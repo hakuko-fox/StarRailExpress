@@ -80,6 +80,7 @@
   "item.noellesroles.hedinghong.desc": "Disposable item, exclusive to the alchemist profession; right-click on a player to poison them.",
   "item.noellesroles.toilet_poison.desc": "Disposable item, exclusive to the poisoner profession; right-click on a toilet to poison the next player who sits on it.",
   "item.noellesroles.dogskin_plaster.desc": "Disposable item, exclusive to the alchemist profession; right-click on a player to prevent their sanity from decreasing for 30 seconds.",
+  "item.noellesroles.alchemist_buff_potion.desc": "Disposable item; right-click a player to apply one random buff from 6 configurable effects and notify the target which effect was applied.",
   "item.noellesroles.fire_axe.desc": "Firefighter exclusive item with 3 durability; hold right-click to lift the fire axe and kill the target, consuming all 3 durability on a kill. You can also crouch + right-click a door to break it, consuming 1 durability. When the fire axe is not at full durability, it cannot be used to cut through people.",
   "item.noellesroles.throwing_knife.desc": "Press Q to throw; right-click raises the throwing knife and can kill.",
   "item.noellesroles.rope.desc": "Rescuer profession exclusive item; right-click to pull a person within a straight line range to you.",

@@ -3,6 +3,8 @@ package org.agmas.noellesroles.item;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -23,6 +25,10 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.repack.HSRSounds;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 药剂师增益药水（一次性道具，对目标使用）
@@ -30,19 +36,33 @@ import org.jetbrains.annotations.NotNull;
 public class AlchemistBuffPotionItem extends Item {
 
     public enum EffectType {
-        MOOD_DRAIN_REDUCE,
-        MOOD_DRAIN_IGNORE,
-        MOOD_REGEN,
-        INFINITE_STAMINA,
-        STAMINA_BOOST,
-        STAMINA_RECOVERY
+        MOOD_DRAIN_REDUCE("mood_drain_reduction"),
+        MOOD_DRAIN_IGNORE("mood_drain_immunity"),
+        MOOD_REGEN("mood_regeneration"),
+        INFINITE_STAMINA("infinite_stamina"),
+        STAMINA_BOOST("stamina_boost"),
+        STAMINA_RECOVERY("stamina_recovery");
+
+        private final String effectId;
+
+        EffectType(String effectId) {
+            this.effectId = effectId;
+        }
+
+        public String getTranslationKey() {
+            return "effect.noellesroles." + effectId;
+        }
     }
 
-    private final EffectType effectType;
+    private final EffectType fixedEffectType;
 
-    public AlchemistBuffPotionItem(Properties settings, EffectType effectType) {
+    public AlchemistBuffPotionItem(Properties settings) {
+        this(settings, null);
+    }
+
+    public AlchemistBuffPotionItem(Properties settings, @Nullable EffectType effectType) {
         super(settings);
-        this.effectType = effectType;
+        this.fixedEffectType = effectType;
     }
 
     @Override
@@ -77,7 +97,12 @@ public class AlchemistBuffPotionItem extends Item {
             return;
         }
 
-        applyEffect(targetPlayer);
+        EffectType appliedEffect = applyEffect(targetPlayer);
+        if (appliedEffect == null) {
+            return;
+        }
+
+        notifyTarget(targetPlayer, appliedEffect);
 
         target.playSound(HSRSounds.ITEM_SYRINGE_STAB, 0.4F, 1.0F);
         final var blockPos = target.blockPosition();
@@ -90,22 +115,59 @@ public class AlchemistBuffPotionItem extends Item {
         }
     }
 
-    private void applyEffect(Player targetPlayer) {
+    private @Nullable EffectType applyEffect(Player targetPlayer) {
+        EffectType effectType = pickEffectType(targetPlayer);
+        if (effectType == null) {
+            return null;
+        }
+
         switch (effectType) {
             case MOOD_DRAIN_REDUCE -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_REDUCTION, 45 * 20, 0, true, true, true));
             case MOOD_DRAIN_IGNORE -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_IMMUNITY, 20 * 20, 0, true, true, true));
             case MOOD_REGEN -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_REGENERATION, 40 * 20, 0, true, true, true));
             case INFINITE_STAMINA -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.INFINITE_STAMINA, 20 * 20, 0, true, true, true));
             case STAMINA_BOOST -> {
-                SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(targetPlayer.level());
-                SRERole role = gameComponent.getRole(targetPlayer);
-                boolean isInfiniteStamina = (role != null && role.getMaxSprintTime(targetPlayer) == Integer.MAX_VALUE);
-                if (!isInfiniteStamina) {
-                    targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_BOOST, 45 * 20, 0, true, true, true));
+                if (isInfiniteStaminaRole(targetPlayer)) {
+                    return null;
                 }
+                targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_BOOST, 45 * 20, 0, true, true, true));
             }
             case STAMINA_RECOVERY -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_RECOVERY, 45 * 20, 0, true, true, true));
         }
+
+        return effectType;
+    }
+
+    private @Nullable EffectType pickEffectType(Player targetPlayer) {
+        if (fixedEffectType != null) {
+            return fixedEffectType;
+        }
+
+        List<EffectType> candidates = new ArrayList<>(List.of(EffectType.values()));
+        if (isInfiniteStaminaRole(targetPlayer)) {
+            candidates.remove(EffectType.STAMINA_BOOST);
+        }
+
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        return candidates.get(targetPlayer.getRandom().nextInt(candidates.size()));
+    }
+
+    private boolean isInfiniteStaminaRole(Player player) {
+        SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(player.level());
+        SRERole role = gameComponent.getRole(player);
+        return role != null && role.getMaxSprintTime(player) == Integer.MAX_VALUE;
+    }
+
+    private void notifyTarget(Player targetPlayer, EffectType effectType) {
+        targetPlayer.displayClientMessage(
+                Component.translatable(
+                        "message.noellesroles.alchemist_buff_potion.applied",
+                        Component.translatable(effectType.getTranslationKey())
+                ).withStyle(ChatFormatting.AQUA),
+                true
+        );
     }
 
     public static HitResult getPotionTarget(Player user) {

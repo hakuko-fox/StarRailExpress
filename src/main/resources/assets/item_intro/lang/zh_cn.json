@@ -80,6 +80,7 @@
   "item.noellesroles.hedinghong.desc": "一次性用品，药剂师职业专属道具，右键对玩家使用，使目标中毒。",
   "item.noellesroles.toilet_poison.desc": "一次性用品，毒师职业专属道具，右键对马桶使用，使下一个坐在马桶上的玩家中毒。",
   "item.noellesroles.dogskin_plaster.desc": "一次性用品，药剂师职业专属道具，右键对玩家使用,使目标在30秒内san值不会下界。",
+  "item.noellesroles.alchemist_buff_potion.desc": "一次性用品，右键对玩家使用，随机施加以下6种增益效果中的一种：san值消耗减缓、san值消耗免疫、san值恢复、无限体力、体力提升、体力恢复效率提升；并提示目标当前获得的效果。",
   "item.noellesroles.fire_axe.desc": "消防员职业专属道具，拥有3点耐久，长按右键可以举起消防斧对目标造成击杀，击杀后直接消耗3点耐久，也可以蹲下右键门将门破开，消耗1点耐久，消防斧耐久不为满时无法通过消防斧刀人。",
   "item.noellesroles.throwing_knife.desc": "按Q键投掷，右键可以将飞刀举起来，并造成击杀。",
   "item.noellesroles.rope.desc": "搜救员职业专属道具，右键将直线范围内的一个人拉到你面前。",

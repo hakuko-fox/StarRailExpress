@@ -74,7 +74,7 @@ public class ModEffects {
     public static final Holder<MobEffect> OTHERWORLD_AURA = register("otherworld_aura", new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x4B0082));
 
     /**
-     * 心情消耗减缓
+     * san值消耗减缓
      * - 有益效果
      * - 降低 mood 的自然消耗速度
      */
@@ -88,7 +88,7 @@ public class ModEffects {
     public static final Holder<MobEffect> MOOD_DRAIN_IMMUNITY = register("mood_drain_immunity", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x2CC36B));
 
     /**
-     * 心情持续恢复
+     * san值恢复
      * - 有益效果
      * - 持续缓慢恢复 mood
      */
@@ -109,7 +109,7 @@ public class ModEffects {
     public static final Holder<MobEffect> STAMINA_BOOST = register("stamina_boost", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xE7A945));
 
     /**
-     * 体力恢复加速
+     * 体力恢复效率提升
      * - 有益效果
      * - 增加非冲刺状态下体力回复速度
      */
@@ -151,7 +151,7 @@ public class ModEffects {
         if (amp < 0) {
             return 0f;
         }
-        return 0.0008f * (amp + 1);
+        return 0.005f * (amp + 1);
     }
 
     public static boolean hasInfiniteStamina(LivingEntity entity) {

@@ -12,8 +12,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -54,6 +56,12 @@ public class PsychologistPlayerComponent implements RoleComponent, ServerTicking
 
     /** 最大治疗距离 */
     public static final double MAX_HEALING_DISTANCE = 5.0;
+
+    /** 心理学家光环半径 */
+    public static final double AURA_RADIUS = 4.0;
+
+    /** 心理学家光环效果持续时间（5秒） */
+    public static final int AURA_DURATION_TICKS = 5 * 20;
 
     /** san满的阈值（1.0表示满，游戏中san值范围是0.0-1.0） */
     public static final float FULL_SANITY = 1.0f;
@@ -304,6 +312,10 @@ public class PsychologistPlayerComponent implements RoleComponent, ServerTicking
             return;
         }
 
+        if (gameWorld.isRunning() && GameUtils.isPlayerAliveAndSurvival(player)) {
+            applyAuraEffects();
+        }
+
         // 减少冷却时间
         if (this.cooldown > 0) {
             this.cooldown--;
@@ -356,6 +368,39 @@ public class PsychologistPlayerComponent implements RoleComponent, ServerTicking
             if (healingTicks >= HEALING_DURATION) {
                 completeHealing(target);
             }
+        }
+    }
+
+    private void applyAuraEffects() {
+        double radiusSqr = AURA_RADIUS * AURA_RADIUS;
+        for (Player nearby : player.level().players()) {
+            if (nearby.getUUID().equals(player.getUUID())) {
+                continue;
+            }
+            if (!GameUtils.isPlayerAliveAndSurvival(nearby)) {
+                continue;
+            }
+            if (player.distanceToSqr(nearby) > radiusSqr) {
+                continue;
+            }
+
+            // LOW_SAN_SHADER_RESISTANCE 二级（放大器 1）
+            nearby.addEffect(new MobEffectInstance(
+                    ModEffects.LOW_SAN_SHADER_RESISTANCE,
+                    AURA_DURATION_TICKS,
+                    1,
+                    true,
+                    false,
+                    true));
+
+            // MOOD_DRAIN_REDUCTION 一级（放大器 0）
+            nearby.addEffect(new MobEffectInstance(
+                    ModEffects.MOOD_DRAIN_REDUCTION,
+                    AURA_DURATION_TICKS,
+                    0,
+                    true,
+                    false,
+                    true));
         }
     }
 
