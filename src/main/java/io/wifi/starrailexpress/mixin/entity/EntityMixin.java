@@ -60,8 +60,10 @@ public class EntityMixin {
         Entity self = (Entity) (Object) this;
         // 只针对玩家，且该玩家对本客户端不可见（隐身效果）
         if (self instanceof Player player && player.isInvisible()) {
-            ci.setReturnValue(false);
-            ci.cancel();
+            if (SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.WIND_YAOSE)) {
+                ci.setReturnValue(false);
+                ci.cancel();
+            }
         }
 
     }
