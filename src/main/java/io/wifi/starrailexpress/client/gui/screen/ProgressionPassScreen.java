@@ -15,6 +15,9 @@ import java.util.List;
 
 public class ProgressionPassScreen extends Screen {
 
+        private static final long OPEN_ANIM_MS = 180L;
+        private static final long CLOSE_ANIM_MS = 150L;
+
     // ------- layout constants -------
     /** 每行任务高度 */
     private static final int ROW_H      = 36;
@@ -45,6 +48,10 @@ public class ProgressionPassScreen extends Screen {
     private int panelX, panelY, panelW, panelH;
     private int questAreaY, questAreaH, rowsPerPage;
 
+        private long openAnimStartMs;
+        private boolean closing;
+        private long closeAnimStartMs;
+
     public ProgressionPassScreen() {
         super(Component.translatable("sre.pass.name"));
         this.progression = SREPlayerProgressionComponent.KEY.get(Minecraft.getInstance().player);
@@ -73,6 +80,10 @@ public class ProgressionPassScreen extends Screen {
         clearWidgets();
         cardButtons.clear();
         computeLayout();
+
+                openAnimStartMs = System.currentTimeMillis();
+                closing = false;
+                closeAnimStartMs = 0L;
 
         // 限制页码在合法范围内
         int dSz = progression.getActiveDailyQuests().size();
@@ -131,7 +142,8 @@ public class ProgressionPassScreen extends Screen {
 
     private Button createCardButton(int x, int y, int width, FactionCardType type, int accentColor) {
         int count = progression.getFactionCards().getOrDefault(type, 0);
-        Component label = Component.translatable("sre.pass.faction." + type.questKey, Component.literal(type.displayName + " x" + count));
+        Component label = Component.literal(
+                Component.translatable("sre.pass.faction." + type.questKey).getString() + " x" + count);
         var btn = ModernButton.builder(label, b -> sendCommand("tmm:pass activate " + type.questKey))
                 .bounds(x, y, width, 22).accentColor(accentColor).build();
         btn.active = count > 0 || progression.getActiveFactionCard() == type;
@@ -143,33 +155,50 @@ public class ProgressionPassScreen extends Screen {
         return false;
     }
 
+        @Override
+        public void onClose() {
+                if (!closing) {
+                        closing = true;
+                        closeAnimStartMs = System.currentTimeMillis();
+                        return;
+                }
+                super.onClose();
+        }
+
     // =========================================================================
     //  渲染
     // =========================================================================
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+                float animVisibility = getAnimationVisibility();
+                if (closing && animVisibility <= 0.01f) {
+                        super.onClose();
+                        return;
+                }
+                int animAlpha = Math.max(0, Math.min(255, (int) (animVisibility * 255.0f)));
+
         super.render(g, mouseX, mouseY, partialTick);
 
         // ---- 面板背景 ----
-        g.fillGradient(0, 0, width, height, 0xE0080C14, 0xF0121B2E);
-        g.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xD20C1018);
-        g.fill(panelX + 14, panelY + 14,          panelX + panelW - 14, panelY + 16,          0xFF3AA6FF);
-        g.fill(panelX + 14, panelY + panelH - 14, panelX + panelW - 14, panelY + panelH - 12, 0x6648D3FF);
+                g.fillGradient(0, 0, width, height, applyAlpha(0xE0080C14, animAlpha), applyAlpha(0xF0121B2E, animAlpha));
+                g.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xD20C1018, animAlpha));
+                g.fill(panelX + 14, panelY + 14,          panelX + panelW - 14, panelY + 16,          applyAlpha(0xFF3AA6FF, animAlpha));
+                g.fill(panelX + 14, panelY + panelH - 14, panelX + panelW - 14, panelY + panelH - 12, applyAlpha(0x6648D3FF, animAlpha));
 
         // ---- 标题栏 ----
-        g.drawString(font, Component.translatable("sre.pass.name"), panelX + 24, panelY + 20, 0xFFF4F7FF, false);
+        g.drawString(font, Component.translatable("sre.pass.name"), panelX + 24, panelY + 20, applyAlpha(0xFFF4F7FF, animAlpha), false);
         g.drawString(font, "Lv." + progression.getLevel()
                         + "  " + Component.translatable("sre.pass.exp_progress", progression.getExperience(), progression.getExperienceForNextLevel()).getString(),
-                panelX + 24, panelY + 34, 0xFF92B6E5, false);
-        renderProgressBar(g, panelX + 24, panelY + 52, panelW - 48, 10);
+                panelX + 24, panelY + 34, applyAlpha(0xFF92B6E5, animAlpha), false);
+        renderProgressBar(g, panelX + 24, panelY + 52, panelW - 48, 10, animAlpha);
 
         // ---- 统计卡片 ----
         renderSummaryCards(g, panelX + 24, panelY + HDR_H);
 
         // ---- 任务列表背景 ----
         g.fill(panelX + 24, questAreaY, panelX + panelW - 24, questAreaY + questAreaH,
-                activeTab == 0 ? 0x8A111827 : 0x8A11211F);
+                applyAlpha(activeTab == 0 ? 0x8A111827 : 0x8A11211F, animAlpha));
 
         // ---- 任务行 ----
         List<SREPlayerProgressionComponent.PassQuest> quests =
@@ -179,46 +208,52 @@ public class ProgressionPassScreen extends Screen {
         int end     = Math.min(start + rowsPerPage, quests.size());
         int rowY    = questAreaY + 4;
         for (int i = start; i < end; i++) {
-            renderQuestRow(g, panelX + 24, rowY, panelW - 48, quests.get(i));
+                        renderQuestRow(g, panelX + 24, rowY, panelW - 48, quests.get(i), animAlpha);
             rowY += ROW_STRIDE;
         }
         if (quests.isEmpty()) {
-            g.drawString(font, Component.translatable("sre.no_quest"), panelX + 24 + 16, questAreaY + 16, 0xFF6A7D99, false);
+                        g.drawString(font, Component.translatable("sre.no_quest"), panelX + 24 + 16, questAreaY + 16, applyAlpha(0xFF6A7D99, animAlpha), false);
         }
 
         // ---- 分页页码标签 ----
         int totalPages = Math.max(1, (quests.size() + rowsPerPage - 1) / rowsPerPage);
         String pgLabel = (curPage + 1) + " / " + totalPages;
         int pgY = questAreaY + questAreaH + 4;
-        g.drawString(font, pgLabel, panelX + panelW / 2 - font.width(pgLabel) / 2, pgY + 6, 0xFF9BBAD4, false);
+        g.drawString(font, pgLabel, panelX + panelW / 2 - font.width(pgLabel) / 2, pgY + 6, applyAlpha(0xFF9BBAD4, animAlpha), false);
 
         // ---- 底部信息 ----
         int infoY = panelY + panelH - 62;
         String activeCard = progression.getActiveFactionCard() == FactionCardType.NONE
                 ? Component.translatable("sre.pass.not_active").getString() : Component.translatable("sre.pass.faction." + progression.getActiveFactionCard().questKey, Component.literal(progression.getActiveFactionCard().displayName)).getString();
-        g.drawString(font, Component.translatable("sre.pass.active_card", activeCard).getString(), panelX + 24, infoY, 0xFFF7D791, false);
+        g.drawString(font, Component.translatable("sre.pass.active_card", activeCard).getString(), panelX + 24, infoY, applyAlpha(0xFFF7D791, animAlpha), false);
         
         long dailyRem  = Math.max(0L, progression.getLastQuestRefreshTime()
                 + 24L * 60L * 60L * 1000L - System.currentTimeMillis());
         long weeklyRem = Math.max(0L, progression.getLastWeeklyRefreshTime()
                 + 7L * 24L * 60L * 60L * 1000L - System.currentTimeMillis());
-        g.drawString(font, Component.translatable("sre.pass.daily_refresh", formatDuration(dailyRem)).getString(),  panelX + 24,            infoY + 14, 0xFF86A3C5, false);
-        g.drawString(font, Component.translatable("sre.pass.weekly_refresh", formatDuration(weeklyRem)).getString(), panelX + panelW / 2 + 8, infoY + 14, 0xFFB09FFF, false);
+                g.drawString(font, Component.translatable("sre.pass.daily_refresh", formatDuration(dailyRem)).getString(),  panelX + 24,            infoY + 14, applyAlpha(0xFF86A3C5, animAlpha), false);
+                g.drawString(font, Component.translatable("sre.pass.weekly_refresh", formatDuration(weeklyRem)).getString(), panelX + panelW / 2 + 8, infoY + 14, applyAlpha(0xFFB09FFF, animAlpha), false);
+
+                // 对组件层加一个淡入/淡出遮罩，打开时从黑渐显，关闭时渐隐到黑。
+                int overlayAlpha = 255 - animAlpha;
+                if (overlayAlpha > 0) {
+                        g.fill(0, 0, width, height, (overlayAlpha << 24));
+                }
     }
 
     // =========================================================================
     //  子渲染器
     // =========================================================================
 
-    private void renderProgressBar(GuiGraphics g, int x, int y, int width, int height) {
-        g.fill(x, y, x + width, y + height, 0x55334955);
+        private void renderProgressBar(GuiGraphics g, int x, int y, int width, int height, int animAlpha) {
+                g.fill(x, y, x + width, y + height, applyAlpha(0x55334955, animAlpha));
         int filled = (int) (width * (progression.getExperience()
                 / (float) Math.max(1, progression.getExperienceForNextLevel())));
-        g.fill(x, y, x + filled, y + height, 0xFF47C1FF);
-        g.fill(x + filled, y, x + Math.min(width, filled + 20), y + height, 0xAA9BE2FF);
+                g.fill(x, y, x + filled, y + height, applyAlpha(0xFF47C1FF, animAlpha));
+                g.fill(x + filled, y, x + Math.min(width, filled + 20), y + height, applyAlpha(0xAA9BE2FF, animAlpha));
     }
 
-    private void renderSummaryCards(GuiGraphics g, int startX, int y) {
+        private void renderSummaryCards(GuiGraphics g, int startX, int y) {
         int cardW = (panelW - 72) / 3;
         renderSummaryCard(g, startX,                  y, cardW, Component.translatable("sre.pass.total_exp").getString(),  String.valueOf(progression.getTotalExperience()),     0xFF61D0FF);
         renderSummaryCard(g, startX + cardW + 12,     y, cardW, Component.translatable("sre.pass.coin_reward").getString(),  String.valueOf(progression.getClaimedCoinRewards()), 0xFFFFD166);
@@ -232,31 +267,31 @@ public class ProgressionPassScreen extends Screen {
         g.drawString(font, value, x + 10, y + 18, 0xFFF5FAFF, false);
     }
 
-    private void renderQuestRow(GuiGraphics g, int questX, int rowY, int questW,
-            SREPlayerProgressionComponent.PassQuest quest) {
+        private void renderQuestRow(GuiGraphics g, int questX, int rowY, int questW,
+                        SREPlayerProgressionComponent.PassQuest quest, int animAlpha) {
         int innerX = questX + 12;
         int innerW = questW - 24;
-        g.fill(innerX, rowY, innerX + innerW, rowY + ROW_H, 0x66192135);
+                g.fill(innerX, rowY, innerX + innerW, rowY + ROW_H, applyAlpha(0x66192135, animAlpha));
 
         // 右列：进度比 + 进度条（宽度自适应）
         int barW   = Math.min(160, Math.max(50, innerW / 3));
         int barX   = innerX + innerW - barW - 8;
         String frac = quest.progress + "/" + quest.target;
         int fracW  = font.width(frac);
-        g.drawString(font, frac, barX - fracW - 6, rowY + 3, 0xFFE8EEF8, false);
-        g.fill(barX, rowY + 14, barX + barW, rowY + 19, 0x55384A66);
+        g.drawString(font, frac, barX - fracW - 6, rowY + 3, applyAlpha(0xFFE8EEF8, animAlpha), false);
+        g.fill(barX, rowY + 14, barX + barW, rowY + 19, applyAlpha(0x55384A66, animAlpha));
         int barFilled = (int) (barW * (quest.progress / (float) Math.max(1, quest.target)));
         g.fill(barX, rowY + 14, barX + barFilled, rowY + 19,
-                quest.rewarded ? 0xFF3DE4A8 : 0xFF59A9FF);
+                applyAlpha(quest.rewarded ? 0xFF3DE4A8 : 0xFF59A9FF, animAlpha));
 
         // 左列：标题 / 描述 / 奖励（紧凑格式）
         int titleColor = quest.rewarded ? 0xFF7CFFC0 : 0xFFF3F7FF;
-        g.drawString(font, quest.title,       innerX + 8, rowY + 3,  titleColor, false);
-        g.drawString(font, quest.description, innerX + 8, rowY + 13, 0xFF8FA7C4, false);
+        g.drawString(font, quest.title,       innerX + 8, rowY + 3,  applyAlpha(titleColor, animAlpha), false);
+        g.drawString(font, quest.description, innerX + 8, rowY + 13, applyAlpha(0xFF8FA7C4, animAlpha), false);
         String rwd = "+" + quest.rewardExperience + "exp  +" + quest.rewardCoins + "g"
                 + (quest.rewardLoot > 0 ? "  +" + quest.rewardLoot + "L" : "")
                 + (quest.rewardCard != FactionCardType.NONE ? "  " + Component.translatable("sre.pass.faction." + quest.rewardCard.questKey, Component.literal(quest.rewardCard.displayName)).getString() : "");
-        g.drawString(font, rwd, innerX + 8, rowY + 23, 0xFFF7D27A, false);
+        g.drawString(font, rwd, innerX + 8, rowY + 23, applyAlpha(0xFFF7D27A, animAlpha), false);
     }
 
     // =========================================================================
@@ -292,4 +327,29 @@ public class ProgressionPassScreen extends Screen {
         Duration d = Duration.ofMillis(millis);
         return d.toHours() + "h " + d.toMinutesPart() + "m";
     }
+
+        private float getAnimationVisibility() {
+                long now = System.currentTimeMillis();
+                if (closing) {
+                        float t = (now - closeAnimStartMs) / (float) CLOSE_ANIM_MS;
+                        return 1.0f - easeOutCubic(clamp01(t));
+                }
+                float t = (now - openAnimStartMs) / (float) OPEN_ANIM_MS;
+                return easeOutCubic(clamp01(t));
+        }
+
+        private static float clamp01(float value) {
+                return Math.max(0.0f, Math.min(1.0f, value));
+        }
+
+        private static float easeOutCubic(float t) {
+                float inv = 1.0f - t;
+                return 1.0f - inv * inv * inv;
+        }
+
+        private static int applyAlpha(int color, int alpha) {
+                int a = (color >>> 24) & 0xFF;
+                int scaled = (a * alpha) / 255;
+                return (scaled << 24) | (color & 0x00FFFFFF);
+        }
 }
