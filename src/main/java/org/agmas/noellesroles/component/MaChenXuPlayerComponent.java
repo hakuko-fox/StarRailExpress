@@ -2,6 +2,7 @@ package org.agmas.noellesroles.component;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent.GameStatus;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -57,21 +58,21 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
     // ==================== 同步分组掩码 ====================
 
     /** 核心状态：阶段、SAN累计、永久属性、进化阈值 */
-    public static final int SYNC_CORE       = 0x01;
+    public static final int SYNC_CORE = 0x01;
     /** 技能列表与当前选中索引 */
-    public static final int SYNC_SKILLS     = 0x02;
+    public static final int SYNC_SKILLS = 0x02;
     /** 所有技能冷却（大招 + 五种鬼术） */
-    public static final int SYNC_COOLDOWNS  = 0x04;
+    public static final int SYNC_COOLDOWNS = 0x04;
     /** 里世界状态、计时器、标记玩家列表 */
     public static final int SYNC_OTHERWORLD = 0x08;
     /** 回响技能状态（录制/可传送/录制进度） */
-    public static final int SYNC_ECHO       = 0x10;
+    public static final int SYNC_ECHO = 0x10;
     /** 浊雨技能状态（激活/剩余时间/使用次数） */
-    public static final int SYNC_TURBID     = 0x20;
+    public static final int SYNC_TURBID = 0x20;
     /** 掠风技能状态（激活/剩余时间） */
-    public static final int SYNC_SWIFT      = 0x40;
+    public static final int SYNC_SWIFT = 0x40;
     /** 全量同步 */
-    public static final int SYNC_ALL        = 0x7F;
+    public static final int SYNC_ALL = 0x7F;
 
     // ==================== 常量定义 ====================
 
@@ -470,7 +471,7 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
      * 检查阶段进阶
      */
     public void checkStageAdvance() {
-        int oldStage = stage;
+        // int oldStage = stage;
         if (stage == 1 && totalSanLoss >= STAGE_2_THRESHOLD) {
             advanceToStage2();
         } else if (stage == 2 && totalSanLoss >= STAGE_3_THRESHOLD) {
@@ -822,7 +823,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
         } else if (timer == 75) {
             sl.playSound(null, sp.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.2F, 0.6F);
         } else if (timer == OTHERWORLD_DESCENT_DURATION) {
-            sl.playSound(null, sp.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 1.4F, 0.65F);
+            sl.playSound(null, sp.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 1.4F,
+                    0.65F);
         }
     }
 
@@ -888,8 +890,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
                     pos.x, pos.y + 0.3, pos.z, 40, 5.0, 1.0, 5.0, 0.02);
             sl.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE,
                     pos.x, pos.y + 0.5, pos.z, 15, 2.0, 3.0, 2.0, 0.005);
-                // 起手球壳
-                playOtherworldDescentEffects(sl, sp, 1);
+            // 起手球壳
+            playOtherworldDescentEffects(sl, sp, 1);
         }
 
         // 好人获得速度II + 里世界侵蚀效果（用于客户端检测）+ 使用Title发送里世界降临提醒
@@ -1048,19 +1050,17 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
     public boolean soulDevour(Player target) {
         if (!(player instanceof ServerPlayer))
             return false;
-        if (SREGameWorldComponent.KEY.get(player.level()).canUseKillerFeatures(target))return false;
+        if (SREGameWorldComponent.KEY.get(player.level()).canUseKillerFeatures(target))
+            return false;
         // 检查目标SAN <= 10（mood <= 0.1）
         float mood = SREPlayerMoodComponent.KEY.get(target).getMood();
         if (mood > 0.1f) {
-            //Noellesroles.LOGGER.info("San {} over 0.1", mood);
+            // Noellesroles.LOGGER.info("San {} over 0.1", mood);
             return false;
         }
 
-
         // 击杀目标（无法复活）
         GameUtils.forceKillPlayer(target, true, player, Noellesroles.id("machenxu"));
-
-
 
         // 移除受害者所有物品
         if (target instanceof ServerPlayer targetSp) {
@@ -1091,8 +1091,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         // 播放音效
-//        player.level().playSound(null, player.blockPosition(),
-//                SoundEvents.WITHER_DEATH, SoundSource.PLAYERS, 1.0F, 1.2F);
+        // player.level().playSound(null, player.blockPosition(),
+        // SoundEvents.WITHER_DEATH, SoundSource.PLAYERS, 1.0F, 1.2F);
 
         // addSanLoss 已完成 SYNC_CORE | SYNC_SKILLS，此处无需重复同步
         return true;
@@ -1148,7 +1148,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
             return false;
         if (!GameUtils.isPlayerAliveAndSurvival(target))
             return false;
-        if (isKiller(target))return false;
+        if (isKiller(target))
+            return false;
         UUID targetUUID = target.getUUID();
         if (markedPlayers.contains(targetUUID))
             return false;
@@ -1193,16 +1194,15 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
                 sl.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP,
                         SoundSource.HOSTILE, 1.0F, 0.85F);
 
-                    // 灵魂火焰爆发
-                    sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                            pos.x, pos.y + 1.0, pos.z, 15, 0.3, 0.5, 0.3, 0.05);
-                    // 暗色烟雾
-                    sl.sendParticles(ParticleTypes.LARGE_SMOKE,
-                            pos.x, pos.y + 0.5, pos.z, 10, 0.4, 0.3, 0.4, 0.02);
-                    // 幽匿粒子
-                    sl.sendParticles(ParticleTypes.SCULK_SOUL,
-                            pos.x, pos.y + 0.8, pos.z, 5, 0.3, 0.3, 0.3, 0.01);
-
+                // 灵魂火焰爆发
+                sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                        pos.x, pos.y + 1.0, pos.z, 15, 0.3, 0.5, 0.3, 0.05);
+                // 暗色烟雾
+                sl.sendParticles(ParticleTypes.LARGE_SMOKE,
+                        pos.x, pos.y + 0.5, pos.z, 10, 0.4, 0.3, 0.4, 0.02);
+                // 幽匿粒子
+                sl.sendParticles(ParticleTypes.SCULK_SOUL,
+                        pos.x, pos.y + 0.8, pos.z, 5, 0.3, 0.3, 0.3, 0.01);
 
                 // 音效
                 sl.playSound(null, target.blockPosition(),
@@ -1267,7 +1267,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
         int duration = (stage >= 4) ? ULTIMATE_DURATION_STAGE_4 : ULTIMATE_DURATION_STAGE_3;
         activateOtherworld(duration);
         ultimateCooldown = duration * 2;
-        // 同步 ultimateCooldown（COOLDOWNS）和 stage4FreeUltUsed（CORE），activateOtherworld 已同步 OTHERWORLD
+        // 同步 ultimateCooldown（COOLDOWNS）和 stage4FreeUltUsed（CORE），activateOtherworld
+        // 已同步 OTHERWORLD
         sync(SYNC_COOLDOWNS | SYNC_CORE);
 
         serverPlayer.displayClientMessage(
@@ -1425,11 +1426,15 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
 
         Level world = player.level();
         for (Player target : world.players()) {
-            if (target.equals(player)) continue;
-            if (!GameUtils.isPlayerAliveAndSurvival(target)) continue;
-            if (isKiller(target)) continue;
+            if (target.equals(player))
+                continue;
+            if (!GameUtils.isPlayerAliveAndSurvival(target))
+                continue;
+            if (isKiller(target))
+                continue;
             // 每个玩家只触发一次
-            if (ghostWallHitPlayers.contains(target.getUUID())) continue;
+            if (ghostWallHitPlayers.contains(target.getUUID()))
+                continue;
 
             Vec3 toTarget = target.position().subtract(ghostWallPos);
             double dot = toTarget.dot(ghostWallDirection);
@@ -1821,8 +1826,10 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     public Component getNowCooldownText() {
-        if (ghostSkills.isEmpty()) return null;
-        if (this.nowSelectedSkill >= ghostSkills.size()) return null;
+        if (ghostSkills.isEmpty())
+            return null;
+        if (this.nowSelectedSkill >= ghostSkills.size())
+            return null;
 
         var skillId = ghostSkills.get(this.nowSelectedSkill);
         return switch (skillId) {
@@ -1889,7 +1896,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
                     yield Component.translatable("tip.noellesroles.not_enough_energy")
                             .withStyle(ChatFormatting.RED);
                 if (otherworldActive)
-                    yield Component.translatable("hud.noellesroles.ma_chen_xu.li_shi_jie_active", otherworldDuration / 20)
+                    yield Component
+                            .translatable("hud.noellesroles.ma_chen_xu.li_shi_jie_active", otherworldDuration / 20)
                             .withStyle(ChatFormatting.DARK_RED);
                 if (ultimateCooldown > 0)
                     yield Component.translatable("message.noellesroles.ma_chen_xu.prayer_rain_cooldown",
@@ -2080,7 +2088,9 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         if (this.stage <= 0)
             return;
-
+        if (SREGameWorldComponent.KEY.get(this.player.level()).getGameStatus() != GameStatus.ACTIVE) {
+            return;
+        }
         int mask = this.pendingSyncMask;
         tag.putInt("_mask", mask);
 

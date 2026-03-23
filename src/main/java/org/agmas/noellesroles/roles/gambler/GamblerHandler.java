@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -184,9 +186,10 @@ public class GamblerHandler {
         serverWorld.setWeatherParameters(0, 400, true, true);
 
         // 4. 全服广播消息
-        String message = "§l§c⚠ §6赌徒触发了 1% 的奇迹！ §c⚠§r";
+        Component message = Component.translatable("message.noellesroles.gambler.miracle");
         serverWorld.players().forEach(player -> {
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(message));
+            player.displayClientMessage(message, true);
+            BroadcastCommand.BroadcastMessage(player, message);
         });
 
         // 5. 发送客户端渲染包 —— 粒子和音效交由各客户端本地渲染，减少服务端网络压力

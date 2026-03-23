@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.init;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
@@ -17,6 +18,50 @@ import java.util.Collections;
 import java.util.Random;
 
 public class InitModRolesMax {
+    public static void autoChangePresent() {
+        // 自动切换预设：游戏结束时应用配置的预设，使其在下一局游戏中生效
+        io.wifi.starrailexpress.SREConfig sreConfig = io.wifi.starrailexpress.SREConfig.instance();
+        if (sreConfig.enableRoundBasedAutoPreset) {
+            // 按游戏轮数自动切换预设
+            sreConfig.roundBasedCurrentRound++;
+            int round = sreConfig.roundBasedCurrentRound;
+            int lowEnd = sreConfig.roundBasedPresetLowLevelRounds;
+            int medEnd = lowEnd + sreConfig.roundBasedPresetMediumLevelRounds;
+            int highEnd = medEnd + sreConfig.roundBasedPresetHighLevelRounds;
+
+            String nextPreset;
+            if (round <= lowEnd) {
+                nextPreset = sreConfig.roundBasedPresetLowLevel;
+            } else if (round <= medEnd) {
+                nextPreset = sreConfig.roundBasedPresetMediumLevel;
+            } else if (round <= highEnd) {
+                nextPreset = sreConfig.roundBasedPresetHighLevel;
+            } else {
+                nextPreset = sreConfig.roundBasedPresetAllRoles;
+            }
+
+            if (nextPreset == null || nextPreset.isBlank()) {
+                // 全部职业启用：清空禁用列表
+                org.agmas.harpymodloader.config.HarpyModLoaderConfig hml = org.agmas.harpymodloader.config.HarpyModLoaderConfig.HANDLER
+                        .instance();
+                hml.disabled.clear();
+                hml.disabledModifiers.clear();
+                org.agmas.harpymodloader.config.HarpyModLoaderConfig.HANDLER.save();
+                SRE.LOGGER.info("[AutoPreset] 第{}局结束，已启用全部职业", round);
+            } else {
+                boolean applied = org.agmas.noellesroles.commands.PresetCommand.applyPresetByName(nextPreset);
+                if (applied) {
+                    SRE.LOGGER.info("[AutoPreset] 第{}局结束，已自动应用预设: {}", round, nextPreset);
+                } else {
+                    SRE.LOGGER.warn("[AutoPreset] 第{}局结束，未找到预设 '{}'，跳过自动切换", round, nextPreset);
+                }
+            }
+            // 保存当前使用预设和已进行轮数到配置
+            sreConfig.roundBasedCurrentPreset = (nextPreset != null) ? nextPreset : "";
+            io.wifi.starrailexpress.SREConfig.HANDLER.save();
+        }
+    }
+
     public static int SPLIT_PERSONALITY_CHANCE = 10; // 10 in 100
     public static int REFUGEE_CHANCE = 10; // 10 in 100
     public static int EGGS_CHANCE = 10;
@@ -200,6 +245,7 @@ public class InitModRolesMax {
 
     public static void registerDynamic() {
         GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
+            autoChangePresent();
             // 获取当前地图ID
             String currentMap = "unknown";
             if (serverLevel.getServer() != null) {
@@ -619,8 +665,8 @@ public class InitModRolesMax {
         }
 
         /// TAXED (纳税)
-        // 纳税修饰符只能生成1个，70%概率生成
-        if (random.nextInt(0, 100) < 70) {
+        // 纳税修饰符只能生成1个，20%概率生成
+        if (random.nextInt(0, 100) < 20) {
             StupidExpress.LOGGER.info("Modifier [Taxed] enabled in this round!");
             Harpymodloader.MODIFIER_MAX.put(Noellesroles.id("taxed"), 1);
         } else {
@@ -628,8 +674,8 @@ public class InitModRolesMax {
         }
 
         /// INTROVERTED (内向)
-        // 内向修饰符只能生成1个，70%概率生成
-        if (random.nextInt(0, 100) < 70) {
+        // 内向修饰符只能生成1个，50%概率生成
+        if (random.nextInt(0, 100) < 50) {
             StupidExpress.LOGGER.info("Modifier [Introverted] enabled in this round!");
             Harpymodloader.MODIFIER_MAX.put(Noellesroles.id("introverted"), 1);
         } else {
