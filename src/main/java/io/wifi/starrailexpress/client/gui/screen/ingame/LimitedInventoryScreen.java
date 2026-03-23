@@ -72,9 +72,10 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     protected void init() {
         super.init();
         initMenuSelections();
-        List<ShopEntry> entries = getShopEntries();
+        List<ShopEntry> entries = new ArrayList<>(getShopEntries());
         if (entries.isEmpty())
             return;
+        entries.removeIf((entry) -> !entry.canDisplay(player));
         int apart = 38;
         int x = this.width / 2 - entries.size() * apart / 2 + 9;
         int y = this.y - 46;
@@ -85,12 +86,9 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                 role.getAddChild().accept(this);
             }
         }
-        for (int i = 0, k = 0; i < entries.size(); i++) {
+        for (int i = 0; i < entries.size(); i++) {
             var t = entries.get(i);
-            if (t.canDisplay(player)) {
-                this.addRenderableWidget(new StoreItemWidget(this, x + apart * k, y, t, k));
-                k++;
-            }
+            this.addRenderableWidget(new StoreItemWidget(this, x + apart * i, y, t, i));
         }
     }
 
