@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -65,6 +64,37 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
     private static final long WEEKLY_REFRESH_INTERVAL_MS = 7L * 24L * 60L * 60L * 1000L;
     private static final float CARD_PREFERRED_PICK_CHANCE = 0.72F;
     private static final int DEFAULT_LEVEL_REWARD_COINS = 20;
+    private static final int SYNC_DIRTY_PROGRESS = 1;
+    private static final int SYNC_DIRTY_CARDS = 1 << 1;
+    private static final int SYNC_DIRTY_TASKS = 1 << 2;
+    private static final int SYNC_DIRTY_ALL = SYNC_DIRTY_PROGRESS | SYNC_DIRTY_CARDS | SYNC_DIRTY_TASKS;
+            private static final Map<String, String> PROGRESS_SYNC_KEYS = Map.ofEntries(
+                Map.entry("level", "lv"),
+                Map.entry("experience", "xp"),
+                Map.entry("totalExperience", "txp"),
+                Map.entry("claimedCoinRewards", "ccr"),
+                Map.entry("claimedLootRewards", "clr"),
+                Map.entry("activeFactionCard", "afc"),
+                Map.entry("factionCards", "fc"),
+                Map.entry("lastQuestRefreshTime", "lqrt"),
+                Map.entry("lastWeeklyRefreshTime", "lwrt"),
+                Map.entry("compactTasks", "ct"),
+                Map.entry("version", "v"));
+            private static final Map<String, String> TASK_SYNC_KEYS = Map.ofEntries(
+                Map.entry("mapping", "m"),
+                Map.entry("definitions", "d"),
+                Map.entry("refreshAt", "r"));
+            private static final Map<String, String> QUEST_DEF_KEYS = Map.ofEntries(
+                Map.entry("id", "i"),
+                Map.entry("title", "t"),
+                Map.entry("description", "ds"),
+                Map.entry("objectiveType", "ot"),
+                Map.entry("objectiveKey", "ok"),
+                Map.entry("target", "tg"),
+                Map.entry("rewardExperience", "rx"),
+                Map.entry("rewardCoins", "rc"),
+                Map.entry("rewardLoot", "rl"),
+                Map.entry("rewardCard", "rd"));
         private static final Path LOCAL_TASK_CONFIG_PATH = FabricLoader.getInstance().getConfigDir()
             .resolve("sre")
             .resolve("progression_tasks.json");
@@ -91,6 +121,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
     private int claimedCoinRewards;
     private int claimedLootRewards;
     private FactionCardType activeFactionCard;
+    private int syncDirtyMask = SYNC_DIRTY_ALL;
 
     public SREPlayerProgressionComponent(Player player) {
         this.player = player;
@@ -209,20 +240,20 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
             return;
         }
         this.factionCards.put(type, Math.max(0, this.factionCards.getOrDefault(type, 0) + count));
-        markChanged();
+        markChanged(SYNC_DIRTY_CARDS);
     }
 
     public boolean activateFactionCard(FactionCardType type) {
         if (type == FactionCardType.NONE) {
             this.activeFactionCard = FactionCardType.NONE;
-            markChanged();
+            markChanged(SYNC_DIRTY_CARDS);
             return true;
         }
         if (this.factionCards.getOrDefault(type, 0) <= 0) {
             return false;
         }
         this.activeFactionCard = type;
-        markChanged();
+        markChanged(SYNC_DIRTY_CARDS);
         return true;
     }
 
@@ -240,7 +271,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                 }
                 this.activeFactionCard = FactionCardType.NONE;
                 serverPlayer.sendSystemMessage(Component.literal("你的" + matchedCard.displayName + "已生效并消耗。"));
-                markChanged();
+                markChanged(SYNC_DIRTY_CARDS);
             }
         }
     }
@@ -357,30 +388,42 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
     }
 
     public void syncToNetwork() {
+        syncToNetwork(SYNC_DIRTY_ALL);
+    }
+
+    public void syncToNetwork(int dirtyMask) {
         if (!SREConfig.instance().progressionSyncServerEnabled || !this.networkSyncEnabled || syncRequests == null) {
             return;
         }
         try {
-            Map<String, Object> progressData = new HashMap<>();
-            progressData.put("level", this.level);
-            progressData.put("experience", this.experience);
-            progressData.put("totalExperience", this.totalExperience);
-            progressData.put("claimedCoinRewards", this.claimedCoinRewards);
-            progressData.put("claimedLootRewards", this.claimedLootRewards);
-            progressData.put("activeFactionCard", this.activeFactionCard.name());
-            progressData.put("factionCards", encodeFactionCards());
-            progressData.put("lastQuestRefreshTime", this.lastQuestRefreshTime);
-            progressData.put("lastWeeklyRefreshTime", this.lastWeeklyRefreshTime);
-            progressData.put("compactTasks", encodeCompactTaskPayload(this.activeQuests));
-            progressData.put("version", System.currentTimeMillis());
+            boolean needProgress = (dirtyMask & (SYNC_DIRTY_PROGRESS | SYNC_DIRTY_CARDS | SYNC_DIRTY_TASKS)) != 0;
+            boolean needTasks = (dirtyMask & SYNC_DIRTY_TASKS) != 0;
 
-            Map<String, Object> taskData = new HashMap<>();
-            taskData.put("mapping", buildTaskMapping(this.activeQuests));
-            taskData.put("definitions", encodeQuestDefinitions(this.activeQuests));
-            taskData.put("refreshAt", this.lastQuestRefreshTime);
+            if (needProgress) {
+                Map<String, Object> progressData = new HashMap<>();
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "level", this.level);
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "experience", this.experience);
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "totalExperience", this.totalExperience);
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "claimedCoinRewards", this.claimedCoinRewards);
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "claimedLootRewards", this.claimedLootRewards);
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "activeFactionCard", this.activeFactionCard.name());
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "factionCards", encodeFactionCards());
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "lastQuestRefreshTime", this.lastQuestRefreshTime);
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "lastWeeklyRefreshTime", this.lastWeeklyRefreshTime);
+                if (needTasks) {
+                    putMappedValue(progressData, PROGRESS_SYNC_KEYS, "compactTasks", encodeCompactTaskPayload(this.activeQuests));
+                }
+                putMappedValue(progressData, PROGRESS_SYNC_KEYS, "version", System.currentTimeMillis());
+                syncRequests.setValue(this.player.getUUID(), NETWORK_DATA_KEY, GSON.toJson(progressData));
+            }
 
-            syncRequests.setValue(this.player.getUUID(), NETWORK_DATA_KEY, GSON.toJson(progressData));
-            syncRequests.setValue(this.player.getUUID(), NETWORK_TASKS_KEY, GSON.toJson(taskData));
+            if (needTasks) {
+                Map<String, Object> taskData = new HashMap<>();
+                putMappedValue(taskData, TASK_SYNC_KEYS, "mapping", buildTaskMapping(this.activeQuests));
+                putMappedValue(taskData, TASK_SYNC_KEYS, "definitions", encodeQuestDefinitions(this.activeQuests));
+                putMappedValue(taskData, TASK_SYNC_KEYS, "refreshAt", this.lastQuestRefreshTime);
+                syncRequests.setValue(this.player.getUUID(), NETWORK_TASKS_KEY, GSON.toJson(taskData));
+            }
         } catch (Exception exception) {
             logger.warn("同步玩家 {} 的进度数据失败。", this.player.getName().getString(), exception);
         }
@@ -396,7 +439,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
             changed = true;
         }
         if (changed) {
-            markChanged();
+            markChanged(SYNC_DIRTY_TASKS);
         }
     }
 
@@ -424,7 +467,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
             }
         }
         if (changed) {
-            markChanged();
+            markChanged(SYNC_DIRTY_ALL);
         }
     }
 
@@ -442,7 +485,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                 serverPlayer.sendSystemMessage(Component.literal("列车等级提升至 Lv." + this.level + "，来源: " + reason));
             }
         }
-        markChanged();
+        markChanged(SYNC_DIRTY_PROGRESS);
     }
 
     public void setTotalExperienceValue(int totalExperience) {
@@ -451,7 +494,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
         this.totalExperience = 0;
         this.rewardedLevelMilestones.clear();
         grantExperience(Math.max(0, totalExperience), "控制台设定");
-        markChanged();
+        markChanged(SYNC_DIRTY_PROGRESS);
     }
 
     private void grantLevelRewards(int level) {
@@ -500,7 +543,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                 .limit(taskCount)
                 .forEach(template -> this.activeQuests.add(template.instantiate()));
         this.lastQuestRefreshTime = now;
-        markChanged();
+        markChanged(SYNC_DIRTY_TASKS | SYNC_DIRTY_PROGRESS);
     }
 
     private void generateLocalWeeklyTasks(boolean forceResetProgress) {
@@ -531,22 +574,22 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                 .limit(taskCount)
                 .forEach(template -> this.activeQuests.add(template.instantiate()));
         this.lastWeeklyRefreshTime = now;
-        markChanged();
+        markChanged(SYNC_DIRTY_TASKS | SYNC_DIRTY_PROGRESS);
     }
 
     private void applyNetworkProgress(Map<String, Object> progressMap) {
-        this.level = getInt(progressMap.get("level"), this.level);
-        this.experience = getInt(progressMap.get("experience"), this.experience);
-        this.totalExperience = getInt(progressMap.get("totalExperience"), this.totalExperience);
-        this.claimedCoinRewards = getInt(progressMap.get("claimedCoinRewards"), this.claimedCoinRewards);
-        this.claimedLootRewards = getInt(progressMap.get("claimedLootRewards"), this.claimedLootRewards);
-        this.lastQuestRefreshTime = getLong(progressMap.get("lastQuestRefreshTime"), this.lastQuestRefreshTime);
-        this.lastWeeklyRefreshTime = getLong(progressMap.get("lastWeeklyRefreshTime"), this.lastWeeklyRefreshTime);
-        Object cardName = progressMap.get("activeFactionCard");
+        this.level = getInt(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "level"), this.level);
+        this.experience = getInt(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "experience"), this.experience);
+        this.totalExperience = getInt(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "totalExperience"), this.totalExperience);
+        this.claimedCoinRewards = getInt(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "claimedCoinRewards"), this.claimedCoinRewards);
+        this.claimedLootRewards = getInt(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "claimedLootRewards"), this.claimedLootRewards);
+        this.lastQuestRefreshTime = getLong(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "lastQuestRefreshTime"), this.lastQuestRefreshTime);
+        this.lastWeeklyRefreshTime = getLong(getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "lastWeeklyRefreshTime"), this.lastWeeklyRefreshTime);
+        Object cardName = getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "activeFactionCard");
         if (cardName instanceof String stringCard) {
             this.activeFactionCard = FactionCardType.fromString(stringCard);
         }
-        Object cards = progressMap.get("factionCards");
+        Object cards = getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "factionCards");
         if (cards instanceof Map<?, ?> rawMap) {
             for (var entry : rawMap.entrySet()) {
                 FactionCardType type = FactionCardType.fromString(String.valueOf(entry.getKey()));
@@ -555,14 +598,14 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                 }
             }
         }
-        Object compactTasks = progressMap.get("compactTasks");
+        Object compactTasks = getMappedValue(progressMap, PROGRESS_SYNC_KEYS, "compactTasks");
         if (compactTasks instanceof List<?> rawCompact && !this.activeQuests.isEmpty()) {
             applyCompactTaskPayload(rawCompact);
         }
     }
 
     private void applyTaskPayload(Map<String, Object> networkTaskMap) {
-        Object definitions = networkTaskMap.get("definitions");
+        Object definitions = getMappedValue(networkTaskMap, TASK_SYNC_KEYS, "definitions");
         if (!(definitions instanceof List<?> rawDefinitions) || rawDefinitions.isEmpty()) {
             return;
         }
@@ -571,20 +614,20 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
             if (!(rawDefinition instanceof Map<?, ?> rawMap)) {
                 continue;
             }
-                String id = getMapString(rawMap, "id", "quest_unknown");
-                String title = getMapString(rawMap, "title", id);
-                String description = getMapString(rawMap, "description", title);
-                ObjectiveType type = ObjectiveType.fromString(getMapString(rawMap, "objectiveType", "PLAY_MATCH"));
-            String objectiveKey = normalizeNullableString(rawMap.get("objectiveKey"));
-            int target = getInt(rawMap.get("target"), 1);
-            int rewardExperience = getInt(rawMap.get("rewardExperience"), 0);
-            int rewardCoins = getInt(rawMap.get("rewardCoins"), 0);
-            int rewardLoot = getInt(rawMap.get("rewardLoot"), 0);
-                FactionCardType rewardCard = FactionCardType.fromString(getMapString(rawMap, "rewardCard", "NONE"));
+            String id = getMapString(rawMap, QUEST_DEF_KEYS, "id", "quest_unknown");
+            String title = getMapString(rawMap, QUEST_DEF_KEYS, "title", id);
+            String description = getMapString(rawMap, QUEST_DEF_KEYS, "description", title);
+            ObjectiveType type = ObjectiveType.fromString(getMapString(rawMap, QUEST_DEF_KEYS, "objectiveType", "PLAY_MATCH"));
+            String objectiveKey = normalizeNullableString(getMapValue(rawMap, QUEST_DEF_KEYS, "objectiveKey"));
+            int target = getInt(getMapValue(rawMap, QUEST_DEF_KEYS, "target"), 1);
+            int rewardExperience = getInt(getMapValue(rawMap, QUEST_DEF_KEYS, "rewardExperience"), 0);
+            int rewardCoins = getInt(getMapValue(rawMap, QUEST_DEF_KEYS, "rewardCoins"), 0);
+            int rewardLoot = getInt(getMapValue(rawMap, QUEST_DEF_KEYS, "rewardLoot"), 0);
+            FactionCardType rewardCard = FactionCardType.fromString(getMapString(rawMap, QUEST_DEF_KEYS, "rewardCard", "NONE"));
             this.activeQuests.add(new PassQuest(id, title, description, type, objectiveKey, 0, target,
                     rewardExperience, rewardCoins, rewardLoot, rewardCard, false));
         }
-        this.lastQuestRefreshTime = getLong(networkTaskMap.get("refreshAt"), System.currentTimeMillis());
+        this.lastQuestRefreshTime = getLong(getMappedValue(networkTaskMap, TASK_SYNC_KEYS, "refreshAt"), System.currentTimeMillis());
     }
 
     private void applyCompactTaskPayload(List<?> compactPayload) {
@@ -630,16 +673,16 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
         List<Map<String, Object>> definitions = new ArrayList<>();
         for (PassQuest quest : quests) {
             Map<String, Object> map = new HashMap<>();
-            map.put("id", quest.id);
-            map.put("title", quest.title);
-            map.put("description", quest.description);
-            map.put("objectiveType", quest.objectiveType.name());
-            map.put("objectiveKey", quest.objectiveKey == null ? "" : quest.objectiveKey);
-            map.put("target", quest.target);
-            map.put("rewardExperience", quest.rewardExperience);
-            map.put("rewardCoins", quest.rewardCoins);
-            map.put("rewardLoot", quest.rewardLoot);
-            map.put("rewardCard", quest.rewardCard.name());
+            putMappedValue(map, QUEST_DEF_KEYS, "id", quest.id);
+            putMappedValue(map, QUEST_DEF_KEYS, "title", quest.title);
+            putMappedValue(map, QUEST_DEF_KEYS, "description", quest.description);
+            putMappedValue(map, QUEST_DEF_KEYS, "objectiveType", quest.objectiveType.name());
+            putMappedValue(map, QUEST_DEF_KEYS, "objectiveKey", quest.objectiveKey == null ? "" : quest.objectiveKey);
+            putMappedValue(map, QUEST_DEF_KEYS, "target", quest.target);
+            putMappedValue(map, QUEST_DEF_KEYS, "rewardExperience", quest.rewardExperience);
+            putMappedValue(map, QUEST_DEF_KEYS, "rewardCoins", quest.rewardCoins);
+            putMappedValue(map, QUEST_DEF_KEYS, "rewardLoot", quest.rewardLoot);
+            putMappedValue(map, QUEST_DEF_KEYS, "rewardCard", quest.rewardCard.name());
             definitions.add(map);
         }
         return definitions;
@@ -654,8 +697,85 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
     }
 
     private void markChanged() {
+        markChanged(SYNC_DIRTY_ALL);
+    }
+
+    private void markChanged(int dirtyMask) {
+        this.syncDirtyMask |= dirtyMask;
         sync();
-        syncToNetwork();
+        syncToNetwork(this.syncDirtyMask);
+        this.syncDirtyMask = 0;
+    }
+
+    public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        int mask = this.syncDirtyMask == 0 ? SYNC_DIRTY_ALL : this.syncDirtyMask;
+        tag.putInt("SyncDirtyMask", mask);
+
+        if ((mask & SYNC_DIRTY_PROGRESS) != 0) {
+            tag.putInt("Level", this.level);
+            tag.putInt("Experience", this.experience);
+            tag.putInt("TotalExperience", this.totalExperience);
+            tag.putInt("ClaimedCoinRewards", this.claimedCoinRewards);
+            tag.putInt("ClaimedLootRewards", this.claimedLootRewards);
+            tag.putLong("LastQuestRefreshTime", this.lastQuestRefreshTime);
+            tag.putLong("LastWeeklyRefreshTime", this.lastWeeklyRefreshTime);
+        }
+
+        if ((mask & SYNC_DIRTY_CARDS) != 0) {
+            tag.putString("ActiveFactionCard", this.activeFactionCard.name());
+            CompoundTag cardTag = new CompoundTag();
+            for (var entry : this.factionCards.entrySet()) {
+                cardTag.putInt(entry.getKey().name(), entry.getValue());
+            }
+            tag.put("FactionCards", cardTag);
+        }
+
+        if ((mask & SYNC_DIRTY_TASKS) != 0) {
+            ListTag questTag = new ListTag();
+            for (PassQuest quest : this.activeQuests) {
+                questTag.add(quest.toNbt());
+            }
+            tag.put("ActiveQuests", questTag);
+        }
+    }
+
+    public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        int mask = tag.contains("SyncDirtyMask", Tag.TAG_INT) ? tag.getInt("SyncDirtyMask") : SYNC_DIRTY_ALL;
+
+        if ((mask & SYNC_DIRTY_PROGRESS) != 0) {
+            this.level = Math.max(1, tag.getInt("Level"));
+            this.experience = tag.getInt("Experience");
+            this.totalExperience = tag.getInt("TotalExperience");
+            this.claimedCoinRewards = tag.getInt("ClaimedCoinRewards");
+            this.claimedLootRewards = tag.getInt("ClaimedLootRewards");
+            this.lastQuestRefreshTime = tag.getLong("LastQuestRefreshTime");
+            this.lastWeeklyRefreshTime = tag.getLong("LastWeeklyRefreshTime");
+        }
+
+        if ((mask & SYNC_DIRTY_CARDS) != 0) {
+            this.activeFactionCard = FactionCardType.fromString(tag.getString("ActiveFactionCard"));
+            if (tag.contains("FactionCards", Tag.TAG_COMPOUND)) {
+                CompoundTag cardTag = tag.getCompound("FactionCards");
+                this.factionCards.clear();
+                for (FactionCardType type : FactionCardType.values()) {
+                    if (type != FactionCardType.NONE) {
+                        this.factionCards.put(type, cardTag.getInt(type.name()));
+                    }
+                }
+            }
+        }
+
+        if ((mask & SYNC_DIRTY_TASKS) != 0) {
+            this.activeQuests.clear();
+            if (tag.contains("ActiveQuests", Tag.TAG_LIST)) {
+                ListTag questList = tag.getList("ActiveQuests", Tag.TAG_COMPOUND);
+                for (Tag element : questList) {
+                    if (element instanceof CompoundTag questTag) {
+                        this.activeQuests.add(PassQuest.fromNbt(questTag));
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -764,9 +884,33 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
         return stringValue.isBlank() ? null : stringValue;
     }
 
-    private static String getMapString(Map<?, ?> map, String key, String fallback) {
-        Object value = map.get(key);
+    private static String getMapString(Map<?, ?> map, Map<String, String> keyMap, String canonicalKey, String fallback) {
+        Object value = getMapValue(map, keyMap, canonicalKey);
         return value == null ? fallback : String.valueOf(value);
+    }
+
+    private static Object getMapValue(Map<?, ?> map, Map<String, String> keyMap, String canonicalKey) {
+        Object value = map.get(canonicalKey);
+        if (value != null) {
+            return value;
+        }
+        String alias = keyMap.get(canonicalKey);
+        return alias == null ? null : map.get(alias);
+    }
+
+    private static Object getMappedValue(Map<String, Object> map, Map<String, String> keyMap, String canonicalKey) {
+        Object value = map.get(canonicalKey);
+        if (value != null) {
+            return value;
+        }
+        String alias = keyMap.get(canonicalKey);
+        return alias == null ? null : map.get(alias);
+    }
+
+    private static void putMappedValue(Map<String, Object> map, Map<String, String> keyMap, String canonicalKey,
+            Object value) {
+        String alias = keyMap.getOrDefault(canonicalKey, canonicalKey);
+        map.put(alias, value);
     }
 
     private static synchronized QuestTemplatePools loadTaskTemplatePools() {
