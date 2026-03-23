@@ -1309,10 +1309,15 @@ public class RoleShopHandler {
         ShopEntry.Type.TOOL));
 
     // 心理学家商店
-    // 薄荷糖 - 100金币
+    // 薄荷糖 - 75金币
     PSYCHOLOGIST_SHOP.add(new ShopEntry(
         ModItems.MINT_CANDIES.getDefaultInstance(),
-        100,
+      75,
+      ShopEntry.Type.TOOL));
+    // 维生素 - 125金币
+    PSYCHOLOGIST_SHOP.add(new ShopEntry(
+      ModItems.ALCHEMIST_BUFF_POTION.getDefaultInstance(),
+      125,
         ShopEntry.Type.TOOL));
     // 炸弹客商店
     BOMBER_SHOP.add(new ShopEntry(

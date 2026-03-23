@@ -1445,6 +1445,7 @@ public class ModEventsRegister {
                 "exposure:album",
                 "exposure:photograph",
                 "noellesroles:mint_candies",
+                "noellesroles:alchemist_buff_potion",
                 "noellesroles:stalker_knife",
                 "noellesroles:stalker_knife_w",
                 "noellesroles:pill",
