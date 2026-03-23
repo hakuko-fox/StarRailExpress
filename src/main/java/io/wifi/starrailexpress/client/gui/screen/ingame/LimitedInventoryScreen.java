@@ -72,7 +72,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     protected void init() {
         super.init();
         initMenuSelections();
-        List<ShopEntry> entries = getShopEntries();
+        List<ShopEntry> entries = new ArrayList<>(getShopEntries());
         if (entries.isEmpty())
             return;
         entries.removeIf((entry) -> !entry.canDisplay(player));
