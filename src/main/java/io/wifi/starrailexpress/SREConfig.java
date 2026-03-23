@@ -110,7 +110,7 @@ public class SREConfig implements ConfigData {
     public int roundBasedPresetLowLevelRounds = 3;
     @Tooltip(count = 2)
     @ConfigEntry.Category(value = "presents")
-    public int roundBasedPresetMediumLevelRounds = 3;
+    public int roundBasedPresetMediumLevelRounds = 5;
     @Tooltip(count = 2)
     @ConfigEntry.Category(value = "presents")
     public int roundBasedPresetHighLevelRounds = 3;
