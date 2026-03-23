@@ -54,6 +54,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -801,9 +802,7 @@ public class GameUtils {
     public static void resetPlayerAfterGame(ServerPlayer player) {
         resetPlayer(player);
         ServerPlayNetworking.send(player, new AnnounceEndingPayload());
-
         player.removeVehicle();
-
         AreasWorldComponent.PosWithOrientation spawnPos = AreasWorldComponent.KEY.get(player.level()).getSpawnPos();
         if (spawnPos == null) {
             BlockPos worldSpawnPos = player.serverLevel().getSharedSpawnPos();
@@ -814,6 +813,7 @@ public class GameUtils {
         DimensionTransition teleportTarget = new DimensionTransition(player.serverLevel(), spawnPos.pos, Vec3.ZERO,
                 spawnPos.yaw, spawnPos.pitch, DimensionTransition.DO_NOTHING);
         player.changeDimension(teleportTarget);
+        player.teleportTo(spawnPos.pos.x, spawnPos.pos.y, spawnPos.pos.z);
     }
 
     public static void resetAllToilets(ServerLevel serverWorld) {

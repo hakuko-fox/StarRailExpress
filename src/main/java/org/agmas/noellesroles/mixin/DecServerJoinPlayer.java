@@ -1,19 +1,19 @@
 package org.agmas.noellesroles.mixin;
 
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.cca.*;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.PlayerList;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.ConfigWorldComponent;
-import org.agmas.noellesroles.component.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SkinSplitPersonalityComponent;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
 
@@ -28,24 +28,20 @@ public class DecServerJoinPlayer {
         if (!modifierComponent.getModifiers(serverPlayer.getUUID()).isEmpty()) {
             var pl = modifierComponent.modifiers.get(serverPlayer.getUUID());
             if (pl != null) {
+                if (pl.contains(SEModifiers.SPLIT_PERSONALITY)) {
+                    SplitPersonalityComponent.KEY.get(serverPlayer).init();
+                    SkinSplitPersonalityComponent.KEY.get(serverPlayer).clear();
+                }
                 pl.clear();
                 modifierComponent.sync();
             }
-            SplitPersonalityComponent.KEY.get(serverPlayer).init();
-            SkinSplitPersonalityComponent.KEY.get(serverPlayer).clear();
+
         }
         serverPlayer.getInventory().clearContent();
         if (!serverPlayer.getActiveEffects().isEmpty()) {
             RoleUtils.RemoveAllEffects(serverPlayer);
         }
         RoleUtils.RemoveAllPlayerAttributes(serverPlayer);
-        (InsaneKillerPlayerComponent.KEY.get(serverPlayer)).init();
-        ((SREPlayerMoodComponent) SREPlayerMoodComponent.KEY.get(serverPlayer)).init();
-        ((SREPlayerShopComponent) SREPlayerShopComponent.KEY.get(serverPlayer)).init();
-        (SplitPersonalityComponent.KEY.get(serverPlayer)).clear();
-        ((SREPlayerPoisonComponent) SREPlayerPoisonComponent.KEY.get(serverPlayer)).init();
-        ((SREPlayerPsychoComponent) SREPlayerPsychoComponent.KEY.get(serverPlayer)).init();
-        ((SREPlayerNoteComponent) SREPlayerNoteComponent.KEY.get(serverPlayer)).init();
         ConfigWorldComponent.KEY.get(serverPlayer.level()).sync();
     }
 
