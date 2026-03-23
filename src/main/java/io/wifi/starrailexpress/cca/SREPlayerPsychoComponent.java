@@ -102,7 +102,7 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
             this.stopPsycho();
             this.sync();
         } else {
-            if (this.psychoTicks % 40 == 0) { // 2s一次
+            if (this.psychoTicks % 200 == 0) { // 10s一次
                 this.sync();
             }
         }
