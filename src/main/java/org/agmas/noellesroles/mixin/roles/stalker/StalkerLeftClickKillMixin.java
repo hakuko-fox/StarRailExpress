@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.roles.stalker;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -32,6 +33,8 @@ public abstract class StalkerLeftClickKillMixin {
      */
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void onStalkerKnifeAttack(Entity target, CallbackInfo ci) {
+        if (SRE.isLobby)
+            return;
         ServerPlayer attacker = (ServerPlayer) (Object) this;
 
         // 检查目标是否是玩家

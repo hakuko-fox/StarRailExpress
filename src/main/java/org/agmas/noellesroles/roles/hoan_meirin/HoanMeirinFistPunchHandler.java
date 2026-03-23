@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.roles.hoan_meirin;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.AllowPlayerPunching;
@@ -115,6 +116,8 @@ public class HoanMeirinFistPunchHandler {
      */
     public static InteractionResult onEntityDamaged(Player attacker, Level level, InteractionHand hand, Entity entity,
             EntityHitResult hitResult) {
+        if (SRE.isLobby)
+            return InteractionResult.PASS;
         // 仅在服务端处理，且攻击者必须是玩家
         var gameWorldComponent = SREGameWorldComponent.KEY.get(level);
         if (!GameUtils.isPlayerAliveAndSurvival(attacker))
@@ -126,8 +129,8 @@ public class HoanMeirinFistPunchHandler {
             return InteractionResult.PASS;
         if (!gameWorldComponent.isRole(attacker, ModRoles.HOAN_MEIRIN))
             return InteractionResult.PASS;
-        if(victim.getCooldowns().isOnCooldown(Items.CLOCK)){
-            return InteractionResult.PASS; //安全时间
+        if (victim.getCooldowns().isOnCooldown(Items.CLOCK)) {
+            return InteractionResult.PASS; // 安全时间
         }
         // 必须空手（主手持空气）
         ItemStack mainHand = attacker.getMainHandItem();

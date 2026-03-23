@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Entity.class)
 public class EntityMixin {
@@ -48,5 +49,14 @@ public class EntityMixin {
             }
         }
         return original.call(other);
+    }
+    @Inject(method = "canSpawnSprintParticle", at = @At("HEAD"), cancellable = true)
+    private void onSpawnSprintParticle(CallbackInfoReturnable<Boolean> ci) {
+        Entity self = (Entity) (Object) this;
+        // 只针对玩家，且该玩家对本客户端不可见（隐身效果）
+        if (self instanceof Player player && player.isInvisible()) {
+            ci.setReturnValue(false);
+            ci.cancel();
+        }
     }
 }
