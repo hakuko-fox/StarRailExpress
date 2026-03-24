@@ -1026,7 +1026,7 @@
   "message.note.put_back": "你花费75\uE781将一张便签贴到了 %s 的背上",
   "message.note.not_enough_money": "你没有足够的钱 - 需要75\uE781来将便签放到人身上",
   "message.arrow.near_by_players": "附近玩家数量：%s",
-  "message.bartender.armor_broke": "你攻击到的目标的盾被破坏了",
+  "message.bartender.armor_broke": "目标的盾被破坏了",
   "message.bartender.armor_broke_self": "你的盾被破坏了",
   "hud.bartender.has_armor": "你当前拥有 %s 层护盾",
   "message.tip.for_killer": "按下 %s 可切换杀手直觉",
@@ -1615,11 +1615,6 @@
   "hud.noellesroles.ma_chen_xu.total_san_loss": "累计恐惧值: %s",
   "hud.noellesroles.ma_chen_xu.evolution_progress": "进化进度: %s/%s",
   "hud.noellesroles.safe_time": "剩余安全时间：%ss",
-  "info.screen.roleid.shooting_frenzy": "杀手阵营\n魔改Psycho\n狂暴时间内射击冷却-50%%\n枪不会掉落\n手持双枪\n无盾\n不会受锁定目标影响\n狂暴皮肤",
-  "announcement.star.role.shooting_frenzy": "射击狂热",
-  "announcement.star.role.noellesroles.shooting_frenzy": "射击狂热",
-  "announcement.star.goals.shooting_frenzy": "进入狂暴模式，用双枪射杀所有人！",
-  "announcement.star.win.shooting_frenzy": "杀手胜利！",
   "message.noellesroles.shooting_frenzy.start": "射击狂热已激活！双枪已就绪！",
   "message.noellesroles.shooting_frenzy.end": "射击狂热已结束。"
 }

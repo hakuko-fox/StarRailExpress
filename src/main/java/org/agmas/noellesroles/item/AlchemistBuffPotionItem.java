@@ -122,17 +122,17 @@ public class AlchemistBuffPotionItem extends Item {
         }
 
         switch (effectType) {
-            case MOOD_DRAIN_REDUCE -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_REDUCTION, 45 * 20, 0, true, true, true));
-            case MOOD_DRAIN_IGNORE -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_IMMUNITY, 20 * 20, 0, true, true, true));
-            case MOOD_REGEN -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_REGENERATION, 40 * 20, 0, true, true, true));
-            case INFINITE_STAMINA -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.INFINITE_STAMINA, 20 * 20, 0, true, true, true));
+            case MOOD_DRAIN_REDUCE -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_REDUCTION, 25 * 20, 0, true, true, true));
+            case MOOD_DRAIN_IGNORE -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_IMMUNITY, 25 * 20, 0, true, true, true));
+            case MOOD_REGEN -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.MOOD_REGENERATION, 25 * 20, 0, true, true, true));
+            case INFINITE_STAMINA -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.INFINITE_STAMINA, 25 * 20, 0, true, true, true));
             case STAMINA_BOOST -> {
                 if (isInfiniteStaminaRole(targetPlayer)) {
                     return null;
                 }
-                targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_BOOST, 45 * 20, 0, true, true, true));
+                targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_BOOST, 25 * 20, 0, true, true, true));
             }
-            case STAMINA_RECOVERY -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_RECOVERY, 45 * 20, 0, true, true, true));
+            case STAMINA_RECOVERY -> targetPlayer.addEffect(new MobEffectInstance(ModEffects.STAMINA_RECOVERY, 25 * 20, 0, true, true, true));
         }
 
         return effectType;

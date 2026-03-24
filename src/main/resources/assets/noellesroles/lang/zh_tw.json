@@ -1026,7 +1026,8 @@
   "message.note.put_back": "你花費75\uE781將一張便簽貼到了 %s 的背上",
   "message.note.not_enough_money": "你沒有足夠的錢 - 需要75\uE781來將便簽放到人身上",
   "message.arrow.near_by_players": "附近玩家數量：%s",
-  "message.bartender.armor_broke": "你的盾被破壞了",
+  "message.bartender.armor_broke": "目標的盾被破壞了",
+  "message.bartender.armor_broke_self": "你的盾被破壞了",
   "hud.bartender.has_armor": "你當前擁有 %s 層護盾",
   "message.tip.for_killer": "按下 %s 可切換殺手直覺",
   "message.tip.skill_disabled": "當前場上部分職業及修飾符的技能已被禁用",
@@ -1614,11 +1615,6 @@
   "hud.noellesroles.ma_chen_xu.total_san_loss": "累計恐懼值: %s",
   "hud.noellesroles.ma_chen_xu.evolution_progress": "進化進度: %s/%s",
   "hud.noellesroles.safe_time": "剩餘安全時間：%ss",
-  "info.screen.roleid.shooting_frenzy": "殺手陣營\n魔改Psycho\n狂暴時間內射擊冷卻-50%%\n槍不會掉落\n手持雙槍\n無盾\n不會受鎖定目標影響\n狂暴皮膚",
-  "announcement.star.role.shooting_frenzy": "射擊狂熱",
-  "announcement.star.role.noellesroles.shooting_frenzy": "射擊狂熱",
-  "announcement.star.goals.shooting_frenzy": "進入狂暴模式，用雙槍射殺所有人！",
-  "announcement.star.win.shooting_frenzy": "殺手勝利！",
   "message.noellesroles.shooting_frenzy.start": "射擊狂熱已啟動！雙槍已就緒！",
   "message.noellesroles.shooting_frenzy.end": "射擊狂熱已結束。"
 }
