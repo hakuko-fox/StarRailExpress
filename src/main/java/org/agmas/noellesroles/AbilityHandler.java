@@ -479,7 +479,8 @@ public class AbilityHandler {
                     continue;
                 }
 
-                target.addEffect(new MobEffectInstance(ModEffects.GHOST_CURSE, duration, 0, false, true, true));
+                target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, duration, 0, false, true, false));
+                target.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration, 0, false, true, false));
                 affected++;
             }
 
