@@ -610,8 +610,8 @@ public class GameReplayManager {
 
       // 显示平民
       if (!aliveCivilians.isEmpty() || !deadCivilians.isEmpty()) {
-        text.append(
-            Component.translatable("sre.replay.civilians").withStyle(ChatFormatting.BLUE)).append("\n");
+        text.append(Component.literal(" - ").withStyle(ChatFormatting.GRAY)).append(
+            Component.translatable("sre.replay.civilians").withStyle(ChatFormatting.BLUE)).append(" ");
         if (!aliveCivilians.isEmpty()) {
           MutableComponent aliveCivText = ReplayDisplayUtils.buildTeamPlayerRolesWithDeathStatus(this,
               aliveCivilians, playerRoles, "", true);
@@ -630,8 +630,8 @@ public class GameReplayManager {
 
       // 显示中立
       if (!aliveNeutrals.isEmpty() || !deadNeutrals.isEmpty()) {
-        text.append(
-            Component.translatable("sre.replay.neutrals").withStyle(ChatFormatting.YELLOW)).append("\n");
+        text.append(Component.literal(" - ").withStyle(ChatFormatting.GRAY)).append(
+            Component.translatable("sre.replay.neutrals").withStyle(ChatFormatting.YELLOW)).append(" ");
         if (!aliveNeutrals.isEmpty()) {
           MutableComponent aliveNeutText = ReplayDisplayUtils.buildTeamPlayerRolesWithDeathStatus(this,
               aliveNeutrals, playerRoles, "", true);
@@ -649,8 +649,8 @@ public class GameReplayManager {
       }
       // 显示杀手
       if (!aliveKillers.isEmpty() || !deadKillers.isEmpty()) {
-        text.append(
-            Component.translatable("sre.replay.killers").withStyle(ChatFormatting.DARK_RED)).append("\n");
+        text.append(Component.literal(" - ").withStyle(ChatFormatting.GRAY)).append(
+            Component.translatable("sre.replay.killers").withStyle(ChatFormatting.DARK_RED)).append(" ");
         if (!aliveKillers.isEmpty()) {
           MutableComponent aliveKillText = ReplayDisplayUtils.buildTeamPlayerRolesWithDeathStatus(this,
               aliveKillers, playerRoles, "", true);
