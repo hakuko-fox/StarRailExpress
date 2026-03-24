@@ -386,7 +386,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (nbtCompound.contains("GameStatus"))
             this.gameStatus = GameStatus.values()[(nbtCompound.getInt("GameStatus"))];
         else
-            this.gameStatus = null;
+            this.gameStatus = GameStatus.INACTIVE;
         if (nbtCompound.contains("PsychosActive"))
             this.psychosActive = nbtCompound.getInt("PsychosActive");
         else
@@ -565,10 +565,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                         this.setGameStatus(GameStatus.INACTIVE);
                 }
             }
-        } else if (this.getGameStatus() == GameStatus.ACTIVE || this.getGameStatus() == GameStatus.INACTIVE) {
-            this.setFade(fade - 1);
-        } else if (this.fade != 0) {
-            this.fade = 0;
+        } else if (this.fade > 0) {
+            this.fade--;
         }
 
         if (this.isRunning()) {
