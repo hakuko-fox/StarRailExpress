@@ -270,7 +270,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
                     this.factionCards.put(matchedCard, current - 1);
                 }
                 this.activeFactionCard = FactionCardType.NONE;
-                serverPlayer.sendSystemMessage(Component.translatable("message.sre.progression.faction_card_activated", matchedCard.displayName));
+                serverPlayer.sendSystemMessage(Component.translatable("message.sre.progression.faction_card_activated", Component.translatable(matchedCard.displayName)));
                 markChanged(SYNC_DIRTY_CARDS);
             }
         }
