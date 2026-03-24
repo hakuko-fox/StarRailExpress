@@ -106,8 +106,10 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     @Override
     public void serverTick() {
         if (!checkIsGameRunning()) {
-            if (this.psychoTicks > 0)
+            if (this.psychoTicks > 0) {
+                this.stopPsycho();
                 this.psychoTicks = 0;
+            }
             return;
         }
         if (this.psychoTicks <= 0)
@@ -209,7 +211,7 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         }
-        return gameWorldComponent.isRunning();
+        return gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE);
     }
 
     @Override

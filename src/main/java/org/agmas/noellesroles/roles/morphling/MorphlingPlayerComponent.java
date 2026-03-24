@@ -39,7 +39,7 @@ public class MorphlingPlayerComponent implements RoleComponent, ServerTickingCom
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         }
-        return gameWorldComponent.isRunning();
+        return gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE);
     }
 
     @Override

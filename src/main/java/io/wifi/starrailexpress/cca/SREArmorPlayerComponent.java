@@ -90,7 +90,7 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         }
-        return gameWorldComponent.isRunning();
+        return gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE);
     }
 
     public void clientTick() {
