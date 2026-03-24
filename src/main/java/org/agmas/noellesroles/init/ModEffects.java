@@ -18,11 +18,30 @@ import org.agmas.noellesroles.effects.SimpleMobEffect;
 import org.agmas.noellesroles.effects.TimeStopEffect;
 
 public class ModEffects {
-    public static final Holder<MobEffect> SKILL_BANED = register("skill_baned", new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
-    public static final Holder<MobEffect> BLACK_MONITOR = register("black_monitor", new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
-    public static final Holder<MobEffect> MOVE_BANED = register("move_baned", new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
-    public static final Holder<MobEffect> TURN_BANED = register("turn_baned", new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
-    public static final Holder<MobEffect> USED_BANED = register("used_baned", new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> BLACK_MONITOR = register("black_monitor",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> MOVE_BANED = register("move_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF) {
+                @Override
+                public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+                    if (livingEntity.level().getGameTime() % 20 == 0)
+                        livingEntity.addEffect(new MobEffectInstance(
+                                ModEffects.NO_COLLIDE,
+                                40, // 持续时间 30s（tick）
+                                5, // 等级（0 = 速度 I）
+                                true, // ambient（环境效果，如信标）
+                                false, // showParticles（显示粒子）
+                                false // showIcon（显示图标）
+                        ));
+                    return super.applyEffectTick(livingEntity, amplifier);
+                }
+            });
+    public static final Holder<MobEffect> TURN_BANED = register("turn_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> USED_BANED = register("used_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
 
     /**
      * 时间停止效果
@@ -44,83 +63,102 @@ public class ModEffects {
      * - 被攻击者：隐身 + 无法移动 + 无法使用物品 + 红色粒子
      */
 
-    public static final Holder<MobEffect> GHOST_CURSE = register("ghost_curse", new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B0000){
-        @Override
-        public boolean shouldApplyEffectTickThisTick(int i, int j) {
-            return true;
-        }
+    public static final Holder<MobEffect> GHOST_CURSE = register("ghost_curse",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B0000) {
+                @Override
+                public boolean shouldApplyEffectTickThisTick(int i, int j) {
+                    return true;
+                }
 
-        @Override
-        public boolean isEnabled(FeatureFlagSet featureFlagSet) {
-            return true;
-        }
+                @Override
+                public boolean isEnabled(FeatureFlagSet featureFlagSet) {
+                    return true;
+                }
 
-        @Override
-        public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
-            if (livingEntity.level() instanceof ServerLevel serverLevel){
-                BlockPos blockPos = livingEntity.blockPosition().above(1);
-                serverLevel.sendParticles(DustParticleOptions.REDSTONE, (double)blockPos.getX() , (double)blockPos.getY() , (double)blockPos.getZ() ,14, (double)0.6F, (double)0.6F, (double)0.6F,0.4d);
-
-            }
-            return super.applyEffectTick(livingEntity, amplifier);
-        }
-    });
+                @Override
+                public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
+                    if (livingEntity.level() instanceof ServerLevel serverLevel) {
+                        BlockPos blockPos = livingEntity.blockPosition().above(1);
+                        serverLevel.sendParticles(DustParticleOptions.REDSTONE, (double) blockPos.getX(),
+                                (double) blockPos.getY(), (double) blockPos.getZ(), 14, (double) 0.6F, (double) 0.6F,
+                                (double) 0.6F, 0.4d);
+                    }
+                    if (livingEntity.level().getGameTime() % 20 == 0)
+                        livingEntity.addEffect(new MobEffectInstance(
+                                ModEffects.NO_COLLIDE,
+                                40, // 持续时间 30s（tick）
+                                5, // 等级（0 = 速度 I）
+                                true, // ambient（环境效果，如信标）
+                                false, // showParticles（显示粒子）
+                                false // showIcon（显示图标）
+                        ));
+                    return super.applyEffectTick(livingEntity, amplifier);
+                }
+            });
 
     /**
      * 里世界侵蚀效果
      * - 有害效果，暗紫色
      * - 用于标记处于里世界影响下的好人玩家，驱动客户端shader和场景变化
      */
-    public static final Holder<MobEffect> OTHERWORLD_AURA = register("otherworld_aura", new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x4B0082));
+    public static final Holder<MobEffect> OTHERWORLD_AURA = register("otherworld_aura",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x4B0082));
 
     /**
      * san值消耗减缓
      * - 有益效果
      * - 降低 mood 的自然消耗速度
      */
-    public static final Holder<MobEffect> MOOD_DRAIN_REDUCTION = register("mood_drain_reduction", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x63D5A5));
+    public static final Holder<MobEffect> MOOD_DRAIN_REDUCTION = register("mood_drain_reduction",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x63D5A5));
 
     /**
      * 无视心情消耗
      * - 有益效果
      * - mood 不再因任务自然下降
      */
-    public static final Holder<MobEffect> MOOD_DRAIN_IMMUNITY = register("mood_drain_immunity", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x2CC36B));
+    public static final Holder<MobEffect> MOOD_DRAIN_IMMUNITY = register("mood_drain_immunity",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x2CC36B));
 
     /**
      * san值恢复
      * - 有益效果
      * - 持续缓慢恢复 mood
      */
-    public static final Holder<MobEffect> MOOD_REGENERATION = register("mood_regeneration", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7AF2D2));
+    public static final Holder<MobEffect> MOOD_REGENERATION = register("mood_regeneration",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7AF2D2));
 
     /**
      * 无限体力
      * - 有益效果
      * - 冲刺不消耗体力
      */
-    public static final Holder<MobEffect> INFINITE_STAMINA = register("infinite_stamina", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xF6C95A));
+    public static final Holder<MobEffect> INFINITE_STAMINA = register("infinite_stamina",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xF6C95A));
 
     /**
      * 体力提升
      * - 有益效果
      * - 提升体力上限
      */
-    public static final Holder<MobEffect> STAMINA_BOOST = register("stamina_boost", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xE7A945));
+    public static final Holder<MobEffect> STAMINA_BOOST = register("stamina_boost",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xE7A945));
 
     /**
      * 体力恢复效率提升
      * - 有益效果
      * - 增加非冲刺状态下体力回复速度
      */
-    public static final Holder<MobEffect> STAMINA_RECOVERY = register("stamina_recovery", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFD97D));
+    public static final Holder<MobEffect> STAMINA_RECOVERY = register("stamina_recovery",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFD97D));
 
     /**
      * 低san视觉抗性
      * - 有益效果
      * - 降低低san下后处理视觉干扰（等级越高越强）
      */
-    public static final Holder<MobEffect> LOW_SAN_SHADER_RESISTANCE = register("low_san_shader_resistance", new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xA9D6FF));
+    public static final Holder<MobEffect> LOW_SAN_SHADER_RESISTANCE = register("low_san_shader_resistance",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xA9D6FF));
 
     /**
      * 注册药水效果到注册表

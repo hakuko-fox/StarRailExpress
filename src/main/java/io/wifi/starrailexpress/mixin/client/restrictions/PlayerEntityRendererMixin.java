@@ -36,8 +36,8 @@ public class PlayerEntityRendererMixin {
             PlayerSkin.Model model = abstractClientPlayerEntity.getSkin().model();
             String suffix = (model == PlayerSkin.Model.SLIM) ? "_thin" : "";
             ResourceLocation texture = SRE.watheId("textures/entity/psycho" + suffix + ".png");
-
             cir.setReturnValue(texture);
+            cir.cancel();
         }
     }
 

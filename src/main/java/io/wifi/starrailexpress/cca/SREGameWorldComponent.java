@@ -384,7 +384,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         else
             this.gameMode = null;
         if (nbtCompound.contains("GameStatus"))
-            this.gameStatus = GameStatus.values()[(nbtCompound.getInt("GameStatus"))];
+            this.gameStatus = GameStatus.valueOf(nbtCompound.getString("GameStatus"));
         else
             this.gameStatus = GameStatus.INACTIVE;
         if (nbtCompound.contains("PsychosActive"))
@@ -427,7 +427,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         // if (!this.syncRole) {
         if (this.gameMode != null)
             nbtCompound.putString("GameMode", this.gameMode.identifier.toString());
-        nbtCompound.putInt("GameStatus", this.gameStatus.ordinal());
+        nbtCompound.putString("GameStatus", this.gameStatus.name());
         // nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
         if (this.looseEndWinner != null)

@@ -38,7 +38,6 @@
     "roles.insanekiller.InsaneShopMixin",
     "roles.insanekiller.PlayerNoBoxMixin",
     "roles.insanekiller.ProjectileUtilMixin",
-    "roles.jester.FakeRevolverMixin",
     "roles.jester.JesterItemEntityMixin",
     "roles.manipulator.PlayerControlMixin",
     "roles.manipulator.PlayerDeathMixin",

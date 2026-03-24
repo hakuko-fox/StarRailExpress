@@ -9,8 +9,6 @@ import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
 import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
 import io.wifi.starrailexpress.util.ShopEntry;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
@@ -67,7 +65,6 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     }
 
     @Override
-    @Environment(EnvType.CLIENT)
     public void clientTick() {
         if (!checkIsGameRunning()) {
             if (this.psychoTicks > 0)
@@ -211,7 +208,7 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         }
-        return gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE);
+        return gameWorldComponent.isRunning();
     }
 
     @Override

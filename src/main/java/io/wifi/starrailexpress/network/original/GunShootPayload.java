@@ -48,8 +48,6 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             ServerPlayer player = context.player();
             ItemStack mainHandStack = player.getMainHandItem();
 
-            if (!mainHandStack.is(TMMItemTags.GUNS))
-                return;
             if (player.getCooldowns().isOnCooldown(mainHandStack.getItem()))
                 return;
             player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),
@@ -71,7 +69,8 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 }
             }
 
-            if (player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
+            if (mainHandStack.is(TMMItemTags.GUNS)
+                    && player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
                     && target.distanceTo(player) < 70.0) {
                 SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
                 Item revolver = TMMItems.REVOLVER;
@@ -142,7 +141,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             for (ServerPlayer tracking : PlayerLookup.tracking(player))
                 PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
             PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
-            if (!player.isCreative()) {
+            if (!player.isCreative() && mainHandStack.is(TMMItemTags.GUNS)) {
                 var cooldowns = player.getCooldowns();
                 if (!mainHandStack.is(ModItems.ONCE_REVOLVER))
                     if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
