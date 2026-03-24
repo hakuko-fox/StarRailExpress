@@ -33,8 +33,9 @@ public class ServerPlayerEntityMixin {
     }
 
     @WrapOperation(method = "startSleepInBed", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;setRespawnPosition(Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/core/BlockPos;FZZ)V"))
-    public void tmm$disableSetSpawnpoint(ServerPlayer instance, ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage, Operation<Void> original) {
-        if(SRE.isLobby){
+    public void tmm$disableSetSpawnpoint(ServerPlayer instance, ResourceKey<Level> dimension, @Nullable BlockPos pos,
+            float angle, boolean forced, boolean sendMessage, Operation<Void> original) {
+        if (SRE.isLobby) {
             original.call();
         }
     }
@@ -52,7 +53,7 @@ public class ServerPlayerEntityMixin {
                 GameUtils.killPlayer(playerTarget, true, self, GameConstants.DeathReasons.BAT);
             }
             CrosshairaddonsCompat.onAttack(target);
-            self.playNotifySound(TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
+            self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
             ci.cancel();
             return;
         }
