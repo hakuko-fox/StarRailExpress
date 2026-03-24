@@ -107,5 +107,9 @@
     {"id":"weekly_be_killer_5","title":"危险专业户","description":"成为杀手阵营 5 次","objectiveType":"BECOME_FACTION","objectiveKey":"killer","target":5,"rewardExperience":1280,"rewardCoins":540,"rewardLoot":2,"rewardCard":"KILLER","priority":1},
     {"id":"weekly_be_civilian_5","title":"秩序代言人","description":"成为平民阵营 5 次","objectiveType":"BECOME_FACTION","objectiveKey":"civilian","target":5,"rewardExperience":1280,"rewardCoins":540,"rewardLoot":2,"rewardCard":"CIVILIAN","priority":1},
     {"id":"weekly_be_neutral_5","title":"灰域行者","description":"成为中立阵营 5 次","objectiveType":"BECOME_FACTION","objectiveKey":"neutral","target":5,"rewardExperience":1350,"rewardCoins":570,"rewardLoot":2,"rewardCard":"NEUTRAL","priority":1}
+  ],
+  "permanent": [
+    {"id":"permanent_be_any_faction","title":"熟悉阵营","description":"累计成为杀手/平民/中立阵营 12 次","objectiveType":"BECOME_FACTION","objectiveKey":"killer,civilian,neutral","target":12,"rewardExperience":800,"rewardCoins":300,"rewardLoot":2,"rewardCard":"NONE","priority":1,"category":"PERMANENT","unlockLevel":1},
+    {"id":"permanent_use_medical_items","title":"应急补给","description":"累计使用牛奶桶或金苹果 6 次","objectiveType":"USE_ITEM","objectiveKey":"minecraft:milk_bucket,minecraft:golden_apple","target":6,"rewardExperience":600,"rewardCoins":240,"rewardLoot":1,"rewardCard":"CIVILIAN","priority":2,"category":"PERMANENT","unlockLevel":1}
   ]
 }
