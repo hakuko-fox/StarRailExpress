@@ -525,9 +525,8 @@ public class InitModRolesMax {
                     isUnderwaterMap = underwaterMaps.contains(currentMap);
                 }
                 if (isUnderwaterMap) {
-                    Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 1);
-                    Harpymodloader.setRoleMaximum(ModRoles.DIVER_ID, 1);
                     Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 1);
+                    Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 1);
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.DIVER_ID, 0);
