@@ -74,7 +74,8 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
 
         if (this.psychoTicks <= 0)
             return;
-        this.psychoTicks--;
+        if (this.psychoTicks > 1)
+            this.psychoTicks--;
         if (SREClient.gameComponent.isRole(this.player, ModRoles.EXECUTIONER)) {
             if (this.player.getMainHandItem().is(TMMItems.REVOLVER))
                 return;
