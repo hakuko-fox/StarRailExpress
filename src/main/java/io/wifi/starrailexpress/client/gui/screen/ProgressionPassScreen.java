@@ -15,8 +15,8 @@ import java.util.List;
 
 public class ProgressionPassScreen extends Screen {
 
-    private static final long OPEN_ANIM_MS = 180L;
-    private static final long CLOSE_ANIM_MS = 150L;
+    // private static final long OPEN_ANIM_MS = 180L;
+    // private static final long CLOSE_ANIM_MS = 150L;
 
     // ------- layout constants -------
     /** 每行任务高度 */
@@ -48,9 +48,9 @@ public class ProgressionPassScreen extends Screen {
     private int panelX, panelY, panelW, panelH;
     private int questAreaY, questAreaH, rowsPerPage;
 
-    private long openAnimStartMs;
+    // private long openAnimStartMs;
     private boolean closing;
-    private long closeAnimStartMs;
+    // private long closeAnimStartMs;
 
     public ProgressionPassScreen() {
         super(Component.translatable("sre.pass.name"));
@@ -81,9 +81,9 @@ public class ProgressionPassScreen extends Screen {
         cardButtons.clear();
         computeLayout();
 
-        openAnimStartMs = System.currentTimeMillis();
+        // openAnimStartMs = System.currentTimeMillis();
         closing = false;
-        closeAnimStartMs = 0L;
+        // closeAnimStartMs = 0L;
 
         // 限制页码在合法范围内
         int dSz = progression.getActiveDailyQuests().size();
@@ -156,7 +156,7 @@ public class ProgressionPassScreen extends Screen {
         int count = progression.getFactionCards().getOrDefault(type, 0);
         Component label = Component.literal(
                 Component.translatable("sre.pass.faction." + type.questKey).getString() + " x" + count);
-        var btn = ModernButton.builder(label, b -> sendCommand("tmm:pass activate " + type.questKey))
+        var btn = ModernButton.builder(label, b -> sendCommand("sre:pass activate " + type.questKey))
                 .bounds(x, y, width, 22).accentColor(accentColor).build();
         btn.active = count > 0 || progression.getActiveFactionCard() == type;
         return btn;
@@ -171,7 +171,7 @@ public class ProgressionPassScreen extends Screen {
     public void onClose() {
         if (!closing) {
             closing = true;
-            closeAnimStartMs = System.currentTimeMillis();
+            // closeAnimStartMs = System.currentTimeMillis();
             return;
         }
         super.onClose();
@@ -189,13 +189,7 @@ public class ProgressionPassScreen extends Screen {
             return;
         }
         int animAlpha = Math.max(0, Math.min(255, (int) (animVisibility * 255.0f)));
-
-        // ---- 面板背景 ----
-        g.fillGradient(0, 0, width, height, applyAlpha(0xE0080C14, animAlpha), applyAlpha(0xF0121B2E, animAlpha));
-        g.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xD20C1018, animAlpha));
-        g.fill(panelX + 14, panelY + 14, panelX + panelW - 14, panelY + 16, applyAlpha(0xFF3AA6FF, animAlpha));
-        g.fill(panelX + 14, panelY + panelH - 14, panelX + panelW - 14, panelY + panelH - 12,
-                applyAlpha(0x6648D3FF, animAlpha));
+        super.render(g, mouseX, mouseY, partialTick);
 
         // ---- 标题栏 ----
         g.drawString(font, Component.translatable("sre.pass.name"), panelX + 24, panelY + 20,
@@ -205,14 +199,9 @@ public class ProgressionPassScreen extends Screen {
                 + Component.translatable("sre.pass.exp_progress", progression.getExperience(),
                         progression.getExperienceForNextLevel()).getString(),
                 panelX + 24, panelY + 34, applyAlpha(0xFF92B6E5, animAlpha), false);
-        renderProgressBar(g, panelX + 24, panelY + 52, panelW - 48, 10, animAlpha);
 
         // ---- 统计卡片 ----
         renderSummaryCards(g, panelX + 24, panelY + HDR_H);
-
-        // ---- 任务列表背景 ----
-        g.fill(panelX + 24, questAreaY, panelX + panelW - 24, questAreaY + questAreaH,
-                applyAlpha(activeTab == 0 ? 0x8A111827 : 0x8A11211F, animAlpha));
 
         // ---- 任务行 ----
         List<SREPlayerProgressionComponent.PassQuest> quests = activeTab == 0 ? progression.getActiveDailyQuests()
@@ -260,11 +249,24 @@ public class ProgressionPassScreen extends Screen {
         if (overlayAlpha > 0) {
             g.fill(0, 0, width, height, (overlayAlpha << 24));
         }
-        super.render(g, mouseX, mouseY, partialTick);
     }
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        float animVisibility = getAnimationVisibility();
+
+        int animAlpha = Math.max(0, Math.min(255, (int) (animVisibility * 255.0f)));
+
+        // ---- 面板背景 ----
+        g.fillGradient(0, 0, width, height, applyAlpha(0xE0080C14, animAlpha), applyAlpha(0xF0121B2E, animAlpha));
+        g.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xD20C1018, animAlpha));
+        g.fill(panelX + 14, panelY + 14, panelX + panelW - 14, panelY + 16, applyAlpha(0xFF3AA6FF, animAlpha));
+        g.fill(panelX + 14, panelY + panelH - 14, panelX + panelW - 14, panelY + panelH - 12,
+                applyAlpha(0x6648D3FF, animAlpha));
+        renderProgressBar(g, panelX + 24, panelY + 52, panelW - 48, 10, animAlpha);
+        // ---- 任务列表背景 ----
+        g.fill(panelX + 24, questAreaY, panelX + panelW - 24, questAreaY + questAreaH,
+                applyAlpha(activeTab == 0 ? 0x8A111827 : 0x8A11211F, animAlpha));
     }
 
     // =========================================================================
@@ -367,23 +369,22 @@ public class ProgressionPassScreen extends Screen {
     }
 
     private float getAnimationVisibility() {
-        long now = System.currentTimeMillis();
+        // long now = System.currentTimeMillis();
         if (closing) {
-            float t = (now - closeAnimStartMs) / (float) CLOSE_ANIM_MS;
-            return 1.0f - easeOutCubic(clamp01(t));
+            return 0;
         }
-        float t = (now - openAnimStartMs) / (float) OPEN_ANIM_MS;
-        return easeOutCubic(clamp01(t));
+        // float t = (now - openAnimStartMs) / (float) OPEN_ANIM_MS;
+        return 1;
     }
 
-    private static float clamp01(float value) {
-        return Math.max(0.0f, Math.min(1.0f, value));
-    }
+    // private static float clamp01(float value) {
+    //     return Math.max(0.0f, Math.min(1.0f, value));
+    // }
 
-    private static float easeOutCubic(float t) {
-        float inv = 1.0f - t;
-        return 1.0f - inv * inv * inv;
-    }
+    // private static float easeOutCubic(float t) {
+    //     float inv = 1.0f - t;
+    //     return 1.0f - inv * inv * inv;
+    // }
 
     private static int applyAlpha(int color, int alpha) {
         int a = (color >>> 24) & 0xFF;
