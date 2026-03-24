@@ -36,7 +36,7 @@ public class ConfigCommand {
                                                 String statusText = value ? "Enabled" : "Disabled";
                                                 context.getSource().sendSystemMessage(
                                                         Component
-                                                         .literal("Innocent Punishment" + statusText
+                                                         .literal("Innocent Punishment " + statusText
                                                                          + " (accidentalKillPunishment = " + value + ")")
                                                                  .withStyle(net.minecraft.ChatFormatting.GREEN));
                                                 return 1;

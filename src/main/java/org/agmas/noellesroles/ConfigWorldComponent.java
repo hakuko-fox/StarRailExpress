@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingComponent {
+    private static final String SKILL_ECHO_ROLE_TRANSLATION_PREFIX = "announcement.star.role.noellesroles.";
     public static final ComponentKey<ConfigWorldComponent> KEY = ComponentRegistry.getOrCreate(
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "config"), ConfigWorldComponent.class);
     public boolean insaneSeesMorphs = true;
@@ -172,7 +173,7 @@ public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingC
 
         String rolePath = role.getIdentifier() != null ? role.getIdentifier().getPath() : "unknown";
         Component roleName = Component.translatableWithFallback(
-                "announcement.star.role.noellesroles." + rolePath,
+                SKILL_ECHO_ROLE_TRANSLATION_PREFIX + rolePath,
                 rolePath);
         Component message = Component.translatable("message.noellesroles.skill_echo.heard", roleName)
                 .withStyle(ChatFormatting.GOLD);
