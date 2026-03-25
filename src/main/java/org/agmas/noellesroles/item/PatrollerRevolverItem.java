@@ -7,9 +7,7 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.particle.HandParticle;
 import io.wifi.starrailexpress.client.render.TMMRenderLayers;
 import io.wifi.starrailexpress.compat.CrosshairaddonsCompat;
-import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.item.SkinableItem;
 import io.wifi.starrailexpress.network.original.GunShootPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -24,7 +22,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
-import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
 
 public class PatrollerRevolverItem extends SkinableItem {
@@ -64,10 +61,10 @@ public class PatrollerRevolverItem extends SkinableItem {
                 return InteractionResultHolder.fail(stack);
             }
         }
-        int REVOLVER_COOLDOWN = GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0);
+        // int REVOLVER_COOLDOWN = GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0);
 
         // user.getCooldowns().addCooldown(TMMItems.REVOLVER, 2 * 20);
-        user.getCooldowns().addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 2);
+        // user.getCooldowns().addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 2);
         return InteractionResultHolder.consume(stack);
     }
 

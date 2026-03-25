@@ -501,7 +501,9 @@ public class ModEventsRegister {
                     items.remove(ModItems.ONCE_REVOLVER);
                 }
                 items.remove(ModItems.PATROLLER_REVOLVER);
-                if (!mainHandStack.is(ModItems.PATROLLER_REVOLVER)) {
+                if (mainHandStack.is(ModItems.PATROLLER_REVOLVER)) {
+                    cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 3);
+                } else {
                     cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, REVOLVER_COOLDOWN / 15);
                 }
                 // cooldowns.addCooldown(ModItems.PATROLLER_REVOLVER, 3 * 20);
