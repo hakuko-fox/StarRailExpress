@@ -42,6 +42,11 @@ public class PlayerBodyEntity extends LivingEntity {
     }
 
     @Override
+    public void kill() {
+        this.discard();
+    }
+
+    @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
         return ItemStack.EMPTY;
     }
@@ -136,7 +141,7 @@ public class PlayerBodyEntity extends LivingEntity {
         if (killerUUID != null) {
             this.setKillerUuid(killerUUID);
         }
-        if(nbt.contains("DeathReason")){
+        if (nbt.contains("DeathReason")) {
             this.setDeathReason(nbt.getString("DeathReason"));
         }
     }
