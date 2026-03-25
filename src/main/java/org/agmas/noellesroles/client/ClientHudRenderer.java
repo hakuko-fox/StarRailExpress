@@ -238,7 +238,7 @@ public class ClientHudRenderer {
         text = Component.translatable("gui.noellesroles.noisemaker.ready");
         color = 0x55FF55; // 绿色
       }
-      
+
       int screenWidth = context.guiWidth();
       int screenHeight = context.guiHeight();
       int textWidth = client.font.width(text);
@@ -315,26 +315,26 @@ public class ClientHudRenderer {
       Component progressText = Component.translatable("gui.noellesroles.candlebearer.progress",
           component.successfulCandles,
           component.requiredCandles).withStyle(ChatFormatting.GOLD);
-        context.drawString(font, progressText, x - font.width(progressText), y - font.lineHeight * 4 - 10,
+      context.drawString(font, progressText, x - font.width(progressText), y - font.lineHeight * 4 - 10,
           Color.WHITE.getRGB());
 
       Component chargeText = Component.translatable("gui.noellesroles.candlebearer.charges",
           component.invisibilityCharges,
           CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES).withStyle(ChatFormatting.YELLOW);
-        context.drawString(font, chargeText, x - font.width(chargeText), y - font.lineHeight * 3 - 8,
+      context.drawString(font, chargeText, x - font.width(chargeText), y - font.lineHeight * 3 - 8,
           Color.WHITE.getRGB());
 
-        Component livingCandleText;
-        int livingCandleColor;
-        if (component.livingCandleCooldownTicks > 0) {
+      Component livingCandleText;
+      int livingCandleColor;
+      if (component.livingCandleCooldownTicks > 0) {
         livingCandleText = Component.translatable("gui.noellesroles.candlebearer.living_cooldown",
-          (component.livingCandleCooldownTicks + 19) / 20);
+            (component.livingCandleCooldownTicks + 19) / 20);
         livingCandleColor = 0xFFAA00;
-        } else {
+      } else {
         livingCandleText = Component.translatable("gui.noellesroles.candlebearer.living_ready");
         livingCandleColor = 0x55FF55;
-        }
-        context.drawString(font, livingCandleText, x - font.width(livingCandleText), y - font.lineHeight * 2 - 6,
+      }
+      context.drawString(font, livingCandleText, x - font.width(livingCandleText), y - font.lineHeight * 2 - 6,
           livingCandleColor);
 
       Component stateText;
@@ -473,13 +473,49 @@ public class ClientHudRenderer {
       }
       return;
     });
-    RoleHudRenderCallback.EVENT.register(ModRoles.WATCHER_ID, (guiGraphics, deltaTracker) -> {
-      // 渲染watcher的提示
+
+    RoleHudRenderCallback.EVENT.register(ModRoles.ATHLETE_ID, (guiGraphics, deltaTracker) -> {
+      // 渲染运动员的提示
       var client = Minecraft.getInstance();
+      int screenWidth = guiGraphics.guiWidth();
       int screenHeight = guiGraphics.guiHeight();
       var font = client.font;
       int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
+      int xOffset = screenWidth - 10; // 距离右边缘
+      var abpc = AthletePlayerComponent.KEY.get(client.player);
+      if (client.player.hasEffect(MobEffects.MOVEMENT_SPEED)) {
+        //
+        var text = Component
+            .translatable("hud.noellesroles.athlete.active",
+                client.player.getEffect(MobEffects.MOVEMENT_SPEED).getDuration() / 20)
+            .withStyle(ChatFormatting.AQUA);
+        guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+            Color.WHITE.getRGB());
+      } else if (abpc.cooldown > 0) {
+        var text = Component
+            .translatable("hud.noellesroles.athlete.cooldown", abpc.cooldown / 20)
+            .withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+            Color.WHITE.getRGB());
+      } else {
+        var text = Component
+            .translatable("hud.noellesroles.athlete.ready", NoellesrolesClient.abilityBind.getTranslatedKeyMessage())
+            .withStyle(ChatFormatting.GREEN);
+        guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+            Color.WHITE.getRGB());
+      }
+      return;
+    });
+    RoleHudRenderCallback.EVENT.register(ModRoles.WATCHER_ID, (guiGraphics, deltaTracker) -> {
+      // 渲染watcher的提示
+      var client = Minecraft.getInstance();
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int xOffset = screenWidth - 10; // 右下角
+      int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
       var abpc = SREArmorPlayerComponent.KEY.get(client.player);
+      var wtpc = WatcherPlayerComponent.KEY.get(client.player);
       {
         var text = Component
             .translatable("hud.bartender.has_armor",
@@ -488,9 +524,30 @@ public class ClientHudRenderer {
         guiGraphics.drawString(font, text, 10, yOffset - font.lineHeight - 4,
             Color.WHITE.getRGB());
       }
+      {
+        if (wtpc.getCooldown() > 0) {
+          var text = Component
+              .translatable("message.noellesroles.detective.on_cooldown", wtpc.getCooldown() / 20)
+              .withStyle(ChatFormatting.AQUA);
+          guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight * 2 - 8,
+              Color.WHITE.getRGB());
+        }
+        {
+          var text = Component
+              .translatable("hud.noellesroles.watcher.stance_angry", wtpc.getCooldown() / 20)
+              .withStyle(ChatFormatting.YELLOW);
+          if (wtpc.isInCalmStance()) {
+            text = Component
+                .translatable("hud.noellesroles.watcher.stance_calm", wtpc.getCooldown() / 20)
+                .withStyle(ChatFormatting.GREEN);
+          }
+          guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
+              Color.WHITE.getRGB());
+        }
+      }
       return;
     });
-    
+
     RoleHudRenderCallback.EVENT.register(ModRoles.HOAN_MEIRIN_ID, (guiGraphics, deltaTracker) -> {
       // 渲染红美铃的提示
       var client = Minecraft.getInstance();
