@@ -13,13 +13,14 @@ public class PlayerRoleWeightManager {
     /**
      * 将角色类型归并为阵营组：
      * - 无辜阵营 (0/1) → 1
-     * - 中立阵营 (2)   → 2
-     * - 亲杀中立 (3)   → 3
-     * - 杀手阵营 (4)   → 4
-     * - 警卫阵营 (5)   → 5
+     * - 中立阵营 (2) → 2
+     * - 亲杀中立 (3) → 3
+     * - 杀手阵营 (4) → 4
+     * - 警卫阵营 (5) → 5
      */
     private static int getFactionGroup(int type) {
-        if (type <= 1) return 1;
+        if (type <= 1)
+            return 1;
         return type;
     }
 
@@ -35,14 +36,19 @@ public class PlayerRoleWeightManager {
             total = 1;
         double basePercent = 1.0 - (double) typeWeight / (double) total;
 
-        // 连续相同阵营惩罚：streak>=2时每多一局概率减半，防止一直游玩同一阵营
+        // 连续相同阵营惩罚：streak>=3时每多一局概率减半，防止一直游玩同一阵营
         int streak = weightManager.getStreakCount();
-        if (streak >= 2 && getFactionGroup(type) == weightManager.getLastAssignedFactionGroup()) {
-            double streakPenalty = Math.pow(0.5, streak - 1);
-            basePercent *= streakPenalty;
+        if (streak >= 3) {
+            if (getFactionGroup(type) == weightManager.getLastAssignedFactionGroup()) {
+                double streakPenalty = Math.pow(0.5, streak - 1);
+                basePercent *= streakPenalty;
+            } else {
+                double streakPenalty = Math.pow(1.25, streak - 1);
+                basePercent *= streakPenalty;
+            }
         }
 
-        return Math.max(0.0, basePercent);
+        return Math.min(Math.max(0.0, basePercent), 1.0);
     }
 
     public static double getRoleWeightPercent(Player playerEntity, int roleType) {
@@ -319,6 +325,19 @@ public class PlayerRoleWeightManager {
                 return this.vigilanteWeight;
             }
             return -1;
+        }
+
+        public int getHighestWeightType() {
+            int minType = 1;
+            double minCount = 1f;
+            for (int i = 1; i <= 5; i++) {
+                int tmp = this.getWeight(i);
+                if (tmp <= minCount) {
+                    minCount = tmp;
+                    minType = i;
+                }
+            }
+            return minType;
         }
     }
 

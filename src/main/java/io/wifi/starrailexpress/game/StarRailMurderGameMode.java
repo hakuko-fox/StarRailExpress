@@ -410,7 +410,20 @@ public class StarRailMurderGameMode extends GameMode {
             roleInstantList.add(new RoleInstant(UUID.randomUUID(), role));
         }
         List<RoleInstant> expandedRoles = RoleAssignmentManager.expandWithCompanionRoles(roleInstantList);
-
+        Random random = new Random(serverWorld.getGameTime());
+        
+        // 保底
+        for (var p : players) {
+            var manager = PlayerRoleWeightManager.playerWeights.get(p.getUUID());
+            if (manager != null) {
+                if (manager.getStreakCount() >= random.nextInt(6, 13)) {
+                    int highestWeightType = manager.getHighestWeightType();
+                    if (highestWeightType == manager.getLastAssignedFactionGroup())
+                        continue;
+                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType);
+                }
+            }
+        }
         // 创建权重分布用于分配展开后的角色
         List<Map.Entry<RoleInstant, Float>> roleWeights = new ArrayList<>();
 
