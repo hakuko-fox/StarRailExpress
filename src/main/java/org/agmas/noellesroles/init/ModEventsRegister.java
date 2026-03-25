@@ -50,7 +50,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
@@ -987,16 +986,13 @@ public class ModEventsRegister {
             }
             if (gameWorldComponent.isRole(playerEntity, ModRoles.SEA_KING)) {
                 if (playerEntity.level() instanceof ServerLevel level) {
-                    var entities = level.getEntities(EntityTypeTest.forClass(ThrownTrident.class),
-                            playerEntity.getBoundingBox().deflate(30, 20, 30), (e) -> {
-                                if (e.getOwner().getUUID().equals(playerEntity.getUUID()))
-                                    return true;
-                                return false;
-                            });
-                    entities.forEach((e) -> {
-                        playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
-                        e.discard();
-                    });
+                    for (var e : level.getAllEntities()) {
+                        if (e instanceof ThrownTrident te)
+                            if (te.getOwner().getUUID().equals(playerEntity.getUUID())){
+                                playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                                te.discard();
+                            }
+                    }
                 }
             }
             {
