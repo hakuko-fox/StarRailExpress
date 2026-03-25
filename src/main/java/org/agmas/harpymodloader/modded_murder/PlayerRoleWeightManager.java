@@ -13,13 +13,13 @@ public class PlayerRoleWeightManager {
     /**
      * 将角色类型归并为阵营组：
      * - 无辜阵营 (0/1) → 1
-     * - 中立阵营 (2/3) → 2
+     * - 中立阵营 (2)   → 2
+     * - 亲杀中立 (3)   → 3
      * - 杀手阵营 (4)   → 4
      * - 警卫阵营 (5)   → 5
      */
     private static int getFactionGroup(int type) {
         if (type <= 1) return 1;
-        if (type <= 3) return 2;
         return type;
     }
 
@@ -174,10 +174,10 @@ public class PlayerRoleWeightManager {
 
         /**
          * 在记录本局权重前调用，更新连续阵营计数。
-         * 阵营组与 getFactionGroup 保持一致：无辜=1, 中立=2, 杀手=4, 警卫=5。
+         * 阵营组与 getFactionGroup 保持一致：无辜=1, 中立=2, 亲杀中立=3, 杀手=4, 警卫=5。
          */
         public void updateStreak(int type) {
-            int fg = (type <= 1) ? 1 : (type <= 3) ? 2 : type;
+            int fg = (type <= 1) ? 1 : type;
             if (fg == lastAssignedFactionGroup) {
                 streakCount++;
             } else {
