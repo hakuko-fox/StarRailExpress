@@ -102,6 +102,7 @@ public class SREClient implements ClientModInitializer {
     public static SREPlayerMoodComponent moodComponent;
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
+    // HUD/API 缓存：在 END_CLIENT_TICK 统一更新，在渲染 mixin 中仅做读取，避免渲染流程重复判断。
     private static boolean cachedPlayerAliveAndInSurvival;
     private static boolean cachedPlayerSpectatingOrCreative;
     private static boolean cachedPlayerCreative;
