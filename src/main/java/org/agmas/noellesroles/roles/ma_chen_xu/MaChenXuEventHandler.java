@@ -1,12 +1,14 @@
 package org.agmas.noellesroles.roles.ma_chen_xu;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeath;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.component.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
  * 布袋鬼（诡舍·缚灵）事件处理器
@@ -41,7 +43,7 @@ public class MaChenXuEventHandler {
                 if (compc.otherworldActive) {
                     return false;
                 }
-                // RoleUtils.changeRole(victim, SERoles.AMNESIAC);
+                RoleUtils.changeRole(victim, TMMRoles.DISCOVERY_CIVILIAN);
             }
             return true;
         });
