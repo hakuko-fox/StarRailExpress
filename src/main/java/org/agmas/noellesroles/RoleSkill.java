@@ -31,10 +31,16 @@ public final class RoleSkill {
     }
 
     public static boolean beforeUse(ServerPlayer player, SRERole role) {
+        if (!isRegistered(role)) {
+            return true;
+        }
         return OnRoleSkillUse.BEFORE.invoker().onUse(player, role);
     }
 
     public static void afterUse(ServerPlayer player, SRERole role) {
+        if (!isRegistered(role)) {
+            return;
+        }
         OnRoleSkillUse.AFTER.invoker().onUse(player, role);
     }
 
@@ -73,6 +79,7 @@ public final class RoleSkill {
         register(ModRoles.BOXER);
         register(ModRoles.ATHLETE);
         register(ModRoles.WATER_GHOST);
+        register(ModRoles.THE_INSANE_DAMNED_PARANOID_KILLER_OF_DOOM_DEATH_DESTRUCTION_AND_WAFFLES);
         register(ModRoles.ADMIRER);
         register(ModRoles.STALKER);
         register(ModRoles.DETECTIVE);
