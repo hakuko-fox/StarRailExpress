@@ -33,7 +33,7 @@ public abstract class AvengerHudMixin {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null)
             return;
-        if (client.player.isSpectator())
+        if (SREClient.isPlayerSpectator())
             return;
 
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.player.level());

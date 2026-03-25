@@ -34,7 +34,7 @@ public class SeaKingHudMixin {
         if (!SREClient.gameComponent.isRole(player, ModRoles.SEA_KING)) {
             return;
         }
-        if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+        if (!SREClient.isPlayerAliveAndInSurvival()) {
             return;
         }
 

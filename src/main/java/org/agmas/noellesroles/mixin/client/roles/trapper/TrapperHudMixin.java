@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles.trapper;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.client.DeltaTracker;
@@ -32,14 +33,14 @@ public class TrapperHudMixin {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) return;
 
-        if (client.player.isSpectator())
+        if (SREClient.isPlayerSpectator())
             return;
         // 检查是否是设陷者
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.level);
         if (!gameWorld.isRole(client.player, ModRoles.TRAPPER)) return;
         
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
+        if (!SREClient.isPlayerAliveAndInSurvival()) return;
         
         // 获取设陷者组件
         TrapperPlayerComponent trapperComponent = TrapperPlayerComponent.KEY.get(client.player);

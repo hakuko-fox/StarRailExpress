@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles.insane;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
@@ -27,7 +28,7 @@ public abstract class InsaneHudMixin {
         if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null) {
             return;
         }
-        if (Minecraft.getInstance().player.isSpectator())
+        if (SREClient.isPlayerSpectator())
             return;
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(Minecraft.getInstance().player.level());

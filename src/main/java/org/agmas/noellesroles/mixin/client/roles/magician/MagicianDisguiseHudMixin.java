@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles.magician;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -36,7 +37,7 @@ public abstract class MagicianDisguiseHudMixin {
         if (client.player == null || client.level == null) {
             return;
         }
-        if (client.player.isSpectator()) {
+        if (SREClient.isPlayerSpectator()) {
             return;
         }
 

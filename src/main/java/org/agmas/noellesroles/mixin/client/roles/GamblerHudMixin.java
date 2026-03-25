@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.client.DeltaTracker;
@@ -31,7 +32,7 @@ public class GamblerHudMixin {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null)
             return;
-        if(client.player.isSpectator()) return;
+        if (SREClient.isPlayerSpectator()) return;
 
         // 检查是否是赌徒
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.level);
@@ -39,7 +40,7 @@ public class GamblerHudMixin {
             return;
 
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(client.player))
+        if (!SREClient.isPlayerAliveAndInSurvival())
             return;
 
         // 获取赌徒组件

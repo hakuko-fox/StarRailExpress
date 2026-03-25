@@ -36,7 +36,7 @@ public class WaterGhostHudMixin {
         }
 
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+        if (!SREClient.isPlayerAliveAndInSurvival()) {
             return;
         }
 

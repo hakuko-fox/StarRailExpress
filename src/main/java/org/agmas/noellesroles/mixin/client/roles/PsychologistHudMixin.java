@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -33,14 +34,14 @@ public class PsychologistHudMixin {
     private void renderPsychologistHud(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) return;
-        if(client.player.isSpectator()) return;
+        if (SREClient.isPlayerSpectator()) return;
         
         // 检查是否是心理学家
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.level);
         if (!gameWorld.isRole(client.player, ModRoles.PSYCHOLOGIST)) return;
         
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
+        if (!SREClient.isPlayerAliveAndInSurvival()) return;
         
         // 获取心理学家组件
         PsychologistPlayerComponent psychComp = ModComponents.PSYCHOLOGIST.get(client.player);

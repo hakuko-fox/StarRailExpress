@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.client.DeltaTracker;
@@ -31,14 +32,14 @@ public class BoxerHudMixin {
     private void renderBoxerAbilityStatus(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) return;
-        if(client.player.isSpectator()) return;
+        if (SREClient.isPlayerSpectator()) return;
         
         // 检查是否是拳击手
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.level);
         if (!gameWorld.isRole(client.player, ModRoles.BOXER)) return;
         
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return;
+        if (!SREClient.isPlayerAliveAndInSurvival()) return;
         
         // 获取拳击手组件
         BoxerPlayerComponent boxerComponent = BoxerPlayerComponent.KEY.get(client.player);

@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin.client.roles;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
@@ -36,7 +37,7 @@ public abstract class PuppeteerHudMixin {
     public void renderPuppeteerHud(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) return;
-        if(client.player.isSpectator()) return;
+        if (SREClient.isPlayerSpectator()) return;
 
         // 获取傀儡师组件
         PuppeteerPlayerComponent puppeteerComp = ModComponents.PUPPETEER.get(client.player);

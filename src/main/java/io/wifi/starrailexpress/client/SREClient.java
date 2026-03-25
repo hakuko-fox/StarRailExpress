@@ -102,6 +102,13 @@ public class SREClient implements ClientModInitializer {
     public static SREPlayerMoodComponent moodComponent;
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
+    private static boolean cachedPlayerAliveAndInSurvival;
+    private static boolean cachedPlayerSpectatingOrCreative;
+    private static boolean cachedPlayerCreative;
+    private static boolean cachedPlayerSpectator;
+    private static boolean cachedKiller;
+    private static boolean cachedUseTrainHud;
+    private static boolean cachedCanRenderChatHud = true;
     public static boolean hideLocalMainHandItemInLayer = false;
     public static boolean hideLocalOffHandItemInLayer = false;
     public static final Map<UUID, PlayerInfo> PLAYER_ENTRIES_CACHE = new HashMap<>();
@@ -124,8 +131,7 @@ public class SREClient implements ClientModInitializer {
     }
 
     public static boolean isPlayerCreative() {
-        Minecraft client = Minecraft.getInstance();
-        return (client != null && client.player != null && (client.player.isCreative()));
+        return cachedPlayerCreative;
     }
 
     @Override
@@ -358,6 +364,7 @@ public class SREClient implements ClientModInitializer {
         intervalTime = new Random().nextInt(0, 200);
         ClientTickEvents.END_CLIENT_TICK.register((client) -> {
             FrameAnimationRenderer.setInWorld(client != null && client.level != null);
+            updateHudApiCache(client);
             LocalPlayer player = client.player;
             if (player == null) {
                 prevMainHandSnapshot = ItemStack.EMPTY;
@@ -675,15 +682,27 @@ public class SREClient implements ClientModInitializer {
     }
 
     public static boolean isPlayerAliveAndInSurvival() {
-        return GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(Minecraft.getInstance().player);
+        return cachedPlayerAliveAndInSurvival;
     }
 
     public static boolean isPlayerSpectatingOrCreative() {
-        return GameUtils.isPlayerSpectatingOrCreativeIgnoreShitSplit(Minecraft.getInstance().player);
+        return cachedPlayerSpectatingOrCreative;
     }
 
     public static boolean isKiller() {
-        return gameComponent != null && gameComponent.canUseKillerFeatures(Minecraft.getInstance().player);
+        return cachedKiller;
+    }
+
+    public static boolean isPlayerSpectator() {
+        return cachedPlayerSpectator;
+    }
+
+    public static boolean shouldUseTrainHud() {
+        return cachedUseTrainHud;
+    }
+
+    public static boolean canRenderChatHud() {
+        return cachedCanRenderChatHud;
     }
 
     public static int getInstinctHighlight(Entity target) {
@@ -748,5 +767,31 @@ public class SREClient implements ClientModInitializer {
     private static boolean isHandHiddenByEvent(LocalPlayer player, ItemStack stack, boolean isMainHand) {
         ItemStack eventRes = AllowItemShowInHand.EVENT.invoker().allowShowInHand(player, stack, isMainHand);
         return eventRes != null && eventRes.isEmpty();
+    }
+
+    private static void updateHudApiCache(Minecraft client) {
+        LocalPlayer player = client.player;
+        cachedPlayerAliveAndInSurvival = GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
+        cachedPlayerSpectatingOrCreative = GameUtils.isPlayerSpectatingOrCreativeIgnoreShitSplit(player);
+        cachedPlayerCreative = player != null && player.isCreative();
+        cachedPlayerSpectator = player != null && player.isSpectator();
+        cachedUseTrainHud = !isInLobby && trainComponent != null && trainComponent.hasHud();
+        cachedKiller = gameComponent != null && gameComponent.canUseKillerFeatures(player);
+
+        boolean canRender = true;
+        if (player != null && !isInLobby) {
+            if (gameComponent != null && gameComponent.isRunning()
+                    && SRE.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
+                canRender = false;
+            } else if (gameComponent == null || !cachedPlayerAliveAndInSurvival) {
+                canRender = true;
+            } else {
+                final var playerRole = gameComponent.getRole(player);
+                canRender = SRE.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
+                        || (playerRole != null && SRE.canUseChatHud.stream().anyMatch(predicate -> predicate.test(playerRole)))
+                        || !gameComponent.isRunning();
+            }
+        }
+        cachedCanRenderChatHud = canRender;
     }
 }

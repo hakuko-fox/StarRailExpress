@@ -28,7 +28,7 @@ public class ConspiratorHudMixin {
     private static void renderConspiratorHud(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
-        if(client.player.isSpectator()) return;
+        if (SREClient.isPlayerSpectator()) return;
         
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(client.player.level());
         if (!gameWorld.isRole(client.player, ModRoles.CONSPIRATOR)) return;

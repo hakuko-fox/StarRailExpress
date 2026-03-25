@@ -36,7 +36,7 @@ public class StalkerHudMixin {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null)
             return;
-        if (client.player.isSpectator())
+        if (SREClient.isPlayerSpectator())
             return;
         if (SREClient.gameComponent == null)
             return;
@@ -54,7 +54,7 @@ public class StalkerHudMixin {
             return;
 
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(client.player))
+        if (!SREClient.isPlayerAliveAndInSurvival())
             return;
 
         // 渲染位置 - 左下角

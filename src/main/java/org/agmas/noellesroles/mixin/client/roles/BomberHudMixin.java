@@ -32,7 +32,7 @@ public class BomberHudMixin {
         Player player = client.player;
         if (player == null)
             return;
-        if (client.player.isSpectator())
+        if (SREClient.isPlayerSpectator())
             return;
         if (SREClient.gameComponent == null) {
             return;
@@ -77,7 +77,7 @@ public class BomberHudMixin {
             return;
 
         // 检查玩家是否存活
-        if (!GameUtils.isPlayerAliveAndSurvival(client.player))
+        if (!SREClient.isPlayerAliveAndInSurvival())
             return;
 
         // 计算背包中的炸弹数量
