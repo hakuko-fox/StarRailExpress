@@ -26,7 +26,10 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.item.ItemStack;
+
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
 import org.agmas.noellesroles.client.screen.GuessRoleScreen;
 import org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
@@ -68,16 +71,42 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         }
     }
 
+    public static class ShopEntryDisplayItem extends ShopEntry {
+        public ShopEntryDisplayItem(ItemStack stack, int price, Type type) {
+            super(stack, price, type);
+        }
+
+        public ShopEntryDisplayItem(ShopEntry shopEntry, int index) {
+            this(shopEntry.stack(), shopEntry.price(), shopEntry.type());
+            this.index = index;
+        }
+
+        public static ArrayList<ShopEntryDisplayItem> transferArrayList(List<ShopEntry> shopEntries,
+                Player player) {
+            ArrayList<ShopEntryDisplayItem> displayAbleEntries = new ArrayList<>();
+            int idx = 0;
+            for (var entry : shopEntries) {
+                if (entry.canDisplay(player)) {
+                    displayAbleEntries.add(new ShopEntryDisplayItem(entry, idx));
+                }
+                idx++;
+            }
+            return displayAbleEntries;
+        }
+
+        public int index = 0;
+    }
+
     @Override
     protected void init() {
         super.init();
         initMenuSelections();
-        List<ShopEntry> entries = new ArrayList<>(getShopEntries());
-        if (entries.isEmpty())
+        List<ShopEntry> entries = (getShopEntries());
+        List<ShopEntryDisplayItem> displayAbleEntries = ShopEntryDisplayItem.transferArrayList(entries, player);
+        if (displayAbleEntries.isEmpty())
             return;
-        entries.removeIf((entry) -> !entry.canDisplay(player));
         int apart = 38;
-        int x = this.width / 2 - entries.size() * apart / 2 + 9;
+        int x = this.width / 2 - displayAbleEntries.size() * apart / 2 + 9;
         int y = this.y - 46;
         final var gameComponent = SREClient.gameComponent;
         if (gameComponent != null) {
@@ -86,8 +115,8 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                 role.getAddChild().accept(this);
             }
         }
-        for (int i = 0; i < entries.size(); i++) {
-            var t = entries.get(i);
+        for (int i = 0; i < displayAbleEntries.size(); i++) {
+            var t = displayAbleEntries.get(i);
             this.addRenderableWidget(new StoreItemWidget(this, x + apart * i, y, t, i));
         }
     }

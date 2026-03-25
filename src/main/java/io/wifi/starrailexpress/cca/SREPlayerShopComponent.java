@@ -69,9 +69,9 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         if (this.balance != amount) {
             this.balance = amount;
             // try{
-            //     throw new RuntimeException("Hello!");
+            // throw new RuntimeException("Hello!");
             // }catch(Exception e){
-            //     SRE.LOGGER.info("Balance {}",amount,e);
+            // SRE.LOGGER.info("Balance {}",amount,e);
             // }
             this.sync();
         }
@@ -84,7 +84,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         if (FabricLoader.getInstance().isDevelopmentEnvironment() && this.balance < entry.price())
             this.balance = entry.price() * 10;
         if (this.balance >= entry.price() && !this.player.getCooldowns().isOnCooldown(entry.stack().getItem())
-                && entry.canBuy(this.player) && entry.canDisplay(this.player) && entry.onBuy(this.player)) {
+                && entry.canDisplay(this.player) && entry.canBuy(this.player) && entry.onBuy(this.player)) {
             this.balance -= entry.price();
             if (this.player instanceof ServerPlayer player) {
                 player.connection.send(
@@ -96,7 +96,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                         entry.price());
             }
         } else {
-            this.player.displayClientMessage(Component.literal("购买失败").withStyle(ChatFormatting.DARK_RED), true);
+            this.player.displayClientMessage(Component.translatable("message.tip.purchase_failed").withStyle(ChatFormatting.DARK_RED), true);
             if (this.player instanceof ServerPlayer player) {
                 player.connection.send(new ClientboundSoundPacket(
                         BuiltInRegistries.SOUND_EVENT.wrapAsHolder(TMMSounds.UI_SHOP_BUY_FAIL), SoundSource.PLAYERS,
@@ -162,7 +162,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.balance = tag.getInt("Balance");
     }
-    
+
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }

@@ -19,7 +19,6 @@ import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.modifier.cursed.cca.CursedComponent;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
-import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
 import pro.fazeclan.river.stupid_express.role.arsonist.ArsonistWinChecker;
 import pro.fazeclan.river.stupid_express.role.necromancer.cca.NecromancerComponent;
 import pro.fazeclan.river.stupid_express.utils.StupidRoleUtils;
@@ -233,26 +232,12 @@ public class StupidEventRegister {
             var lover = level.getPlayerByUUID(component.getLover());
             if (lover != null) {
                 if (GameUtils.isPlayerAliveAndSurvival(lover)) {
-                    GameUtils.killPlayer(
+                    GameUtils.forceKillPlayer(
                             lover,
                             true,
                             killer,
                             StupidExpress.id("broken_heart"));
-                } else {
-                    var wmc = WorldModifierComponent.KEY.get(lover.level());
-                    if (wmc.isModifier(lover, SEModifiers.SPLIT_PERSONALITY)) {
-                        var splc = SplitPersonalityComponent.KEY.get(lover);
-                        if (!splc.isDeath()) {
-                            GameUtils.killPlayer(
-                                    lover,
-                                    true,
-                                    killer,
-                                    StupidExpress.id("broken_heart"));
-                        }
-                    }
-
                 }
-
             }
         });
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
