@@ -42,7 +42,7 @@ public class PlayerEntityRendererMixin {
 
     @ModifyVariable(method = "renderHand", at = @At("STORE"), ordinal = 0)
     private ResourceLocation tmm$psychoArmTexture(ResourceLocation skinTexture) {
-        if (SREClient.localPlayerPsychoActive && Minecraft.getInstance().player != null) {
+        if (Minecraft.getInstance().player != null && SREClient.localPlayerPsychoActive) {
             PlayerSkin.Model model = Minecraft.getInstance().player.getSkin().model();
             String suffix = model == PlayerSkin.Model.SLIM ? "_thin" : "";
             return SRE.watheId("textures/entity/psycho" + suffix + ".png");

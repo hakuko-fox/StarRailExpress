@@ -90,6 +90,7 @@ import org.slf4j.LoggerFactory;
 import org.spongepowered.include.com.google.gson.JsonSyntaxException;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 public class SREClient implements ClientModInitializer {
@@ -106,7 +107,7 @@ public class SREClient implements ClientModInitializer {
     public static boolean hideLocalMainHandItemInLayer = false;
     public static boolean hideLocalOffHandItemInLayer = false;
     public static final Map<UUID, PlayerInfo> PLAYER_ENTRIES_CACHE = new HashMap<>();
-    public static final Map<UUID, Boolean> PLAYER_PSYCHO_CACHE = new HashMap<>();
+    public static final Map<UUID, Boolean> PLAYER_PSYCHO_CACHE = new ConcurrentHashMap<>();
     public static boolean localPlayerPsychoActive = false;
     private static ItemStack prevMainHandSnapshot = ItemStack.EMPTY;
     private static ItemStack prevOffHandSnapshot = ItemStack.EMPTY;
