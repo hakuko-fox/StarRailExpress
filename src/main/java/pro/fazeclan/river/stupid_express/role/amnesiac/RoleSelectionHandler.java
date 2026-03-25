@@ -1,5 +1,7 @@
 package pro.fazeclan.river.stupid_express.role.amnesiac;
 
+import org.agmas.noellesroles.role.ModRoles;
+
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -42,20 +44,29 @@ public class RoleSelectionHandler {
             }
             if (!gameWorldComponent.isSkillAvailable) {
                 // 技能不可用
-                 player.displayClientMessage(Component.translatable("message.stupid_express.generic.skill_not_available"), true);
+                player.displayClientMessage(
+                        Component.translatable("message.stupid_express.generic.skill_not_available"), true);
                 return InteractionResult.PASS;
             }
             SRERole role = gameWorldComponent.getRole(victim.getPlayerUuid());
+            if (role.identifier().equals(ModRoles.MA_CHEN_XU.identifier())) {
+                player.displayClientMessage(
+                        Component.translatable("msg.amnesiac.change_role.failed_not_support")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return InteractionResult.PASS;
+            }
             if (role.identifier().equals(SERoles.INITIATE.identifier())) {
                 player.displayClientMessage(
-                        Component.translatable("msg.amnesiac.change_role.failed_initiate")
+                        Component.translatable("msg.amnesiac.change_role.failed_not_support")
                                 .withStyle(ChatFormatting.RED),
                         true);
                 return InteractionResult.PASS;
             }
             if (role.identifier().equals(SERoles.AMNESIAC.identifier())) {
                 player.displayClientMessage(
-                        Component.translatable("msg.amnesiac.change_role.failed_same").withStyle(ChatFormatting.RED),
+                        Component.translatable("msg.amnesiac.change_role.failed_not_support")
+                                .withStyle(ChatFormatting.RED),
                         true);
                 return InteractionResult.PASS;
             }
@@ -64,7 +75,7 @@ public class RoleSelectionHandler {
 
             SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(interacting);
             StupidRoleUtils.changeRole(interacting, role);
-            
+
             // 播放全场音效
             interacting.level().playSound(null, interacting.blockPosition(),
                     SoundEvents.BEACON_POWER_SELECT, SoundSource.MASTER, 2.0F, 1.0F);

@@ -110,6 +110,7 @@
   "gui.stupid_express.refugee.all_death": "所有亡命徒已死亡！时间回溯！",
   "gui.stupid_express.refugee.loose_end_time": "亡命徒时刻",
   "msg.amnesiac.change_role.failed_same": "无法切换职业：你无法从失忆患者切换到失忆患者",
+  "msg.amnesiac.change_role.failed_not_support":"无法切换职业：你无法从失忆患者切换到这个职业",
   "msg.amnesiac.change_role.failed_initiate": "无法切换职业：你无法从失忆患者切换到初学者",
   "title.stupid_express.refugee.active": "亡命时刻",
   "title.stupid_express.refugee.died": "一切恢复平静",
