@@ -38,6 +38,7 @@ import org.agmas.noellesroles.AbilityHandler;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.ModDataComponentTypes;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.RoleSkill;
 import org.agmas.noellesroles.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.component.*;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -536,11 +537,23 @@ public class ModPacketsReciever {
         });
 
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.ABILITY_PACKET, (payload, context) -> {
+      var gameWorldComponent = SREGameWorldComponent.KEY.get(context.player().level());
+      SRERole role = gameWorldComponent.getRole(context.player());
+      if (!RoleSkill.beforeUse(context.player(), role)) {
+        return;
+      }
       AbilityHandler.handler(payload, context);
+      RoleSkill.afterUse(context.player(), role);
       ConfigWorldComponent.onPlayerUsedSkill(context.player());
     });
     ServerPlayNetworking.registerGlobalReceiver(AbilityWithTargetC2SPacket.ID, (payload, context) -> {
+      var gameWorldComponent = SREGameWorldComponent.KEY.get(context.player().level());
+      SRERole role = gameWorldComponent.getRole(context.player());
+      if (!RoleSkill.beforeUse(context.player(), role)) {
+        return;
+      }
       AbilityHandler.handlerWithTarget(payload, context);
+      RoleSkill.afterUse(context.player(), role);
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.INSANE_KILLER_ABILITY_PACKET, (payload, context) -> {
       ServerPlayer player = (ServerPlayer) context.player();
