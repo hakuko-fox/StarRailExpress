@@ -23,16 +23,18 @@ public abstract class KeyBindingMixin {
             return false;
         if (instance.options == null)
             return false;
-        if (instance.player == null)
+        final var player = instance.player;
+        if (player == null)
             return false;
+        final var options = instance.options;
         if (SREClient.isInLobby) {
             return false;
         }
-        if (!SREClient.isPlayerCreative() && this.same(instance.options.keyDrop)) {
+        if (!SREClient.isPlayerCreative() && this.same(options.keyDrop)) {
             if (SRE.canDropItem
-                    .contains(BuiltInRegistries.ITEM.getKey(instance.player.getMainHandItem().getItem()).toString())
+                    .contains(BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem()).toString())
                     || SRE.canDrop.stream().anyMatch((p) -> {
-                        return p.test(instance.player);
+                        return p.test(player);
                     })) {
                 if (instance.screen == null) {
                     return false;
@@ -42,39 +44,28 @@ public abstract class KeyBindingMixin {
         }
         if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()
                 && SREClient.isPlayerAliveAndInSurvival()) {
-            if (this.same(instance.options.keyJump)) {
+            if (this.same(options.keyJump)) {
                 if (SREClient.gameComponent.isJumpAvailable())
                     return false;
                 return true;
             }
-            return this.same(instance.options.keySwapOffhand) ||
-
-                    this.same(instance.options.keyAdvancements);
+            return this.same(options.keySwapOffhand) || this.same(options.keyAdvancements);
         }
         return false;
     }
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean tmm$restrainWasPressedKeys(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean tmm$restrainIsPressedKeys(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean tmm$restrainMatchesKey(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 }

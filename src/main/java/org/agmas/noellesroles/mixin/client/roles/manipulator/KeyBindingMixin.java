@@ -20,27 +20,29 @@ public abstract class KeyBindingMixin {
     private boolean shouldSuppressKey() {
         if (SRE.isLobby)
             return false;
-        if (Minecraft.getInstance() == null)
+        final var instance = Minecraft.getInstance();
+        if (instance == null)
             return false;
-        if (Minecraft.getInstance().player == null)
+        final var player = instance.player;
+        if (player == null)
             return false;
-        if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.isPlayerAliveAndInSurvival() ) {
-            final var isControlling = InControlCCA.KEY.get(Minecraft.getInstance().player);
+        final var options = instance.options;
+        if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.isPlayerAliveAndInSurvival()) {
+            final var isControlling = InControlCCA.KEY.get(player);
             if (isControlling.isControlling) {
-                return this.same(Minecraft.getInstance().options.keySwapOffhand) ||
-                        this.same(Minecraft.getInstance().options.keyJump) ||
-                        this.same(Minecraft.getInstance().options.keyTogglePerspective) ||
-                        this.same(Minecraft.getInstance().options.keyDrop) ||
-                        this.same(Minecraft.getInstance().options.keyAttack) ||
-                        this.same(Minecraft.getInstance().options.keyDown) ||
-                        this.same(Minecraft.getInstance().options.keyLeft) ||
-                        this.same(Minecraft.getInstance().options.keyRight) ||
-                        this.same(Minecraft.getInstance().options.keyUp) ||
-                        this.same(Minecraft.getInstance().options.keySprint) ||
-                        this.same(Minecraft.getInstance().options.keyInventory) ||
-                        this.same(Minecraft.getInstance().options.keyUse) ||
-                        this.same(Minecraft.getInstance().options.keyDrop) ||
-                        this.same(Minecraft.getInstance().options.keyAdvancements);
+                return this.same(options.keySwapOffhand) ||
+                        this.same(options.keyJump) ||
+                        this.same(options.keyTogglePerspective) ||
+                        this.same(options.keyDrop) ||
+                        this.same(options.keyAttack) ||
+                        this.same(options.keyDown) ||
+                        this.same(options.keyLeft) ||
+                        this.same(options.keyRight) ||
+                        this.same(options.keyUp) ||
+                        this.same(options.keySprint) ||
+                        this.same(options.keyInventory) ||
+                        this.same(options.keyUse) ||
+                        this.same(options.keyAdvancements);
             }
         }
         return false;
@@ -48,19 +50,16 @@ public abstract class KeyBindingMixin {
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean noe$restrainWasPressedKeys(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean noe$restrainIsPressedKeys(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean noe$restrainMatchesKey(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 }

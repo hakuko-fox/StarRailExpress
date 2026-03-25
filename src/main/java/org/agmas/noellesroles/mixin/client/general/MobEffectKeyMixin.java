@@ -21,38 +21,37 @@ public abstract class MobEffectKeyMixin {
     private boolean shouldSuppressKey() {
         if (SRE.isLobby)
             return false;
-        if (Minecraft.getInstance() == null)
+        final var instance = Minecraft.getInstance();
+        if (instance == null)
             return false;
-        LocalPlayer player = Minecraft.getInstance().player;
+        final LocalPlayer player = instance.player;
         if (player == null)
             return false;
-       if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA) || player.hasEffect(ModEffects.GHOST_CURSE)){
-           return this.same(NoellesrolesClient.abilityBind);
-       }
-       if (player.hasEffect(ModEffects.MOVE_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)){
-           return this.same(Minecraft.getInstance().options.keyJump)||this.same(Minecraft.getInstance().options.keyLeft)||this.same(Minecraft.getInstance().options.keyRight)||this.same(Minecraft.getInstance().options.keyUp)||this.same(Minecraft.getInstance().options.keyDown);
-       }
-        if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)){
-            return this.same(Minecraft.getInstance().options.keyAttack)||this.same(Minecraft.getInstance().options.keyDrop)||this.same(Minecraft.getInstance().options.keyUse);
+        final var options = instance.options;
+        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA) || player.hasEffect(ModEffects.GHOST_CURSE)) {
+            return this.same(NoellesrolesClient.abilityBind);
+        }
+        if (player.hasEffect(ModEffects.MOVE_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)) {
+            return this.same(options.keyJump) || this.same(options.keyLeft) || this.same(options.keyRight) || this.same(options.keyUp) || this.same(options.keyDown);
+        }
+        if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)) {
+            return this.same(options.keyAttack) || this.same(options.keyDrop) || this.same(options.keyUse);
         }
         return false;
     }
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean noe$restrainWasPressedKeys(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean noe$restrainIsPressedKeys(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean noe$restrainMatchesKey(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 }

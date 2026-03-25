@@ -22,18 +22,20 @@ public abstract class KeyBindingMixin {
     private boolean shouldSuppressKey() {
         if (SRE.isLobby)
             return false;
-        if (Minecraft.getInstance() == null) {
+        final var instance = Minecraft.getInstance();
+        if (instance == null) {
             return false;
         }
-        if (Minecraft.getInstance().player == null) {
+        final var player = instance.player;
+        if (player == null) {
             return false;
         }
+        final var options = instance.options;
         if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()
                 && !SREClient.isPlayerAliveAndInSurvival()
-                && WorldModifierComponent.KEY.get(Minecraft.getInstance().player.level())
-                        .isModifier(Minecraft.getInstance().player, SEModifiers.SPLIT_PERSONALITY)) {
+                && WorldModifierComponent.KEY.get(player.level()).isModifier(player, SEModifiers.SPLIT_PERSONALITY)) {
 
-            final var splitPersonalityComponent = SplitPersonalityComponent.KEY.get(Minecraft.getInstance().player);
+            final var splitPersonalityComponent = SplitPersonalityComponent.KEY.get(player);
             if (splitPersonalityComponent == null || splitPersonalityComponent.getMainPersonality() == null
                     || splitPersonalityComponent.getSecondPersonality() == null)
                 return false;
@@ -41,17 +43,17 @@ public abstract class KeyBindingMixin {
                 return false;
             if (splitPersonalityComponent.isCurrentlyActive())
                 return false;
-            return this.same(Minecraft.getInstance().options.keySwapOffhand) ||
-                    this.same(Minecraft.getInstance().options.keyJump) ||
-                    this.same(Minecraft.getInstance().options.keyDrop) ||
-                    this.same(Minecraft.getInstance().options.keyUp) ||
-                    this.same(Minecraft.getInstance().options.keyRight) ||
-                    this.same(Minecraft.getInstance().options.keyPlayerList) ||
-                    this.same(Minecraft.getInstance().options.keyLeft) ||
-                    this.same(Minecraft.getInstance().options.keyDown) ||
-                    this.same(Minecraft.getInstance().options.keyUse) ||
-                    this.same(Minecraft.getInstance().options.keyShift) ||
-                    this.same(Minecraft.getInstance().options.keyAdvancements);
+            return this.same(options.keySwapOffhand) ||
+                    this.same(options.keyJump) ||
+                    this.same(options.keyDrop) ||
+                    this.same(options.keyUp) ||
+                    this.same(options.keyRight) ||
+                    this.same(options.keyPlayerList) ||
+                    this.same(options.keyLeft) ||
+                    this.same(options.keyDown) ||
+                    this.same(options.keyUse) ||
+                    this.same(options.keyShift) ||
+                    this.same(options.keyAdvancements);
 
         }
         return false;
@@ -59,25 +61,16 @@ public abstract class KeyBindingMixin {
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean noe$restrainWasPressedKeys(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean noe$restrainIsPressedKeys(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean noe$restrainMatchesKey(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 }

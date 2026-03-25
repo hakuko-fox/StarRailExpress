@@ -14,8 +14,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
-import java.util.Arrays;
-
 @Mixin(KeyMapping.class)
 public abstract class CantControlMixin {
 
@@ -26,59 +24,56 @@ public abstract class CantControlMixin {
     private boolean shouldSuppressKey() {
         if (SRE.isLobby)
             return false;
-        if (Minecraft.getInstance() == null)
+        final var instance = Minecraft.getInstance();
+        if (instance == null)
             return false;
-        LocalPlayer player = Minecraft.getInstance().player;
+        final LocalPlayer player = instance.player;
         if (player == null)
             return false;
+        final var options = instance.options;
         if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()
                 && SREClient.isPlayerAliveAndInSurvival()
                 && player.hasEffect((ModEffects.TIME_STOP))) {
 
-                if (TimeStopEffect.canMovePlayers.contains(player.getUUID())){
-                    return false ;
-                }
-                return this.same(Minecraft.getInstance().options.keySwapOffhand) ||
-                        this.same(Minecraft.getInstance().options.keyJump) ||
-                        this.same(Minecraft.getInstance().options.keyTogglePerspective) ||
-                        this.same(Minecraft.getInstance().options.keyDrop) ||
-                        this.same(Minecraft.getInstance().options.keyLeft) ||
-                        this.same(Minecraft.getInstance().options.keyUp) ||
-                        this.same(Minecraft.getInstance().options.keyDown) ||
-                        this.same(Minecraft.getInstance().options.keyRight) ||
-                        this.same(NoellesrolesClient.abilityBind) ||
-                        this.same(Minecraft.getInstance().options.keyAttack) ||
-                        this.same(Minecraft.getInstance().options.keyShift) ||
-                        this.same(Minecraft.getInstance().options.keyInventory) ||
-                        Arrays.stream(Minecraft.getInstance().options.keyHotbarSlots).anyMatch(this::same) ||
-                        this.same(Minecraft.getInstance().options.keyUse) ||
-                        this.same(Minecraft.getInstance().options.keyAdvancements);
+            if (TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+                return false;
             }
+            for (var hotbarSlot : options.keyHotbarSlots) {
+                if (this.same(hotbarSlot)) {
+                    return true;
+                }
+            }
+            return this.same(options.keySwapOffhand) ||
+                    this.same(options.keyJump) ||
+                    this.same(options.keyTogglePerspective) ||
+                    this.same(options.keyDrop) ||
+                    this.same(options.keyLeft) ||
+                    this.same(options.keyUp) ||
+                    this.same(options.keyDown) ||
+                    this.same(options.keyRight) ||
+                    this.same(NoellesrolesClient.abilityBind) ||
+                    this.same(options.keyAttack) ||
+                    this.same(options.keyShift) ||
+                    this.same(options.keyInventory) ||
+                    this.same(options.keyUse) ||
+                    this.same(options.keyAdvancements);
+        }
 
         return false;
     }
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean noe$restrainWasPressedKeys(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean noe$restrainIsPressedKeys(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean noe$restrainMatchesKey(boolean original) {
-        if (this.shouldSuppressKey())
-            return false;
-        else
-            return original;
+        return !this.shouldSuppressKey() && original;
     }
 }

@@ -23,30 +23,26 @@ public abstract class ChairWheelKeyMappingMixin {
     private boolean shouldSuppressKey() {
         if (SRE.isLobby)
             return false;
-        Minecraft instance = Minecraft.getInstance();
+        final var instance = Minecraft.getInstance();
         if (instance == null)
             return false;
-        if (instance.player == null)
+        final var player = instance.player;
+        if (player == null)
             return false;
-        if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.isPlayerAliveAndInSurvival() &&SREClient.gameComponent.getGameMode() instanceof ChairWheelRaceGame) {
-            boolean b = this.same(instance.options.keySwapOffhand) ||
-                    this.same(instance.options.keyJump) ||
-                    this.same(instance.options.keyDrop) ||
-                    this.same(instance.options.keyAttack) ||
-                    this.same(instance.options.keyShift) ||
-                    this.same(instance.options.keyInventory) ||
-                    this.same(instance.options.keyDrop) ||
-                    this.same(instance.options.keyAdvancements);
-            boolean a =false;
-            if (instance.player!=null){
-                if (instance.player.hasEffect(MobEffects.BAD_OMEN)){
-                    a =     this.same(instance.options.keyUp) ||
-                            this.same(instance.options.keyRight) ||
-                            this.same(instance.options.keyDown) ||
-                            this.same(instance.options.keyLeft) ;
-                }
-            }
-            return b||a;
+        final var options = instance.options;
+        if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning() && SREClient.isPlayerAliveAndInSurvival() && SREClient.gameComponent.getGameMode() instanceof ChairWheelRaceGame) {
+            final boolean actionKeys = this.same(options.keySwapOffhand) ||
+                    this.same(options.keyJump) ||
+                    this.same(options.keyDrop) ||
+                    this.same(options.keyAttack) ||
+                    this.same(options.keyShift) ||
+                    this.same(options.keyInventory) ||
+                    this.same(options.keyAdvancements);
+            final boolean movementKeys = player.hasEffect(MobEffects.BAD_OMEN) && (this.same(options.keyUp) ||
+                    this.same(options.keyRight) ||
+                    this.same(options.keyDown) ||
+                    this.same(options.keyLeft));
+            return actionKeys || movementKeys;
         }
 
         return false;
@@ -54,19 +50,16 @@ public abstract class ChairWheelKeyMappingMixin {
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean noe$restrainWasPressedKeys(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean noe$restrainIsPressedKeys(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean noe$restrainMatchesKey(boolean original) {
-        if (this.shouldSuppressKey()) return false;
-        else return original;
+        return !this.shouldSuppressKey() && original;
     }
 }
