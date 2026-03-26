@@ -345,7 +345,7 @@ public class ModRoles {
       .registerRole(new NormalRole(ATTENDANT_ID, (new Color(198, 185, 36)).getRGB(),
           true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false));
   public static SRERole PATROLLER = TMMRoles
-      .registerRole(new NormalRole(PATROLLER_ID, 0x1B8AE5, true, false, SRERole.MoodType.REAL,
+      .registerRole(new NormalRole(PATROLLER_ID, 0x2F6BFF, true, false, SRERole.MoodType.REAL,
           io.wifi.starrailexpress.game.GameConstants.getInTicks(0, 10), false)
           .setVigilanteTeam(true).setComponentKey(PatrollerPlayerComponent.KEY))
       .setCanPickUpRevolver(true);
