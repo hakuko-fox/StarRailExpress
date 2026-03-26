@@ -276,7 +276,7 @@ public class ModRoles {
           TMMRoles.CIVILIAN.getMaxSprintTime(), false))
       .setVigilanteTeam(true).setCanSeeCoin(true).setCanPickUpRevolver(false).setCanAutoAddMoney(true);
   public static SRERole WIND_YAOSE = TMMRoles.registerRole(
-      new ExtraEffectRole(WIND_YAOSE_ID, new Color(106, 255, 179).getRGB(),
+      new ExtraEffectRole(WIND_YAOSE_ID, new Color(127, 231, 255).getRGB(),
           false, false, SRERole.MoodType.FAKE,
           TMMRoles.CIVILIAN.getMaxSprintTime(), false).addEffect(
               new MobEffectInstance(
@@ -345,7 +345,7 @@ public class ModRoles {
       .registerRole(new NormalRole(ATTENDANT_ID, (new Color(198, 185, 36)).getRGB(),
           true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false));
   public static SRERole PATROLLER = TMMRoles
-      .registerRole(new NormalRole(PATROLLER_ID, 0x1B8AE5, true, false, SRERole.MoodType.REAL,
+      .registerRole(new NormalRole(PATROLLER_ID, 0x2F6BFF, true, false, SRERole.MoodType.REAL,
           io.wifi.starrailexpress.game.GameConstants.getInTicks(0, 10), false)
           .setVigilanteTeam(true).setComponentKey(PatrollerPlayerComponent.KEY))
       .setCanPickUpRevolver(true);
@@ -470,7 +470,7 @@ public class ModRoles {
   // 会计角色 - 乘客阵营
   public static SRERole ACCOUNTANT = TMMRoles.registerRole(new NormalRole(
       ACCOUNTANT_ID, // 角色 ID
-      new Color(0, 128, 128).getRGB(), // 青色 - 代表会计
+      new Color(46, 139, 87).getRGB(), // 海绿色 - 代表会计的稳重与秩序
       true, // isInnocent = 乘客阵营
       false, // canUseKiller = 无杀手能力
       SRERole.MoodType.REAL, // 真实心情
@@ -570,7 +570,7 @@ public class ModRoles {
   // 武术教官角色 - 警长阵营
   public static SRERole MARTIAL_ARTS_INSTRUCTOR = TMMRoles.registerRole(new NormalRole(
       MARTIAL_ARTS_INSTRUCTOR_ID, // 角色 ID
-      new Color(255, 215, 0).getRGB(), // 金黄色 - 代表武术的荣耀与威严
+      new Color(255, 170, 0).getRGB(), // 琥珀金 - 代表武术的荣耀与威严
       true, // isInnocent = 乘客阵营
       false, // canUseKiller = 无杀手能力
       SRERole.MoodType.REAL, // 真实心情
@@ -751,7 +751,7 @@ public class ModRoles {
    */
   public static SRERole ENGINEER = TMMRoles.registerRole(new NormalRole(
       ENGINEER_ID, // 角色 ID
-      new Color(255, 140, 0).getRGB(), // 橙色 - 代表工程帽/工具
+      new Color(255, 179, 71).getRGB(), // 琥珀橙 - 代表工程帽/工具
       true, // isInnocent = 乘客阵营
       false, // canUseKiller = 无杀手能力
       SRERole.MoodType.REAL, // 真实心情
@@ -866,7 +866,7 @@ public class ModRoles {
    */
   public static SRERole SUPERSTAR = TMMRoles.registerRole(new NormalRole(
       STAR_ID, // 角色 ID
-      new Color(255, 215, 0).getRGB(), // 金色 - 代表明星的光芒
+      new Color(255, 240, 120).getRGB(), // 星辉黄 - 代表明星的聚光灯
       true, // isInnocent = 乘客阵营
       false, // canUseKiller = 无杀手能力
       SRERole.MoodType.REAL, // 真实心情
@@ -1124,7 +1124,7 @@ public class ModRoles {
    */
   public static SRERole MONITOR = TMMRoles.registerRole(new NormalRole(
       MONITOR_ID, // 角色 ID
-      new Color(0, 255, 255).getRGB(), // 青色
+      new Color(32, 201, 151).getRGB(), // 蓝绿色
       true, // isInnocent = 好人阵营
       false, // canUseKiller = 无杀手能力
       SRERole.MoodType.REAL, // 真实心情
@@ -1187,7 +1187,7 @@ public class ModRoles {
    */
   public static SRERole NIAN_SHOU = TMMRoles.registerRole(new NianShouRole(
       NIAN_SHOU_ID, // 角色 ID
-      new Color(255, 69, 0).getRGB(), // 红橙色 - 代表年兽的颜色
+      new Color(255, 99, 71).getRGB(), // 番茄红 - 代表年兽的喜庆与压迫感
       false, // isInnocent = 非乘客阵营（中立）
       false, // canUseKiller = 无杀手能力（但可以购买关灯）
       SRERole.MoodType.REAL, // 真实心情
@@ -1209,7 +1209,7 @@ public class ModRoles {
    */
   public static SRERole THIEF = TMMRoles.registerRole(new NormalRole(
       THIEF_ID, // 角色 ID
-      new Color(255, 215, 0).getRGB(), // 金色 - 代表财富
+      new Color(212, 175, 55).getRGB(), // 金棕色 - 代表财富与贪婪
       false, // isInnocent = 非乘客阵营
       false, // canUseKiller = 无杀手能力
       SRERole.MoodType.FAKE, // 假心情
