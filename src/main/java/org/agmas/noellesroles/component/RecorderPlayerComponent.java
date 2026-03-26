@@ -58,7 +58,7 @@ public class RecorderPlayerComponent implements RoleComponent, ServerTickingComp
         var players = player.level().players();
         int totalPlayers = players.size();
         this.requiredCorrectCount = getRequiredCorrectCount(totalPlayers);
-        this.MAX_WRONG_GUESSES = getRequiredCorrectCount(totalPlayers);
+        this.MAX_WRONG_GUESSES = 5;
         this.sync();
     }
 
@@ -201,16 +201,20 @@ public class RecorderPlayerComponent implements RoleComponent, ServerTickingComp
     public int getRequiredCorrectCount(int totalPlayers) {
         if (totalPlayers <= 8)
             return 5;
-        if (totalPlayers <= 18) {
+        if (totalPlayers <= 12) {
             return (int) 6;
         }
-        if (totalPlayers > 18 && totalPlayers <= 24) {
+        if (totalPlayers <= 18) {
             return 7;
         }
-        if (totalPlayers > 24 && totalPlayers <= 32) {
+        if (totalPlayers <= 24) {
             return 8;
         }
-        return totalPlayers / 4;
+        if (totalPlayers <= 27)
+            return 9;
+        if (totalPlayers <= 32)
+            return 10;
+        return totalPlayers / 3;
     }
 
     @Override
@@ -333,7 +337,7 @@ public class RecorderPlayerComponent implements RoleComponent, ServerTickingComp
     public Player getPlayer() {
         return player;
     }
-    
+
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }
