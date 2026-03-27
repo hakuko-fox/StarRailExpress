@@ -113,18 +113,21 @@ public class InstinctRenderer {
                 return -1;
             if (GameUtils.isPlayerSpectatingOrCreative(self))
                 return -1;
+            if (!hasInstinct)
+                return -1;
 
             CandleBearerPlayerComponent component = CandleBearerPlayerComponent.KEY.get(self);
             if (target instanceof Player targetPlayer) {
                 if (component.isCandleLit(targetPlayer.getUUID())) {
                     return ModRoles.CANDLE_BEARER.color();
                 }
-                return -1;
+                return Color.GRAY.getRGB();
             }
             if (target instanceof PlayerBodyEntity body) {
                 if (body.getPlayerUuid() != null && component.isCandleLit(body.getPlayerUuid())) {
                     return ModRoles.CANDLE_BEARER.color();
                 }
+                return Color.GRAY.getRGB();
             }
             return -1;
         });

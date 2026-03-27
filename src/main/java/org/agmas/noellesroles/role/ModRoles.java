@@ -1233,7 +1233,7 @@ public class ModRoles {
       TMMRoles.CIVILIAN.getMaxSprintTime(),
       true
   )).setComponentKey(CandleBearerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
-      .setCanSeeTeammateKiller(false);;
+      .setCanSeeTeammateKiller(false).setCanUseInstinct(true);;
 
   /**
    * 魔术师角色 - 好人阵营（从模仿者移植）
