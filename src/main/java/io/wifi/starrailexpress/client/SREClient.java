@@ -321,7 +321,11 @@ public class SREClient implements ClientModInitializer {
             hideLocalOffHandItemInLayer = isHandHiddenByEvent(player, offHand, false);
         });
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
-            if (Minecraft.getInstance() != null && Minecraft.getInstance().player != null) {
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null) {
+                return;
+            }
+            final LocalPlayer player = Minecraft.getInstance().player;
+            {
                 boolean keycode = Minecraft.getInstance().options.keyShift.consumeClick();
                 if (keycode) {
                     if (SecurityMonitorBlock.isInSecurityMode()) {
@@ -345,7 +349,10 @@ public class SREClient implements ClientModInitializer {
             } else {
                 instinctLightLevel -= .2f;
             }
-            instinctLightLevel = Mth.clamp(instinctLightLevel, -.04f, 0.75f);
+            float maxLightLevel = 0.75f;
+            if (player.isCreative())
+                maxLightLevel = 1f;
+            instinctLightLevel = Mth.clamp(instinctLightLevel, -.04f, maxLightLevel);
 
             if (!prevGameRunning && gameComponent.isRunning()) {
                 Minecraft.getInstance().player.getInventory().selected = 8;
@@ -362,7 +369,6 @@ public class SREClient implements ClientModInitializer {
                 soundLevel = Minecraft.getInstance().options.getSoundSourceVolume(SoundSource.MASTER);
             }
 
-            LocalPlayer player = Minecraft.getInstance().player;
             if (player != null) {
                 StoreRenderer.tick();
                 TimeRenderer.tick();
