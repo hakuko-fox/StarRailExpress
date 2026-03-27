@@ -336,7 +336,7 @@ public class ModPacketsReciever {
           StalkerPlayerComponent stalkerPlayerComponent = StalkerPlayerComponent.KEY.get(player);
           if (stalkerPlayerComponent.phase == 3 && !stalkerPlayerComponent.isDashOnCooldown()) {
             if (stalkerKnifeItem.tryDashAttack(player, player.getMainHandItem(), player.serverLevel())) {
-              stalkerPlayerComponent.dashCooldown = 60;
+              stalkerPlayerComponent.dashCooldown = 50;
             }
           }
         }
