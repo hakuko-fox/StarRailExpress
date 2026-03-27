@@ -83,7 +83,7 @@ public abstract class StalkerLeftClickKillMixin {
         // 二阶段：左键直接击杀
         GameUtils.killPlayer(targetPlayer, true, attacker, GameConstants.DeathReasons.KNIFE);
 
-        attacker.getCooldowns().addCooldown(mainHand.getItem(), 5*20);
+        attacker.getCooldowns().addCooldown(mainHand.getItem(), GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3);
         // 触发攻击冷却
 //        stalkerComp.triggerAttackCooldown();
 
