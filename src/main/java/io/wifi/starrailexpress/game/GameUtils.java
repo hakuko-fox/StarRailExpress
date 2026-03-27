@@ -1442,7 +1442,7 @@ public class GameUtils {
         return false;
     }
 
-    static void resetEntities(ServerLevel serverWorld) {
+    public static void resetEntities(ServerLevel serverWorld) {
         for (PlayerBodyEntity body : serverWorld.getEntities(TMMEntities.PLAYER_BODY,
                 playerBodyEntity -> true)) {
             body.discard();
