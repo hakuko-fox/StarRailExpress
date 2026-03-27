@@ -460,17 +460,18 @@ public class ModEventsRegister {
         OnPlayerUsedSkill.EVENT.register((player) -> {
             NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
             if (!config.skillEchoEventEnabled) {
-                return;
+                return false;
             }
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
             if (!gameWorld.isRunning()) {
-                return;
+                return false;
             }
             SRERole role = gameWorld.getRole(player);
             if (role == null) {
-                return;
+                return false;
             }
             ConfigWorldComponent.KEY.get(player.level()).announceSkillEchoForRole(role);
+            return false;
         });
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             if (killer != null) {

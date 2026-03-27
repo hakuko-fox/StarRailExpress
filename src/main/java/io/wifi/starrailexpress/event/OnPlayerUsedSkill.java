@@ -10,9 +10,12 @@ public interface OnPlayerUsedSkill {
     Event<OnPlayerUsedSkill> EVENT = createArrayBacked(OnPlayerUsedSkill.class,
             listeners -> (player) -> {
                 for (OnPlayerUsedSkill listener : listeners) {
-                    listener.onPlayerUsedSkill(player);
+                    if(listener.onPlayerUsedSkill(player)){
+                        return true;
+                    }
                 }
+                return false;
             });
 
-    void onPlayerUsedSkill(ServerPlayer player);
+    boolean onPlayerUsedSkill(ServerPlayer player);
 }
