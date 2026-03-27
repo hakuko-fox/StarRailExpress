@@ -13,7 +13,6 @@ import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.game.MapResetManager;
-import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses.ServerTaskInfo;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -192,7 +191,7 @@ public class GameUtilsCommand {
                                       "subtitle", ComponentArgument.textComponent(registryAccess))
                                   .executes(GameUtilsCommand::executeCustomWinWithIdAndTitle))))))
               .then(Commands.literal("reset")
-                  .then(Commands.literal("sync")
+                  .then(Commands.literal("blocks")
                       .then(Commands.literal("copy").executes((context) -> {
                         GameUtils.tryAutoTrainReset(context.getSource().getLevel());
                         context.getSource().sendSuccess(() -> Component.literal("Normal Reset(copy)!"), true);
@@ -205,35 +204,12 @@ public class GameUtilsCommand {
 
                         return 1;
                       })))
-                  .then(Commands.literal("asyn")
-                      .then(Commands.literal("copy").executes((context) -> {
-                        var world = context.getSource().getLevel();
-                        var areas = AreasWorldComponent.KEY.get(world);
-                        ServerTaskInfoClasses.FullTrainResetTask task = new ServerTaskInfoClasses.FullTrainResetTask(
-                            areas,
-                            world, null, 0);
-                        task.shouldStartGame = false;
-
-                        GameUtils.serverTaskQueue.add(task);
-                        context.getSource()
-                            .sendSuccess(() -> Component.literal("Add server reset task: Normal Reset(copy)!"), true);
-                        return 1;
-                      }))
-                      .then(Commands.literal("simple").executes((context) -> {
-
-                        var world = context.getSource().getLevel();
-                        MapResetManager.loadArea(world);
-                        var areas = AreasWorldComponent.KEY.get(world);
-                        ServerTaskInfoClasses.OnlySomeBlockResetTask task = new ServerTaskInfoClasses.OnlySomeBlockResetTask(
-                            GameUtils.resetPoints, world, null, 0, areas);
-                        task.shouldStartGame = false;
-                        GameUtils.serverTaskQueue.add(task);
-                        context.getSource().sendSuccess(
-                            () -> Component.literal("Add server reset task: Simple Reset (clean points only)!"),
-                            true);
-
-                        return 1;
-                      }))))
+                  .then(Commands.literal("entity").then(Commands.literal("clear").executes((context) -> {
+                    GameUtils.resetEntities(context.getSource().getLevel());
+                    context.getSource().sendSuccess(() -> Component.literal("Cleared entity!"),
+                        true);
+                    return 1;
+                  }))))
               .then(Commands.literal("scan").executes((context) -> {
                 var source = context.getSource();
                 var level = source.getLevel();

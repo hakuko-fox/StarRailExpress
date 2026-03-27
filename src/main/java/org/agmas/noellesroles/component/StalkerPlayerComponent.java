@@ -20,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
@@ -142,9 +143,6 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
     /** 能量获取计时器（每秒获取一次） */
     private int energyTickCounter = 0;
 
-    /** 二阶段攻击冷却计时器（tick） */
-    public int attackCooldown = 0;
-
     /** 三阶段突进冷却计时器（tick） */
     public int dashCooldown = 0;
 
@@ -190,11 +188,10 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
         this.dashDirection = Vec3.ZERO;
         this.isStalkerMarked = true;
         this.energyTickCounter = 0;
-        this.attackCooldown = 0;
         this.dashCooldown = 0;
         final var playerCount = getPlayerCount();
         int kills = (int) Math.ceil(playerCount / 6.0);
-        this.ph2_kill_need = Math.max(1, (int)((float)kills / 1.5));
+        this.ph2_kill_need = Math.max(1, (int) ((float) kills / 1.5));
         this.ph1_energy_need = playerCount * 15;
         this.ph2_energy_need = playerCount * 2;
 
@@ -225,7 +222,6 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
         this.dashDirection = Vec3.ZERO;
         this.isStalkerMarked = false;
         this.energyTickCounter = 0;
-        this.attackCooldown = 0;
         this.dashCooldown = 0;
         this.sync();
     }
@@ -304,7 +300,7 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
 
         if (!(player instanceof ServerPlayer serverPlayer))
             return;
-
+        ConfigWorldComponent.onPlayerUsedSkill( (ServerPlayer) player);
         // 跟踪者一开始就是杀手阵营，不需要 addRole
         // 只需要给予刀
         player.addItem(ModItems.STALKER_KNIFE.getDefaultInstance());
@@ -374,7 +370,7 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
         if (phase >= 2) {
             this.phase2Kills++;
             // 设置攻击冷却
-            this.attackCooldown = PHASE_2_ATTACK_COOLDOWN;
+            // this.attackCooldown = PHASE_2_ATTACK_COOLDOWN;
 
             // 播放击杀音效
             player.level().playSound(null, player.blockPosition(),
@@ -386,34 +382,10 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
     }
 
     /**
-     * 检查二阶段攻击是否在冷却中
-     */
-    public boolean isAttackOnCooldown() {
-        return phase >= 2 && attackCooldown > 0;
-    }
-
-    /**
-     * 触发攻击冷却（刀攻击时调用）
-     */
-    public void triggerAttackCooldown() {
-        if (phase >= 2) {
-            this.attackCooldown = PHASE_2_ATTACK_COOLDOWN;
-            this.sync();
-        }
-    }
-
-    /**
      * 检查突进是否在冷却中
      */
     public boolean isDashOnCooldown() {
         return dashCooldown > 0;
-    }
-
-    /**
-     * 获取攻击冷却秒数
-     */
-    public float getAttackCooldownSeconds() {
-        return attackCooldown / 20.0f;
     }
 
     /**
@@ -718,14 +690,6 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
             player.setSprinting(false);
         }
 
-        // 处理攻击冷却倒计时
-        if (attackCooldown > 0) {
-            attackCooldown--;
-            if (attackCooldown % 20 == 0) {
-                sync();
-            }
-        }
-
         // 处理突进冷却倒计时
         if (dashCooldown > 0) {
             dashCooldown--;
@@ -744,7 +708,7 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
             if (phase3Timer > 0) {
                 phase3Timer--;
                 // 每秒同步一次
-                if (phase3Timer % 20 == 0) {
+                if (phase3Timer % 200 == 0) {
                     sync();
                 }
             }
@@ -798,7 +762,6 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
         tag.putDouble("dashDirY", this.dashDirection.y);
         tag.putDouble("dashDirZ", this.dashDirection.z);
         tag.putBoolean("isStalkerMarked", this.isStalkerMarked);
-        tag.putInt("attackCooldown", this.attackCooldown);
         tag.putInt("dashCooldown", this.dashCooldown);
         tag.putInt("ph1_energy_need", this.ph1_energy_need);
         tag.putInt("ph2_energy_need", this.ph2_energy_need);
@@ -824,7 +787,6 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
         double dirZ = tag.contains("dashDirZ") ? tag.getDouble("dashDirZ") : 0;
         this.dashDirection = new Vec3(dirX, dirY, dirZ);
         this.isStalkerMarked = tag.contains("isStalkerMarked") && tag.getBoolean("isStalkerMarked");
-        this.attackCooldown = tag.contains("attackCooldown") ? tag.getInt("attackCooldown") : 0;
         this.dashCooldown = tag.contains("dashCooldown") ? tag.getInt("dashCooldown") : 0;
         this.ph1_energy_need = tag.contains("ph1_energy_need") ? tag.getInt("ph1_energy_need") : 500;
         this.ph2_energy_need = tag.contains("ph2_energy_need") ? tag.getInt("ph2_energy_need") : 30;
@@ -836,6 +798,14 @@ public class StalkerPlayerComponent implements RoleComponent, ServerTickingCompo
         // 二阶段及以上禁止冲刺
         if (phase >= 2 && player.isSprinting()) {
             player.setSprinting(false);
+        }
+        if (dashCooldown > 1) {
+            dashCooldown--;
+        }
+        if (phase == 3) {
+            if (phase3Timer > 1) {
+                phase3Timer--;
+            }
         }
     }
 

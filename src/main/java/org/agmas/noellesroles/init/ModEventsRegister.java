@@ -524,17 +524,27 @@ public class ModEventsRegister {
         OnPlayerUsedSkill.EVENT.register((player) -> {
             NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
             if (!config.skillEchoEventEnabled) {
-                return;
+                return false;
             }
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
             if (!gameWorld.isRunning()) {
-                return;
+                return false;
             }
             SRERole role = gameWorld.getRole(player);
             if (role == null) {
-                return;
+                return false;
             }
-            ConfigWorldComponent.KEY.get(player.level()).announceSkillEchoForRole(role);
+            if (Math.random()<=0.6)return false;
+
+            // 随机延迟 3~7 秒后触发回响
+            int delayTicks = (int) ((Math.random() * 4 + 3) * 20); // 3-7 秒转换为 tick (20 ticks = 1 秒)
+            
+            if (player.level() instanceof ServerLevel serverLevel) {
+                GameUtils.serverAsynTaskLists.add(new ServerTaskInfoClasses.SchedulerTask(delayTicks, () -> {
+                    ConfigWorldComponent.KEY.get(serverLevel).announceSkillEchoForRole(role);
+                }));
+            }
+            return false;
         });
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             if (killer != null) {
@@ -1553,7 +1563,7 @@ public class ModEventsRegister {
                 "noellesroles:mint_candies",
                 "noellesroles:alchemist_buff_potion",
                 "noellesroles:stalker_knife",
-                "noellesroles:stalker_knife_w",
+                "noellesroles:stalker_knife_offhand",
                 "noellesroles:pill",
                 "noellesroles:pocket_watch",
                 "noellesroles:throwing_knife",

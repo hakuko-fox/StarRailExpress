@@ -16,6 +16,7 @@ import org.agmas.noellesroles.component.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.StalkerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.item.StalkerKnifeItem;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,22 +58,34 @@ public abstract class StalkerLeftClickKillMixin {
         // 检查是否是活跃的跟踪者且处于二阶段
         if (!stalkerComp.isActiveStalker())
             return;
-        if (stalkerComp.phase != 2)
+        if (stalkerComp.phase < 2)
             return;
 
         // 检查手持物品是否是刀
         ItemStack mainHand = attacker.getItemInHand(InteractionHand.MAIN_HAND);
-        if (!mainHand.is(ModItems.STALKER_KNIFE))
+        if (!(mainHand.getItem() instanceof StalkerKnifeItem))
             return;
-        if (attacker.getCooldowns().isOnCooldown(ModItems.STALKER_KNIFE)) {
+
+
+        // 三阶段时不能用左键击杀，只能用突进
+        if (stalkerComp.phase == 3 && stalkerComp.dashModeActive) {
             ci.cancel();
             return;
         }
 
+        // 检查攻击是否在冷却中
+        if (attacker.getCooldowns().isOnCooldown(mainHand.getItem())) {
+            ci.cancel();
+            return;
+        }
+
+        StalkerKnifeItem.performDashOnHit(attacker.level(), attacker, targetPlayer);
         // 二阶段：左键直接击杀
         GameUtils.killPlayer(targetPlayer, true, attacker, GameConstants.DeathReasons.KNIFE);
-        attacker.getCooldowns().addCooldown(ModItems.STALKER_KNIFE,
-                GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3);
+
+        attacker.getCooldowns().addCooldown(mainHand.getItem(), GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3);
+        // 触发攻击冷却
+//        stalkerComp.triggerAttackCooldown();
 
         // 击杀后定身0.5秒（10 tick）- 使用缓慢和失明来模拟
         attacker.addEffect(new MobEffectInstance(

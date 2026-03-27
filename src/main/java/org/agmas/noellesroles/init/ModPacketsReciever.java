@@ -336,7 +336,7 @@ public class ModPacketsReciever {
           StalkerPlayerComponent stalkerPlayerComponent = StalkerPlayerComponent.KEY.get(player);
           if (stalkerPlayerComponent.phase == 3 && !stalkerPlayerComponent.isDashOnCooldown()) {
             if (stalkerKnifeItem.tryDashAttack(player, player.getMainHandItem(), player.serverLevel())) {
-              stalkerPlayerComponent.dashCooldown = 60;
+              stalkerPlayerComponent.dashCooldown = 50;
             }
           }
         }
@@ -384,7 +384,7 @@ public class ModPacketsReciever {
                   || role.identifier().equals(ModRoles.WATER_GHOST_ID)
                   || role.identifier().equals(ModRoles.DIO_ID)
                   || Harpymodloader.VANNILA_ROLES.contains(role) || !role.canUseKiller()
-                  || HarpyModLoaderConfig.HANDLER.instance().disabled
+                  || HarpyModLoaderConfig.HANDLER.instance().getDisabled()
                       .contains(role.identifier().getPath()));
               if (shuffledKillerRoles.isEmpty())
                 shuffledKillerRoles.add(TMMRoles.KILLER);

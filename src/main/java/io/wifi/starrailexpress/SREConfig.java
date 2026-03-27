@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress;
 
+import java.util.ArrayList;
+
 import io.wifi.ConfigCompact.ConfigClassHandler;
 import io.wifi.ConfigCompact.annotation.ConfigSync;
 import me.shedaniel.autoconfig.ConfigData;
@@ -101,30 +103,30 @@ public class SREConfig implements ConfigData {
     // @Tooltip(count = 3)
     // public String autoPresetName = "";
 
-    // 按游戏轮数自动切换预设配置
+    public static class AutoPresetInfo {
+        public int advanceCount = 0;
+        public String presetName = "";
+
+        public AutoPresetInfo(){
+        }
+
+        public AutoPresetInfo(String present, int advanceCount) {
+            this.advanceCount = advanceCount;
+            this.presetName = present;
+        }
+    }
+
+    
     @ConfigEntry.Category(value = "presents")
     @Tooltip(count = 2)
     public boolean enableRoundBasedAutoPreset = true;
+    
+    // 按游戏轮数自动切换预设配置
     @ConfigEntry.Category(value = "presents")
-    @Tooltip(count = 2)
-    public int roundBasedPresetLowLevelRounds = 3;
-    @Tooltip(count = 2)
+    @Tooltip
+    public ArrayList<AutoPresetInfo> roundBasedPreset = getDefaultAutoPresetInfos();
     @ConfigEntry.Category(value = "presents")
-    public int roundBasedPresetMediumLevelRounds = 5;
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public int roundBasedPresetHighLevelRounds = 3;
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public String roundBasedPresetLowLevel = "low_level";
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public String roundBasedPresetMediumLevel = "medium_level";
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public String roundBasedPresetHighLevel = "high_level";
     @Tooltip(count = 3)
-    @ConfigEntry.Category(value = "presents")
     public String roundBasedPresetAllRoles = "";
     // 当前已进行的游戏轮数（自动维护，勿手动修改）
     @ConfigEntry.Category(value = "presents")
@@ -205,5 +207,12 @@ public class SREConfig implements ConfigData {
 
     public static SREConfig instance() {
         return HANDLER.instance();
+    }
+    public ArrayList<AutoPresetInfo> getDefaultAutoPresetInfos(){
+        ArrayList<AutoPresetInfo> arr = new ArrayList<>();
+        arr.add(new AutoPresetInfo("low_level", 3));
+        arr.add(new AutoPresetInfo("medium_level", 5));
+        arr.add(new AutoPresetInfo("high_level", 5));
+        return arr;
     }
 }

@@ -12,6 +12,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.world.effect.MobEffects;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
@@ -54,6 +55,10 @@ public abstract class WorldRendererMixin {
                     tmm$doFog(0, 17);
                     return;
                 }
+            }
+            if (player.hasEffect(MobEffects.BLINDNESS)){
+                tmm$doFog(0, 12);
+                return;
             }
             if (SREClient.isTrainMoving()) {
 

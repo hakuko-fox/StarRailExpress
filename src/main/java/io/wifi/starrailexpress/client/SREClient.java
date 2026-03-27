@@ -321,7 +321,11 @@ public class SREClient implements ClientModInitializer {
             hideLocalOffHandItemInLayer = isHandHiddenByEvent(player, offHand, false);
         });
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
-            if (Minecraft.getInstance() != null && Minecraft.getInstance().player != null) {
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null) {
+                return;
+            }
+            final LocalPlayer player = Minecraft.getInstance().player;
+            {
                 boolean keycode = Minecraft.getInstance().options.keyShift.consumeClick();
                 if (keycode) {
                     if (SecurityMonitorBlock.isInSecurityMode()) {
@@ -345,7 +349,10 @@ public class SREClient implements ClientModInitializer {
             } else {
                 instinctLightLevel -= .2f;
             }
-            instinctLightLevel = Mth.clamp(instinctLightLevel, -.04f, 0.75f);
+            float maxLightLevel = 0.75f;
+            if (player.isCreative())
+                maxLightLevel = 1f;
+            instinctLightLevel = Mth.clamp(instinctLightLevel, -.04f, maxLightLevel);
 
             if (!prevGameRunning && gameComponent.isRunning()) {
                 Minecraft.getInstance().player.getInventory().selected = 8;
@@ -362,7 +369,6 @@ public class SREClient implements ClientModInitializer {
                 soundLevel = Minecraft.getInstance().options.getSoundSourceVolume(SoundSource.MASTER);
             }
 
-            LocalPlayer player = Minecraft.getInstance().player;
             if (player != null) {
                 StoreRenderer.tick();
                 TimeRenderer.tick();
@@ -536,6 +542,20 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(OpenProgressionScreenPayload.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ProgressionPassScreen()));
         });
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        io.wifi.starrailexpress.unlock.RoleUnlockManager.getInstance()
+                                .updateClientData(payload.globalGamesPlayed(), payload.forceUnlockedRoles());
+                        context.client().setScreen(
+                                new io.wifi.starrailexpress.client.gui.screen.RoleUnlockProgressScreen());
+                    });
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+            io.wifi.starrailexpress.network.RoleUnlockedHudPayload.ID, (payload, context) -> {
+                context.client().execute(() -> io.wifi.starrailexpress.client.gui.RoleUnlockHudRenderer
+                    .enqueue(payload.globalGamesPlayed(), payload.unlockedRoleIds()));
+            });
         ClientPlayNetworking.registerGlobalReceiver(CloseUiPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 context.client().setScreen(null);
@@ -593,6 +613,7 @@ public class SREClient implements ClientModInitializer {
             ScopeOverlayRenderer.renderScopeOverlay(guiGraphics, deltaTick);
             WaypointHUD.renderHUD(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+            RoleUnlockHudRenderer.render(guiGraphics);
 
             // // 添加地图详情渲染
             // Font font = Minecraft.getInstance().font;
