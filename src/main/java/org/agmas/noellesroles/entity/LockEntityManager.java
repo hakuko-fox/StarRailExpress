@@ -32,6 +32,7 @@ public class LockEntityManager {
         canBeAffectedItems.add(FunnyItems.BOWEN_BADGE);
         // 在此处添加可以撬锁的物品
         canBeUsedToUnLock.add(TMMItems.LOCKPICK);
+        canBeUsedToUnLock.add(ModItems.MASTER_KEY);
         canBeUsedToUnLock.add(ModItems.MASTER_KEY_P);
         canBeUsedToUnLock.add(ModItems.NOELL_PAPERCLIP);
 

@@ -351,7 +351,9 @@ public class RicesRoleRhapsody implements ModInitializer {
                 });
                 context.player().displayClientMessage(
                         Component.translatable("message.lock.failed").withStyle(ChatFormatting.RED), true);
-                lockPick.shrink(1);
+                if (!lockPick.is(ModItems.MASTER_KEY)) {
+                    lockPick.shrink(1);
+                }
             }
         });
 
