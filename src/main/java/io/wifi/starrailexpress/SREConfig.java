@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress;
 
+import java.util.ArrayList;
+
 import io.wifi.ConfigCompact.ConfigClassHandler;
 import io.wifi.ConfigCompact.annotation.ConfigSync;
 import me.shedaniel.autoconfig.ConfigData;
@@ -101,28 +103,24 @@ public class SREConfig implements ConfigData {
     // @Tooltip(count = 3)
     // public String autoPresetName = "";
 
+    public static class AutoPresetInfo {
+        public int advanceCount;
+        public String presentName;
+
+        public AutoPresetInfo(String present, int advanceCount) {
+            this.advanceCount = advanceCount;
+            this.presentName = present;
+        }
+    }
+
     // 按游戏轮数自动切换预设配置
+    @ConfigEntry.Category(value = "presents")
+    @Tooltip
+    public ArrayList<AutoPresetInfo> roundBasedPreset = new ArrayList<>();
+    
     @ConfigEntry.Category(value = "presents")
     @Tooltip(count = 2)
     public boolean enableRoundBasedAutoPreset = true;
-    @ConfigEntry.Category(value = "presents")
-    @Tooltip(count = 2)
-    public int roundBasedPresetLowLevelRounds = 3;
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public int roundBasedPresetMediumLevelRounds = 5;
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public int roundBasedPresetHighLevelRounds = 3;
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public String roundBasedPresetLowLevel = "low_level";
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public String roundBasedPresetMediumLevel = "medium_level";
-    @Tooltip(count = 2)
-    @ConfigEntry.Category(value = "presents")
-    public String roundBasedPresetHighLevel = "high_level";
     @Tooltip(count = 3)
     @ConfigEntry.Category(value = "presents")
     public String roundBasedPresetAllRoles = "";
@@ -205,5 +203,10 @@ public class SREConfig implements ConfigData {
 
     public static SREConfig instance() {
         return HANDLER.instance();
+    }
+    public SREConfig(){
+        this.roundBasedPreset.add(new AutoPresetInfo("low_level", 3));
+        this.roundBasedPreset.add(new AutoPresetInfo("medium_level", 5));
+        this.roundBasedPreset.add(new AutoPresetInfo("high_level", 5));
     }
 }

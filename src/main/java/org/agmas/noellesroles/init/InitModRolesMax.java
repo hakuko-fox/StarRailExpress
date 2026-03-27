@@ -2,6 +2,7 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.SREConfig.AutoPresetInfo;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import org.agmas.harpymodloader.Harpymodloader;
@@ -25,17 +26,18 @@ public class InitModRolesMax {
             // 按游戏轮数自动切换预设
             sreConfig.roundBasedCurrentRound++;
             int round = sreConfig.roundBasedCurrentRound;
-            int lowEnd = sreConfig.roundBasedPresetLowLevelRounds;
-            int medEnd = lowEnd + sreConfig.roundBasedPresetMediumLevelRounds;
-            int highEnd = medEnd + sreConfig.roundBasedPresetHighLevelRounds;
-
+            int need = 0;
+            AutoPresetInfo selectedInfo = null;
+            for (AutoPresetInfo info : SREConfig.instance().roundBasedPreset) {
+                need+=info.advanceCount;
+                if(round>=need){
+                    selectedInfo = info;
+                    break;
+                }
+            };
             String nextPreset;
-            if (round <= lowEnd) {
-                nextPreset = sreConfig.roundBasedPresetLowLevel;
-            } else if (round <= medEnd) {
-                nextPreset = sreConfig.roundBasedPresetMediumLevel;
-            } else if (round <= highEnd) {
-                nextPreset = sreConfig.roundBasedPresetHighLevel;
+            if (selectedInfo!=null) {
+                nextPreset = selectedInfo.presentName;
             } else {
                 nextPreset = sreConfig.roundBasedPresetAllRoles;
                 sreConfig.enableRoundBasedAutoPreset = false;
