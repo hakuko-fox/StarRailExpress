@@ -1,10 +1,7 @@
 {
   "replace": false,
   "values": [
-    "trainmurdermystery:revolver",
-    "trainmurdermystery:derringer",
-    "noellesroles:bandit_revolver",
-    "noellesroles:patroller_revolver",
+    "#starrailexpress:cooldown_guns",
     "noellesroles:once_revolver",
     "noellesroles:fake_revolver"
   ]

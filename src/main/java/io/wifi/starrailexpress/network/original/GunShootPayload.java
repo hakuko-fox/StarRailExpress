@@ -28,7 +28,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.repack.HSRItems;
 import org.jetbrains.annotations.NotNull;
 
@@ -141,14 +140,13 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             for (ServerPlayer tracking : PlayerLookup.tracking(player))
                 PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
             PacketTracker.sendToClient(player, new ShootMuzzleS2CPayload(player.getId()));
-            if (!player.isCreative() && mainHandStack.is(TMMItemTags.GUNS)) {
+            if (!player.isCreative() && mainHandStack.is(TMMItemTags.COOLDOWN_GUNS)) {
                 var cooldowns = player.getCooldowns();
-                if (!mainHandStack.is(ModItems.ONCE_REVOLVER) && !mainHandStack.is(ModItems.FAKE_REVOLVER))
-                    if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
-                        cooldowns.addCooldown(mainHandStack.getItem(),
-                                GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(),
-                                        GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
-                    }
+                if (!cooldowns.isOnCooldown(mainHandStack.getItem())) {
+                    cooldowns.addCooldown(mainHandStack.getItem(),
+                            GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(),
+                                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
+                }
             }
         }
     }
