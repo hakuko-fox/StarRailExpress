@@ -1268,22 +1268,6 @@ public class GameUtils {
     record BlockInfo(BlockPos pos, BlockState state, @Nullable BlockEntityInfo blockEntityInfo) {
     }
 
-    enum Mode {
-        FORCE(true),
-        MOVE(true),
-        NORMAL(false);
-
-        private final boolean allowsOverlap;
-
-        Mode(final boolean allowsOverlap) {
-            this.allowsOverlap = allowsOverlap;
-        }
-
-        public boolean allowsOverlap() {
-            return this.allowsOverlap;
-        }
-    }
-
     public static void resetEntities(ServerLevel serverWorld) {
         for (PlayerBodyEntity body : serverWorld.getEntities(TMMEntities.PLAYER_BODY,
                 playerBodyEntity -> true)) {
