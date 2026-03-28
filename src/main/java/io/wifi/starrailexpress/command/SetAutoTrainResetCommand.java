@@ -21,7 +21,7 @@ public class SetAutoTrainResetCommand {
 
     private static int execute(CommandSourceStack source, boolean enabled) {
         SREConfig.instance().enableAutoTrainReset = enabled;
-        SREConfig.instance().HANDLER.save();
+        SREConfig.HANDLER.save();
 
         source.sendSuccess(
                 () -> Component.translatable("commands.sre.setautotrainreset", enabled)

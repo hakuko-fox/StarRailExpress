@@ -719,11 +719,11 @@ public class RoleShopHandler {
           ModItems.SCREWDRIVER.getDefaultInstance(),
           100,
           ShopEntry.Type.TOOL));
-        SHOP.add(new ShopEntry(
+      SHOP.add(new ShopEntry(
           ModItems.NOELL_KEY_BLANK.getDefaultInstance(),
           150,
           ShopEntry.Type.TOOL));
-        SHOP.add(new ShopEntry(
+      SHOP.add(new ShopEntry(
           ModItems.NOELL_PAPERCLIP.getDefaultInstance(),
           75,
           ShopEntry.Type.TOOL));
@@ -1515,10 +1515,10 @@ public class RoleShopHandler {
     });
 
     // 闪光弹 - 100金币
-    BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 30, ShopEntry.Type.TOOL){
+    BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 30, ShopEntry.Type.TOOL) {
       @Override
       public boolean canBuy(@NotNull Player player) {
-        return !MCItemsUtils.hasItemB(player, ModItems.FLASH_GRENADE);
+        return !(MCItemsUtils.hasItem(player, ModItems.FLASH_GRENADE) > 0);
       }
     });
 

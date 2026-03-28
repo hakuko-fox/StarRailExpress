@@ -11,7 +11,9 @@ import io.wifi.starrailexpress.game.MapManager;
 import io.wifi.starrailexpress.game.MapResetManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.List;
@@ -131,8 +133,12 @@ public class SwitchMapCommand {
 
       for (String mapName : availableMaps) {
         source.sendSuccess(
-            () -> Component.literal(" - " + mapName)
-                .withStyle(style -> style.withColor(0xFFFFFF)),
+            () -> Component.literal(" - [" + mapName + "]")
+                .withStyle(style -> style.withColor(0xFFFFFF)
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                        Component.literal("CLICK TO SWITCH")))
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                        "/tmm:switchmap load " + mapName))),
             false);
       }
     }

@@ -658,6 +658,7 @@ public class GameUtils {
             SRERole playerRole = gameComponent.getRole(player);
             if (playerRole == null)
                 continue;
+            if(playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier()));
             boolean isWinner = false;
             switch (winStatus) {
                 case CUSTOM:
@@ -712,7 +713,7 @@ public class GameUtils {
                 case TIME:
                 case PASSENGERS:
                     // 排除游客职业
-                    if (playerRole.isInnocent() && !playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier()))
+                    if (playerRole.isInnocent())
                         isWinner = true;
                     else {
                         String roleidentifier = playerRole.identifier().getPath();
@@ -736,7 +737,6 @@ public class GameUtils {
                     && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
                 isWinner = true;
             }
-
             if (isWinner) {
                 roundEnd.setPlayerWin(player.getUUID(), isWinner);
                 roundEnd.CustomWinnerPlayers.add(player.getUUID());

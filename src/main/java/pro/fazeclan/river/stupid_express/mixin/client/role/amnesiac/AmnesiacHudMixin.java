@@ -4,7 +4,6 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
 import io.wifi.starrailexpress.entity.PlayerBodyEntity;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
