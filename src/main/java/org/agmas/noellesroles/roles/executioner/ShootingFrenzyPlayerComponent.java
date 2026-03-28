@@ -86,7 +86,7 @@ public class ShootingFrenzyPlayerComponent implements RoleComponent, ServerTicki
      * 启动射击狂热模式
      * - 不给球棒，而是给双枪
      * - 设置psycho模式为type=1（狂暴皮肤）
-     * - 无盾（armor=0）
+     * - 一层护盾（armor=1）
      */
     public boolean startFrenzy() {
         SREPlayerPsychoComponent psychoComponent = SREPlayerPsychoComponent.KEY.get(player);
@@ -109,7 +109,7 @@ public class ShootingFrenzyPlayerComponent implements RoleComponent, ServerTicki
         // 设置psycho模式（不使用startPsycho避免给球棒）
         // psychoComponent.startPsycho();
         psychoComponent.setPsychoTicks(GameConstants.getPsychoTimer());
-        psychoComponent.setArmour(0); // 无盾
+        psychoComponent.setArmour(1); // 一层护盾
         psychoComponent.type = 1; // 狂暴皮肤
         psychoComponent.sync();
 
