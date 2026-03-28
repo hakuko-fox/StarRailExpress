@@ -711,7 +711,8 @@ public class GameUtils {
                     break;
                 case TIME:
                 case PASSENGERS:
-                    if (playerRole.isInnocent())
+                    // 排除游客职业
+                    if (playerRole.isInnocent() && !playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier()))
                         isWinner = true;
                     else {
                         String roleidentifier = playerRole.identifier().getPath();
