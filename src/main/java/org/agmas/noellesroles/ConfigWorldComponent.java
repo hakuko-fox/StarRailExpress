@@ -27,11 +27,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
 public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingComponent {
-    private static final String SKILL_ECHO_ROLE_TRANSLATION_PREFIX = "announcement.star.role.noellesroles.";
+    public static final String SKILL_ECHO_ROLE_TRANSLATION_PREFIX = "announcement.star.role.noellesroles.";
     public static final ComponentKey<ConfigWorldComponent> KEY = ComponentRegistry.getOrCreate(
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "config"), ConfigWorldComponent.class);
     public boolean insaneSeesMorphs = true;
@@ -154,6 +155,9 @@ public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingC
         if (!(world instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
             return;
         }
+        if (new Random().nextInt(0, 100) >= 69) {
+            return;
+        }
         String roleKey = getRoleKey(role);
         if (skillEchoAnnouncedRoles.contains(roleKey)) {
             return;
@@ -162,7 +166,7 @@ public class ConfigWorldComponent implements AutoSyncedComponent, ServerTickingC
 
         String rolePath = role.getIdentifier() != null ? role.getIdentifier().getPath() : "unknown";
         Component roleName = Component.translatable(
-                "announcement.star.role."+rolePath);
+                "announcement.star.role." + rolePath);
         Component message = Component.translatable("message.noellesroles.skill_echo.heard", roleName)
                 .withStyle(ChatFormatting.GOLD);
 

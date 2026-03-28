@@ -28,16 +28,6 @@ public class MCItemsUtils extends TMMItemUtils {
 
         return false;
     }
-    public static boolean hasItemB(@NotNull Player player, Item stackToInsert) {
-        for (int i = 0; i < 9; ++i) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (stack.isEmpty()) {
-                if (stack.is(stackToInsert)) return true;
-            }
-        }
-
-        return false;
-    }
     public static List<Item> getItemsByTag(ServerLevel level, TagKey<Item> tag) {
         var opt2 = level.getServer().registryAccess()
                 .registry(Registries.ITEM);

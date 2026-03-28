@@ -23,7 +23,7 @@ import java.util.UUID;
 public class DetectiveInspectScreenHandler extends AbstractContainerMenu {
     
     private final Container displayInventory;
-    private final Player viewer;
+    public final Player viewer;
     private final UUID targetPlayerUuid;
     
     // 显示4行（36个槽位，对应玩家的主物品栏+快捷栏）
