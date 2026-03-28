@@ -156,6 +156,8 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> SEA_KING_SHOP = new ArrayList<>();
   // ==================== 水鬼商店 ====================
   public static ArrayList<ShopEntry> WATER_GHOST_SHOP = new ArrayList<>();
+  // ==================== 秉烛人商店 ====================
+  public static ArrayList<ShopEntry> CANDLE_BEARER_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -923,6 +925,12 @@ public class RoleShopHandler {
           ModRoles.WATER_GHOST_ID, WATER_GHOST_SHOP);
     }
 
+    // 秉烛人商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.CANDLE_BEARER_ID, CANDLE_BEARER_SHOP);
+    }
+
     // 故障机器人商店
     {
       List<ShopEntry> glitchRobotShop = new ArrayList<>();
@@ -1170,6 +1178,7 @@ public class RoleShopHandler {
     MARTIAL_ARTS_INSTRUCTOR_SHOP.clear();
     SEA_KING_SHOP.clear();
     WATER_GHOST_SHOP.clear();
+    CANDLE_BEARER_SHOP.clear();
 
     柜子区的商店.add(new ShopEntry(
         HSRItems.BANDIT_REVOLVER.getDefaultInstance(),
@@ -1663,5 +1672,12 @@ public class RoleShopHandler {
 
     // 水鬼商店
     initializeWaterGhostShop();
+
+    // 秉烛人商店
+    // 撬锁器 - 75金币
+    CANDLE_BEARER_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
   }
 }
