@@ -635,6 +635,7 @@ public class GameUtils {
         world.setDayTime(Level.TICKS_PER_DAY / 2);
         world.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, world.getServer());
         gameComponent.getGameMode().finalizeGame(world, gameComponent);
+        
         OnGameEnd.EVENT.invoker().onGameEnd(world, gameComponent);
         SRE.REPLAY_MANAGER.finalizeReplay(roundEnd.getWinStatus(), roundEnd);
 
@@ -786,10 +787,9 @@ public class GameUtils {
         roundEnd.CustomWinnerPlayers.clear();
 
         SREGameTimeComponent.KEY.get(world).reset();
-        gameComponent.clearRoleMap();
+        gameComponent.clearRoleMap(false);
         gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
         trainComponent.setTime(0);
-        gameComponent.sync();
 
         // 重置计分板组件
         SREGameScoreboardComponent scoreboardComponent = SREGameScoreboardComponent.KEY
