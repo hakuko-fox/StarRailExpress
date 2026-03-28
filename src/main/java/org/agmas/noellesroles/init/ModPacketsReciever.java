@@ -375,7 +375,6 @@ public class ModPacketsReciever {
                 .get(player);
             vulturePlayerComponent.bodiesEaten++;
             vulturePlayerComponent.sync();
-            player.playSound(SoundEvents.PLAYER_BURP, 1.0F, 0.5F);
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2));
             if (vulturePlayerComponent.bodiesEaten >= vulturePlayerComponent.bodiesRequired) {
               ArrayList<SRERole> shuffledKillerRoles = new ArrayList<>(Noellesroles.getEnableKillerRoles());
