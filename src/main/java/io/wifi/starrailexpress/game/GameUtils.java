@@ -331,13 +331,13 @@ public class GameUtils {
         int gamesAfter = unlockStorage.getGlobalGamesPlayed();
 
         List<ResourceLocation> newlyUnlockedRoles = RoleUnlockManager.getInstance()
-            .getNewlyUnlockedRoles(gamesBefore, gamesAfter, unlockStorage.getForceUnlockedRoles());
+                .getNewlyUnlockedRoles(gamesBefore, gamesAfter, unlockStorage.getForceUnlockedRoles());
         if (!newlyUnlockedRoles.isEmpty()) {
             RoleUnlockedHudPayload unlockPayload = new RoleUnlockedHudPayload(
-                gamesAfter,
-                newlyUnlockedRoles.stream().map(ResourceLocation::toString).toList());
+                    gamesAfter,
+                    newlyUnlockedRoles.stream().map(ResourceLocation::toString).toList());
             for (ServerPlayer player : readyPlayerList) {
-            ServerPlayNetworking.send(player, unlockPayload);
+                ServerPlayNetworking.send(player, unlockPayload);
             }
         }
 
@@ -658,7 +658,9 @@ public class GameUtils {
             SRERole playerRole = gameComponent.getRole(player);
             if (playerRole == null)
                 continue;
-            if(playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier()));
+            if (playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier())) {
+                continue;
+            }
             boolean isWinner = false;
             switch (winStatus) {
                 case CUSTOM:
