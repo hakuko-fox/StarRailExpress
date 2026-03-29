@@ -790,7 +790,8 @@ public class GameUtils {
         gameComponent.clearRoleMap(false);
         gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
         trainComponent.setTime(0);
-
+        gameComponent.roleWorldComponent.sync();
+        
         // 重置计分板组件
         SREGameScoreboardComponent scoreboardComponent = SREGameScoreboardComponent.KEY
                 .get(world.getServer().getScoreboard());

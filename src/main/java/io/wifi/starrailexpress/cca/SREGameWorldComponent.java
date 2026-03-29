@@ -39,7 +39,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     public static final ComponentKey<SREGameWorldComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("game"),
             SREGameWorldComponent.class);
     private final Level world;
-    private SRERoleWorldComponent roleWorldComponent = null;
+    public SRERoleWorldComponent roleWorldComponent = null;
     private boolean canJump = false;
     private boolean haveOutsideSounds = false;
     private boolean lockedToSupporters = false;
