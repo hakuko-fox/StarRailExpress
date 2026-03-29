@@ -100,7 +100,7 @@ public class SREClient implements ClientModInitializer {
     public static HPManager handParticleManager;
     public static Map<Player, Vec3> particleMap;
     public static Map<UUID, Integer> cachedHighLightMap = new HashMap<>();
-    public static ArrayList<Entity> pendingHighLight = new ArrayList<>();
+    public static Set<Entity> pendingHighLight = new HashSet<>();
     private static boolean prevGameRunning;
     public static SREGameWorldComponent gameComponent;
     public static AreasWorldComponent areaComponent;
@@ -669,7 +669,8 @@ public class SREClient implements ClientModInitializer {
 
     private static void updateInstinctCache(Minecraft client) {
         for (Entity entity : pendingHighLight) {
-            cachedHighLightMap.put(entity.getUUID(), getInstinctHighlight(entity));
+            int a = getInstinctHighlight(entity);
+            cachedHighLightMap.put(entity.getUUID(), a);
         }
         pendingHighLight.clear();
         if (client.level.getGameTime() % 20 == 0) {
@@ -788,6 +789,9 @@ public class SREClient implements ClientModInitializer {
     }
 
     public static int getCachedInstinctHighlight(Entity target) {
+        if (!(target instanceof ItemEntity || target instanceof Player || target instanceof NoteEntity || target instanceof FirecrackerEntity)){
+            return -1;
+        }
         if (!cachedHighLightMap.containsKey(target.getUUID())) {
             pendingHighLight.add(target);
             return -1;
