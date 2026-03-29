@@ -679,7 +679,7 @@ public class SREClient implements ClientModInitializer {
             }
             cachedHighLightMap.put(entity.getUUID(), getInstinctHighlight(entity));
         }
-        for(var it: toRemove){
+        for (var it : toRemove) {
             cachedHighLightMap.remove(it);
         }
     }
