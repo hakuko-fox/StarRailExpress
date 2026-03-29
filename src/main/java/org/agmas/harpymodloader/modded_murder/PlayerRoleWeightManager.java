@@ -97,7 +97,7 @@ public class PlayerRoleWeightManager {
             PlayerRoleWeightManager.playerWeights.putIfAbsent(player, weightManager);
         }
         // 记录本局阵营，更新连续计数
-        weightManager.updateStreak(type);
+        weightManager.updateStreak((type));
         // 比例缩放：当总权重过大时等比缩小，保留历史比例且避免极端权重堆积
         if (weightManager.getWeightSum() >= 25) {
             weightManager.scaleDown();
@@ -187,7 +187,7 @@ public class PlayerRoleWeightManager {
          * 阵营组与 getFactionGroup 保持一致：无辜=1, 中立=2, 亲杀中立=3, 杀手=4, 警卫=5。
          */
         public void updateStreak(int type) {
-            int fg = (type <= 1) ? 1 : type;
+            int fg = getFactionGroup(type);
             if (fg == lastAssignedFactionGroup) {
                 streakCount++;
             } else {
