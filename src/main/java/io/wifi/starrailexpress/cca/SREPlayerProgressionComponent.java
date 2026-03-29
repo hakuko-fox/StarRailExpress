@@ -856,7 +856,7 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
 
     @Override
     public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        if (!SREConfig.instance().enableProgressionSystem)
+        if (!this.player.level().isClientSide && !SREConfig.instance().enableProgressionSystem)
             return;
         this.level = Math.max(1, tag.getInt("Level"));
         this.experience = tag.getInt("Experience");
