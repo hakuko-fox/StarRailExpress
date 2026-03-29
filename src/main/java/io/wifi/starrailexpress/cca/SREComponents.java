@@ -39,7 +39,7 @@ public class SREComponents
         registry.beginRegistration(Player.class, SREPlayerShopComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerShopComponent::new);
         registry.beginRegistration(Player.class, DynamicShopComponent.KEY)
-                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY).end(DynamicShopComponent::new);
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(DynamicShopComponent::new);
         registry.beginRegistration(Player.class, SREPlayerPoisonComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerPoisonComponent::new);
         registry.beginRegistration(Player.class, SREPlayerPsychoComponent.KEY)
@@ -52,9 +52,9 @@ public class SREComponents
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
                 .end(SREPlayerAFKComponent::new);
         registry.beginRegistration(Player.class, SREPlayerSkinsComponent.KEY)
-                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY).end(SREPlayerSkinsComponent::new);
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerSkinsComponent::new);
         registry.beginRegistration(Player.class, SREPlayerProgressionComponent.KEY)
-                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY).end(SREPlayerProgressionComponent::new);
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerProgressionComponent::new);
         registry.beginRegistration(Player.class, SREPlayerNunchuckComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerNunchuckComponent::new);
         registry.beginRegistration(Player.class, NameTagInventoryComponent.KEY)
