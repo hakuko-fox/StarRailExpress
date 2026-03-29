@@ -63,7 +63,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
 
     public static ArrayList<Player> getPlayersAffectedByExplosion(Level level, double x, double y, double z,
             float radius) {
-        float diameter = radius * 2.0F;
+        float diameter = radius;
         int minX = Mth.floor(x - diameter - 1.0F);
         int maxX = Mth.floor(x + diameter + 1.0F);
         int minY = Mth.floor(y - diameter - 1.0F);
