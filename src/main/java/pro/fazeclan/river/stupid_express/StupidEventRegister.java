@@ -3,6 +3,7 @@ package pro.fazeclan.river.stupid_express;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -43,27 +44,21 @@ public class StupidEventRegister {
             }
         });
         // 初学被初学杀死
-        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-
+        AfterShieldAllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             var level = (ServerLevel) victim.level();
             var gameWorldComponent = SREGameWorldComponent.KEY.get(level);
 
             if (!gameWorldComponent.isRole(victim, SERoles.INITIATE)) {
-                return;
+                return true;
             }
             if (killer == null)
-                return;
-            if (!gameWorldComponent.isSkillAvailable) {
-                // 技能不可用
-                victim.displayClientMessage(
-                        Component.translatable("message.stupid_express.generic.skill_not_available"), true);
-                return;
-            }
+                return true;
             if (gameWorldComponent.isRole(killer, SERoles.INITIATE)) {
                 var shuffledKillerRoles = new ArrayList<>(StupidExpress.getEnableRoles());
                 shuffledKillerRoles.removeIf(role -> Harpymodloader.VANNILA_ROLES.contains(role) || !role.canUseKiller()
                         || HarpyModLoaderConfig.HANDLER.instance().getDisabled().contains(role.identifier().getPath())
-                    || role.identifier().equals(ResourceLocation.fromNamespaceAndPath("noellesroles", "water_ghost"))
+                        || role.identifier()
+                                .equals(ResourceLocation.fromNamespaceAndPath("noellesroles", "water_ghost"))
                         || role.identifier().equals(ResourceLocation.fromNamespaceAndPath("noellesroles", "poisoner"))
                         || role.identifier().getPath().equals("dio")
                         || role.identifier().equals(ResourceLocation.fromNamespaceAndPath("noellesroles", "doctor"))
@@ -82,7 +77,9 @@ public class StupidEventRegister {
 
                 StupidRoleUtils.changeRole(killer, role, true);
                 StupidRoleUtils.sendWelcomeAnnouncement((ServerPlayer) killer);
+                return false;
             }
+            return true;
         });
         // 初学杀错人
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
@@ -183,7 +180,8 @@ public class StupidEventRegister {
                     shuffledKillerRoles.removeIf(role -> {
                         if (role.identifier().getPath().equals("dio"))
                             return true;
-                        if (role.identifier().equals(ResourceLocation.fromNamespaceAndPath("noellesroles", "water_ghost")))
+                        if (role.identifier()
+                                .equals(ResourceLocation.fromNamespaceAndPath("noellesroles", "water_ghost")))
                             return true;
                         if (!gameWorldComponent.isKillerTeamRole(role))
                             return true;
