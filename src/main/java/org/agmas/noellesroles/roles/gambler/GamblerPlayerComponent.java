@@ -67,6 +67,13 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
     }
 
     public void clientTick() {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (!gameWorld.isRole(player, ModRoles.GAMBLER))
+            return;
+        if (!gameWorld.isRunning())
+            return;
+        if (roleDrawTimer < DRAW_INTERVAL)
+            roleDrawTimer++;
     }
 
     public void serverTick() {
@@ -84,9 +91,9 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
             roleDrawTimer = 0;
             drawNewRole();
         }
-        if (roleDrawTimer % 20 == 0) {
-            sync();
-        }
+        // if (roleDrawTimer % 600 == 0) {
+        // sync();
+        // }
     }
 
     private void drawNewRole() {
@@ -168,7 +175,7 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
 
         roleDrawTimer = tag.getInt("roleDrawTimer");
     }
-    
+
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }
