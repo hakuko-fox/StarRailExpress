@@ -41,10 +41,11 @@ public class SignedPaperItem extends Item {
                 e -> e != player);
 
         for (Player target : nearby) {
+            if (target.isSpectator())
+                continue;
             Vec3 toTarget = target.getEyePosition().subtract(eyePos);
             if (toTarget.lengthSqr() < 1e-6)
                 continue;
-
             double dot = lookVec.dot(toTarget.normalize());
             if (dot > FOV_COS_THRESHOLD && isStarPlayer(target) && level.getGameTime() % 20 == 0) {
                 player.addEffect(new MobEffectInstance(
