@@ -20,7 +20,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
@@ -63,7 +62,8 @@ public class GamblerHandler {
 
         // 获取随机数决定结果 (0-99)
         int chance = victim.getRandom().nextInt(100);
-        if (victim instanceof ServerPlayer) ConfigWorldComponent.onPlayerUsedSkill( (ServerPlayer) victim);
+        if (victim instanceof ServerPlayer)
+            ConfigWorldComponent.onPlayerUsedSkill((ServerPlayer) victim);
 
         victim.level().players().forEach(
                 player -> {
@@ -113,12 +113,6 @@ public class GamblerHandler {
 
             // 变成杀手阵营
             ArrayList<SRERole> shuffledKillerRoles = new ArrayList<>(Noellesroles.getEnableKillerRoles());
-                shuffledKillerRoles.removeIf(role -> role.identifier().equals(ModRoles.EXECUTIONER_ID)
-                    || role.identifier().equals(ModRoles.WATER_GHOST_ID)
-                    || role.identifier().equals(ModRoles.MA_CHEN_XU_ID)
-                    || role.identifier().equals(ModRoles.DIO_ID)
-                    || Harpymodloader.VANNILA_ROLES.contains(role) || !role.canUseKiller()
-                    || HarpyModLoaderConfig.HANDLER.instance().getDisabled().contains(role.identifier().getPath()));
             if (shuffledKillerRoles.isEmpty())
                 shuffledKillerRoles.add(TMMRoles.KILLER);
             Collections.shuffle(shuffledKillerRoles);
