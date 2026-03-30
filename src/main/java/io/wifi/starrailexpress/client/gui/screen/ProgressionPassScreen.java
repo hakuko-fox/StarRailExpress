@@ -171,7 +171,13 @@ public class ProgressionPassScreen extends Screen {
         int count = progression.getFactionCards().getOrDefault(type, 0);
         Component label = Component.literal(
                 Component.translatable("sre.pass.faction." + type.questKey).getString() + " x" + count);
-        var btn = ModernButton.builder(label, b -> sendCommand("sre:pass activate " + type.questKey))
+        var btn = ModernButton.builder(label, b -> {
+            if (count > 0) {
+                sendCommand("sre:pass activate " + type.questKey);
+                progression.getFactionCards().put(type, count - 1);
+                b.active = false;
+            }
+        })
                 .bounds(x, y, width, 22).accentColor(accentColor).build();
         btn.active = count > 0;
         return btn;
@@ -246,11 +252,13 @@ public class ProgressionPassScreen extends Screen {
         int infoY = panelY + panelH - 62;
         // 不保存这一项所以删了
         // String activeCard = true
-        //         ? Component.translatable("sre.pass.not_active").getString()
-        //         : Component.translatable("sre.pass.faction." + progression.getActiveFactionCard().questKey,
-        //                 Component.translatable(progression.getActiveFactionCard().displayName)).getString();
-        // g.drawString(font, Component.translatable("sre.pass.active_card", activeCard).getString(), panelX + 24, infoY,
-        //         applyAlpha(0xFFF7D791, animAlpha), false);
+        // ? Component.translatable("sre.pass.not_active").getString()
+        // : Component.translatable("sre.pass.faction." +
+        // progression.getActiveFactionCard().questKey,
+        // Component.translatable(progression.getActiveFactionCard().displayName)).getString();
+        // g.drawString(font, Component.translatable("sre.pass.active_card",
+        // activeCard).getString(), panelX + 24, infoY,
+        // applyAlpha(0xFFF7D791, animAlpha), false);
 
         long dailyRem = Math.max(0L, progression.getLastQuestRefreshTime()
                 + 24L * 60L * 60L * 1000L - System.currentTimeMillis());
@@ -399,12 +407,12 @@ public class ProgressionPassScreen extends Screen {
     }
 
     // private static float clamp01(float value) {
-    //     return Math.max(0.0f, Math.min(1.0f, value));
+    // return Math.max(0.0f, Math.min(1.0f, value));
     // }
 
     // private static float easeOutCubic(float t) {
-    //     float inv = 1.0f - t;
-    //     return 1.0f - inv * inv * inv;
+    // float inv = 1.0f - t;
+    // return 1.0f - inv * inv * inv;
     // }
 
     private static int applyAlpha(int color, int alpha) {
