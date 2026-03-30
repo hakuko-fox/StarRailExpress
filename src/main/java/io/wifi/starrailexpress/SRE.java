@@ -238,7 +238,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             CoinToLotteryCommand.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher);
             net.exmo.sre.client.chat.ChatDialogueCommand.register(dispatcher);
-            io.wifi.starrailexpress.command.UnlockAllRolesCommand.register(dispatcher);
+            // io.wifi.starrailexpress.command.UnlockAllRolesCommand.register(dispatcher);
         }));
     }
 
