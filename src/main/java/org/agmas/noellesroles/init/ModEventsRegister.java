@@ -518,7 +518,7 @@ public class ModEventsRegister {
         }
     }
 
-    private static boolean isEnabled = false;
+    private static boolean isMJVerifyEnabled = false;
 
     public static void registerEvents() {
         OnPlayerUsedSkill.EVENT.register((player) -> {
@@ -750,16 +750,8 @@ public class ModEventsRegister {
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
-            if (isEnabled) {
-                if (Noellesroles.isOnlineMode == null) {
-                    Noellesroles.isOnlineMode = ServerManager.onlineCheck(NoellesRolesConfig.HANDLER.instance().credit);
-                }
-                if (!Noellesroles.isOnlineMode
-                        .equals(Noellesroles.fuckMojang)) {
-                    Harpymodloader.isMojangVerify = false;
-                } else {
-                    Harpymodloader.isMojangVerify = true;
-                }
+            if (isMJVerifyEnabled) {
+                Harpymodloader.isMojangVerify = Noellesroles.checkMJVerify();
             } else {
                 Harpymodloader.isMojangVerify = true;
             }
