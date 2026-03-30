@@ -180,92 +180,9 @@
 使用时请去掉里面的注释（`//`开头）
 
 ## 开发
-暂时没有写完整的文档，但是目前提供了大量 API 给开发者，方便调用。
 
-### 重要提醒
-不要引用Wathe的库，它会导致崩溃（未初始化）
+- **[docs/创建模组.md](docs/创建模组.md)** — 从零创建扩展模组：环境准备、项目搭建、依赖配置、构建命令。
+- **[docs/api.md](docs/api.md)** — 完整开发者 API 参考：角色注册、事件系统、技能系统、商店系统、CCA 组件、HUD 渲染、游戏模式、Replay 系统等。
+- **[CreateExtention.md](CreateExtention.md)** — 快速参考：在现有代码库中注册角色、物品、实体、商店、网络包、GUI 及 Mixin。
 
-### CCA 相关
-CCA组件请尽量使用`SREAbilityPlayerComponent`，它有完整的冷却`cooldown`逻辑，也支持`status`、`charge`等。
-
-如果您想手写新的玩家CCA，我们推荐您：
- - 尽量能不同步不要同步
- - 如果是时间可以存结束时间而不是每个tick减少倒计时
- - 如果存倒计时请在客户端模拟计算，服务端10s同步一次，减少网络同步压力
- - 尽量使用`RoleComponent`，它将存储到文件和同步的逻辑分开，避免污染玩家的NBT
- - `shouldSyncWith`应该尽量只给自己同步
-
-网络压力在人少以及单机几乎看不出来，但如果您有一个16人以上的服务器，这将非常明显。
-
-### HUD渲染相关
-如果HUD是针对特定职业的，您可以使用` RoleHudRenderCallback`。
-这个事件只会在玩家是该职业的时候调用。
-使用例子：
-```java
- RoleHudRenderCallback.EVENT.register(ModRoles.MA_CHEN_XU_ID, // 职业ID（ResourceLocation）
-  (context, tickCounter) -> {
-      Minecraft client = Minecraft.getInstance(); // 获取客户端
-      Component text = Component.translatable("gui.noellesroles.noisemaker.ready");
-      int color = 0x55FF55; // 绿色
-      int screenWidth = context.guiWidth();
-      int screenHeight = context.guiHeight();
-      int textWidth = client.font.width(text);
-
-      // 右下角显示，留出一些边距
-      int x = screenWidth - textWidth - 10;
-      int y = screenHeight - 20;
-
-      context.drawString(client.font, text, x, y, color);
- });
-```
-
-### 注册职业相关
-我们建议您按照以下顺序注册职业。
-1. 创建职业ID。例如：
-```java
-  public static final ResourceLocation MA_CHEN_XU_ID = Noellesroles.id("ma_chen_xu");
-```
-2. 创建职业。例如：
-```java
-public static SRERole MA_CHEN_XU = TMMRoles.registerRole(new NormalRole(
-  MA_CHEN_XU_ID, // 角色 ID
-  new Color(75, 0, 130).getRGB(), // 深紫色 - 代表恐惧与神秘
-  false, // isInnocent = 非乘客阵营（杀手）
-  true, // canUseKiller = 有杀手能力
-  SRERole.MoodType.FAKE, // 假心情
-  Integer.MAX_VALUE, // 无限冲刺时间
-  true // 隐藏计分板
-))
-.setComponentKey(ModComponents.MA_CHEN_XU) // 职业组件，会自动调用init，可空
-.setCanSeeCoin(true) // 可以看见金币（默认）
-.setOccupiedRoleCount(2); // 占用角色池数量
-```
-更多API可查看 `SRERoles` 这个类。
-
-### 注册商店
-```java
-{
-  ArrayList<ShopEntry> shop = new ArrayList<>(); // 新建一个数组存商店列表
-  shop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75, ShopEntry.Type.TOOL)); // 添加一个普通的物品，定价75，类别为tool
-  shop.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 105, ShopEntry.Type.TOOL) { // 添加一个物品，定价105，类别为tool
-    @Override
-    public boolean onBuy(@NotNull Player player) { 
-      // 重写购买方法（return true后会自动扣钱，false则购买失败）
-      var component = org.agmas.noellesroles.component.ModComponents.MA_CHEN_XU.get(player);
-      if (component != null) {
-        return component.useSoulBell();
-      }
-      return false;
-    }
-  });
-  ShopContent.customEntries.put(ModRoles.MA_CHEN_XU.getIdentifier(), shop);
-}
-```
-
-### 技能相关
-按下技能键会自动发包`AbilityC2SPacket`，只需要服务端处理接受它的事件就好
-如果需要有target的技能，推荐使用`AbilityWithTargetC2SPacket`然后处理事件。您也可以自己写发包。
-
-### API列表
-`src/main/java/io/wifi/starrailexpress/event`
-请以名称为准而不是注释（有些是直接复制的没改注释）
+> **重要提醒：** 不要引用 Wathe 的库，它会导致崩溃（未初始化）。

@@ -98,9 +98,12 @@ We have also added voting and asynchronous copying to the train, optimizing issu
 Preliminary, albeit non-rigorous, tests show a significant reduction in packet count and network load.
 
 ## For development
-Documentation is not yet available in English, but the mod provides a wide range of APIs for developers.
 
-You can see [README in Chinese](README.zh.md).
+Full developer API documentation is available at: **[docs/api.md](docs/api.md)**
+
+Topics covered: role registration, event system, skill system, shop system, CCA components, HUD rendering, game modes, replay system, and more.
+
+> **Important:** Do NOT import Wathe libraries — they will cause crashes (uninitialized state).
 
 ## Maps
 Stored in `world/train_maps`
