@@ -101,8 +101,7 @@ public class ProgressionPassScreen extends Screen {
                 ModernButton.builder(Component.translatable("sre.pass.day"), btn -> {
                     activeTab = 0;
                     init();
-                }).accentBar(ModernButton.AccentSide.LEFT, ModernButton.AccentSide.BOTTOM,
-                        ModernButton.AccentSide.RIGHT, ModernButton.AccentSide.TOP)
+                }).accentBar(ModernButton.AccentSide.TOP)
                         .bounds(panelX + 24, tabY, tabW, 20)
                         .accentColor(activeTab == 0 ? 0xFF3AA6FF : 0xFF2B3A55)
                         .build());
@@ -110,8 +109,7 @@ public class ProgressionPassScreen extends Screen {
                 ModernButton.builder(Component.translatable("sre.pass.weekly"), btn -> {
                     activeTab = 1;
                     init();
-                }).accentBar(ModernButton.AccentSide.LEFT, ModernButton.AccentSide.BOTTOM,
-                        ModernButton.AccentSide.RIGHT, ModernButton.AccentSide.TOP)
+                }).accentBar(ModernButton.AccentSide.TOP)
                         .bounds(panelX + 24 + tabW + 8, tabY, tabW, 20)
                         .accentColor(activeTab == 1 ? 0xFFFFD060 : 0xFF2B3A55)
                         .build());
@@ -119,8 +117,7 @@ public class ProgressionPassScreen extends Screen {
                 ModernButton.builder(Component.translatable("sre.pass.permanent"), btn -> {
                     activeTab = 2;
                     init();
-                }).accentBar(ModernButton.AccentSide.LEFT, ModernButton.AccentSide.BOTTOM,
-                        ModernButton.AccentSide.RIGHT, ModernButton.AccentSide.TOP)
+                }).accentBar(ModernButton.AccentSide.TOP)
                         .bounds(panelX + 24 + (tabW + 8) * 2, tabY, tabW, 20)
                         .accentColor(activeTab == 2 ? 0xFFA98BFF : 0xFF2B3A55)
                         .build());
