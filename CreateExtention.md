@@ -1,5 +1,28 @@
 # 如何创建扩展
 
+> 本文档为**在现有代码库中**注册新内容的快速参考。  
+> 如果你要创建一个**独立的扩展模组**（新 Gradle 项目），请先阅读 **[docs/创建模组.md](docs/创建模组.md)**。
+
+## 项目构建
+
+在开始开发前，确保项目可以正常编译和运行：
+
+```bash
+# 编译并打包（产物在 build/libs/）
+./gradlew build
+
+# 启动测试客户端
+./gradlew runClient
+
+# 启动测试服务端
+./gradlew runServer
+
+# 清理构建缓存
+./gradlew clean
+```
+
+> **环境要求：** JDK 21，并能访问 `maven.fabricmc.net`、`maven.terraformersmc.com` 等 Maven 仓库。
+
 ## 抽奖系统
 
 ### 创建新的稀有度
