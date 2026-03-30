@@ -22,7 +22,7 @@ import java.util.Collection;
 public class ToggleWaypointsCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tmm:togglewaypoints")
-            .requires((t)->t.hasPermission(2))
+            .requires(source -> source.hasPermission(2)) // 需要OP权限
             .executes(context -> toggleWaypoints(context, null, null, null, null)) // 默认为切换操作，对所有玩家
             .then(Commands.argument("target", EntityArgument.players())
                 .executes(context -> toggleWaypoints(context, EntityArgument.getPlayers(context, "target"), null, null, null))
