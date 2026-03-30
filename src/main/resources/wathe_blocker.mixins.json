@@ -15,7 +15,6 @@
     "client.BlockWatheClient",
     "client.IHateWatheModelLayers",
     "client.PanoramaMixin",
-    "client.RatatouilleArmorFixMixin",
     "client.WatheWheelBlockEntityRendererMixin"
   ]
 }

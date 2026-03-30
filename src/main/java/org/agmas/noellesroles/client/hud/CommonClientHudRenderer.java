@@ -9,8 +9,10 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -33,8 +35,13 @@ import org.agmas.noellesroles.roles.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.roles.thief.ThiefPlayerComponent;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.function.BiConsumer;
 
 public class CommonClientHudRenderer {
+  static ArrayList<BiConsumer<GuiGraphics, DeltaTracker>> roleRenderConsumers = null;
+  static SRERole lastRenderRole = null;
+
   public static void registerFather() {
     HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
@@ -65,14 +72,17 @@ public class CommonClientHudRenderer {
         return;
       }
       // if (SREClient.isPlayerSpectator())
-      //   return;
+      // return;
       SRERole role = SREClient.getCachedPlayerRole();
       if (role == null)
         return;
-      var consumer = RoleHudRenderCallback.EVENT.getConsumer(role.identifier());
-      if (consumer != null) {
+      if (role != lastRenderRole) {
+        roleRenderConsumers = RoleHudRenderCallback.EVENT.getConsumer(role.identifier());
+        lastRenderRole = role;
+      }
+      if (roleRenderConsumers != null) {
         try {
-          consumer.forEach((c) -> c.accept(guiGraphics, deltaTracker));
+          roleRenderConsumers.forEach((c) -> c.accept(guiGraphics, deltaTracker));
         } catch (Exception e) {
           RoleHudRenderCallback.EVENT.removeConsumer(role.identifier());
           SRE.LOGGER.error("[ROLE HUD ERROR] Error while render role hud of {}. Removed it.",
