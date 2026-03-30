@@ -207,7 +207,7 @@ public class ProgressionCommand {
     FactionCardType type = FactionCardType.fromString(faction);
     if (!component.activateFactionCard(type)) {
       source.sendFailure(Component.translatable("cmd.stupid_express.progression.activate.failed",
-          faction));
+           Component.translatable(type.displayName)));
       return 0;
     }
     source.sendSuccess(() -> Component.translatable("cmd.stupid_express.progression.activate.success",
