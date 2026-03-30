@@ -32,8 +32,8 @@ import java.util.List;
 public class WheelchairEntity extends Mob {
 
     // ===== 同步数据：加速时间（类似 Pig 的 DATA_BOOST_TIME）=====
-    private static final EntityDataAccessor<Integer> DATA_BOOST_TIME =
-            SynchedEntityData.defineId(WheelchairEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_BOOST_TIME = SynchedEntityData
+            .defineId(WheelchairEntity.class, EntityDataSerializers.INT);
 
     // ===== 耐久（保留原有变量名）=====
     public int durability = 60;
@@ -44,7 +44,7 @@ public class WheelchairEntity extends Mob {
     // ===== 加速相关 =====
     private int boostTime;
     private boolean boosting;
-    
+
     // ===== 瘫痪相关 =====
     private int stunTime;
     private boolean stunned;
@@ -53,12 +53,12 @@ public class WheelchairEntity extends Mob {
     private ItemStack item = ItemStack.EMPTY;
     private SREGameWorldComponent gameWorldComponent;
     private Vec3 lastPos = null;
-    
+
     // ===== 减速与红石冷却 =====
     private int slowTime; // ticks remaining for slow effect
     private float slowMultiplier = 1.0f; // applied multiplier when slowed
     private int redstoneCooldown; // ticks until redstone can trigger again
-        private int emeraldCooldown; // ticks until emerald boost can be applied again
+    private int emeraldCooldown; // ticks until emerald boost can be applied again
 
     public WheelchairEntity(EntityType<? extends Mob> entityType, Level world) {
         super(entityType, world);
@@ -86,8 +86,8 @@ public class WheelchairEntity extends Mob {
     }
 
     // 同步数据：瘫痪时间（用于外部访问）
-    private static final EntityDataAccessor<Integer> DATA_STUN_TIME =
-            SynchedEntityData.defineId(WheelchairEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_STUN_TIME = SynchedEntityData.defineId(WheelchairEntity.class,
+            EntityDataSerializers.INT);
 
     // ===== 对外公开的操作/访问器 =====
     public boolean isBoosting() {
@@ -177,8 +177,10 @@ public class WheelchairEntity extends Mob {
         }
 
         // --- 左右输入控制旋转（保留玩家左右操控轮椅的位置）---
-        if (player.xxa > 0) deltaRotation -= 2.2f;
-        if (player.xxa < 0) deltaRotation += 2.2f;
+        if (player.xxa > 0)
+            deltaRotation -= 2.2f;
+        if (player.xxa < 0)
+            deltaRotation += 2.2f;
         this.setYRot(this.getYRot() + deltaRotation);
         this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
         deltaRotation *= 0.8f;
@@ -211,7 +213,8 @@ public class WheelchairEntity extends Mob {
     // ===== getRiddenInput：前进后退根据当前朝向移动（类似 Pig.getRiddenInput）=====
     @Override
     protected Vec3 getRiddenInput(Player player, Vec3 travelVector) {
-        if (this.stunned) return Vec3.ZERO;
+        if (this.stunned)
+            return Vec3.ZERO;
         float forward = player.zza;
         if (forward > 0) {
             return new Vec3(0.0, 0.0, 1.0);
@@ -240,22 +243,24 @@ public class WheelchairEntity extends Mob {
         if (this.boosting && this.boostTime-- <= 0) {
             this.boosting = false;
         }
-        
+
         // 粒子拖尾 - 服务端发送
         if (this.boosting && this.level() instanceof ServerLevel serverLevel) {
             for (int i = 0; i < 4; i++) {
                 serverLevel.sendParticles(
-                    ParticleTypes.FLAME,
-                    this.getX() + Mth.triangleWave(this.random.nextFloat(), 0.0F) * (float) this.getBbWidth() * 0.5F,
-                    this.getY() + 0.5 + Mth.triangleWave(this.random.nextFloat(), -0.7F),
-                    this.getZ() + Mth.triangleWave(this.random.nextFloat(), 0.0F) * (float) this.getBbWidth() * 0.5F,
-                    1, // 发送1个粒子
-                    0.0, 0.0, 0.0, // 速度分量
-                    0.0 // 最大随机偏移
+                        ParticleTypes.FLAME,
+                        this.getX()
+                                + Mth.triangleWave(this.random.nextFloat(), 0.0F) * (float) this.getBbWidth() * 0.5F,
+                        this.getY() + 0.5 + Mth.triangleWave(this.random.nextFloat(), -0.7F),
+                        this.getZ()
+                                + Mth.triangleWave(this.random.nextFloat(), 0.0F) * (float) this.getBbWidth() * 0.5F,
+                        1, // 发送1个粒子
+                        0.0, 0.0, 0.0, // 速度分量
+                        0.0 // 最大随机偏移
                 );
             }
         }
-        
+
         // 减速计时
         if (this.slowTime > 0) {
             this.slowTime--;
@@ -268,7 +273,7 @@ public class WheelchairEntity extends Mob {
         if (this.redstoneCooldown > 0) {
             this.redstoneCooldown--;
         }
-        
+
         // 绿宝石触发冷却计时
         if (this.emeraldCooldown > 0) {
             this.emeraldCooldown--;
@@ -287,7 +292,8 @@ public class WheelchairEntity extends Mob {
 
     /**
      * 应用减速效果
-     * @param ticks 持续时长（tick）
+     * 
+     * @param ticks      持续时长（tick）
      * @param multiplier 速度倍率（例如 0.5f 表示减半）
      */
     public void applySlow(int ticks, float multiplier) {
@@ -297,21 +303,24 @@ public class WheelchairEntity extends Mob {
 
     /**
      * 尝试应用红石瘫痪效果，若处于冷却中则返回 false
-
-        /**
-         * 尝试应用一次性加速（带冷却），如果当前可用则触发 boost 并设置冷却
-         * @param cooldownTicks 冷却时长（tick）
-         * @return 是否成功触发
-         */
-        public boolean tryBoostWithCooldown(int cooldownTicks) {
-            if (this.emeraldCooldown <= 0) {
-                this.boost();
-                this.emeraldCooldown = cooldownTicks;
-                return true;
-            }
-            return false;
+     * 
+     * /**
+     * 尝试应用一次性加速（带冷却），如果当前可用则触发 boost 并设置冷却
+     * 
+     * @param cooldownTicks 冷却时长（tick）
+     * @return 是否成功触发
+     */
+    public boolean tryBoostWithCooldown(int cooldownTicks) {
+        if (this.emeraldCooldown <= 0) {
+            this.boost();
+            this.emeraldCooldown = cooldownTicks;
+            return true;
         }
-     * @param stunTicks 眩晕时长（tick）
+        return false;
+    }
+
+    /**
+     * @param stunTicks     眩晕时长（tick）
      * @param cooldownTicks 触发后冷却时长（tick）
      */
     public boolean tryApplyRedstoneStun(int stunTicks, int cooldownTicks) {
