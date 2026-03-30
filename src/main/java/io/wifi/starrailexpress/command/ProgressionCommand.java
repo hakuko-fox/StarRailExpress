@@ -247,7 +247,7 @@ public class ProgressionCommand {
       return 0;
     }
     SREPlayerProgressionComponent.KEY.get(player).setFactionCard(type, count);
-    source.sendSuccess(() -> Component.translatable("cmd.stupid_express.progression.givecard.success",
+    source.sendSuccess(() -> Component.translatable("cmd.stupid_express.progression.setcard.success",
         player.getName().getString(), count, Component.translatable(type.displayName)), true);
     return 1;
   }
