@@ -14,28 +14,45 @@
    - [NormalRole — 标准角色](#normalrole--标准角色)
    - [ExtraEffectRole — 药水效果角色](#extraeffectrole--药水效果角色)
    - [TMMRoles — 角色注册表](#tmmroles--角色注册表)
-3. [CCA 组件 / CCA Components](#cca-组件--cca-components)
+3. [修饰符系统 / Modifier System](#修饰符系统--modifier-system)
+   - [SREModifier — 修饰符基类](#sremodifier--修饰符基类)
+   - [HMLModifiers — 修饰符注册表](#hmlmodifiers--修饰符注册表)
+   - [WorldModifierComponent — 修饰符 CCA](#worldmodifiercomponent--修饰符-cca)
+4. [CCA 组件 / CCA Components](#cca-组件--cca-components)
    - [RoleComponent — 角色组件接口](#rolecomponent--角色组件接口)
    - [SREAbilityPlayerComponent — 通用技能组件](#sreabilityplayercomponent--通用技能组件)
-4. [技能系统 / Skill System](#技能系统--skill-system)
+5. [技能系统 / Skill System](#技能系统--skill-system)
    - [RoleSkill — 技能注册](#roleskill--技能注册)
-5. [商店系统 / Shop System](#商店系统--shop-system)
+6. [商店系统 / Shop System](#商店系统--shop-system)
    - [ShopEntry — 商店条目](#shopentry--商店条目)
    - [ShopContent — 商店内容管理](#shopcontent--商店内容管理)
-6. [蓄力物品系统 / Chargeable Item System](#蓄力物品系统--chargeable-item-system)
+7. [蓄力物品系统 / Chargeable Item System](#蓄力物品系统--chargeable-item-system)
    - [ChargeableItem — 蓄力物品接口](#chargeableitem--蓄力物品接口)
    - [ChargeableItemRegistry — 蓄力物品注册表](#chargeableitemregistry--蓄力物品注册表)
-7. [事件系统 / Event System](#事件系统--event-system)
-   - [游戏生命周期事件](#游戏生命周期事件)
-   - [玩家死亡事件](#玩家死亡事件)
-   - [技能与交互事件](#技能与交互事件)
-   - [渲染与客户端事件](#渲染与客户端事件)
-   - [其他事件](#其他事件)
-8. [游戏模式系统 / Game Mode System](#游戏模式系统--game-mode-system)
-   - [GameMode — 游戏模式基类](#gamemode--游戏模式基类)
-   - [SREGameModes — 游戏模式注册表](#sregamemodes--游戏模式注册表)
-9. [HUD 渲染 / HUD Rendering](#hud-渲染--hud-rendering)
-10. [Replay 系统 / Replay System](#replay-系统--replay-system)
+8. [物品类型 / Item Types](#物品类型--item-types)
+   - [可继承物品基类](#可继承物品基类)
+   - [SkinableItem — 可换皮肤物品](#skinableitem--可换皮肤物品)
+9. [皮肤系统 / Skin System](#皮肤系统--skin-system)
+   - [SkinManager — 皮肤工具类](#skinmanager--皮肤工具类)
+   - [注册自定义皮肤](#注册自定义皮肤)
+10. [事件系统 / Event System](#事件系统--event-system)
+    - [游戏生命周期事件](#游戏生命周期事件)
+    - [玩家死亡事件](#玩家死亡事件)
+    - [技能与交互事件](#技能与交互事件)
+    - [渲染与客户端事件](#渲染与客户端事件)
+    - [其他事件](#其他事件)
+11. [Harpymodloader API](#harpymodloader-api)
+    - [Harpymodloader — 主入口](#harpymodloader--主入口)
+    - [HML 事件](#hml-事件)
+12. [游戏模式系统 / Game Mode System](#游戏模式系统--game-mode-system)
+    - [GameMode — 游戏模式基类](#gamemode--游戏模式基类)
+    - [SREGameModes — 游戏模式注册表](#sregamemodes--游戏模式注册表)
+13. [HUD 渲染 / HUD Rendering](#hud-渲染--hud-rendering)
+14. [工具类 / Utilities](#工具类--utilities)
+    - [GameUtils — 游戏工具](#gameutils--游戏工具)
+    - [TMMItemUtils — 物品工具](#tmmitemutils--物品工具)
+    - [RoleUtils — 角色工具](#roleutils--角色工具)
+15. [Replay 系统 / Replay System](#replay-系统--replay-system)
     - [IGameReplayRecorder — 回放记录接口](#igamereplayrecorder--回放记录接口)
     - [IGameReplayReader — 回放读取接口](#igamereplayreader--回放读取接口)
     - [ReplayEventTypes — 事件类型枚举](#replayeventtypes--事件类型枚举)
@@ -267,6 +284,130 @@ TMMRoles.addRoleComponents(ModComponents.MY_COMPONENT);
 
 ---
 
+## 修饰符系统 / Modifier System
+
+修饰符（Modifier）是叠加在职业上的附加属性/能力，一名玩家可同时拥有多个修饰符。  
+Modifiers are additive traits/abilities stacked on top of a role; a player can hold multiple simultaneously.
+
+### SREModifier — 修饰符基类
+
+**包 / Package:** `org.agmas.harpymodloader.modifiers`
+
+#### 构造函数 / Constructor
+
+```java
+new SREModifier(
+    ResourceLocation identifier,         // 修饰符唯一 ID
+    int color,                           // 通告颜色（ARGB 整数）
+    @Nullable ArrayList<SRERole> cannotBeAppliedTo,  // 不能应用到的职业列表（null = 无限制）
+    @Nullable ArrayList<SRERole> canOnlyBeAppliedTo, // 只能应用到的职业列表（null = 无限制）
+    boolean killerOnly,                  // 仅限杀手
+    boolean civilianOnly                 // 仅限平民阵营
+)
+```
+
+#### 链式配置方法 / Fluent Setters
+
+```java
+SREModifier setMax(int count)                                    // 同场最大数量（-1 无限制）
+SREModifier setServerGameTickEvent(Consumer<ServerPlayer> event) // 服务端每 Tick 回调
+SREModifier setClientGameTickEvent(Consumer<Player> event)       // 客户端每 Tick 回调
+void setCannotBeAppliedTo(ArrayList<SRERole> list)               // 设置排除职业列表
+void setCanOnlyBeAppliedTo(ArrayList<SRERole> list)              // 设置白名单职业列表
+```
+
+#### 查询方法 / Getters
+
+```java
+ResourceLocation identifier()                // 获取 ID
+int color()                                  // 获取颜色
+ArrayList<SRERole> cannotBeAppliedTo()       // 获取排除职业列表
+ArrayList<SRERole> canOnlyBeAppliedTo()      // 获取白名单职业列表
+MutableComponent getName()                   // 获取翻译名称（无颜色）
+MutableComponent getName(boolean withColor)  // 获取翻译名称（可带颜色）
+```
+
+#### 翻译键 / Translation Key
+
+```
+announcement.star.modifier.<namespace>.<path>
+// 或（兼容 starrailexpress 命名空间简写）：
+announcement.star.modifier.<path>
+```
+
+---
+
+### HMLModifiers — 修饰符注册表
+
+**包 / Package:** `org.agmas.harpymodloader.modifiers`
+
+```java
+// 全部已注册修饰符列表
+ArrayList<SREModifier> HMLModifiers.MODIFIERS
+
+// 注册修饰符（返回修饰符本身，支持链式）
+SREModifier HMLModifiers.registerModifier(SREModifier modifier)
+```
+
+#### 完整注册示例
+
+```java
+// 1. 声明 ID
+public static final ResourceLocation MY_MODIFIER_ID = MyMod.id("my_modifier");
+
+// 2. 注册修饰符
+public static final SREModifier MY_MODIFIER = HMLModifiers.registerModifier(
+    new SREModifier(
+        MY_MODIFIER_ID,
+        0xFF5500,  // 橙色
+        null,      // 不排除任何职业
+        null,      // 不限制职业
+        false,     // 不仅限杀手
+        true       // 仅限平民阵营
+    )
+    .setMax(2)     // 同场最多 2 人拥有
+    .setServerGameTickEvent(player -> {
+        // 每 Tick 执行的服务端逻辑
+    })
+);
+```
+
+#### 添加配置（可选）
+
+修饰符每局分配数量受 `HarpyModLoaderConfig` 中两个参数控制：  
+- `modifierMaximum`：每名玩家最多修饰符数量（默认 1）
+- `modifierMultiplier`：按玩家总数乘以该系数分配修饰符（默认 0.5）
+
+可通过 `/setEnabledModifier` 指令在游戏内禁用/启用修饰符。
+
+---
+
+### WorldModifierComponent — 修饰符 CCA
+
+**包 / Package:** `org.agmas.harpymodloader.component`  
+**组件键 / Component Key:** `WorldModifierComponent.KEY`（Level 级 CCA）
+
+```java
+// 获取组件
+WorldModifierComponent wmc = WorldModifierComponent.KEY.get(player.level());
+```
+
+| 方法 | 说明 |
+|------|------|
+| `boolean isModifier(Player player, SREModifier modifier)` | 判断玩家是否拥有该修饰符 |
+| `boolean isModifier(UUID uuid, SREModifier modifier)` | 同上（UUID 版） |
+| `ArrayList<SREModifier> getModifiers(Player player)` | 获取玩家所有修饰符 |
+| `ArrayList<SREModifier> getModifiers(UUID uuid)` | 同上（UUID 版） |
+| `HashMap<UUID, ArrayList<SREModifier>> getModifiers()` | 获取全局修饰符映射 |
+| `List<UUID> getAllWithModifier(SREModifier modifier)` | 获取拥有该修饰符的所有玩家 |
+| `void addModifier(UUID player, SREModifier modifier)` | 为玩家添加修饰符（并同步） |
+| `void removeModifier(UUID player, SREModifier modifier)` | 移除玩家修饰符（并同步） |
+| `ArrayList<SREModifier> getDisplayableModifiers(Player player)` | 获取可展示给该玩家的修饰符列表 |
+
+> **注意：** 修饰符添加/移除会分别触发 `ModifierAssigned.EVENT` / `ModifierRemoved.EVENT`，见[HML 事件](#hml-事件)。
+
+---
+
 ## CCA 组件 / CCA Components
 
 ### RoleComponent — 角色组件接口
@@ -490,6 +631,166 @@ ChargeableItemRegistry.ChargeInfo info = ChargeableItemRegistry.getChargeInfo(st
 
 // 触发蓄力完成回调
 ChargeableItemRegistry.onFullyCharged(stack, player);
+```
+
+---
+
+## 物品类型 / Item Types
+
+### 可继承物品基类
+
+以下是游戏中可被继承扩展的物品基类，每个都提供了特定的游戏机制钩子。
+
+| 类 | 包 | 说明 |
+|---|---|---|
+| `SkinableItem` | `io.wifi.starrailexpress.item` | 抽象基类，支持皮肤系统的物品 |
+| `KnifeItem` | `io.wifi.starrailexpress.item` | 近战刀（继承 `SkinableItem`），蓄力刺杀 |
+| `RevolverItem` | `io.wifi.starrailexpress.item` | 左轮手枪（继承 `SkinableItem`），有耐久度 |
+| `BatItem` | `io.wifi.starrailexpress.item` | 球棒（继承 `SkinableItem`） |
+| `GrenadeItem` | `io.wifi.starrailexpress.item` | 手雷（继承 `SkinableItem`），蓄力投掷 |
+| `DefenseItem` | `io.wifi.starrailexpress.item` | 防具/防御物品（继承 `Item`），限制使用职业 |
+| `NoteItem` | `io.wifi.starrailexpress.item` | 便条（继承 `Item` + `AdventureUsable`） |
+
+#### DefenseItem — 防御物品
+
+`DefenseItem` 是防具类物品的基类，使用动画为 `DRINK`。可通过 `canUseByRightClickRolePaths` 白名单限制使用该物品的职业路径（path 字符串）：
+
+```java
+// 允许特定职业路径使用（path = identifier().getPath()）
+DefenseItem.canUseByRightClickRolePaths.add("my_role");
+```
+
+---
+
+### SkinableItem — 可换皮肤物品
+
+**包 / Package:** `io.wifi.starrailexpress.item`
+
+继承此抽象类以创建支持皮肤系统的物品。  
+Extend this abstract class to create an item that supports the skin system.
+
+```java
+public class MyWeapon extends SkinableItem {
+    public MyWeapon(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public String getItemSkinType() {
+        // 返回皮肤类型名称（需与 SkinManager.registerType 中注册的名称一致）
+        return "my_weapon";
+    }
+
+    @Override
+    public String getDefaultSkin() {
+        return "default";
+    }
+
+    @Override
+    public String[] getAvailableSkins() {
+        // 返回该物品支持的皮肤名称数组
+        return new String[]{ "default", "gold", "iron" };
+    }
+}
+```
+
+| 方法 | 说明 |
+|---|---|
+| `abstract String getItemSkinType()` | **必须实现**，返回皮肤类型字符串 |
+| `String getDefaultSkin()` | 默认皮肤名（默认 `"default"`） |
+| `String[] getAvailableSkins()` | 支持的皮肤列表（用于 UI 展示） |
+
+---
+
+## 皮肤系统 / Skin System
+
+### SkinManager — 皮肤工具类
+
+**包 / Package:** `io.wifi.starrailexpress.util`
+
+皮肤系统的核心管理类，负责皮肤注册、查询、锁定/解锁，以及玩家皮肤状态持久化。  
+Core skin system manager: handles registration, querying, lock/unlock, and player skin persistence.
+
+#### 注册自定义皮肤
+
+```java
+// 1. 注册皮肤类型（须在 SkinManager 静态初始化顺序之后，建议在 mod onInitialize 中调用）
+SkinManager.registerType("my_weapon");
+
+// 2. 注册具体皮肤（type, skinID, color）
+SkinManager.registerSkin("my_weapon", "default", Colors.LIGHT_GRAY);
+SkinManager.registerSkin("my_weapon", "gold",    0xFFD700);
+SkinManager.registerSkin("my_weapon", "iron",    0xAAAAAA);
+```
+
+#### 皮肤数据操作
+
+```java
+// 检查玩家是否解锁了某皮肤
+boolean unlocked = SkinManager.isSkinUnlocked(player, itemStack, "gold");
+
+// 解锁皮肤给玩家
+SkinManager.unlockSkin(player, itemStack, "gold");
+
+// 按物品类型解锁皮肤（无 ItemStack 版本）
+SkinManager.unlockSkinForItemType(player, "my_weapon", "gold");
+
+// 锁定皮肤（移除解锁状态）
+SkinManager.lockSkin(player, itemStack, "gold");
+
+// 获取玩家当前装备的皮肤
+String skinName = SkinManager.getEquippedSkin(player, itemStack);
+
+// 设置玩家当前装备皮肤
+SkinManager.setEquippedSkin(player, itemStack, "gold");
+SkinManager.setEquippedSkinForItemType(player, "my_weapon", "gold");
+
+// 同步皮肤数据给客户端
+SkinManager.sync(player);
+```
+
+#### 皮肤彩券货币
+
+皮肤系统内置两种货币用于彩券（开箱）系统：
+
+```java
+// 获取/增加彩券抽取次数
+int chances = SkinManager.getLootChance(player);
+SkinManager.addLootChance(player, 1);
+
+// 获取/增加皮肤货币数量
+int coins = SkinManager.getCoinNum(player);
+SkinManager.addCoinNum(player, 100);
+```
+
+#### SkinManager.Skin — 皮肤数据类
+
+```java
+SkinManager.Skin skin = SkinManager.Skin.fromString("my_weapon", "gold");
+int color = skin.getColor();   // 颜色值
+String name = skin.getName();  // 皮肤小写名称
+String tooltip = skin.tooltipName; // Tooltip 显示名
+```
+
+#### 内置皮肤类型 / Built-in Skin Types
+
+| 常量 | 字符串值 |
+|---|---|
+| `SkinManager.SkinTypes.KNIFE` | `"knife"` |
+| `SkinManager.SkinTypes.REVOLVER` | `"revolver"` |
+| `SkinManager.SkinTypes.BAT` | `"bat"` |
+| `SkinManager.SkinTypes.GRENADE` | `"grenade"` |
+| `SkinManager.SkinTypes.HAT` | `"hat"` |
+
+#### 皮肤品质颜色 / QualityColor
+
+```java
+SkinManager.QualityColor.COMMON       // 0xFFEEEEEE 白灰
+SkinManager.QualityColor.UNCOMMON     // 0xFF33FF55 绿色
+SkinManager.QualityColor.RARE         // 0xFFAAAAFF 蓝色
+SkinManager.QualityColor.EPIC         // 0xFFAA55FF 紫色
+SkinManager.QualityColor.LEGENDARY    // 0xFFFFAA55 金色
+SkinManager.QualityColor.UNBELIEVABLE // 0xFFFF3F3F 红色
 ```
 
 ---
@@ -844,6 +1145,147 @@ OnOpenInventory.EVENT.register((localPlayer, screen) -> false);
 
 ---
 
+## Harpymodloader API
+
+**包 / Package:** `org.agmas.harpymodloader`
+
+Harpymodloader 是修饰符系统和职业权重系统的核心，提供以下 API。
+
+### Harpymodloader — 主入口
+
+#### 强制职业 / Force Role
+
+```java
+// 为玩家设置强制分配的职业（下局生效）
+Harpymodloader.addToForcedRoles(ModRoles.MY_ROLE, player);
+```
+
+#### 强制修饰符 / Force Modifier
+
+```java
+// 为玩家设置强制分配的修饰符（下局生效）
+Harpymodloader.addToForcedModifiers(NRModifiers.EXPEDITION, player);
+```
+
+#### 职业最大数量 / Role Maximum Count
+
+```java
+// 设置职业同场最大数量（也可通过 SRERole.setMax(n) 链式设置）
+Harpymodloader.setRoleMaximum(ModRoles.MY_ROLE, 2);
+Harpymodloader.setRoleMaximum(MY_ROLE_ID, 2);  // ResourceLocation 版
+```
+
+#### 伴侣职业 / Companion Role（同时分配两个职业）
+
+```java
+// 设置：分配 DOCTOR 的同时也分配 POISONER
+Harpymodloader.setOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
+
+// 查询
+SRERole companion = Harpymodloader.getOccupationRole(ModRoles.DOCTOR); // POISONER
+boolean has = Harpymodloader.hasOccupationRole(ModRoles.DOCTOR);
+
+// 移除
+Harpymodloader.removeOccupationRole(ModRoles.DOCTOR);
+Harpymodloader.clearOccupationRoles();
+```
+
+#### 隐藏修饰符 / Hide Modifiers
+
+将修饰符 path 加入 `HIDDEN_MODIFIERS` 可使其不在 UI 中展示（但仍可被分配）。
+
+```java
+Harpymodloader.HIDDEN_MODIFIERS.add(NRModifiers.INTROVERTED.identifier().getPath());
+```
+
+#### 特殊职业列表 / Special Roles
+
+`SPECIAL_ROLES`：不参与普通分配池的职业（如 CIVILIAN、LOOSE_END）。  
+`OVERWRITE_ROLES`：分配后会覆盖先前职业的角色列表。
+
+---
+
+### HML 事件
+
+所有事件位于 `org.agmas.harpymodloader.events`。
+
+#### `ModdedRoleAssigned` — 职业分配时
+
+**类型:** 通知型。职业被分配给玩家时触发（同时自动调用 `RoleMethodDispatcher.onInit`）。
+
+```java
+ModdedRoleAssigned.EVENT.register((player, role) -> {
+    // 初始化职业相关逻辑
+});
+```
+
+#### `ModdedRoleRemoved` — 职业移除时
+
+**类型:** 通知型。职业从玩家移除时触发。
+
+```java
+ModdedRoleRemoved.EVENT.register((player, role) -> {
+    // 清理职业相关逻辑
+});
+```
+
+#### `ModifierAssigned` — 修饰符分配时
+
+**类型:** 通知型。修饰符被分配给玩家时触发。
+
+```java
+ModifierAssigned.EVENT.register((player, modifier) -> {
+    if (modifier.equals(NRModifiers.MY_MODIFIER)) {
+        // 初始化修饰符组件或状态
+    }
+});
+```
+
+#### `ModifierRemoved` — 修饰符移除时
+
+**类型:** 通知型。修饰符从玩家移除时触发。
+
+```java
+ModifierRemoved.EVENT.register((player, modifier) -> {
+    if (modifier.equals(NRModifiers.MY_MODIFIER)) {
+        // 清理修饰符状态
+    }
+});
+```
+
+#### `GameInitializeEvent` — 游戏初始化时
+
+**类型:** 通知型。游戏开始初始化后触发（职业已分配完毕）。
+
+```java
+GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
+    // 所有玩家的职业已分配，可在此进行进一步初始化
+});
+```
+
+#### `OnGamePlayerRolesConfirm` — 职业分配确认前
+
+**类型:** 通知型。职业分配方案确定后、实际分配前触发，可修改分配映射。
+
+```java
+OnGamePlayerRolesConfirm.EVENT.register((serverLevel, roleAssignments) -> {
+    // roleAssignments: Map<Player, SRERole>
+    // 可以在这里调整/覆盖分配方案
+});
+```
+
+#### `ResetPlayerEvent` — 玩家重置时
+
+**类型:** 通知型。玩家状态重置时触发（游戏开始前或结束后）。
+
+```java
+ResetPlayerEvent.EVENT.register(player -> {
+    // 清理该玩家的自定义状态
+});
+```
+
+---
+
 ## 游戏模式系统 / Game Mode System
 
 ### GameMode — 游戏模式基类
@@ -996,11 +1438,263 @@ ReplayEventRegistry.registerCustomEvent(
 
 ---
 
+## 工具类 / Utilities
+
+### GameUtils — 游戏工具
+
+**包 / Package:** `io.wifi.starrailexpress.game`
+
+游戏流程控制、玩家状态判断、杀戮逻辑等核心工具方法。  
+Core utilities for game flow, player state checks, and kill logic.
+
+#### 游戏流程 / Game Flow
+
+```java
+// 启动游戏（isLobby=false 时才生效）
+GameUtils.startGame(serverLevel, gameMode, timeInMinutes);
+
+// 强制真正开始游戏（跳过准备阶段）
+GameUtils.trueStartGame(serverLevel, gameMode, timeInMinutes);
+
+// 停止游戏
+GameUtils.stopGame(serverLevel);
+
+// 初始化游戏（内部调用）
+GameUtils.initializeGame(serverLevel);
+
+// 游戏结束后清理
+GameUtils.finalizeGame(serverLevel);
+
+// 添加游戏开始的物品冷却（安全时间）
+GameUtils.addItemCooldowns(serverLevel);
+```
+
+#### 执行命令
+
+```java
+GameUtils.executeCommand(commandSourceStack, "/say Hello");
+```
+
+#### 玩家重置 / Player Reset
+
+```java
+// 游戏中重置玩家（清背包、状态等）
+GameUtils.resetPlayer(serverPlayer);
+
+// 游戏结束后重置玩家（含发送结束包）
+GameUtils.resetPlayerAfterGame(serverPlayer);
+```
+
+#### 玩家状态判断 / Player State
+
+```java
+// 是否已被淘汰（死亡/旁观/创造）
+boolean eliminated = GameUtils.isPlayerEliminated(player);
+boolean eliminatedIgnoreSplit = GameUtils.isPlayerEliminatedIgnoreShitSplit(player);
+
+// 是否存活（非旁观/创造）
+boolean alive = GameUtils.isPlayerAliveAndSurvival(player);
+boolean alive2 = GameUtils.isPlayerAliveAndSurvival(player, worldModifierComponent);
+
+// 是否旁观
+boolean spectator = GameUtils.isPlayerSpectator(player);
+
+// 是否创造
+boolean creative = GameUtils.isPlayerCreative(player);
+
+// 是否旁观或创造
+boolean specOrCreative = GameUtils.isPlayerSpectatingOrCreative(player);
+
+// 分裂人格存活结果
+GameUtils.SPAliveResult result = GameUtils.isPlayerSplitPersonalityAndSurvive(player);
+// result: ALIVE | DEAD | NOT_APPLICABLE
+```
+
+#### 玩家击杀 / Kill Player
+
+```java
+// 击杀玩家（可指定死亡原因，触发 AllowPlayerDeath/OnPlayerDeath 等事件）
+GameUtils.killPlayer(victim, spawnBody, killer);
+GameUtils.killPlayer(victim, spawnBody, killer, GameConstants.DeathReasons.KNIFE_STAB);
+
+// 强制击杀（跳过 AllowPlayerDeath 拦截）
+GameUtils.forceKillPlayer(victim, spawnBody, killer, deathReason);
+```
+
+#### 阵营判断
+
+```java
+// 判断两职业是否属于不同阵营
+boolean diff = GameUtils.differentTeam(role1, role2);
+```
+
+#### 死亡掉落
+
+```java
+// 判断物品死亡时是否应掉落
+boolean drop = GameUtils.shouldDropOnDeath(itemStack);
+```
+
+#### 玩家位置限制
+
+```java
+// 将玩家限制在 AABB 范围内（超出则传送回边界）
+GameUtils.limitPlayerToBox(serverPlayer, new AABB(minX,minY,minZ, maxX,maxY,maxZ));
+```
+
+#### 自定义胜利条件
+
+```java
+// 注册自定义胜利判断谓词（配合 WinStatus.CUSTOM 使用）
+GameUtils.CustomWinnersPredicates.add(entry -> {
+    Player player = entry.getKey();
+    String roleId = entry.getValue();
+    return roleId.equals("my_role"); // 满足条件的玩家为胜利者
+});
+```
+
+---
+
+### TMMItemUtils — 物品工具
+
+**包 / Package:** `io.wifi.starrailexpress.util`
+
+提供玩家背包物品清除与统计的简便方法，自动同步背包 UI。  
+Provides convenient player inventory clear/count methods that auto-sync the inventory UI.
+
+```java
+// 清除玩家背包中指定物品（全部），返回清除数量
+int count = TMMItemUtils.clearItem(player, TMMItems.KNIFE);
+int count = TMMItemUtils.clearItem(player, TMMItemTags.GUNS);       // 按标签
+int count = TMMItemUtils.clearItem(player, stack -> stack.isDamaged()); // 按谓词
+
+// 清除指定数量
+int count = TMMItemUtils.clearItem(player, TMMItems.KNIFE, 1);
+int count = TMMItemUtils.clearItem(player, predicate, 3);
+
+// 统计玩家背包中物品数量（不清除）
+int has = TMMItemUtils.hasItem(player, TMMItems.KNIFE);
+int has = TMMItemUtils.hasItem(player, TMMItemTags.GUNS);
+int has = TMMItemUtils.hasItem(player, predicate);
+```
+
+---
+
+### RoleUtils — 角色工具
+
+**包 / Package:** `org.agmas.noellesroles.utils`  
+继承自 `MCItemsUtils`（提供物品基础工具）
+
+#### 胜利控制
+
+```java
+// 触发自定义胜利（需设置胜利者 ID 和颜色）
+RoleUtils.customWinnerWin(serverLevel, "my_winner_id", 0xFF5500);
+
+// 完整版（可指定 WinStatus 类型）
+RoleUtils.customWinnerWin(serverLevel, WinStatus.CUSTOM,
+    "my_winner_id", OptionalInt.of(0xFF5500));
+```
+
+#### 音效播放
+
+```java
+// 给指定玩家播放音效（仅该玩家可听到，服务端发包）
+RoleUtils.playSound(serverPlayer, TMMSounds.KNIFE_HIT, SoundSource.PLAYERS, 1.0f, 1.0f);
+RoleUtils.playSound(serverPlayer, soundEvent, source, x, y, z, volume, pitch);
+```
+
+#### 属性操作
+
+```java
+// 移除玩家所有属性修饰符
+RoleUtils.RemoveAllPlayerAttributes(serverPlayer);
+
+// 清除所有药水效果
+boolean removed = RoleUtils.RemoveAllEffects(player);
+```
+
+#### 背包操作
+
+```java
+// 玩家是否有空格子（0-8 快捷栏）
+boolean hasFree = RoleUtils.isPlayerHasFreeSlot(player);
+
+// 移除指定槽位的物品
+RoleUtils.removeStackItem(serverPlayer, slotIndex);
+
+// 掉落并清除满足条件的物品，返回清除数量
+int count = RoleUtils.dropAndClearAllSatisfiedItems(serverPlayer, TMMItems.KNIFE);
+int count = RoleUtils.dropAndClearAllSatisfiedItems(serverPlayer, TMMItemTags.GUNS);
+
+// 仅清除（不掉落）
+int count = RoleUtils.clearAllSatisfiedItems(serverPlayer, item);
+int count = RoleUtils.clearAllSatisfiedItems(serverPlayer, tagKey);
+int count = RoleUtils.clearAllKnives(serverPlayer);    // 快捷方法：清除所有刀
+int count = RoleUtils.clearAllRevolver(serverPlayer);  // 快捷方法：清除所有枪
+```
+
+#### 角色变更
+
+```java
+// 变更玩家的职业（触发 ModdedRoleRemoved/ModdedRoleAssigned 事件）
+RoleUtils.changeRole(player, ModRoles.KILLER);
+RoleUtils.changeRole(player, ModRoles.KILLER, /* record= */ true);
+
+// 发送欢迎公告（告知职业）
+RoleUtils.sendWelcomeAnnouncement(serverPlayer);
+```
+
+#### 名称与颜色工具
+
+```java
+// 获取职业翻译名（Component）
+MutableComponent name = RoleUtils.getRoleName(role);
+MutableComponent name = RoleUtils.getRoleName(roleId);
+
+// 获取职业描述
+MutableComponent desc = RoleUtils.getRoleDescription(role);
+
+// 获取修饰符翻译名
+MutableComponent modName = RoleUtils.getModifierName(modifier);
+MutableComponent modNameColored = RoleUtils.getModifierNameWithColor(modifier);
+MutableComponent modDesc = RoleUtils.getModifierDescription(modifier);
+
+// 统一处理职业/修饰符/物品的名称（用于 UI 展示）
+Component display = RoleUtils.getRoleOrModifierName(roleOrModifier);
+MutableComponent colored = RoleUtils.getRoleOrModifierNameWithColor(roleOrModifier);
+MutableComponent desc2 = RoleUtils.getRoleOrModifierDescription(roleOrModifier);
+int color = RoleUtils.getRoleOrModifierColor(roleOrModifier);
+ResourceLocation id = RoleUtils.getRoleOrModifierIdentifier(roleOrModifier);
+MutableComponent typeName = RoleUtils.getRoleOrModifierTypeName(roleOrModifier); // "职业" / "修饰符"
+
+// 同上，额外支持 Item 类型
+Component name2 = RoleUtils.getRoleOrModifierOrItemName(roleOrModifierOrItem);
+ResourceLocation id2 = RoleUtils.getRoleOrModifierOrItemIdentifier(roleOrModifierOrItem);
+```
+
+#### 职业查询
+
+```java
+// 通过名称（path）获取职业
+SRERole role = RoleUtils.getRoleFromName("killer");  // Noellesroles 命名空间
+SRERole role = RoleUtils.getRole(roleId);             // 任意 ResourceLocation
+
+// 判断两职业是否相同（null 安全）
+boolean eq = RoleUtils.compareRole(role1, role2);
+```
+
+---
+
 ## 参考 / References
 
 - 角色系统源码：`src/main/java/io/wifi/starrailexpress/api/`
 - 事件列表：`src/main/java/io/wifi/starrailexpress/event/`
 - 技能系统：`src/main/java/org/agmas/noellesroles/RoleSkill.java`
+- 修饰符系统：`src/main/java/org/agmas/harpymodloader/modifiers/`
+- Harpymodloader 事件：`src/main/java/org/agmas/harpymodloader/events/`
 - Noellesroles 事件：`src/main/java/org/agmas/noellesroles/events/`
+- 皮肤管理：`src/main/java/io/wifi/starrailexpress/util/SkinManager.java`
+- 工具类：`src/main/java/io/wifi/starrailexpress/util/TMMItemUtils.java` · `src/main/java/org/agmas/noellesroles/utils/RoleUtils.java`
 - 创建扩展指南：[`CreateExtention.md`](../CreateExtention.md)
 - 中文 README：[`README.zh.md`](../README.zh.md)
