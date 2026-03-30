@@ -96,7 +96,7 @@ public class ProgressionCommand {
                     StringArgumentType.word())
                     .then(Commands.argument("count",
                         IntegerArgumentType
-                            .integer(1))
+                            .integer(0))
                         .executes(context -> setCard(
                             context.getSource(),
                             getSinglePlayer(context
