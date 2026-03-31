@@ -23,7 +23,7 @@ import org.agmas.noellesroles.role.ModRoles;
 public class PuppeteerHud {
 
     public static void register() {
-        CommonHudRenderCallback.EVENT.register((client,context, deltaTracker) -> {
+        CommonHudRenderCallback.EVENT.register((client, context, deltaTracker) -> {
             if (!OptimizedTextRenderer.INSTANCE.isTickDirty())
                 return;
             if (SREClient.isPlayerSpectator())
