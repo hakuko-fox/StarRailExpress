@@ -20,27 +20,30 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Frame-level text batch renderer with tick-rate computation and VertexBuffer caching.
+ * Frame-level text batch renderer with tick-rate computation and optimized batching.
  *
- * <p>
- * Lifecycle (managed by GuiRenderMixin):
- * 
+ * <h2>Optimizations:</h2>
+ * <ul>
+ *   <li>Matrix4f object pooling - reuses matrix instances to reduce GC pressure</li>
+ *   <li>Batch rendering - consecutive same-type operations merged into single draw calls</li>
+ *   <li>Tick-rate caching - skips recomputation when tick hasn't changed</li>
+ *   <li>Pre-allocated lists - avoids list resizing during frame</li>
+ * </ul>
+ *
+ * <h2>Lifecycle (managed by GuiRenderMixin):</h2>
  * <pre>
  *   ClientTickEvent  →  markTickDirty()    ← called every game tick
  *   Gui.render HEAD  →  beginFrame()       ← opens batch window
  *     FakeGuiGraphics →  enqueue(...)      ← only runs if tick is dirty
- *   Gui.render RETURN →  endFrame()        ← submits cached VertexBuffer or rebuilds
+ *   Gui.render RETURN →  endFrame()        ← submits batched draw calls
  * </pre>
- *
- * <p>
- * When the tick has NOT changed since last frame, {@link #isTickDirty()}
- * returns false. The cached VertexBuffer is replayed directly without
- * re-computing text or blit entries.
  */
 public class OptimizedTextRenderer {
 
@@ -49,28 +52,69 @@ public class OptimizedTextRenderer {
     private OptimizedTextRenderer() {
     }
 
+    // ── Matrix4f Object Pool ───────────────────────────────────────────────────
+    
+    private static final int MATRIX_POOL_SIZE = 256;
+    private final Deque<Matrix4f> matrixPool = new ArrayDeque<>(MATRIX_POOL_SIZE);
+    
+    private Matrix4f acquireMatrix(Matrix4f source) {
+        Matrix4f m = matrixPool.pollFirst();
+        if (m == null) {
+            m = new Matrix4f(source);
+        } else {
+            m.set(source);
+        }
+        return m;
+    }
+    
+    private void releaseMatrix(Matrix4f m) {
+        if (matrixPool.size() < MATRIX_POOL_SIZE) {
+            matrixPool.offerFirst(m);
+        }
+    }
+    
+    private void releaseAllMatrices(List<RenderAction> actions) {
+        for (RenderAction action : actions) {
+            Matrix4f m = action.getMatrix();
+            if (m != null) {
+                releaseMatrix(m);
+            }
+        }
+    }
+
     // ── Tick-rate gate ─────────────────────────────────────────────────────────
 
-    /** Set to true every game tick by ClientTickMixin. */
     private boolean tickDirty = true;
-
-    /** All render actions cached from the LAST dirty tick — replayed every frame in order. */
     private final List<RenderAction> tickCache = new ArrayList<>(128);
-
-    /** Render actions accumulated during the current frame's enqueue pass. */
     private final List<RenderAction> pending = new ArrayList<>(128);
 
     private GuiGraphics frameGraphics = null;
     private boolean inFrame = false;
 
+    // ── VBO Cache for static geometry ──────────────────────────────────────────
+    
+    /** Cached VBO for fill operations - reused when tick hasn't changed */
+    private @Nullable VertexBuffer fillVbo = null;
+    /** Cached VBO for blit operations grouped by texture */
+    private @Nullable VertexBuffer blitVbo = null;
+    private @Nullable ResourceLocation cachedBlitTexture = null;
+    /** Cached VBO for gradient operations */
+    private @Nullable VertexBuffer gradientVbo = null;
+    /** Whether VBOs need rebuilding */
+    private boolean vboDirty = true;
+    
+    // Cached geometry data for VBO rebuild
+    private final List<FillAction> cachedFills = new ArrayList<>(64);
+    private final List<BlitAction> cachedBlits = new ArrayList<>(64);
+    private final List<FillGradientAction> cachedGradients = new ArrayList<>(32);
+
     // ── Tick lifecycle (called by ClientTickMixin) ─────────────────────────────
 
-    /** Called once per game tick. Marks HUD for recomputation. */
     public void markTickDirty() {
         tickDirty = true;
+        vboDirty = true;
     }
 
-    /** True if HUD render logic should run this frame (tick changed). */
     public boolean isTickDirty() {
         return tickDirty;
     }
@@ -87,21 +131,108 @@ public class OptimizedTextRenderer {
         if (!inFrame)
             return;
 
-        // If the tick was dirty, the HUD ran and filled pending lists with fresh entries.
-        // Promote them to tickCache and clear the dirty flag.
-        // IMPORTANT: Always update tickCache when dirty, even if pending is empty (HUD hidden).
         if (tickDirty) {
+            // Release matrices from old cache before replacing
+            releaseAllMatrices(tickCache);
             tickCache.clear();
             tickCache.addAll(pending);
             tickDirty = false;
+            
+            // Rebuild geometry caches for VBO
+            rebuildGeometryCaches();
         }
 
-        // Always flush from tickCache (either freshly computed or last tick's replay)
         flushCache();
 
         pending.clear();
         inFrame = false;
         frameGraphics = null;
+    }
+    
+    /**
+     * Rebuild geometry caches from tickCache for VBO usage.
+     */
+    private void rebuildGeometryCaches() {
+        cachedFills.clear();
+        cachedBlits.clear();
+        cachedGradients.clear();
+        
+        for (RenderAction action : tickCache) {
+            if (action instanceof FillAction f) {
+                cachedFills.add(f);
+            } else if (action instanceof BlitAction b) {
+                cachedBlits.add(b);
+            } else if (action instanceof FillGradientAction g) {
+                cachedGradients.add(g);
+            }
+        }
+        
+        vboDirty = true;
+    }
+    
+    /**
+     * Build or rebuild VBOs for cached geometry.
+     */
+    private void rebuildVbosIfNeeded() {
+        if (!vboDirty) return;
+        
+        // Rebuild fill VBO
+        if (!cachedFills.isEmpty()) {
+            if (fillVbo != null) fillVbo.close();
+            fillVbo = buildFillVbo();
+        }
+        
+        // Rebuild gradient VBO
+        if (!cachedGradients.isEmpty()) {
+            if (gradientVbo != null) gradientVbo.close();
+            gradientVbo = buildGradientVbo();
+        }
+        
+        vboDirty = false;
+    }
+    
+    private @Nullable VertexBuffer buildFillVbo() {
+        if (cachedFills.isEmpty()) return null;
+        
+        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        for (FillAction f : cachedFills) {
+            Matrix4f m = f.matrix;
+            bb.addVertex(m, f.x1, f.y2, f.z).setColor(f.color);
+            bb.addVertex(m, f.x2, f.y2, f.z).setColor(f.color);
+            bb.addVertex(m, f.x2, f.y1, f.z).setColor(f.color);
+            bb.addVertex(m, f.x1, f.y1, f.z).setColor(f.color);
+        }
+        
+        MeshData mesh = bb.build();
+        if (mesh == null) return null;
+        
+        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+        vbo.bind();
+        vbo.upload(mesh);
+        VertexBuffer.unbind();
+        return vbo;
+    }
+    
+    private @Nullable VertexBuffer buildGradientVbo() {
+        if (cachedGradients.isEmpty()) return null;
+        
+        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        for (FillGradientAction g : cachedGradients) {
+            Matrix4f m = g.matrix;
+            bb.addVertex(m, g.x2, g.y1, g.z).setColor(g.colorFrom);
+            bb.addVertex(m, g.x1, g.y1, g.z).setColor(g.colorFrom);
+            bb.addVertex(m, g.x1, g.y2, g.z).setColor(g.colorTo);
+            bb.addVertex(m, g.x2, g.y2, g.z).setColor(g.colorTo);
+        }
+        
+        MeshData mesh = bb.build();
+        if (mesh == null) return null;
+        
+        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+        vbo.bind();
+        vbo.upload(mesh);
+        VertexBuffer.unbind();
+        return vbo;
     }
 
     private void flushCache() {
@@ -110,15 +241,146 @@ public class OptimizedTextRenderer {
 
         Font font = Minecraft.getInstance().font;
         MultiBufferSource.BufferSource bufferSource = frameGraphics.bufferSource();
+        
+        // Rebuild VBOs if geometry changed
+        rebuildVbosIfNeeded();
+        
+        // Track if we've rendered VBO-based geometry
+        boolean fillsRendered = false;
+        boolean gradientsRendered = false;
 
-        // Execute all render actions in order
-        for (RenderAction action : tickCache) {
+        int i = 0;
+        int size = tickCache.size();
+        while (i < size) {
+            RenderAction action = tickCache.get(i);
+
+            // Use VBO for FillActions if available
+            if (action instanceof FillAction) {
+                if (!fillsRendered && fillVbo != null) {
+                    renderFillVbo();
+                    fillsRendered = true;
+                }
+                // Skip all consecutive FillActions
+                while (i < size && tickCache.get(i) instanceof FillAction) i++;
+                continue;
+            }
+
+            // Batch consecutive BlitActions with same texture (no VBO, textures vary)
+            if (action instanceof BlitAction) {
+                i = flushBatchedBlits(i, size);
+                continue;
+            }
+
+            // Batch consecutive TextActions
+            if (action instanceof TextAction) {
+                i = flushBatchedText(i, size, font, bufferSource);
+                continue;
+            }
+
+            // Use VBO for FillGradientActions if available
+            if (action instanceof FillGradientAction) {
+                if (!gradientsRendered && gradientVbo != null) {
+                    renderGradientVbo();
+                    gradientsRendered = true;
+                }
+                // Skip all consecutive FillGradientActions
+                while (i < size && tickCache.get(i) instanceof FillGradientAction) i++;
+                continue;
+            }
+
+            // Execute other actions individually
             action.execute(frameGraphics, font, bufferSource);
+            i++;
         }
 
         RenderSystem.disableDepthTest();
         bufferSource.endBatch();
         RenderSystem.enableDepthTest();
+    }
+    
+    /** Identity matrix for VBO rendering (vertices already transformed) */
+    private static final Matrix4f IDENTITY = new Matrix4f();
+    
+    /**
+     * Render cached fill VBO.
+     */
+    private void renderFillVbo() {
+        if (fillVbo == null) return;
+        
+        RenderSystem.enableBlend();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        
+        fillVbo.bind();
+        fillVbo.drawWithShader(
+            IDENTITY,
+            RenderSystem.getProjectionMatrix(),
+            RenderSystem.getShader()
+        );
+        VertexBuffer.unbind();
+    }
+    
+    /**
+     * Render cached gradient VBO.
+     */
+    private void renderGradientVbo() {
+        if (gradientVbo == null) return;
+        
+        RenderSystem.enableBlend();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        
+        gradientVbo.bind();
+        gradientVbo.drawWithShader(
+            IDENTITY,
+            RenderSystem.getProjectionMatrix(),
+            RenderSystem.getShader()
+        );
+        VertexBuffer.unbind();
+    }
+
+    /**
+     * Batch consecutive BlitActions with the same texture into a single draw call.
+     */
+    private int flushBatchedBlits(int start, int size) {
+        BlitAction first = (BlitAction) tickCache.get(start);
+        ResourceLocation tex = first.texture;
+
+        RenderSystem.setShaderTexture(0, tex);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.enableBlend();
+        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+
+        int i = start;
+        while (i < size && tickCache.get(i) instanceof BlitAction b && b.texture.equals(tex)) {
+            Matrix4f m = b.matrix;
+            bb.addVertex(m, b.x1, b.y2, b.z).setUv(b.u0, b.v1).setColor(b.r, b.g, b.b, b.a);
+            bb.addVertex(m, b.x2, b.y2, b.z).setUv(b.u1, b.v1).setColor(b.r, b.g, b.b, b.a);
+            bb.addVertex(m, b.x2, b.y1, b.z).setUv(b.u1, b.v0).setColor(b.r, b.g, b.b, b.a);
+            bb.addVertex(m, b.x1, b.y1, b.z).setUv(b.u0, b.v0).setColor(b.r, b.g, b.b, b.a);
+            i++;
+        }
+
+        BufferUploader.drawWithShader(bb.buildOrThrow());
+        return i;
+    }
+
+    /**
+     * Batch consecutive TextActions using shared buffer source.
+     */
+    private int flushBatchedText(int start, int size, Font font, MultiBufferSource.BufferSource bufferSource) {
+        int i = start;
+        while (i < size && tickCache.get(i) instanceof TextAction t) {
+            if (t.seq != null) {
+                font.drawInBatch(t.seq, t.x, t.y, t.color, t.shadow,
+                        t.matrix, bufferSource, Font.DisplayMode.NORMAL, 0,
+                        LightTexture.FULL_BRIGHT);
+            } else if (t.text != null) {
+                font.drawInBatch(t.text, t.x, t.y, t.color, t.shadow,
+                        t.matrix, bufferSource, Font.DisplayMode.NORMAL, 0,
+                        LightTexture.FULL_BRIGHT);
+            }
+            i++;
+        }
+        return i;
     }
 
     // ── Enqueue API (called by FakeGuiGraphics) ────────────────────────────────
@@ -130,7 +392,7 @@ public class OptimizedTextRenderer {
             return;
         }
         pending.add(new TextAction(null, text, x, y, color, shadow,
-                new Matrix4f(graphics.pose().last().pose())));
+                acquireMatrix(graphics.pose().last().pose())));
     }
 
     public void enqueueSeq(GuiGraphics graphics, FormattedCharSequence seq,
@@ -140,7 +402,7 @@ public class OptimizedTextRenderer {
             return;
         }
         pending.add(new TextAction(seq, null, x, y, color, shadow,
-                new Matrix4f(graphics.pose().last().pose())));
+                acquireMatrix(graphics.pose().last().pose())));
     }
 
     public void enqueueBlit(GuiGraphics graphics, ResourceLocation texture,
@@ -155,7 +417,7 @@ public class OptimizedTextRenderer {
                 x1, x2, y1, y2, z,
                 u0, u1, v0, v1,
                 r, g, b, a,
-                new Matrix4f(graphics.pose().last().pose())));
+                acquireMatrix(graphics.pose().last().pose())));
     }
 
     public void enqueueFill(GuiGraphics graphics, int x1, int y1, int x2, int y2, int z, int color) {
@@ -164,7 +426,7 @@ public class OptimizedTextRenderer {
             return;
         }
         pending.add(new FillAction(x1, y1, x2, y2, z, color,
-                new Matrix4f(graphics.pose().last().pose())));
+                acquireMatrix(graphics.pose().last().pose())));
     }
 
     public void enqueueFillWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int y1, int x2, int y2, int z, int color) {
@@ -181,7 +443,7 @@ public class OptimizedTextRenderer {
             return;
         }
         pending.add(new FillGradientAction(x1, y1, x2, y2, z, colorFrom, colorTo,
-                new Matrix4f(graphics.pose().last().pose())));
+                acquireMatrix(graphics.pose().last().pose())));
     }
 
     public void enqueueFillGradientWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int y1, int x2, int y2, int colorFrom, int colorTo, int z) {
@@ -197,7 +459,7 @@ public class OptimizedTextRenderer {
             graphics.hLine(x1, x2, y, color);
             return;
         }
-        pending.add(new HLineAction(null, x1, x2, y, color, new Matrix4f(graphics.pose().last().pose())));
+        pending.add(new HLineAction(null, x1, x2, y, color));
     }
 
     public void enqueueHLineWithRenderType(GuiGraphics graphics, RenderType rt, int x1, int x2, int y, int color) {
@@ -205,7 +467,7 @@ public class OptimizedTextRenderer {
             graphics.hLine(rt, x1, x2, y, color);
             return;
         }
-        pending.add(new HLineAction(rt, x1, x2, y, color, new Matrix4f(graphics.pose().last().pose())));
+        pending.add(new HLineAction(rt, x1, x2, y, color));
     }
 
     public void enqueueVLine(GuiGraphics graphics, int x, int y1, int y2, int color) {
@@ -213,7 +475,7 @@ public class OptimizedTextRenderer {
             graphics.vLine(x, y1, y2, color);
             return;
         }
-        pending.add(new VLineAction(null, x, y1, y2, color, new Matrix4f(graphics.pose().last().pose())));
+        pending.add(new VLineAction(null, x, y1, y2, color));
     }
 
     public void enqueueVLineWithRenderType(GuiGraphics graphics, RenderType rt, int x, int y1, int y2, int color) {
@@ -221,7 +483,7 @@ public class OptimizedTextRenderer {
             graphics.vLine(rt, x, y1, y2, color);
             return;
         }
-        pending.add(new VLineAction(rt, x, y1, y2, color, new Matrix4f(graphics.pose().last().pose())));
+        pending.add(new VLineAction(rt, x, y1, y2, color));
     }
 
     public void enqueueRenderOutline(GuiGraphics graphics, int x, int y, int w, int h, int color) {
@@ -455,49 +717,65 @@ public class OptimizedTextRenderer {
 
     // ── RenderAction interface ─────────────────────────────────────────────────
 
-    @FunctionalInterface
     private interface RenderAction {
         void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource);
+        /** Returns the matrix for pooling, or null if this action doesn't use a pooled matrix. */
+        default @Nullable Matrix4f getMatrix() { return null; }
     }
 
     // ── Text rendering action ──────────────────────────────────────────────────
 
-    private record TextAction(
-            @Nullable FormattedCharSequence seq,
-            @Nullable Component text,
-            float x, float y,
-            int color, boolean shadow,
-            Matrix4f matrix) implements RenderAction {
+    private static final class TextAction implements RenderAction {
+        final @Nullable FormattedCharSequence seq;
+        final @Nullable Component text;
+        final float x, y;
+        final int color;
+        final boolean shadow;
+        final Matrix4f matrix;
+        
+        TextAction(@Nullable FormattedCharSequence seq, @Nullable Component text,
+                   float x, float y, int color, boolean shadow, Matrix4f matrix) {
+            this.seq = seq;
+            this.text = text;
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.shadow = shadow;
+            this.matrix = matrix;
+        }
+        
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
-            if (seq != null) {
-                font.drawInBatch(seq, x, y, color, shadow,
-                        matrix, bufferSource, Font.DisplayMode.NORMAL, 0,
-                        LightTexture.FULL_BRIGHT);
-            } else if (text != null) {
-                font.drawInBatch(text, x, y, color, shadow,
-                        matrix, bufferSource, Font.DisplayMode.NORMAL, 0,
-                        LightTexture.FULL_BRIGHT);
-            }
+            // Handled by flushBatchedText
         }
+        
+        @Override
+        public @Nullable Matrix4f getMatrix() { return matrix; }
     }
 
     // ── Fill action ────────────────────────────────────────────────────────────
 
-    private record FillAction(
-            int x1, int y1, int x2, int y2, int z, int color,
-            Matrix4f matrix) implements RenderAction {
+    private static final class FillAction implements RenderAction {
+        final int x1, y1, x2, y2, z, color;
+        final Matrix4f matrix;
+        
+        FillAction(int x1, int y1, int x2, int y2, int z, int color, Matrix4f matrix) {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+            this.z = z;
+            this.color = color;
+            this.matrix = matrix;
+        }
+        
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
-            RenderSystem.enableBlend();
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-            bufferBuilder.addVertex(matrix, x1, y2, z).setColor(color);
-            bufferBuilder.addVertex(matrix, x2, y2, z).setColor(color);
-            bufferBuilder.addVertex(matrix, x2, y1, z).setColor(color);
-            bufferBuilder.addVertex(matrix, x1, y1, z).setColor(color);
-            BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+            // Handled by flushBatchedFills
         }
+        
+        @Override
+        public @Nullable Matrix4f getMatrix() { return matrix; }
     }
 
     private record FillRenderTypeAction(
@@ -518,13 +796,28 @@ public class OptimizedTextRenderer {
 
     // ── Fill gradient action ───────────────────────────────────────────────────
 
-    private record FillGradientAction(
-            int x1, int y1, int x2, int y2, int z, int colorFrom, int colorTo,
-            Matrix4f matrix) implements RenderAction {
+    private static final class FillGradientAction implements RenderAction {
+        final int x1, y1, x2, y2, z, colorFrom, colorTo;
+        final Matrix4f matrix;
+        
+        FillGradientAction(int x1, int y1, int x2, int y2, int z, int colorFrom, int colorTo, Matrix4f matrix) {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+            this.z = z;
+            this.colorFrom = colorFrom;
+            this.colorTo = colorTo;
+            this.matrix = matrix;
+        }
+        
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
-            graphics.fillGradient(x1, y1, x2, y2, z, colorFrom, colorTo);
+            // Handled by flushBatchedGradients
         }
+        
+        @Override
+        public @Nullable Matrix4f getMatrix() { return matrix; }
     }
 
     private record FillGradientRenderTypeAction(
@@ -538,8 +831,7 @@ public class OptimizedTextRenderer {
     // ── Line actions ───────────────────────────────────────────────────────────
 
     private record HLineAction(
-            @Nullable RenderType rt, int x1, int x2, int y, int color,
-            Matrix4f matrix) implements RenderAction {
+            @Nullable RenderType rt, int x1, int x2, int y, int color) implements RenderAction {
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
             if (rt != null) {
@@ -551,8 +843,7 @@ public class OptimizedTextRenderer {
     }
 
     private record VLineAction(
-            @Nullable RenderType rt, int x, int y1, int y2, int color,
-            Matrix4f matrix) implements RenderAction {
+            @Nullable RenderType rt, int x, int y1, int y2, int color) implements RenderAction {
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
             if (rt != null) {
@@ -573,24 +864,40 @@ public class OptimizedTextRenderer {
 
     // ── Blit action ────────────────────────────────────────────────────────────
 
-    private record BlitAction(
-            ResourceLocation texture,
-            int x1, int x2, int y1, int y2, int z,
-            float u0, float u1, float v0, float v1,
-            float r, float g, float b, float a,
-            Matrix4f matrix) implements RenderAction {
+    private static final class BlitAction implements RenderAction {
+        final ResourceLocation texture;
+        final int x1, x2, y1, y2, z;
+        final float u0, u1, v0, v1;
+        final float r, g, b, a;
+        final Matrix4f matrix;
+        
+        BlitAction(ResourceLocation texture, int x1, int x2, int y1, int y2, int z,
+                   float u0, float u1, float v0, float v1,
+                   float r, float g, float b, float a, Matrix4f matrix) {
+            this.texture = texture;
+            this.x1 = x1;
+            this.x2 = x2;
+            this.y1 = y1;
+            this.y2 = y2;
+            this.z = z;
+            this.u0 = u0;
+            this.u1 = u1;
+            this.v0 = v0;
+            this.v1 = v1;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+            this.matrix = matrix;
+        }
+        
         @Override
         public void execute(GuiGraphics graphics, Font font, MultiBufferSource.BufferSource bufferSource) {
-            RenderSystem.setShaderTexture(0, texture);
-            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-            RenderSystem.enableBlend();
-            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-            bufferBuilder.addVertex(matrix, x1, y2, z).setUv(u0, v1).setColor(r, g, b, a);
-            bufferBuilder.addVertex(matrix, x2, y2, z).setUv(u1, v1).setColor(r, g, b, a);
-            bufferBuilder.addVertex(matrix, x2, y1, z).setUv(u1, v0).setColor(r, g, b, a);
-            bufferBuilder.addVertex(matrix, x1, y1, z).setUv(u0, v0).setColor(r, g, b, a);
-            BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+            // Handled by flushBatchedBlits
         }
+        
+        @Override
+        public @Nullable Matrix4f getMatrix() { return matrix; }
     }
 
     // ── BlitSprite action ──────────────────────────────────────────────────────
