@@ -1,8 +1,8 @@
 package org.agmas.noellesroles.client.hud.roles;
 
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 
@@ -23,11 +23,10 @@ import org.agmas.noellesroles.role.ModRoles;
 public class PuppeteerHud {
 
     public static void register() {
-        CommonHudRenderCallback.EVENT.register((client, context, deltaTracker) -> {
-            if (!OptimizedTextRenderer.INSTANCE.isTickDirty())
-                return;
+        CommonHudRenderCallback.EVENT.register((context, deltaTracker) -> {
             if (SREClient.isPlayerSpectator())
                 return;
+            final var client = Minecraft.getInstance();
             PuppeteerPlayerComponent puppeteerComp = ModComponents.PUPPETEER.get(client.player);
 
             // 检查玩家是否是傀儡师（包括操控假人时角色临时变更的情况）
@@ -43,7 +42,7 @@ public class PuppeteerHud {
                 return;
 
             Font textRenderer = client.font;
-            int screenHeight = client.getWindow().getGuiScaledHeight();
+            int screenHeight = context.guiHeight();
 
             // 左下角位置
             int baseX = 10;
