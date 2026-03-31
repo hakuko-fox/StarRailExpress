@@ -3,19 +3,21 @@ package org.agmas.noellesroles.client.event;
 import net.minecraft.client.DeltaTracker;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 
-import net.fabricmc.fabric.api.event.Event;
-import net.minecraft.client.Minecraft;
-
-import static net.fabricmc.fabric.api.event.EventFactory.createArrayBacked;
+import java.util.ArrayList;
+import java.util.function.BiConsumer;
 
 public interface CommonHudRenderCallback {
+    public static class CommonRenderEvent {
+        public ArrayList<BiConsumer<FakeGuiGraphics, DeltaTracker>> role_events = new ArrayList<>();
 
-    Event<CommonHudRenderCallback> EVENT = createArrayBacked(CommonHudRenderCallback.class,
-            listeners -> (client, guiGraphics, deltaTracker) -> {
-                for (CommonHudRenderCallback listener : listeners) {
-                    listener.onRenderer(client, guiGraphics, deltaTracker);
-                }
-            });
+        public ArrayList<BiConsumer<FakeGuiGraphics, DeltaTracker>> getConsumer() {
+            return role_events;
+        }
 
-    void onRenderer(Minecraft client, FakeGuiGraphics guiGraphics, DeltaTracker deltaTracker);
+        public void register(BiConsumer<FakeGuiGraphics, DeltaTracker> consumer) {
+            role_events.add(consumer);
+        }
+    }
+
+    public final static CommonRenderEvent EVENT = new CommonRenderEvent();
 }

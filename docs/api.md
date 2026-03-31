@@ -1343,9 +1343,10 @@ public static final GameMode MY_MODE = SREGameModes.registerGameMode(MY_MODE_ID,
 ## HUD 渲染 / HUD Rendering
 
 如果 HUD 是针对特定职业的，使用 `RoleHudRenderCallback`。  
-For role-specific HUD elements, use `RoleHudRenderCallback`.
+如果不是针对特定职业的，可以使用 `CommonHudRenderCallback`。
+与官方 HudRenderCallback 相比，它有着更好的性能，能够在一定程度上提高fps。
 
-**包 / Package:** `org.agmas.noellesroles` (通过 `RicesRoleRhapsody` 注册)
+**包 / Package:** `org.agmas.noellesroles.client.event`
 
 ```java
 RoleHudRenderCallback.EVENT.register(
