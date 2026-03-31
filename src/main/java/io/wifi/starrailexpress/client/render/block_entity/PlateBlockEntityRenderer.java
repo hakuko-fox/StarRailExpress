@@ -50,7 +50,7 @@ public class PlateBlockEntityRenderer implements BlockEntityRenderer<BeveragePla
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         // 如果没有玩家或世界为空，则不渲染
-        if (player == null || entity.getLevel() == null) {
+        if (player == null || entity.getLevel() == null || entity.getStoredItems() == null) {
             return false;
         }
         if (entity.getStoredItems().isEmpty())

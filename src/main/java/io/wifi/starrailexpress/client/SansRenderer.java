@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.util.MathHelper;
+import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,6 +25,7 @@ import pro.fazeclan.river.stupid_express.client.StupidExpressClient;
 import java.util.Random;
 import java.util.function.Function;
 
+@SuppressWarnings("unused")
 public class SansRenderer {
     public static SansRenderer instance = new SansRenderer();
     private static final float PASSIVE_THRESHOLD = .0002f;
@@ -99,7 +101,7 @@ public class SansRenderer {
     private static float getLowSanFinalIntensity(LocalPlayer player, float mood) {
 
         float resistance = ModEffects.getLowSanShaderResistance(player);
-        return Mth.clamp( (1f - resistance), 0f, 1f);
+        return Mth.clamp((1f - resistance), 0f, 1f);
     }
 
     private void renderHint(Gui gui, PoseStack poseStack, float partialTicks, int scw, int sch, GuiGraphics graphics) {
@@ -138,10 +140,11 @@ public class SansRenderer {
         // 添加文字阴影效果（如果理智很低）
         if (m_cap.getMood() < 0.25f) {
             int shadowColor = 0xAA0000 | (opacity >> 24 << 24); // 红色阴影
-            graphics.drawString(gui.getFont(), m_hint, (int) (pX + 1), (int) (pY + 1), shadowColor, true);
+            OptimizedTextRenderer.INSTANCE.enqueue(graphics, m_hint, (int) (pX + 1), (int) (pY + 1), shadowColor, true);
         }
 
-        graphics.drawString(gui.getFont(), m_hint, (int) pX, (int) pY, 0xFFFFFF | opacity, true);
+        OptimizedTextRenderer.INSTANCE.enqueue(graphics, m_hint, (int) pX, (int) pY, 0xFFFFFF | opacity, true);
+
         poseStack.popPose();
         RenderSystem.disableBlend();
     }
