@@ -595,10 +595,10 @@ public class CommonClientHudRenderer {
       int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
       int xOffset = screenWidth - 10; // 距离右边缘
       var abpc = AthletePlayerComponent.KEY.get(client.player);
-      if (client.player.hasEffect(MobEffects.MOVEMENT_SPEED)) {
+      if (abpc.speedTicks > 0) {
         var text = Component
             .translatable("hud.noellesroles.athlete.active",
-                client.player.getEffect(MobEffects.MOVEMENT_SPEED).getDuration() / 20)
+                abpc.speedTicks / 20)
             .withStyle(ChatFormatting.AQUA);
         guiGraphics.drawString(font, text, xOffset - font.width(text), yOffset - font.lineHeight - 4,
             Color.WHITE.getRGB());

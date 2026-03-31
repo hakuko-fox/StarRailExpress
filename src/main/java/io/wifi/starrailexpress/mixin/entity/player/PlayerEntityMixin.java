@@ -83,12 +83,12 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
 
             if (player.hasEffect(MobEffects.MOVEMENT_SPEED)) {
                 final var speedEffect = player.getEffect(MobEffects.MOVEMENT_SPEED);
-                speedModifier *= (1f + speedEffect.getAmplifier() * 0.2f);
+                speedModifier *= (1f + (speedEffect.getAmplifier() + 1) * 0.25f);
             }
 
             if (player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
                 final var slowEffect = player.getEffect(MobEffects.MOVEMENT_SLOWDOWN);
-                speedModifier *= (1 - slowEffect.getAmplifier() * 0.2f);
+                speedModifier *= (1 - (slowEffect.getAmplifier() + 1) * 0.2f);
                 if (speedModifier < 0)
                     speedModifier = 0;
             }

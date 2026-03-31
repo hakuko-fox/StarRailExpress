@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
+import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
@@ -22,7 +23,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * - 使用后冷却120秒（2分钟）
  * - 角色特点：无限奔跑时间
  */
-public class AthletePlayerComponent implements RoleComponent, ServerTickingComponent {
+public class AthletePlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
 
     /** 组件键 - 用于从玩家获取此组件 */
     public static final ComponentKey<AthletePlayerComponent> KEY = ModComponents.ATHLETE;
@@ -40,7 +41,7 @@ public class AthletePlayerComponent implements RoleComponent, ServerTickingCompo
     public static final int SPEED_DURATION = 400;
 
     /** 速度效果等级（1级，索引为0，对应 Speed I） */
-    public static final int SPEED_AMPLIFIER = 3;
+    public static final int SPEED_AMPLIFIER = 4;
 
     // ==================== 状态变量 ====================
 
@@ -160,7 +161,7 @@ public class AthletePlayerComponent implements RoleComponent, ServerTickingCompo
         if (this.cooldown > 0) {
             this.cooldown--;
             // 每秒同步一次，减少网络压力
-            if (this.cooldown % 20 == 0 || this.cooldown == 0) {
+            if (this.cooldown % 200 == 0 || this.cooldown == 0) {
                 this.sync();
             }
         }
@@ -203,5 +204,15 @@ public class AthletePlayerComponent implements RoleComponent, ServerTickingCompo
         this.cooldown = tag.contains("cooldown") ? tag.getInt("cooldown") : 0;
         this.speedTicks = tag.contains("speedTicks") ? tag.getInt("speedTicks") : 0;
         this.isSprinting = tag.contains("isSprinting") && tag.getBoolean("isSprinting");
+    }
+
+    @Override
+    public void clientTick() {
+        if (this.cooldown > 1) {
+            this.cooldown--;
+        }
+        if (this.speedTicks > 0) {
+            this.speedTicks--;
+        }
     }
 }
