@@ -11,8 +11,6 @@ import io.wifi.starrailexpress.client.StaminaRenderer;
 import io.wifi.starrailexpress.client.StatusBarHUD;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.game.GameConstants;
-import io.wifi.utils.client.betterrender.FakeGuiGraphics;
-import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -51,14 +49,7 @@ public class InGameHudMixin {
         LocalPlayer player = this.minecraft.player;
         if (player == null)
             return;
-        FakeGuiGraphics context = new FakeGuiGraphics(trueContext);
         Font renderer = Minecraft.getInstance().font;
-        if (OptimizedTextRenderer.INSTANCE.isTickDirty()) {
-            RoleNameRenderer.renderHud(renderer, player, context, tickCounter);
-            RoundTextRenderer.renderHud(renderer, player, context, tickCounter.getRealtimeDeltaTicks());
-            LobbyPlayersRenderer.renderHud(renderer, player, context);
-        }
-
         if (Minecraft.getInstance().screen == null)
             StoreRenderer.renderHud(renderer, player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));
         TimeRenderer.renderHud(renderer, player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));

@@ -69,7 +69,6 @@ public class OptimizedTextRenderer {
     // ── Frame lifecycle (called by GuiRenderMixin) ─────────────────────────────
 
     public void beginFrame(GuiGraphics graphics) {
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // ← 这行
         frameGraphics = graphics;
         inFrame = true;
         pending.clear();
@@ -114,7 +113,6 @@ public class OptimizedTextRenderer {
             }
         }
 
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // ← 这行
         RenderSystem.disableDepthTest();
         bufferSource.endBatch();
         RenderSystem.enableDepthTest();

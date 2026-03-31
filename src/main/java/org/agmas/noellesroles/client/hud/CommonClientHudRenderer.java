@@ -6,6 +6,9 @@ import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.gui.LobbyPlayersRenderer;
+import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.starrailexpress.client.gui.RoundTextRenderer;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
@@ -14,6 +17,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -50,14 +54,19 @@ public class CommonClientHudRenderer {
     HudRenderCallback.EVENT.register((trueGuiGraphics, deltaTracker) -> {
       if (!OptimizedTextRenderer.INSTANCE.isTickDirty())
         return;
-      var client = Minecraft.getInstance();
+      final Minecraft client = Minecraft.getInstance();
+      final Font font = client.font;
       final FakeGuiGraphics guiGraphics = new FakeGuiGraphics(trueGuiGraphics);
-      if (client == null)
-        return;
       if (client.player == null)
         return;
       if (SREClient.gameComponent == null) {
         return;
+      }
+      final LocalPlayer player = client.player;
+      {
+        RoleNameRenderer.renderHud(font, player, guiGraphics, deltaTracker);
+        RoundTextRenderer.renderHud(font, player, guiGraphics, deltaTracker.getRealtimeDeltaTicks());
+        LobbyPlayersRenderer.renderHud(font, player, guiGraphics);
       }
       {
         if (client.screen == null) {
