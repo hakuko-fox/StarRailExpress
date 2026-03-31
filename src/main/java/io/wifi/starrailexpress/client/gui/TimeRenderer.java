@@ -15,11 +15,21 @@ import org.jetbrains.annotations.NotNull;
 public class TimeRenderer {
     public static TimeNumberRenderer view = new TimeNumberRenderer();
     public static float offsetDelta = 0f;
+    // 缓存角色状态，避免每帧查询
+    private static boolean cachedCanSeeTime = false;
+    private static int lastCachedTick = -1;
 
     public static void renderHud(Font renderer, @NotNull LocalPlayer player, @NotNull GuiGraphics context, float delta) {
-        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        SRERole role = gameWorldComponent.getRole(player);
-        if (gameWorldComponent.isRunning() && (role != null && role.canSeeTime() || GameUtils.isPlayerSpectatingOrCreative(player))) {
+        // 每20tick更新一次角色权限缓存
+        int currentTick = player.tickCount;
+        if (currentTick - lastCachedTick > 20 || lastCachedTick < 0) {
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            SRERole role = gameWorldComponent.getRole(player);
+            cachedCanSeeTime = gameWorldComponent.isRunning() && 
+                (role != null && role.canSeeTime() || GameUtils.isPlayerSpectatingOrCreative(player));
+            lastCachedTick = currentTick;
+        }
+        if (cachedCanSeeTime) {
             int time = SREGameTimeComponent.KEY.get(player.level()).getTime();
             if (Math.abs(view.getTarget() - time) > 10) offsetDelta = time > view.getTarget() ? .6f : -.6f;
             if (time < GameConstants.getInTicks(1, 0)) {
@@ -87,6 +97,9 @@ public class TimeRenderer {
     }
 
     public static class ScrollingDigit {
+        // 预缓存数字字符串和幂次结果，避免每帧创建对象和重复计算
+        private static final String[] DIGIT_STRINGS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        
         private final int power;
         private final boolean cap6;
         private float target;
@@ -106,20 +119,34 @@ public class TimeRenderer {
 
         public void render(@NotNull Font renderer, @NotNull GuiGraphics context, int colour, float delta) {
             float value = Mth.lerp(delta, this.lastValue, this.value);
-            int digit = Mth.floor(value) % (this.cap6 ? 6 : 10);
-            int digitNext = Mth.floor(value + 1) % (this.cap6 ? 6 : 10);
-            double offset = Math.pow(value % 1, this.power);
+            int mod = this.cap6 ? 6 : 10;
+            int digit = Mth.floor(value) % mod;
+            int digitNext = (digit + 1) % mod;
+            // 使用快速幂近似代替Math.pow
+            float base = value % 1;
+            float offset = fastPow(base, this.power);
             colour &= 0xFFFFFF;
             context.pose().pushPose();
             context.pose().translate(0, -offset * (renderer.lineHeight + 2), 0);
-            double alpha = (1.0f - Math.abs(offset)) * 255.0f;
+            float alpha = (1.0f - offset) * 255.0f;
             int baseColour = colour | (int) alpha << 24;
-            int nextColour = colour | (int) (Math.abs(offset) * 255.0f) << 24;
+            int nextColour = colour | (int) (offset * 255.0f) << 24;
             if ((baseColour & -67108864) != 0)
-                context.drawString(renderer, String.valueOf(digit), 0, 0, baseColour);
+                context.drawString(renderer, DIGIT_STRINGS[digit], 0, 0, baseColour);
             if ((nextColour & -67108864) != 0)
-                context.drawString(renderer, String.valueOf(digitNext), 0, renderer.lineHeight + 2, nextColour);
+                context.drawString(renderer, DIGIT_STRINGS[digitNext], 0, renderer.lineHeight + 2, nextColour);
             context.pose().popPose();
+        }
+        
+        // 快速整数幂计算，比Math.pow更高效
+        private static float fastPow(float base, int exp) {
+            float result = 1.0f;
+            while (exp > 0) {
+                if ((exp & 1) == 1) result *= base;
+                base *= base;
+                exp >>= 1;
+            }
+            return result;
         }
 
         public void setTarget(float target) {

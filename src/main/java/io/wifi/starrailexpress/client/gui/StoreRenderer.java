@@ -16,30 +16,37 @@ import java.util.List;
 public class StoreRenderer {
     public static MoneyNumberRenderer view = new MoneyNumberRenderer();
     public static float offsetDelta = 0f;
+    // 缓存角色状态，避免每帧查询
+    private static boolean cachedCanSeeCoin = false;
+    private static int lastCachedTick = -1;
 
     public static void renderHud(Font font, @NotNull LocalPlayer player, @NotNull GuiGraphics context,
             float delta) {
-        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        SRERole role = gameWorldComponent.getRole(player);
-        if (role == null) {
+        // 每20tick更新一次角色权限缓存
+        int currentTick = player.tickCount;
+        if (currentTick - lastCachedTick > 20 || lastCachedTick < 0) {
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            SRERole role = gameWorldComponent.getRole(player);
+            cachedCanSeeCoin = role != null && role.canSeeCoin();
+            lastCachedTick = currentTick;
+        }
+        if (!cachedCanSeeCoin) {
             return;
         }
-        if (role.canSeeCoin()) {
-            int balance = SREPlayerShopComponent.KEY.get(player).balance;
-            if (view.getTarget() != balance) {
-                offsetDelta = balance > view.getTarget() ? .6f : -.6f;
-                view.setTarget(balance);
-            }
-            float r = offsetDelta > 0 ? 1f - offsetDelta : 1f;
-            float g = offsetDelta < 0 ? 1f + offsetDelta : 1f;
-            float b = 1f - Math.abs(offsetDelta);
-            int colour = Mth.color(r, g, b) | 0xFF000000;
-            context.pose().pushPose();
-            context.pose().translate(context.guiWidth() - 12, 6, 0);
-            view.render(font, context, 0, 0, colour, delta);
-            context.pose().popPose();
-            offsetDelta = Mth.lerp(delta / 16, offsetDelta, 0f);
+        int balance = SREPlayerShopComponent.KEY.get(player).balance;
+        if (view.getTarget() != balance) {
+            offsetDelta = balance > view.getTarget() ? .6f : -.6f;
+            view.setTarget(balance);
         }
+        float r = offsetDelta > 0 ? 1f - offsetDelta : 1f;
+        float g = offsetDelta < 0 ? 1f + offsetDelta : 1f;
+        float b = 1f - Math.abs(offsetDelta);
+        int colour = Mth.color(r, g, b) | 0xFF000000;
+        context.pose().pushPose();
+        context.pose().translate(context.guiWidth() - 12, 6, 0);
+        view.render(font, context, 0, 0, colour, delta);
+        context.pose().popPose();
+        offsetDelta = Mth.lerp(delta / 16, offsetDelta, 0f);
     }
 
     public static void tick() {
@@ -90,6 +97,9 @@ public class StoreRenderer {
     }
 
     public static class ScrollingDigit {
+        // 预缓存数字字符串，避免每帧创建String对象
+        private static final String[] DIGIT_STRINGS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        
         private final boolean force;
         private float target;
         private float value;
@@ -107,28 +117,22 @@ public class StoreRenderer {
         }
 
         public void render(@NotNull Font renderer, @NotNull GuiGraphics context, int colour, float delta) {
-            if (Mth.floor(this.lastValue) != Mth.floor(this.value)) {
-                // LocalPlayer player = Minecraft.getInstance().player;
-                // if (player != null)player.getWorld().playSound(player, player.getX(),
-                // player.getY(), player.getZ(), TMMSounds.BALANCE_CLICK, SoundCategory.PLAYERS,
-                // 0.1f, 1 + this.lastValue - this.value, player.getRandom().nextLong());
-            }
             float value = Mth.lerp(delta, this.lastValue, this.value);
             int digit = Mth.floor(value) % 10;
-            int digitNext = Mth.floor(value + 1) % 10;
+            int digitNext = (digit + 1) % 10;
             float offset = value % 1;
             colour &= 0xFFFFFF;
             context.pose().pushPose();
             context.pose().translate(0, -offset * (renderer.lineHeight + 2), 0);
-            float alpha = (1.0f - Math.abs(offset)) * 255.0f;
+            float alpha = (1.0f - offset) * 255.0f;
             if (value < 1 && !this.force)
                 alpha *= value;
             int baseColour = colour | (int) alpha << 24;
-            int nextColour = colour | (int) (Math.abs(offset) * 255.0f) << 24;
+            int nextColour = colour | (int) (offset * 255.0f) << 24;
             if ((baseColour & -67108864) != 0)
-                context.drawString(renderer, String.valueOf(digit), 0, 0, baseColour);
+                context.drawString(renderer, DIGIT_STRINGS[digit], 0, 0, baseColour);
             if ((nextColour & -67108864) != 0)
-                context.drawString(renderer, String.valueOf(digitNext), 0, renderer.lineHeight + 2, nextColour);
+                context.drawString(renderer, DIGIT_STRINGS[digitNext], 0, renderer.lineHeight + 2, nextColour);
             context.pose().popPose();
         }
 
