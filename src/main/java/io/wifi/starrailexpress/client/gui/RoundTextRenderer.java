@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
+import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -49,49 +50,54 @@ public class RoundTextRenderer {
     public static Map<UUID, SRERole> lastRole = new HashMap<>();
 
     @SuppressWarnings("IntegerDivisionInFloatingPointContext")
-    public static void renderHud(Font renderer, LocalPlayer player, @NotNull FakeGuiGraphics context, float partialTicks) {
+    public static void renderHud(Font renderer, LocalPlayer player, @NotNull FakeGuiGraphics context,
+            float partialTicks) {
         boolean isLooseEnds = SREGameWorldComponent.KEY.get(player.level()).getGameMode() == SREGameModes.LOOSE_ENDS;
 
-        if (welcomeTime > 0) {
-            if (welcomeTime <= WELCOME_DURATION - GameConstants.FADE_TIME + 15) {
-                MapDetailsRenderer.renderHud(renderer, player, context, partialTicks);
+        if (OptimizedTextRenderer.INSTANCE.isTickDirty()) {
+            if (welcomeTime > 0) {
+                if (welcomeTime <= WELCOME_DURATION - GameConstants.FADE_TIME + 15) {
+                    MapDetailsRenderer.renderHud(renderer, player, context, partialTicks);
+                }
+                context.pose().pushPose();
+                context.pose().translate(context.guiWidth() / 2f, context.guiHeight() / 2f + 3.5, 0);
+                context.pose().pushPose();
+                context.pose().scale(2.6f, 2.6f, 1f);
+                int color = isLooseEnds ? 0x9F0000 : 0xFFFFFF;
+                if (welcomeTime <= 180) {
+                    Component welcomeText = isLooseEnds ? Component.translatable("announcement.star.loose_ends.welcome")
+                            : role.welcomeText;
+                    context.drawString(renderer, welcomeText, -renderer.width(welcomeText) / 2, -12, color);
+                }
+                context.pose().popPose();
+                context.pose().pushPose();
+                context.pose().scale(1.2f, 1.2f, 1f);
+                if (welcomeTime <= 120) {
+                    Component premiseText = isLooseEnds ? Component.translatable("announcement.star.loose_ends.premise")
+                            : role.premiseText.apply(killers);
+                    context.drawString(renderer, premiseText, -renderer.width(premiseText) / 2, 0, color);
+                }
+                context.pose().popPose();
+                context.pose().pushPose();
+                context.pose().scale(1f, 1f, 1f);
+                if (welcomeTime <= 60) {
+                    Component goalText = isLooseEnds ? Component.translatable("announcement.star.loose_ends.goal")
+                            : role.goalText.apply(targets);
+                    context.drawString(renderer, goalText, -renderer.width(goalText) / 2, 14, color);
+                }
+                if (welcomeTime <= 120) {
+                    boolean canJump = SREClient.gameComponent.isJumpAvailable();
+                    MutableComponent canJumpTip = canJump
+                            ? Component.translatable("announcement.star.tip.can_jump").withStyle(ChatFormatting.GREEN)
+                            : Component.translatable("announcement.star.tip.cant_jump")
+                                    .withStyle(ChatFormatting.YELLOW);
+                    context.drawString(renderer, canJumpTip, -renderer.width(canJumpTip) / 2, 28, color);
+                }
+                context.pose().popPose();
+                context.pose().popPose();
             }
-            context.pose().pushPose();
-            context.pose().translate(context.guiWidth() / 2f, context.guiHeight() / 2f + 3.5, 0);
-            context.pose().pushPose();
-            context.pose().scale(2.6f, 2.6f, 1f);
-            int color = isLooseEnds ? 0x9F0000 : 0xFFFFFF;
-            if (welcomeTime <= 180) {
-                Component welcomeText = isLooseEnds ? Component.translatable("announcement.star.loose_ends.welcome")
-                        : role.welcomeText;
-                context.drawString(renderer, welcomeText, -renderer.width(welcomeText) / 2, -12, color);
-            }
-            context.pose().popPose();
-            context.pose().pushPose();
-            context.pose().scale(1.2f, 1.2f, 1f);
-            if (welcomeTime <= 120) {
-                Component premiseText = isLooseEnds ? Component.translatable("announcement.star.loose_ends.premise")
-                        : role.premiseText.apply(killers);
-                context.drawString(renderer, premiseText, -renderer.width(premiseText) / 2, 0, color);
-            }
-            context.pose().popPose();
-            context.pose().pushPose();
-            context.pose().scale(1f, 1f, 1f);
-            if (welcomeTime <= 60) {
-                Component goalText = isLooseEnds ? Component.translatable("announcement.star.loose_ends.goal")
-                        : role.goalText.apply(targets);
-                context.drawString(renderer, goalText, -renderer.width(goalText) / 2, 14, color);
-            }
-            if (welcomeTime <= 120) {
-                boolean canJump = SREClient.gameComponent.isJumpAvailable();
-                MutableComponent canJumpTip = canJump
-                        ? Component.translatable("announcement.star.tip.can_jump").withStyle(ChatFormatting.GREEN)
-                        : Component.translatable("announcement.star.tip.cant_jump").withStyle(ChatFormatting.YELLOW);
-                context.drawString(renderer, canJumpTip, -renderer.width(canJumpTip) / 2, 28, color);
-            }
-            context.pose().popPose();
-            context.pose().popPose();
         }
+
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
         final GuiGraphics trueContext = context.getDefaultGuiGraphics();
         if (endTime > 0 && endTime < END_DURATION - (GameConstants.FADE_TIME * 2) && !game.isRunning()) {
@@ -119,6 +125,7 @@ public class RoundTextRenderer {
             if (isLooseEnds) {
                 context.drawString(renderer, RoleAnnouncementTexts.LOOSE_END.titleText,
                         -renderer.width(RoleAnnouncementTexts.LOOSE_END.titleText) / 2, 14, 0xFFFFFF);
+
                 int looseEnds = 0;
                 for (SREGameRoundEndComponent.RoundEndData entry : roundEnd.players) {
                     context.pose().pushPose();
@@ -133,19 +140,23 @@ public class RoundTextRenderer {
                         context.pose().pushPose();
                         context.pose().translate(8, 0, 0);
                         float offColour = entry.wasDead() ? 0.4f : 1f;
-                        trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f, offColour,
+                        trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f,
+                                offColour,
                                 offColour, 1f);
                         context.pose().translate(-0.5, -0.5, 0);
                         context.pose().scale(1.125f, 1.125f, 1f);
-                        trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f, offColour,
+                        trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f,
+                                offColour,
                                 offColour, 1f);
                         context.pose().popPose();
                     }
                     if (entry.wasDead()) {
                         context.pose().translate(13, 0, 0);
                         context.pose().scale(2f, 1f, 1f);
+
                         context.drawString(renderer, "x", -renderer.width("x") / 2, 0, 0xE10000, false);
                         context.drawString(renderer, "x", -renderer.width("x") / 2, 1, 0x550000, false);
+
                     }
                     context.pose().popPose();
                 }
@@ -169,7 +180,9 @@ public class RoundTextRenderer {
                         -renderer.width(
                                 Component.translatable("announcement.star.title.neutral"))
                                 / 2 - 90,
-                        (loose_endsTotal > 1) ? (14 + 16 + 32 * ((loose_endsTotal) / 2)) : 14, Color.YELLOW.getRGB());
+                        (loose_endsTotal > 1) ? (14 + 16 + 32 * ((loose_endsTotal) / 2)) : 14,
+                        Color.YELLOW.getRGB());
+
                 if (loose_endsTotal > 1) {
                     context.drawString(renderer, Component.translatable("announcement.star.role.loose_end"),
                             -renderer.width(
@@ -184,6 +197,7 @@ public class RoundTextRenderer {
                 context.drawString(renderer, RoleAnnouncementTexts.KILLER.titleText,
                         -renderer.width(RoleAnnouncementTexts.KILLER.titleText) / 2 + 90,
                         14 + 16 + 32 * ((vigilanteTotal) / 2), 0xFFFFFF);
+
                 int civilians = 0;
                 int neutrals = 0;
                 int vigilantes = 0;

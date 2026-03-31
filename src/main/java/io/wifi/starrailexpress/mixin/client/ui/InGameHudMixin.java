@@ -11,6 +11,7 @@ import io.wifi.starrailexpress.client.StaminaRenderer;
 import io.wifi.starrailexpress.client.StatusBarHUD;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -50,6 +51,7 @@ public class InGameHudMixin {
         if (player == null)
             return;
         Font renderer = Minecraft.getInstance().font;
+        FakeGuiGraphics fakeGuiGraphics = new FakeGuiGraphics(trueContext);
         if (Minecraft.getInstance().screen == null)
             StoreRenderer.renderHud(renderer, player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));
         TimeRenderer.renderHud(renderer, player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));
@@ -57,6 +59,7 @@ public class InGameHudMixin {
         StatusBarHUD.getInstance().render(trueContext, tickCounter.getRealtimeDeltaTicks());
         StaminaRenderer.renderHud(player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));
         SansRenderer.instance.tick(player, trueContext, tickCounter.getGameTimeDeltaPartialTick(true));
+        RoundTextRenderer.renderHud(renderer, player, fakeGuiGraphics, tickCounter.getRealtimeDeltaTicks());
     }
 
     @WrapMethod(method = "renderCrosshair")

@@ -8,7 +8,6 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.LobbyPlayersRenderer;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
-import io.wifi.starrailexpress.client.gui.RoundTextRenderer;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
@@ -65,7 +64,6 @@ public class CommonClientHudRenderer {
       final LocalPlayer player = client.player;
       {
         RoleNameRenderer.renderHud(font, player, guiGraphics, deltaTracker);
-        RoundTextRenderer.renderHud(font, player, guiGraphics, deltaTracker.getRealtimeDeltaTicks());
         LobbyPlayersRenderer.renderHud(font, player, guiGraphics);
       }
       {
