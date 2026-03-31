@@ -109,7 +109,7 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.ATHLETE_ID, 1);
 
         // 明星每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.STAR_ID, 1);
+        Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 1);
 
         // 退伍军人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.VETERAN_ID, 1);

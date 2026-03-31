@@ -7,7 +7,6 @@ import org.agmas.noellesroles.role.ModRoles;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
@@ -54,8 +53,7 @@ public class AvengerHud {
                 final var playerInfo = client.player.connection.getPlayerInfo(avengerComponent.killerUuid);
                 if (avengerComponent.killerUuid != null &&
                         playerInfo != null) {
-                    PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),
-                            playerInfo.getSkin().texture(),
+                    context.drawPlayerFace(playerInfo.getSkin().texture(),
                             xOffset, yOffset - 14, 12);
 
                     Component killerName = Component.literal(avengerComponent.getKillerName())
@@ -64,10 +62,10 @@ public class AvengerHud {
                 }
             } else if (avengerComponent.bound && avengerComponent.targetPlayer != null) {
                 // 已绑定目标 - 显示保护目标
-                if (client.player.connection.getPlayerInfo(avengerComponent.targetPlayer) != null) {
+                var target = client.player.connection.getPlayerInfo(avengerComponent.targetPlayer);
+                if (target != null) {
                     // 显示目标头像
-                    PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),
-                            client.player.connection.getPlayerInfo(avengerComponent.targetPlayer).getSkin().texture(),
+                    context.drawPlayerFace(target.getSkin().texture(),
                             xOffset, yOffset, 12);
 
                     Component targetText = Component.translatable("tip.noellesroles.avenger.target",

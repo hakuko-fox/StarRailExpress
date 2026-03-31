@@ -21,7 +21,7 @@ import org.agmas.noellesroles.role.ModRoles;
 public class SuperStarHud {
 
     public static void register() {
-        RoleHudRenderCallback.EVENT.register(ModRoles.SINGER_ID, (context, deltaTracker) -> {
+        RoleHudRenderCallback.EVENT.register(ModRoles.SUPERSTAR_ID, (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
             if (SREClient.isPlayerSpectator())
                 return;

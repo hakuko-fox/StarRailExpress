@@ -105,7 +105,7 @@ public class ModRoles {
   public static final ResourceLocation POSTMAN_ID = Noellesroles.id("postman");
   public static final ResourceLocation DETECTIVE_ID = Noellesroles.id("detective");
   public static final ResourceLocation ATHLETE_ID = Noellesroles.id("athlete");
-  public static final ResourceLocation STAR_ID = Noellesroles.id("star");
+  public static final ResourceLocation SUPERSTAR_ID = Noellesroles.id("star");
   public static final ResourceLocation VETERAN_ID = Noellesroles.id("veteran");
   public static final ResourceLocation SINGER_ID = Noellesroles.id("singer");
   public static final ResourceLocation PSYCHOLOGIST_ID = Noellesroles.id("psychologist");
@@ -866,7 +866,7 @@ public class ModRoles {
    * - 30秒冷却
    */
   public static SRERole SUPERSTAR = TMMRoles.registerRole(new NormalRole(
-      STAR_ID, // 角色 ID
+      SUPERSTAR_ID, // 角色 ID
       new Color(255, 240, 120).getRGB(), // 星辉黄 - 代表明星的聚光灯
       true, // isInnocent = 乘客阵营
       false, // canUseKiller = 无杀手能力

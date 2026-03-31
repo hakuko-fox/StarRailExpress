@@ -61,7 +61,7 @@ public class RoleUnlockManager {
         UNLOCK_THRESHOLDS.put(ModRoles.ACCOUNTANT_ID,               12);
         UNLOCK_THRESHOLDS.put(ModRoles.DIVER_ID,                    12);
         UNLOCK_THRESHOLDS.put(ModRoles.PHOTOGRAPHER_ID,             12);
-        UNLOCK_THRESHOLDS.put(ModRoles.STAR_ID,                     12);
+        UNLOCK_THRESHOLDS.put(ModRoles.SUPERSTAR_ID,                     12);
         UNLOCK_THRESHOLDS.put(ModRoles.AVENGER_ID,                  12);
         UNLOCK_THRESHOLDS.put(ModRoles.RECALLER_ID,                 12);
         UNLOCK_THRESHOLDS.put(ModRoles.GLITCH_ROBOT_ID,             15);

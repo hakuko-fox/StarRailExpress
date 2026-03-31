@@ -21,7 +21,8 @@ public class InsaneHud {
 
                     final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(client.player);
                     if (insaneKillerPlayerComponent.inNearDeath()) {
-                        var text1 = Component.translatable("insane.tip.neardeath.line1").withStyle(ChatFormatting.YELLOW);
+                        var text1 = Component.translatable("insane.tip.neardeath.line1")
+                                .withStyle(ChatFormatting.YELLOW);
                         var text2 = Component
                                 .translatable("insane.tip.neardeath.line2", insaneKillerPlayerComponent.deathState / 20)
                                 .withStyle(ChatFormatting.RED);

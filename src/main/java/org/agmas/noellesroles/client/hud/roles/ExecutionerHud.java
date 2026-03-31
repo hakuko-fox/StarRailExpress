@@ -3,7 +3,6 @@ package org.agmas.noellesroles.client.hud.roles;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
@@ -26,13 +25,13 @@ public abstract class ExecutionerHud {
             int screenHeight = context.guiHeight();
             int yOffset = screenHeight - 28; // 右下角
             int xOffset = screenWidth - 180; // 距离右边缘
-             if (component.targetSelected && component.target != null) {
+            if (component.targetSelected && component.target != null) {
                 // 已绑定目标 - 显示保护目标
                 var info = client.player.connection.getPlayerInfo(component.target);
                 if (info != null) {
                     // 显示目标头像
-                    PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),
-                           info.getSkin().texture(),
+                    context.drawPlayerFace(
+                            info.getSkin().texture(),
                             xOffset, yOffset, 12);
 
                     Component targetText = Component.translatable("hud.executioner.target",

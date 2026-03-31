@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client.hud.roles;
 
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -24,6 +25,8 @@ public class PuppeteerHud {
 
     public static void register() {
         HudRenderCallback.EVENT.register((context, deltaTracker) -> {
+            if (!OptimizedTextRenderer.INSTANCE.isTickDirty())
+                return;
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || client.level == null)
                 return;

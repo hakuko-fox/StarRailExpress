@@ -244,12 +244,16 @@ public class FakeGuiGraphics {
         textRenderer.enqueueBlitResource(real, loc, x, y, z, u, v, w, h, tw, th);
     }
 
-    public void blit(ResourceLocation loc, int x, int y, int w, int h, float u, float v, int rw, int rh, int tw, int th) {
-        textRenderer.enqueueBlitResourceRegion(real, loc, x, y, w, h, u, v, rw, rh, tw, th);
-    }
-
     public void blit(ResourceLocation loc, int x, int y, float u, float v, int w, int h, int tw, int th) {
         textRenderer.enqueueBlitResourceSimple(real, loc, x, y, u, v, w, h, tw, th);
+    }
+
+    /**
+     * Blit with width/height and UV region - used by PlayerFaceRenderer.
+     * Signature: blit(texture, x, y, width, height, u, v, uWidth, vHeight, texWidth, texHeight)
+     */
+    public void blit(ResourceLocation loc, int x, int y, int w, int h, float u, float v, int uw, int vh, int tw, int th) {
+        textRenderer.enqueueBlitResourceRegion(real, loc, x, y, w, h, u, v, uw, vh, tw, th);
     }
 
     public void blitSprite(ResourceLocation loc, int x, int y, int w, int h) {
@@ -340,5 +344,85 @@ public class FakeGuiGraphics {
     public void innerBlit(ResourceLocation texture, int x1, int x2, int y1, int y2, int z,
             float u0, float u1, float v0, float v1, float r, float g, float b, float a) {
         textRenderer.enqueueBlit(real, texture, x1, x2, y1, y2, z, u0, u1, v0, v1, r, g, b, a);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // PLAYER FACE RENDERING — optimized implementation of PlayerFaceRenderer
+    // ═════════════════════════════════════════════════════════════════════════
+
+    private static final int SKIN_HEAD_U = 8;
+    private static final int SKIN_HEAD_V = 8;
+    private static final int SKIN_HEAD_WIDTH = 8;
+    private static final int SKIN_HEAD_HEIGHT = 8;
+    private static final int SKIN_HAT_U = 40;
+    private static final int SKIN_HAT_V = 8;
+    private static final int SKIN_TEX_WIDTH = 64;
+    private static final int SKIN_TEX_HEIGHT = 64;
+
+    /**
+     * Draw a player face (head + hat layer) - optimized replacement for PlayerFaceRenderer.draw().
+     * 
+     * <p>Usage:
+     * <pre>{@code
+     * // Instead of:
+     * PlayerFaceRenderer.draw(guiGraphics, skinTexture, x, y, size);
+     * 
+     * // Use:
+     * fakeGraphics.drawPlayerFace(skinTexture, x, y, size);
+     * }</pre>
+     * 
+     * @param skinTexture the player skin texture
+     * @param x the x position
+     * @param y the y position
+     * @param size the size (width and height) of the face
+     */
+    public void drawPlayerFace(ResourceLocation skinTexture, int x, int y, int size) {
+        drawPlayerFace(skinTexture, x, y, size, true, false);
+    }
+
+    /**
+     * Draw a player face with options for hat layer and mirroring.
+     * 
+     * @param skinTexture the player skin texture
+     * @param x the x position
+     * @param y the y position
+     * @param size the size (width and height) of the face
+     * @param drawHat whether to draw the hat layer
+     * @param upsideDown whether to flip the face vertically
+     */
+    public void drawPlayerFace(ResourceLocation skinTexture, int x, int y, int size, 
+                                boolean drawHat, boolean upsideDown) {
+        int vOffset = SKIN_HEAD_V + (upsideDown ? SKIN_HEAD_HEIGHT : 0);
+        int vHeight = SKIN_HEAD_HEIGHT * (upsideDown ? -1 : 1);
+        
+        // Draw head base layer
+        blit(skinTexture, x, y, size, size, 
+             (float) SKIN_HEAD_U, (float) vOffset, 
+             SKIN_HEAD_WIDTH, vHeight, 
+             SKIN_TEX_WIDTH, SKIN_TEX_HEIGHT);
+        
+        // Draw hat overlay layer
+        if (drawHat) {
+            int hatVOffset = SKIN_HAT_V + (upsideDown ? SKIN_HEAD_HEIGHT : 0);
+            int hatVHeight = SKIN_HEAD_HEIGHT * (upsideDown ? -1 : 1);
+            
+            // Note: The hat layer uses blend, handled by the blit action
+            blit(skinTexture, x, y, size, size,
+                 (float) SKIN_HAT_U, (float) hatVOffset,
+                 SKIN_HEAD_WIDTH, hatVHeight,
+                 SKIN_TEX_WIDTH, SKIN_TEX_HEIGHT);
+        }
+    }
+
+    /**
+     * Draw a player face from PlayerSkin - convenience method.
+     * 
+     * @param skin the player skin
+     * @param x the x position
+     * @param y the y position
+     * @param size the size (width and height) of the face
+     */
+    public void drawPlayerFace(net.minecraft.client.resources.PlayerSkin skin, int x, int y, int size) {
+        drawPlayerFace(skin.texture(), x, y, size);
     }
 }

@@ -25,7 +25,7 @@ public class PsychologistHud {
     public static void register() {
         RoleHudRenderCallback.EVENT.register(ModRoles.PSYCHOLOGIST_ID, (context, deltaTracker) -> {
             Minecraft client = Minecraft.getInstance();
-    if (SREClient.isPlayerSpectator())
+            if (SREClient.isPlayerSpectator())
                 return;
             // 获取心理学家组件
             PsychologistPlayerComponent psychComp = ModComponents.PSYCHOLOGIST.get(client.player);
