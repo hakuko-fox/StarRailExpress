@@ -3,10 +3,10 @@ package org.agmas.noellesroles.mixin.client.roles.wayfarer;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.component.WayfarerPlayerComponent;
@@ -21,7 +21,7 @@ import pro.fazeclan.river.stupid_express.client.StupidExpressClient;
 public class TargetEntityHudmixin {
 
     @Inject(method = "renderHud", at = @At("TAIL"))
-    private static void replaceRoleHud(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter,
+    private static void replaceRoleHud(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter,
             CallbackInfo ci) {
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         if (StupidExpressClient.targetBody == null) {

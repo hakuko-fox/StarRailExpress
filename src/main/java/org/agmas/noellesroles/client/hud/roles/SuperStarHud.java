@@ -4,14 +4,12 @@ import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.network.chat.Component;
 
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.SuperStarPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
-import org.spongepowered.asm.mixin.Mixin;
 
 /**
  * 明星 HUD 显示
@@ -20,7 +18,6 @@ import org.spongepowered.asm.mixin.Mixin;
  * - 发光中状态（主动技能触发时）
  * - 主动技能冷却时间或就绪提示
  */
-@Mixin(Gui.class)
 public class SuperStarHud {
 
     public static void register() {

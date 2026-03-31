@@ -2,8 +2,8 @@ package io.wifi.starrailexpress.client.gui;
 
 import io.wifi.starrailexpress.data.MapConfig;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -53,7 +53,7 @@ public class MapDetailsRenderer {
     private static float titleOffsetX = 0f; // 标题偏移动画
     private static float titlePulse = 0f; // 标题脉动动画
 
-    public static void renderHud(Font font, @NotNull LocalPlayer player, GuiGraphics context, float delta) {
+    public static void renderHud(Font font, @NotNull LocalPlayer player, FakeGuiGraphics context, float delta) {
         if (mapId.isEmpty() || System.currentTimeMillis() - displayStartTime > DISPLAY_DURATION) {
             // 重置动画状态
             if (!mapId.isEmpty()) {
@@ -184,7 +184,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染上下黑框
      */
-    private static void renderBlackBars(GuiGraphics context, int screenWidth, int screenHeight) {
+    private static void renderBlackBars(FakeGuiGraphics context, int screenWidth, int screenHeight) {
         if (currentBarHeightRatio <= 0f) return;
 
         int barHeight = (int) (screenHeight * currentBarHeightRatio);
@@ -200,7 +200,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染全屏电影效果
      */
-    private static void renderFullscreenEffects(GuiGraphics context, int screenWidth, int screenHeight, int alpha) {
+    private static void renderFullscreenEffects(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 渲染暗角效果（模拟电影镜头）
         renderVignette(context, screenWidth, screenHeight, alpha);
 
@@ -217,7 +217,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染暗角效果（优化版本）
      */
-    private static void renderVignette(GuiGraphics context, int screenWidth, int screenHeight, int alpha) {
+    private static void renderVignette(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 使用径向渐变实现更自然的暗角效果
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
@@ -253,7 +253,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染胶片颗粒效果
      */
-    private static void renderFilmGrain(GuiGraphics context, int screenWidth, int screenHeight, int alpha) {
+    private static void renderFilmGrain(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 随机颗粒效果（简化实现）
         long time = System.currentTimeMillis();
         int grainAlpha = (int)(alpha * 0.1f); // 非常淡的颗粒
@@ -269,7 +269,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染扫描线效果
      */
-    private static void renderScanlines(GuiGraphics context, int screenWidth, int screenHeight, int alpha) {
+    private static void renderScanlines(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 每隔2像素绘制一条细线
         int lineAlpha = (int)(alpha * 0.05f); // 非常淡的扫描线
 
@@ -281,7 +281,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染老电影噪点效果
      */
-    private static void renderVintageNoise(GuiGraphics context, int screenWidth, int screenHeight, int alpha) {
+    private static void renderVintageNoise(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 模拟老电影的随机噪点
         long time = System.currentTimeMillis();
         java.util.Random random = new java.util.Random(time / 100);
@@ -304,7 +304,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染左上角内容
      */
-    private static void renderTopLeftContent(GuiGraphics context, Font font,
+    private static void renderTopLeftContent(FakeGuiGraphics context, Font font,
                                              String mapName, String mapDesc, int alpha) {
         int currentY = TOP_MARGIN;
 
@@ -328,7 +328,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染地图标题
      */
-    private static void renderTitle(GuiGraphics context, Font font, String title, int y, int alpha) {
+    private static void renderTitle(FakeGuiGraphics context, Font font, String title, int y, int alpha) {
         context.pose().pushPose();
 
         // 应用位置和动画效果
@@ -353,7 +353,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染作者信息
      */
-    private static void renderAuthor(GuiGraphics context, Font font, int y, int alpha) {
+    private static void renderAuthor(FakeGuiGraphics context, Font font, int y, int alpha) {
         context.pose().pushPose();
 
         int authorX = LEFT_MARGIN;
@@ -376,7 +376,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染地图描述
      */
-    private static void renderDescription(GuiGraphics context, Font font, String description, int y, int alpha) {
+    private static void renderDescription(FakeGuiGraphics context, Font font, String description, int y, int alpha) {
         // 计算描述的最大宽度（屏幕宽度减去左边距）
         int maxDescWidth = context.guiWidth() - LEFT_MARGIN - 20;
 
@@ -419,7 +419,7 @@ public class MapDetailsRenderer {
     /**
      * 渲染地图ID
      */
-    private static void renderMapId(GuiGraphics context, Font font, int alpha) {
+    private static void renderMapId(FakeGuiGraphics context, Font font, int alpha) {
         int screenWidth = context.guiWidth();
         int screenHeight = context.guiHeight();
 

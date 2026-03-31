@@ -3,9 +3,9 @@ package pro.fazeclan.river.stupid_express.mixin.client.role.amnesiac;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
 import io.wifi.starrailexpress.entity.PlayerBodyEntity;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -22,7 +22,7 @@ import pro.fazeclan.river.stupid_express.constants.SERoles;
 public class AmnesiacHudMixin {
 
     @Inject(method = "renderHud", at = @At("TAIL"))
-    private static void replaceRoleHud(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter,
+    private static void replaceRoleHud(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter,
             CallbackInfo ci) {
         if (StupidExpressClient.targetBody == null) {
             return;
@@ -41,7 +41,7 @@ public class AmnesiacHudMixin {
     }
 
     @Inject(method = "renderHud", at = @At(value = "INVOKE", target = "Lio/wifi/starrailexpress/game/GameUtils;isPlayerSpectatingOrCreative(Lnet/minecraft/world/entity/player/Player;)Z"))
-    private static void playerBodyRaycast(Font renderer, LocalPlayer player, GuiGraphics context,
+    private static void playerBodyRaycast(Font renderer, LocalPlayer player, FakeGuiGraphics context,
             DeltaTracker tickCounter, CallbackInfo ci) {
         float range = RoleNameRenderer.getPlayerRange(player);
         HitResult line = ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof PlayerBodyEntity,

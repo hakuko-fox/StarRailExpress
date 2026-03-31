@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.index.TMMSounds;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -48,7 +49,7 @@ public class RoundTextRenderer {
     public static Map<UUID, SRERole> lastRole = new HashMap<>();
 
     @SuppressWarnings("IntegerDivisionInFloatingPointContext")
-    public static void renderHud(Font renderer, LocalPlayer player, @NotNull GuiGraphics context, float partialTicks) {
+    public static void renderHud(Font renderer, LocalPlayer player, @NotNull FakeGuiGraphics context, float partialTicks) {
         boolean isLooseEnds = SREGameWorldComponent.KEY.get(player.level()).getGameMode() == SREGameModes.LOOSE_ENDS;
 
         if (welcomeTime > 0) {
@@ -92,6 +93,7 @@ public class RoundTextRenderer {
             context.pose().popPose();
         }
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        final GuiGraphics trueContext = context.getDefaultGuiGraphics();
         if (endTime > 0 && endTime < END_DURATION - (GameConstants.FADE_TIME * 2) && !game.isRunning()) {
             SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(player.level());
             if (roundEnd.getWinStatus() == GameUtils.WinStatus.NONE)
@@ -131,11 +133,11 @@ public class RoundTextRenderer {
                         context.pose().pushPose();
                         context.pose().translate(8, 0, 0);
                         float offColour = entry.wasDead() ? 0.4f : 1f;
-                        context.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f, offColour,
+                        trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f, offColour,
                                 offColour, 1f);
                         context.pose().translate(-0.5, -0.5, 0);
                         context.pose().scale(1.125f, 1.125f, 1f);
-                        context.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f, offColour,
+                        trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f, offColour,
                                 offColour, 1f);
                         context.pose().popPose();
                     }
@@ -256,11 +258,11 @@ public class RoundTextRenderer {
                             context.pose().pushPose();
                             context.pose().translate(8, 0, 0);
                             float offColour = entry.wasDead() ? 0.4f : 1f;
-                            context.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f,
+                            trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f,
                                     offColour, offColour, 1f);
                             context.pose().translate(-0.5, -0.5, 0);
                             context.pose().scale(1.125f, 1.125f, 1f);
-                            context.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f,
+                            trueContext.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f,
                                     offColour, offColour, 1f);
                             context.pose().popPose();
 

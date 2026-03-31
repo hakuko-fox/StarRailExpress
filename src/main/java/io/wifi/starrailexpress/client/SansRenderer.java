@@ -420,8 +420,8 @@ public class SansRenderer {
     }
 
     public void tick(@NotNull LocalPlayer player, @NotNull GuiGraphics context, float dt) {
-        if (m_mc.player == null || m_mc.isPaused() || m_mc.player.isCreative() || m_mc.player.isSpectator()
-                || !SREGameWorldComponent.KEY.get(player.level()).isRunning())
+        if (m_mc.player == null || m_mc.isPaused() || SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()
+                || !SREClient.gameComponent.isRunning())
             return;
 
         m_cap = SREPlayerMoodComponent.KEY.get(m_mc.player);

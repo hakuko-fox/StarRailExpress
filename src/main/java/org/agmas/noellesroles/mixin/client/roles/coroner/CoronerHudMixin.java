@@ -9,11 +9,11 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
 import io.wifi.starrailexpress.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -48,7 +48,7 @@ public abstract class CoronerHudMixin {
     private static Component nametag;
 
     @Inject(method = "renderHud", at = @At("TAIL"))
-    private static void coronerRoleNameRenderer(Font renderer, LocalPlayer player, GuiGraphics context,
+    private static void coronerRoleNameRenderer(Font renderer, LocalPlayer player, FakeGuiGraphics context,
             DeltaTracker tickCounter, CallbackInfo ci) {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(player.level());
 
@@ -228,7 +228,7 @@ public abstract class CoronerHudMixin {
     }
 
     @Inject(method = "renderHud", at = @At(value = "INVOKE", target = "Lio/wifi/starrailexpress/game/GameUtils;isPlayerSpectatingOrCreative(Lnet/minecraft/world/entity/player/Player;)Z"))
-    private static void customRaycast(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter,
+    private static void customRaycast(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter,
             CallbackInfo ci) {
         float range = RoleNameRenderer.getPlayerRange(player);
         HitResult line = ProjectileUtil.getHitResultOnViewVector(player,

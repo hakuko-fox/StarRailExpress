@@ -2,10 +2,10 @@ package pro.fazeclan.river.stupid_express.mixin.client.modifier.lovers;
 
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -28,7 +28,7 @@ public abstract class LoversHudMixin {
     private static float nametagAlpha;
 
     @Inject(method = "renderHud", at = @At("TAIL"))
-    private static void loversHud(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private static void loversHud(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
 
         var clientPlayer = Minecraft.getInstance().player;
 
@@ -59,7 +59,7 @@ public abstract class LoversHudMixin {
                 }
             }
             if (config.modifiersSection.loversSection.loversKnowImmediately) {
-                PlayerFaceRenderer.draw(context,loverInfo.getSkin().texture(), 2, textYPos - 2,12);
+                PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),loverInfo.getSkin().texture(), 2, textYPos - 2,12);
             }
             context.drawString(renderer, name, textXPos, textYPos, SEModifiers.LOVERS.color());
 
@@ -71,7 +71,7 @@ public abstract class LoversHudMixin {
             method = "renderHud",
             at = @At("TAIL")
     )
-    private static void renderLovers(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private static void renderLovers(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         var loversComponent = LoversComponent.KEY.get(Minecraft.getInstance().player);
         if (StupidExpressClient.target == null) {
             return;
@@ -100,7 +100,7 @@ public abstract class LoversHudMixin {
     }
 
     @Unique
-    private static void stupidexpress$renderLoversHud(Font renderer, GuiGraphics context, Component component) {
+    private static void stupidexpress$renderLoversHud(Font renderer, FakeGuiGraphics context, Component component) {
 
         context.pose().pushPose();
         context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f - 35.0f, 0.0f);

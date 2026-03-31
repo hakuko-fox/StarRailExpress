@@ -54,7 +54,7 @@ public class AvengerHud {
                 final var playerInfo = client.player.connection.getPlayerInfo(avengerComponent.killerUuid);
                 if (avengerComponent.killerUuid != null &&
                         playerInfo != null) {
-                    PlayerFaceRenderer.draw(context,
+                    PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),
                             playerInfo.getSkin().texture(),
                             xOffset, yOffset - 14, 12);
 
@@ -66,7 +66,7 @@ public class AvengerHud {
                 // 已绑定目标 - 显示保护目标
                 if (client.player.connection.getPlayerInfo(avengerComponent.targetPlayer) != null) {
                     // 显示目标头像
-                    PlayerFaceRenderer.draw(context,
+                    PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),
                             client.player.connection.getPlayerInfo(avengerComponent.targetPlayer).getSkin().texture(),
                             xOffset, yOffset, 12);
 

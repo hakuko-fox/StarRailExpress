@@ -31,7 +31,7 @@ public abstract class ExecutionerHud {
                 var info = client.player.connection.getPlayerInfo(component.target);
                 if (info != null) {
                     // 显示目标头像
-                    PlayerFaceRenderer.draw(context,
+                    PlayerFaceRenderer.draw(context.getDefaultGuiGraphics(),
                            info.getSkin().texture(),
                             xOffset, yOffset, 12);
 

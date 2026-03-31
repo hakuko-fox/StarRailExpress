@@ -2,9 +2,9 @@ package pro.fazeclan.river.stupid_express.mixin.client.role.arsonist;
 
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -25,7 +25,7 @@ import java.awt.*;
 public class ArsonistHudMixin {
 
     @Inject(method = "renderHud", at = @At("TAIL"))
-    private static void replaceRoleHud(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private static void replaceRoleHud(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         if (StupidExpressClient.target == null) {
             return;
         }
@@ -43,7 +43,7 @@ public class ArsonistHudMixin {
     }
 
     @Inject(method = "renderHud", at = @At(value = "INVOKE", target = "Lio/wifi/starrailexpress/game/GameUtils;isPlayerSpectatingOrCreative(Lnet/minecraft/world/entity/player/Player;)Z"))
-    private static void playerRaycast(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private static void playerRaycast(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         float range = RoleNameRenderer.getPlayerRange(player);
         HitResult line = ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof Player, range);
         StupidExpressClient.target = null;

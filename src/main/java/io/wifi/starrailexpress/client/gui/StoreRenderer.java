@@ -3,11 +3,15 @@ package io.wifi.starrailexpress.client.gui;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
+
+import org.agmas.noellesroles.client.event.MutableComponentResult;
+import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -17,7 +21,7 @@ public class StoreRenderer {
     public static MoneyNumberRenderer view = new MoneyNumberRenderer();
     public static float offsetDelta = 0f;
 
-    public static void renderHud(Font renderer, @NotNull LocalPlayer player, @NotNull GuiGraphics context,
+    public static void renderHud(Font font, @NotNull LocalPlayer player, @NotNull FakeGuiGraphics context,
             float delta) {
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         SRERole role = gameWorldComponent.getRole(player);
@@ -36,9 +40,22 @@ public class StoreRenderer {
             int colour = Mth.color(r, g, b) | 0xFF000000;
             context.pose().pushPose();
             context.pose().translate(context.guiWidth() - 12, 6, 0);
-            view.render(renderer, context, 0, 0, colour, delta);
+            view.render(font, context, 0, 0, colour, delta);
             context.pose().popPose();
             offsetDelta = Mth.lerp(delta / 16, offsetDelta, 0f);
+        }
+        if(Minecraft.getInstance().screen == null){
+            MutableComponentResult texts = OnMessageBelowMoneyRenderer.EVENT.invoker().onRenderer(
+                    Minecraft.getInstance(), context,
+                    delta);
+            List<MutableComponent> infoLines = texts.mutipleContent;
+            int y = 20;
+            int width = context.guiWidth();
+            int lineHeight = font.lineHeight + 4;
+            for (var line : infoLines) {
+                context.drawString(font, line, width - 10 - font.width(line), y, java.awt.Color.WHITE.getRGB());
+                y += lineHeight;
+            }
         }
     }
 
@@ -69,7 +86,7 @@ public class StoreRenderer {
                 digit.update();
         }
 
-        public void render(Font renderer, @NotNull GuiGraphics context, int x, int y, int colour, float delta) {
+        public void render(Font renderer, @NotNull FakeGuiGraphics context, int x, int y, int colour, float delta) {
             context.pose().pushPose();
             context.pose().translate(x, y, 0);
             context.drawString(renderer, "\uE781", 0, 0, colour);
@@ -106,9 +123,9 @@ public class StoreRenderer {
                 this.value = this.target;
         }
 
-        public void render(@NotNull Font renderer, @NotNull GuiGraphics context, int colour, float delta) {
+        public void render(@NotNull Font renderer, @NotNull FakeGuiGraphics context, int colour, float delta) {
             if (Mth.floor(this.lastValue) != Mth.floor(this.value)) {
-                LocalPlayer player = Minecraft.getInstance().player;
+                // LocalPlayer player = Minecraft.getInstance().player;
                 // if (player != null)player.getWorld().playSound(player, player.getX(),
                 // player.getY(), player.getZ(), TMMSounds.BALANCE_CLICK, SoundCategory.PLAYERS,
                 // 0.1f, 1 + this.lastValue - this.value, player.getRandom().nextLong());

@@ -7,12 +7,13 @@ import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
+import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -39,12 +40,15 @@ import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
 public class CommonClientHudRenderer {
-  static ArrayList<BiConsumer<GuiGraphics, DeltaTracker>> roleRenderConsumers = null;
+  static ArrayList<BiConsumer<FakeGuiGraphics, DeltaTracker>> roleRenderConsumers = null;
   static SRERole lastRenderRole = null;
 
   public static void registerFather() {
-    HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
+    HudRenderCallback.EVENT.register((trueGuiGraphics, deltaTracker) -> {
+      if (!OptimizedTextRenderer.INSTANCE.isTickDirty())
+        return;
       var client = Minecraft.getInstance();
+      final FakeGuiGraphics guiGraphics = new FakeGuiGraphics(trueGuiGraphics);
       if (client == null)
         return;
       if (client.player == null)
@@ -52,24 +56,16 @@ public class CommonClientHudRenderer {
       if (SREClient.gameComponent == null) {
         return;
       }
-      if (!SREClient.gameComponent.isRunning())
-        return;
-      if (!client.player.hasEffect(ModEffects.NO_COLLIDE))
-        return;
-      var effect = client.player.getEffect(ModEffects.NO_COLLIDE);
-      Component message = Component.translatable("hud.noellesroles.safe_time", effect.getDuration() / 20)
-          .withStyle(ChatFormatting.GREEN);
-      guiGraphics.drawCenteredString(client.font, message, guiGraphics.guiWidth() / 2, 40,
-          java.awt.Color.WHITE.getRGB());
-    });
-    HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
-      var client = Minecraft.getInstance();
-      if (client == null)
-        return;
-      if (client.player == null)
-        return;
-      if (SREClient.gameComponent == null) {
-        return;
+      {
+        if (SREClient.gameComponent.isRunning()) {
+          if (client.player.hasEffect(ModEffects.NO_COLLIDE)) {
+            var effect = client.player.getEffect(ModEffects.NO_COLLIDE);
+            Component message = Component.translatable("hud.noellesroles.safe_time", effect.getDuration() / 20)
+                .withStyle(ChatFormatting.GREEN);
+            guiGraphics.drawCenteredString(client.font, message, guiGraphics.guiWidth() / 2, 40,
+                java.awt.Color.WHITE.getRGB());
+          }
+        }
       }
       // if (SREClient.isPlayerSpectator())
       // return;

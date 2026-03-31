@@ -80,26 +80,26 @@ public class TaskBlockOverlayRenderer {
         // RenderSystem.lineWidth(4);
         LevelRenderer.renderLineBox(matrices, vertexConsumer, localAABB, red, green, blue, alpha);
 
-        if (text != null) {
-            if (textScale <= 0) {
-                double blockWidthX = localAABB.maxX - localAABB.minX;
-                double blockWidthZ = localAABB.maxZ - localAABB.minZ;
-                double blockWidth = Math.max(blockWidthX, blockWidthZ);
-                if (blockWidth <= 0 || blockWidth > 1)
-                    blockWidth = 1.0;
-                int textPixelWidth = client.font.width(text);
-                if (textPixelWidth > 0)
-                    textScale = (float) blockWidth * 0.75f / textPixelWidth;
-            }
+        // if (text != null) {
+        //     if (textScale <= 0) {
+        //         double blockWidthX = localAABB.maxX - localAABB.minX;
+        //         double blockWidthZ = localAABB.maxZ - localAABB.minZ;
+        //         double blockWidth = Math.max(blockWidthX, blockWidthZ);
+        //         if (blockWidth <= 0 || blockWidth > 1)
+        //             blockWidth = 1.0;
+        //         int textPixelWidth = client.font.width(text);
+        //         if (textPixelWidth > 0)
+        //             textScale = (float) blockWidth * 0.75f / textPixelWidth;
+        //     }
 
-            double centerX = (localAABB.minX + localAABB.maxX) / 2.0;
-            double centerY = (localAABB.minY + localAABB.maxY) / 2.0;
-            double centerZ = (localAABB.minZ + localAABB.maxZ) / 2.0;
-            if (cameraPos.distanceTo(blockPos.getCenter()) <= 3)
-                renderTextAtAABBCenter(context, blockPos, centerX, centerY, centerZ, text,
-                        textScale, color.getRGB(),
-                        true);
-        }
+        //     double centerX = (localAABB.minX + localAABB.maxX) / 2.0;
+        //     double centerY = (localAABB.minY + localAABB.maxY) / 2.0;
+        //     double centerZ = (localAABB.minZ + localAABB.maxZ) / 2.0;
+        //     if (cameraPos.distanceTo(blockPos.getCenter()) <= 3)
+        //         renderTextAtAABBCenter(context, blockPos, centerX, centerY, centerZ, text,
+        //                 textScale, color.getRGB(),
+        //                 true);
+        // }
 
         matrices.popPose();
     }

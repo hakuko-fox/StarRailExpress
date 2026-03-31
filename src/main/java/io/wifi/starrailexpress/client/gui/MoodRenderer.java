@@ -91,7 +91,7 @@ public class MoodRenderer {
             context.pose().pushPose();
             context.pose().translate(0, 10 * renderer.offset, 0);
             context.drawString(textRenderer, renderer.text, 22, 6,
-                    Mth.color(1f, 1f, 1f) | ((int) (renderer.alpha * 255) << 24));
+                    Mth.color(1f, 1f, 1f) | ((int) (renderer.alpha * 255) << 24), false);
             context.pose().popPose();
             if (maxRenderer == null || renderer.offset > maxRenderer.offset)
                 maxRenderer = renderer;
@@ -181,7 +181,7 @@ public class MoodRenderer {
             float value = 1 - ((player.tickCount + tickCounter.getGameTimeDeltaPartialTick(true)) / 64) % 1;
             context.pose().pushPose();
             context.pose().translate(value * (width + 4), 6, 0);
-            context.drawString(renderer, text, i * (width + 4), 0, colour | 255 << 24);
+            context.drawString(renderer, text, i * (width + 4), 0, colour | 255 << 24, false);
             context.pose().popPose();
         }
         context.disableScissor();

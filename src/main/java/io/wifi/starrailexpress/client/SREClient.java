@@ -749,6 +749,9 @@ public class SREClient implements ClientModInitializer {
         }
     }
 
+    public static boolean isPlayerAliveAndInSurvivalIgnoreShitSplit() {
+        return cachedPlayerAliveAndInSurvivalIgnoreShitSplit;
+    }
     public static boolean isPlayerAliveAndInSurvival() {
         return cachedPlayerAliveAndInSurvival;
     }
@@ -844,6 +847,7 @@ public class SREClient implements ClientModInitializer {
             return true;
         return false;
     };
+    private static boolean cachedPlayerAliveAndInSurvivalIgnoreShitSplit = false;
 
     public static boolean isInstinctEnabled() {
         boolean canUseInstinct = isKiller();
@@ -871,6 +875,7 @@ public class SREClient implements ClientModInitializer {
     private static void updateHudApiCache(Minecraft client) {
         LocalPlayer player = client.player;
         cachedPlayerAliveAndInSurvival = GameUtils.isPlayerAliveAndSurvival(player);
+        cachedPlayerAliveAndInSurvivalIgnoreShitSplit = GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
         cachedPlayerSpectatingOrCreative = GameUtils.isPlayerSpectatingOrCreative(player);
         cachedPlayerCreative = player != null && player.isCreative();
         cachedPlayerSpectator = player != null && player.isSpectator();

@@ -3,10 +3,10 @@ package pro.fazeclan.river.stupid_express.mixin.client.role.necromancer;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +21,7 @@ import pro.fazeclan.river.stupid_express.role.necromancer.cca.NecromancerCompone
 public class NecromancerHudMixin {
 
     @Inject(method = "renderHud", at = @At("TAIL"))
-    private static void replaceRoleHud(Font renderer, LocalPlayer player, GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private static void replaceRoleHud(Font renderer, LocalPlayer player, FakeGuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         if (StupidExpressClient.targetBody == null) {
             return;
         }
