@@ -28,7 +28,7 @@ public class TMMRoles {
                     new MobEffectInstance(
                             MobEffects.MOVEMENT_SPEED,
                             30 * 20, // 持续时间 60s（tick）
-                            0, // 等级（0 = 速度 I）
+                            3, // 等级（0 = 速度 I）
                             true, // ambient（环境效果，如信标）
                             false, // showParticles（显示粒子）
                             true // showIcon（显示图标）
