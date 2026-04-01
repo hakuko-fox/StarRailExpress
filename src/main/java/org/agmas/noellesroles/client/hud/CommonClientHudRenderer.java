@@ -8,10 +8,12 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.LobbyPlayersRenderer;
 import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
+import io.wifi.starrailexpress.client.gui.RoundTextRenderer;
+import io.wifi.starrailexpress.client.gui.TimeRenderer;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
+import io.wifi.utils.client.betterrender.FakeHudRenderCallback;
 import io.wifi.utils.client.betterrender.OptimizedTextRenderer;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -51,12 +53,16 @@ public class CommonClientHudRenderer {
   static SRERole lastRenderRole = null;
 
   public static void registerFather() {
-    HudRenderCallback.EVENT.register((trueGuiGraphics, deltaTracker) -> {
+    // Use FakeHudRenderCallback instead of Fabric's HudRenderCallback
+    // This ensures rendering happens INSIDE the frame lifecycle
+    // (beginFrame/endFrame)
+    // which fixes the font rendering issue where text would randomly disappear
+    FakeHudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> {
       if (!OptimizedTextRenderer.INSTANCE.isTickDirty())
         return;
       final Minecraft client = Minecraft.getInstance();
       final Font font = client.font;
-      final FakeGuiGraphics guiGraphics = new FakeGuiGraphics(trueGuiGraphics);
+      // FakeGuiGraphics is already provided by the callback - no need to wrap again
       if (client.player == null)
         return;
       if (SREClient.gameComponent == null) {
@@ -66,6 +72,12 @@ public class CommonClientHudRenderer {
       {
         RoleNameRenderer.renderHud(font, player, guiGraphics, deltaTracker);
         LobbyPlayersRenderer.renderHud(font, player, guiGraphics);
+      }
+      {
+        RoundTextRenderer.renderHud(font, player, guiGraphics, deltaTracker.getRealtimeDeltaTicks());
+      }
+      {
+        TimeRenderer.renderHud(font, player, guiGraphics, deltaTracker.getGameTimeDeltaPartialTick(true));
       }
       {
         if (client.screen == null) {
@@ -104,8 +116,8 @@ public class CommonClientHudRenderer {
         lastRenderRole = role;
       }
       var consumer1 = CommonHudRenderCallback.EVENT.getConsumer();
-      if(consumer1!=null && !consumer1.isEmpty()){
-        consumer1.forEach((c)->{
+      if (consumer1 != null && !consumer1.isEmpty()) {
+        consumer1.forEach((c) -> {
           c.accept(guiGraphics, deltaTracker);
         });
       }

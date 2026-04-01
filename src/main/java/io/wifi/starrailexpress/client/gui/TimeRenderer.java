@@ -5,8 +5,8 @@ import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
@@ -19,7 +19,7 @@ public class TimeRenderer {
     private static boolean cachedCanSeeTime = false;
     private static int lastCachedTick = -1;
 
-    public static void renderHud(Font renderer, @NotNull LocalPlayer player, @NotNull GuiGraphics context, float delta) {
+    public static void renderHud(Font renderer, @NotNull LocalPlayer player, @NotNull FakeGuiGraphics context, float delta) {
         // 每20tick更新一次角色权限缓存
         int currentTick = player.tickCount;
         if (currentTick - lastCachedTick > 20 || lastCachedTick < 0) {
@@ -75,7 +75,7 @@ public class TimeRenderer {
             this.seconds.getB().update();
         }
 
-        public void render(Font renderer, @NotNull GuiGraphics context, int x, int y, int colour, float delta) {
+        public void render(Font renderer, @NotNull FakeGuiGraphics context, int x, int y, int colour, float delta) {
             context.pose().pushPose();
             context.pose().translate(x, y, 0);
             context.pose().translate(16, 0, 0);
@@ -117,7 +117,7 @@ public class TimeRenderer {
             if (Math.abs(this.value - this.target) < 0.01f) this.value = this.target;
         }
 
-        public void render(@NotNull Font renderer, @NotNull GuiGraphics context, int colour, float delta) {
+        public void render(@NotNull Font renderer, @NotNull FakeGuiGraphics context, int colour, float delta) {
             float value = Mth.lerp(delta, this.lastValue, this.value);
             int mod = this.cap6 ? 6 : 10;
             int digit = Mth.floor(value) % mod;
