@@ -262,8 +262,8 @@ public class HudMoodRenderer {
                 this.text = Component.translatable("task." + (SREClient.isKiller() ? "fake" : "feel"))
                         .append(Component.translatable("task." + present.getName()));
             this.present = present != null;
-            this.alpha = Mth.lerp(delta / 16, this.alpha, present != null ? 1f : 0f);
-            this.offset = Mth.lerp(delta / 32, this.offset, this.index);
+            this.alpha = Mth.lerp(delta / 4, this.alpha, present != null ? 1f : 0f);
+            this.offset = Mth.lerp(delta / 8, this.offset, this.index);
             return this.alpha < 0.075f || (((int) (this.alpha * 255.0f) << 24) & -67108864) == 0;
         }
     }
