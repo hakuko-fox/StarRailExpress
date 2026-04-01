@@ -27,8 +27,6 @@ public class SkinsNetworkSyncCommand {
                         .then(Commands.literal("stop").executes((ctx) -> {
                             SkinsNetworkSyncInitializer.isEnabled = false;
                             SREPlayerSkinsComponent.disableGlobalNetworkSync();
-                            SREConfig.instance().mysqlPlayerSyncEnabled = false;
-                            SREConfig.instance().itemSkinSyncServerEnabled = false;
                             return 1;
                         }))
                         .then(Commands.argument("host", StringArgumentType.word())

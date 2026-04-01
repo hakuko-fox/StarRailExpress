@@ -164,6 +164,7 @@ public class SREConfig implements ConfigData {
     public int mysqlSyncPoolSize = 4;
     @ConfigEntry.Category(value = "sync")
     public int mysqlSyncConnectTimeoutMs = 5000;
+    
     @ConfigEntry.Category(value = "progression")
     public boolean enableProgressionSystem = false;
     @ConfigEntry.Category(value = "progression")
@@ -179,12 +180,7 @@ public class SREConfig implements ConfigData {
     public boolean isItemSkinEnabled = true;
     @ConfigEntry.Category(value = "skin")
     public boolean isItemSkinManagementEnabled = false;
-    @ConfigEntry.Category(value = "skin")
-    public String itemSkinSyncServerHost = "";
-    @ConfigEntry.Category(value = "skin")
-    public int itemSkinSyncServerPort = 8080;
-    @ConfigEntry.Category(value = "skin")
-    public String itemSkinSyncServerKey = "";
+    
     @ConfigEntry.Category(value = "skin")
     public boolean itemSkinSyncServerEnabled = false;
     // AFK设置
