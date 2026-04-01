@@ -488,7 +488,7 @@ public class MapDetailsRenderer {
                 .ifPresent(map -> {
                     displayName.set(map.displayName);
                     description.set(map.description);
-                    author.set("allinTOKYO canyuesama haiman wifi_left guanzheqwq biantwin");
+                    author.set("allinTOKYO canyuesama haiman wifi_left guanzheqwq biantwin Luo_Ye_Ruo_Shui");
                 });
 
         setMapDetails(mapId, description.get(), author.get());
