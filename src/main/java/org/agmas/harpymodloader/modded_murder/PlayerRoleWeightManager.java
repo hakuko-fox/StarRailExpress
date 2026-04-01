@@ -47,12 +47,12 @@ public class PlayerRoleWeightManager {
                 double streakPenalty = Math.pow(0.5, streak - 1);
                 basePercent *= streakPenalty;
             } else {
-                double streakPenalty = Math.pow(1.25, streak - 1);
+                double streakPenalty = Math.pow(1.5, streak - 1);
                 basePercent *= streakPenalty;
             }
         }
 
-        return Math.min(Math.max(0.0, basePercent), 1.0);
+        return Math.max(0.0, basePercent);
     }
 
     public static double getRoleWeightPercent(Player playerEntity, int roleType) {

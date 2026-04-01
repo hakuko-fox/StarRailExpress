@@ -653,7 +653,6 @@ public class RoleShopHandler {
           List.of(new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 10,
               ShopEntry.Type.TOOL)));
     }
-
     {
       ShopContent.customEntries.put(
           ModRoles.CONSPIRATOR_ID, CONSPIRATOR_SHOP);
