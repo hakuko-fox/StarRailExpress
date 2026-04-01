@@ -993,6 +993,7 @@
   "hud.noellesroles.recorder.requirement": "你需要记录 %s 个玩家才能获胜",
   "hud.noellesroles.recorder.process": "当前进度：%s / %s",
   "message.noellesroles.recorder.entry": "你发觉有人想知道你的身份。",
+  "message.noellesroles.arsonist.entry": "你发觉有人想烧光这辆列车。",
   "announcement.star.goals.recorder": "使用记录笔记猜测其他玩家的角色。如果猜对人数达到一定的数量，你将获得独立胜利！",
   "announcement.star.goals.noellesroles.recorder": "使用记录笔记猜测其他玩家的角色。如果猜对人数达到一定的数量，你将获得独立胜利！",
   "announcement.star.win.recorder": "记录员胜利！",

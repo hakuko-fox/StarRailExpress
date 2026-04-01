@@ -90,6 +90,7 @@ import org.agmas.noellesroles.roles.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.roles.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.utils.*;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
+import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.PlayerStatsBeforeRefugee;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
@@ -1286,6 +1287,7 @@ public class ModEventsRegister {
             boolean hasRecorder = false;
             // 年兽除岁效果：给所有玩家分发4个鞭炮
             boolean hasNianShou = false;
+            boolean hasArsonist = false;
             final var all_players = serverLevel.players();
             for (var p : all_players) {
                 if (!gameWorldComponent.isJumpAvailable() && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
@@ -1306,6 +1308,8 @@ public class ModEventsRegister {
                     hasRecorder = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NIAN_SHOU)) {
                     hasNianShou = true;
+                } else if (gameWorldComponent.isRole(p, SERoles.ARSONIST)) {
+                    hasArsonist = true;
                 }
                 if (worldModifierComponent.isModifier(p, NRModifiers.EXPEDITION)) {
                     SRERole role = gameWorldComponent.getRole(p);
@@ -1346,7 +1350,14 @@ public class ModEventsRegister {
                     }
                 });
             }
-
+            if (hasArsonist) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.arsonist.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
             if (hasNianShou) {
                 for (var player : all_players) {
                     // 给每个玩家4个鞭炮
