@@ -119,6 +119,11 @@ public class CommonClientHudRenderer {
       }
       // if (SREClient.isPlayerSpectator())
       // return;
+      {
+        // 最后渲染在上层
+        BroadcasterHud.renderBroadcast(guiGraphics, deltaTracker);
+      }
+
       SRERole role = SREClient.getCachedPlayerRole();
       if (role == null)
         return;
@@ -148,10 +153,6 @@ public class CommonClientHudRenderer {
                   role.identifier().toString(), e.getMessage()).withStyle(ChatFormatting.RED),
               true);
         }
-      }
-      {
-        // 最后渲染在最上层
-        BroadcasterHud.renderBroadcast(guiGraphics, deltaTracker);
       }
     });
   }
