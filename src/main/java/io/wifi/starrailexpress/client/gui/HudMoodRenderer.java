@@ -65,8 +65,8 @@ public class HudMoodRenderer {
         
         SREPlayerMoodComponent component = SREPlayerMoodComponent.KEY.get(player);
         float oldMood = moodRender;
-        moodRender = Mth.lerp(delta / 8, moodRender, component.getMood());
-        moodAlpha = Mth.lerp(delta / 16, moodAlpha, renderers.isEmpty() ? 0f : 1f);
+        moodRender = Mth.lerp(delta / 4, moodRender, component.getMood());
+        moodAlpha = Mth.lerp(delta / 8, moodAlpha, renderers.isEmpty() ? 0f : 1f);
         
         SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
         if (psycho.getPsychoTicks() > 0) {
@@ -114,7 +114,7 @@ public class HudMoodRenderer {
         
         if (maxRenderer != null) {
             moodOffset = Mth.lerp(delta / 8, moodOffset, maxRenderer.offset);
-            moodTextWidth = Mth.lerp(delta / 32, moodTextWidth, textRenderer.width(maxRenderer.text));
+            moodTextWidth = Mth.lerp(delta / 8, moodTextWidth, textRenderer.width(maxRenderer.text));
         }
         
         SRERole role = gameWorldComponent.getRole(player);
@@ -125,7 +125,7 @@ public class HudMoodRenderer {
                 renderCivilian(textRenderer, context, oldMood);
             }
         }
-        arrowProgress = Mth.lerp(delta / 24, arrowProgress, 0f);
+        arrowProgress = Mth.lerp(delta / 8, arrowProgress, 0f);
     }
 
     private static void renderCivilian(@NotNull Font textRenderer, @NotNull FakeGuiGraphics context, float prevMood) {
