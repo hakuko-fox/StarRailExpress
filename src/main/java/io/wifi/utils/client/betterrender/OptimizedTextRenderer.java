@@ -84,18 +84,21 @@ public class OptimizedTextRenderer {
         if (!inFrame)
             return;
 
+        // Check if HUD should be hidden (F1 key)
+        boolean hideGui = Minecraft.getInstance().options.hideGui;
+
         if (tickDirty) {
-            // Update cache: if there were draw calls, store them; otherwise clear the cache
-            // This ensures that when nothing should be drawn, the cache is empty
+            // Update cache: if there were draw calls and HUD is visible, store them; otherwise clear the cache
+            // This ensures that when nothing should be drawn (or HUD is hidden), the cache is empty
             tickCache.clear();
-            if (hasDrawCallsThisFrame) {
+            if (hasDrawCallsThisFrame && !hideGui) {
                 tickCache.addAll(pending);
             }
             tickDirty = false;
         }
 
-        // Only render if there's content in the cache
-        if (!tickCache.isEmpty()) {
+        // Only render if there's content in the cache and HUD is not hidden
+        if (!tickCache.isEmpty() && !hideGui) {
             flushCache();
         }
 
