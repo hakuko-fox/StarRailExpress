@@ -26,6 +26,7 @@ import org.agmas.noellesroles.component.*;
 import org.agmas.noellesroles.entity.WheelchairEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.roles.ninja.NinjaPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.roles.commander.CommanderHudRender;
 import org.agmas.noellesroles.roles.candlebearer.CandleBearerPlayerComponent;
@@ -533,6 +534,45 @@ public class CommonClientHudRenderer {
             Color.WHITE.getRGB());
       }
       return;
+    });
+    // 忍者 HUD（模仿幽灵 Phantom）
+    RoleHudRenderCallback.EVENT.register(ModRoles.NINJA_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client.player == null) return;
+
+      NinjaPlayerComponent ninjaComp = NinjaPlayerComponent.KEY.get(client.player);
+      if (ninjaComp == null) return;
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int x = screenWidth - 10;
+      int y = screenHeight - 20;
+
+      Component text = null;
+      int color = 0xFFFFFFFF;
+
+      // 技能激活中（格挡中）
+      if (ninjaComp.isAbilityActive()) {
+        int seconds = (int) Math.ceil(ninjaComp.getDurationSeconds());
+        text = Component.translatable("hud.noellesroles.ninja.active", seconds);
+        color = 0x00fff7; // 青蓝色
+      }
+      // 技能冷却中
+      else if (ninjaComp.isOnCooldown()) {
+        int seconds = (int) Math.ceil(ninjaComp.getCooldownSeconds());
+        text = Component.translatable("hud.noellesroles.ninja.cooldown", seconds);
+        color = 0xFF5555; // 红色
+      }
+      // 技能可用
+      else {
+        text = Component.translatable("hud.noellesroles.ninja.ready");
+        color = 0x55FF55; // 绿色
+      }
+
+      // 计算文字宽度（右对齐）
+      int textWidth = font.width(text);
+      guiGraphics.drawString(font, text, x - textWidth, y, color);
     });
     RoleHudRenderCallback.EVENT.register(ModRoles.JOJO_ID, (guiGraphics, deltaTracker) -> {
       // 渲染JOJO的提示

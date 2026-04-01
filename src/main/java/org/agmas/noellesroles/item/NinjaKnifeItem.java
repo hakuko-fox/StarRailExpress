@@ -12,60 +12,66 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.Noellesroles;
 
-/**
- * 苦无 - 忍者专属近战武器
- * 特性：左键击杀玩家，静音，使用后消失，独立冷却组
- */
 public class NinjaKnifeItem extends KnifeItem {
 
     public NinjaKnifeItem(Properties properties) {
         super(properties);
     }
 
-    // 禁用右键
+    /**
+     * 右键使用，立即触发（无需蓄力）
+     */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        return InteractionResultHolder.fail(player.getItemInHand(hand));
+        ItemStack stack = player.getItemInHand(hand);
+
+        if (!(player instanceof ServerPlayer attacker)) {
+            return InteractionResultHolder.pass(stack);
+        }
+
+        // 直接执行攻击（参考父类的 releaseUsing 逻辑）
+        // 获取攻击目标（父类的方法）
+        var collision = KnifeItem.getKnifeTarget(attacker);
+        if (collision instanceof net.minecraft.world.phys.EntityHitResult entityHitResult) {
+            var target = entityHitResult.getEntity();
+            if (target instanceof Player victim) {
+                // 执行击杀
+                GameUtils.killPlayer(victim, true, attacker, Noellesroles.id("ninja_knife_kill"));
+                // 苦无消失
+                stack.shrink(1);
+                return InteractionResultHolder.consume(stack);
+            }
+        }
+
+        return InteractionResultHolder.pass(stack);
     }
 
-    @Override
-    public void releaseUsing(ItemStack stack, Level level, LivingEntity user, int remainingUseTicks) {}
-
+    /**
+     * 禁用蓄力（返回0，无需蓄力）
+     */
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity user) {
         return 0;
     }
 
+    /**
+     * 禁用使用动画
+     */
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.NONE;
     }
 
-    // 左键击杀
+    /**
+     * 禁用左键攻击
+     */
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (!(target instanceof Player victim)) return false;
-        if (!(attacker instanceof ServerPlayer killer)) return false;
-
-        GameUtils.killPlayer(victim, true, killer, Noellesroles.id("ninja_knife_kill"));
-        stack.shrink(1);  // 使用后消失
-        return true;
+        return false;
     }
 
-    // 独立冷却组（与普通刀分开）
-    @Override
-    public String getCooldownGroup() {
-        return "ninja_knife";
-    }
-
-    // 禁用皮肤系统
     @Override
     public String getItemSkinType() {
-        return null;
-    }
-
-    @Override
-    public String[] getAvailableSkins() {
-        return new String[0];
+        return "";
     }
 }

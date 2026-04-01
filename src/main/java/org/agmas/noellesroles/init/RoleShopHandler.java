@@ -158,6 +158,8 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> WATER_GHOST_SHOP = new ArrayList<>();
   // ==================== 秉烛人商店 ====================
   public static ArrayList<ShopEntry> CANDLE_BEARER_SHOP = new ArrayList<>();
+  //=============忍者商店================
+  public static ArrayList<ShopEntry> NINJA_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -416,6 +418,7 @@ public class RoleShopHandler {
       });
       ShopContent.customEntries.put(ModRoles.OLDMAN.getIdentifier(), SHOP);
     }
+
     {
       // 监察员的商店
       var SHOP = new ArrayList<ShopEntry>();
@@ -440,6 +443,34 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(SERoles.NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
       ShopContent.customEntries.put(SERoles.ARSONIST.getIdentifier(), NECROMANCER_SHOP);
     }
+    {
+      // 忍者商店
+      var NINJA_SHOP = new ArrayList<ShopEntry>();
+
+      // 普通刀 - 130金币
+      NINJA_SHOP.add(new ShopEntry(
+              TMMItems.KNIFE.getDefaultInstance(),
+              130,
+              ShopEntry.Type.WEAPON
+      ));
+
+      // 苦无 - 200金币
+      NINJA_SHOP.add(new ShopEntry(
+              ModItems.NINJA_KNIFE.getDefaultInstance(),
+              200,
+              ShopEntry.Type.WEAPON
+      ));
+
+      // 手里剑 - 325金币
+      NINJA_SHOP.add(new ShopEntry(
+              ModItems.NINJA_SHURIKEN.getDefaultInstance(),
+              325,
+              ShopEntry.Type.WEAPON
+      ));
+
+      ShopContent.customEntries.put(ModRoles.NINJA_ID, NINJA_SHOP);
+    }
+
     {
       // 厨师的商店
       var shop = new ArrayList<ShopEntry>();

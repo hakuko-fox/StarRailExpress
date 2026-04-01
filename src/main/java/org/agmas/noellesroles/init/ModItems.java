@@ -49,7 +49,12 @@ public class ModItems {
             new H2SO4AcidItem((new Item.Properties()).stacksTo(1)), "bucket_of_h2so4");
     public static final Item LETTER_ITEM = register(
             new LetterItem((new Item.Properties()).stacksTo(1)), "letter");
-
+    public static final Item NINJA_KNIFE = register(
+            new NinjaKnifeItem(new Item.Properties().stacksTo(1)),
+            "ninja_knife");
+    public static final Item NINJA_SHURIKEN = register(
+            new NinjaShurikenItem(new Item.Properties().stacksTo(1)),
+            "ninja_shuriken");
     public static final Item ONCE_REVOLVER = register(
             new OnceRevolverItem((new Item.Properties()).stacksTo(1).durability(1)), "once_revolver");
     public static final Item HANDCUFFS = register(

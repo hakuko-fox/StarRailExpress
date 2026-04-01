@@ -85,6 +85,17 @@ public class RoleInitialItems {
             return item;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.ELF, elfItems);
+        List<Supplier<ItemStack>> ninjaItems = new ArrayList<>();
+        ninjaItems.add(() -> {
+            ItemStack lockpick = new ItemStack(
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("starrailexpress", "lockpick")
+                    )
+            );
+            return lockpick;
+        });
+        INITIAL_ITEMS_MAP.put(ModRoles.NINJA, ninjaItems);
+
 
         // 亡命徒初始物品
         List<Supplier<ItemStack>> looseItems = new ArrayList<>();

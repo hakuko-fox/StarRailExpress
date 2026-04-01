@@ -31,7 +31,8 @@ import org.agmas.noellesroles.roles.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.roles.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.roles.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.roles.vulture.VulturePlayerComponent;
-
+import org.agmas.noellesroles.roles.ninja.NinjaRole;
+import org.agmas.noellesroles.component.ModComponents;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -140,6 +141,7 @@ public class ModRoles {
   public static ResourceLocation HOAN_MEIRIN_ID = Noellesroles.id("hoan_meirin");
   public static ResourceLocation LOCKSMITH_ID = Noellesroles.id("locksmith");
   public static ResourceLocation EXAMPLER_ID = Noellesroles.id("exampler");
+  public static final ResourceLocation NINJA_ID = Noellesroles.id("ninja");
 
   public static ResourceLocation THE_INSANE_DAMNED_PARANOID_KILLER_OF_DOOM_DEATH_DESTRUCTION_AND_WAFFLES_ID = Noellesroles
       .id("the_insane_damned_paranoid_killer");
@@ -270,6 +272,20 @@ public class ModRoles {
           true, false, SRERole.MoodType.REAL,
           TMMRoles.CIVILIAN.getMaxSprintTime(), false))
       .setCanSeeCoin(true).setCanSeeTime(false);
+  //忍者
+  public static final SRERole NINJA = TMMRoles.registerRole(
+          new NinjaRole(
+                  NINJA_ID,
+                  new Color(44, 44, 44).getRGB(),
+                  false,   // 杀手阵营
+                  true,    // 有杀手能力
+                  SRERole.MoodType.FAKE,
+                  Integer.MAX_VALUE,
+                  true
+          )
+                  .setComponentKey(ModComponents.NINJA)
+                  .setCanSeeCoin(true)
+                  .setOccupiedRoleCount(1));
   public static SRERole ELF = TMMRoles.registerRole(
       new NormalRole(ELF_ID, new Color(106, 255, 179).getRGB(),
           true, false, SRERole.MoodType.REAL,
