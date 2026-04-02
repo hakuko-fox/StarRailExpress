@@ -237,6 +237,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             CoinToLotteryCommand.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher);
             net.exmo.sre.client.chat.ChatDialogueCommand.register(dispatcher);
+            io.wifi.starrailexpress.mail.MailCommand.register(dispatcher, registryAccess);
             // io.wifi.starrailexpress.command.UnlockAllRolesCommand.register(dispatcher);
         }));
     }
@@ -337,6 +338,20 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                 net.exmo.sre.client.chat.OpenChatDialoguePayload.CODEC);
         PayloadTypeRegistry.playC2S().register(net.exmo.sre.client.chat.ChatDialogueAdvancePayload.ID,
                 net.exmo.sre.client.chat.ChatDialogueAdvancePayload.CODEC);
+
+        // Mailbox
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.mail.OpenMailboxScreenPayload.ID,
+                io.wifi.starrailexpress.mail.OpenMailboxScreenPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.mail.MailClaimC2SPayload.ID,
+                io.wifi.starrailexpress.mail.MailClaimC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.mail.MailDeleteC2SPayload.ID,
+                io.wifi.starrailexpress.mail.MailDeleteC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.mail.MailClaimAllC2SPayload.ID,
+                io.wifi.starrailexpress.mail.MailClaimAllC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.mail.MailDeleteAllReadC2SPayload.ID,
+                io.wifi.starrailexpress.mail.MailDeleteAllReadC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.mail.MailMarkReadC2SPayload.ID,
+                io.wifi.starrailexpress.mail.MailMarkReadC2SPayload.CODEC);
     }
 
     private void registerGlobalReceivers() {
@@ -359,6 +374,18 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
         });
         ServerPlayNetworking.registerGlobalReceiver(NunchuckHitPayload.ID, new NunchuckHitPayload.Receiver());
+
+        // Mailbox receivers
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.mail.MailClaimC2SPayload.ID,
+                new io.wifi.starrailexpress.mail.MailClaimC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.mail.MailDeleteC2SPayload.ID,
+                new io.wifi.starrailexpress.mail.MailDeleteC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.mail.MailClaimAllC2SPayload.ID,
+                new io.wifi.starrailexpress.mail.MailClaimAllC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.mail.MailDeleteAllReadC2SPayload.ID,
+                new io.wifi.starrailexpress.mail.MailDeleteAllReadC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.mail.MailMarkReadC2SPayload.ID,
+                new io.wifi.starrailexpress.mail.MailMarkReadC2SPayload.Receiver());
 
         // Chat Dialogue advance handler
         ServerPlayNetworking.registerGlobalReceiver(

@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.cca;
 
+import io.wifi.starrailexpress.mail.MailboxComponent;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.NotNull;
@@ -59,6 +60,8 @@ public class SREComponents
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerNunchuckComponent::new);
         registry.beginRegistration(Player.class, NameTagInventoryComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY).end(NameTagInventoryComponent::new);
+        registry.beginRegistration(Player.class, MailboxComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY).end(MailboxComponent::new);
     }
 
     @Override

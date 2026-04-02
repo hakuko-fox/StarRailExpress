@@ -633,6 +633,15 @@ public interface TMMBlocks {
             new SecurityMonitorBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion()),
             TMMItems.DECORATION_GROUP);
 
+    // 邮箱方块
+    Block MAILBOX = registrar.createWithItem("mailbox",
+            new io.wifi.starrailexpress.mail.MailboxBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(2.0f, 6.0f)
+                            .sound(SoundType.METAL)
+                            .noOcclusion()),
+            TMMItems.DECORATION_GROUP);
+
     private static Block createBranch(String name, Block wood, BlockRegistrar registrar) {
         return registrar.createWithItem(name,
                 new BranchBlock(BlockBehaviour.Properties.ofFullCopy(wood).mapColor(wood.defaultMapColor())),

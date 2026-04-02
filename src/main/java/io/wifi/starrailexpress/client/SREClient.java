@@ -553,6 +553,11 @@ public class SREClient implements ClientModInitializer {
             context.client().execute(() -> context.client().setScreen(new ProgressionPassScreen()));
         });
         ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.mail.OpenMailboxScreenPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> context.client().setScreen(
+                            new io.wifi.starrailexpress.mail.MailboxScreen()));
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
                 io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID, (payload, context) -> {
                     context.client().execute(() -> {
                         io.wifi.starrailexpress.unlock.RoleUnlockManager.getInstance()

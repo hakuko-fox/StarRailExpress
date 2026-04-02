@@ -166,6 +166,7 @@
       "starrailexpress:ability",
       "starrailexpress:armor",
       "starrailexpress:player_nunchuck",
+      "starrailexpress:mailbox",
       "noellesroles:ma_chen_xu"
     ],
     "loom:injected_interfaces": {
