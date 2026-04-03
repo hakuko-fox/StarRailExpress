@@ -305,14 +305,4 @@ public class MapVotingComponent implements AutoSyncedComponent, CommonTickingCom
         this.playerVotes.clear();
         this.shouldSync = true;
     }
-
-    // Getter and setter for presetGameMode
-    public String getPresetGameMode() {
-        return presetGameMode;
-    }
-
-    public void setPresetGameMode(String presetGameMode) {
-        this.presetGameMode = presetGameMode;
-        this.shouldSync = true;
-    }
 }
