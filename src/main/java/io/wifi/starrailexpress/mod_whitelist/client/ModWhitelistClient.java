@@ -17,7 +17,7 @@ public class ModWhitelistClient {
 		mods.sort(String::compareTo);
 
 		// Initialize network handler for sending mod info when joining
-		ModWhitelistClientNetworkHandler.initializeClient();
+
 
 		hello();
 	}
