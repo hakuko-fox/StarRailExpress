@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress;
 
+import com.google.gson.JsonObject;
 import com.google.common.reflect.Reflection;
 import dev.upcraft.datasync.api.util.Entitlements;
 import io.wifi.ConfigCompact.ConfigEvents;
@@ -176,10 +177,12 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
-            String payload = "{\"uuid\":\"" + player.getUUID() + "\",\"username\":\"" + player.getGameProfile().getName() + "\"}";
+            JsonObject obj = new JsonObject();
+            obj.addProperty("uuid", player.getUUID().toString());
+            obj.addProperty("username", player.getGameProfile().getName());
             MysqlPlayerDataStore.saveBatchAsync(
                     player.getUUID(),
-                    java.util.Map.of("player_identity", payload),
+                    java.util.Map.of("player_identity", obj.toString()),
                     System.currentTimeMillis());
         });
     }
