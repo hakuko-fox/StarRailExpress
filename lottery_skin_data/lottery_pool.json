@@ -391,13 +391,13 @@
                 {
                     "Probability":0.015,
                     "ItemList":[
-                        "gun/cat_gun","gun/blackgold","gun/divine","gun/eyeball","gun/golden_gyration","gun/white_gold_gun"
+                        "gun/cat_gun","gun/blackgold","gun/divine","gun/eyeball","gun/golden_gyration","gun/white_gold_gun","gun/green_glass"
                     ]
                 },
                 {
                     "Probability":0.01,
                     "ItemList":[
-                        "gun/canyue_gun"
+                        "gun/canyue_gun","gun/dark_blue","gun/iron_ball_gun"
                     ]
                 }
             ]
