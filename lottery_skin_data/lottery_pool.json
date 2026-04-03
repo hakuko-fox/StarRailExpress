@@ -277,7 +277,7 @@
                     ]
                 },
                 {
-                    "Probability":0.2,
+                    "Probability":0.19,
                     "ItemList":[
                         "coin"
                     ]
@@ -335,7 +335,7 @@
                 {
                     "Probability":0.1,
                     "ItemList":[
-                        "knife/anubis","knife/blade_of_soul","knife/cheems_knife","knife/coral","knife/dark_sparks","knife/death_edge","knife/evolutionary_truster","knife/exknife","knife/flame_sword","knife/greed","knife/inflammatory_burial","knife/lightning_nunchakus"
+                        "knife/anubis","knife/blade_of_soul","knife/cheems_knife","knife/coral","knife/dark_sparks","knife/death_edge","knife/evolutionary_truster","knife/exknife","knife/flame_sword","knife/greed","knife/inflammatory_burial","knife/lightning_nunchakus","knife/red_butterfly_knife","knife/green_butterfly_knife"
                     ]
                 },
                 {
@@ -347,7 +347,7 @@
                 {
                     "Probability":0.01,
                     "ItemList":[
-                        "knife/quill","knife/lightning_whip","knife/galaxy_spark","knife/head_dart","knife/scarlet_scar"
+                        "knife/quill","knife/lightning_whip","knife/galaxy_spark","knife/head_dart","knife/scarlet_scar","knife/gold_claw_knife","knife/ruby_claw_knife"
                     ]
                 }
             ]
@@ -391,7 +391,13 @@
                 {
                     "Probability":0.015,
                     "ItemList":[
-                        "gun/cat_gun","gun/blackgold","gun/divine","gun/eyeball","gun/golden_gyration"
+                        "gun/cat_gun","gun/blackgold","gun/divine","gun/eyeball","gun/golden_gyration","gun/white_gold_gun"
+                    ]
+                },
+                {
+                    "Probability":0.01,
+                    "ItemList":[
+                        "gun/canyue_gun"
                     ]
                 }
             ]
