@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.api.*;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
 import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import io.wifi.starrailexpress.cca.*;
+import io.wifi.starrailexpress.command.AutoShutdownWhenNotRunningCommand;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.entity.NoteEntity;
@@ -253,6 +254,13 @@ public class GameUtils {
         SREGameWorldComponent component = SREGameWorldComponent.KEY.get(world);
         SREWorldBlackoutComponent.KEY.get(world).reset();
         component.setGameStatus(SREGameWorldComponent.GameStatus.STOPPING);
+        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning){
+            world.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("sre.shutdown.waring"), false);
+
+            serverAsynTaskLists.add( new ServerTaskInfoClasses.SchedulerTask(20*20,() -> {
+                world.getServer().halt(true);
+            }));
+        }
     }
 
     private static void executeFunction(CommandSourceStack source, String function) {

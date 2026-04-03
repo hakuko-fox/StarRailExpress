@@ -21,8 +21,8 @@ import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(SodiumShader.class)
 public abstract class SodiumShaderMixin implements SodiumShaderInterface {
-    @Unique
-    private GlUniformBlock uniformOffsets;
+//    @Unique
+//    private GlUniformBlock uniformOffsets;
 
     // @Inject(method = "<init>", at = @At("RETURN"))
     // private void tmm$addUniform(IrisRenderingPipeline pipeline, SodiumPrograms.Pass pass, ShaderBindingContext context, int handle, BlendModeOverride blendModeOverride, List bufferBlendOverrides, CustomUniforms customUniforms, Supplier flipState, float alphaTest, boolean containsTessellation, CallbackInfo ci) {

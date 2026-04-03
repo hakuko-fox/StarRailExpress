@@ -85,6 +85,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     public static ArrayList<String> canDropItem = new ArrayList<>();
     public static ArrayList<Predicate<Player>> canDrop = new ArrayList<>();
 
+
     public static @NotNull ResourceLocation id(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
@@ -227,6 +228,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             SetAutoTrainResetCommand.register(dispatcher);
             SetBoundCommand.register(dispatcher);
             AutoStartCommand.register(dispatcher);
+            AutoShutdownWhenNotRunningCommand.register(dispatcher);
             LockToSupportersCommand.register(dispatcher);
             SetRoleCountCommand.register(dispatcher);
             ConfigCommand.register(dispatcher);

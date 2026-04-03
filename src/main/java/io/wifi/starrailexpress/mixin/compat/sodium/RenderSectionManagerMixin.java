@@ -22,14 +22,14 @@ public class RenderSectionManagerMixin {
     //     }
     // }
 
-    @ModifyExpressionValue(method = "getSearchDistance",
-            at = @At(value = "FIELD",
-                    target = "Lnet/caffeinemc/mods/sodium/client/gui/SodiumGameOptions$PerformanceSettings;useFogOcclusion:Z"),
-            remap = false)
-    private boolean sre$forceNotUseFogOcclusion(boolean original) {
-        if (SREClient.needsChunkOffset()) {
-            return false;
-        }
-        return original;
-    }
+//    @ModifyExpressionValue(method = "getSearchDistance",
+//            at = @At(value = "FIELD",
+//                    target = "Lnet/caffeinemc/mods/sodium/client/gui/SodiumGameOptions$PerformanceSettings;useFogOcclusion:Z"),
+//            remap = false)
+//    private boolean sre$forceNotUseFogOcclusion(boolean original) {
+//        if (SREClient.needsChunkOffset()) {
+//            return false;
+//        }
+//        return original;
+//    }
 }
