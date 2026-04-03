@@ -30,6 +30,7 @@ import java.util.function.ToIntFunction;
 public abstract class SRERole {
     private ResourceLocation identifier;
     private boolean canSeeCoin = true;
+    private boolean canSeeBodyInfo = false;
     private boolean canUseInstinct = false;
     private int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
@@ -39,6 +40,15 @@ public abstract class SRERole {
         this.clientTickEvent = event;
         return this;
     };
+
+    public boolean canSeeBodyInfo() {
+        return canSeeBodyInfo;
+    }
+
+    public SRERole setCanSeeBodyInfo(boolean bl) {
+        this.canSeeBodyInfo = bl;
+        return this;
+    }
 
     public SRERole setServerGameTickEvent(BiConsumer<ServerPlayer, SREGameWorldComponent> event) {
         this.serverTickEvent = event;
@@ -270,7 +280,8 @@ public abstract class SRERole {
     public void clientTick(Player player) {
     }
 
-    public void rightClickEntity(Player player, Entity victim) {
+    public InteractionResult rightClickEntity(Player player, Entity victim) {
+        return InteractionResult.PASS;
     }
 
     public void leftClickEntity(Player player, Entity victim) {
