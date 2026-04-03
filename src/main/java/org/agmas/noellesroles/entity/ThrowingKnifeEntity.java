@@ -16,7 +16,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 
 public class ThrowingKnifeEntity extends AbstractArrow {
-    final ItemStack pickupItemStack;
+    final ItemStack pickupItemStack = ModItems.THROWING_KNIFE.getDefaultInstance();
 
     public ThrowingKnifeEntity(EntityType<? extends AbstractArrow> entityType, Level level) {
         super(entityType, level);
