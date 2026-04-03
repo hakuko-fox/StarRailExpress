@@ -413,14 +413,14 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
             if (skinData.containsKey("lootChance")) {
                 Object lootChance = skinData.get("lootChance");
                 if (lootChance instanceof Number) {
-                    this.lootChance = (Integer) skinData.get("lootChance");
+                    this.lootChance = (int) ((Double) skinData.get("lootChance")).doubleValue();
                 }
             }
 
             if (skinData.containsKey("coinNum")) {
                 Object coinNum = skinData.get("coinNum");
                 if (coinNum instanceof Number) {
-                    this.coinNum = (Integer) skinData.get("coinNum");
+                    this.coinNum = (int) ((Double) skinData.get("coinNum")).doubleValue();
                 }
             }
 
