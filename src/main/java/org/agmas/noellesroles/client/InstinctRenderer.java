@@ -509,6 +509,11 @@ public class InstinctRenderer {
                         && SREClient.isPlayerAliveAndInSurvival()) {
                     return -2;
                 }
+                // 雇佣兵：杀手直觉无法透视
+                if (SREClient.gameComponent.isRole(target_player, ModRoles.MERCENARY) && isKillerTeam(self_role)
+                        && SREClient.isPlayerAliveAndInSurvival()) {
+                    return -2;
+                }
                 // 记录员
                 if (SREClient.gameComponent.isRole(self, ModRoles.RECORDER)) {
                     if (target instanceof Player targetPlayer) {

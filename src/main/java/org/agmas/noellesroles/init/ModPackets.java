@@ -23,6 +23,7 @@ public class ModPackets {
     public static final CustomPacketPayload.Type<ExecutionerSelectTargetC2SPacket> EXECUTIONER_SELECT_TARGET_PACKET = ExecutionerSelectTargetC2SPacket.ID;
     public static final CustomPacketPayload.Type<InsaneKillerAbilityC2SPacket> INSANE_KILLER_ABILITY_PACKET = InsaneKillerAbilityC2SPacket.ID;
     public static final CustomPacketPayload.Type<RecorderC2SPacket> RECORDER_PACKET = RecorderC2SPacket.TYPE;
+        public static final CustomPacketPayload.Type<MercenaryContractSignC2SPacket> MERCENARY_CONTRACT_SIGN_PACKET = MercenaryContractSignC2SPacket.TYPE;
     public static final CustomPacketPayload.Type<MonitorMarkC2SPacket> MONITOR_MARK_PACKET = MonitorMarkC2SPacket.ID;
     public static final CustomPacketPayload.Type<WaterGhostUseSkillC2SPacket> WATER_GHOST_SKILL_PACKET = WaterGhostUseSkillC2SPacket.TYPE;
 
@@ -89,6 +90,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(InsaneKillerAbilityC2SPacket.ID,
                 InsaneKillerAbilityC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(RecorderC2SPacket.TYPE, RecorderC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(MercenaryContractSignC2SPacket.TYPE,
+                MercenaryContractSignC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(MonitorMarkC2SPacket.ID, MonitorMarkC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WaterGhostUseSkillC2SPacket.TYPE, WaterGhostUseSkillC2SPacket.CODEC);
 

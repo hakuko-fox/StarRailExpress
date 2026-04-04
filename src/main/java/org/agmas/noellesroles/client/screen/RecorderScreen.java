@@ -269,6 +269,7 @@ public class RecorderScreen extends Screen {
 
         roles.clear();
         roles.addAll(availableRoleIds);
+        roles.removeIf(r -> r != null && r.identifier().equals(org.agmas.noellesroles.role.ModRoles.MERCENARY_ID));
 
         // 如果列表为空（可能是单人测试或者数据未同步），回退到显示所有角色
         if (roles.isEmpty()) {

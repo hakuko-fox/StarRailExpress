@@ -843,6 +843,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             tooltipHelper(ModItems.SCREWDRIVER, itemStack, list);
             tooltipHelper(ModItems.LIFE_AND_DEATH_SHAPE, itemStack, list);
             tooltipHelper(ModItems.SIGNED_PAPER, itemStack, list);
+            tooltipHelper(ModItems.MERCENARY_CONTRACT, itemStack, list);
             tooltipHelper(ModItems.THROWING_KNIFE, itemStack, list);
         }));
         // registerKeyBindings();

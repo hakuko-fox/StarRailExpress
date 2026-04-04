@@ -240,6 +240,7 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.GLITCH_ROBOT_ID, NoellesRolesConfig.HANDLER.instance().glitchRobotMax);
         Harpymodloader.setRoleMaximum(ModRoles.GHOST_ID, NoellesRolesConfig.HANDLER.instance().ghostMax);
         Harpymodloader.setRoleMaximum(ModRoles.THIEF_ID, 1);
+        Harpymodloader.setRoleMaximum(ModRoles.MERCENARY_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.BANDIT_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.BOMBER_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.OLDMAN_ID, 1);
@@ -334,6 +335,11 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(ModRoles.MAGICIAN_ID, 1);
             } else {
                 Harpymodloader.setRoleMaximum(ModRoles.MAGICIAN_ID, 0);
+            }
+            if (players_count >= 12 && random.nextInt(0, 100) <= 25) {
+                Harpymodloader.setRoleMaximum(ModRoles.MERCENARY_ID, 1);
+            } else {
+                Harpymodloader.setRoleMaximum(ModRoles.MERCENARY_ID, 0);
             }
             // 死灵法师数量 - 仅在12人以上对局出现
             if (players_count >= 12 && random.nextInt(0, 100) <= 50) {

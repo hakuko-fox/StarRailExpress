@@ -108,6 +108,11 @@ public class ModRolesInitialEventRegister {
                 var tpc = WatcherPlayerComponent.KEY.get(player);
                 tpc.init();
             }
+            if (role.identifier().equals(ModRoles.MERCENARY.identifier())) {
+                var mercenary = MercenaryPlayerComponent.KEY.get(player);
+                mercenary.init();
+                mercenary.sync();
+            }
             if (role.identifier().equals(ModRoles.WAYFARER.identifier())) {
                 player.getInventory().clearContent();
                 RoleUtils.insertStackInFreeSlot(player, ModItems.FAKE_REVOLVER.getDefaultInstance());

@@ -39,6 +39,7 @@ import net.minecraft.world.item.component.Unbreakable;
 import net.minecraft.world.item.component.WrittenBookContent;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.component.MaChenXuPlayerComponent;
+import org.agmas.noellesroles.component.MercenaryPlayerComponent;
 import org.agmas.noellesroles.component.SingerPlayerComponent;
 import org.agmas.noellesroles.component.StalkerPlayerComponent;
 import org.agmas.noellesroles.component.WatcherPlayerComponent;
@@ -161,6 +162,8 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> WATER_GHOST_SHOP = new ArrayList<>();
   // ==================== 秉烛人商店 ====================
   public static ArrayList<ShopEntry> CANDLE_BEARER_SHOP = new ArrayList<>();
+  // ==================== 雇佣兵商店 ====================
+  public static ArrayList<ShopEntry> MERCENARY_SHOP = new ArrayList<>();
   // =============忍者商店================
   public static ArrayList<ShopEntry> NINJA_SHOP = new ArrayList<>();
 
@@ -514,6 +517,40 @@ public class RoleShopHandler {
       var _SHOP = new ArrayList<ShopEntry>();
       _SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(ModRoles.COMMANDER_ID, _SHOP);
+    }
+    {
+      // 雇佣兵商店
+      var shop = new ArrayList<ShopEntry>();
+
+      // 未签订契约 - 50金币
+      shop.add(new ShopEntry(ModItems.MERCENARY_CONTRACT.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+
+      // 护盾层 - 150金币
+      ItemStack shieldItem = Items.SHIELD.getDefaultInstance();
+      shieldItem.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.mercenary_guard").withStyle(ChatFormatting.AQUA));
+      shop.add(new ShopEntry(shieldItem, 150, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          var gameWorld = SREGameWorldComponent.KEY.get(player.level());
+          if (!gameWorld.isRole(player, ModRoles.MERCENARY)) {
+            return false;
+          }
+          var mercenary = MercenaryPlayerComponent.KEY.get(player);
+          return mercenary.onBoughtShieldLayer();
+        }
+      });
+
+      // 撬锁器 - 100金币
+      shop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
+      // 德林加 - 250金币
+      shop.add(new ShopEntry(TMMItems.DERRINGER.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
+
+      // 刀 - 125金币
+      shop.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 125, ShopEntry.Type.WEAPON));
+
+      ShopContent.customEntries.put(ModRoles.MERCENARY_ID, shop);
     }
     {
       // 游侠商店

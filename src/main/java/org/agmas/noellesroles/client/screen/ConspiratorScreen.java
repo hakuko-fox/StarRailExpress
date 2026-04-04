@@ -203,6 +203,7 @@ public class ConspiratorScreen extends Screen {
     private void initRoleSelection() {
         // 获取所有注册的角色
         roles = Noellesroles.getAllRolesSorted(false);
+        roles.removeIf(r -> r != null && r.identifier().equals(org.agmas.noellesroles.role.ModRoles.MERCENARY_ID));
 
         if (roles.isEmpty()) {
             onClose();

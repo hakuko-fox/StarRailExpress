@@ -50,6 +50,7 @@ import org.agmas.noellesroles.roles.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.roles.thief.ThiefPlayerComponent;
 
 import java.awt.*;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
@@ -1064,6 +1065,60 @@ public class CommonClientHudRenderer {
       dy -= font.lineHeight + 8;
 
       guiGraphics.drawString(font, progress, xOffset - font.width(progress), dy, Color.WHITE.getRGB());
+    });
+
+    // 雇佣兵HUD
+    RoleHudRenderCallback.EVENT.register(ModRoles.MERCENARY_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client == null || client.player == null || SREClient.gameComponent == null) {
+        return;
+      }
+      if (!SREClient.gameComponent.isRole(client.player, ModRoles.MERCENARY)) {
+        return;
+      }
+
+      var mercenary = MercenaryPlayerComponent.KEY.maybeGet(client.player).orElse(null);
+      if (mercenary == null) {
+        return;
+      }
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      Font font = client.font;
+      int xOffset = screenWidth - 10;
+      int yOffset = screenHeight - 10 - font.lineHeight;
+      int dy = yOffset;
+
+      int armor = SREArmorPlayerComponent.KEY.get(client.player).getArmor();
+      var armorText = Component.translatable("hud.mercenary.shields", armor).withStyle(ChatFormatting.AQUA);
+      guiGraphics.drawString(font, armorText, xOffset - font.width(armorText), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 4;
+
+      Component progress = Component.translatable(
+          "hud.mercenary.progress",
+          mercenary.contractKillCount,
+          mercenary.requiredContractKills).withStyle(ChatFormatting.GOLD);
+      guiGraphics.drawString(font, progress, xOffset - font.width(progress), dy, Color.WHITE.getRGB());
+      dy -= font.lineHeight + 6;
+
+      if (mercenary.contractActive && mercenary.contractTargetUuid != null) {
+        UUID targetUuid = mercenary.contractTargetUuid;
+        var target = client.level == null ? null : client.level.getPlayerByUUID(targetUuid);
+        var targetLabel = Component.translatable("hud.mercenary.target", mercenary.contractTargetName)
+            .withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, targetLabel, xOffset - font.width(targetLabel), dy, Color.WHITE.getRGB());
+
+        int iconSize = 18;
+        int iconX = xOffset - font.width(targetLabel) - iconSize - 6;
+        int iconY = dy - 1;
+        if (target instanceof net.minecraft.client.player.AbstractClientPlayer clientTarget) {
+          guiGraphics.drawPlayerFace(clientTarget.getSkin().texture(), iconX, iconY, iconSize);
+        }
+        dy -= font.lineHeight + 4;
+      } else {
+        Component idle = Component.translatable("hud.mercenary.idle").withStyle(ChatFormatting.GREEN);
+        guiGraphics.drawString(font, idle, xOffset - font.width(idle), dy, Color.WHITE.getRGB());
+      }
     });
 
     // 仇杀客HUD

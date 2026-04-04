@@ -58,6 +58,8 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.component.MercenaryPlayerComponent;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
 import org.agmas.noellesroles.repack.HSRItems;
 import org.agmas.noellesroles.roles.coroner.BodyDeathReasonComponent;
@@ -690,6 +692,12 @@ public class GameUtils {
                         // 魔术师不算胜利
                         isWinner = true;
                     }
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
+                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                            isWinner = true;
+                        }
+                    }
                     break;
                 case LOOSE_END:
                     if (winStatus == WinStatus.LOOSE_END) {
@@ -726,6 +734,12 @@ public class GameUtils {
                             isWinner = true;
                         }
                         // 魔术师不需要判断，因为他是innocent
+                    }
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
+                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                            isWinner = true;
+                        }
                     }
                     break;
                 case RECORDER:

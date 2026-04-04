@@ -1081,6 +1081,12 @@ public class ModEventsRegister {
         });
         OnPlayerKilledPlayerIdentifier.EVENT.register((victim, killer, deathReason) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
+            if (gameWorldComponent.isRole(killer, ModRoles.MERCENARY)) {
+                var mercenary = MercenaryPlayerComponent.KEY.get(killer);
+                if (mercenary != null && mercenary.isContractTarget(victim)) {
+                    mercenary.onContractTargetKilled();
+                }
+            }
             if (gameWorldComponent.isRole(killer, ModRoles.WATCHER)) {
                 var watcher = WatcherPlayerComponent.KEY.get(killer);
                 if (watcher.isInCalmStance()) {
@@ -1152,6 +1158,17 @@ public class ModEventsRegister {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorldComponent.isRole(victim, ModRoles.WATCHER)) {
                 WatcherPlayerComponent.KEY.get(victim).markShieldConsumed();
+            }
+            if (killer != null && gameWorldComponent.isRole(victim, ModRoles.MERCENARY)) {
+                var mercenary = MercenaryPlayerComponent.KEY.get(victim);
+                if (mercenary != null) {
+                    mercenary.setForcedTarget(killer);
+                    victim.displayClientMessage(
+                            Component.translatable("message.noellesroles.mercenary.new_forced_target",
+                                            killer.getDisplayName())
+                                    .withStyle(ChatFormatting.RED),
+                            true);
+                }
             }
         });
 
@@ -1231,7 +1248,6 @@ public class ModEventsRegister {
             }
         });
         AfterShieldAllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
-
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             if (gameWorldComponent.isRole(player, ModRoles.SUPERSTAR)) {
                 return true;
@@ -1711,6 +1727,7 @@ public class ModEventsRegister {
                 "noellesroles:throwing_knife",
                 "noellesroles:shisiye",
                 "noellesroles:signed_paper",
+                "noellesroles:mercenary_contract",
                 "noellesroles:diving_helmet",
                 "noellesroles:life_and_death_shape",
                 "noellesroles:noell_paperclip",

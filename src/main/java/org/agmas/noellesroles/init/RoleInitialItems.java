@@ -163,6 +163,11 @@ public class RoleInitialItems {
         banditItems.add(() -> TMMItems.CROWBAR.getDefaultInstance());
         INITIAL_ITEMS_MAP.put(ModRoles.BANDIT, banditItems);
 
+        // 雇佣兵初始物品
+        List<Supplier<ItemStack>> mercenaryItems = new ArrayList<>();
+        mercenaryItems.add(() -> TMMItems.REVOLVER.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.MERCENARY, mercenaryItems);
+
         // 特警初始物品
         List<Supplier<ItemStack>> swastItems = new ArrayList<>();
         swastItems.add(() -> TMMItems.SNIPER_RIFLE.getDefaultInstance());

@@ -468,6 +468,13 @@ public class ModItems {
             new SignedPaperItem(new Item.Properties().stacksTo(1)),
             "signed_paper");
 
+    /**
+     * 雇佣契约（未签订/已签订共用物品）
+     */
+    public static final Item MERCENARY_CONTRACT = register(
+            new MercenaryContractItem(new Item.Properties().stacksTo(1)),
+            "mercenary_contract");
+
     public static final Item ZHANWEIFU1 = registrar.create("zhanweifu1",
             new Item(new Item.Properties().stacksTo(64)));
     public static final Item ZHANWEIFU2 = registrar.create("zhanweifu2",

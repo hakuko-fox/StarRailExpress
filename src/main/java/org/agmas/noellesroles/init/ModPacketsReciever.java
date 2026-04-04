@@ -580,6 +580,8 @@ public class ModPacketsReciever {
       RoleSkill.afterUse(player, ModRoles.THE_INSANE_DAMNED_PARANOID_KILLER_OF_DOOM_DEATH_DESTRUCTION_AND_WAFFLES);
     });
     ServerPlayNetworking.registerGlobalReceiver(RecorderC2SPacket.TYPE, RecorderC2SPacket::handle);
+    ServerPlayNetworking.registerGlobalReceiver(MercenaryContractSignC2SPacket.TYPE,
+      MercenaryContractSignC2SPacket::handle);
 
     // 消防斧攻击包处理
     ServerPlayNetworking.registerGlobalReceiver(FireAxeStabPayload.ID, (payload, context) -> {

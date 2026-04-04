@@ -190,6 +190,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<MagicianPlayerComponent> MAGICIAN = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "magician"),
       MagicianPlayerComponent.class);
+  public static final ComponentKey<MercenaryPlayerComponent> MERCENARY = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mercenary"),
+      MercenaryPlayerComponent.class);
   public static final ComponentKey<BanditPlayerComponent> BANDIT = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "bandit"),
       BanditPlayerComponent.class);
@@ -387,6 +390,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, MAGICIAN)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(MagicianPlayerComponent::new);
+
+    // 注册雇佣兵组件
+    registry.beginRegistration(Player.class, MERCENARY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(MercenaryPlayerComponent::new);
 
     // 注册起搏器组件
     registry.beginRegistration(Player.class, DEFIBRILLATOR)

@@ -170,6 +170,7 @@ public class ModRoles {
   public static final ResourceLocation NIAN_SHOU_ID = Noellesroles.id("nianshou");
   public static final ResourceLocation OLDMAN_ID = Noellesroles.id("oldman");
   public static final ResourceLocation THIEF_ID = Noellesroles.id("thief");
+    public static final ResourceLocation MERCENARY_ID = Noellesroles.id("mercenary");
   public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
   public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
 
@@ -1212,6 +1213,22 @@ public class ModRoles {
       true // 隐藏计分板
   )).setComponentKey(ThiefPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
       .setCanSeeTeammateKiller(false);;
+
+  /**
+   * 雇佣兵角色 - 中立阵营（非独立胜利）
+   * - 默认无雇佣任务时发光
+   * - 默认无雇佣任务时拥有2层护盾
+   * - 仅可击杀雇佣目标或打破其护盾者
+   */
+  public static SRERole MERCENARY = TMMRoles.registerRole(new NormalRole(
+      MERCENARY_ID,
+      new Color(176, 128, 96).getRGB(),
+      false,
+      true,
+      SRERole.MoodType.FAKE,
+      TMMRoles.CIVILIAN.getMaxSprintTime(),
+      true)).setComponentKey(MercenaryPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+      .setCanSeeTeammateKiller(false).setCanUseInstinct(false).setCanPickUpRevolver(true);
 
   /**
    * 秉烛人角色 - 中立阵营
