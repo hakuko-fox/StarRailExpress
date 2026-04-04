@@ -30,7 +30,7 @@ public class CommonTalkChatMixin {
     public void getDisplayName(CallbackInfoReturnable<Component> cir) {
         Player mainPlayer = (Player) (Object) this;
         if (mainPlayer instanceof ServerPlayer ){
-            cir.setReturnValue(somePrefix(mainPlayer).append(mainPlayer.getDisplayName()));
+            cir.setReturnValue(somePrefix(mainPlayer).append(cir.getReturnValue()));
         }
     }
 }
