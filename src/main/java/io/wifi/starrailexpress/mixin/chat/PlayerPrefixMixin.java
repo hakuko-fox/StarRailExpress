@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class PlayerPrefixMixin {
     @Unique
     private static MutableComponent somePrefix(Player mainPlayer) {
-        if (mainPlayer instanceof ServerPlayer ){
+        if (mainPlayer instanceof ServerPlayer){
             var component = NameTagInventoryComponent.KEY.get(mainPlayer).generate();
             return component != null ? component : Component.literal("");
         }

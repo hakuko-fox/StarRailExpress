@@ -12,6 +12,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -39,16 +40,17 @@ public class NameTagInventoryComponent implements RoleComponent {
     public String CurrentNameTag = "";
 
     private boolean isNetworkSyncEnabled = false;
+
     public NameTagInventoryComponent(Player player) {
         this.player = player;
     }
-    
+
     /**
      * 初始化网络同步
      * 
      * @param host 服务器主机地址
      * @param port 服务器端口
-     * @param key 认证密钥
+     * @param key  认证密钥
      */
     public void initializeNetworkSync(String host, int port, String key) {
         this.isNetworkSyncEnabled = SREConfig.instance().itemSkinSyncServerEnabled
@@ -60,14 +62,14 @@ public class NameTagInventoryComponent implements RoleComponent {
             logger.warn("玩家 {} 的名片 MySQL 同步未启用，数据库不可用或配置未完成。", this.player.getName().getString());
         }
     }
-    
+
     /**
      * 禁用全局网络同步
      */
     public static void disableGlobalNetworkSync() {
         MysqlPlayerDataStore.shutdown();
     }
-    
+
     /**
      * 禁用网络同步
      */
@@ -75,7 +77,7 @@ public class NameTagInventoryComponent implements RoleComponent {
         this.isNetworkSyncEnabled = false;
     }
 
-    public void syncFromLinkedServer(){
+    public void syncFromLinkedServer() {
         if (!SREConfig.instance().itemSkinSyncServerEnabled)
             return;
         if (!this.isNetworkSyncEnabled || !(this.player instanceof ServerPlayer serverPlayer)
@@ -105,16 +107,24 @@ public class NameTagInventoryComponent implements RoleComponent {
                     return null;
                 });
     }
-    
+
     public MutableComponent generate() {
-        var nameTag = Component.literal("");
-        if (getPlayer().isSpectator()){
-            nameTag.append(Component.translatable("starrailexpress.tag.spectator").append(" "));
+        ArrayList<MutableComponent> toAddNameTags = new ArrayList<>();
+        if (getPlayer().isSpectator()) {
+            toAddNameTags.add(Component.translatable("starrailexpress.tag.spectator"));
         }
-        MutableComponent translatable = Component.translatable( CurrentNameTag);
-        nameTag.append(translatable).append(" ");
-        return nameTag;
+        // ComponentUtils.formatList(toAddNameTags);
+        if (CurrentNameTag != null && !CurrentNameTag.isEmpty() && !CurrentNameTag.isBlank()) {
+            toAddNameTags.add(Component.translatable(CurrentNameTag));
+        }
+        if (nameTags.size() > 0) {
+            return ComponentUtils.formatList(toAddNameTags, (t) -> {
+                return Component.literal(" ").append(t);
+            }).copy();
+        }
+        return null;
     }
+
     @Override
     public boolean shouldSyncWith(ServerPlayer player) {
         return this.player == player;
@@ -136,7 +146,7 @@ public class NameTagInventoryComponent implements RoleComponent {
             nameTagsList.add(StringTag.valueOf(nameTag));
         }
         compoundTag.put("nameTags", nameTagsList);
-        
+
         // 保存当前选中的名片
         compoundTag.putString("CurrentNameTag", CurrentNameTag);
     }
@@ -210,7 +220,7 @@ public class NameTagInventoryComponent implements RoleComponent {
     public String getCurrentNameTag() {
         return CurrentNameTag;
     }
-    
+
     /**
      * 将名片数据异步同步到 MySQL
      */
@@ -233,7 +243,7 @@ public class NameTagInventoryComponent implements RoleComponent {
                     }
                 });
     }
-    
+
     /**
      * 应用从网络获取的名片数据
      */
@@ -276,7 +286,7 @@ public class NameTagInventoryComponent implements RoleComponent {
                 System.currentTimeMillis(),
                 DATABASE_SYNC_FLUSH_TIMEOUT_MS);
     }
-    
+
     /**
      * 检查网络同步是否已启用
      */
@@ -293,7 +303,6 @@ public class NameTagInventoryComponent implements RoleComponent {
         return nametagData;
     }
 
-    
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         writeToNbt(tag, registryLookup);
