@@ -73,6 +73,8 @@ public class RoleUnlockManager {
         UNLOCK_THRESHOLDS.put(ModRoles.MAGICIAN_ID,                 15);
         UNLOCK_THRESHOLDS.put(ModRoles.AWESOME_BINGLUS_ID,          15);
         UNLOCK_THRESHOLDS.put(ModRoles.BETTER_VIGILANTE_ID,         15);
+        UNLOCK_THRESHOLDS.put(ModRoles.BASEBALL_PLAYER_ID,          1);
+        UNLOCK_THRESHOLDS.put(ModRoles.CREEPER_ID,                  10);
         UNLOCK_THRESHOLDS.put(ModRoles.CLOCKMAKER_ID,               20);
         UNLOCK_THRESHOLDS.put(ModRoles.SWAST_ID,                    20);
         UNLOCK_THRESHOLDS.put(ModRoles.MARTIAL_ARTS_INSTRUCTOR_ID,  20);

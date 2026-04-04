@@ -82,8 +82,9 @@ public class SREWorldBlackoutComponent implements ServerTickingComponent {
             if (!state.hasProperty(BlockStateProperties.LIT) || !state.hasProperty(TMMProperties.ACTIVE))
                 continue;
 
-            int duration = GameConstants.getBlackoutMinDuration() + this.world.random
-                    .nextInt(GameConstants.getBlackoutMaxDuration() - GameConstants.getBlackoutMinDuration());
+            int duration = (int) (GameConstants.getBlackoutMinDuration() + this.world.random
+                                .nextInt(GameConstants.getBlackoutMaxDuration() - GameConstants.getBlackoutMinDuration())*SREPlayerShopComponent.customBlackoutTimeB);
+            SREPlayerShopComponent.customBlackoutTimeB = 1f;
             if (duration > this.blackOutRemainingTicks)
                 this.blackOutRemainingTicks = duration;
             BlackoutDetails detail = new BlackoutDetails(pos, duration,

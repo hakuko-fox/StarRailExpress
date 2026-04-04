@@ -485,8 +485,6 @@ public class RoleShopHandler {
       // 忍者商店
       var NINJA_SHOP = new ArrayList<ShopEntry>();
 
-      // 普通刀 - 300金币
-      NINJA_SHOP.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
 
       // 苦无 - 130金币
       NINJA_SHOP.add(new ShopEntry(ModItems.NINJA_KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON));
@@ -497,6 +495,7 @@ public class RoleShopHandler {
       // 关灯 - 50金币
       NINJA_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
         public boolean onBuy(@NotNull Player player) {
+          SREPlayerShopComponent.customBlackoutTimeB = 0.4f;
           return SREPlayerShopComponent.useBlackout(player);
         }
       });

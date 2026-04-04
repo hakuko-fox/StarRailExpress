@@ -133,6 +133,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
 
     }
 
+    public static float customBlackoutTimeB = 1;
     public static boolean useBlackout(@NotNull Player player) {
         player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
                 GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.BLACKOUT, 0));

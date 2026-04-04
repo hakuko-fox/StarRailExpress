@@ -83,6 +83,8 @@ public class RicesRoleRhapsody implements ModInitializer {
     public static final CustomPacketPayload.Type<PsychologistC2SPacket> PSYCHOLOGIST_PACKET = PsychologistC2SPacket.ID;
     public static final CustomPacketPayload.Type<PuppeteerC2SPacket> PUPPETEER_PACKET = PuppeteerC2SPacket.ID;
 
+    public static final CustomPacketPayload.Type<CreeperAbilityC2SPacket> CREEPER_ABILITY_PACKET = CreeperAbilityC2SPacket.ID;
+
     public static final CustomPacketPayload.Type<LockGameC2Packet> LOCK_GAME_PACKET = LockGameC2Packet.ID;
     public static final CustomPacketPayload.Type<KeyForgeGameC2Packet> KEY_FORGE_GAME_PACKET = KeyForgeGameC2Packet.ID;
     public static final CustomPacketPayload.Type<LootRequestC2SPacket> LOOT_REQUIRE_PACKET = LootRequestC2SPacket.ID;
@@ -309,6 +311,9 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 注册傀儡师技能包
         PayloadTypeRegistry.playC2S().register(PuppeteerC2SPacket.ID, PuppeteerC2SPacket.CODEC);
+
+        // 注册苦力怕技能包
+        PayloadTypeRegistry.playC2S().register(CreeperAbilityC2SPacket.ID, CreeperAbilityC2SPacket.CODEC);
 
         // 注册撬锁小游戏完成包
         PayloadTypeRegistry.playC2S().register(LockGameC2Packet.ID, LockGameC2Packet.CODEC);

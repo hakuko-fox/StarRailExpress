@@ -58,6 +58,7 @@ public class StupidExpress implements ModInitializer {
                 || r.identifier().equals(ModRoles.DIO_ID)
                 || r.identifier().equals(ModRoles.JOJO_ID)
                 || r.identifier().equals(ModRoles.BEST_VIGILANTE_ID)
+                || r.identifier().equals(ModRoles.BASEBALL_PLAYER_ID)
                 || r.identifier().equals(ModRoles.WATER_GHOST_ID)
                 || (removeNonThisRoundRoles && Harpymodloader.ROLE_MAX.getOrDefault(r.identifier(), 1) <= 0)
                 || r.getOccupiedRoleCount() > 1
