@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.mixin.gui;
 
 import com.kreezcraft.localizedchat.CommonClass;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,9 +10,12 @@ import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 
-@Mixin(CommonClass.class)
+@Mixin(Player.class)
 public class CommonTalkChatMixin {
     @Unique
     private static MutableComponent somePrefix(Player mainPlayer) {
@@ -21,39 +25,12 @@ public class CommonTalkChatMixin {
         return Component.literal("");
     }
 
-    /**
-     * @author
-     * @reason
-     */
-    @Overwrite
-    public static boolean onChatMessage(ServerPlayer sender, String message) {
-        return false;
-        // // ServerMessageEvents.ALLOW_CHAT_MESSAGE.invoker().allowChatMessage(message, sender, null);
-        // if (sender == null) {
-        //     return false;
-        // } else {
-        //     MinecraftServer server = sender.getServer();
-        //     if (server == null) {
-        //         return false;
-        //     } else {
-        //         String var10000 = ConfigCache.angleBraceColor;
-        //         Component senderMessage = somePrefix(sender).append(Component.literal(var10000 + "<" + ConfigCache.nameColor + playerName(sender).getString() + ConfigCache.angleBraceColor + "> " + ConfigCache.defaultColor + message));
-        //         server.getPlayerList().broadcastSystemMessage(senderMessage, (player) -> {
-        //             if (sender.getUUID().equals(player.getUUID())) {
-        //                 player.sendSystemMessage(senderMessage);
-        //             } else {
-        //                 if (!ConfigCache.opAsPlayer && server.getPlayerList().getOps().get(sender.getGameProfile()) != null) {
-        //                     return (senderMessage);
-        //                 }
 
-        //                 if (compareCoordinatesDistance(sender.blockPosition(), player.blockPosition()) <= (double)ConfigCache.talkRange) {
-        //                     return (senderMessage);
-        //                 }
-        //             }
-        //             return null;
-        //         }, false);
-        //         return true;
-        //     }
-        // }
+    @Inject(method = "getDisplayName", at = @At("HEAD"), cancellable = true)
+    public void getDisplayName(CallbackInfoReturnable<Component> cir) {
+        Player mainPlayer = (Player) (Object) this;
+        if (mainPlayer instanceof ServerPlayer ){
+            cir.setReturnValue(somePrefix(mainPlayer).append(mainPlayer.getDisplayName()));
+        }
     }
 }
