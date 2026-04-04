@@ -1,5 +1,5 @@
 {
-  "sre.shutdown.waring": "§e服务器将在 20 秒后自动关闭...",
+  "sre.shutdown.waring": "服务器将在 %s 秒后自动关闭...",
   "============ 重置 ===========": "",
   "message.sre.reseting": "重置地图中 %s%%",
   "message.sre.starting": "游戏开始！",

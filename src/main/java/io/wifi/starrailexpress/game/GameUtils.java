@@ -256,14 +256,6 @@ public class GameUtils {
         SREGameWorldComponent component = SREGameWorldComponent.KEY.get(world);
         SREWorldBlackoutComponent.KEY.get(world).reset();
         component.setGameStatus(SREGameWorldComponent.GameStatus.STOPPING);
-        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning) {
-            world.getServer().getPlayerList().broadcastSystemMessage(Component.translatable("sre.shutdown.waring"),
-                    false);
-
-            serverAsynTaskLists.add(new ServerTaskInfoClasses.SchedulerTask(5 * 20, () -> {
-                world.getServer().halt(true);
-            }));
-        }
     }
 
     private static void executeFunction(CommandSourceStack source, String function) {
@@ -641,6 +633,17 @@ public class GameUtils {
         world.setWeatherParameters(6000, 0, false, false);
         serverTaskQueue.clear();
         serverAsynTaskLists.clear();
+
+        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning) {
+            world.getServer().getPlayerList().broadcastSystemMessage(
+                    Component.translatable("sre.shutdown.waring", 10).withStyle(ChatFormatting.YELLOW),
+                    false);
+
+            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10 * 20, () -> {
+                world.getServer().halt(true);
+            }));
+        }
+
         isStartingGame = false;
         SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
         RoleMethodDispatcher.onEndGame(world);
