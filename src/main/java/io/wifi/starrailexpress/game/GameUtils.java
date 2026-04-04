@@ -634,16 +634,6 @@ public class GameUtils {
         serverTaskQueue.clear();
         serverAsynTaskLists.clear();
 
-        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning) {
-            world.getServer().getPlayerList().broadcastSystemMessage(
-                    Component.translatable("sre.shutdown.waring", 10).withStyle(ChatFormatting.YELLOW),
-                    false);
-
-            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10 * 20, () -> {
-                world.getServer().halt(true);
-            }));
-        }
-
         isStartingGame = false;
         SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
         RoleMethodDispatcher.onEndGame(world);
@@ -829,6 +819,16 @@ public class GameUtils {
                 .get(world.getServer().getScoreboard());
         scoreboardComponent.reset();
         roundEnd.sync();
+
+        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning) {
+            world.getServer().getPlayerList().broadcastSystemMessage(
+                    Component.translatable("sre.shutdown.waring", 10).withStyle(ChatFormatting.YELLOW),
+                    false);
+
+            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10 * 20, () -> {
+                world.getServer().halt(true);
+            }));
+        }
     }
 
     public static void resetPlayer(ServerPlayer player) {
