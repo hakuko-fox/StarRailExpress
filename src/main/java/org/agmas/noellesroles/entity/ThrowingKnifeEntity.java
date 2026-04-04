@@ -2,12 +2,14 @@ package org.agmas.noellesroles.entity;
 
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
@@ -15,20 +17,14 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 
-public class ThrowingKnifeEntity extends AbstractArrow {
-    private ItemStack pickupItemStack;
+public class ThrowingKnifeEntity extends Arrow {
 
-    public ThrowingKnifeEntity(EntityType<? extends AbstractArrow> entityType, Level level) {
+    public ThrowingKnifeEntity(EntityType<? extends Arrow> entityType, Level level) {
         super(entityType, level);
         this.setNoGravity(true);
-        this.pickupItemStack = ModItems.THROWING_KNIFE.getDefaultInstance();
     }
 
-    public ThrowingKnifeEntity(EntityType<? extends AbstractArrow> entityType, Level level, ItemStack pickupItemStack) {
-        super(entityType, level);
-        this.setNoGravity(true);
-        this.pickupItemStack = pickupItemStack;
-    }
+
 
     @Override
     public boolean isPickable() {
@@ -71,10 +67,14 @@ public class ThrowingKnifeEntity extends AbstractArrow {
 
     @Override
     protected ItemStack getDefaultPickupItem() {
-        return pickupItemStack;
+        return ItemStack.EMPTY;
     }
 
-    // @Override
+    @Override
+    public void addAdditionalSaveData(CompoundTag compoundTag) {
+        super.addAdditionalSaveData(compoundTag);
+    }
+// @Override
     // protected Item getDefaultItem() {
     // return ModItems.THROWING_KNIFE;
     // }
