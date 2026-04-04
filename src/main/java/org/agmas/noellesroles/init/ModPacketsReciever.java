@@ -325,14 +325,16 @@ public class ModPacketsReciever {
             && cooldowns.get(tk).endTime - cooldowns1.tickCount <= 20)
           return;
         if (!player.isCreative())
-          player.getMainHandItem().shrink(1);
+          mainHandItem.shrink(1);
         if (!cooldowns1.isOnCooldown(tk)) {
           cooldowns1.addCooldown(tk, 20);
         }
-        ThrowingKnifeEntity entity = new ThrowingKnifeEntity(ModEntities.THROWING_KNIFE, player.level());
+        ThrowingKnifeEntity entity = new ThrowingKnifeEntity(ModEntities.THROWING_KNIFE, player, player.level(),
+            tk.getDefaultInstance());
+
         entity.setPos(player.getEyePosition().add(0, 0, 0));
         entity.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0f, 1.3f, 1.0f);
-        entity.setOwner(player);
+        // entity.setOwner(player);
         player.level().addFreshEntity(entity);
         player.swing(InteractionHand.MAIN_HAND);
         ServerLevel serverLevel = player.serverLevel();
@@ -502,8 +504,8 @@ public class ModPacketsReciever {
 
           // 模仿者使用广播员能力
           if (gameWorldComponent.isRole(context.player(), ModRoles.IMITATOR)) {
-            org.agmas.noellesroles.roles.imitator.ImitatorPlayerComponent imitComp =
-                    org.agmas.noellesroles.component.ModComponents.IMITATOR.get(context.player());
+            org.agmas.noellesroles.roles.imitator.ImitatorPlayerComponent imitComp = org.agmas.noellesroles.component.ModComponents.IMITATOR
+                .get(context.player());
             if (!payload.onlySave()) {
               imitComp.useMessageAbility(context.player(), payload.message());
             }
@@ -581,7 +583,7 @@ public class ModPacketsReciever {
     });
     ServerPlayNetworking.registerGlobalReceiver(RecorderC2SPacket.TYPE, RecorderC2SPacket::handle);
     ServerPlayNetworking.registerGlobalReceiver(MercenaryContractSignC2SPacket.TYPE,
-      MercenaryContractSignC2SPacket::handle);
+        MercenaryContractSignC2SPacket::handle);
 
     // 消防斧攻击包处理
     ServerPlayNetworking.registerGlobalReceiver(FireAxeStabPayload.ID, (payload, context) -> {

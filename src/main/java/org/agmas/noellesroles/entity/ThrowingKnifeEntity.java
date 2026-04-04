@@ -8,8 +8,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
@@ -17,14 +17,18 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 
-public class ThrowingKnifeEntity extends Arrow {
+public class ThrowingKnifeEntity extends AbstractArrow {
 
-    public ThrowingKnifeEntity(EntityType<? extends Arrow> entityType, Level level) {
+    public ThrowingKnifeEntity(EntityType<? extends AbstractArrow> entityType, Level level) {
         super(entityType, level);
         this.setNoGravity(true);
     }
 
-
+    public ThrowingKnifeEntity(EntityType<? extends AbstractArrow> entityType, LivingEntity livingEntity, Level level,
+            ItemStack itemStack) {
+        super(entityType, livingEntity, level, itemStack, null);
+        this.setNoGravity(true);
+    }
 
     @Override
     public boolean isPickable() {
@@ -67,14 +71,14 @@ public class ThrowingKnifeEntity extends Arrow {
 
     @Override
     protected ItemStack getDefaultPickupItem() {
-        return ItemStack.EMPTY;
+        return ModItems.THROWING_KNIFE.getDefaultInstance();
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag compoundTag) {
         super.addAdditionalSaveData(compoundTag);
     }
-// @Override
+    // @Override
     // protected Item getDefaultItem() {
     // return ModItems.THROWING_KNIFE;
     // }

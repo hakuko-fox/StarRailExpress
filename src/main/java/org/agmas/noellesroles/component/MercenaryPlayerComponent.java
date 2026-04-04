@@ -8,8 +8,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -127,7 +125,8 @@ public class MercenaryPlayerComponent implements RoleComponent, ServerTickingCom
         this.employerName = employerDisplay == null ? "" : employerDisplay;
         this.contractTargetUuid = target;
         Player liveTarget = player.level().getPlayerByUUID(target);
-        this.contractTargetName = liveTarget != null ? liveTarget.getScoreboardName() : (targetDisplay == null ? "" : targetDisplay);
+        this.contractTargetName = liveTarget != null ? liveTarget.getScoreboardName()
+                : (targetDisplay == null ? "" : targetDisplay);
         this.contractActive = true;
         this.boughtShieldThisContract = false;
 
@@ -162,8 +161,8 @@ public class MercenaryPlayerComponent implements RoleComponent, ServerTickingCom
         if (player instanceof ServerPlayer sp) {
             sp.displayClientMessage(
                     Component.translatable("message.noellesroles.mercenary.contract_finished",
-                                    contractKillCount,
-                                    requiredContractKills)
+                            contractKillCount,
+                            requiredContractKills)
                             .withStyle(ChatFormatting.GREEN),
                     true);
         }
@@ -267,7 +266,7 @@ public class MercenaryPlayerComponent implements RoleComponent, ServerTickingCom
             enterIdleState(false);
             if (forcedTargetUuid != null) {
                 Player forcedTarget = player.level().getPlayerByUUID(forcedTargetUuid);
-                if (forcedTarget == null || !GameUtils.isPlayerAliveAndSurvival(forcedTarget)) {
+                if (forcedTarget == null || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(forcedTarget)) {
                     forcedTargetUuid = null;
                     forcedTargetName = "";
                     sync();
@@ -281,8 +280,10 @@ public class MercenaryPlayerComponent implements RoleComponent, ServerTickingCom
             onContractTargetLost();
             return;
         }
-
-        contractTarget.addEffect(new MobEffectInstance(MobEffects.GLOWING, GLOW_REFRESH_TICKS, 0, false, false, false));
+        if (player.level().getGameTime() % 30 == 0) {
+            contractTarget
+                    .addEffect(new MobEffectInstance(MobEffects.GLOWING, GLOW_REFRESH_TICKS, 0, false, false, false));
+        }
     }
 
     @Override

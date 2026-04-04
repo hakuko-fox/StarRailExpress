@@ -15,18 +15,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.LightLayer;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
+import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-public class NinjaPlayerComponent implements RoleComponent, ServerTickingComponent {
+public class NinjaPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
 
     public static final ComponentKey<NinjaPlayerComponent> KEY = ModComponents.NINJA;
 
     // 格挡常量
-    private static final int ABILITY_COOLDOWN = 300 * 20;   // 300秒
+    private static final int ABILITY_COOLDOWN = 300 * 20; // 300秒
     private static final int ABILITY_DURATION = 2 * 20 + 10; // 2.5秒
     private static final int BOUNTY_AMOUNT = 100;
 
@@ -37,17 +37,30 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
     public boolean shieldUsed = false;
 
     // HUD 辅助方法
-    public boolean isOnCooldown() { return cooldown > 0; }
-    public boolean isAbilityActive() { return duration > 0; }
-    public float getCooldownSeconds() { return cooldown / 20.0f; }
-    public float getDurationSeconds() { return duration / 20.0f; }
+    public boolean isOnCooldown() {
+        return cooldown > 0;
+    }
+
+    public boolean isAbilityActive() {
+        return duration > 0;
+    }
+
+    public float getCooldownSeconds() {
+        return cooldown / 20.0f;
+    }
+
+    public float getDurationSeconds() {
+        return duration / 20.0f;
+    }
 
     public NinjaPlayerComponent(Player player) {
         this.player = player;
     }
 
     @Override
-    public Player getPlayer() { return player; }
+    public Player getPlayer() {
+        return player;
+    }
 
     @Override
     public void init() {
@@ -59,29 +72,38 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
     }
 
     @Override
-    public void clear() { init(); }
+    public void clear() {
+        init();
+    }
 
     @Override
-    public boolean shouldSyncWith(ServerPlayer target) { return this.player == target; }
+    public boolean shouldSyncWith(ServerPlayer target) {
+        return this.player == target;
+    }
 
-    public void sync() { KEY.sync(this.player); }
+    public void sync() {
+        KEY.sync(this.player);
+    }
 
     public boolean canUseAbility() {
         return cooldown <= 0 && duration <= 0 && !hasShield;
     }
 
     public boolean useAbility() {
-        if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
+        if (!GameUtils.isPlayerAliveAndSurvival(player))
+            return false;
         if (!canUseAbility()) {
             if (player instanceof ServerPlayer sp && cooldown > 0) {
                 sp.displayClientMessage(
                         Component.translatable("message.noellesroles.ninja.block_cooldown", (cooldown + 19) / 20)
-                                .withStyle(ChatFormatting.RED), true);
+                                .withStyle(ChatFormatting.RED),
+                        true);
             }
             return false;
         }
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorld.getRole(player.getUUID()) != ModRoles.NINJA) return false;
+        if (gameWorld.getRole(player.getUUID()) != ModRoles.NINJA)
+            return false;
 
         this.hasShield = true;
         this.shieldUsed = false;
@@ -92,7 +114,8 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
         if (player instanceof ServerPlayer sp) {
             sp.displayClientMessage(
                     Component.translatable("message.noellesroles.ninja.block_activate")
-                            .withStyle(ChatFormatting.GREEN), true);
+                            .withStyle(ChatFormatting.GREEN),
+                    true);
         }
         return true;
     }
@@ -109,7 +132,8 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
             if (player instanceof ServerPlayer sp) {
                 sp.displayClientMessage(
                         Component.translatable("message.noellesroles.ninja.block_success")
-                                .withStyle(ChatFormatting.GOLD), true);
+                                .withStyle(ChatFormatting.GOLD),
+                        true);
             }
             return true;
         }
@@ -118,10 +142,13 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
 
     @Override
     public void serverTick() {
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer))
+            return;
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorld.getRole(player.getUUID()) != ModRoles.NINJA) return;
-        if (!GameUtils.isPlayerAliveAndSurvival(serverPlayer)) return;
+        if (gameWorld.getRole(player.getUUID()) != ModRoles.NINJA)
+            return;
+        if (!GameUtils.isPlayerAliveAndSurvival(serverPlayer))
+            return;
 
         // 格挡持续时间
         if (duration > 0) {
@@ -131,30 +158,44 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
                 shieldUsed = false;
                 cooldown = ABILITY_COOLDOWN;
                 sync();
-            } else if (duration % 20 == 0) {
+            } else if (duration % 200 == 0) {
                 sync();
             }
         }
         // 格挡冷却递减
         if (cooldown > 0) {
             cooldown--;
-            if (cooldown % 20 == 0 || cooldown == 0) sync();
+            if (cooldown % 200 == 0 || cooldown == 0)
+                sync();
+        }
+    }
+
+    @Override
+    public void clientTick() {
+        if (cooldown > 1) {
+            cooldown--;
+        }
+        if (duration > 0) {
+            duration--;
         }
     }
 
     public static void registerEvents() {
         // 赏金被动：黑暗击杀得100金币（黑暗 = 亮度 ≤5 或 停电）
         OnPlayerKilledPlayer.EVENT.register((victim, killer, reason) -> {
-            if (killer == null || victim == null) return;
+            if (killer == null || victim == null)
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(killer.level());
-            if (gameWorld.getRole(killer.getUUID()) != ModRoles.NINJA) return;
+            if (gameWorld.getRole(killer.getUUID()) != ModRoles.NINJA)
+                return;
 
             // 检测黑暗环境（综合亮度）
             int lightLevel = killer.level().getRawBrightness(killer.blockPosition(), 0);
             var blackOut = SREWorldBlackoutComponent.KEY.maybeGet(killer.level()).orElse(null);
             boolean isDark = lightLevel <= 5 || (blackOut != null && blackOut.isBlackoutActive());
 
-            if (!isDark) return;
+            if (!isDark)
+                return;
 
             if (killer instanceof ServerPlayer sp) {
                 SREPlayerShopComponent shopComp = SREPlayerShopComponent.KEY.get(sp);
@@ -162,14 +203,16 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
                 shopComp.sync();
                 sp.displayClientMessage(
                         Component.translatable("message.noellesroles.ninja.bounty", BOUNTY_AMOUNT)
-                                .withStyle(ChatFormatting.GOLD), true);
+                                .withStyle(ChatFormatting.GOLD),
+                        true);
             }
         });
 
         // 格挡伤害
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             NinjaPlayerComponent comp = KEY.get(victim);
-            if (comp != null && comp.tryBlockDamage()) return false;
+            if (comp != null && comp.tryBlockDamage())
+                return false;
             return true;
         });
     }
@@ -191,7 +234,10 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
     }
 
     @Override
-    public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {}
+    public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
+    }
+
     @Override
-    public void readFromNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {}
+    public void readFromNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
+    }
 }
