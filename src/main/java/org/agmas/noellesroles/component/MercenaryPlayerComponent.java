@@ -198,7 +198,7 @@ public class MercenaryPlayerComponent implements RoleComponent, ServerTickingCom
             return false;
         }
         SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
-        armor.addArmor();
+        armor.giveArmor();
         bonusShields++;
         boughtShieldThisContract = true;
         sync();

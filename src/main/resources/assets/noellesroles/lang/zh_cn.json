@@ -1417,6 +1417,7 @@
   "item.noellesroles.signed_paper.rename": "%s 的签名纸",
   "item.noellesroles.signed_paper.tooltip": "拥有此签名时，当你视野范围内有明星时，你将获得速度 I",
   "item.noellesroles.mercenary_contract": "未签订的契约",
+  "item.noellesroles.mercenary_contract.tooltip": "非雇佣兵右键可选择目标，雇佣兵右键执行目标。",
   "item.noellesroles.mercenary_contract.signed_name": "已签订契约（目标：%s）",
   "item.noellesroles.mercenary_guard": "临时护盾",
   "item.noellesroles.life_and_death_shape": "不知道是谁的签名纸",
