@@ -495,8 +495,7 @@ public class RoleShopHandler {
       // 关灯 - 50金币
       NINJA_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
         public boolean onBuy(@NotNull Player player) {
-          SREPlayerShopComponent.customBlackoutTimeB = 0.4f;
-          return SREPlayerShopComponent.useBlackout(player);
+          return SREPlayerShopComponent.useBlackoutWithMultiplier(player, 0.4);
         }
       });
 

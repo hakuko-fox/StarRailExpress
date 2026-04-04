@@ -74,17 +74,11 @@ public class SREWorldBlackoutComponent implements ServerTickingComponent {
         return triggerBlackout(true);
     }
 
-    public boolean triggerBlackout(boolean haveSound) {
-        if (this.blackOutRemainingTicks > 0)
-            return false;
+    public boolean triggerBlackout(boolean haveSound, int duration) {
         for (var pos : GameUtils.resetPoints) {
             BlockState state = this.world.getBlockState(pos);
             if (!state.hasProperty(BlockStateProperties.LIT) || !state.hasProperty(TMMProperties.ACTIVE))
                 continue;
-
-            int duration = (int) (GameConstants.getBlackoutMinDuration() + this.world.random
-                                .nextInt(GameConstants.getBlackoutMaxDuration() - GameConstants.getBlackoutMinDuration())*SREPlayerShopComponent.customBlackoutTimeB);
-            SREPlayerShopComponent.customBlackoutTimeB = 1f;
             if (duration > this.blackOutRemainingTicks)
                 this.blackOutRemainingTicks = duration;
             BlackoutDetails detail = new BlackoutDetails(pos, duration,
@@ -114,6 +108,19 @@ public class SREWorldBlackoutComponent implements ServerTickingComponent {
             }
         }
         return true;
+    }
+
+    public static int getRandomDuration(Level world) {
+        int duration = (int) (GameConstants.getBlackoutMinDuration() + world.random
+                .nextInt(GameConstants.getBlackoutMaxDuration() - GameConstants.getBlackoutMinDuration()));
+        return duration;
+    }
+
+    public boolean triggerBlackout(boolean haveSound) {
+        if (this.blackOutRemainingTicks > 0)
+            return false;
+        int duration = getRandomDuration(world);
+        return triggerBlackout(haveSound, duration);
     }
 
     @Override

@@ -293,7 +293,9 @@ public class GameUtilsCommand {
                   })))
               .then(Commands.literal("blackout").executes((context) -> {
                 return executeBlackout(context, -1);
-              }).then(Commands.literal("stop").executes((context) -> {
+              }).then(Commands.argument("duration", IntegerArgumentType.integer(0)).executes((context) -> {
+                return executeBlackout(context, IntegerArgumentType.getInteger(context, "duration"));
+              })).then(Commands.literal("stop").executes((context) -> {
                 return executeBlackout(context, 0);
               })))
               .then(Commands.literal("psycho").executes((context) -> {
@@ -388,7 +390,11 @@ public class GameUtilsCommand {
   public static int executeBlackout(CommandContext<CommandSourceStack> context, int time) {
     var wbc = SREWorldBlackoutComponent.KEY.get(context.getSource().getLevel());
     if (time != 0) {
-      wbc.triggerBlackout();
+      if (time == 0) {
+        wbc.triggerBlackout(true);
+      } else {
+        wbc.triggerBlackout(true, time);
+      }
       context.getSource()
           .sendSuccess(() -> Component.translatable("Triggered Blackout!"), true);
 

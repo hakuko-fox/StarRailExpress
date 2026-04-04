@@ -96,7 +96,8 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                         entry.price());
             }
         } else {
-            this.player.displayClientMessage(Component.translatable("message.tip.purchase_failed").withStyle(ChatFormatting.DARK_RED), true);
+            this.player.displayClientMessage(
+                    Component.translatable("message.tip.purchase_failed").withStyle(ChatFormatting.DARK_RED), true);
             if (this.player instanceof ServerPlayer player) {
                 player.connection.send(new ClientboundSoundPacket(
                         BuiltInRegistries.SOUND_EVENT.wrapAsHolder(TMMSounds.UI_SHOP_BUY_FAIL), SoundSource.PLAYERS,
@@ -133,15 +134,23 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
 
     }
 
-    public static float customBlackoutTimeB = 1;
-    public static boolean useBlackout(@NotNull Player player) {
+    public static boolean useBlackoutWithMultiplier(@NotNull Player player, double multtiplier) {
+        return useBlackout(player,
+                (int) ((double) SREWorldBlackoutComponent.getRandomDuration(player.level()) * multtiplier));
+    }
+
+    public static boolean useBlackout(@NotNull Player player, int duration) {
         player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
                 GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.BLACKOUT, 0));
-        boolean triggered = SREWorldBlackoutComponent.KEY.get(player.level()).triggerBlackout();
+        boolean triggered = SREWorldBlackoutComponent.KEY.get(player.level()).triggerBlackout(true, duration);
         if (triggered) {
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.BLACKOUT));
         }
         return triggered;
+    }
+
+    public static boolean useBlackout(@NotNull Player player) {
+        return useBlackout(player, SREWorldBlackoutComponent.getRandomDuration(player.level()));
     }
 
     public static boolean usePsychoMode(@NotNull Player player) {
