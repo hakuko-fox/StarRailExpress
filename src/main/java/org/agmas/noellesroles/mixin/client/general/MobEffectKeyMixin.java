@@ -29,13 +29,15 @@ public abstract class MobEffectKeyMixin {
             return false;
         final var options = instance.options;
         if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA) || player.hasEffect(ModEffects.GHOST_CURSE)) {
-            return this.same(NoellesrolesClient.abilityBind);
+            if(this.same(NoellesrolesClient.abilityBind)){
+                return true;
+            }
         }
         if (player.hasEffect(ModEffects.MOVE_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)) {
-            return this.same(options.keyJump) || this.same(options.keyLeft) || this.same(options.keyRight) || this.same(options.keyUp) || this.same(options.keyDown);
+            if( this.same(options.keyJump) || this.same(options.keyLeft) || this.same(options.keyRight) || this.same(options.keyUp) || this.same(options.keyDown))return true;
         }
         if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)) {
-            return this.same(options.keyAttack) || this.same(options.keyDrop) || this.same(options.keyUse);
+            if( this.same(options.keyAttack) || this.same(options.keyDrop) || this.same(options.keyUse))return true;
         }
         return false;
     }
