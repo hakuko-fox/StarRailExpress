@@ -212,6 +212,14 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "best_vigilante"),
       BestVigilantePlayerComponent.class);
 
+  public static final ComponentKey<BaseballPlayerComponent> BASEBALL_PLAYER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "baseball_player"),
+      BaseballPlayerComponent.class);
+
+  public static final ComponentKey<CreeperPlayerComponent> CREEPER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "creeper"),
+      CreeperPlayerComponent.class);
+
   public static final ComponentKey<AccountantPlayerComponent> ACCOUNTANT = AccountantPlayerComponent.KEY;
 
   public static final ComponentKey<WaterGhostPlayerComponent> WATER_GHOST = ComponentRegistry.getOrCreate(
@@ -478,6 +486,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, BEST_VIGILANTE)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BestVigilantePlayerComponent::new);
+
+    // 注册棒球员组件
+    registry.beginRegistration(Player.class, BASEBALL_PLAYER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(BaseballPlayerComponent::new);
+
+    // 注册苦力怕组件
+    registry.beginRegistration(Player.class, CREEPER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(CreeperPlayerComponent::new);
 
     // 注册远征队组件
     registry.beginRegistration(Player.class, EXPEDITION)

@@ -139,7 +139,7 @@
             "PoolType":"Common",
             "QualityListGroup":[
                 {
-                    "Probability":0.35,
+                    "Probability":0.345,
                     "ItemList":[
                         "coin","bat/baseball_bat","bat/bamboo/minecraft/textures/item/bamboo.png"
                     ]
@@ -172,6 +172,12 @@
                     "Probability":0.01,
                     "ItemList":[
                         "bat/plasma_axe","bat/road_roller","bat/slippers","bat/platinum_arm","bat/chigang","bat/jin_gu_bang"
+                    ]
+                },
+                {
+                    "Probability":0.005,
+                    "ItemList":[
+                        "bat/musical"
                     ]
                 }
             ]
@@ -315,7 +321,7 @@
             "PoolType":"Common",
             "QualityListGroup":[
                 {
-                    "Probability":0.35,
+                    "Probability":0.345,
                     "ItemList":[
                         "coin"
                     ]
@@ -348,6 +354,12 @@
                     "Probability":0.01,
                     "ItemList":[
                         "knife/quill","knife/lightning_whip","knife/galaxy_spark","knife/head_dart","knife/scarlet_scar","knife/gold_claw_knife","knife/ruby_claw_knife"
+                    ]
+                },
+                {
+                    "Probability":0.005,
+                    "ItemList":[
+                        "knife/canyue_knife"
                     ]
                 }
             ]

@@ -97,6 +97,8 @@ public class ModRoles {
   public static ResourceLocation RECALLER_ID = Noellesroles.id("recaller");
   public static final ResourceLocation BETTER_VIGILANTE_ID = Noellesroles.id("better_vigilante");
   public static final ResourceLocation BEST_VIGILANTE_ID = Noellesroles.id("best_vigilante");
+  public static final ResourceLocation BASEBALL_PLAYER_ID = Noellesroles.id("baseball_player");
+  public static final ResourceLocation CREEPER_ID = Noellesroles.id("creeper");
   public static ResourceLocation BROADCASTER_ID = Noellesroles.id("broadcaster");
   public static ResourceLocation GHOST_ID = Noellesroles.id("ghost");
   public static ResourceLocation DOCTOR_ID = Noellesroles.id("doctor");
@@ -364,6 +366,46 @@ public class ModRoles {
       TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
       false // 显示计分板
   )).setVigilanteTeam(true).setCanPickUpRevolver(true).setComponentKey(ModComponents.BEST_VIGILANTE);;
+
+  /**
+   * 棒球员角色
+   * - 属于警长阵营 (isInnocent = true, setVigilanteTeam = true)
+   * - 不能使用杀手能力 (canUseKiller = false)
+   * - 真实心情系统
+   * - 标准冲刺时间
+   * - 在计分板上显示
+   * - 技能：开局自带一个球棒
+   * - 1%概率刷新
+   */
+  public static SRERole BASEBALL_PLAYER = TMMRoles.registerRole(new NormalRole(
+      BASEBALL_PLAYER_ID, // 角色 ID
+      new Color(139, 69, 19).getRGB(), // 棕色 - 代表球棒
+      true, // isInnocent = 警长阵营
+      false, // canUseKiller = 无杀手能力
+      SRERole.MoodType.REAL, // 真实心情
+      TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+      false // 显示计分板
+  )).setVigilanteTeam(true).setCanPickUpRevolver(true).setComponentKey(ModComponents.BASEBALL_PLAYER);
+
+  /**
+   * 苦力怕角色
+   * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)
+   * - 假心情系统
+   * - 无限冲刺时间
+   * - 在计分板上显示
+   * - 技能：按下技能键花费300金币引燃自身，10s后爆炸
+   * - 只能购买撬锁器和刀（130金币）
+   * - 10%概率刷新
+   */
+  public static SRERole CREEPER = TMMRoles.registerRole(new CreeperRole(
+      CREEPER_ID, // 角色 ID
+      new Color(0, 128, 0).getRGB(), // 绿色 - 代表苦力怕
+      false, // isInnocent = 杀手阵营
+      true, // canUseKiller = 有杀手能力
+      SRERole.MoodType.FAKE, // 假心情
+      -1, // 无限冲刺时间
+      false // 显示计分板
+  )).setComponentKey(ModComponents.CREEPER);
 
   /**
    * 作家角色

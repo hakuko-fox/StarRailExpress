@@ -1317,5 +1317,41 @@ public class CommonClientHudRenderer {
           .withStyle(ChatFormatting.AQUA);
       context.drawString(font, tipText, x - font.width(tipText), y, 0xFFFFFFFF);
     });
+
+    // 苦力怕HUD
+    RoleHudRenderCallback.EVENT.register(ModRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
+      var client = Minecraft.getInstance();
+      if (client == null || client.player == null || SREClient.gameComponent == null) {
+        return;
+      }
+      if (!SREClient.gameComponent.isRole(client.player, ModRoles.CREEPER)) {
+        return;
+      }
+
+      var creeperComponent = ModComponents.CREEPER.maybeGet(client.player).orElse(null);
+      if (creeperComponent == null) {
+        return;
+      }
+
+      int screenWidth = guiGraphics.guiWidth();
+      int screenHeight = guiGraphics.guiHeight();
+      var font = client.font;
+      int yOffset = screenHeight - 10 - font.lineHeight; // 右下角
+      int xOffset = screenWidth - 10; // 距离右边缘
+
+      if (creeperComponent.ignited) {
+        // 显示倒计时
+        int secondsLeft = creeperComponent.igniteTimeLeft / 20;
+        var countdownText = Component.translatable("hud.creeper.countdown", secondsLeft)
+            .withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, countdownText, xOffset - font.width(countdownText), yOffset, Color.WHITE.getRGB());
+      } else {
+        // 显示技能提示
+        var abilityKey = NoellesrolesClient.abilityBind.getTranslatedKeyMessage();
+        var igniteText = Component.translatable("hud.creeper.ignite", abilityKey)
+            .withStyle(ChatFormatting.GREEN);
+        guiGraphics.drawString(font, igniteText, xOffset - font.width(igniteText), yOffset, Color.WHITE.getRGB());
+      }
+    });
   }
 }

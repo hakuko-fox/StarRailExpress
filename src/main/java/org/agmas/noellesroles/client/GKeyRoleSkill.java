@@ -102,6 +102,10 @@ public final class GKeyRoleSkill {
             ClientPlayNetworking.send(new AbilityC2SPacket());
             return true;
         });
+        register(ModRoles.CREEPER, true, (client, gameWorld) -> {
+            ClientPlayNetworking.send(new org.agmas.noellesroles.packet.CreeperAbilityC2SPacket());
+            return true;
+        });
         register(ModRoles.VULTURE, false, (client, gameWorld) -> {
             if (NoellesrolesClient.targetBody == null) {
                 return true;
