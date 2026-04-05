@@ -2,9 +2,11 @@ package io.wifi.starrailexpress.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 
 public class AutoShutdownWhenNotRunningCommand {
   public static boolean autoShutdownWhenGameNotRunning = false;
@@ -21,6 +23,10 @@ public class AutoShutdownWhenNotRunningCommand {
 
   private static int execute(CommandSourceStack source, boolean enabled) {
     autoShutdownWhenGameNotRunning = enabled;
+    ServerLevel level = source.getLevel();
+    if (!SREGameWorldComponent.KEY.get(level).isRunning()){
+      level.getServer().halt(false);
+    }
     source.sendSuccess(
         () -> Component.literal("Auto stop server: " + (enabled ? "On" : "Off")),
         true);
