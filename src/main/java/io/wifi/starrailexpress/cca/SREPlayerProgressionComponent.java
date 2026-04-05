@@ -416,6 +416,30 @@ public class SREPlayerProgressionComponent implements AutoSyncedComponent, Serve
         flushDatabaseSync(dirtyMask, false);
     }
 
+    public void flushNetworkSyncAsyncOnDisconnect() {
+        if (!SREConfig.instance().progressionSyncServerEnabled || !this.networkSyncEnabled) {
+            return;
+        }
+
+        Map<String, String> payloads = buildDatabasePayloads(SYNC_DIRTY_ALL);
+        if (payloads.isEmpty()) {
+            return;
+        }
+
+        long updatedAt = System.currentTimeMillis();
+        this.databaseSyncPending = false;
+        MysqlPlayerDataStore.saveBatchAsync(this.player.getUUID(), payloads, updatedAt)
+                .whenComplete((success, throwable) -> {
+                    if (throwable != null) {
+                        logger.warn("断线时异步同步玩家 {} 的进度数据到 MySQL 失败。", this.player.getName().getString(), throwable);
+                        return;
+                    }
+                    if (!Boolean.TRUE.equals(success)) {
+                        logger.warn("断线时异步同步玩家 {} 的进度数据到 MySQL 未成功写入。", this.player.getName().getString());
+                    }
+                });
+    }
+
     private void incrementQuest(ObjectiveType type, String key, int amount) {
         boolean changed = false;
         for (PassQuest quest : this.activeQuests) {

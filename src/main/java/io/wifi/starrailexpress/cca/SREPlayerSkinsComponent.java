@@ -434,6 +434,28 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         return flushSkinDataToDatabase(true);
     }
 
+    public void flushNetworkSyncAsyncOnDisconnect() {
+        if (!this.isNetworkSyncEnabled) {
+            return;
+        }
+
+        String payloadJson = GSON.toJson(buildSkinDataPayload());
+        Map<String, String> payloads = Map.of(DATABASE_SYNC_KEY, payloadJson);
+        long updatedAt = System.currentTimeMillis();
+        this.databaseSyncQueued = false;
+
+        MysqlPlayerDataStore.saveBatchAsync(this.player.getUUID(), payloads, updatedAt)
+                .whenComplete((success, throwable) -> {
+                    if (throwable != null) {
+                        logger.warn("断线时异步刷新玩家 {} 的皮肤 MySQL 数据失败。", this.player.getName().getString(), throwable);
+                        return;
+                    }
+                    if (!Boolean.TRUE.equals(success)) {
+                        logger.warn("断线时异步刷新玩家 {} 的皮肤 MySQL 数据未成功写入。", this.player.getName().getString());
+                    }
+                });
+    }
+
     /**
      * 深复制解锁皮肤映射
      */

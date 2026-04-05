@@ -43,6 +43,7 @@ public class SREPlayerStatsComponent implements AutoSyncedComponent, ServerTicki
     private final Player player;
     private long totalPlayTime = 0;
     public boolean loaded = false;
+    private boolean syncedFromDatabase = false;
     private int totalGamesPlayed = 0;
     private int totalKills = 0;
     private int totalDeaths = 0;
@@ -836,6 +837,7 @@ public class SREPlayerStatsComponent implements AutoSyncedComponent, ServerTicki
                 .thenAccept(records -> {
                     MysqlPlayerDataStore.SyncRecord record = records.get(DATABASE_SYNC_KEY);
                     if (record == null || record.payload() == null || record.payload().isBlank()) {
+                        syncedFromDatabase = true; // 已尝试同步，数据库为空
                         return;
                     }
                     PlayerStatsData data;
@@ -847,6 +849,7 @@ public class SREPlayerStatsComponent implements AutoSyncedComponent, ServerTicki
                     }
                     serverPlayer.getServer().execute(() -> {
                         applyData(data);
+                        syncedFromDatabase = true;
                         sync();
                         saveToFileAsync();
                     });
@@ -875,6 +878,10 @@ public class SREPlayerStatsComponent implements AutoSyncedComponent, ServerTicki
 
     public void flushDatabaseAsync() {
         if (!isDatabaseSyncEnabled()) {
+            return;
+        }
+        // 如果同步失败且有本地数据，不保存以避免覆盖数据库
+        if (!syncedFromDatabase && loaded) {
             return;
         }
         String jsonData = PlayerStatsSerializer.toJson(this);
@@ -1052,6 +1059,7 @@ public class SREPlayerStatsComponent implements AutoSyncedComponent, ServerTicki
 
     public void joinLoadFromFile() {
         if (!loaded) {
+            syncedFromDatabase = false;
             this.loadFromFile(player.getUUID().toString());
             this.sync();
             this.pullStatsFromNetwork();

@@ -99,16 +99,16 @@ public class SkinsNetworkSyncInitializer {
             SREPlayerProgressionComponent progressionComponent = SREPlayerProgressionComponent.KEY.get(player);
             NameTagInventoryComponent nameTagInventoryComponent = NameTagInventoryComponent.KEY.get(player);
             if (skinsComponent != null && skinsComponent.isNetworkSyncEnabled()) {
-                skinsComponent.flushNetworkSyncBlocking();
+                skinsComponent.flushNetworkSyncAsyncOnDisconnect();
                 skinsComponent.disableNetworkSync();
-                logger.info("玩家 {} 的皮肤 MySQL 同步已断开", player.getName().getString());
+                logger.info("玩家 {} 的皮肤 MySQL 断线同步已提交", player.getName().getString());
             }
             if (progressionComponent != null && progressionComponent.isNetworkSyncEnabled()) {
-                progressionComponent.flushNetworkSyncBlocking();
+                progressionComponent.flushNetworkSyncAsyncOnDisconnect();
                 progressionComponent.disableNetworkSync();
             }
             if (nameTagInventoryComponent != null && nameTagInventoryComponent.isNetworkSyncEnabled()) {
-                nameTagInventoryComponent.flushNetworkSyncBlocking();
+                nameTagInventoryComponent.flushNetworkSyncAsyncOnDisconnect();
                 nameTagInventoryComponent.disableNetworkSync();
             }
         } catch (Exception e) {

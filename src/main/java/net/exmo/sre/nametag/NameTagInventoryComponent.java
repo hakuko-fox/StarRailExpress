@@ -287,6 +287,26 @@ public class NameTagInventoryComponent implements RoleComponent {
                 DATABASE_SYNC_FLUSH_TIMEOUT_MS);
     }
 
+    public void flushNetworkSyncAsyncOnDisconnect() {
+        if (!this.isNetworkSyncEnabled) {
+            return;
+        }
+
+        MysqlPlayerDataStore.saveBatchAsync(
+                this.player.getUUID(),
+                Map.of(DATABASE_SYNC_KEY, GSON.toJson(buildNametagPayload())),
+                System.currentTimeMillis())
+                .whenComplete((success, throwable) -> {
+                    if (throwable != null) {
+                        logger.warn("断线时异步同步玩家 {} 的名片数据到 MySQL 失败。", this.player.getName().getString(), throwable);
+                        return;
+                    }
+                    if (!Boolean.TRUE.equals(success)) {
+                        logger.warn("断线时异步同步玩家 {} 的名片数据到 MySQL 未成功写入。", this.player.getName().getString());
+                    }
+                });
+    }
+
     /**
      * 检查网络同步是否已启用
      */
