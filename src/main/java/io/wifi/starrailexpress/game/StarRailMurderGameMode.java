@@ -61,9 +61,9 @@ public class StarRailMurderGameMode extends GameMode {
     @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
-        if (!Harpymodloader.isMojangVerify) {
-            return;
-        }
+        // if (!Harpymodloader.isMojangVerify) {
+        //     return;
+        // }
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameWorldComponent, players);
 
         Harpymodloader.refreshRoles();
