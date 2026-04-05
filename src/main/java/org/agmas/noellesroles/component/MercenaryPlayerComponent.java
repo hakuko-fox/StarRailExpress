@@ -25,7 +25,7 @@ public class MercenaryPlayerComponent implements RoleComponent, ServerTickingCom
 
     private static final int BASE_IDLE_SHIELDS = 2;
     private static final int GLOW_REFRESH_TICKS = 40;
-    private static final int CONTRACT_COOLDOWN_TICKS = 40 * 20; // 40秒冷却
+    private static final int CONTRACT_COOLDOWN_TICKS = 90 * 20; // 90秒冷却
 
     private final Player player;
 
