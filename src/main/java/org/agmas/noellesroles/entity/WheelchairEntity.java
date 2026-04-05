@@ -2,7 +2,6 @@ package org.agmas.noellesroles.entity;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
