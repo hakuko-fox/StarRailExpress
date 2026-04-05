@@ -113,6 +113,7 @@
   "text.autoconfig.starrailexpress.option.blackoutCooldown": "停电冷却",
   "text.autoconfig.starrailexpress.option.blackoutMaxDuration": "停电最大时长",
   "text.autoconfig.starrailexpress.option.blackoutRandomRange": "停电浮动范围",
+  "text.autoconfig.starrailexpress.option.blackoutCooldownGlobal": "停电公共冷却时长",
   "text.autoconfig.starrailexpress.option.blackoutPrice": "停电价格",
   "text.autoconfig.starrailexpress.option.bodyBagCooldown": "尸体袋",
   "text.autoconfig.starrailexpress.option.bodyBagPrice": "尸体袋",

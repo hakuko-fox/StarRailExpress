@@ -24,7 +24,7 @@ public class GameConstants {
     };
 
     public static int getBlackoutCooldownGlobal() {
-        return SREConfig.instance().blackoutCooldownGlobal;
+        return SREConfig.instance().blackoutCooldownGlobal * 20;
     }
 
     // Role Configuration (Server-side, mutable via command)
