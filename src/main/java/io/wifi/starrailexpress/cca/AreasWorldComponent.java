@@ -35,7 +35,6 @@ public class AreasWorldComponent implements AutoSyncedComponent {
             AreasWorldComponent.class);
     private final Level world;
 
-    /** 景色滚动方向轴 */
     public static enum ScrollAxis {
         X, Y, Z, NONE
     }
