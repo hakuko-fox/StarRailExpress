@@ -79,7 +79,7 @@ public class GameUtilsCommand {
                   .then(Commands.literal("list").executes((context) -> {
                     var source = context.getSource();
                     source.sendSystemMessage(
-                        Component.literal("Sync Task Queue:\n").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+                        Component.literal("Sync Task Queue:").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
                     int idx = 0;
                     for (ServerTaskInfo inf : GameUtils.serverTaskQueue) {
                       source.sendSystemMessage(Component.translatable("[%s] %s", idx, inf.getClass().getSimpleName())
@@ -87,7 +87,7 @@ public class GameUtilsCommand {
                       idx++;
                     }
                     source.sendSystemMessage(
-                        Component.literal("Asyn Task List:\n").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+                        Component.literal("\nAsyn Task List:").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
                     idx = 0;
                     for (ServerTaskInfo inf : GameUtils.serverAsynTaskLists) {
                       source.sendSystemMessage(Component.translatable("[%s] %s", idx, inf.getClass().getSimpleName())
@@ -95,7 +95,7 @@ public class GameUtilsCommand {
                       idx++;
                     }
                     source.sendSuccess(() -> {
-                      return Component.translatable("Sync Task Queue size: %s\nAsyn Task List size: %s",
+                      return Component.translatable("\nSync Task Queue size: %s\nAsyn Task List size: %s",
                           GameUtils.serverTaskQueue.size(),
                           GameUtils.serverAsynTaskLists.size()).withStyle(ChatFormatting.GOLD);
                     }, false);

@@ -84,33 +84,34 @@ public class SwitchMapCommand {
           if (MapManager.loadMap(serverWorld, mapName)) {
             playerList.broadcastSystemMessage(
                 Component.translatable("Reseting and scaning all maps...\nNow: %s [%s / %s]\nReseting maps...", mapName,
-                    now, total),
+                    now, total).withStyle(ChatFormatting.AQUA),
                 false);
+            GameUtils.serverTaskQueue.addFirst(new ServerTaskInfoClasses.SchedulerTask(20, () -> {
+              playerList.broadcastSystemMessage(
+                  Component.translatable("Scanning points...").withStyle(ChatFormatting.YELLOW),
+                  false);
+              MapResetManager.scanArea(serverWorld, areas);
+              MapResetManager.saveArea(serverWorld);
+              playerList.broadcastSystemMessage(
+                  Component.translatable("Scanned and saved reset points for map %s ! Total %s blocks!",
+                      Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size()).withStyle(ChatFormatting.GRAY),
+                  false);
+              MapScannerManager.scanAndSaveScannerArea(serverWorld, areas);
+              HashMap<Integer, Boolean> map = new HashMap<>();
+              for (Map.Entry<BlockPos, Integer> entry : GameUtils.taskBlocks.entrySet()) {
+                map.putIfAbsent(entry.getValue(), true);
+              }
+              playerList.broadcastSystemMessage(
+                  Component.translatable("Scanned Task points! Total %s types!", map.size()).withStyle(ChatFormatting.GRAY), false);
+            }));
             GameUtils.serverTaskQueue
                 .addFirst(new ServerTaskInfoClasses.FullTrainResetTask(areas, serverWorld, null, 0, false));
           } else {
             playerList.broadcastSystemMessage(
-                Component.translatable("Reseting and scaning map %s failed. [%s / %s]", mapName, now, total), false);
+                Component.translatable("Reseting and scaning map %s failed. [%s / %s]", mapName, now, total).withStyle(ChatFormatting.RED), false);
           }
         }));
-        GameUtils.serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(20, () -> {
-          playerList.broadcastSystemMessage(
-              Component.translatable("Scanning points..."),
-              false);
-          MapResetManager.scanArea(serverWorld, areas);
-          MapResetManager.saveArea(serverWorld);
-          playerList.broadcastSystemMessage(
-              Component.translatable("Scanned and saved reset points for map %s ! Total %s blocks!",
-                  Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size()),
-              false);
-          MapScannerManager.scanAndSaveScannerArea(serverWorld, areas);
-          HashMap<Integer, Boolean> map = new HashMap<>();
-          for (Map.Entry<BlockPos, Integer> entry : GameUtils.taskBlocks.entrySet()) {
-            map.putIfAbsent(entry.getValue(), true);
-          }
-          playerList.broadcastSystemMessage(
-              Component.translatable("Scanned Task points! Total %s types!", map.size()), false);
-        }));
+
       }
       GameUtils.serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10, () -> {
         playerList.broadcastSystemMessage(
