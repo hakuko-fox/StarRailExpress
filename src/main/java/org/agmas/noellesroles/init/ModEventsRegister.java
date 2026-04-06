@@ -592,7 +592,7 @@ public class ModEventsRegister {
             if (victimRole != null && !victimRole.isInnocent()
                     && victimRole.isCanUseKiller()) {
                 if (killer != null && killer != victim && killerRole != null
-                    && !killerRole.isInnocent()&&killerRole.isCanUseKiller()) {
+                        && !killerRole.isInnocent() && killerRole.isCanUseKiller()) {
                     {
                         if (victim instanceof ServerPlayer sp) {
                             sp.displayClientMessage(Component.translatable("message.sre.unyielding.immune_killer")
@@ -664,8 +664,8 @@ public class ModEventsRegister {
             if (victimRole != null
                     && io.wifi.starrailexpress.cca.SREGameWorldComponent.isKillerTeamRoleStatic(victimRole)) {
                 if (killer != null && killer != victim && killerRole != null
-                    && io.wifi.starrailexpress.cca.SREGameWorldComponent.isKillerTeamRoleStatic(killerRole)
-                    && !victimRole.isNeutrals() && !killerRole.isNeutrals() && !killerRole.isNeutralForKiller()) {
+                        && io.wifi.starrailexpress.cca.SREGameWorldComponent.isKillerTeamRoleStatic(killerRole)
+                        && !victimRole.isNeutrals() && !killerRole.isNeutrals() && !killerRole.isNeutralForKiller()) {
                     // 若该职业通过 setNeutralForKiller 标记为对杀手中立，则不触发不屈的“杀手间免疫”效果
                     if (victimRole.isNeutralForKiller()) {
                         // skip unyielding killer-team immunity for neutral-for-killer roles
