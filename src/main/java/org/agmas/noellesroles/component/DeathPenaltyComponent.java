@@ -226,7 +226,7 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putLong("penaltyExpiry", this.penaltyExpiry);
-        if (this.limitCameraUUID != null) {
+        if (this.limitCameraUUID != null || this.limitPos != null) {
             tag.putBoolean("chatEnabled", false);
         }
         if (limitPos != null) {
@@ -297,5 +297,10 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
 
     @Override
     public void clientTick() {
+        if (limitPos != null) {
+            if (player.distanceToSqr(limitPos) >= 1) {
+                player.setPos(limitPos);
+            }
+        }
     }
 }
