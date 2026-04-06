@@ -99,6 +99,7 @@ public final class RoomManager {
         }
         for (FourthRoomRoomState roomState : data.rooms.values()) {
             roomState.activePlayerId = roomState.occupants.isEmpty() ? null : roomState.occupants.getFirst();
+            refreshRoomTurnState(roomState.roomId);
         }
         data.setDirty(true);
     }
@@ -162,9 +163,14 @@ public final class RoomManager {
         if (roomState == null || roomState.occupants.isEmpty()) {
             return;
         }
+        if (countLivingPlayers(roomId) <= 1) {
+            roomState.activePlayerId = null;
+            data.setDirty(true);
+            return;
+        }
         int activeIndex = roomState.activePlayerId == null ? -1 : roomState.occupants.indexOf(roomState.activePlayerId);
         if (activeIndex < 0) {
-            activeIndex = 0;
+            activeIndex = -1;
         }
         for (int attempts = 0; attempts < roomState.occupants.size(); attempts++) {
             activeIndex = (activeIndex + 1) % roomState.occupants.size();
@@ -173,6 +179,53 @@ public final class RoomManager {
             if (candidate != null && candidate.alive) {
                 roomState.activePlayerId = candidateId;
                 roomState.turnNumber++;
+                data.setDirty(true);
+                return;
+            }
+        }
+        roomState.activePlayerId = null;
+        data.setDirty(true);
+    }
+
+    public int countLivingPlayers(int roomId) {
+        FourthRoomRoomState roomState = data.rooms.get(roomId);
+        if (roomState == null) {
+            return 0;
+        }
+        int living = 0;
+        for (UUID occupantId : roomState.occupants) {
+            FourthRoomPlayerState state = data.players.get(occupantId);
+            if (state != null && state.alive) {
+                living++;
+            }
+        }
+        return living;
+    }
+
+    public boolean hasLivingOpponent(UUID playerId) {
+        return getOpponent(playerId) != null;
+    }
+
+    public void refreshRoomTurnState(int roomId) {
+        FourthRoomRoomState roomState = data.rooms.get(roomId);
+        if (roomState == null) {
+            return;
+        }
+        if (countLivingPlayers(roomId) <= 1) {
+            roomState.activePlayerId = null;
+            data.setDirty(true);
+            return;
+        }
+        if (roomState.activePlayerId != null) {
+            FourthRoomPlayerState current = data.players.get(roomState.activePlayerId);
+            if (current != null && current.alive) {
+                return;
+            }
+        }
+        for (UUID occupantId : roomState.occupants) {
+            FourthRoomPlayerState candidate = data.players.get(occupantId);
+            if (candidate != null && candidate.alive) {
+                roomState.activePlayerId = occupantId;
                 data.setDirty(true);
                 return;
             }

@@ -24,6 +24,7 @@ public final class FourthRoomPlayerState {
     public String skillCardId = "";
     public int lifeShield;
     public int skipTurns;
+    public int extraTurns;
     public int markedForKill;
     public boolean decoyArmed;
     public int bulletproofVestCharges;
@@ -34,6 +35,8 @@ public final class FourthRoomPlayerState {
     public int stickyNoteCharges;
     public long pendingPoisonDeathTick = -1L;
     public boolean taskCompleted;
+    public int drawNoticeSequence;
+    public String lastDrawSummary = "";
     public final List<String> peekCache = new ArrayList<>();
 
     public FourthRoomPlayerState() {
@@ -86,6 +89,7 @@ public final class FourthRoomPlayerState {
         tag.putString("SkillCardId", skillCardId == null ? "" : skillCardId);
         tag.putInt("LifeShield", lifeShield);
         tag.putInt("SkipTurns", skipTurns);
+        tag.putInt("ExtraTurns", extraTurns);
         tag.putInt("MarkedForKill", markedForKill);
         tag.putBoolean("DecoyArmed", decoyArmed);
         tag.putInt("BulletproofVestCharges", bulletproofVestCharges);
@@ -96,6 +100,8 @@ public final class FourthRoomPlayerState {
         tag.putInt("StickyNoteCharges", stickyNoteCharges);
         tag.putLong("PendingPoisonDeathTick", pendingPoisonDeathTick);
         tag.putBoolean("TaskCompleted", taskCompleted);
+        tag.putInt("DrawNoticeSequence", drawNoticeSequence);
+        tag.putString("LastDrawSummary", lastDrawSummary == null ? "" : lastDrawSummary);
         tag.put("DrawPile", saveCards(drawPile));
         tag.put("Hand", saveCards(hand));
         tag.put("DiscardPile", saveCards(discardPile));
@@ -122,6 +128,7 @@ public final class FourthRoomPlayerState {
         state.skillCardId = tag.getString("SkillCardId");
         state.lifeShield = tag.getInt("LifeShield");
         state.skipTurns = tag.getInt("SkipTurns");
+        state.extraTurns = tag.getInt("ExtraTurns");
         state.markedForKill = tag.getInt("MarkedForKill");
         state.decoyArmed = tag.getBoolean("DecoyArmed");
         state.bulletproofVestCharges = tag.getInt("BulletproofVestCharges");
@@ -132,6 +139,8 @@ public final class FourthRoomPlayerState {
         state.stickyNoteCharges = tag.getInt("StickyNoteCharges");
         state.pendingPoisonDeathTick = tag.contains("PendingPoisonDeathTick") ? tag.getLong("PendingPoisonDeathTick") : -1L;
         state.taskCompleted = tag.getBoolean("TaskCompleted");
+        state.drawNoticeSequence = tag.getInt("DrawNoticeSequence");
+        state.lastDrawSummary = tag.getString("LastDrawSummary");
         loadCards(tag.getList("DrawPile", Tag.TAG_COMPOUND), state.drawPile);
         loadCards(tag.getList("Hand", Tag.TAG_COMPOUND), state.hand);
         loadCards(tag.getList("DiscardPile", Tag.TAG_COMPOUND), state.discardPile);

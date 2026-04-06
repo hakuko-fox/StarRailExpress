@@ -45,14 +45,27 @@ public enum BasicCard implements Card {
     SKIP("skip") {
         @Override
         public boolean play(FourthRoomGameManager manager, UUID playerId, @Nullable UUID targetId, CardInstance instance) {
-            manager.addSkipTurns(playerId, 1);
+            return manager.skipOpponentTurn(playerId, targetId);
+        }
+    },
+    VETO("veto") {
+        @Override
+        public boolean play(FourthRoomGameManager manager, UUID playerId, @Nullable UUID targetId, CardInstance instance) {
+            if (manager.hasCardInHand(targetId, "veto")) {
+                manager.removeCardFromHand(targetId, "veto");
+                manager.logPlayerRoomAction(playerId, "card", "否决", "被否决抵消", manager.playerName(targetId), "");
+            } else {
+                manager.drawCards(targetId, 1, false);
+                manager.logPlayerRoomAction(playerId, "card", "否决", "强制摸牌", manager.playerName(targetId), "");
+            }
             return true;
         }
     },
     POINT_KILL("point_kill") {
         @Override
         public boolean play(FourthRoomGameManager manager, UUID playerId, @Nullable UUID targetId, CardInstance instance) {
-            return manager.addMarkedKill(targetId, 1);
+            manager.addExtraTurns(targetId, 1);
+            return true;
         }
     },
     DISMANTLE("dismantle") {
