@@ -86,8 +86,13 @@ public class SREConfig implements ConfigData {
 
     // Bartender - Glow duration in seconds
 
-    public int safeTimeCooldown = 30;
+    @ConfigSync(shouldSync = true)
     public int bartenderGlowDuration = 40;
+
+    @ConfigSync(shouldSync = true)
+    public int furandoruSafeTime = 6 * 60;// 6分钟外安全
+
+    public int safeTimeCooldown = 30;
     public int startingMoney = 100;
     public int passiveMoneyAmount = 5;
     public int passiveMoneyInterval = 10;
@@ -108,7 +113,7 @@ public class SREConfig implements ConfigData {
         public int advanceCount = 0;
         public String presetName = "";
 
-        public AutoPresetInfo(){
+        public AutoPresetInfo() {
         }
 
         public AutoPresetInfo(String present, int advanceCount) {
@@ -117,11 +122,10 @@ public class SREConfig implements ConfigData {
         }
     }
 
-    
     @ConfigEntry.Category(value = "presents")
     @Tooltip(count = 2)
     public boolean enableRoundBasedAutoPreset = true;
-    
+
     // 按游戏轮数自动切换预设配置
     @ConfigEntry.Category(value = "presents")
     @Tooltip
@@ -165,7 +169,7 @@ public class SREConfig implements ConfigData {
     public int mysqlSyncPoolSize = 4;
     @ConfigEntry.Category(value = "sync")
     public int mysqlSyncConnectTimeoutMs = 5000;
-    
+
     @ConfigEntry.Category(value = "progression")
     public boolean enableProgressionSystem = false;
     @ConfigEntry.Category(value = "progression")
@@ -181,7 +185,7 @@ public class SREConfig implements ConfigData {
     public boolean isItemSkinEnabled = true;
     @ConfigEntry.Category(value = "skin")
     public boolean isItemSkinManagementEnabled = false;
-    
+
     @ConfigEntry.Category(value = "skin")
     public boolean itemSkinSyncServerEnabled = false;
     // AFK设置
@@ -225,7 +229,8 @@ public class SREConfig implements ConfigData {
     public static SREConfig instance() {
         return HANDLER.instance();
     }
-    public ArrayList<AutoPresetInfo> getDefaultAutoPresetInfos(){
+
+    public ArrayList<AutoPresetInfo> getDefaultAutoPresetInfos() {
         ArrayList<AutoPresetInfo> arr = new ArrayList<>();
         arr.add(new AutoPresetInfo("low_level", 3));
         arr.add(new AutoPresetInfo("medium_level", 5));

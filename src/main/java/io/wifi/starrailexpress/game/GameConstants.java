@@ -196,4 +196,8 @@ public class GameConstants {
         public static ResourceLocation SNIPER_RIFLE_BACKFIRE = SRE.id("sniper_rifle_backfire");
         public static ResourceLocation NUNCHUCK = SRE.id("nunchuck_hit");
     }
+
+    public static int getFurandoruSafeLine() {
+        return SREConfig.instance().furandoruSafeTime * 20;
+    }
 }

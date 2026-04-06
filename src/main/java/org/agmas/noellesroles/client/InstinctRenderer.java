@@ -1,13 +1,14 @@
 package org.agmas.noellesroles.client;
-
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGetInstinctHighlight;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -383,9 +384,10 @@ public class InstinctRenderer {
 
         // 通用逻辑
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            if (Minecraft.getInstance() == null)
+            Minecraft client = Minecraft.getInstance();
+            if (client == null)
                 return -1;
-            var self = Minecraft.getInstance().player;
+            var self = client.player;
             if (self == null)
                 return -1;
             if (SREClient.gameComponent == null) {
@@ -700,6 +702,11 @@ public class InstinctRenderer {
                         if (SREClient.gameComponent.isRole(self, ModRoles.DIO)) {
                             if (RoleUtils.compareRole(target_role, ModRoles.JOJO)) {
                                 return Color.CYAN.getRGB();
+                            }
+                        }
+                        if (SREGameTimeComponent.KEY.get(client.level).getTime() >= GameConstants.getFurandoruSafeLine()) {
+                            if (SREClient.gameComponent.isRole(target_player, RedHouseRoles.FURANDORU)) {
+                                return -2;
                             }
                         }
                         if (SREClient.gameComponent.isRole(target_player, ModRoles.GAMBLER)) {
