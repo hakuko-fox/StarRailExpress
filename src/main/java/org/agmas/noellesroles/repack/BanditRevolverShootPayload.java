@@ -67,7 +67,7 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                             // \
                             boolean shouldDrop = false;
                             if (game.isRole(player, ModRoles.BANDIT)) {
-                                shouldDrop = player.getRandom().nextInt(0, 100) <= 90;
+                                shouldDrop = player.getRandom().nextInt(0, 100) <= 80;
                             } else {
                                 shouldDrop = player.getRandom().nextFloat() <= 0.2F;
                             }
