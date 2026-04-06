@@ -140,6 +140,9 @@ public final class FourthRoomGameManager {
             return false;
         }
         UUID resolvedTarget = targetId != null ? targetId : roomManager.getOpponent(playerId);
+        if (cardId.equals("point_kill") && !instance.gold()) {
+            resolvedTarget = playerId;
+        }
         playerState.hand.remove(instance);
         boolean success = card.play(this, playerId, resolvedTarget, instance);
         if (!success) {
@@ -168,7 +171,8 @@ public final class FourthRoomGameManager {
         }
         if (playerState.extraTurns > 0) {
             playerState.extraTurns--;
-            logPlayerRoomAction(playerId, "system", "额外回合结束", "", "", "剩余额外回合 " + playerState.extraTurns);
+            drawCards(playerId, 1, false);
+            logPlayerRoomAction(playerId, "system", "额外回合结束", "", "", "剩余额外回合 " + playerState.extraTurns + " 摸 1 张牌");
             data.setDirty(true);
             syncMatchState();
             return true;
@@ -566,7 +570,7 @@ public final class FourthRoomGameManager {
             cardJson.addProperty("gold", cardInstance.gold());
             cardJson.addProperty("displayName", cardDisplayName(cardInstance.cardId()));
             cardJson.addProperty("description", definition != null ? cardDescription(definition) : cardInstance.cardId());
-            cardJson.addProperty("requiresTarget", definition != null && cardRequiresTarget(definition));
+            cardJson.addProperty("requiresTarget", definition != null && cardRequiresTarget(definition, cardInstance.gold()));
             cardJson.addProperty("skill", definition != null && definition.isSkill());
             hand.add(cardJson);
         }
@@ -737,8 +741,13 @@ public final class FourthRoomGameManager {
         if (targetState == null || !targetState.alive) {
             return false;
         }
-        addSkipTurns(resolvedTarget, 1);
-        logPlayerRoomAction(playerId, "card", "施放了", cardDisplayName(BasicCard.SKIP), playerName(resolvedTarget), "目标下回合将被直接跳过");
+        if (isPlayersTurn(resolvedTarget)) {
+            endTurn(resolvedTarget);
+            logPlayerRoomAction(playerId, "card", "施放了", cardDisplayName(BasicCard.SKIP), playerName(resolvedTarget), "立即跳过目标当前回合");
+        } else {
+            addSkipTurns(resolvedTarget, 1);
+            logPlayerRoomAction(playerId, "card", "施放了", cardDisplayName(BasicCard.SKIP), playerName(resolvedTarget), "目标下回合将被直接跳过");
+        }
         return true;
     }
 
@@ -830,9 +839,10 @@ public final class FourthRoomGameManager {
         };
     }
 
-    private boolean cardRequiresTarget(Card card) {
+    private boolean cardRequiresTarget(Card card, boolean gold) {
         return switch (card.id()) {
-            case "seize", "skip", "veto", "point_kill", "dismantle", "interrogate" -> true;
+            case "point_kill" -> gold;
+            case "seize", "skip", "veto", "dismantle", "interrogate" -> true;
             default -> false;
         };
     }

@@ -114,6 +114,7 @@ public final class FourthRoomBattleScreen extends Screen {
         renderShopTray(graphics, snapshot, mouseX, mouseY);
         renderTableSurface(graphics, snapshot);
         renderSelectedPreview(graphics, snapshot, mouseX, mouseY);
+        renderPeek(graphics, snapshot, mouseX, mouseY);
         renderHand(graphics, snapshot, mouseX, mouseY);
         renderBanners(graphics);
         renderHoverTooltip(graphics, mouseX, mouseY);
@@ -340,6 +341,7 @@ public final class FourthRoomBattleScreen extends Screen {
         drawRoundedPanel(graphics, x, y, SIDE_PANEL_WIDTH, panelHeight, 0xA013151C, 0x44D0B575);
         graphics.drawString(font, "同房玩家", x + 14, y + 12, 0xFFF0DEB1, false);
         graphics.drawString(font, fit("先选目标，再打需要目标的牌", SIDE_PANEL_WIDTH - 28), x + 14, y + 26, 0xFFB7BBC6, false);
+        graphics.drawString(font, "抽牌堆: " + snapshot.viewer().drawPileSize(), x + 14, y + 40, 0xFFB7BBC6, false);
 
         int cardY = y + 50;
         for (FourthRoomClientSnapshot.RoomPlayer player : snapshot.roomPlayers()) {
@@ -532,6 +534,25 @@ public final class FourthRoomBattleScreen extends Screen {
         }
     }
 
+    private void renderPeek(GuiGraphics graphics, FourthRoomClientSnapshot snapshot, int mouseX, int mouseY) {
+        List<FourthRoomClientSnapshot.PeekCard> peekCards = snapshot.viewer().peekCards();
+        if (peekCards.isEmpty()) {
+            return;
+        }
+        int centerX = width / 2;
+        int centerY = height - 250; // Above hand
+        int spread = 100; // Random spread radius
+        for (int i = 0; i < peekCards.size(); i++) {
+            FourthRoomClientSnapshot.PeekCard card = peekCards.get(i);
+            // Random position within spread
+            int offsetX = (int) ((Math.random() - 0.5) * spread * 2);
+            int offsetY = (int) ((Math.random() - 0.5) * spread * 2);
+            int cardX = centerX + offsetX;
+            int cardY = centerY + offsetY;
+            drawPeekCard(graphics, card, cardX, cardY, mouseX, mouseY);
+        }
+    }
+
     private void renderBanners(GuiGraphics graphics) {
         if (actionBanner != null && actionBannerTicks > 0) {
             renderNoticeStrip(graphics, 82, actionBanner.summary(), actionColor(actionBanner.category()), actionBannerTicks, false);
@@ -633,7 +654,26 @@ public final class FourthRoomBattleScreen extends Screen {
         }
         graphics.pose().popPose();
     }
+    private void drawPeekCard(GuiGraphics graphics, FourthRoomClientSnapshot.PeekCard card, int centerX, int bottomY, int mouseX, int mouseY) {
+        int bg = 0xFFF2E7D1;
+        int border = 0xFF8B6B3C;
 
+        graphics.pose().pushPose();
+        graphics.pose().translate(centerX, bottomY, 20.0F);
+        graphics.pose().scale(0.5F, 0.5F, 1.0F);
+
+        int left = -CARD_WIDTH / 2;
+        int top = -CARD_HEIGHT;
+        graphics.fill(left, top, left + CARD_WIDTH, top + CARD_HEIGHT, 0x66000000);
+        graphics.fill(left + 2, top - 2, left + CARD_WIDTH + 2, top + CARD_HEIGHT - 2, 0x18000000);
+        graphics.fill(left, top, left + CARD_WIDTH, top + CARD_HEIGHT, bg);
+        graphics.renderOutline(left, top, CARD_WIDTH, CARD_HEIGHT, border);
+        graphics.fill(left + 8, top + 8, left + CARD_WIDTH - 8, top + 26, mixColor(border, 0xFFFFFFFF, 0.84F));
+        graphics.drawCenteredString(font, fit(card.displayName(), CARD_WIDTH - 20), 0, top + 13, 0xFF1F1A16);
+        graphics.drawString(font, "窥视", left + 10, top + 36, 0xFF6E5F4A, false);
+        graphics.drawCenteredString(font, card.id(), 0, top + 56, 0xFF3A3128);
+        graphics.pose().popPose();
+    }
     private void drawCard(GuiGraphics graphics, FourthRoomClientSnapshot.CardView card, int centerX, int bottomY,
             float rotation, float scale, boolean hovered, boolean playable, boolean selected) {
         int bg = card.skill() ? 0xFFF7F0E4 : 0xFFF2E7D1;
