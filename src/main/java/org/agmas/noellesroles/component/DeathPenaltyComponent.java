@@ -100,6 +100,7 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
                                         Component.translatable("message.noellesroles.admin.free_cam_hint")
                                                 .withStyle(ChatFormatting.YELLOW));
                             }
+                            sync();
                         }
                         return;
                     }
@@ -152,6 +153,10 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
             sp.teleportTo(pos.x, pos.y, pos.z);
         }
         this.morePenalty = morePenalty;
+        sync();
+    }
+
+    public void sync() {
         ModComponents.DEATH_PENALTY.sync(player);
     }
 
@@ -174,18 +179,18 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
             sp.setCamera(cameraEntity);
         }
         this.morePenalty = morePenalty;
-        ModComponents.DEATH_PENALTY.sync(player);
+        sync();
     }
 
     public void setPenalty(long durationTicks, boolean morePenalty) {
+        this.morePenalty = morePenalty;
         if (durationTicks < 0) {
             this.penaltyExpiry = -1;
-            ModComponents.DEATH_PENALTY.sync(player);
+            sync();
             return;
         }
         this.penaltyExpiry = player.level().getGameTime() + durationTicks;
-        this.morePenalty = morePenalty;
-        ModComponents.DEATH_PENALTY.sync(player);
+        sync();
     }
 
     public boolean hasPenalty() {
@@ -218,7 +223,8 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
         if (this.player.hasEffect(ModEffects.USED_BANED)) {
             this.player.removeEffect(ModEffects.USED_BANED);
         }
-        ModComponents.DEATH_PENALTY.sync(player);
+        sync();
+
     }
 
     @Override
