@@ -6,11 +6,14 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wifi.starrailexpress.fourthroom.card.CardRegistry;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomGameManager;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomPlayerState;
+import io.wifi.starrailexpress.fourthroom.scene.FourthRoomSceneGenerator;
 import io.wifi.starrailexpress.fourthroom.shop.FourthRoomShopItem;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -30,6 +33,12 @@ public final class FourthRoomCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("tmm:fourthroom")
                 .then(Commands.literal("status").executes(context -> status(context.getSource())))
+            .then(Commands.literal("generate_test_scene")
+                .requires(source -> source.hasPermission(2))
+                .executes(context -> generateTestScene(context.getSource(), defaultSceneOrigin(context.getSource())))
+                .then(Commands.argument("origin", BlockPosArgument.blockPos())
+                    .executes(context -> generateTestScene(context.getSource(),
+                        BlockPosArgument.getLoadedBlockPos(context, "origin")))))
                 .then(Commands.literal("reveal").executes(context -> reveal(context.getSource())))
                 .then(Commands.literal("play")
                         .then(Commands.argument("cardId", StringArgumentType.word()).suggests(CARD_SUGGESTIONS)
@@ -58,7 +67,11 @@ public final class FourthRoomCommand {
         FourthRoomGameManager manager = FourthRoomGameManager.of(source.getLevel());
         var data = manager.data();
         source.sendSuccess(() -> Component.literal("Fourth Room phase=" + data.phase.name() + ", activeTask=" + data.activeTaskId
-                + ", nextRotationTick=" + data.nextRotationTick + ", rooms=" + data.rooms.size()), false);
+                + ", nextRotationTick=" + data.nextRotationTick + ", rooms=" + data.rooms.size()
+                + ", sceneGenerated=" + data.sceneLayout.generated), false);
+        if (data.sceneLayout.generated) {
+            source.sendSuccess(() -> Component.literal("Scene lobby=" + data.sceneLayout.lobbyPos + ", duel=" + data.sceneLayout.duelArenaPos), false);
+        }
         try {
             ServerPlayer player = source.getPlayerOrException();
             FourthRoomPlayerState state = data.players.get(player.getUUID());
@@ -69,6 +82,23 @@ public final class FourthRoomCommand {
         } catch (Exception ignored) {
         }
         return 1;
+    }
+
+    private static int generateTestScene(CommandSourceStack source, BlockPos origin) {
+        var layout = new FourthRoomSceneGenerator(source.getLevel()).generate(origin);
+        FourthRoomGameManager.of(source.getLevel()).syncMatchState();
+        source.sendSuccess(() -> Component.literal("Generated Fourth Room test scene at " + origin
+                + " with " + layout.rooms.size() + " rooms."), true);
+        return 1;
+    }
+
+    private static BlockPos defaultSceneOrigin(CommandSourceStack source) {
+        try {
+            ServerPlayer player = source.getPlayerOrException();
+            return player.blockPosition().below();
+        } catch (Exception ignored) {
+            return source.getLevel().getSharedSpawnPos();
+        }
     }
 
     private static int reveal(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

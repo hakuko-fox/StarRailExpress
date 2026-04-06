@@ -27,6 +27,9 @@ public final class RoomManager {
     }
 
     public List<RoomDefinition> buildRoomDefinitions() {
+        if (data.sceneLayout.hasRooms()) {
+            return new ArrayList<>(data.sceneLayout.rooms);
+        }
         BlockPos lobby = config.resolveLobby(level.getSharedSpawnPos());
         List<RoomDefinition> rooms = new ArrayList<>();
         int columns = Math.max(2, (int) Math.ceil(Math.sqrt(config.roomCount)));
@@ -34,8 +37,8 @@ public final class RoomManager {
         int index = 0;
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns && index < config.roomCount; column++) {
-                int xOffset = (column - (columns - 1) / 2) * config.roomSpacing;
-                int zOffset = (row - (rows - 1) / 2) * config.roomSpacing;
+                int xOffset = (int) Math.round((column - (columns - 1) / 2.0D) * config.roomSpacing);
+                int zOffset = (int) Math.round((row - (rows - 1) / 2.0D) * config.roomSpacing);
                 BlockPos center = lobby.offset(xOffset, 0, zOffset);
                 rooms.add(new RoomDefinition(index, center, center.offset(-1, 0, 0), center.offset(1, 0, 0)));
                 index++;
@@ -120,7 +123,7 @@ public final class RoomManager {
     }
 
     public void teleportAlivePlayersToLobby() {
-        BlockPos lobby = config.resolveLobby(level.getSharedSpawnPos());
+        BlockPos lobby = data.sceneLayout.generated ? data.sceneLayout.lobbyPos : config.resolveLobby(level.getSharedSpawnPos());
         for (FourthRoomPlayerState playerState : data.players.values()) {
             if (!playerState.alive) {
                 continue;

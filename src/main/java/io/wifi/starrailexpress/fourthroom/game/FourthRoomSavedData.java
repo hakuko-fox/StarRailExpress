@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.fourthroom.game;
 
+import io.wifi.starrailexpress.fourthroom.scene.FourthRoomSceneLayout;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -28,6 +29,7 @@ public final class FourthRoomSavedData extends SavedData {
     public int rotationCount;
     public String activeTaskId = "";
     public FourthRoomTeam winner;
+    public FourthRoomSceneLayout sceneLayout = new FourthRoomSceneLayout();
     public final Map<UUID, FourthRoomPlayerState> players = new LinkedHashMap<>();
     public final Map<Integer, FourthRoomRoomState> rooms = new LinkedHashMap<>();
     public final java.util.List<FourthRoomStickyNoteState> stickyNotes = new java.util.ArrayList<>();
@@ -57,6 +59,9 @@ public final class FourthRoomSavedData extends SavedData {
         data.activeTaskId = tag.getString("ActiveTaskId");
         if (tag.contains("Winner")) {
             data.winner = FourthRoomTeam.valueOf(tag.getString("Winner"));
+        }
+        if (tag.contains("SceneLayout", Tag.TAG_COMPOUND)) {
+            data.sceneLayout = FourthRoomSceneLayout.load(tag.getCompound("SceneLayout"));
         }
         for (Tag playerEntry : tag.getList("Players", Tag.TAG_COMPOUND)) {
             if (playerEntry instanceof CompoundTag playerTag) {
@@ -110,6 +115,7 @@ public final class FourthRoomSavedData extends SavedData {
         if (winner != null) {
             tag.putString("Winner", winner.name());
         }
+        tag.put("SceneLayout", sceneLayout.save());
         ListTag playerList = new ListTag();
         for (FourthRoomPlayerState playerState : players.values()) {
             playerList.add(playerState.save());

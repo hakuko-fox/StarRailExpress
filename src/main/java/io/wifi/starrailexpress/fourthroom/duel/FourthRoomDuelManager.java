@@ -57,7 +57,9 @@ public final class FourthRoomDuelManager {
 
     public void startFinalDuel() {
         data.phase = FourthRoomPhase.DUEL;
-        BlockPos duelArena = config.resolveDuelArena(manager.level().getSharedSpawnPos());
+        BlockPos duelArena = data.sceneLayout.generated
+                ? data.sceneLayout.duelArenaPos
+                : config.resolveDuelArena(manager.level().getSharedSpawnPos());
         for (FourthRoomPlayerState playerState : data.players.values()) {
             if (!playerState.alive) {
                 continue;
