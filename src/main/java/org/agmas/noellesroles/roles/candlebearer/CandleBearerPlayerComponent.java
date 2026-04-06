@@ -47,7 +47,7 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
 
     public static final int MAX_INVISIBILITY_CHARGES = 3;
     public static final int INVISIBILITY_DURATION_TICKS = 18 * 20;
-    public static final int LIVING_CANDLE_COOLDOWN_TICKS = 10 * 20;
+    public static final int LIVING_CANDLE_COOLDOWN_TICKS = 3 * 20;
     public static final int GLOW_DELAY_TICKS = 6 * 20;
     public static final int GLOW_DURATION_TICKS = 5 * 20;
 
