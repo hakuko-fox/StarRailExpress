@@ -287,7 +287,7 @@ public class LotteryManager {
     };
     /** 不同品质重复皮肤对应折算的为单抽硬币数量的比例 */
     private static final float[] skinToCoin = {
-            0.1f, 0.125f, 0.25f, 0.5f, 1f
+            0.1f, 0.125f, 0.25f, 0.5f, 1f, 2f, 3f
     };
     /**
      * 抽奖粒度
