@@ -1012,7 +1012,7 @@ public class GameUtils {
         }
 
         if (component.getPsychoTicks() > 0) {
-            if (component.getArmour() > 0) {
+            if (!forceDeath && component.getArmour() > 0) {
                 component.setArmour(component.getArmour() - 1);
                 if (SRE.REPLAY_MANAGER != null) {
                     SRE.REPLAY_MANAGER.breakArmor(victim.getUUID());
@@ -1025,7 +1025,9 @@ public class GameUtils {
                 victim.playNotifySound(TMMSounds.ITEM_PSYCHO_ARMOUR, SoundSource.MASTER, 5F, 1F);
                 victim.displayClientMessage(Component.translatable("message.bartender.armor_broke_self")
                         .withStyle(ChatFormatting.YELLOW), true);
-                return;
+
+                if (!forceDeath)
+                    return;
             } else {
                 component.stopPsycho();
             }
@@ -1083,7 +1085,7 @@ public class GameUtils {
             }
         }
         // --- 结束新增统计数据更新逻辑 (击杀者) ---
-
+        canDeath = canDeath || forceDeath;
         // --- 结束新增统计数据更新逻辑 (受害者) ---
         if (canDeath) {
             // --- 新增统计数据更新逻辑 (受害者) ---
@@ -1129,7 +1131,9 @@ public class GameUtils {
                     }
                 }
             }
-            if (victim instanceof ServerPlayer serverPlayerEntity && isPlayerAliveAndSurvival(serverPlayerEntity)) {
+            canDeath = canDeath || forceDeath;
+            if (victim instanceof ServerPlayer serverPlayerEntity && isPlayerAliveAndSurvival(serverPlayerEntity)
+                    && canDeath) {
                 serverPlayerEntity.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
                 OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
                 // 关闭任务透视发包
