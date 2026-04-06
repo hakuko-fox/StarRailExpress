@@ -357,7 +357,8 @@ public class SREClient implements ClientModInitializer {
             if (player.isCreative())
                 maxLightLevel = 1f;
             instinctLightLevel = Mth.clamp(instinctLightLevel, -.04f, maxLightLevel);
-
+            if (gameComponent == null)
+                return;
             if (!prevGameRunning && gameComponent.isRunning()) {
                 Minecraft.getInstance().player.getInventory().selected = 8;
             }
@@ -526,9 +527,8 @@ public class SREClient implements ClientModInitializer {
             GameUtils.roomToPlayer.clear();
             GameUtils.roomToPlayer.putAll(data);
         });
-        ClientPlayNetworking.registerGlobalReceiver(ModWhitelistConfigPayload.ID
-        , (payload, context) -> {
-                    ModWhitelistClientNetworkHandler.sendModWhitelistPayload();
+        ClientPlayNetworking.registerGlobalReceiver(ModWhitelistConfigPayload.ID, (payload, context) -> {
+            ModWhitelistClientNetworkHandler.sendModWhitelistPayload();
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ShowSelectedMapUIPayload.ID, (payload, context) -> {
@@ -565,20 +565,22 @@ public class SREClient implements ClientModInitializer {
                     context.client().execute(() -> context.client().setScreen(
                             new io.wifi.starrailexpress.mail.MailboxScreen()));
                 });
-        ClientPlayNetworking.registerGlobalReceiver(
-                io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID, (payload, context) -> {
-                    context.client().execute(() -> {
-                        io.wifi.starrailexpress.unlock.RoleUnlockManager.getInstance()
-                                .updateClientData(payload.globalGamesPlayed(), payload.forceUnlockedRoles());
-                        context.client().setScreen(
-                                new io.wifi.starrailexpress.client.gui.screen.RoleUnlockProgressScreen());
-                    });
-                });
         // ClientPlayNetworking.registerGlobalReceiver(
-        //         io.wifi.starrailexpress.network.RoleUnlockedHudPayload.ID, (payload, context) -> {
-        //             context.client().execute(() -> io.wifi.starrailexpress.client.gui.RoleUnlockHudRenderer
-        //                     .enqueue(payload.globalGamesPlayed(), payload.unlockedRoleIds()));
+        //         io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID, (payload, context) -> {
+        //             context.client().execute(() -> {
+        //                 io.wifi.starrailexpress.unlock.RoleUnlockManager.getInstance()
+        //                         .updateClientData(payload.globalGamesPlayed(), payload.forceUnlockedRoles());
+        //                 context.client().setScreen(
+        //                         new io.wifi.starrailexpress.client.gui.screen.RoleUnlockProgressScreen());
+        //             });
         //         });
+        // ClientPlayNetworking.registerGlobalReceiver(
+        // io.wifi.starrailexpress.network.RoleUnlockedHudPayload.ID, (payload, context)
+        // -> {
+        // context.client().execute(() ->
+        // io.wifi.starrailexpress.client.gui.RoleUnlockHudRenderer
+        // .enqueue(payload.globalGamesPlayed(), payload.unlockedRoleIds()));
+        // });
         ClientPlayNetworking.registerGlobalReceiver(CloseUiPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 context.client().setScreen(null);
@@ -765,6 +767,7 @@ public class SREClient implements ClientModInitializer {
     public static boolean isPlayerAliveAndInSurvivalIgnoreShitSplit() {
         return cachedPlayerAliveAndInSurvivalIgnoreShitSplit;
     }
+
     public static boolean isPlayerAliveAndInSurvival() {
         return cachedPlayerAliveAndInSurvival;
     }
@@ -886,6 +889,8 @@ public class SREClient implements ClientModInitializer {
     }
 
     private static void updateHudApiCache(Minecraft client) {
+        if (gameComponent == null)
+            return;
         LocalPlayer player = client.player;
         cachedPlayerAliveAndInSurvival = GameUtils.isPlayerAliveAndSurvival(player);
         cachedPlayerAliveAndInSurvivalIgnoreShitSplit = GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
