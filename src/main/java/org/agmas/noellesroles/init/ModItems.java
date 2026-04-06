@@ -312,6 +312,14 @@ public class ModItems {
             new WrittenNoteItem(new Item.Properties().stacksTo(1)),
             "written_note");
     /**
+     * 巨大便签
+     * - 记者专属可购买道具
+     * - 生成一个10倍大小的便签实体，可贴在人身上
+     */
+    public static final Item GIANT_NOTE = register(
+            new org.agmas.noellesroles.item.GiantNoteItem(new Item.Properties().stacksTo(1)),
+            "giant_note");
+    /**
      * 炸弹
      * - 炸弹客专属物品
      * - 倒计时10秒，前5秒隐形

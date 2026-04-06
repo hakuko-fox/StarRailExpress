@@ -649,7 +649,7 @@ ChargeableItemRegistry.onFullyCharged(stack, player);
 | `BatItem` | `io.wifi.starrailexpress.item` | 球棒（继承 `SkinableItem`） |
 | `GrenadeItem` | `io.wifi.starrailexpress.item` | 手雷（继承 `SkinableItem`），蓄力投掷 |
 | `DefenseItem` | `io.wifi.starrailexpress.item` | 防具/防御物品（继承 `Item`），限制使用职业 |
-| `NoteItem` | `io.wifi.starrailexpress.item` | 便条（继承 `Item` + `AdventureUsable`） |
+| `NoteItem` | `io.wifi.starrailexpress.item` | 便签（继承 `Item` + `AdventureUsable`） |
 
 #### DefenseItem — 防御物品
 
@@ -1414,7 +1414,7 @@ Optional<String> name = reader.getPlayerName(uuid);
 | `LOCKPICK_ATTEMPT` | `LockpickAttemptDetails` | 撬锁尝试 |
 | `ITEM_USED` / `ITEM_USE` | `ItemUsedDetails` | 物品使用 |
 | `MOOD_CHANGE` | `MoodChangeDetails` | 心情变化 |
-| `NOTE_EDIT` | `NoteEditDetails` | 便条编辑 |
+| `NOTE_EDIT` | `NoteEditDetails` | 便签编辑 |
 | `GAME_START` / `GAME_END` | — | 游戏开始/结束 |
 | `ROLE_ASSIGNMENT` | — | 角色分配 |
 | `BLACKOUT_START` / `BLACKOUT_END` | `BlackoutEventDetails` | 停电事件 |

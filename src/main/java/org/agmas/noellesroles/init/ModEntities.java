@@ -181,6 +181,16 @@ public class ModEntities {
                     .trackedUpdateRate(10)
                     .build());
 
+    @SuppressWarnings("deprecation")
+    public static final EntityType<io.wifi.starrailexpress.entity.NoteEntity> GIANT_NOTE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("giant_note"),
+            FabricEntityTypeBuilder.<io.wifi.starrailexpress.entity.NoteEntity>create(MobCategory.MISC, io.wifi.starrailexpress.entity.NoteEntity::new)
+                    .dimensions(EntityDimensions.fixed(4.5F, 4.5F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(10)
+                    .build());
+
     /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）

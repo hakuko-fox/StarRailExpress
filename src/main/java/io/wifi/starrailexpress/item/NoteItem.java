@@ -41,7 +41,7 @@ public class NoteItem extends Item implements AdventureUsable {
         }
         Level world = player.level();
         if (world.isClientSide) return InteractionResult.PASS;
-        NoteEntity note = TMMEntities.NOTE.create(world);
+        NoteEntity note = createNoteEntity(world);
 
         if (note == null) return InteractionResult.PASS;
 
@@ -66,5 +66,9 @@ public class NoteItem extends Item implements AdventureUsable {
             player.getItemInHand(context.getHand()).shrink(1);
         }
         return InteractionResult.SUCCESS;
+    }
+
+    protected NoteEntity createNoteEntity(Level world) {
+        return TMMEntities.NOTE.create(world);
     }
 }
