@@ -86,6 +86,8 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
                     if (CONSPIRATOR_alive) {
                         if (this.penaltyExpiry == -2) {
                             this.penaltyExpiry = -1;
+                            this.limitCameraUUID = null;
+                            this.limitPos = null;
                             player.sendSystemMessage(
                                     Component.translatable("message.noellesroles.penalty.limit.god_job_couple")
                                             .withStyle(ChatFormatting.RED));
@@ -109,7 +111,6 @@ public class DeathPenaltyComponent implements RoleComponent, ServerTickingCompon
                         Component.translatable("message.noellesroles.penalty.unlimit").withStyle(ChatFormatting.GREEN));
                 this.init();
                 return;
-                // 亡语杀手限制
             } else {
                 if (player.level().getGameTime() >= this.penaltyExpiry) {
                     player.displayClientMessage(Component.translatable("message.noellesroles.penalty.unlimit")
