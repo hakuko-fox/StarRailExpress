@@ -733,22 +733,25 @@ public final class FourthRoomGameManager {
         return roomState != null && Objects.equals(roomState.activePlayerId, playerId);
     }
 
-    public boolean skipOpponentTurn(UUID playerId, UUID targetId) {
-        UUID resolvedTarget = targetId != null ? targetId : roomManager.getOpponent(playerId);
-        if (resolvedTarget == null) {
+    public boolean skipCurrentTurn(UUID playerId) {
+        FourthRoomPlayerState actorState = data.players.get(playerId);
+        if (actorState == null) {
             return false;
         }
+        FourthRoomRoomState roomState = data.rooms.get(actorState.roomId);
+        if (roomState == null || roomState.activePlayerId == null) {
+            return false;
+        }
+        UUID resolvedTarget = roomState.activePlayerId;
         FourthRoomPlayerState targetState = data.players.get(resolvedTarget);
         if (targetState == null || !targetState.alive) {
             return false;
         }
-        if (isPlayersTurn(resolvedTarget)) {
-            endTurn(resolvedTarget);
-            logPlayerRoomAction(playerId, "card", "施放了", cardDisplayName(BasicCard.SKIP), playerName(resolvedTarget), "立即跳过目标当前回合");
-        } else {
-            addSkipTurns(resolvedTarget, 1);
-            logPlayerRoomAction(playerId, "card", "施放了", cardDisplayName(BasicCard.SKIP), playerName(resolvedTarget), "目标下回合将被直接跳过");
+        if (!isPlayersTurn(resolvedTarget)) {
+            return false;
         }
+        endTurn(resolvedTarget);
+        logPlayerRoomAction(playerId, "card", "施放了", cardDisplayName(BasicCard.SKIP), playerName(resolvedTarget), "立即跳过当前玩家回合");
         return true;
     }
 
@@ -825,8 +828,8 @@ public final class FourthRoomGameManager {
             case "cleanse" -> "将弃牌堆洗回牌库。";
             case "bottom_draw" -> "从牌库底部摸一张牌。";
             case "seize" -> "随机夺取目标一张可夺取卡牌。";
-            case "skip" -> "下次轮到你时跳过该回合。";
-            case "veto" -> "任何时候可以打出，强制对手摸一张牌。可以用否决抵消。";
+            case "skip" -> "立即跳过当前玩家的回合。";
+            case "veto" -> "任何时候可以打出，强制目标摸一张牌。可以对自己使用，也可以被否决抵消。";
             case "point_kill" -> "给目标额外一个回合。";
             case "dismantle" -> "随机将目标一张卡塞回其牌库。";
             case "peek" -> "查看自己牌库顶的三张牌。";
@@ -843,7 +846,8 @@ public final class FourthRoomGameManager {
     private boolean cardRequiresTarget(Card card, boolean gold) {
         return switch (card.id()) {
             case "point_kill" -> gold;
-            case "seize", "skip", "veto", "dismantle", "interrogate" -> true;
+            case "seize", "veto", "dismantle", "interrogate" -> true;
+            case "skip" -> false;
             default -> false;
         };
     }

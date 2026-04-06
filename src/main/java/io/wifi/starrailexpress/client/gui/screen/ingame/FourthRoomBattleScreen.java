@@ -35,13 +35,15 @@ public final class FourthRoomBattleScreen extends Screen {
     private final Map<String, Float> cardPresence = new HashMap<>();
     private final Map<String, Float> cardHoverAmounts = new HashMap<>();
     private final Map<Integer, Float> actionRevealAmounts = new HashMap<>();
-    private final Map<String, int[]> peekCardPositions = new HashMap<>();
-
     private int lastSnapshotVersion = -1;
     private float introProgress;
     private String selectedTargetId = "";
     private String selectedCardKey = "";
     private String hoveredCardKey = "";
+    private boolean showingTargetPicker = false;
+    private String pendingCardKey = "";
+    private boolean showingShopTargetPicker = false;
+    private String pendingShopItemId = "";
     private int lastSeenActionSequence;
     private int lastSeenDrawSequence;
     private int actionBannerTicks;
@@ -118,6 +120,12 @@ public final class FourthRoomBattleScreen extends Screen {
         renderHand(graphics, snapshot, mouseX, mouseY);
         renderPeek(graphics, snapshot, mouseX, mouseY);
         renderBanners(graphics);
+        if (showingTargetPicker) {
+            renderTargetPicker(graphics, snapshot, mouseX, mouseY);
+        }
+        if (showingShopTargetPicker) {
+            renderShopTargetPicker(graphics, snapshot, mouseX, mouseY);
+        }
         renderHoverTooltip(graphics, mouseX, mouseY);
     }
 
@@ -441,12 +449,18 @@ public final class FourthRoomBattleScreen extends Screen {
                     renderChip(graphics, panel.x() + panel.width() - 62, itemY + 20, 32, 16, "用",
                             snapshot.viewer().alive()
                                     && snapshot.hasActiveTask()
-                                    && item.ownedCount() > 0
-                                    && (!item.requiresTarget() || !selectedTargetId.isBlank()),
+                                    && item.ownedCount() > 0,
                             0xFF7C4A31,
-                            List.of(Component.literal(item.description()), Component.literal(item.requiresTarget() ? "需要先选中目标" : "无需目标")),
+                            List.of(Component.literal(item.description()), Component.literal(item.requiresTarget() ? "需要选择目标" : "无需目标")),
                             mouseX, mouseY,
-                            () -> ClientPlayNetworking.send(new UseAssassinationItemPayload(item.id(), item.requiresTarget() ? selectedTargetId : "")));
+                            () -> {
+                                if (item.requiresTarget()) {
+                                    pendingShopItemId = item.id();
+                                    showingShopTargetPicker = true;
+                                } else {
+                                    ClientPlayNetworking.send(new UseAssassinationItemPayload(item.id(), ""));
+                                }
+                            });
                 }
             }
             itemY += 48;
@@ -496,9 +510,9 @@ public final class FourthRoomBattleScreen extends Screen {
         graphics.drawCenteredString(font,
                 Component.literal(fit(blankFallback(preview.description(), preview.displayName()), 280)),
                 previewCenterX, previewBottomY + 18, 0xFFD2D9E2);
-        boolean canPlay = canUseCard(snapshot, preview) && (!preview.requiresTarget() || !selectedTargetId.isBlank());
+        boolean canPlay = canUseCard(snapshot, preview);
         renderChip(graphics, previewCenterX - 52, previewBottomY + 36, 104, 20,
-                preview.requiresTarget() ? "打出到当前目标" : "打出已选牌",
+                preview.requiresTarget() ? "选择目标并打出" : "打出已选牌",
                 canPlay,
                 preview.skill() ? 0xFF315E8A : 0xFF745432,
                 List.of(Component.literal(preview.description())), mouseX, mouseY,
@@ -538,22 +552,29 @@ public final class FourthRoomBattleScreen extends Screen {
     private void renderPeek(GuiGraphics graphics, FourthRoomClientSnapshot snapshot, int mouseX, int mouseY) {
         List<FourthRoomClientSnapshot.PeekCard> peekCards = snapshot.viewer().peekCards();
         if (peekCards.isEmpty()) {
-            peekCardPositions.clear();
             return;
         }
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int spread = 120;
+
+        int cardScale = 70;
+        int scaledWidth = Math.round(CARD_WIDTH * (cardScale / 100.0F));
+        int scaledHeight = Math.round(CARD_HEIGHT * (cardScale / 100.0F));
+        int spacing = 18;
+        int count = peekCards.size();
+        int totalWidth = count * scaledWidth + Math.max(0, count - 1) * spacing;
+        int panelWidth = totalWidth + 40;
+        int panelHeight = scaledHeight + 64;
+        int panelX = (width - panelWidth) / 2;
+        int panelY = Math.max(86, (height - panelHeight) / 2 - 12);
+
+        drawRoundedPanel(graphics, panelX, panelY, panelWidth, panelHeight, 0xD81A1D26, 0x88CDBA83);
+        graphics.drawCenteredString(font, "窥视结果", width / 2, panelY + 12, 0xFFF3DCA0);
+
+        int startX = (width - totalWidth) / 2 + scaledWidth / 2;
+        int bottomY = panelY + panelHeight - 18;
         for (int i = 0; i < peekCards.size(); i++) {
             FourthRoomClientSnapshot.PeekCard card = peekCards.get(i);
-            String key = card.id() + "_" + i;
-            if (!peekCardPositions.containsKey(key)) {
-                int offsetX = (int) ((Math.random() - 0.5) * spread * 2);
-                int offsetY = (int) ((Math.random() - 0.5) * spread);
-                peekCardPositions.put(key, new int[]{centerX + offsetX, centerY + offsetY});
-            }
-            int[] pos = peekCardPositions.get(key);
-            drawPeekCard(graphics, card, pos[0], pos[1], mouseX, mouseY);
+            int centerX = startX + i * (scaledWidth + spacing);
+            drawPeekCard(graphics, card, centerX, bottomY, mouseX, mouseY);
         }
     }
 
@@ -752,12 +773,122 @@ public final class FourthRoomBattleScreen extends Screen {
         if (selected == null || !canUseCard(snapshot, selected)) {
             return false;
         }
-        if (selected.requiresTarget() && selectedTargetId.isBlank()) {
-            return false;
+        if (selected.requiresTarget()) {
+            pendingCardKey = selectedCardKey;
+            showingTargetPicker = true;
+            return true;
         }
-        ClientPlayNetworking.send(new CardPlayPayload(selected.id(), selected.requiresTarget() ? selectedTargetId : ""));
+        ClientPlayNetworking.send(new CardPlayPayload(selected.id(), ""));
         selectedCardKey = "";
         return true;
+    }
+
+    private void confirmTargetAndPlay(String targetUuid) {
+        FourthRoomClientSnapshot snapshot = FourthRoomClientState.snapshot();
+        FourthRoomClientSnapshot.CardView card = findCardByKey(snapshot, pendingCardKey);
+        if (card != null && canUseCard(snapshot, card)) {
+            ClientPlayNetworking.send(new CardPlayPayload(card.id(), targetUuid));
+        }
+        showingTargetPicker = false;
+        pendingCardKey = "";
+        selectedCardKey = "";
+    }
+
+    private void renderTargetPicker(GuiGraphics graphics, FourthRoomClientSnapshot snapshot, int mouseX, int mouseY) {
+        FourthRoomClientSnapshot.CardView card = findCardByKey(snapshot, pendingCardKey);
+        if (card == null) {
+            showingTargetPicker = false;
+            return;
+        }
+        // Dim background
+        graphics.fill(0, 0, width, height, 0x88000000);
+
+        List<FourthRoomClientSnapshot.RoomPlayer> targets = snapshot.roomPlayers().stream()
+            .filter(p -> p.alive() && (card.id().equals("veto") || !p.self()))
+                .toList();
+
+        int popupWidth = 260;
+        int rowHeight = 36;
+        int headerHeight = 48;
+        int popupHeight = headerHeight + targets.size() * rowHeight + 16;
+        int popupX = (width - popupWidth) / 2;
+        int popupY = (height - popupHeight) / 2;
+
+        drawRoundedPanel(graphics, popupX, popupY, popupWidth, popupHeight, 0xE81A1D26, 0x88E1C17D);
+        graphics.drawCenteredString(font, "选择目标", width / 2, popupY + 10, 0xFFF3DCA0);
+        graphics.drawCenteredString(font, fit(card.displayName(), popupWidth - 20), width / 2, popupY + 26, 0xFFD2D9E2);
+
+        int btnY = popupY + headerHeight;
+        for (FourthRoomClientSnapshot.RoomPlayer target : targets) {
+            boolean hovered = mouseX >= popupX + 16 && mouseX <= popupX + popupWidth - 16
+                    && mouseY >= btnY && mouseY <= btnY + rowHeight - 4;
+            int btnColor = hovered ? 0xCC6B4331 : 0xCC242B37;
+            int btnBorder = hovered ? 0x88FFAD7A : 0x44404050;
+            drawRoundedPanel(graphics, popupX + 16, btnY, popupWidth - 32, rowHeight - 4, btnColor, btnBorder);
+            graphics.drawCenteredString(font, target.name(), width / 2, btnY + 10, 0xFFF3EEE7);
+            registerHitRegion(popupX + 16, btnY, popupWidth - 32, rowHeight - 4, true,
+                    List.of(Component.literal("选择 " + target.name())),
+                    () -> confirmTargetAndPlay(target.uuid()));
+            btnY += rowHeight;
+        }
+
+        // Cancel button
+        int cancelY = btnY + 4;
+        boolean cancelHovered = mouseX >= popupX + 50 && mouseX <= popupX + popupWidth - 50
+                && mouseY >= cancelY && mouseY <= cancelY + 22;
+        drawRoundedPanel(graphics, popupX + 50, cancelY, popupWidth - 100, 22,
+                cancelHovered ? 0xCC5A2020 : 0xCC3A3E47, cancelHovered ? 0x88FF6666 : 0x44565662);
+        graphics.drawCenteredString(font, "取消", width / 2, cancelY + 7, 0xFFF2EEE7);
+        registerHitRegion(popupX + 50, cancelY, popupWidth - 100, 22, true,
+                List.of(Component.literal("取消选择")),
+                () -> { showingTargetPicker = false; pendingCardKey = ""; });
+    }
+
+    private void renderShopTargetPicker(GuiGraphics graphics, FourthRoomClientSnapshot snapshot, int mouseX, int mouseY) {
+        graphics.fill(0, 0, width, height, 0x88000000);
+
+        List<FourthRoomClientSnapshot.RoomPlayer> targets = snapshot.roomPlayers().stream()
+                .filter(p -> p.alive() && !p.self())
+                .toList();
+
+        int popupWidth = 260;
+        int rowHeight = 36;
+        int headerHeight = 40;
+        int popupHeight = headerHeight + targets.size() * rowHeight + 16;
+        int popupX = (width - popupWidth) / 2;
+        int popupY = (height - popupHeight) / 2;
+
+        drawRoundedPanel(graphics, popupX, popupY, popupWidth, popupHeight, 0xE81A1D26, 0x887DAD8E);
+        graphics.drawCenteredString(font, "选择目标玩家", width / 2, popupY + 14, 0xFFF3DCA0);
+
+        int btnY = popupY + headerHeight;
+        for (FourthRoomClientSnapshot.RoomPlayer target : targets) {
+            boolean hovered = mouseX >= popupX + 16 && mouseX <= popupX + popupWidth - 16
+                    && mouseY >= btnY && mouseY <= btnY + rowHeight - 4;
+            int btnColor = hovered ? 0xCC6B4331 : 0xCC242B37;
+            int btnBorder = hovered ? 0x88FFAD7A : 0x44404050;
+            drawRoundedPanel(graphics, popupX + 16, btnY, popupWidth - 32, rowHeight - 4, btnColor, btnBorder);
+            graphics.drawCenteredString(font, target.name(), width / 2, btnY + 10, 0xFFF3EEE7);
+            String targetId = target.uuid();
+            registerHitRegion(popupX + 16, btnY, popupWidth - 32, rowHeight - 4, true,
+                    List.of(Component.literal("选择 " + target.name())),
+                    () -> {
+                        ClientPlayNetworking.send(new UseAssassinationItemPayload(pendingShopItemId, targetId));
+                        showingShopTargetPicker = false;
+                        pendingShopItemId = "";
+                    });
+            btnY += rowHeight;
+        }
+
+        int cancelY = btnY + 4;
+        boolean cancelHovered = mouseX >= popupX + 50 && mouseX <= popupX + popupWidth - 50
+                && mouseY >= cancelY && mouseY <= cancelY + 22;
+        drawRoundedPanel(graphics, popupX + 50, cancelY, popupWidth - 100, 22,
+                cancelHovered ? 0xCC5A2020 : 0xCC3A3E47, cancelHovered ? 0x88FF6666 : 0x44565662);
+        graphics.drawCenteredString(font, "取消", width / 2, cancelY + 7, 0xFFF2EEE7);
+        registerHitRegion(popupX + 50, cancelY, popupWidth - 100, 22, true,
+                List.of(Component.literal("取消")),
+                () -> { showingShopTargetPicker = false; pendingShopItemId = ""; });
     }
 
     private FourthRoomClientSnapshot.CardView selectedCard(FourthRoomClientSnapshot snapshot) {
@@ -814,7 +945,7 @@ public final class FourthRoomBattleScreen extends Screen {
             boolean selected = key.equals(selectedCardKey);
             float lift = hover * 18.0F + (selected ? 26.0F : 0.0F);
             float scale = 0.92F + hover * 0.05F + (selected ? 0.08F : 0.0F);
-            boolean playable = canUseCard(snapshot, card) && (!card.requiresTarget() || !selectedTargetId.isBlank());
+            boolean playable = canUseCard(snapshot, card);
             layouts.add(new CardLayout(
                     key,
                     card,

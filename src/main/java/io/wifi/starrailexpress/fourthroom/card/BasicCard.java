@@ -45,7 +45,7 @@ public enum BasicCard implements Card {
     SKIP("skip") {
         @Override
         public boolean play(FourthRoomGameManager manager, UUID playerId, @Nullable UUID targetId, CardInstance instance) {
-            return manager.skipOpponentTurn(playerId, targetId);
+            return manager.skipCurrentTurn(playerId);
         }
     },
     VETO("veto") {
