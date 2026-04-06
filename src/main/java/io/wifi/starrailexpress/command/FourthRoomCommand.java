@@ -66,18 +66,16 @@ public final class FourthRoomCommand {
     private static int status(CommandSourceStack source) {
         FourthRoomGameManager manager = FourthRoomGameManager.of(source.getLevel());
         var data = manager.data();
-        source.sendSuccess(() -> Component.literal("Fourth Room phase=" + data.phase.name() + ", activeTask=" + data.activeTaskId
-                + ", nextRotationTick=" + data.nextRotationTick + ", rooms=" + data.rooms.size()
-                + ", sceneGenerated=" + data.sceneLayout.generated), false);
+        source.sendSuccess(() -> Component.translatable("command.fourth_room.status.phase", data.phase.name(), data.activeTaskId, data.nextRotationTick, data.rooms.size(), data.sceneLayout.generated), false);
         if (data.sceneLayout.generated) {
-            source.sendSuccess(() -> Component.literal("Scene lobby=" + data.sceneLayout.lobbyPos + ", duel=" + data.sceneLayout.duelArenaPos), false);
+            source.sendSuccess(() -> Component.translatable("command.fourth_room.status.scene", data.sceneLayout.lobbyPos, data.sceneLayout.duelArenaPos), false);
         }
         try {
             ServerPlayer player = source.getPlayerOrException();
             FourthRoomPlayerState state = data.players.get(player.getUUID());
             if (state != null) {
                 List<String> hand = state.hand.stream().map(card -> card.cardId() + (card.gold() ? "*" : "")).toList();
-                source.sendSuccess(() -> Component.literal("Your room=" + state.roomId + ", coins=" + state.coins + ", hand=" + hand), false);
+                source.sendSuccess(() -> Component.translatable("command.fourth_room.status.player", state.roomId, state.coins, String.join(", ", hand)), false);
             }
         } catch (Exception ignored) {
         }
@@ -87,8 +85,7 @@ public final class FourthRoomCommand {
     private static int generateTestScene(CommandSourceStack source, BlockPos origin) {
         var layout = new FourthRoomSceneGenerator(source.getLevel()).generate(origin);
         FourthRoomGameManager.of(source.getLevel()).syncMatchState();
-        source.sendSuccess(() -> Component.literal("Generated Fourth Room test scene at " + origin
-                + " with " + layout.rooms.size() + " rooms."), true);
+        source.sendSuccess(() -> Component.translatable("command.fourth_room.generate_scene", origin, layout.rooms.size()), true);
         return 1;
     }
 
@@ -104,21 +101,21 @@ public final class FourthRoomCommand {
     private static int reveal(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         boolean success = FourthRoomGameManager.of(source.getLevel()).revealOwnIdentity(player.getUUID());
-        source.sendSuccess(() -> Component.literal(success ? "Identity revealed." : "No hidden identity left."), false);
+        source.sendSuccess(() -> Component.translatable(success ? "command.fourth_room.reveal.success" : "command.fourth_room.reveal.failure"), false);
         return success ? 1 : 0;
     }
 
     private static int play(CommandSourceStack source, String cardId, ServerPlayer target) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         boolean success = FourthRoomGameManager.of(source.getLevel()).playCard(player.getUUID(), cardId, target == null ? null : target.getUUID());
-        source.sendSuccess(() -> Component.literal(success ? "Card played." : "Card play failed."), false);
+        source.sendSuccess(() -> Component.translatable(success ? "command.fourth_room.play.success" : "command.fourth_room.play.failure"), false);
         return success ? 1 : 0;
     }
 
     private static int endTurn(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         boolean success = FourthRoomGameManager.of(source.getLevel()).endTurn(player.getUUID());
-        source.sendSuccess(() -> Component.literal(success ? "Turn ended." : "Cannot end turn now."), false);
+        source.sendSuccess(() -> Component.translatable(success ? "command.fourth_room.end_turn.success" : "command.fourth_room.end_turn.failure"), false);
         return success ? 1 : 0;
     }
 
@@ -126,7 +123,7 @@ public final class FourthRoomCommand {
         ServerPlayer player = source.getPlayerOrException();
         FourthRoomShopItem item = FourthRoomShopItem.byId(itemId.toLowerCase(Locale.ROOT));
         boolean success = item != null && FourthRoomGameManager.of(source.getLevel()).buyItem(player.getUUID(), item);
-        source.sendSuccess(() -> Component.literal(success ? "Purchase complete." : "Purchase failed."), false);
+        source.sendSuccess(() -> Component.translatable(success ? "command.fourth_room.buy.success" : "command.fourth_room.buy.failure"), false);
         return success ? 1 : 0;
     }
 
@@ -134,21 +131,21 @@ public final class FourthRoomCommand {
         ServerPlayer player = source.getPlayerOrException();
         FourthRoomShopItem item = FourthRoomShopItem.byId(itemId.toLowerCase(Locale.ROOT));
         boolean success = item != null && FourthRoomGameManager.of(source.getLevel()).useAssassinationItem(player.getUUID(), target.getUUID(), item);
-        source.sendSuccess(() -> Component.literal(success ? "Item used." : "Item use failed."), false);
+        source.sendSuccess(() -> Component.translatable(success ? "command.fourth_room.use_item.success" : "command.fourth_room.use_item.failure"), false);
         return success ? 1 : 0;
     }
 
     private static int completeTask(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         boolean success = FourthRoomGameManager.of(source.getLevel()).taskScheduler().completeTask(player.getUUID());
-        source.sendSuccess(() -> Component.literal(success ? "Task marked complete." : "No active task to complete."), false);
+        source.sendSuccess(() -> Component.translatable(success ? "command.fourth_room.complete_task.success" : "command.fourth_room.complete_task.failure"), false);
         return success ? 1 : 0;
     }
 
     private static int searchNotes(CommandSourceStack source) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         List<String> notes = FourthRoomGameManager.of(source.getLevel()).searchNotes(player.getUUID());
-        source.sendSuccess(() -> Component.literal(notes.isEmpty() ? "No notes found." : String.join(" | ", notes)), false);
+        source.sendSuccess(() -> Component.translatable(notes.isEmpty() ? "command.fourth_room.search_notes.none" : "command.fourth_room.search_notes.found", String.join(" | ", notes)), false);
         return notes.size();
     }
 }

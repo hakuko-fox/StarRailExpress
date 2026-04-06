@@ -5,6 +5,8 @@ import io.wifi.starrailexpress.fourthroom.game.FourthRoomGameManager;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomPlayerState;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomSavedData;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -48,7 +50,7 @@ public final class FourthRoomTaskScheduler {
         state.taskCompleted = true;
         int reward = ThreadLocalRandom.current().nextInt(taskType.minReward(), taskType.maxReward() + 1);
         manager.grantCoins(playerId, reward, "task_complete");
-        manager.sendPrivate(playerId, "Task completed: " + taskType.description() + " (+" + reward + " gold)");
+        manager.sendPrivate(playerId, Component.translatable("task.fourth_room.completed", Component.translatable(taskType.descriptionKey()), reward));
         data.setDirty(true);
         manager.syncMatchState();
         return true;

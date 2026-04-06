@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.fourthroom.game.FourthRoomSavedData;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomStickyNoteState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +76,7 @@ public final class FourthRoomShopService {
                 if (target.bulletproofVestCharges > 0) {
                     target.bulletproofVestCharges--;
                     manager.logPlayerRoomAction(targetId, "defense", "触发了", manager.shopItemDisplayName(FourthRoomShopItem.BULLETPROOF_VEST), "", "挡下手枪");
-                    manager.sendPrivate(targetId, "Your bulletproof vest blocked a handgun shot.");
+                    manager.sendPrivate(targetId, Component.translatable("message.fourth_room.bulletproof_vest"));
                 } else {
                     manager.eliminatePlayer(targetId, "handgun");
                 }

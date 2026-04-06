@@ -396,7 +396,7 @@ public final class FourthRoomGameManager {
         }
         if (targetState.lifeShield > 0) {
             targetState.lifeShield--;
-            sendPrivate(targetId, "A life card blocked incoming damage.");
+            sendPrivate(targetId, Component.translatable("message.fourth_room.life_card_blocked"));
             logRoomAction(targetState.roomId, "defense", playerName(targetId), "抵挡了伤害", "命格", "", "");
             data.setDirty(true);
             return;
@@ -443,7 +443,7 @@ public final class FourthRoomGameManager {
     public boolean buyItem(UUID playerId, FourthRoomShopItem item) {
         boolean success = shopService.buy(playerId, item);
         if (success) {
-            sendPrivate(playerId, "Purchased " + item.id());
+            sendPrivate(playerId, Component.translatable("message.fourth_room.purchased", item.id()));
         }
         return success;
     }
@@ -477,21 +477,21 @@ public final class FourthRoomGameManager {
         state.coins += amount;
         data.setDirty(true);
         if (amount > 0) {
-            sendPrivate(playerId, "+" + amount + " gold (" + reason + ")");
+            sendPrivate(playerId, Component.translatable("message.fourth_room.gold_change", amount, reason));
         }
     }
 
-    public void broadcast(String message) {
-        Component component = Component.literal("[Fourth Room] " + message).withStyle(ChatFormatting.GOLD);
+    public void broadcast(Component message) {
+        Component component = Component.translatable("fourth_room.prefix").append(message).withStyle(ChatFormatting.GOLD);
         for (ServerPlayer player : level.players()) {
             player.displayClientMessage(component, false);
         }
     }
 
-    public void sendPrivate(UUID playerId, String message) {
+    public void sendPrivate(UUID playerId, Component message) {
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
         if (player != null) {
-            player.displayClientMessage(Component.literal("[Fourth Room] " + message).withStyle(ChatFormatting.YELLOW), true);
+            player.displayClientMessage(Component.translatable("fourth_room.prefix").append(message).withStyle(ChatFormatting.YELLOW), true);
         }
     }
 
@@ -854,25 +854,11 @@ public final class FourthRoomGameManager {
     }
 
     public String shopItemDisplayName(FourthRoomShopItem item) {
-        return switch (item) {
-            case SCORPION -> "蝎子";
-            case HANDGUN -> "手枪";
-            case POISON_MUSHROOM -> "毒蘑菇";
-            case BULLETPROOF_VEST -> "防弹衣";
-            case TEST_STRIP -> "试纸";
-            case STICKY_NOTE -> "便利贴";
-        };
+        return Component.translatable("shop.fourth_room." + item.id()).getString();
     }
 
     private String shopItemDescription(FourthRoomShopItem item) {
-        return switch (item) {
-            case SCORPION -> "任务期间可直接处决一个目标。";
-            case HANDGUN -> "任务期间射击目标，防弹衣可挡。";
-            case POISON_MUSHROOM -> "任务期间给目标挂上延时死亡。";
-            case BULLETPROOF_VEST -> "被手枪命中时自动抵挡一次。";
-            case TEST_STRIP -> "保留作后续任务与检定扩展。";
-            case STICKY_NOTE -> "保留作便利贴放置与搜索扩展。";
-        };
+        return Component.translatable("shop.fourth_room." + item.id() + ".description").getString();
     }
 
     private boolean shopItemCanUse(FourthRoomShopItem item) {

@@ -56,7 +56,7 @@ public final class FourthRoomBattleScreen extends Screen {
     private float shopScrollCurrent;
 
     public FourthRoomBattleScreen() {
-        super(Component.literal("第四房间"));
+        super(Component.translatable("screen.fourth_room.title"));
     }
 
     @Override
@@ -299,10 +299,10 @@ public final class FourthRoomBattleScreen extends Screen {
         int panelWidth = width - PANEL_MARGIN * 2;
         drawRoundedPanel(graphics, panelX, panelY, panelWidth, TOP_BAR_HEIGHT, 0xA81A1A22, 0x44E1C17D);
 
-        graphics.drawString(font, "第四房间", panelX + 16, panelY + 12, 0xFFF3DCA0, false);
-        graphics.drawString(font, fit("阶段 " + snapshot.phaseDisplayName(), 180), panelX + 16, panelY + 28, 0xFFEDECEC, false);
+        graphics.drawString(font, Component.translatable("screen.fourth_room.title"), panelX + 16, panelY + 12, 0xFFF3DCA0, false);
+        graphics.drawString(font, Component.translatable("screen.fourth_room.phase", snapshot.phaseDisplayName()), panelX + 16, panelY + 28, 0xFFEDECEC, false);
         graphics.drawString(font,
-                fit("当前行动者 " + blankFallback(snapshot.activePlayerName(), "无") + " | 你的金币 " + snapshot.viewer().coins(), 260),
+                Component.translatable("screen.fourth_room.active_player", blankFallback(snapshot.activePlayerName(), Component.translatable("screen.fourth_room.none").getString()), snapshot.viewer().coins()),
                 panelX + 16, panelY + 42, 0xFFB7D1E7, false);
 
         int progressX = panelX + 260;
@@ -312,34 +312,34 @@ public final class FourthRoomBattleScreen extends Screen {
                         ? Mth.clamp(1.0F - (snapshot.taskDeadlineTick() - snapshot.serverTick()) / (float) snapshot.taskDurationTicks(), 0.0F, 1.0F)
                         : 0.0F,
                 0xFF6BC5FF,
-                snapshot.hasActiveTask() ? "任务剩余 " + snapshot.secondsUntil(snapshot.taskDeadlineTick()) + "s" : "暂无任务");
+                snapshot.hasActiveTask() ? Component.translatable("screen.fourth_room.task_remaining", snapshot.secondsUntil(snapshot.taskDeadlineTick())).getString() : Component.translatable("screen.fourth_room.no_task").getString());
         renderProgressBar(graphics, progressX, panelY + 36, progressWidth, 12,
                 snapshot.nextRotationTick() > snapshot.serverTick() && snapshot.rotationIntervalTicks() > 0L
                         ? Mth.clamp(1.0F - (snapshot.nextRotationTick() - snapshot.serverTick()) / (float) snapshot.rotationIntervalTicks(), 0.0F, 1.0F)
                         : 0.0F,
-                0xFFE6AC52, "下次轮换 " + snapshot.secondsUntil(snapshot.nextRotationTick()) + "s");
+                0xFFE6AC52, Component.translatable("screen.fourth_room.next_rotation", snapshot.secondsUntil(snapshot.nextRotationTick())).getString());
 
         int chipX = panelX + panelWidth - 214;
         int chipY = panelY + 14;
-        renderChip(graphics, chipX, chipY, 64, 24, "翻身份",
+        renderChip(graphics, chipX, chipY, 64, 24, Component.translatable("screen.fourth_room.reveal_identity").getString(),
                 snapshot.viewer().alive() && snapshot.viewer().canReveal(),
                 0xFF286B5A,
-                List.of(Component.literal("翻开一块身份并获得 2 金币")), mouseX, mouseY,
+                List.of(Component.translatable("screen.fourth_room.reveal_identity.tooltip")), mouseX, mouseY,
                 () -> ClientPlayNetworking.send(new RevealIdentityPayload()));
-        renderChip(graphics, chipX + 70, chipY, 64, 24, "任务",
+        renderChip(graphics, chipX + 70, chipY, 64, 24, Component.translatable("screen.fourth_room.task").getString(),
                 snapshot.viewer().alive() && snapshot.hasActiveTask() && !snapshot.viewer().taskCompleted(),
                 0xFF245E8A,
-                List.of(Component.literal(blankFallback(snapshot.activeTaskDescription(), "当前没有任务"))), mouseX, mouseY,
+                List.of(Component.literal(blankFallback(snapshot.activeTaskDescription(), Component.translatable("screen.fourth_room.no_active_task").getString()))), mouseX, mouseY,
                 () -> ClientPlayNetworking.send(new CompleteFourthRoomTaskPayload()));
-        renderChip(graphics, chipX + 140, chipY, 64, 24, "回合",
+        renderChip(graphics, chipX + 140, chipY, 64, 24, Component.translatable("screen.fourth_room.end_turn").getString(),
                 snapshot.viewer().alive() && snapshot.viewer().canEndTurn() && snapshot.inCardBattle(),
                 0xFF7A5031,
-                List.of(Component.literal("结束你的回合并摸 1 张牌")), mouseX, mouseY,
+                List.of(Component.translatable("screen.fourth_room.end_turn.tooltip")), mouseX, mouseY,
                 () -> ClientPlayNetworking.send(new EndTurnPayload()));
-        renderChip(graphics, panelX + panelWidth - 64, panelY + 40, 50, 18, "关闭",
+        renderChip(graphics, panelX + panelWidth - 64, panelY + 40, 50, 18, Component.translatable("screen.fourth_room.close").getString(),
                 true,
                 0xFF5A2A2A,
-                List.of(Component.literal("按 H 也可以关闭或打开界面")), mouseX, mouseY,
+                List.of(Component.translatable("screen.fourth_room.close.tooltip")), mouseX, mouseY,
                 this::onClose);
     }
 
@@ -362,15 +362,15 @@ public final class FourthRoomBattleScreen extends Screen {
             }
             drawRoundedPanel(graphics, x + 12, cardY, SIDE_PANEL_WIDTH - 24, 54, cardColor,
                     active ? 0x88F8C76A : selected ? 0x88FFAD7A : 0x44404050);
-            graphics.drawString(font, player.self() ? "你" : player.name(), x + 24, cardY + 10,
+            graphics.drawString(font, player.self() ? Component.translatable("screen.fourth_room.you").getString() : player.name(), x + 24, cardY + 10,
                     player.alive() ? 0xFFF3EEE7 : 0xFF887A78, false);
             graphics.drawString(font,
-                    player.alive() ? (active ? "行动中" : "待机") : "已出局",
+                    player.alive() ? (active ? Component.translatable("screen.fourth_room.active").getString() : Component.translatable("screen.fourth_room.idle").getString()) : Component.translatable("screen.fourth_room.eliminated").getString(),
                     x + 24, cardY + 24, active ? 0xFFF7D070 : 0xFFB2BECF, false);
-            graphics.drawString(font, "未翻身份 " + player.hiddenIdentityCount(), x + 24, cardY + 38, 0xFFE4CAA1, false);
+            graphics.drawString(font, Component.translatable("screen.fourth_room.unrevealed_identities", player.hiddenIdentityCount()).getString(), x + 24, cardY + 38, 0xFFE4CAA1, false);
             if (!player.self()) {
                 registerHitRegion(x + 12, cardY, SIDE_PANEL_WIDTH - 24, 54, player.alive(),
-                        List.of(Component.literal(player.name() + (selected ? " 已选为目标" : " 可作为目标"))),
+                        List.of(Component.translatable(selected ? "screen.fourth_room.target_selected" : "screen.fourth_room.target_available", player.name())),
                         () -> selectedTargetId = player.uuid());
             }
             cardY += 62;
@@ -384,7 +384,7 @@ public final class FourthRoomBattleScreen extends Screen {
             int color = identity.revealed() ? 0xFFDFB56D : 0xFF666978;
             graphics.fill(pipX, footerY + 28, pipX + 44, footerY + 42, color);
             graphics.renderOutline(pipX, footerY + 28, 44, 14, 0x55FFFFFF);
-            graphics.drawString(font, identity.revealed() ? fit(shortBlock(identity.blockId()), 42) : "隐藏", pipX + 4, footerY + 31, 0xFF1D1815, false);
+            graphics.drawString(font, identity.revealed() ? fit(shortBlock(identity.blockId()), 42) : Component.translatable("screen.fourth_room.hidden").getString(), pipX + 4, footerY + 31, 0xFF1D1815, false);
             pipX += 50;
         }
     }
@@ -572,7 +572,7 @@ public final class FourthRoomBattleScreen extends Screen {
         int panelY = Math.max(86, (height - panelHeight) / 2 - 12);
 
         drawRoundedPanel(graphics, panelX, panelY, panelWidth, panelHeight, 0xD81A1D26, 0x88CDBA83);
-        graphics.drawCenteredString(font, "窥视结果", width / 2, panelY + 12, 0xFFF3DCA0);
+        graphics.drawCenteredString(font, Component.translatable("screen.fourth_room.peek_results").getString(), width / 2, panelY + 12, 0xFFF3DCA0);
 
         int startX = (width - totalWidth) / 2 + scaledWidth / 2;
         int bottomY = panelY + panelHeight - 18;
@@ -731,10 +731,10 @@ public final class FourthRoomBattleScreen extends Screen {
         graphics.renderOutline(left, top, CARD_WIDTH, CARD_HEIGHT, border);
         graphics.fill(left + 8, top + 8, left + CARD_WIDTH - 8, top + 26, mixColor(border, 0xFFFFFFFF, 0.84F));
         graphics.drawCenteredString(font, fit(card.displayName(), CARD_WIDTH - 20), 0, top + 13, 0xFF1F1A16);
-        graphics.drawString(font, card.skill() ? "技能" : "基础", left + 10, top + 36, 0xFF6E5F4A, false);
+        graphics.drawString(font, Component.translatable(card.skill() ? "screen.fourth_room.card.skill" : "screen.fourth_room.card.basic").getString(), left + 10, top + 36, 0xFF6E5F4A, false);
         if (card.gold()) {
             graphics.fill(left + CARD_WIDTH - 28, top + 8, left + CARD_WIDTH - 10, top + 22, 0xFFE4B94A);
-            graphics.drawString(font, "金", left + CARD_WIDTH - 22, top + 11, 0xFF3B2B12, false);
+            graphics.drawString(font, Component.translatable("screen.fourth_room.card.gold").getString(), left + CARD_WIDTH - 22, top + 11, 0xFF3B2B12, false);
         }
         List<FormattedCharSequence> lines = font.split(Component.literal(card.description()), CARD_WIDTH - 22);
         int textY = top + 56;
@@ -744,10 +744,10 @@ public final class FourthRoomBattleScreen extends Screen {
         }
         if (card.requiresTarget()) {
             graphics.fill(left + 10, top + CARD_HEIGHT - 24, left + CARD_WIDTH - 10, top + CARD_HEIGHT - 10, 0xFF8A5B41);
-            graphics.drawCenteredString(font, "需要目标", 0, top + CARD_HEIGHT - 20, 0xFFF7EFE5);
+            graphics.drawCenteredString(font, Component.translatable("screen.fourth_room.card.requires_target").getString(), 0, top + CARD_HEIGHT - 20, 0xFFF7EFE5);
         } else if (playable) {
             graphics.fill(left + 10, top + CARD_HEIGHT - 24, left + CARD_WIDTH - 10, top + CARD_HEIGHT - 10, 0xFF40664D);
-            graphics.drawCenteredString(font, "可打出", 0, top + CARD_HEIGHT - 20, 0xFFF1F4EE);
+            graphics.drawCenteredString(font, Component.translatable("screen.fourth_room.card.playable").getString(), 0, top + CARD_HEIGHT - 20, 0xFFF1F4EE);
         }
         graphics.pose().popPose();
     }
@@ -849,9 +849,9 @@ public final class FourthRoomBattleScreen extends Screen {
                 && mouseY >= cancelY && mouseY <= cancelY + 22;
         drawRoundedPanel(graphics, popupX + 50, cancelY, popupWidth - 100, 22,
                 cancelHovered ? 0xCC5A2020 : 0xCC3A3E47, cancelHovered ? 0x88FF6666 : 0x44565662);
-        graphics.drawCenteredString(font, "取消", width / 2, cancelY + 7, 0xFFF2EEE7);
+        graphics.drawCenteredString(font, Component.translatable("screen.fourth_room.cancel").getString(), width / 2, cancelY + 7, 0xFFF2EEE7);
         registerHitRegion(popupX + 50, cancelY, popupWidth - 100, 22, true,
-                List.of(Component.literal("取消选择")),
+                List.of(Component.translatable("screen.fourth_room.cancel_selection")),
                 () -> { showingTargetPicker = false; pendingCardKey = ""; });
         graphics.pose().popPose();
     }
@@ -871,7 +871,7 @@ public final class FourthRoomBattleScreen extends Screen {
         int popupY = (height - popupHeight) / 2;
 
         drawRoundedPanel(graphics, popupX, popupY, popupWidth, popupHeight, 0xE81A1D26, 0x887DAD8E);
-        graphics.drawCenteredString(font, "选择目标玩家", width / 2, popupY + 14, 0xFFF3DCA0);
+        graphics.drawCenteredString(font, Component.translatable("screen.fourth_room.select_target_player").getString(), width / 2, popupY + 14, 0xFFF3DCA0);
 
         int btnY = popupY + headerHeight;
         for (FourthRoomClientSnapshot.RoomPlayer target : targets) {
@@ -897,9 +897,9 @@ public final class FourthRoomBattleScreen extends Screen {
                 && mouseY >= cancelY && mouseY <= cancelY + 22;
         drawRoundedPanel(graphics, popupX + 50, cancelY, popupWidth - 100, 22,
                 cancelHovered ? 0xCC5A2020 : 0xCC3A3E47, cancelHovered ? 0x88FF6666 : 0x44565662);
-        graphics.drawCenteredString(font, "取消", width / 2, cancelY + 7, 0xFFF2EEE7);
+        graphics.drawCenteredString(font, Component.translatable("screen.fourth_room.cancel").getString(), width / 2, cancelY + 7, 0xFFF2EEE7);
         registerHitRegion(popupX + 50, cancelY, popupWidth - 100, 22, true,
-                List.of(Component.literal("取消")),
+                List.of(Component.translatable("screen.fourth_room.cancel")),
                 () -> { showingShopTargetPicker = false; pendingShopItemId = ""; });
         graphics.pose().popPose();
     }
