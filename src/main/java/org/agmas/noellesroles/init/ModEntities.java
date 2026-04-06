@@ -186,7 +186,7 @@ public class ModEntities {
             BuiltInRegistries.ENTITY_TYPE,
             Noellesroles.id("giant_note"),
             FabricEntityTypeBuilder.<io.wifi.starrailexpress.entity.NoteEntity>create(MobCategory.MISC, io.wifi.starrailexpress.entity.NoteEntity::new)
-                    .dimensions(EntityDimensions.fixed(4.5F, 4.5F))
+                    .dimensions(EntityDimensions.fixed(2.5F, 2.5F))
                     .trackRangeBlocks(128)
                     .trackedUpdateRate(10)
                     .build());
