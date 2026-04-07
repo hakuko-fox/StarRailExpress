@@ -34,6 +34,8 @@ import java.util.UUID;
  */
 public class FourthRoomTableBlockEntity extends BlockEntity {
 
+    private static final int MAX_SEATED_PLAYERS = 2;
+
     /** Room ID this table is linked to (-1 = unlinked). */
     private int linkedRoomId = -1;
 
@@ -99,11 +101,11 @@ public class FourthRoomTableBlockEntity extends BlockEntity {
         if (seatedPlayers.contains(uuid)) {
             seatedPlayers.remove(uuid);
             player.displayClientMessage(Component.literal("§e[第四房间] §f已离开牌桌"), true);
-        } else if (seatedPlayers.size() < 4) {
+        } else if (seatedPlayers.size() < MAX_SEATED_PLAYERS) {
             seatedPlayers.add(uuid);
-            player.displayClientMessage(Component.literal("§e[第四房间] §f已加入牌桌 (" + seatedPlayers.size() + "/4)"), true);
+            player.displayClientMessage(Component.literal("§e[第四房间] §f已加入牌桌 (" + seatedPlayers.size() + "/" + MAX_SEATED_PLAYERS + ")"), true);
         } else {
-            player.displayClientMessage(Component.literal("§e[第四房间] §c牌桌已满"), true);
+            player.displayClientMessage(Component.literal("§e[第四房间] §c当前牌桌只支持双人对战"), true);
         }
         sync();
     }

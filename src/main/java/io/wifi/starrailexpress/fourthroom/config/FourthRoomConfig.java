@@ -98,7 +98,7 @@ public final class FourthRoomConfig {
     private void ensureDefaults() {
         defaultPlayerCount = Math.max(2, defaultPlayerCount);
         roomCount = Math.max(1, roomCount);
-        playersPerRoom = Math.max(2, playersPerRoom);
+        playersPerRoom = 2;
         maxRotations = Math.max(1, maxRotations);
         rotationIntervalSeconds = Math.max(30, rotationIntervalSeconds);
         lobbyWaitSeconds = Math.max(1, lobbyWaitSeconds);
