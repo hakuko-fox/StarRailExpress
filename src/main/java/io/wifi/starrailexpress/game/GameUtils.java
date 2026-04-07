@@ -88,6 +88,7 @@ public class GameUtils {
     public static ArrayList<BlockPos> resetPoints = new ArrayList<>();
     public static ArrayList<ServerTaskInfoClasses.ServerTaskInfo> serverTaskQueue = new ArrayList<>();
     public static ArrayList<ServerTaskInfoClasses.ServerTaskInfo> serverAsynTaskLists = new ArrayList<>();
+    private static Set<UUID> forcedReadyPlayers;
     public static boolean isStartingGame = false;
 
     public static void limitPlayerToBox(ServerPlayer player, AABB box) {
@@ -230,9 +231,7 @@ public class GameUtils {
             ServerPlayNetworking.send(player, new CloseUiPayload());
         }
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(world);
-        AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
-        int playerCount = Math.toIntExact(players.stream()
-                .filter(serverPlayerEntity -> (areas.getReadyArea().contains(serverPlayerEntity.position()))).count());
+        int playerCount = getStartingPlayers(world).size();
         game.gameMode = (gameMode);
         SREGameTimeComponent.KEY.get(world).setResetTime(time);
         RefugeeComponent.KEY.get(world).reset();
@@ -245,6 +244,7 @@ public class GameUtils {
             game.setGameStatus(SREGameWorldComponent.GameStatus.STARTING);
 
         } else {
+            clearForcedReadyPlayers();
             for (ServerPlayer player : players) {
                 player.displayClientMessage(
                         Component.translatable("game.start_error.not_enough_players", gameMode.minPlayerCount), true);
@@ -277,7 +277,8 @@ public class GameUtils {
         // AreasWorldComponent.KEY.get(serverWorld);
 
         RoleMethodDispatcher.onStartGame(serverWorld);
-        ArrayList<ServerPlayer> readyPlayerList = new ArrayList<>(getReadyPlayerList(serverWorld));
+        ArrayList<ServerPlayer> readyPlayerList = new ArrayList<>(getStartingPlayers(serverWorld));
+        clearForcedReadyPlayers();
         // serverWorld.setWeatherParameters(0, -1, true, true);
         List<ServerPlayer> players = new ArrayList<>(serverWorld.getServer().getPlayerList().getPlayers());
         // 在分配角色前将所有玩家设置为冒险模式，并且resetPlayer
@@ -618,6 +619,31 @@ public class GameUtils {
 
         gameComponent.setJumpAvailable(areas.canJump);
         gameComponent.setOutsideSoundsAvailable(areas.haveOutsideSound);
+    }
+
+    public static void setForcedReadyPlayers(Collection<UUID> playerIds) {
+        if (playerIds == null || playerIds.isEmpty()) {
+            forcedReadyPlayers = null;
+            return;
+        }
+        forcedReadyPlayers = new LinkedHashSet<>(playerIds);
+    }
+
+    public static void clearForcedReadyPlayers() {
+        forcedReadyPlayers = null;
+    }
+
+    private static List<ServerPlayer> getStartingPlayers(ServerLevel serverWorld) {
+        if (forcedReadyPlayers != null && !forcedReadyPlayers.isEmpty()) {
+            List<ServerPlayer> selected = forcedReadyPlayers.stream()
+                    .map(serverWorld.getServer().getPlayerList()::getPlayer)
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (!selected.isEmpty()) {
+                return selected;
+            }
+        }
+        return getReadyPlayerList(serverWorld);
     }
 
     private static List<ServerPlayer> getReadyPlayerList(ServerLevel serverWorld) {

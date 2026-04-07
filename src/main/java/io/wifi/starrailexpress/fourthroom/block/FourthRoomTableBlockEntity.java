@@ -1,9 +1,15 @@
 package io.wifi.starrailexpress.fourthroom.block;
 
+import io.wifi.starrailexpress.api.SREGameModes;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.fourthroom.effect.EffectEvent;
 import io.wifi.starrailexpress.fourthroom.effect.EffectQueue;
 import io.wifi.starrailexpress.fourthroom.effect.TableEffectEvents;
+import io.wifi.starrailexpress.fourthroom.game.FourthRoomGameManager;
+import io.wifi.starrailexpress.fourthroom.game.FourthRoomSavedData;
 import io.wifi.starrailexpress.fourthroom.network.FourthRoomTableEffectsPayload;
+import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -19,11 +25,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -98,16 +106,74 @@ public class FourthRoomTableBlockEntity extends BlockEntity {
         if (level == null || level.isClientSide) return;
 
         UUID uuid = player.getUUID();
+        boolean joined = false;
         if (seatedPlayers.contains(uuid)) {
             seatedPlayers.remove(uuid);
             player.displayClientMessage(Component.literal("§e[第四房间] §f已离开牌桌"), true);
         } else if (seatedPlayers.size() < MAX_SEATED_PLAYERS) {
             seatedPlayers.add(uuid);
+            joined = true;
             player.displayClientMessage(Component.literal("§e[第四房间] §f已加入牌桌 (" + seatedPlayers.size() + "/" + MAX_SEATED_PLAYERS + ")"), true);
         } else {
             player.displayClientMessage(Component.literal("§e[第四房间] §c当前牌桌只支持双人对战"), true);
         }
+        if (joined) {
+            tryStartTableMatch();
+        }
         sync();
+    }
+
+    private void tryStartTableMatch() {
+        if (!(level instanceof ServerLevel serverLevel) || seatedPlayers.size() < MAX_SEATED_PLAYERS) {
+            return;
+        }
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(serverLevel);
+        if (gameWorld.getGameStatus() != SREGameWorldComponent.GameStatus.INACTIVE) {
+            notifySeatedPlayers(serverLevel, Component.literal("§e[第四房间] §c当前已有其他对局正在运行"));
+            return;
+        }
+        if (!isSceneTable(serverLevel)) {
+            notifySeatedPlayers(serverLevel, Component.literal("§e[第四房间] §c这张牌桌未绑定四号房场景，先生成测试场景"));
+            return;
+        }
+
+        List<ServerPlayer> participants = seatedPlayers.stream()
+                .map(serverLevel.getServer().getPlayerList()::getPlayer)
+                .filter(Objects::nonNull)
+                .toList();
+        if (participants.size() < MAX_SEATED_PLAYERS) {
+            notifySeatedPlayers(serverLevel, Component.literal("§e[第四房间] §c有玩家不在线，无法开始双人对局"));
+            return;
+        }
+
+        BlockPos lobbyPos = FourthRoomSavedData.get(serverLevel).sceneLayout.lobbyPos;
+        for (int index = 0; index < participants.size(); index++) {
+            ServerPlayer participant = participants.get(index);
+            double xOffset = index == 0 ? -0.85D : 0.85D;
+            participant.teleportTo(serverLevel, lobbyPos.getX() + 0.5D + xOffset, lobbyPos.getY(), lobbyPos.getZ() + 0.5D,
+                    participant.getYRot(), participant.getXRot());
+        }
+
+        FourthRoomGameManager.setRequestedPlayerCount(serverLevel, MAX_SEATED_PLAYERS);
+        GameUtils.setForcedReadyPlayers(seatedPlayers);
+        GameUtils.startGame(serverLevel, SREGameModes.FOURTH_ROOM,
+                GameConstants.getInTicks(SREGameModes.FOURTH_ROOM.defaultStartTime, 0));
+        notifySeatedPlayers(serverLevel, Component.literal("§e[第四房间] §f2/2 已就绪，正在开启双人对战"));
+    }
+
+    private boolean isSceneTable(ServerLevel serverLevel) {
+        FourthRoomSavedData data = FourthRoomSavedData.get(serverLevel);
+        return data.sceneLayout.hasRooms() && data.sceneLayout.rooms.stream()
+                .anyMatch(room -> room.center().equals(getBlockPos()));
+    }
+
+    private void notifySeatedPlayers(ServerLevel serverLevel, Component message) {
+        for (UUID seatedPlayer : seatedPlayers) {
+            ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(seatedPlayer);
+            if (player != null) {
+                player.displayClientMessage(message, true);
+            }
+        }
     }
 
     /**
