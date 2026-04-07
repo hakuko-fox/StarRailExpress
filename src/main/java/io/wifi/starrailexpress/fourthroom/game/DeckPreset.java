@@ -59,10 +59,13 @@ public enum DeckPreset {
             deck.add(new CardInstance(BasicCard.DEATH.id(), false));
             deck.add(new CardInstance(BasicCard.DEATH.id(), false));
             deck.add(new CardInstance(BasicCard.DEATH.id(), false));
-            deck.add(new CardInstance(BasicCard.DEATH.id(), false));
             // 净化 x1
             deck.add(new CardInstance(BasicCard.CLEANSE.id(), false));
+            deck.add(new CardInstance(BasicCard.CLEANSE.id(), false));
+            deck.add(new CardInstance(BasicCard.CLEANSE.id(), false));
             // 抽底（金卡）x1
+            deck.add(new CardInstance(BasicCard.BOTTOM_DRAW.id(), true));
+            deck.add(new CardInstance(BasicCard.BOTTOM_DRAW.id(), true));
             deck.add(new CardInstance(BasicCard.BOTTOM_DRAW.id(), true));
             // 夺取 x3 (更多抢夺)
             deck.add(new CardInstance(BasicCard.SEIZE.id(), false));
@@ -71,9 +74,13 @@ public enum DeckPreset {
             // 跳过 x2
             deck.add(new CardInstance(BasicCard.SKIP.id(), false));
             deck.add(new CardInstance(BasicCard.SKIP.id(), false));
+            deck.add(new CardInstance(BasicCard.SKIP.id(), false));
+            deck.add(new CardInstance(BasicCard.SKIP.id(), false));
             // 否决 x1
             deck.add(new CardInstance(BasicCard.VETO.id(), false));
+            deck.add(new CardInstance(BasicCard.VETO.id(), false));
             // 点杀 x2 + 点杀（金卡）x1
+            deck.add(new CardInstance(BasicCard.POINT_KILL.id(), false));
             deck.add(new CardInstance(BasicCard.POINT_KILL.id(), false));
             deck.add(new CardInstance(BasicCard.POINT_KILL.id(), false));
             deck.add(new CardInstance(BasicCard.POINT_KILL.id(), true));
@@ -82,8 +89,11 @@ public enum DeckPreset {
             deck.add(new CardInstance(BasicCard.DISMANTLE.id(), false));
             // 窥视 x1
             deck.add(new CardInstance(BasicCard.PEEK.id(), false));
+            deck.add(new CardInstance(BasicCard.PEEK.id(), true));
+            deck.add(new CardInstance(BasicCard.PEEK.id(), false));
             // 命格 x1 (减少防御)
             deck.add(new CardInstance(BasicCard.LIFE.id(), false));
+            deck.add(new CardInstance(BasicCard.LIFE.id(), true));
             return deck;
         }
     },

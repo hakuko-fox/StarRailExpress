@@ -111,6 +111,9 @@ public class FourthRoomTableBlockEntityRenderer implements BlockEntityRenderer<F
             renderCard(entity, poseStack, bufferSource, 0.5D + offset.x, 0.94D + index * 0.004D,
                     0.5D + offset.z, card.highlight() ? 0.24F : 0.22F, card.highlight(), zRot,
                     OverlayTexture.NO_OVERLAY);
+            // Render card name above the card
+            renderBillboardText(poseStack, bufferSource, Component.literal(card.titleText()), offset.x, 1.08D, offset.z,
+                    card.accentColor(), 0.015F);
         }
     }
 

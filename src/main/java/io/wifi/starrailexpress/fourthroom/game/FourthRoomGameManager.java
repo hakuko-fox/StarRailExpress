@@ -192,6 +192,12 @@ public final class FourthRoomGameManager {
                 playerName(resolvedTarget),
                 instance.gold() ? "金卡" : "");
         emitCardPlayEffects(playerState.roomId, playerId, cardDisplayName(card), instance.gold(), card.isSkill());
+        // Add the played card to the table display
+        FourthRoomTableBlockEntity table = getRoomTable(playerState.roomId, roomManager.buildRoomDefinitions());
+        if (table != null) {
+            int color = instance.gold() ? 0xFFF2C56A : (card.isSkill() ? 0xFF6FD6C5 : 0xFFF08B55);
+            table.addTableCard(cardDisplayName(card), playerName(playerId) + " 使用", color, instance.gold());
+        }
         data.setDirty(true);
         syncMatchState();
         return true;
