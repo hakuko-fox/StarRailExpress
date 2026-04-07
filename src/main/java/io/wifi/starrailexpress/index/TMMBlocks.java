@@ -642,6 +642,11 @@ public interface TMMBlocks {
                             .noOcclusion()),
             TMMItems.DECORATION_GROUP);
 
+    // 第四房间牌桌
+    Block FOURTH_ROOM_TABLE = registrar.createWithItem("fourth_room_table",
+            new io.wifi.starrailexpress.fourthroom.block.FourthRoomTableBlock(),
+            TMMItems.EQUIPMENT_GROUP);
+
     private static Block createBranch(String name, Block wood, BlockRegistrar registrar) {
         return registrar.createWithItem(name,
                 new BranchBlock(BlockBehaviour.Properties.ofFullCopy(wood).mapColor(wood.defaultMapColor())),

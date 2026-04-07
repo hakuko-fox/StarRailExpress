@@ -43,6 +43,7 @@ public interface RoleComponent extends AutoSyncedComponent {
         buf.writeNbt(tag);
     }
 
+    @Override
     @CheckEnvironment(EnvType.CLIENT)
     default void applySyncPacket(RegistryFriendlyByteBuf buf) {
         CompoundTag tag = buf.readNbt();

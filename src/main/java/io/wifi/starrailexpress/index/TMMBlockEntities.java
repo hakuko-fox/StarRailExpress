@@ -27,6 +27,11 @@ public interface TMMBlockEntities {
     BlockEntityType<SecurityMonitorBlockEntity> SECURITY_MONITOR = registrar.create("security_monitor", BlockEntityType.Builder.of(SecurityMonitorBlockEntity::new, TMMBlocks.SECURITY_MONITOR));
     BlockEntityType<ToiletBlockEntity> TOILET = registrar.create("toilet", BlockEntityType.Builder.of(ToiletBlockEntity::create, TMMBlocks.LIGHT_TOILET, TMMBlocks.DARK_TOILET));
 
+    BlockEntityType<io.wifi.starrailexpress.fourthroom.block.FourthRoomTableBlockEntity> FOURTH_ROOM_TABLE =
+            registrar.create("fourth_room_table", BlockEntityType.Builder.of(
+                    io.wifi.starrailexpress.fourthroom.block.FourthRoomTableBlockEntity::new,
+                    TMMBlocks.FOURTH_ROOM_TABLE));
+
     static void initialize() {
         registrar.registerEntries();
     }

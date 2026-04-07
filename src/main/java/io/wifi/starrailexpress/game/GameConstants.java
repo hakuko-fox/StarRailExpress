@@ -27,12 +27,6 @@ public class GameConstants {
         return SREConfig.instance().blackoutCooldownGlobal * 20;
     }
 
-    // Role Configuration (Server-side, mutable via command)
-    public class RoleConfig {
-        public static int killerCount = 1;
-        public static int vigilanteCount = 1;
-    }
-
     // Blocks
     public static int DOOR_AUTOCLOSE_TIME = getInTicks(0, 5);
 

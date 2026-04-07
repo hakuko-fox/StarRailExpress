@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.client;
 
 import io.wifi.starrailexpress.cca.MapVotingComponent;
+import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.gui.ScopeOverlayRenderer;
 import io.wifi.starrailexpress.client.gui.screen.MapSelectorScreen;
@@ -10,6 +11,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
@@ -59,11 +61,16 @@ public class InputHandler {
         }
 
         if (openFourthRoomScreenKeybind.consumeClick()) {
+            if (client.screen instanceof FourthRoomBattleScreen) {
+                client.setScreen(null);
+                return;
+            }
             if (FourthRoomClientState.snapshot().active()) {
-                if (client.screen instanceof FourthRoomBattleScreen) {
-                    client.setScreen(null);
-                } else {
+                var lookedTable = FourthRoomCameraDirector.getLookedTable(client);
+                if (lookedTable != null && lookedTable.linkedRoomId() == FourthRoomClientState.snapshot().viewer().roomId()) {
                     client.setScreen(new FourthRoomBattleScreen());
+                } else if (client.player != null) {
+                    client.player.displayClientMessage(Component.literal("请先看向自己房间的牌桌"), true);
                 }
             }
         }

@@ -130,8 +130,8 @@ public class PlayerRoleWeightManager {
      * Get Role type(int) for a role
      * 
      * @param role
-     * @return - 0: Innocent and Cannot Use Killer
-     *         - 1: Innocent but can Use Killer
+     * @return - -1: Unknown 
+     *         - 1: Innocent
      *         - 2: Neturals but not for killer
      *         - 3: Neturals for killer
      *         - 4: Killer
@@ -163,7 +163,6 @@ public class PlayerRoleWeightManager {
         if (role.canUseKiller()) {
             return 4;
         }
-
         return -1; // Unknown
     }
 

@@ -517,7 +517,6 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             });
             return true;
         }
-
         // if (abilityComponent.cooldown > 0) {
         // return;
         // }

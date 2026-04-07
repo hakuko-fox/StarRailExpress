@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "starrailexpress:block/fourth_room_table"
+      }
+    }
+  ]
+}

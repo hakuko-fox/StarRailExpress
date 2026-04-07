@@ -21,7 +21,10 @@ import io.wifi.starrailexpress.client.gui.screen.PlayerStatsScreen;
 import io.wifi.starrailexpress.client.gui.screen.ProgressionPassScreen;
 import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.WaypointHUD;
+import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
+import io.wifi.starrailexpress.client.render.block_entity.FourthRoomTableBlockEntityRenderer;
+import io.wifi.starrailexpress.fourthroom.network.FourthRoomTableEffectsPayload;
 import io.wifi.starrailexpress.fourthroom.network.FourthRoomStatePayload;
 import io.wifi.starrailexpress.client.model.GeneralModelLoadingPlugin;
 import io.wifi.starrailexpress.client.model.TMMModelLayers;
@@ -259,6 +262,7 @@ public class SREClient implements ClientModInitializer {
                 TMMBlockEntities.BEVERAGE_PLATE,
                 PlateBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.HORN, HornBlockEntityRenderer::new);
+        BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
 
         AmbienceUtil.registerBackgroundAmbience(
                 new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE, player -> gameComponent.isPsychoActive(), 20));
@@ -450,8 +454,13 @@ public class SREClient implements ClientModInitializer {
 
         SyncMapConfigPayload.registerReceiver();
         FourthRoomStatePayload.registerReceiver();
+        FourthRoomTableEffectsPayload.registerReceiver();
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomClientState.clear());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> FourthRoomClientState.clear());
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FourthRoomCameraDirector.clear());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            FourthRoomClientState.clear();
+            FourthRoomCameraDirector.clear();
+        });
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
@@ -638,6 +647,7 @@ public class SREClient implements ClientModInitializer {
             ScopeOverlayRenderer.renderScopeOverlay(guiGraphics, deltaTick);
             WaypointHUD.renderHUD(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
+            FourthRoomCameraDirector.renderOverlay(guiGraphics);
             // RoleUnlockHudRenderer.render(guiGraphics);
 
             // // 添加地图详情渲染
@@ -663,6 +673,7 @@ public class SREClient implements ClientModInitializer {
 
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            FourthRoomCameraDirector.tick(client);
             if (SREClient.gameComponent == null)
                 return;
 

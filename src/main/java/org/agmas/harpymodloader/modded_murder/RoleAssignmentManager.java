@@ -1,8 +1,7 @@
 package org.agmas.harpymodloader.modded_murder;
 
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.game.StarRailMurderGameMode;
-import io.wifi.starrailexpress.game.StarRailMurderGameMode.RoleInstant;
+import io.wifi.starrailexpress.game.utils.RoleInstance;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.Harpymodloader;
 
@@ -43,7 +42,7 @@ public class RoleAssignmentManager {
      * @param tryLevel       尝试匹配等级。0：完全相同，1：忽略中立阵营，2：包含平民，3：包括所有
      * @return
      */
-    public static boolean tryRemoveARole(SRERole companion, List<RoleInstant> expandedRoles,
+    public static boolean tryRemoveARole(SRERole companion, List<RoleInstance> expandedRoles,
             List<SRERole> companionRoles,
             List<SRERole> companedRoles, int tryLevel) {
         final boolean[] isRemoved = { false };
@@ -89,10 +88,10 @@ public class RoleAssignmentManager {
      * @param roles 原始角色列表
      * @return 展开后的角色列表（包含所有关联角色，允许重复）
      */
-    public static List<StarRailMurderGameMode.RoleInstant> expandWithCompanionRoles(
-            List<StarRailMurderGameMode.RoleInstant> roles) {
-        List<StarRailMurderGameMode.RoleInstant> oldRoles = new ArrayList<>(roles);
-        List<StarRailMurderGameMode.RoleInstant> expandedRoles = new ArrayList<>(roles);
+    public static List<RoleInstance> expandWithCompanionRoles(
+            List<RoleInstance> roles) {
+        List<RoleInstance> oldRoles = new ArrayList<>(roles);
+        List<RoleInstance> expandedRoles = new ArrayList<>(roles);
         List<SRERole> companionRoles = new ArrayList<>();
         List<SRERole> companedRoles = new ArrayList<>();
 
@@ -118,7 +117,7 @@ public class RoleAssignmentManager {
         }
 
         expandedRoles.addAll(
-                companionRoles.stream().map(r -> new StarRailMurderGameMode.RoleInstant(UUID.randomUUID(), r))
+                companionRoles.stream().map(r -> new RoleInstance(UUID.randomUUID(), r))
                         .toList());
         return expandedRoles;
     }

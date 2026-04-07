@@ -6,6 +6,7 @@ import org.agmas.noellesroles.client.hud.roles.*;
 public class OtherRolesRegister {
 
     public static void registerSons() {
+        CustomPendingHud.register();
         AdmirerHud.register();
         AvengerHud.register();
         BomberHud.register();

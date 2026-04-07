@@ -355,43 +355,43 @@ public class GameUtils {
                 }
             }
         }
-        addItemCooldowns(serverWorld);
+        int SAFE_TIME_COOLDOWN = SREConfig.instance().safeTimeCooldown * 20;
+        addItemCooldowns(serverWorld, SAFE_TIME_COOLDOWN);
         OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(serverWorld);
         // --- 结束新增统计数据更新逻辑 ---
         executeFunction(serverWorld.getServer().createCommandSourceStack(),
                 "harpymodloader:start_game_" + AreasWorldComponent.KEY.get(serverWorld).mapName);
-        OnTrainAreaHaveReseted.EVENT.invoker().onWorldHaveReseted(serverWorld);
+        OnTrainAreaHaveReseted.EVENT.invoker().onWorldHaveInited(serverWorld);
     }
 
-    public static void addItemCooldowns(ServerLevel world) {
+    public static void addItemCooldowns(ServerLevel world, int time) {
         for (ServerPlayer player : world.players()) {
             var cooldowns = player.getCooldowns();
             var items = new ArrayList<>(MCItemsUtils.getItemsByTag(player.serverLevel(), TMMItemTags.GUNS));
             // Noellesroles.LOGGER.info("itemSize:" + items.size());
-            int SAFE_TIME_COOLDOWN = SREConfig.instance().safeTimeCooldown * 20;
             items.forEach((item) -> {
                 cooldowns.addCooldown(item,
-                        (Integer) SAFE_TIME_COOLDOWN);
+                        (Integer) time);
             });
-            cooldowns.addCooldown(ModItems.THROWING_KNIFE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(ModItems.NINJA_KNIFE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(ModItems.NINJA_SHURIKEN, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(Items.TRIDENT, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(TMMItems.GRENADE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(TMMItems.PSYCHO_MODE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(ModItems.SP_KNIFE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(ModItems.STALKER_KNIFE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(ModItems.STALKER_KNIFE_OFFHAND, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(TMMItems.NUNCHUCK, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(TMMItems.KNIFE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(ModItems.FAKE_REVOLVER, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(Items.CLOCK, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(HSRItems.TOXIN, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(HSRItems.ANTIDOTE, SAFE_TIME_COOLDOWN);
-            cooldowns.addCooldown(TMMItems.SNIPER_RIFLE, SAFE_TIME_COOLDOWN);
+            cooldowns.addCooldown(ModItems.THROWING_KNIFE, time);
+            cooldowns.addCooldown(ModItems.NINJA_KNIFE, time);
+            cooldowns.addCooldown(ModItems.NINJA_SHURIKEN, time);
+            cooldowns.addCooldown(Items.TRIDENT, time);
+            cooldowns.addCooldown(TMMItems.GRENADE, time);
+            cooldowns.addCooldown(TMMItems.PSYCHO_MODE, time);
+            cooldowns.addCooldown(ModItems.SP_KNIFE, time);
+            cooldowns.addCooldown(ModItems.STALKER_KNIFE, time);
+            cooldowns.addCooldown(ModItems.STALKER_KNIFE_OFFHAND, time);
+            cooldowns.addCooldown(TMMItems.NUNCHUCK, time);
+            cooldowns.addCooldown(TMMItems.KNIFE, time);
+            cooldowns.addCooldown(ModItems.FAKE_REVOLVER, time);
+            cooldowns.addCooldown(Items.CLOCK, time);
+            cooldowns.addCooldown(HSRItems.TOXIN, time);
+            cooldowns.addCooldown(HSRItems.ANTIDOTE, time);
+            cooldowns.addCooldown(TMMItems.SNIPER_RIFLE, time);
             player.addEffect(new MobEffectInstance(
                     ModEffects.NO_COLLIDE,
-                    (int) (SAFE_TIME_COOLDOWN), // 持续时间 30s（tick）
+                    (int) (time), // 持续时间 30s（tick）
                     0, // 等级（0 = 速度 I）
                     true, // ambient（环境效果，如信标）
                     false, // showParticles（显示粒子）
@@ -399,7 +399,7 @@ public class GameUtils {
             ));
             player.addEffect(new MobEffectInstance(
                     ModEffects.SKILL_BANED,
-                    (int) (SAFE_TIME_COOLDOWN), // 持续时间 30s（tick）
+                    (int) (time), // 持续时间 30s（tick）
                     0, // 等级（0 = 速度 I）
                     true, // ambient（环境效果，如信标）
                     false, // showParticles（显示粒子）

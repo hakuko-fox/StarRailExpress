@@ -52,7 +52,6 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.roles.coroner.BodyDeathReasonComponent;
 import org.agmas.noellesroles.roles.executioner.ExecutionerPlayerComponent;
-import org.agmas.noellesroles.roles.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.roles.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.roles.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.roles.voodoo.VoodooPlayerComponent;
@@ -483,12 +482,9 @@ public class ModPacketsReciever {
             }
           }
         });
-    ServerPlayNetworking.registerGlobalReceiver(GamblerSelectRoleC2SPacket.ID, (payload, context) -> {
-      context.server().execute(() -> {
-        GamblerPlayerComponent component = GamblerPlayerComponent.KEY.get(context.player());
-        component.selectRole(payload.roleId());
-      });
-    });
+    ServerPlayNetworking.registerGlobalReceiver(GamblerSelectRoleC2SPacket.ID,
+        new GamblerSelectRoleC2SPacket.Receiver());
+        
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BroadcasterC2SPacket.ID,
         (payload, context) -> {
           SREAbilityPlayerComponent abilityPlayerComponent = SREAbilityPlayerComponent.KEY
@@ -692,21 +688,23 @@ public class ModPacketsReciever {
         });
 
     // 苦力怕技能包处理
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.CREEPER_ABILITY_PACKET, (payload, context) -> {
-      ServerPlayer player = context.player();
-      SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(player.level());
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.CREEPER_ABILITY_PACKET,
+        (payload, context) -> {
+          ServerPlayer player = context.player();
+          SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+              .get(player.level());
 
-      if (!gameWorldComponent.isSkillAvailable) {
-        player.displayClientMessage(
-            Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
-        return;
-      }
+          if (!gameWorldComponent.isSkillAvailable) {
+            player.displayClientMessage(
+                Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
+            return;
+          }
 
-      if (gameWorldComponent.isRole(player, ModRoles.CREEPER)) {
-        CreeperPlayerComponent creeperComponent = CreeperPlayerComponent.KEY.get(player);
-        creeperComponent.ignite();
-      }
-    });
+          if (gameWorldComponent.isRole(player, ModRoles.CREEPER)) {
+            CreeperPlayerComponent creeperComponent = CreeperPlayerComponent.KEY.get(player);
+            creeperComponent.ignite();
+          }
+        });
   }
 
 }

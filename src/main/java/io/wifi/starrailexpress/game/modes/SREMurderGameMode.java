@@ -1,4 +1,4 @@
-package io.wifi.starrailexpress.game;
+package io.wifi.starrailexpress.game.modes;
 
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.SRERole;
@@ -6,6 +6,9 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.cca.SREPlayerProgressionComponent.FactionCardType;
 import io.wifi.starrailexpress.event.AllowGameEnd;
+import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.impl.util.log.Log;
@@ -18,6 +21,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.RoleWeightedUtil;
@@ -36,9 +40,13 @@ import org.agmas.noellesroles.commands.BroadcastCommand;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class StarRailMurderGameMode extends GameMode {
-    public StarRailMurderGameMode(ResourceLocation identifier) {
+public class SREMurderGameMode extends GameMode {
+    public SREMurderGameMode(ResourceLocation identifier) {
         super(identifier, 10, 6);
+    }
+
+    public SREMurderGameMode(ResourceLocation identifier, int defaultStartTime, int minPlayerCount) {
+        super(identifier, defaultStartTime, minPlayerCount);
     }
 
     @Override
@@ -86,7 +94,7 @@ public class StarRailMurderGameMode extends GameMode {
         assignRole(serverWorld, gameWorldComponent, players);
     }
 
-    private void assignRole(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+    public static void assignRole(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         // 新的模块化角色分配流程
         Map<Player, SRERole> roleAssignments = assignRolesToPlayers(serverWorld, players);
@@ -142,7 +150,7 @@ public class StarRailMurderGameMode extends GameMode {
     }
 
     // 执行指定函数的辅助方法
-    private void executeFunction(CommandSourceStack source, String function) {
+    public void executeFunction(CommandSourceStack source, String function) {
         try {
             source.getServer().getCommands().performPrefixedCommand(source, "function " + function);
         } catch (Exception e) {
@@ -151,7 +159,7 @@ public class StarRailMurderGameMode extends GameMode {
     }
 
     // 将玩家添加到队伍的辅助方法
-    private void addPlayersToTeam(CommandSourceStack source, List<ServerPlayer> players, String teamName) {
+    public void addPlayersToTeam(CommandSourceStack source, List<ServerPlayer> players, String teamName) {
         try {
             // 首先尝试创建队伍（如果不存在）
             source.getServer().getCommands().performPrefixedCommand(source,
@@ -166,7 +174,7 @@ public class StarRailMurderGameMode extends GameMode {
     }
 
     // 将玩家从队伍中移除的辅助方法
-    private void removePlayersFromTeam(CommandSourceStack source, String teamName) {
+    public void removePlayersFromTeam(CommandSourceStack source, String teamName) {
         try {
             // 将所有玩家从队伍中移除
             source.getServer().getCommands().performPrefixedCommand(source, "team empty " + teamName);
@@ -178,7 +186,7 @@ public class StarRailMurderGameMode extends GameMode {
         }
     }
 
-    public void assignModifiers(int desiredModifierCount, ServerLevel serverWorld,
+    public static void assignModifiers(int desiredModifierCount, ServerLevel serverWorld,
             SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverWorld);
@@ -304,7 +312,64 @@ public class StarRailMurderGameMode extends GameMode {
      * 新的模块化角色分配方法
      * 处理强制角色、计算各类型角色数量、创建角色池、分配角色以及处理关联角色
      */
-    private Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
+    public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
+            int forcedRoleSize) {
+        // 第二步：创建角色池并分配角色
+        // 杀手池
+        RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
+                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        role.canUseKiller() &&
+                        !role.isInnocent() &&
+                        role != TMMRoles.CIVILIAN);
+
+        List<SRERole> assignedKillers = killerPool.selectRoles(killerCount);
+
+        // 警卫池 - 使用无限重复模式，因为警卫职业数量有限
+        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante", SRERole::isVigilanteTeam);
+        List<SRERole> assignedVigilantes = vigilantePool.selectRoles(vigilanteCount);
+
+        // 中立池
+        RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
+                role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        ((!role.canUseKiller() &&
+                                !role.isInnocent()) || role.isNeutrals())
+                        &&
+                        role != TMMRoles.CIVILIAN));
+        List<SRERole> assignedNatures = neutralsPool.selectRoles(neutralsCount);
+
+        // 第三步：计算平民数量（只分配基础非平民角色，不包含补充的平民角色）
+        int assignedSpecialCount = assignedKillers.size() + assignedVigilantes.size() + assignedNatures.size();
+        int civilianCount = playerSize - assignedSpecialCount - forcedRoleSize;
+
+        // 平民池（只包含真正的"平民"角色，例如医生等）
+        RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
+                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        !role.isVigilanteTeam() &&
+                        !role.canUseKiller() &&
+                        !role.isNeutrals() &&
+                        role.isInnocent() &&
+                        role != TMMRoles.CIVILIAN);
+        civilianPool.setIgnoreRoleOccupiedCount(true);
+        List<SRERole> assignedCivilians = civilianPool.selectRoles(civilianCount);
+
+        // 第四步：合并所有分配的角色（包括处理关联角色）
+        List<SRERole> allRoles = new ArrayList<>();
+        allRoles.addAll(assignedKillers);
+        allRoles.addAll(assignedVigilantes);
+        allRoles.addAll(assignedNatures);
+        allRoles.addAll(assignedCivilians);
+
+        // 展开关联角色
+        List<RoleInstance> roleInstantList = new ArrayList<>();
+
+        for (SRERole role : allRoles) {
+            roleInstantList.add(new RoleInstance(UUID.randomUUID(), role));
+        }
+        List<RoleInstance> expandedRoles = RoleAssignmentManager.expandWithCompanionRoles(roleInstantList);
+        return expandedRoles;
+    }
+
+    private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
         Map<Player, SRERole> roleAssignments = new HashMap<>();
         for (Player player : players) {
             roleAssignments.put(player, null);
@@ -341,54 +406,9 @@ public class StarRailMurderGameMode extends GameMode {
         vigilanteCount = Math.max(0, vigilanteCount);
         neutralsCount = Math.max(0, neutralsCount);
 
-        // 第二步：创建角色池并分配角色
-        // 杀手池
-        RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        role.canUseKiller() &&
-                        !role.isInnocent() &&
-                        role != TMMRoles.CIVILIAN);
-
-        List<SRERole> assignedKillers = killerPool.selectRoles(killerCount);
-
-        // 警卫池 - 使用无限重复模式，因为警卫职业数量有限
-        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante", SRERole::isVigilanteTeam);
-        List<SRERole> assignedVigilantes = vigilantePool.selectRoles(vigilanteCount);
-
-        // 中立池
-        RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
-                role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        ((!role.canUseKiller() &&
-                                !role.isInnocent()) || role.isNeutrals())
-                        &&
-                        role != TMMRoles.CIVILIAN));
-        List<SRERole> assignedNatures = neutralsPool.selectRoles(neutralsCount);
-
-        // 第三步：计算平民数量（只分配基础非平民角色，不包含补充的平民角色）
-        int assignedSpecialCount = assignedKillers.size() + assignedVigilantes.size() + assignedNatures.size();
-        int civilianCount = players.size() - assignedSpecialCount - forcedRoles.size();
-
-        // 平民池（只包含真正的"平民"角色，例如医生等）
-        RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        !role.isVigilanteTeam() &&
-                        !role.canUseKiller() &&
-                        !role.isNeutrals() &&
-                        role.isInnocent() &&
-                        role != TMMRoles.CIVILIAN);
-        civilianPool.setIgnoreRoleOccupiedCount(true);
-        List<SRERole> assignedCivilians = civilianPool.selectRoles(civilianCount);
-
-        // 第四步：合并所有分配的角色（包括处理关联角色）
-        List<SRERole> allRoles = new ArrayList<>();
-        allRoles.addAll(assignedKillers);
-        allRoles.addAll(assignedVigilantes);
-        allRoles.addAll(assignedNatures);
-        allRoles.addAll(assignedCivilians);
-
-        // 展开关联角色
-        List<RoleInstant> roleInstantList = new ArrayList<>();
-
+        List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
+                forcedRoles.size());
+        RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色
         List<ServerPlayer> unassignedPlayers = new ArrayList<>();
         for (ServerPlayer player : players) {
@@ -396,13 +416,6 @@ public class StarRailMurderGameMode extends GameMode {
                 unassignedPlayers.add(player);
             }
         }
-
-        for (SRERole role : allRoles) {
-            roleInstantList.add(new RoleInstant(UUID.randomUUID(), role));
-        }
-        List<RoleInstant> expandedRoles = RoleAssignmentManager.expandWithCompanionRoles(roleInstantList);
-        Random random = new Random(serverWorld.getGameTime());
-
         // 保底
         for (var p : players) {
             if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(p.getUUID()))
@@ -418,7 +431,7 @@ public class StarRailMurderGameMode extends GameMode {
             }
         }
         // 创建权重分布用于分配展开后的角色
-        List<Map.Entry<RoleInstant, Float>> roleWeights = new ArrayList<>();
+        List<Map.Entry<RoleInstance, Float>> roleWeights = new ArrayList<>();
 
         for (var role : expandedRoles) {
             roleWeights.add(new AbstractMap.SimpleEntry<>(role,
@@ -436,7 +449,7 @@ public class StarRailMurderGameMode extends GameMode {
         {
             var roleSelectors = new HashMap<Integer, RoleWeightedUtil>();
             {
-                var roleIdToRoleMaps = new HashMap<Integer, HashMap<RoleInstant, Float>>();
+                var roleIdToRoleMaps = new HashMap<Integer, HashMap<RoleInstance, Float>>();
                 for (var entry : hashMap.entrySet()) {
                     var role = entry.getKey();
                     Float roleWeight = entry.getValue();
@@ -462,7 +475,7 @@ public class StarRailMurderGameMode extends GameMode {
                     var roleSelector = roleSelectors.get(roleType);
                     if (roleSelector == null)
                         continue;
-                    RoleInstant roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
+                    RoleInstance roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
                     SRERole selectedRole = null;
                     if (roleInstant != null) {
                         hashMap.remove(roleInstant);
@@ -495,7 +508,7 @@ public class StarRailMurderGameMode extends GameMode {
 
         Collections.shuffle(unassignedPlayers);
         while (unassignedPlayers.size() > 0 && roleSelector.size() > 0) {
-            RoleInstant roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
+            RoleInstance roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
             SRERole selectedRole = null;
             if (roleInstant != null) {
                 selectedRole = roleInstant.role();
@@ -518,14 +531,10 @@ public class StarRailMurderGameMode extends GameMode {
         return roleAssignments;
     }
 
-    private Player pickPlayerWithProgressBias(ServerLevel serverWorld, List<ServerPlayer> unassignedPlayers,
+    public static Player pickPlayerWithProgressBias(ServerLevel serverWorld, List<ServerPlayer> unassignedPlayers,
             int selectedRoleType) {
         // 目前采用forceTeam逻辑所以无需判断
         return PlayerRoleAssigner.pickByInverseWeight(unassignedPlayers, selectedRoleType);
-    }
-
-    public record RoleInstant(UUID uuid, SRERole role) {
-
     }
 
     @Override
@@ -609,8 +618,7 @@ public class StarRailMurderGameMode extends GameMode {
         }
 
         // game end on win and display
-        GameUtils.WinStatus modifiedWinStatus = AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld,
-                winStatus, false);
+        GameUtils.WinStatus modifiedWinStatus = allowGameEnd(serverWorld, winStatus, false, gameWorldComponent);
         if (!modifiedWinStatus.equals(GameUtils.WinStatus.NOT_MODIFY)) {
             winStatus = modifiedWinStatus;
         }
@@ -621,4 +629,9 @@ public class StarRailMurderGameMode extends GameMode {
         }
     }
 
+    public GameUtils.WinStatus allowGameEnd(ServerLevel serverWorld, GameUtils.WinStatus winStatus,
+            boolean isLooseEndsMode, SREGameWorldComponent gameWorldComponent) {
+        return AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld,
+                winStatus, false);
+    }
 }

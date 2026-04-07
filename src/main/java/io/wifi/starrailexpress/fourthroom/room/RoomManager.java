@@ -1,13 +1,16 @@
 package io.wifi.starrailexpress.fourthroom.room;
 
+import io.wifi.starrailexpress.fourthroom.block.FourthRoomTableBlock;
 import io.wifi.starrailexpress.fourthroom.config.FourthRoomConfig;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomPlayerState;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomRoomState;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomSavedData;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomTeam;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +43,8 @@ public final class RoomManager {
                 int xOffset = (int) Math.round((column - (columns - 1) / 2.0D) * config.roomSpacing);
                 int zOffset = (int) Math.round((row - (rows - 1) / 2.0D) * config.roomSpacing);
                 BlockPos center = lobby.offset(xOffset, 0, zOffset);
-                rooms.add(new RoomDefinition(index, center, center.offset(-1, 0, 0), center.offset(1, 0, 0)));
+                Direction facing = doorFacing(center, lobby);
+                rooms.add(new RoomDefinition(index, center, seatPos(center, facing, true), seatPos(center, facing, false)));
                 index++;
             }
         }
@@ -117,8 +121,9 @@ public final class RoomManager {
                     continue;
                 }
                 BlockPos seatPos = index == 0 ? definition.seatA() : definition.seatB();
+                float yRot = lookYaw(seatPos, definition.center());
                 player.teleportTo(level, seatPos.getX() + 0.5D, seatPos.getY() + 0.1D, seatPos.getZ() + 0.5D,
-                        player.getYRot(), player.getXRot());
+                    yRot, 12.0F);
             }
         }
     }
@@ -237,5 +242,31 @@ public final class RoomManager {
     private void addOccupant(FourthRoomRoomState room, FourthRoomPlayerState state) {
         room.occupants.add(state.playerId);
         state.roomId = room.roomId;
+    }
+
+    private Direction doorFacing(BlockPos roomCenter, BlockPos lobbyCenter) {
+        int dx = lobbyCenter.getX() - roomCenter.getX();
+        int dz = lobbyCenter.getZ() - roomCenter.getZ();
+        if (Math.abs(dx) >= Math.abs(dz)) {
+            return dx >= 0 ? Direction.EAST : Direction.WEST;
+        }
+        return dz >= 0 ? Direction.SOUTH : Direction.NORTH;
+    }
+
+    private BlockPos seatPos(BlockPos center, Direction facing, boolean firstSeat) {
+        int localX = firstSeat ? -2 : 2;
+        return switch (facing) {
+            case SOUTH -> center.offset(-localX, 0, 0);
+            case EAST -> center.offset(0, 0, localX);
+            case WEST -> center.offset(0, 0, -localX);
+            case NORTH -> center.offset(localX, 0, 0);
+            default -> center.offset(localX, 0, 0);
+        };
+    }
+
+    private float lookYaw(BlockPos from, BlockPos to) {
+        double dx = (to.getX() + 0.5D) - (from.getX() + 0.5D);
+        double dz = (to.getZ() + 0.5D) - (from.getZ() + 0.5D);
+        return (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
     }
 }

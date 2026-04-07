@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.fourthroom.scene;
 
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
+import io.wifi.starrailexpress.fourthroom.block.FourthRoomTableBlock;
 import io.wifi.starrailexpress.fourthroom.config.FourthRoomConfig;
 import io.wifi.starrailexpress.fourthroom.game.FourthRoomSavedData;
 import io.wifi.starrailexpress.fourthroom.room.RoomDefinition;
@@ -70,7 +71,8 @@ public final class FourthRoomSceneGenerator {
                 int x = lobbyFloorCenter.getX() + (int) Math.round(centeredColumn * spacing);
                 int z = lobbyFloorCenter.getZ() + (int) Math.round(centeredRow * spacing);
                 BlockPos center = new BlockPos(x, lobbyFloorCenter.getY(), z);
-                rooms.add(new RoomDefinition(roomId, center, center.offset(-2, 0, 0), center.offset(2, 0, 0)));
+                Direction facing = doorFacing(center, lobbyFloorCenter);
+                rooms.add(new RoomDefinition(roomId, center, seatPos(center, facing, true), seatPos(center, facing, false)));
                 roomId++;
             }
         }
@@ -140,7 +142,9 @@ public final class FourthRoomSceneGenerator {
         }
         carveDoor(roomDoorCenter(room, lobbyFloorCenter), doorFacing(room, lobbyFloorCenter));
         placeWindows(center, lobbyFloorCenter, window);
-        setBlock(center, TMMBlocks.COFFEE_TABLE.defaultBlockState());
+        Direction tableFacing = doorFacing(room, lobbyFloorCenter);
+        setBlock(center, TMMBlocks.FOURTH_ROOM_TABLE.defaultBlockState().setValue(FourthRoomTableBlock.FACING, tableFacing));
+        FourthRoomTableBlock.placeStructure(level, center, tableFacing);
         setBlock(room.seatA(), TMMBlocks.BAR_STOOL.defaultBlockState());
         setBlock(room.seatB(), TMMBlocks.BAR_STOOL.defaultBlockState());
         placeLight(center.offset(-3, 0, -3));
@@ -279,6 +283,18 @@ public final class FourthRoomSceneGenerator {
 
     private void placeLight(BlockPos floorPos) {
         setBlock(floorPos, Blocks.SEA_LANTERN.defaultBlockState());
+    }
+
+    private BlockPos seatPos(BlockPos center, Direction facing, boolean firstSeat) {
+        int localX = firstSeat ? -2 : 2;
+        BlockPos offset = switch (facing) {
+            case SOUTH -> center.offset(-localX, 0, 0);
+            case EAST -> center.offset(0, 0, localX);
+            case WEST -> center.offset(0, 0, -localX);
+            case NORTH -> center.offset(localX, 0, 0);
+            default -> center.offset(localX, 0, 0);
+        };
+        return offset;
     }
 
     private void fill(BlockPos from, BlockPos to, BlockState state) {

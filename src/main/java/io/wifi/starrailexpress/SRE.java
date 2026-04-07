@@ -25,7 +25,7 @@ import io.wifi.starrailexpress.event.EntityInteractionHandler;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.StarRailMurderGameMode;
+import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.fourthroom.network.*;
 import io.wifi.starrailexpress.index.*;
 import io.wifi.starrailexpress.network.*;
@@ -68,7 +68,7 @@ import java.util.function.Predicate;
 public class SRE extends StarRailExpressID implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static MinecraftServer SERVER;
-    public static StarRailMurderGameMode GAME;
+    public static SREMurderGameMode GAME;
     public static SREConfig CONFIG = new SREConfig();
     public static GameReplayManager REPLAY_MANAGER;
     public static final Networking NETWORKING = new Networking();
@@ -164,7 +164,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             SERVER = server;
             initConstants();
-            GAME = new StarRailMurderGameMode(SRE.id("murder"));
+            GAME = new SREMurderGameMode(SRE.id("murder"));
             ServerMapConfig.getInstance(server);
             net.exmo.sre.client.chat.ChatDialogueManager.getInstance(server);
             ServerTickEvents.START_SERVER_TICK.register(serv -> {
@@ -236,7 +236,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             AutoStartCommand.register(dispatcher);
             AutoShutdownWhenNotRunningCommand.register(dispatcher);
             LockToSupportersCommand.register(dispatcher);
-            SetRoleCountCommand.register(dispatcher);
             ConfigCommand.register(dispatcher);
             SwitchMapCommand.register(dispatcher);
             ReloadReadyAreaCommand.register(dispatcher);
@@ -334,6 +333,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PayloadTypeRegistry.playS2C().register(CloseUiPayload.ID, CloseUiPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(PlayerDeathPayload.ID, PlayerDeathPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(FourthRoomStatePayload.ID, FourthRoomStatePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(FourthRoomTableEffectsPayload.ID, FourthRoomTableEffectsPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenSkinScreenPaylod.ID, OpenSkinScreenPaylod.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenProgressionScreenPayload.ID, OpenProgressionScreenPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID,

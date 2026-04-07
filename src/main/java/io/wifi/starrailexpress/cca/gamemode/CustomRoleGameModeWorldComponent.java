@@ -1,0 +1,200 @@
+package io.wifi.starrailexpress.cca.gamemode;
+
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.SREGameModes;
+import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.client.gui.screen.gamemode.custom_role.CustomRoleUpdateHandler;
+import io.wifi.starrailexpress.game.utils.RoleInstance;
+import net.fabricmc.api.EnvType;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.noellesroles.utils.RoleUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.ladysnake.cca.api.v3.component.ComponentKey;
+import org.ladysnake.cca.api.v3.component.ComponentRegistry;
+import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
+import org.ladysnake.cca.api.v3.util.CheckEnvironment;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class CustomRoleGameModeWorldComponent implements AutoSyncedComponent {
+    public static final ComponentKey<CustomRoleGameModeWorldComponent> KEY = ComponentRegistry.getOrCreate(
+            SRE.id("custom_roles"),
+            CustomRoleGameModeWorldComponent.class);
+    private final Level world;
+    HashMap<String, SRERole> pathToRole = new HashMap<>();
+
+    // 职业阵营 / 职业
+    private final HashMap<SRERole, Integer> available_roles = new HashMap<>();
+
+    public CustomRoleGameModeWorldComponent(Level world) {
+        this.world = world;
+    }
+
+    public void clear() {
+        this.available_roles.clear();
+    }
+
+    public void clearAndSync() {
+        this.available_roles.clear();
+        sync();
+    }
+
+    public void sync() {
+        KEY.sync(this.world);
+    }
+
+    public HashMap<SRERole, Integer> getRoles() {
+        return this.available_roles;
+    }
+
+    public List<SRERole> getRole(int type) {
+        if (available_roles == null) {
+            return Collections.emptyList();
+        }
+        return available_roles.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && entry.getValue() == type)
+                .map(Map.Entry::getKey)
+                .filter(Objects::nonNull) // 过滤掉 key 为 null 的项
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean shouldSyncWith(ServerPlayer sp) {
+        SREGameWorldComponent gpcca = SREGameWorldComponent.KEY.get(sp.level());
+        if (gpcca.isRunning() && gpcca.getGameMode() == SREGameModes.CUSTOM_SELECTED_MODE)
+            return true;
+        return false;
+    }
+
+    public void reloadPathToRole() {
+        pathToRole.clear();
+        for (var r : TMMRoles.ROLES.entrySet()) {
+            var role = r.getValue();
+            pathToRole.putIfAbsent(role.identifier().getPath(), role);
+        }
+    }
+
+    public void writeToSyncNbtWithPlayer(CompoundTag tag, HolderLookup.Provider registryLookup,
+            ServerPlayer recipient) {
+        writeToSyncNbt(tag, registryLookup);
+    }
+
+    public @Nullable SRERole getRoleFromPath(String path) {
+        if (pathToRole.containsKey(path)) {
+            return pathToRole.get(path);
+        } else {
+            reloadPathToRole();
+            if (pathToRole.containsKey(path)) {
+                return pathToRole.get(path);
+            }
+        }
+        return null;
+    }
+
+    public void readFromSyncNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
+        // this.lockedToSupporters = nbtCompound.getBoolean("LockedToSupporters");
+        // this.enableWeights = nbtCompound.getBoolean("EnableWeights");
+        this.available_roles.clear();
+        if (nbtCompound.contains("roles", CompoundTag.TAG_LIST)) {
+            ListTag roleInfoCompund = nbtCompound.getList("roles", CompoundTag.TAG_STRING);
+            for (var info : roleInfoCompund) {
+                StringTag str = (StringTag) info;
+                String rolePath = str.getAsString();
+                SRERole role = getRoleFromPath(rolePath);
+                if (role != null) {
+                    this.available_roles.putIfAbsent(role, PlayerRoleWeightManager.getRoleType(role));
+                }
+            }
+        }
+
+        if (this.world.isClientSide) {
+            CustomRoleUpdateHandler.updateRoleSelection();
+        }
+    }
+
+    public void writeToSyncNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
+        if (this.available_roles.isEmpty())
+            return;
+        var roleInfoCompund = new ListTag();
+        for (SRERole info : available_roles.keySet()) {
+            String roleId = info.identifier().getPath();
+            roleInfoCompund.add(StringTag.valueOf(roleId));
+        }
+        nbtCompound.put("roles", roleInfoCompund);
+    }
+
+    @Override
+    public void readFromNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
+    }
+
+    @Override
+    public void writeToNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
+    }
+
+    @Override
+    public void writeSyncPacket(RegistryFriendlyByteBuf buf, ServerPlayer recipient) {
+        CompoundTag tag = new CompoundTag();
+        this.writeToSyncNbtWithPlayer(tag, buf.registryAccess(), recipient);
+        buf.writeNbt(tag);
+    }
+
+    @Override
+    @CheckEnvironment(EnvType.CLIENT)
+    public void applySyncPacket(RegistryFriendlyByteBuf buf) {
+        CompoundTag tag = buf.readNbt();
+        if (tag != null) {
+            this.readFromSyncNbt(tag, buf.registryAccess());
+        }
+    }
+
+    public void playerSelectedRole(ServerPlayer player, ResourceLocation roleId) {
+        var crgmtpcca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
+        SRERole role = RoleUtils.getRole(roleId);
+        if (crgmtpcca.getTeam() == PlayerRoleWeightManager.getRoleType(role)
+                && this.available_roles.containsKey(role)) {
+            player.displayClientMessage(Component
+                    .translatable("gui.noellesroles.gambler.selected", RoleUtils.getRoleOrModifierNameWithColor(role))
+                    .withStyle(ChatFormatting.RED), true);
+            RoleUtils.changeRole(player, role);
+            this.available_roles.remove(role);
+        } else {
+            player.displayClientMessage(Component
+                    .translatable("gui.noellesroles.gambler.failed", RoleUtils.getRoleOrModifierNameWithColor(role))
+                    .withStyle(ChatFormatting.RED), true);
+        }
+    }
+
+    public void autoSelect(ServerPlayer player) {
+        var crgmtpcca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
+        ArrayList<ResourceLocation> roles = crgmtpcca.getAvailableRoles();
+        if (roles.isEmpty()) {
+            RoleUtils.changeRole(player, TMMRoles.CIVILIAN);
+            return;
+        } else {
+            playerSelectedRole(player, roles.getFirst());
+        }
+    }
+
+    public void addAllRoles(List<RoleInstance> expandedRoles) {
+        for (var roleInstance : expandedRoles) {
+            SRERole role = roleInstance.role();
+            if (role != null)
+                this.available_roles.put(role, PlayerRoleWeightManager.getRoleType(role));
+        }
+    }
+}

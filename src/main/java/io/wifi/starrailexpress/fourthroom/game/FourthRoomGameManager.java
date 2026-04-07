@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.fourthroom.game;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import io.wifi.starrailexpress.fourthroom.block.FourthRoomTableBlockEntity;
 import io.wifi.starrailexpress.fourthroom.card.BasicCard;
 import io.wifi.starrailexpress.fourthroom.card.Card;
 import io.wifi.starrailexpress.fourthroom.card.CardInstance;
@@ -9,7 +10,10 @@ import io.wifi.starrailexpress.fourthroom.card.CardRegistry;
 import io.wifi.starrailexpress.fourthroom.card.SkillCard;
 import io.wifi.starrailexpress.fourthroom.config.FourthRoomConfig;
 import io.wifi.starrailexpress.fourthroom.duel.FourthRoomDuelManager;
+import io.wifi.starrailexpress.fourthroom.effect.EffectEvent;
+import io.wifi.starrailexpress.fourthroom.effect.TableEffectEvents;
 import io.wifi.starrailexpress.fourthroom.network.FourthRoomStatePayload;
+import io.wifi.starrailexpress.fourthroom.room.RoomDefinition;
 import io.wifi.starrailexpress.fourthroom.room.RoomManager;
 import io.wifi.starrailexpress.fourthroom.shop.FourthRoomShopItem;
 import io.wifi.starrailexpress.fourthroom.shop.FourthRoomShopService;
@@ -20,6 +24,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,6 +90,9 @@ public final class FourthRoomGameManager {
         data.setDirty(true);
         broadcast("Fourth Room match started with " + participants.size() + " players.");
         syncMatchState();
+        for (FourthRoomRoomState roomState : data.rooms.values()) {
+            emitActiveTurnFocus(roomState.roomId, roomState.activePlayerId, 60L);
+        }
     }
 
     public void shutdownMatch() {
@@ -96,6 +104,7 @@ public final class FourthRoomGameManager {
             }
         }
         data.resetMatchState();
+        clearRoomTables();
         for (ServerPlayer player : recipients) {
             FourthRoomStatePayload.send(player, buildSnapshot(player).toString());
         }
@@ -157,6 +166,7 @@ public final class FourthRoomGameManager {
                 cardDisplayName(card),
                 playerName(resolvedTarget),
                 instance.gold() ? "金卡" : "");
+        emitCardPlayEffects(playerState.roomId, playerId, cardDisplayName(card), instance.gold(), card.isSkill());
         data.setDirty(true);
         syncMatchState();
         return true;
@@ -183,6 +193,8 @@ public final class FourthRoomGameManager {
         logPlayerRoomAction(playerId, "system", "结束了回合", "", "", "摸 1 张牌");
         roomManager.advanceTurn(playerState.roomId);
         resolveTurnEntry(playerState.roomId);
+        FourthRoomRoomState roomState = data.rooms.get(playerState.roomId);
+        emitActiveTurnFocus(playerState.roomId, roomState != null ? roomState.activePlayerId : null, 140L);
         syncMatchState();
         return true;
     }
@@ -237,6 +249,7 @@ public final class FourthRoomGameManager {
         if (!drawnCards.isEmpty()) {
             state.drawNoticeSequence++;
             state.lastDrawSummary = String.join("、", drawnCards);
+            emitDrawEffects(state.roomId, playerId, amount);
         }
         data.setDirty(true);
     }
@@ -509,6 +522,7 @@ public final class FourthRoomGameManager {
 
     public void syncMatchState() {
         data.setDirty(true);
+        syncRoomTables();
         for (FourthRoomPlayerState playerState : data.players.values()) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerState.playerId);
             if (player != null) {
@@ -668,6 +682,294 @@ public final class FourthRoomGameManager {
 
     public long currentTick() {
         return level.getGameTime();
+    }
+
+    private void syncRoomTables() {
+        List<RoomDefinition> definitions = roomManager.buildRoomDefinitions();
+        for (RoomDefinition definition : definitions) {
+            FourthRoomTableBlockEntity table = getRoomTable(definition.roomId(), definitions);
+            if (table == null) {
+                continue;
+            }
+            FourthRoomRoomState roomState = data.rooms.get(definition.roomId());
+            if (!data.active || roomState == null) {
+                table.clearLinkedRoomState();
+                continue;
+            }
+            table.applyRoomVisualState(
+                    definition.roomId(),
+                    buildSeatView(roomState, 0),
+                    buildSeatView(roomState, 1),
+                    roomDrawPileSize(roomState),
+                    roomDiscardPileSize(roomState),
+                    latestDiscardLabel(roomState),
+                    roomState.activePlayerId == null ? "" : roomState.activePlayerId.toString(),
+                    phaseDisplayName(data.phase),
+                    roomState.publicActions.isEmpty() ? "" : formatActionSummary(roomState.publicActions.getLast()),
+                    buildRecentTableCards(roomState));
+        }
+    }
+
+    private void clearRoomTables() {
+        List<RoomDefinition> definitions = roomManager.buildRoomDefinitions();
+        for (RoomDefinition definition : definitions) {
+            FourthRoomTableBlockEntity table = getRoomTable(definition.roomId(), definitions);
+            if (table != null) {
+                table.clearLinkedRoomState();
+            }
+        }
+    }
+
+    @Nullable
+    private FourthRoomTableBlockEntity getRoomTable(int roomId, List<RoomDefinition> definitions) {
+        if (roomId < 0 || roomId >= definitions.size()) {
+            return null;
+        }
+        if (level.getBlockEntity(definitions.get(roomId).center()) instanceof FourthRoomTableBlockEntity table) {
+            return table;
+        }
+        return null;
+    }
+
+    @Nullable
+    private FourthRoomTableBlockEntity.SeatView buildSeatView(FourthRoomRoomState roomState, int seatIndex) {
+        if (seatIndex < 0 || seatIndex >= roomState.occupants.size()) {
+            return null;
+        }
+        UUID occupantId = roomState.occupants.get(seatIndex);
+        FourthRoomPlayerState occupant = data.players.get(occupantId);
+        if (occupant == null) {
+            return null;
+        }
+        return new FourthRoomTableBlockEntity.SeatView(
+                occupantId.toString(),
+                playerName(occupantId),
+                occupant.alive,
+                occupant.hiddenIdentityCount());
+    }
+
+    private List<FourthRoomTableBlockEntity.TableCardDisplay> buildRecentTableCards(FourthRoomRoomState roomState) {
+        List<FourthRoomTableBlockEntity.TableCardDisplay> displays = new ArrayList<>();
+        int start = Math.max(0, roomState.publicActions.size() - 5);
+        for (int index = start; index < roomState.publicActions.size(); index++) {
+            FourthRoomPublicAction action = roomState.publicActions.get(index);
+            displays.add(new FourthRoomTableBlockEntity.TableCardDisplay(
+                    actionTitle(action),
+                    formatActionSummary(action),
+                    categoryColor(action.category),
+                    isHighlightCategory(action.category),
+                    action.tick));
+        }
+        return displays;
+    }
+
+    private int roomDrawPileSize(FourthRoomRoomState roomState) {
+        int size = 0;
+        for (UUID occupantId : roomState.occupants) {
+            FourthRoomPlayerState state = data.players.get(occupantId);
+            if (state != null && state.alive) {
+                size += state.drawPile.size();
+            }
+        }
+        return size;
+    }
+
+    private int roomDiscardPileSize(FourthRoomRoomState roomState) {
+        int size = 0;
+        for (UUID occupantId : roomState.occupants) {
+            FourthRoomPlayerState state = data.players.get(occupantId);
+            if (state != null) {
+                size += state.discardPile.size();
+            }
+        }
+        return size;
+    }
+
+    private String latestDiscardLabel(FourthRoomRoomState roomState) {
+        for (int index = roomState.publicActions.size() - 1; index >= 0; index--) {
+            FourthRoomPublicAction action = roomState.publicActions.get(index);
+            if (!action.subject.isBlank()) {
+                return action.subject;
+            }
+        }
+        return "";
+    }
+
+    private void emitDrawEffects(int roomId, UUID playerId, int amount) {
+        if (roomId < 0 || amount <= 0) {
+            return;
+        }
+        TableEffectEvents.TableAnchor anchor = anchorForPlayer(roomId, playerId);
+        if (anchor == null) {
+            return;
+        }
+        int color = 0xFF7CCBFF;
+        List<EffectEvent> effects = new ArrayList<>();
+        int motionCount = Math.min(3, Math.max(1, amount));
+        for (int index = 0; index < motionCount; index++) {
+            long offset = index * 120L;
+            effects.add(new TableEffectEvents.CardMotion(offset, "摸牌", false,
+                    TableEffectEvents.TableAnchor.DRAW_PILE, anchor, color, 320L));
+        }
+        effects.add(new TableEffectEvents.Pulse(60L, anchor, color, 0.75F, 360L));
+        emitEffects(roomId, effects);
+    }
+
+    private void emitCardPlayEffects(int roomId, UUID actorId, String cardLabel, boolean gold, boolean skillCard) {
+        if (roomId < 0) {
+            return;
+        }
+        TableEffectEvents.TableAnchor anchor = anchorForPlayer(roomId, actorId);
+        if (anchor == null) {
+            return;
+        }
+        int color = gold ? 0xFFF2C56A : (skillCard ? 0xFF6FD6C5 : 0xFFF08B55);
+        emitEffects(roomId, List.of(
+                new TableEffectEvents.CardMotion(0L, cardLabel, gold, anchor,
+                        TableEffectEvents.TableAnchor.CENTER, color, 360L),
+                new TableEffectEvents.Pulse(150L, TableEffectEvents.TableAnchor.CENTER, color, 1.0F, 420L),
+                new TableEffectEvents.CardMotion(320L, cardLabel, gold, TableEffectEvents.TableAnchor.CENTER,
+                        TableEffectEvents.TableAnchor.DISCARD_PILE, color, 320L)));
+    }
+
+    private void emitActiveTurnFocus(int roomId, @Nullable UUID activePlayerId, long delayMs) {
+        if (roomId < 0 || activePlayerId == null) {
+            return;
+        }
+        TableEffectEvents.TableAnchor anchor = anchorForPlayer(roomId, activePlayerId);
+        if (anchor == null) {
+            return;
+        }
+        int color = 0xFF8BD5FF;
+        emitEffects(roomId, List.of(
+                new TableEffectEvents.CameraFocus(delayMs, anchor, 420L, 0.55F, false, 0),
+                new TableEffectEvents.Pulse(delayMs + 60L, anchor, color, 0.90F, 420L),
+                new TableEffectEvents.Banner(delayMs + 30L, "轮到 " + playerName(activePlayerId), color, 760L)));
+    }
+
+    private void emitActionLogEffects(int roomId, FourthRoomPublicAction action) {
+        if (roomId < 0) {
+            return;
+        }
+        int color = categoryColor(action.category);
+        boolean heavy = isHeavyCategory(action.category);
+        TableEffectEvents.TableAnchor actorAnchor = anchorForPlayerName(roomId, action.actorName);
+        TableEffectEvents.TableAnchor targetAnchor = anchorForPlayerName(roomId, action.targetName);
+        List<EffectEvent> effects = new ArrayList<>();
+        effects.add(new TableEffectEvents.Banner(40L, formatActionBanner(action), color, 920L));
+        if (actorAnchor != null && !action.actorName.isBlank() && !"系统".equals(action.actorName)) {
+            effects.add(new TableEffectEvents.CameraFocus(0L, actorAnchor, 300L, 0.40F, false, 0));
+        }
+        if (targetAnchor != null && targetAnchor != actorAnchor) {
+            effects.add(new TableEffectEvents.CameraFocus(150L, targetAnchor, heavy ? 460L : 340L,
+                    heavy ? 0.72F : 0.52F, heavy, heavy ? color : 0));
+        }
+        TableEffectEvents.TableAnchor pulseAnchor = targetAnchor != null ? targetAnchor
+                : actorAnchor != null ? actorAnchor : TableEffectEvents.TableAnchor.CENTER;
+        effects.add(new TableEffectEvents.Pulse(90L, pulseAnchor, color, heavy ? 1.15F : 0.75F,
+                heavy ? 520L : 360L));
+        emitEffects(roomId, effects);
+    }
+
+    private void emitEffects(int roomId, List<EffectEvent> effects) {
+        FourthRoomTableBlockEntity table = getRoomTable(roomId, roomManager.buildRoomDefinitions());
+        if (table != null) {
+            table.broadcastEffects(effects);
+        }
+    }
+
+    @Nullable
+    private TableEffectEvents.TableAnchor anchorForPlayer(int roomId, @Nullable UUID playerId) {
+        if (playerId == null) {
+            return null;
+        }
+        FourthRoomRoomState roomState = data.rooms.get(roomId);
+        if (roomState == null) {
+            return null;
+        }
+        int index = roomState.occupants.indexOf(playerId);
+        return index >= 0 ? TableEffectEvents.TableAnchor.fromSeatIndex(index) : null;
+    }
+
+    @Nullable
+    private TableEffectEvents.TableAnchor anchorForPlayerName(int roomId, String playerName) {
+        if (playerName == null || playerName.isBlank()) {
+            return null;
+        }
+        FourthRoomRoomState roomState = data.rooms.get(roomId);
+        if (roomState == null) {
+            return null;
+        }
+        for (int index = 0; index < roomState.occupants.size(); index++) {
+            if (playerName(roomState.occupants.get(index)).equals(playerName)) {
+                return TableEffectEvents.TableAnchor.fromSeatIndex(index);
+            }
+        }
+        return null;
+    }
+
+    private boolean isHighlightCategory(String category) {
+        return switch (category) {
+            case "card", "skill", "damage", "reveal", "defense" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isHeavyCategory(String category) {
+        return switch (category) {
+            case "damage", "reveal", "defense" -> true;
+            default -> false;
+        };
+    }
+
+    private int categoryColor(String category) {
+        return switch (category) {
+            case "card" -> 0xFFF08B55;
+            case "skill" -> 0xFF6FD6C5;
+            case "damage" -> 0xFFE4574C;
+            case "defense" -> 0xFF6CB5F5;
+            case "reveal" -> 0xFFC883F1;
+            case "system" -> 0xFFE3E3E3;
+            default -> 0xFFD6CFBA;
+        };
+    }
+
+    private String actionTitle(FourthRoomPublicAction action) {
+        if (action == null) {
+            return "系统";
+        }
+        if (!action.subject.isBlank()) {
+            return action.subject;
+        }
+        return action.verb.isBlank() ? "系统" : action.verb;
+    }
+
+    private String formatActionSummary(FourthRoomPublicAction action) {
+        if (action == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        appendToken(builder, action.actorName);
+        appendToken(builder, action.verb);
+        appendToken(builder, action.subject);
+        appendToken(builder, action.targetName);
+        appendToken(builder, action.detail);
+        return builder.toString();
+    }
+
+    private String formatActionBanner(FourthRoomPublicAction action) {
+        String summary = formatActionSummary(action);
+        return summary.isBlank() ? "牌桌状态已更新" : summary;
+    }
+
+    private void appendToken(StringBuilder builder, String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        if (!builder.isEmpty()) {
+            builder.append(' ');
+        }
+        builder.append(token);
     }
 
     private void assignTeamsAndIdentities(List<ServerPlayer> participants) {
@@ -938,6 +1240,7 @@ public final class FourthRoomGameManager {
             roomState.publicActions.removeFirst();
         }
         data.setDirty(true);
+        emitActionLogEffects(roomId, action);
     }
 
     private String shortBlockId(String blockId) {
@@ -997,6 +1300,9 @@ public final class FourthRoomGameManager {
         }
         data.setDirty(true);
         syncMatchState();
+        for (FourthRoomRoomState roomState : data.rooms.values()) {
+            emitActiveTurnFocus(roomState.roomId, roomState.activePlayerId, 80L);
+        }
     }
 
     private void resolveTurnEntry(int roomId) {

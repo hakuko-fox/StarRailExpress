@@ -1,4 +1,4 @@
-package io.wifi.starrailexpress.game;
+package io.wifi.starrailexpress.game.modes;
 
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -7,6 +7,8 @@ import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
+import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
@@ -119,5 +121,9 @@ public class WTLooseEndsGameMode extends GameMode {
                 GameUtils.stopGame(serverWorld);
             }
         }
+    }
+    
+    public boolean hasMood(){
+        return false;
     }
 }

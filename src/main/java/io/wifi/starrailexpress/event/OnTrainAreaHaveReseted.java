@@ -23,16 +23,16 @@ public interface OnTrainAreaHaveReseted {
     Event<OnTrainAreaHaveReseted> EVENT = createArrayBacked(OnTrainAreaHaveReseted.class,
             listeners -> (sl) -> {
                 for (OnTrainAreaHaveReseted listener : listeners) {
-                    listener.onWorldHaveReseted(sl);
+                    listener.onWorldHaveInited(sl);
                 }
             });
 
     /**
-     * 列车区域重置完成时的回调方法。
+     * 列车初始化完成的回调方法。
      *
-     * <p>Callback invoked after the server level (train area) has been reset.
+     * <p>Callback invoked after the server level (train area) has been inited.
      *
      * @param serverWorld 已重置的服务端世界 / the server level that was reset
      */
-    void onWorldHaveReseted(ServerLevel serverWorld);
+    void onWorldHaveInited(ServerLevel serverWorld);
 }
