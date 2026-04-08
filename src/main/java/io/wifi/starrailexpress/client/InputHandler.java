@@ -33,7 +33,7 @@ public class InputHandler {
                 "category.starrailexpress.general"));
         openFourthRoomPeekScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.starrailexpress.open_fourth_room_peek_screen",
-                GLFW.GLFW_KEY_V,
+                GLFW.GLFW_KEY_Z,
                 "category.starrailexpress.general"));
 
         ClientTickEvents.END_CLIENT_TICK.register(InputHandler::onClientTick);
