@@ -140,7 +140,7 @@ public class RoundTextRenderer {
         }
 
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
-        if (endTime > 0 && endTime < END_DURATION - (GameConstants.FADE_TIME * 2) && !game.isRunning()) {
+        if (endTime > 0 && endTime < END_DURATION - (GameConstants.FADE_TIME * 2) && !game.isRunning() && game.fade <= 0) {
             SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(player.level());
             if (roundEnd.getWinStatus() == GameUtils.WinStatus.NONE)
                 return;
