@@ -280,7 +280,8 @@ public class LootInfoScreen extends AbstractPixelScreen {
         // 新布局计算：左侧选项卡 + 右侧展示区 + 底部操作栏
         int leftX = layoutMetrics.leftX;
         int topY = layoutMetrics.topY;
-        boolean isInit = tryToInitPool(LotteryManager.getInstance().getLotteryPool(initPoolId));
+        this.curPool = LotteryManager.getInstance().getLotteryPool(initPoolId);
+        boolean isInit = tryToInitPool();
         if (isInit) {
             // 立绘动画
             animations.add(new Pair<>(initBgTime, BezierAnimation.builder(
@@ -537,18 +538,17 @@ public class LootInfoScreen extends AbstractPixelScreen {
         }
         super.onClose();
     }
-    private boolean tryToInitPool(LotteryManager.LotteryPool curPool) {
+    private boolean tryToInitPool() {
         int sketchX = layoutMetrics.sketchX;
         int sketchY = layoutMetrics.sketchY;
         // 无卡池信息时的处理
         try {
-            LotteryManager.LotteryPool finalCurPool = curPool;
             // 设置预览按钮：隐形按钮点击立绘打开预览,
             viewPoolBtn = Button.builder(
                             Component.empty(),
                             buttonWidget -> {
                                 Minecraft minecraft = Minecraft.getInstance();
-                                minecraft.setScreen(new ViewLotteryPoolScreen(finalCurPool.getPoolID(), this));
+                                minecraft.setScreen(new ViewLotteryPoolScreen(this.curPool.getPoolID(), this));
                             })
                     .pos(sketchX, sketchY)
                     .size(layoutMetrics.sketchWidth, layoutMetrics.sketchHeight)
@@ -580,7 +580,7 @@ public class LootInfoScreen extends AbstractPixelScreen {
                     layoutMetrics.actionButtonHeight,
                     Component.translatable("screen.noellesroles.loot.lootBtn"),
                     poolButton -> {
-                        ClientPlayNetworking.send(new LootRequestC2SPacket(finalCurPool.getPoolID()));
+                        ClientPlayNetworking.send(new LootRequestC2SPacket(this.curPool.getPoolID()));
                     });
             addRenderableWidget(startPoolBtn);
             startPoolBtn.active = false;
@@ -596,7 +596,7 @@ public class LootInfoScreen extends AbstractPixelScreen {
                     Component.translatable("screen.noellesroles.loot.multiLootBtn"),
                     poolButton -> {
                         int lootCount = 5;
-                        ClientPlayNetworking.send(new LootMultiRequestC2SPacket(finalCurPool.getPoolID(), lootCount));
+                        ClientPlayNetworking.send(new LootMultiRequestC2SPacket(this.curPool.getPoolID(), lootCount));
                     });
             addRenderableWidget(multiPoolBtn);
             multiPoolBtn.active = false;
@@ -612,7 +612,7 @@ public class LootInfoScreen extends AbstractPixelScreen {
                     Component.translatable("screen.noellesroles.loot.previewBtn"),
                     poolButton -> {
                         Minecraft minecraft = Minecraft.getInstance();
-                        minecraft.setScreen(new ViewLotteryPoolScreen(finalCurPool.getPoolID(), this));
+                        minecraft.setScreen(new ViewLotteryPoolScreen(this.curPool.getPoolID(), this));
                     });
             addRenderableWidget(previewBtn);
             previewBtn.active = false;
@@ -666,7 +666,8 @@ public class LootInfoScreen extends AbstractPixelScreen {
         if (nextPool == null)
             return;
         if (poolSketch == null || startPoolBtn == null || multiPoolBtn == null || previewBtn == null) {
-            if (!tryToInitPool(nextPool))
+            this.curPool = nextPool;
+            if (!tryToInitPool())
                 return;
             else {
                 if (viewPoolBtn != null)
@@ -741,12 +742,10 @@ public class LootInfoScreen extends AbstractPixelScreen {
     }
 
     public void switchToPoolBtn(int poolD) {
-        if (curPool == null || poolD == curPool.getPoolID())
+        if (curPool == null)
             return;
         for (PoolButton poolButton : poolButtons) {
-            boolean isCurrent = curPool != null && poolButton.getPoolID() == curPool.getPoolID();
-            boolean isNext = poolButton.getPoolID() == poolD;
-            poolButton.setSelected(isNext && !isCurrent);
+            poolButton.setSelected(poolButton.getPoolID() == poolD);
         }
     }
 

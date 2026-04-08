@@ -2,9 +2,13 @@ package io.wifi.starrailexpress.mixin.client.ui;
 
 import java.util.ArrayList;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
 import org.agmas.noellesroles.client.screen.GuessRoleScreen;
+import org.agmas.noellesroles.client.screen.LootInfoScreen;
 import org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
+import org.agmas.noellesroles.packet.Loot.LootPoolsInfoCheckC2SPacket;
+import org.agmas.noellesroles.utils.lottery.LotteryManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,6 +23,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+
+import static io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen.menuButtonHeight;
 
 // ✅ 必须加 abstract
 @Mixin(InventoryScreen.class)
@@ -91,6 +97,18 @@ public abstract class GameMenu extends Screen {
                         SRE$MENU_BUTTON_HEIGHT)
                 .build();
         sre$menuSelections.add(btn1);
+        // 抽卡页面
+        var lootBtn = org.agmas.noellesroles.client.widget.custom_button.ModernButton
+                .builder(Component.translatable("screen.limited_inventory.menu.loot_screen"), (btn) -> {
+                    if (LotteryManager.getInstance().getLotteryPools().isEmpty())
+                        ClientPlayNetworking.send(new LootPoolsInfoCheckC2SPacket());
+                    this.minecraft.setScreen(new LootInfoScreen(0, 0, 0,this));
+                    sre$toggleViewMenu(false);
+                }).bounds(width - SRE$MENU_BUTTON_WIDTH, startY - SRE$MENU_BUTTON_HEIGHT,
+                        SRE$MENU_BUTTON_WIDTH, SRE$MENU_BUTTON_HEIGHT)
+                .build();
+        startY -= SRE$MENU_BUTTON_HEIGHT;
+        sre$menuSelections.add(lootBtn);
 
         // 职业猜测
         var btn2 = org.agmas.noellesroles.client.widget.custom_button.ModernButton
