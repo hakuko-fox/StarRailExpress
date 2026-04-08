@@ -192,7 +192,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         worldModifierComponent.removeModifier(player.getUUID(), SEModifiers.REFUGEE);
 
         // Effects and notifications
-        player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 30 * 20, 0, false, false));
+        // 变更：亡命徒发光时间由 30s 调整为 5 分钟（300s）
+        player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 5 * 60 * 20, 0, false, false));
         serverLevel.getServer().getCommands().performPrefixedCommand(serverLevel.getServer().createCommandSourceStack(),
                 "title @a title {\"translate\":\"title.stupid_express.refugee.active\",\"color\":\"dark_red\"}");
 

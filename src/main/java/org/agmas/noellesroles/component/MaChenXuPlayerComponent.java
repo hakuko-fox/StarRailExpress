@@ -110,7 +110,7 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
     public static final int OTHERWORLD_SAN_LOSS = 2;
 
     /** 大招费用 */
-    public static final int ULTIMATE_COST = 200;
+    public static final int ULTIMATE_COST = 150;
 
     /** 大招持续时间（tick） */
     public static final int ULTIMATE_DURATION_STAGE_3 = 600; // 30秒

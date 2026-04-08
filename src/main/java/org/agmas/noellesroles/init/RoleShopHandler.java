@@ -1086,7 +1086,7 @@ public class RoleShopHandler {
             .setStyle(Style.EMPTY.withItalic(false))
             .withStyle(ChatFormatting.GRAY));
         it.set(DataComponents.LORE, new ItemLore(rainLore));
-        shop.add(new ShopEntry(it, 150,
+        shop.add(new ShopEntry(it, 250,
             ShopEntry.Type.TOOL) {
           @Override
           public boolean onBuy(Player player) {

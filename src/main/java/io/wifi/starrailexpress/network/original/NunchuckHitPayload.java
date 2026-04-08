@@ -77,7 +77,7 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
         }
 
         boolean shouldApplyCooldown = false;
-        int cooldownTicks = 15; // 默认0.75秒冷却
+        int cooldownTicks = 0; // 默认无冷却
 
         // 检查攻击者是否在7秒内连续使用3次
         if (attackRecord != null) {
@@ -144,7 +144,7 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
 
             // 设置物品冷却
             if (!attacker.isCreative()) {
-                attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 7 * 20); // 7秒
+                attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 5 * 20); // 5秒
             }
         } else {
             // 不击杀的情况下，设置较短的冷却
@@ -152,7 +152,7 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
                 if (shouldApplyCooldown) {
                     attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, cooldownTicks);
                 } else {
-                    attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 15); 
+                    attacker.getCooldowns().addCooldown(TMMItems.NUNCHUCK, 0); 
                 }
             }
         }
