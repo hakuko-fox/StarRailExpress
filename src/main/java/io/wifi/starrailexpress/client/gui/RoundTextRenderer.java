@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.util.TMMClientUtils;
 import io.wifi.starrailexpress.event.OnRoundStartWelcomeTimmer;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -26,7 +27,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import org.jetbrains.annotations.NotNull;
 
@@ -144,11 +144,11 @@ public class RoundTextRenderer {
             SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(player.level());
             if (roundEnd.getWinStatus() == GameUtils.WinStatus.NONE)
                 return;
-            Player winner = null;
+            String winner = null;
             if (game.getLooseEndWinner() != null)
-                winner = player.level().getPlayerByUUID(game.getLooseEndWinner());
+                winner = TMMClientUtils.getPlayerNameByUid(game.getLooseEndWinner());
             Component endText = role.getEndText(roundEnd.getWinStatus(),
-                    winner == null ? roundEnd.getCustomWinners() : winner.getName(), roundEnd);
+                    winner == null ? roundEnd.getCustomWinners() : Component.literal(winner), roundEnd);
             if (endText == null)
                 return;
 
@@ -173,14 +173,19 @@ public class RoundTextRenderer {
             context.drawString(renderer, winMessage, -winMessageWidth / 2, -4, 0xFFFFFF);
             context.pose().popPose();
             if (isLooseEnds) {
-                Component titleText = RoleAnnouncementTexts.LOOSE_END.titleText;
+                Component titleText;
+                if (winner != null) {
+                    titleText = Component.translatable("announcement.star.loose_ends.winner", winner);
+                } else {
+                    titleText = Component.translatable("announcement.star.win.loose_ends");
+                }
                 int titleWidth = getOrCacheWidth(renderer, titleText);
                 context.drawString(renderer, titleText, -titleWidth / 2, 14, 0xFFFFFF);
 
                 int looseEnds = 0;
                 for (SREGameRoundEndComponent.RoundEndData entry : roundEnd.players) {
-                    float xPos = ((looseEnds % 6) - 3.5f) * 24f; // 24f = 12 * 2
-                    float yPos = 14 + (looseEnds / 6) * 24f; // 24f = 12 * 2
+                    float xPos = ((looseEnds % 6) - 3.5f) * 12f; // 24f = 12 * 2
+                    float yPos = 14 + (looseEnds / 6) * 12f; // 24f = 12 * 2
                     looseEnds++;
 
                     PlayerInfo playerEntry = SREClient.PLAYER_ENTRIES_CACHE.get(entry.player().getId());
@@ -406,11 +411,11 @@ public class RoundTextRenderer {
         cachedCanJumpTip = null;
     }
 
-    private static MutableComponent getWinMessage(SREGameRoundEndComponent roundEnd, Player winner) {
+    private static MutableComponent getWinMessage(SREGameRoundEndComponent roundEnd, String winner) {
         if (roundEnd.getWinStatus().equals(WinStatus.CUSTOM)) {
             if (winner != null) {
                 return Component.translatable("game.win.star." + roundEnd.CustomWinnerID,
-                        winner.getDisplayName());
+                        winner);
             } else {
                 Component winners = roundEnd.getCustomWinners();
                 return Component.translatable("game.win.star." + roundEnd.CustomWinnerID, winners);
@@ -421,7 +426,7 @@ public class RoundTextRenderer {
         }
         if (winner != null) {
             return Component.translatable("game.win.star." + roundEnd.getWinStatus().name().toLowerCase().toLowerCase(),
-                    winner.getDisplayName());
+                    winner);
         }
         return Component.translatable("game.win.star." + roundEnd.getWinStatus().name().toLowerCase().toLowerCase());
 

@@ -402,6 +402,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     @Override
     public void writeToNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
+
+        if (this.gameMode != null)
+            nbtCompound.putString("GameMode", this.gameMode.identifier.toString());
+        if (this.gameMode == SREGameModes.LOOSE_ENDS && this.looseEndWinner != null)
+            nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
         if (gameStatus == GameStatus.INACTIVE) {
             return;
         }
@@ -415,13 +420,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (isSkillAvailable)
             nbtCompound.putBoolean("isSkillAvailable", isSkillAvailable);
         // if (!this.syncRole) {
-        if (this.gameMode != null)
-            nbtCompound.putString("GameMode", this.gameMode.identifier.toString());
         nbtCompound.putString("GameStatus", this.gameStatus.name());
         // nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
-        if (this.looseEndWinner != null)
-            nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
     }
 
     public ListTag nbtFromUuidList(List<UUID> list) {

@@ -112,18 +112,13 @@ public class WTLooseEndsGameMode extends GameMode {
         // game end on win and display
         if (winStatus != GameUtils.WinStatus.NONE
                 && gameWorldComponent.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE) {
-            var modifiedStatus = AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld, winStatus, true);
-            if (!modifiedStatus.equals(GameUtils.WinStatus.NONE)) {
-                if (!modifiedStatus.equals(GameUtils.WinStatus.NOT_MODIFY)) {
-                    winStatus = modifiedStatus;
-                }
-                SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(serverWorld.players(), winStatus);
-                GameUtils.stopGame(serverWorld);
-            }
+
+            SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(serverWorld.players(), winStatus);
+            GameUtils.stopGame(serverWorld);
         }
     }
-    
-    public boolean hasMood(){
+
+    public boolean hasMood() {
         return false;
     }
 }

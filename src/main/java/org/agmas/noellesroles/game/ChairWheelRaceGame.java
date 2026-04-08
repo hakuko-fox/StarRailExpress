@@ -145,4 +145,8 @@ public class ChairWheelRaceGame extends GameMode {
     public boolean hasMood(){
         return false;
     }
+
+    public boolean hasSafeTime() {
+        return false;
+    }
 }

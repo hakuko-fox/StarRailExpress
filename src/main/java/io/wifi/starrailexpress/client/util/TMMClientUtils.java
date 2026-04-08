@@ -8,4 +8,7 @@ public class TMMClientUtils {
     public static UUID getPlayerUidByName(String name) {
         return Minecraft.getInstance().getConnection().getPlayerInfo(name).getProfile().getId();
     }
+    public static String getPlayerNameByUid(UUID uid) {
+        return Minecraft.getInstance().getConnection().getPlayerInfo(uid).getProfile().getName();
+    }
 }

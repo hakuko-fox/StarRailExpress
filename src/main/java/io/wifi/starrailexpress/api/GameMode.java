@@ -16,9 +16,11 @@ public abstract class GameMode {
     public final int minPlayerCount;
 
     /**
-     * @param identifier the game mode identifier
-     * @param defaultStartTime the default time at which the timer will be set at the start of the game mode, in minutes
-     * @param minPlayerCount the minimum amount of players required to start the game mode
+     * @param identifier       the game mode identifier
+     * @param defaultStartTime the default time at which the timer will be set at
+     *                         the start of the game mode, in minutes
+     * @param minPlayerCount   the minimum amount of players required to start the
+     *                         game mode
      */
     public GameMode(ResourceLocation identifier, int defaultStartTime, int minPlayerCount) {
         this.identifier = identifier;
@@ -34,9 +36,11 @@ public abstract class GameMode {
 
     }
 
-    public void tickCommonGameLoop() {}
+    public void tickCommonGameLoop() {
+    }
 
-    public void tickClientGameLoop() {}
+    public void tickClientGameLoop() {
+    }
 
     public boolean requiresAssignedRole() {
         return true;
@@ -48,13 +52,18 @@ public abstract class GameMode {
 
     public abstract void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent);
 
-    public abstract void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players);
+    public abstract void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+            List<ServerPlayer> players);
 
     public void finalizeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
 
     }
 
-    public boolean hasMood(){
+    public boolean hasSafeTime() {
+        return true;
+    }
+
+    public boolean hasMood() {
         return true;
     }
 }
