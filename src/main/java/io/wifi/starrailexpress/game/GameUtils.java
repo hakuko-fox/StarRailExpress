@@ -897,6 +897,7 @@ public class GameUtils {
             player.stopSleeping();
         player.removeVehicle();
         ExtraSlotComponent.KEY.get(player).clear();
+        player.setInvulnerable(false);
     }
 
     public static void resetPlayerAfterGame(ServerPlayer player) {
