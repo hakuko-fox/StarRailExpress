@@ -41,13 +41,13 @@ public class SkinsNetworkSyncInitializer {
                     SREConfig.instance().mysqlSyncPort,
                     SREConfig.instance().mysqlSyncDatabase);
             try {
-            MysqlPlayerDataStore.initializeFromConfig();
-            isEnabled = MysqlPlayerDataStore.isAvailable()
-                && (SREConfig.instance().itemSkinSyncServerEnabled
-                    || SREConfig.instance().progressionSyncServerEnabled);
+                MysqlPlayerDataStore.initializeFromConfig();
+                isEnabled = MysqlPlayerDataStore.isAvailable()
+                        && (SREConfig.instance().itemSkinSyncServerEnabled
+                                || SREConfig.instance().progressionSyncServerEnabled);
             } catch (Exception exception) {
-            isEnabled = false;
-            logger.error("初始化 MySQL 玩家同步失败，已跳过远端同步。", exception);
+                isEnabled = false;
+                logger.error("初始化 MySQL 玩家同步失败，已跳过远端同步。", exception);
             }
         });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
@@ -123,7 +123,9 @@ public class SkinsNetworkSyncInitializer {
         NETWORK_HOST = host;
         NETWORK_PORT = port;
         NETWORK_KEY = key;
-        logger.info("MySQL 同步配置已设置: {}:{}/{}", host, port, key);
+        if (SREConfig.instance().mysqlPlayerSyncEnabled) {
+            logger.info("MySQL 同步配置已设置: {}:{}/{}", host, port, key);
+        }
     }
 
     /**

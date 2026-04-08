@@ -86,7 +86,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     public static ArrayList<String> canDropItem = new ArrayList<>();
     public static ArrayList<Predicate<Player>> canDrop = new ArrayList<>();
 
-
     public static @NotNull ResourceLocation id(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
@@ -254,7 +253,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             SkinsCommand.register(dispatcher);
             ManageSkinsCommand.register(dispatcher, registryAccess);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
-//            CoinModifier.register(dispatcher, registryAccess);
+            // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher);
             net.exmo.sre.client.chat.ChatDialogueCommand.register(dispatcher);
             io.wifi.starrailexpress.mail.MailCommand.register(dispatcher, registryAccess);
@@ -340,7 +339,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID,
                 io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.RoleUnlockedHudPayload.ID,
-            io.wifi.starrailexpress.network.RoleUnlockedHudPayload.CODEC);
+                io.wifi.starrailexpress.network.RoleUnlockedHudPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.packet.SyncWaypointsPacket.ID,
                 io.wifi.starrailexpress.network.packet.SyncWaypointsPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(
@@ -409,11 +408,14 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         });
         ServerPlayNetworking.registerGlobalReceiver(NunchuckHitPayload.ID, new NunchuckHitPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(CardPlayPayload.ID, new CardPlayPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(BuyFourthRoomItemPayload.ID, new BuyFourthRoomItemPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(BuyFourthRoomItemPayload.ID,
+                new BuyFourthRoomItemPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(RevealIdentityPayload.ID, new RevealIdentityPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(CompleteFourthRoomTaskPayload.ID, new CompleteFourthRoomTaskPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(CompleteFourthRoomTaskPayload.ID,
+                new CompleteFourthRoomTaskPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(EndTurnPayload.ID, new EndTurnPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(UseAssassinationItemPayload.ID, new UseAssassinationItemPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(UseAssassinationItemPayload.ID,
+                new UseAssassinationItemPayload.Receiver());
 
         // Mailbox receivers
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.mail.MailClaimC2SPayload.ID,
@@ -433,15 +435,19 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                     var mgr = net.exmo.sre.client.chat.ChatDialogueManager
                             .getInstance(context.player().getServer());
                     var data = mgr.get(payload.dialogueId());
-                    if (data == null) return;
+                    if (data == null)
+                        return;
                     int idx = payload.lineIndex();
-                    if (idx < 0 || idx >= data.lines.size()) return;
+                    if (idx < 0 || idx >= data.lines.size())
+                        return;
                     var line = data.lines.get(idx);
 
                     if (payload.choiceIndex() >= 0) {
-                        if (!line.hasChoices()) return;
+                        if (!line.hasChoices())
+                            return;
                         int choiceIndex = payload.choiceIndex();
-                        if (choiceIndex < 0 || choiceIndex >= line.choices.size()) return;
+                        if (choiceIndex < 0 || choiceIndex >= line.choices.size())
+                            return;
 
                         var choice = line.choices.get(choiceIndex);
                         executeDialogueCommand(context, choice.command, choice.runsOnServer());
@@ -463,8 +469,10 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                 });
     }
 
-    private static void executeDialogueCommand(ServerPlayNetworking.Context context, String command, boolean runOnServer) {
-        if (!runOnServer || command == null || command.isBlank()) return;
+    private static void executeDialogueCommand(ServerPlayNetworking.Context context, String command,
+            boolean runOnServer) {
+        if (!runOnServer || command == null || command.isBlank())
+            return;
         context.player().getServer().getCommands()
                 .performPrefixedCommand(
                         context.player().createCommandSourceStack()
@@ -503,6 +511,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncInitializer.registerEvents();
             // 可以在此配置网络服务器地址
             // SkinsNetworkSyncInitializer.setNetworkServer("localhost", 8888);
+            if (!SREConfig.instance().mysqlPlayerSyncEnabled) {
+                return;
+            }
             LOGGER.info("皮肤网络同步系统已初始化");
         } catch (Exception e) {
             LOGGER.error("初始化皮肤网络同步系统时出错", e);

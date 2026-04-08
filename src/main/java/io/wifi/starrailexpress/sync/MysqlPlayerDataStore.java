@@ -51,9 +51,9 @@ public final class MysqlPlayerDataStore {
     public static synchronized void initializeFromConfig() {
         shutdownDataSource();
         if (!SREConfig.instance().mysqlPlayerSyncEnabled) {
-            logger.info("MySQL 玩家数据同步未启用，跳过数据库初始化。");
             return;
         }
+        logger.info("MySQL 玩家数据同步已启用，数据库初始化中...");
 
         tableName = sanitizeTablePrefix(SREConfig.instance().mysqlSyncTablePrefix) + "player_sync_data";
 
@@ -101,7 +101,8 @@ public final class MysqlPlayerDataStore {
         return dataSource != null;
     }
 
-    public static CompletableFuture<Map<String, SyncRecord>> loadBatchAsync(UUID playerUuid, Collection<String> dataKeys) {
+    public static CompletableFuture<Map<String, SyncRecord>> loadBatchAsync(UUID playerUuid,
+            Collection<String> dataKeys) {
         List<String> normalizedKeys = normalizeKeys(dataKeys);
         if (playerUuid == null || normalizedKeys.isEmpty() || dataSource == null) {
             return CompletableFuture.completedFuture(Map.of());
@@ -109,7 +110,8 @@ public final class MysqlPlayerDataStore {
         return CompletableFuture.supplyAsync(() -> loadBatch(playerUuid, normalizedKeys), EXECUTOR);
     }
 
-    public static CompletableFuture<Boolean> saveBatchAsync(UUID playerUuid, Map<String, String> payloads, long updatedAt) {
+    public static CompletableFuture<Boolean> saveBatchAsync(UUID playerUuid, Map<String, String> payloads,
+            long updatedAt) {
         Map<String, String> normalizedPayloads = normalizePayloads(payloads);
         if (playerUuid == null || normalizedPayloads.isEmpty() || dataSource == null) {
             return CompletableFuture.completedFuture(false);
@@ -117,9 +119,11 @@ public final class MysqlPlayerDataStore {
         return CompletableFuture.supplyAsync(() -> saveBatch(playerUuid, normalizedPayloads, updatedAt), EXECUTOR);
     }
 
-    public static boolean saveBatchBlocking(UUID playerUuid, Map<String, String> payloads, long updatedAt, long timeoutMs) {
+    public static boolean saveBatchBlocking(UUID playerUuid, Map<String, String> payloads, long updatedAt,
+            long timeoutMs) {
         try {
-            return saveBatchAsync(playerUuid, payloads, updatedAt).get(Math.max(1000L, timeoutMs), TimeUnit.MILLISECONDS);
+            return saveBatchAsync(playerUuid, payloads, updatedAt).get(Math.max(1000L, timeoutMs),
+                    TimeUnit.MILLISECONDS);
         } catch (Exception exception) {
             logger.warn("等待 MySQL 数据同步完成时失败，玩家 {}。", playerUuid, exception);
             return false;
@@ -160,7 +164,8 @@ public final class MysqlPlayerDataStore {
             return false;
         }
 
-        String sql = "INSERT INTO " + tableName + " (player_uuid, data_key, payload_json, updated_at) VALUES (?, ?, ?, ?) "
+        String sql = "INSERT INTO " + tableName
+                + " (player_uuid, data_key, payload_json, updated_at) VALUES (?, ?, ?, ?) "
                 + "ON DUPLICATE KEY UPDATE payload_json = IF(VALUES(updated_at) >= updated_at, VALUES(payload_json), payload_json), "
                 + "updated_at = GREATEST(updated_at, VALUES(updated_at))";
 
