@@ -23,6 +23,7 @@ public class CantRightClickBlocks {
         );
     }
     public static final Set<Block> VANILLA_WORKSTATIONS = new HashSet<>(Set.of(
+            Blocks.CHISELED_BOOKSHELF,
             Blocks.CRAFTING_TABLE,
             Blocks.FURNACE,
             Blocks.BLAST_FURNACE,
