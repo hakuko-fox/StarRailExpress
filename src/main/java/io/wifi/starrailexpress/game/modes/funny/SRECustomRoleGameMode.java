@@ -33,6 +33,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 
 public class SRECustomRoleGameMode extends SREMurderGameMode {
@@ -63,7 +64,14 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                     false, // showParticles - 不显示粒子
                     false // showIcon - 不显示图标
             ));
-
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.INVISIBILITY,
+                    safeTick,
+                    10,
+                    true, // ambient - 环境效果（粒子更少更透明）
+                    false, // showParticles - 不显示粒子
+                    false // showIcon - 不显示图标
+            ));
             player.addEffect(new MobEffectInstance(
                     ModEffects.SKILL_BANED,
                     40,
