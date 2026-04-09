@@ -837,7 +837,6 @@ public class ModEventsRegister {
             } else {
                 Harpymodloader.isMojangVerify = true;
             }
-
         });
         CommanderHandler.registerChatEvent();
         InsaneKillerPlayerComponent.registerEvent();
