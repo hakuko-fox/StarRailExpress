@@ -69,7 +69,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static MinecraftServer SERVER;
     public static SREMurderGameMode GAME;
-    public static SREConfig CONFIG = new SREConfig();
     public static GameReplayManager REPLAY_MANAGER;
     public static final Networking NETWORKING = new Networking();
     public static boolean isLobby = false;
