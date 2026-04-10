@@ -2,12 +2,18 @@ package io.wifi.starrailexpress.util;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class ShopEntry extends dev.doctor4t.wathe.util.ShopEntry {
     public ShopEntry(ItemStack stack, int price, dev.doctor4t.wathe.util.ShopEntry.Type type) {
         super(stack, price, type);
+    }
+
+    public boolean isSafeTime(@NotNull Player player) {
+        return player.hasEffect(ModEffects.NO_COLLIDE);
     }
 
     public boolean canDisplay(@NotNull Player player) {

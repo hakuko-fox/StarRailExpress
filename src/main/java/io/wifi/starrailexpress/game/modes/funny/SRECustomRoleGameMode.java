@@ -30,6 +30,8 @@ import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
+import io.wifi.starrailexpress.network.CloseUiPayload;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -252,6 +254,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                     playerShopComponent.addToBalance(100);
                 }
             }
+            ClientPlayNetworking.send(new CloseUiPayload());
         }
         SRE.REPLAY_MANAGER.updateReplayInitialRoles(players, gameWorldComponent.getRoles());
     }
