@@ -1,5 +1,14 @@
 package org.agmas.noellesroles.client.screen;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import org.agmas.noellesroles.commands.GameUtilsCommand;
+
+import io.wifi.starrailexpress.api.SREGameModes;
+import io.wifi.starrailexpress.command.MapVoteCommand;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -9,15 +18,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import org.agmas.noellesroles.commands.GameUtilsCommand;
-
-import io.wifi.starrailexpress.api.SREGameModes;
-import io.wifi.starrailexpress.command.MapVoteCommand;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 
 public class GameManagementScreen extends Screen {
 
@@ -188,13 +188,13 @@ public class GameManagementScreen extends Screen {
                         "tmm:game psycho stop", 0xFF5577CC));
         effects.section("screen.game_manage.section.timestop", 0xFFBB5533)
                 .add(Entry.button("screen.game_manage.btn.trigger_timestop_5s",
-                        "tmm:game timestop 100", 0xFFBB5533))
+                        "tmm:game timestop 100 \"5s Time Stop\"", 0xFFBB5533))
                 .add(Entry.button("screen.game_manage.btn.trigger_timestop_10s",
-                        "tmm:game timestop 200", 0xFFBB5533))
+                        "tmm:game timestop 200 \"10s Time Stop\"", 0xFFBB5533))
                 .add(Entry.button("screen.game_manage.btn.trigger_timestop_20s",
-                        "tmm:game timestop 400", 0xFFBB5533))
+                        "tmm:game timestop 400 \"20s Time Stop\"", 0xFFBB5533))
                 .add(Entry.button("screen.game_manage.btn.trigger_timestop_30s",
-                        "tmm:game timestop 600", 0xFFBB5533))
+                        "tmm:game timestop 600 \"30s Time Stop\"", 0xFFBB5533))
                 .add(Entry.button("screen.game_manage.btn.stop_timestop",
                         "tmm:game timestop stop", 0xFF5577CC));
         CATEGORIES.add(effects);
