@@ -224,24 +224,6 @@ public class InstinctRenderer {
             }
             return -1;
         });
-        // 傀儡师
-        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            var client = Minecraft.getInstance();
-            if (client == null || client.player == null)
-                return -1;
-            if (SREClient.gameComponent == null) {
-                return -1;
-            }
-            if (GameUtils.isPlayerSpectatingOrCreative(client.player))
-                return -1;
-            if (target instanceof Player) {
-                PuppeteerPlayerComponent selfPuppeteerComp = ModComponents.PUPPETEER.get(client.player);
-                if (selfPuppeteerComp.isControllingPuppet && SREClient.isPlayerAliveAndInSurvival()) {
-                    return ModRoles.PUPPETEER.color();
-                }
-            }
-            return -1;
-        });
         // 初学者
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (SREClient.gameComponent == null) {
@@ -534,6 +516,13 @@ public class InstinctRenderer {
                 // 直觉看不到旁观
                 if ((target_player).isSpectator())
                     return -2;
+                
+                // 小透明：杀手无法看到高亮（杀手，与大部分中立偏狼）
+                if (SREClient.gameComponent.isRole(target_player, ModRoles.GHOST) && isKillerTeam(self_role)
+                        && SREClient.isPlayerAliveAndInSurvival()) {
+                    return -2;
+                }
+
                 // 风精灵
                 if (SREClient.gameComponent.isRole(self, ModRoles.WIND_YAOSE)) {
                     return ModRoles.WIND_YAOSE.getColor();
@@ -550,15 +539,14 @@ public class InstinctRenderer {
                 }
                 // 傀儡师
                 PuppeteerPlayerComponent selfPuppeteerComp = ModComponents.PUPPETEER.get(self);
-                if (selfPuppeteerComp.isPuppeteerMarked && SREClient.isPlayerAliveAndInSurvival()
+                if (selfPuppeteerComp.isControllingPuppet && SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()) {
+                    return ModRoles.PUPPETEER.color();
+                }
+                if (selfPuppeteerComp.isPuppeteerMarked && SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()
                         && selfPuppeteerComp.phase >= 1) {
                     return -1;
                 }
-                // 小透明：杀手无法看到高亮（所有，包括爱慕）
-                if (SREClient.gameComponent.isRole(target_player, ModRoles.GHOST) && isKillerTeam(self_role)
-                        && SREClient.isPlayerAliveAndInSurvival()) {
-                    return -2;
-                }
+
                 // 秉烛人：杀手无法透视察觉
                 if (SREClient.gameComponent.isRole(target_player, ModRoles.CANDLE_BEARER) && isKillerTeam(self_role)
                         && SREClient.isPlayerAliveAndInSurvival()) {
