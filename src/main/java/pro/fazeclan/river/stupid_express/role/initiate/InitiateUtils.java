@@ -17,6 +17,8 @@ import pro.fazeclan.river.stupid_express.utils.StupidRoleUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.agmas.noellesroles.init.ModEffects;
+
 public class InitiateUtils {
 
     private static final int FIVE_SECONDS_TICKS = GameConstants.getInTicks(0, 5);
@@ -61,14 +63,16 @@ public class InitiateUtils {
                     .filter(p -> GameUtils.isPlayerAliveAndSurvival(p)
                             && (gameWorldComponent.isRole(p, SERoles.INITIATE)))
                     .collect(Collectors.toList());
-
             int initiateCount = initiates.size();
 
             // 如果没有初学者，不做任何修改
             if (initiateCount == 0) {
                 return;
             }
-
+            // 安全时间
+            if (initiates.getFirst().hasEffect(ModEffects.NO_COLLIDE)) {
+                return;
+            }
             // 如果有2个或更多初学者，不做任何修改
             if (initiateCount >= 2) {
                 return;

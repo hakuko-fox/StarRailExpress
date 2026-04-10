@@ -370,7 +370,7 @@ public class RoleShopHandler {
     }
 
     {
-      // BAKA的商店
+      // INITIATE的商店
       var SHOP = new ArrayList<ShopEntry>();
       SHOP.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
       ShopContent.customEntries.put(SERoles.INITIATE.getIdentifier(), SHOP);
