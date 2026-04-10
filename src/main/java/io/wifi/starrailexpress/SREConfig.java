@@ -17,7 +17,7 @@ public class SREConfig implements ConfigData {
 
             // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
-    public boolean enableNoLimitLoversInLoverMode = true;
+    public boolean enableNoLimitLoversInLoverMode = false;
     @ConfigEntry.Category(value = "gamemodes")
     public float loverModeLoversPercent = 1f;
     @ConfigEntry.Category(value = "gamemodes")
@@ -25,9 +25,9 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "gamemodes")
     public float gamblerModeGamblerPercent = 1f;
     @ConfigEntry.Category(value = "gamemodes")
-    public int gamblerModeGamblerKillTime = 200;
+    public int gamblerModeGamblerKillTime = 190;
     @ConfigEntry.Category(value = "gamemodes")
-    public int customRoleModeForceSelectTime = 30;
+    public int customRoleModeForceSelectTime = 15;
     @ConfigEntry.Category(value = "gamemodes")
     public double antWarPlayerScale = -0.5;
     @ConfigEntry.Category(value = "gamemodes")
