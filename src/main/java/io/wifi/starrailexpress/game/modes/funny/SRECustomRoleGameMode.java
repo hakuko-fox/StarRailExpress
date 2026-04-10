@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
+import static io.wifi.starrailexpress.game.GameUtils.addItemCooldowns;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +20,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.SpecialGameModeRoles;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerProgressionComponent;
 import io.wifi.starrailexpress.cca.SREPlayerProgressionComponent.FactionCardType;
@@ -47,7 +50,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
     }
 
     long roleSelectTimeout = -1;
-    int safeTick = -1;
+    int selectionTick = -1;
 
     @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
@@ -55,15 +58,15 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         (SRETrainWorldComponent.KEY.get(serverWorld))
                 .setTimeOfDay(SRETrainWorldComponent.TimeOfDay.MIDNIGHT);
         gameWorldComponent.clearRoleMap();
-        safeTick = SREConfig.instance().customRoleModeForceSelectTime * 20;
-        roleSelectTimeout = serverWorld.getGameTime() + safeTick;
+        selectionTick = SREConfig.instance().customRoleModeForceSelectTime * 20;
+        roleSelectTimeout = serverWorld.getGameTime() + selectionTick;
         ArrayList<ServerPlayer> unassignedPlayers = new ArrayList<>(players);
         for (ServerPlayer player : unassignedPlayers) {
             gameWorldComponent.addRole(player, SpecialGameModeRoles.CUSTOM_PENDING, false);
             CustomRoleGameModeTeamsPlayerComponent.KEY.get(player).setTeam(0);
             player.addEffect(new MobEffectInstance(
                     ModEffects.NO_COLLIDE,
-                    safeTick,
+                    selectionTick,
                     10,
                     true, // ambient - 环境效果（粒子更少更透明）
                     false, // showParticles - 不显示粒子
@@ -71,7 +74,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             ));
             player.addEffect(new MobEffectInstance(
                     MobEffects.INVISIBILITY,
-                    safeTick,
+                    selectionTick,
                     10,
                     true, // ambient - 环境效果（粒子更少更透明）
                     false, // showParticles - 不显示粒子
@@ -246,6 +249,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         for (ServerPlayer p : players) {
             SRERole role = roleWorldComponent.getRole(p);
             p.removeEffect(ModEffects.SKILL_BANED);
+            p.removeEffect(ModEffects.NO_COLLIDE);
             if (role != null) {
                 ModdedRoleAssigned.EVENT.invoker().assignModdedRole(p, role);
                 RoleUtils.sendWelcomeAnnouncement(p);
@@ -256,7 +260,10 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             }
             ServerPlayNetworking.send(p, new CloseUiPayload());
         }
+        int SAFE_TIME_COOLDOWN = SREConfig.instance().safeTimeCooldown * 20;
+        addItemCooldowns(serverWorld, SAFE_TIME_COOLDOWN);
         SRE.REPLAY_MANAGER.updateReplayInitialRoles(players, gameWorldComponent.getRoles());
+        SREGameTimeComponent.KEY.get(serverWorld).addTime(selectionTick);
     }
 
     @Override

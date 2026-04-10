@@ -70,7 +70,7 @@ public class InitiateUtils {
                 return;
             }
             // 安全时间
-            if (initiates.getFirst().hasEffect(ModEffects.NO_COLLIDE)) {
+            if (initiates.stream().anyMatch(p -> p.hasEffect(ModEffects.NO_COLLIDE))) {
                 return;
             }
             // 如果有2个或更多初学者，不做任何修改
