@@ -37,17 +37,13 @@ public class TimeStopClock extends Item {
         super(properties);
     }
 
-//    @Override
-//    public @NonNull ItemStack getDefaultInstance() {
-//        // 创建带默认组件的物品栈
-//        CompoundTag defaultTag = new CompoundTag();
-//        defaultTag.putInt(TAG_STOP_TIME, DEFAULT_STOP_TIME);
-//        defaultTag.putInt(TAG_COOLDOWN, DEFAULT_COOL_DOWN);
-//
-//        ItemStack stack = new ItemStack(this);
-//        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(defaultTag));
-//        return stack;
-//    }
+    @Override
+    public @NonNull ItemStack getDefaultInstance() {
+        // 创建带默认组件的物品栈
+        ItemStack stack = new ItemStack(this);
+        stack.set(DataComponents.CUSTOM_DATA, getDefaultCustomData());
+        return stack;
+    }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
@@ -81,6 +77,7 @@ public class TimeStopClock extends Item {
                 ItemComponentUtils.getCustomDataTagIntValue(stack, TAG_COOLDOWN) / 20));
         super.appendHoverText(stack, context, tooltip, type);
     }
+
     public static CustomData getDefaultCustomData() {
         CompoundTag defaultTag = new CompoundTag();
         defaultTag.putInt(TAG_STOP_TIME, DEFAULT_STOP_TIME);
