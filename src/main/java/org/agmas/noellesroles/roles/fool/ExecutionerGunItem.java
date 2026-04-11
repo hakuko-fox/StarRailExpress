@@ -93,7 +93,8 @@ public class ExecutionerGunItem extends Item {
 
         // 检查目标是否为当前异端
         long currentTick = shooter.level().getGameTime();
-        if (comp.hasActiveHeretic(currentTick) && target.getUUID().equals(comp.hereticTarget)) {
+        if (comp.hasActiveHeretic(currentTick) && comp.hereticTarget != null
+                && target.getUUID().equals(comp.hereticTarget)) {
             // 目标是异端——消耗子弹
             if (comp.executionerBullets > 0) {
                 comp.executionerBullets--;
