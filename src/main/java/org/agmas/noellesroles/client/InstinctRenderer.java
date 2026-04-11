@@ -437,6 +437,8 @@ public class InstinctRenderer {
                 if (SREClient.gameComponent.isRole(self, ModRoles.CHEF)) {
                     // LoggerFactory.getLogger("renderer").info("glowTick {}",
                     // bartenderPlayerComponent.glowTicks);
+                    if (self.hasEffect(ModEffects.NO_COLLIDE))
+                        return -1;
                     int t = FoodDrinkGlowComponent.KEY.get(self).glowTicks
                             .getOrDefault(target.getScoreboardName(), new HashMap<>())
                             .getOrDefault(1, 0);
@@ -447,7 +449,8 @@ public class InstinctRenderer {
                 if (SREClient.gameComponent.isRole(self, ModRoles.BARTENDER)) {
                     // LoggerFactory.getLogger("renderer").info("glowTick {}",
                     // bartenderPlayerComponent.glowTicks);
-
+                    if (self.hasEffect(ModEffects.NO_COLLIDE))
+                        return -1;
                     if (armorPlayerComponent.getArmor() > 0 && playerPoisonComponent.poisonTicks > 0) {
                         return (new Color(186, 255, 65).getRGB());
 
@@ -516,7 +519,7 @@ public class InstinctRenderer {
                 // 直觉看不到旁观
                 if ((target_player).isSpectator())
                     return -2;
-                
+
                 // 小透明：杀手无法看到高亮（杀手，与大部分中立偏狼）
                 if (SREClient.gameComponent.isRole(target_player, ModRoles.GHOST) && isKillerTeam(self_role)
                         && SREClient.isPlayerAliveAndInSurvival()) {
