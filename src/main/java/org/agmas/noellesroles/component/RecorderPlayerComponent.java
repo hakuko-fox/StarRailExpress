@@ -55,8 +55,7 @@ public class RecorderPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     public void initRecorder() {
-        var players = player.level().players();
-        int totalPlayers = players.size();
+        int totalPlayers = SREGameWorldComponent.KEY.get(player.level()).getPlayerCount();
         this.requiredCorrectCount = getRequiredCorrectCount(totalPlayers);
         this.MAX_WRONG_GUESSES = 5;
         this.sync();
@@ -101,7 +100,7 @@ public class RecorderPlayerComponent implements RoleComponent, ServerTickingComp
         Player target = player.level().getPlayerByUUID(targetUuid);
         boolean isCorrect = false;
 
-        int playerCount = player.level().players().size();
+        int playerCount = gameWorld.getPlayerCount();
         int cooldownSeconds;
         if (playerCount < 10) {
             cooldownSeconds = 1;

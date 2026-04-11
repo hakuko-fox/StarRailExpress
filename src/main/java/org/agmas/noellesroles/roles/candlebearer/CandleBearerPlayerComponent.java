@@ -86,7 +86,7 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
         invisibilityTicks = 0;
         livingCandleCooldownTicks = 0;
         successfulCandles = 0;
-        int totalPlayers = player.level().players().size();
+        int totalPlayers = SREGameWorldComponent.KEY.get(player.level()).getPlayerCount();
         requiredCandles = Math.max(4, totalPlayers / 5 + 1);
         sync();
     }
@@ -127,7 +127,7 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
             return;
         }
 
-        int totalPlayers = player.level().players().size();
+        int totalPlayers = gameWorld.getPlayerCount();
         int newRequired = Math.max(4, totalPlayers / 5 + 2);
         if (requiredCandles != newRequired) {
             requiredCandles = newRequired;

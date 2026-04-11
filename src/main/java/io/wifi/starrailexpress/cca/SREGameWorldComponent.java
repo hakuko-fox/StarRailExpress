@@ -45,6 +45,16 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     private boolean lockedToSupporters = false;
     private boolean enableWeights = false;
 
+    public int getPlayerCount() {
+        return playerCount;
+    }
+
+    public void setPlayerCount(int playerCount) {
+        this.playerCount = playerCount;
+    }
+
+    private int playerCount = 0;
+
     public boolean isOutsideSoundsAvailable() {
         return haveOutsideSounds;
     }
@@ -381,6 +391,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 : false;
         // this.syncRole = nbtCompound.getBoolean("SyncRole");
         // if (!syncRole) {
+        if (nbtCompound.contains("StartingPlayerCount")){
+            this.startingPlayerCount = nbtCompound.getInt("StartingPlayerCount");
+        }else {
+            this.startingPlayerCount = 0;
+        }
         if (nbtCompound.contains("GameMode"))
             this.gameMode = SREGameModes.GAME_MODES.get(ResourceLocation.parse(nbtCompound.getString("GameMode")));
         else
@@ -433,6 +448,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             nbtCompound.putBoolean("isSkillAvailable", isSkillAvailable);
         // if (!this.syncRole) {
         nbtCompound.putString("GameStatus", this.gameStatus.name());
+        nbtCompound.putInt("StartingPlayerCount", startingPlayerCount);
         // nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
     }

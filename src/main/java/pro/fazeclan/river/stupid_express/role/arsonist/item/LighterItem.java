@@ -43,15 +43,14 @@ public class LighterItem extends Item {
             return InteractionResultHolder.pass(player.getItemInHand(interactionHand));
         }
         var server = player.getServer();
-        var players = server.getPlayerList().getPlayers();
-        var alivePlayers = players.stream().filter(GameUtils::isPlayerAliveAndSurvival).toList();
+        var players1 = server.getPlayerList().getPlayers();
+        var alivePlayers = players1.stream().filter(GameUtils::isPlayerAliveAndSurvival).toList();
         var dousedCountComponent = DousedPlayerComponent.KEY.get(player);
         var dousedCount = dousedCountComponent.dousedCount;
         if (dousedCount >= (int) (alivePlayers.size() * 0.3)) {
             // 杀死所有存活且被泼油的玩家
-            for (ServerPlayer target : players) {
-                if (DousedPlayerComponent.KEY.get(target).getDoused()
-                        && GameUtils.isPlayerAliveAndSurvival(target)) {
+            for (ServerPlayer target : alivePlayers) {
+                if (DousedPlayerComponent.KEY.get(target).getDoused()) {
                     GameUtils.killPlayer(target, true, player, StupidExpress.id("ignited"));
                 }
                 DousedPlayerComponent.KEY.get(target).reset();
@@ -60,7 +59,7 @@ public class LighterItem extends Item {
             player.playNotifySound(SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
             player.displayClientMessage(Component.translatable("item.stupid_express.lighter.used"), true);
             player.playNotifySound(SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS, 1f, 1f);
-            var playersLeft = players.stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
+            var playersLeft = players1.stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
             if (playersLeft <= 1) {
                 // 纵火犯独立胜利统计：使用 RoleUtils.customWinnerWin
                 StupidRoleUtils.customWinnerWin(serverLevel, GameUtils.WinStatus.CUSTOM,
