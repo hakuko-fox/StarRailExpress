@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -22,6 +23,7 @@ public class SetEnabledRoleCommand {
         dispatcher.register(Commands.literal("setEnabledRole")
                 .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
                 .then(Commands.literal("enableAll").executes(SetEnabledRoleCommand::enableAll))
+                .then(Commands.literal("disableAll").executes(SetEnabledRoleCommand::disableAll))
                 .then(Commands.argument("role", RoleArgumentType.create())
                         .then(Commands.argument("enabled", BoolArgumentType.bool())
                                 .executes(SetEnabledRoleCommand::execute))));
@@ -31,8 +33,22 @@ public class SetEnabledRoleCommand {
         if (!Harpymodloader.isMojangVerify) {
             return 1;
         }
-
         HarpyModLoaderConfig.HANDLER.instance().disabled.clear();
+        HarpyModLoaderConfig.HANDLER.save();
+        context.getSource()
+                .sendSuccess(() -> Component.translatable("commands.setenabledrole.enable.success", "ALL"), true);
+
+        return 1;
+    }
+
+    private static int disableAll(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        if (!Harpymodloader.isMojangVerify) {
+            return 1;
+        }
+        HarpyModLoaderConfig.HANDLER.instance().disabled.clear();
+        for (var role : TMMRoles.ROLES.keySet()) {
+            HarpyModLoaderConfig.HANDLER.instance().disabled.add(role.toString());
+        }
         HarpyModLoaderConfig.HANDLER.save();
         context.getSource()
                 .sendSuccess(() -> Component.translatable("commands.setenabledrole.enable.success", "ALL"), true);

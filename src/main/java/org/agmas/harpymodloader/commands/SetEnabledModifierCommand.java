@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -12,6 +13,7 @@ import net.minecraft.network.chat.HoverEvent;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.argument.ModifierArgumentType;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 
 public class SetEnabledModifierCommand {
@@ -23,9 +25,25 @@ public class SetEnabledModifierCommand {
                 Commands.literal("setEnabledModifier")
                         .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
                         .then(Commands.literal("enableAll").executes(SetEnabledModifierCommand::enableAll))
+                        .then(Commands.literal("disableAll").executes(SetEnabledModifierCommand::disableAll))
                         .then(Commands.argument("modifier", ModifierArgumentType.create())
                                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                                         .executes(SetEnabledModifierCommand::execute))));
+    }
+
+    private static int disableAll(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        if (!Harpymodloader.isMojangVerify) {
+            return 1;
+        }
+        HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.clear();
+        for (var role : HMLModifiers.MODIFIERS) {
+            HarpyModLoaderConfig.HANDLER.instance().disabledModifiers.add(role.identifier().toString());
+        }
+        HarpyModLoaderConfig.HANDLER.save();
+        context.getSource()
+                .sendSuccess(() -> Component.translatable("commands.setenabledrole.enable.success", "ALL"), true);
+
+        return 1;
     }
 
     private static int enableAll(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
