@@ -751,7 +751,7 @@ public class RoleShopHandler {
           ModRoles.AWESOME_BINGLUS_ID,
           List.of(
               new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 10, ShopEntry.Type.TOOL),
-              new ShopEntry(ModItems.GIANT_NOTE.getDefaultInstance(), 150, ShopEntry.Type.TOOL)));
+              new ShopEntry(ModItems.GIANT_NOTE.getDefaultInstance(), 75, ShopEntry.Type.TOOL)));
     }
     {
       ShopContent.customEntries.put(
