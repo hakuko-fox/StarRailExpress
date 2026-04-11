@@ -771,7 +771,7 @@
   "container.noellesroles.detective.inspect": "審查 %s 的物品欄",
   "hud.noellesroles.detective.cooldown": "審查冷卻：%s秒",
   "hud.noellesroles.detective.ready": "審查已就緒！按G並瞄準目標",
-  "hud.noellesroles.detective.ready_cost": "審查就緒（200金幣）",
+  "hud.noellesroles.detective.ready_cost": "審查就緒（150金幣）",
   "screen.noellesroles.detective.read_only": "只讀模式",
   "==================== 郵差螢幕 ====================": "",
   "screen.noellesroles.postman.title": "隱秘傳遞",

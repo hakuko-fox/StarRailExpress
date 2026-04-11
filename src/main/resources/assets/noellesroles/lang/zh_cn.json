@@ -771,7 +771,7 @@
   "container.noellesroles.detective.inspect": "审查 %s 的物品栏",
   "hud.noellesroles.detective.cooldown": "审查冷却：%s秒",
   "hud.noellesroles.detective.ready": "审查已就绪！按G并瞄准目标",
-  "hud.noellesroles.detective.ready_cost": "审查就绪（200金币）",
+  "hud.noellesroles.detective.ready_cost": "审查就绪（150金币）",
   "screen.noellesroles.detective.read_only": "只读模式",
   "==================== 邮差屏幕 ====================": "",
   "screen.noellesroles.postman.title": "隐秘传递",
