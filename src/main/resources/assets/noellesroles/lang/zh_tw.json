@@ -1802,5 +1802,11 @@
   "announcement.star.role.imitator": "模仿者",
   "announcement.star.role.noellesroles.imitator": "模仿者",
   "announcement.star.goals.imitator": "一名善變的殺手會懂得將他人的能力化為己用！",
-  "announcement.star.win.imitator": "殺手陣營勝利！"
+  "announcement.star.win.imitator": "殺手陣營勝利！",
+  "message.noellesroles.fool.vote_started": "塔羅會匿名投票開始了",
+  "hud.noellesroles.fool.meeting_active": "§6塔羅會進行中: %ds (按G結束，按V投票)",
+  "hud.noellesroles.fool.vote_active": "§6投票階段剩餘: %ds",
+  "screen.noellesroles.fool.vote.title": "塔羅會投票",
+  "screen.noellesroles.fool.vote.subtitle": "請選擇一名其他存活參會者",
+  "screen.noellesroles.fool.vote.remaining": "剩餘時間：%s秒"
 }

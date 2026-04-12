@@ -4,15 +4,23 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import org.agmas.noellesroles.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.entity.WheelchairEntityModel;
 
 import java.util.UUID;
 
@@ -21,16 +29,20 @@ import java.util.UUID;
  * 
  * 使用玩家皮肤渲染傀儡本体
  */
-public class PuppeteerBodyEntityRenderer extends EntityRenderer<PuppeteerBodyEntity> {
+public class PuppeteerBodyEntityRenderer extends LivingEntityRenderer<PuppeteerBodyEntity, PlayerModel<PuppeteerBodyEntity>> {
 
-    public PuppeteerBodyEntityRenderer(EntityRendererProvider.Context ctx) {
-        super(ctx);
+
+    public PuppeteerBodyEntityRenderer(EntityRendererProvider.Context context) {
+        super(context,new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM ),true), 0.5f);
+        modelNormal = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER ),false);
     }
+    public static PlayerModel<PuppeteerBodyEntity> modelNormal;
 
     @Override
     public void render(PuppeteerBodyEntity entity, float yaw, float tickDelta, PoseStack matrices,
             MultiBufferSource vertexConsumers, int light) {
 
+        super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);
         // matrices.pushPose();
 
         // 调整渲染位置和旋转
@@ -38,22 +50,22 @@ public class PuppeteerBodyEntityRenderer extends EntityRenderer<PuppeteerBodyEnt
 
         // 获取玩家皮肤纹理
         // ResourceLocation texture = getTextureLocation(entity);
-        final var instance = Minecraft.getInstance();
-        UUID ownerUuid = entity.getOwnerUuid().orElse(null);
-        PlayerInfo entry = SREClient.PLAYER_ENTRIES_CACHE.get(ownerUuid);
-        if (entry != null) {
-            AbstractClientPlayer fakePlayer = new RemotePlayer(instance.level,
-                    new GameProfile(ownerUuid, entry.getProfile().getName()));
-            Minecraft.getInstance().getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0, 0, 0, matrices,
-                    vertexConsumers, light);
-
-        } else {
-            AbstractClientPlayer fakePlayer = new RemotePlayer(instance.level,
-                    new GameProfile(UUID.randomUUID(), "pupu"));
-            Minecraft.getInstance().getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0, 0, 0, matrices,
-                    vertexConsumers, light);
-
-        }
+//        final var instance = Minecraft.getInstance();
+//        UUID ownerUuid = entity.getOwnerUuid().orElse(null);
+//        PlayerInfo entry = SREClient.PLAYER_ENTRIES_CACHE.get(ownerUuid);
+//        if (entry != null) {
+//            AbstractClientPlayer fakePlayer = new RemotePlayer(instance.level,
+//                    new GameProfile(ownerUuid, entry.getProfile().getName()));
+//            Minecraft.getInstance().getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0, 0, 0, matrices,
+//                    vertexConsumers, light);
+//
+//        } else {
+//            AbstractClientPlayer fakePlayer = new RemotePlayer(instance.level,
+//                    new GameProfile(UUID.randomUUID(), "pupu"));
+//            Minecraft.getInstance().getEntityRenderDispatcher().render(fakePlayer, 0.0D, 0.0D, 0, 0, 0, matrices,
+//                    vertexConsumers, light);
+//
+//        }
 
         // matrices.popPose();
 
@@ -69,6 +81,9 @@ public class PuppeteerBodyEntityRenderer extends EntityRenderer<PuppeteerBodyEnt
             // 通过 UUID 从玩家列表获取皮肤
             PlayerInfo entry = SREClient.PLAYER_ENTRIES_CACHE.get(ownerUuid);
             if (entry != null) {
+                if( entry.getSkin().model().equals(PlayerSkin.Model.WIDE)){
+                    model = modelNormal;
+                }
                 return entry.getSkin().texture();
             }
             // 如果玩家不在列表中（可能离线），使用基于 UUID 的默认皮肤

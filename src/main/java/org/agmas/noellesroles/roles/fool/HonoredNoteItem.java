@@ -1,7 +1,11 @@
 package org.agmas.noellesroles.roles.fool;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerNoteComponent;
+import io.wifi.starrailexpress.entity.NoteEntity;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.item.NoteItem;
+import io.wifi.starrailexpress.util.AdventureUsable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -13,7 +17,6 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -24,24 +27,24 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 尊名纸条
  *
- * 右键墙壁或地面贴附，生成一个不可破坏的文本实体（ArmorStand with CustomName）。
+ * 右键墙壁或地面贴附，生成一个不可破坏的文本实体（NoteEntity）。
  * 任何玩家距离纸条实体小于5格且视线无障碍时，按V键进行祷告。
  * 祷告完成后玩家获得"塔罗会成员"标签。
  *
  * 价格：50金币
  */
-public class HonoredNoteItem extends Item {
+public class HonoredNoteItem extends NoteItem implements AdventureUsable {
 
     public HonoredNoteItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
-        Level world = context.getLevel();
+    public InteractionResult useOn(@NotNull UseOnContext context) {
         Player player = context.getPlayer();
-        if (player == null) return InteractionResult.PASS;
-
+        if (player == null || player.isShiftKeyDown()) return InteractionResult.PASS;
+        
+        Level world = context.getLevel();
         if (!world.isClientSide) {
             ServerLevel serverWorld = (ServerLevel) world;
             SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverWorld);
@@ -54,41 +57,46 @@ public class HonoredNoteItem extends Item {
                 return InteractionResult.FAIL;
             }
 
-            BlockPos pos = context.getClickedPos();
-            BlockHitResult hitResult = new BlockHitResult(
-                    context.getClickLocation(), context.getClickedFace(), pos, context.isInside());
+            // 设置固定的尊名内容到玩家的笔记组件
+            SREPlayerNoteComponent component = SREPlayerNoteComponent.KEY.get(player);
+            component.setNote(
+                    "§l§6愚者",
+                    "§6不属于这个时代的愚者",
+                    "§6灰雾之上的神秘主宰",
+                    "§6执掌好运的黄黑之王"
+            );
+        }
+        
+        // 调用父类的 useOn 逻辑来放置纸条
+        return super.useOn(context);
+    }
 
-            // 在点击位置生成ArmorStand作为纸条实体
-            double x = hitResult.getLocation().x;
-            double y = hitResult.getLocation().y;
-            double z = hitResult.getLocation().z;
+    @Override
+    protected NoteEntity createNoteEntity(Level world) {
+        return new HonoredNoteEntity(world);
+    }
 
-            ArmorStand noteEntity = new ArmorStand(EntityType.ARMOR_STAND, serverWorld);
-            noteEntity.setPos(x, y, z);
-            noteEntity.setInvisible(true);
-            noteEntity.setNoGravity(true);
-            noteEntity.setCustomName(Component.translatable("entity.noellesroles.honored_note.name")
-                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-            noteEntity.setCustomNameVisible(true);
-            noteEntity.setInvulnerable(true);
-            noteEntity.setSmall(true);
-            // 标记为尊名纸条实体
-            noteEntity.addTag("fool_honored_note");
-            noteEntity.addTag("fool_owner_" + player.getUUID());
-
-            serverWorld.addFreshEntity(noteEntity);
-
-            // 消耗物品
-            ItemStack stack = context.getItemInHand();
-            stack.shrink(1);
-
-            player.displayClientMessage(
-                    Component.translatable("message.noellesroles.fool.note_placed").withStyle(ChatFormatting.GOLD),
-                    true);
-
-            return InteractionResult.SUCCESS;
+    /**
+     * 自定义的尊名纸条实体，具有特殊属性
+     */
+    private static class HonoredNoteEntity extends NoteEntity {
+        public HonoredNoteEntity(Level world) {
+            super(io.wifi.starrailexpress.index.TMMEntities.NOTE, world);
         }
 
-        return InteractionResult.sidedSuccess(world.isClientSide);
+        @Override
+        public boolean isPushable() {
+            return false;
+        }
+
+        @Override
+        public boolean isInvulnerable() {
+            return true;
+        }
+
+        @Override
+        public boolean fireImmune() {
+            return true;
+        }
     }
 }

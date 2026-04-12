@@ -1717,6 +1717,7 @@
   "message.noellesroles.fool.entered_meeting": "You have entered the Tarot Assembly",
   "message.noellesroles.fool.left_meeting": "You have left the Tarot Assembly",
   "message.noellesroles.fool.vote_cast": "Vote submitted",
+  "message.noellesroles.fool.vote_started": "The Tarot Assembly vote has begun",
   "message.noellesroles.fool.vote_no_heretic": "No heretic this session. You received a one-shot revolver",
   "message.noellesroles.fool.heretic_found": "Heretic identified: %s (golden glow, 60s)",
   "message.noellesroles.fool.bullet_replenished": "Executioner's Pistol ammo replenished",
@@ -1729,8 +1730,12 @@
   "hud.noellesroles.fool.bullets": "Executioner Ammo: %d/1",
   "hud.noellesroles.fool.tarot_members": "Tarot Members: %d",
   "hud.noellesroles.fool.heretic": "Heretic: %s (%ds)",
-  "hud.noellesroles.fool.meeting_active": "§6Tarot Assembly in progress (press G to end)",
+  "hud.noellesroles.fool.meeting_active": "§6Tarot Assembly: %ss (press G to end, J to vote)",
+  "hud.noellesroles.fool.vote_active": "§6Voting phase: %ss left",
   "hud.noellesroles.fool.cooldown": "Tarot Cooldown: %ds",
   "hud.noellesroles.fool.protection": "§aProtection: immune to next attack from %s",
+  "screen.noellesroles.fool.vote.title": "Tarot Assembly Ballot",
+  "screen.noellesroles.fool.vote.subtitle": "Choose another living participant",
+  "screen.noellesroles.fool.vote.remaining": "Time remaining: %ss",
   "info.screen.roleid.the_fool": "Innocent faction\\nModded Innocent\\nPlace Honored Notes (50 coins)\\nPlayers pray at notes to become Tarot members\\nPress G to convene Tarot Assembly (5min CD)\\nMembers vote to identify Heretic\\nExecutioner's Pistol: one-shot kill on Heretic only\\nSpirit Cloak: 5s invulnerability (200 coins)"
 }

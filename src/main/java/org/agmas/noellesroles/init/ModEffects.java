@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.init;
 
+import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -19,6 +20,8 @@ import org.agmas.noellesroles.effects.TimeStopEffect;
 
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> TAROT_ASSEMBLY = register("tarot_assembly",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> BLACK_MONITOR = register("black_monitor",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
@@ -127,6 +130,11 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> MOOD_REGENERATION = register("mood_regeneration",
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7AF2D2));
+    /**
+     无敌
+     */
+    public static final Holder<MobEffect> INVINCIBLE = register("invincible",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7AF2D2));
 
     /**
      * 无限体力
@@ -224,6 +232,11 @@ public class ModEffects {
      * 初始化所有药水效果
      */
     public static void init() {
-
+        AllowPlayerDeath.EVENT.register( (player, deathReason) -> {
+            if (player.hasEffect(ModEffects.INVINCIBLE)){
+                return false;
+            }
+            return true;
+        });
     }
 }

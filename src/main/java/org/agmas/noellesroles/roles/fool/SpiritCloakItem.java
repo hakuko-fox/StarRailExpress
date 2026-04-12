@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,12 +70,13 @@ public class SpiritCloakItem extends Item {
             comp.cloakCooldownEndTick = currentTick + COOLDOWN_DURATION;
 
             // 施加抗性提升255效果（实际无敌） + 虚弱255（无法攻击） + 发光效果
-            serverPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE,
-                    INVULNERABLE_DURATION, 254, false, true, true));
-            serverPlayer.addEffect(new MobEffectInstance(MobEffects.WEAKNESS,
+            serverPlayer.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE,
                     INVULNERABLE_DURATION, 254, false, false, false));
-            serverPlayer.addEffect(new MobEffectInstance(MobEffects.GLOWING,
-                    INVULNERABLE_DURATION, 0, false, false, true));
+            serverPlayer.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE,
+                    INVULNERABLE_DURATION, 254, false, false, false));
+            serverPlayer.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY,
+                    INVULNERABLE_DURATION, 254, false, false, false));
+
 
             comp.sync();
 

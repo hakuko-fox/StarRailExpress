@@ -62,14 +62,29 @@ public class FoolPlayerComponent implements RoleComponent {
     /** 当前是否正在塔罗会中 */
     public boolean inMeeting = false;
 
+    /** 会议开始时间，用于避免同一次按键导致立即结束 */
+    public long meetingStartTick = 0;
+
     /** 会议结束时间 */
     public long meetingEndTick = 0;
 
+    /** 当前是否处于匿名投票阶段 */
+    public boolean voteInProgress = false;
+
+    /** 投票阶段结束时间 */
+    public long voteEndTick = 0;
+
     /** 会议参与者的原始位置（UUID -> 坐标，服务端维护） */
-    public transient Map<UUID, double[]> meetingOriginalPositions = new HashMap<>();
+    public transient Map<UUID, double[]> meetingOriginalPositions = new LinkedHashMap<>();
 
     /** 会议中的傀儡实体ID（UUID -> entityId） */
     public transient Map<UUID, Integer> meetingPuppetIds = new HashMap<>();
+
+    /** 当前投票阶段的合格投票人 */
+    public transient Set<UUID> voteEligibleParticipants = new LinkedHashSet<>();
+
+    /** 当前投票记录（投票人 -> 目标） */
+    public transient Map<UUID, UUID> meetingVotes = new HashMap<>();
 
     // ==================== 祷告读条 ====================
     /** 当前是否正在祷告读条（客户端/服务端） */
@@ -109,9 +124,14 @@ public class FoolPlayerComponent implements RoleComponent {
         hereticEndTick = 0;
         protectionSource = null;
         inMeeting = false;
+        meetingStartTick = 0;
         meetingEndTick = 0;
+        voteInProgress = false;
+        voteEndTick = 0;
         meetingOriginalPositions.clear();
         meetingPuppetIds.clear();
+        voteEligibleParticipants.clear();
+        meetingVotes.clear();
         isPraying = false;
         prayStartTick = 0;
         cloakCooldownEndTick = 0;
@@ -167,6 +187,27 @@ public class FoolPlayerComponent implements RoleComponent {
         this.hereticTarget = null;
         this.hereticEndTick = 0;
         this.sync();
+    }
+
+    public void beginVotePhase(Collection<UUID> participants, long endTick) {
+        this.voteInProgress = true;
+        this.voteEndTick = endTick;
+        this.voteEligibleParticipants.clear();
+        this.voteEligibleParticipants.addAll(participants);
+        this.meetingVotes.clear();
+        this.sync();
+    }
+
+    public void clearVotePhase() {
+        this.voteInProgress = false;
+        this.voteEndTick = 0;
+        this.voteEligibleParticipants.clear();
+        this.meetingVotes.clear();
+        this.sync();
+    }
+
+    public boolean canVote(UUID playerUuid) {
+        return voteEligibleParticipants.contains(playerUuid);
     }
 
     /**
@@ -228,6 +269,9 @@ public class FoolPlayerComponent implements RoleComponent {
 
         // 会议状态
         tag.putBoolean("in_meeting", inMeeting);
+        tag.putLong("meeting_end_tick", meetingEndTick);
+        tag.putBoolean("vote_in_progress", voteInProgress);
+        tag.putLong("vote_end_tick", voteEndTick);
 
         // 祷告
         tag.putBoolean("is_praying", isPraying);
@@ -285,6 +329,9 @@ public class FoolPlayerComponent implements RoleComponent {
 
         // 会议状态
         inMeeting = tag.getBoolean("in_meeting");
+        meetingEndTick = tag.getLong("meeting_end_tick");
+        voteInProgress = tag.getBoolean("vote_in_progress");
+        voteEndTick = tag.getLong("vote_end_tick");
 
         // 祷告
         isPraying = tag.getBoolean("is_praying");

@@ -117,5 +117,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.roles.fool.FoolTarotVoteC2SPacket.ID,
                 org.agmas.noellesroles.roles.fool.FoolTarotVoteC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                org.agmas.noellesroles.roles.fool.FoolOpenTarotVoteS2CPacket.ID,
+                org.agmas.noellesroles.roles.fool.FoolOpenTarotVoteS2CPacket.CODEC);
     }
 }

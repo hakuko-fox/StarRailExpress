@@ -1810,7 +1810,7 @@
   "announcement.star.role.noellesroles.the_fool": "愚者",
   "announcement.star.goals.the_fool": "利用塔罗会的力量，找出隐藏在人群中的异端，以审判之名守护正义！",
   "announcement.star.win.the_fool": "好人阵营胜利！",
-  "info.screen.roleid.the_fool": "好人阵营\\n按右键放置尊名纸条(50金币)\\n其他玩家对着纸条按V键祷告成为塔罗会成员\\n按G召开塔罗会(冷却5分钟，死亡后6分钟)\\n成员投票选出异端(金色发光60秒)\\n处刑者手枪：仅对异端一击必杀\\n击杀异端后获得庇护(免疫该玩家一次伤害)\\n灵性斗篷(200金币)：5秒无敌不可攻击",
+  "info.screen.roleid.the_fool": "好人阵营\n按右键放置尊名纸条(50金币)\n其他玩家对着纸条按V键祷告成为塔罗会成员\n按G召开塔罗会(冷却5分钟，死亡后6分钟)\n成员投票选出异端(金色发光60秒)\n处刑者手枪：仅对异端一击必杀\n击杀异端后获得庇护(免疫该玩家一次伤害)\n灵性斗篷(200金币)：5秒无敌不可攻击",
 
   "item.noellesroles.executioner_gun": "处刑者手枪",
   "item.noellesroles.honored_note": "尊名纸条",
@@ -1827,11 +1827,12 @@
   "message.noellesroles.fool.tarot_cooldown": "塔罗会冷却中（%d秒）",
   "message.noellesroles.fool.tarot_started": "塔罗会已召开！",
   "message.noellesroles.fool.tarot_invite_title": "愚者大人召您进入迷雾之上",
-  "message.noellesroles.fool.tarot_invite_subtitle": "按 V 键进入",
-  "message.noellesroles.fool.tarot_invite_chat": "§6[塔罗会] §f愚者大人召您进入迷雾之上。按 V 键进入。",
+  "message.noellesroles.fool.tarot_invite_subtitle": "按 J 键进入",
+  "message.noellesroles.fool.tarot_invite_chat": "§6[塔罗会] §f愚者大人召您进入迷雾之上。按 J 键进入。",
   "message.noellesroles.fool.entered_meeting": "你已进入塔罗会",
   "message.noellesroles.fool.left_meeting": "你已离开塔罗会",
   "message.noellesroles.fool.vote_cast": "投票已提交",
+  "message.noellesroles.fool.vote_started": "塔罗会匿名投票开始了",
   "message.noellesroles.fool.vote_no_heretic": "本次会议未产生异端，你获得了一把一次性手枪",
   "message.noellesroles.fool.heretic_found": "异端已确定：%s（金色发光，持续60秒）",
   "message.noellesroles.fool.bullet_replenished": "处刑者手枪弹药已补充",
@@ -1844,7 +1845,11 @@
   "hud.noellesroles.fool.bullets": "处刑者手枪弹药: %d/1",
   "hud.noellesroles.fool.tarot_members": "塔罗会成员: %d人",
   "hud.noellesroles.fool.heretic": "异端: %s (%ds)",
-  "hud.noellesroles.fool.meeting_active": "§6塔罗会进行中 (按G结束)",
+  "hud.noellesroles.fool.meeting_active": "§6塔罗会进行中: %ds (按G结束，按V投票)",
+  "hud.noellesroles.fool.vote_active": "§6投票阶段剩余: %ds",
   "hud.noellesroles.fool.cooldown": "塔罗会冷却: %ds",
-  "hud.noellesroles.fool.protection": "§a庇护效果: 免疫来自 %s 的下一次伤害"
+  "hud.noellesroles.fool.protection": "§a庇护效果: 免疫来自 %s 的下一次伤害",
+  "screen.noellesroles.fool.vote.title": "塔罗会投票",
+  "screen.noellesroles.fool.vote.subtitle": "请选择一名其他存活参会者",
+  "screen.noellesroles.fool.vote.remaining": "剩余时间：%s秒"
 }

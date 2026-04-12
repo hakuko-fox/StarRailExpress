@@ -33,7 +33,10 @@ public class PrayerHandler {
 
         // 愚者自己不需要祷告
         if (gameComponent.isRole(player, ModRoles.THE_FOOL)) {
-            // 愚者按V——如果在会议中，尝试加入
+            FoolPlayerComponent foolComp = FoolPlayerComponent.KEY.get(player);
+            if (foolComp.inMeeting) {
+                TarotAssemblyManager.requestVoteScreen(player);
+            }
             return;
         }
 
@@ -54,7 +57,11 @@ public class PrayerHandler {
             if (foolComp.isTarotMember(player.getUUID())) {
                 // 已经是成员——如果愚者在开会议，加入会议
                 if (foolComp.inMeeting) {
-                    TarotAssemblyManager.memberJoinMeeting(player);
+                    if (foolComp.meetingOriginalPositions.containsKey(player.getUUID())) {
+                        TarotAssemblyManager.requestVoteScreen(player);
+                    } else {
+                        TarotAssemblyManager.memberJoinMeeting(player);
+                    }
                 } else {
                     player.displayClientMessage(
                             Component.translatable("message.noellesroles.fool.already_member")

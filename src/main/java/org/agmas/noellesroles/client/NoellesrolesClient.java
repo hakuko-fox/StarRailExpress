@@ -114,6 +114,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static Player targetFakeBody;
     public static Player hudTarget;
     public static boolean isTaskInstinctEnabled = false;
+    private static boolean foolMeetingPauseHandled = false;
     public static Map<UUID, UUID> SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static Map<UUID, UUID> JEB_SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static int jebShuffleTime = 0;
@@ -276,11 +277,23 @@ public class NoellesrolesClient implements ClientModInitializer {
         taskInstinctBind = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.noellesroles.taskinstinct",
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "category.starrailexpress.keybinds"));
         foolPrayerBind = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.noellesroles.fool_prayer",
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "category.starrailexpress.keybinds"));
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, "category.starrailexpress.keybinds"));
         ClientPlayNetworking.registerGlobalReceiver(CreateClientSmokeAreaPacket.ID, (payload, context) -> {
             ClientSmokeAreaManager.createSmokeArea(context.client().level, payload.position(), payload.radius(),
                     payload.durationTicks());
         });
+        ClientPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.roles.fool.FoolOpenTarotVoteS2CPacket.ID,
+                (payload, context) -> {
+                    final var client = context.client();
+                    client.execute(() -> {
+                        if (client.player == null) {
+                            return;
+                        }
+                        client.setScreen(new org.agmas.noellesroles.client.screen.FoolTarotVoteScreen(
+                                payload.candidates(), payload.durationSeconds()));
+                    });
+                });
         ClientTickEvents.END_WORLD_TICK.register((level) -> {
             if (level == null)
                 return;
@@ -799,6 +812,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 });
             }
             if (client.player.isCreative()) {
+                if (foolPrayerBind.consumeClick()) {
+                    ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
+                }
                 if (abilityBind.consumeClick()) {
                     if (SREClient.gameComponent.isRole(client.player, ModRoles.ATTENDANT)) {
                         ClientPlayNetworking.send(new AbilityC2SPacket());
@@ -806,6 +822,39 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
                 return;
             }
+
+            org.agmas.noellesroles.roles.fool.FoolPlayerComponent foolComponent =
+                    org.agmas.noellesroles.roles.fool.FoolPlayerComponent.KEY.get(client.player);
+//            if (client.screen instanceof org.agmas.noellesroles.client.screen.FoolTarotVoteScreen
+//                    && (!foolComponent.inMeeting || !foolComponent.voteInProgress)) {
+//                client.setScreen(null);
+//            }
+
+            if (foolPrayerBind.consumeClick()) {
+                ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
+            }
+
+            if (abilityBind.consumeClick()) {
+                if (SREClient.gameComponent.isRole(client.player, ModRoles.THE_FOOL)) {
+                    ClientPlayNetworking.send(new AbilityC2SPacket());
+                }
+            }
+
+            if (foolComponent.inMeeting) {
+                if (client.options.keyUse.consumeClick()) {
+                    ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolLeaveMeetingC2SPacket());
+                }
+
+                boolean pauseOpen = client.screen instanceof net.minecraft.client.gui.screens.PauseScreen;
+                if (pauseOpen && !foolMeetingPauseHandled) {
+                    ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolLeaveMeetingC2SPacket());
+                    client.setScreen(null);
+                }
+                foolMeetingPauseHandled = pauseOpen;
+            } else {
+                foolMeetingPauseHandled = false;
+            }
+
             if (!isPlayerInAdventureMode(client.player))
                 return;
             insanityTime++;
@@ -825,13 +874,6 @@ public class NoellesrolesClient implements ClientModInitializer {
 
             if (abilityBind.consumeClick()) {
                 ClientAbilityHandler.handler(client);
-            }
-
-            // V键：愚者祷告/加入塔罗会
-            if (foolPrayerBind.consumeClick()) {
-                if (client.player != null) {
-                    ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
-                }
             }
         });
 

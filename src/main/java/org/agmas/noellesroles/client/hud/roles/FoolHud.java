@@ -64,9 +64,20 @@ public abstract class FoolHud {
 
             // 会议状态
             if (comp.inMeeting) {
-                Component meetingText = Component.translatable("hud.noellesroles.fool.meeting_active");
+                long gameTime = client.level != null ? client.level.getGameTime() : 0;
+                long remainingTicks = Math.max(0, comp.meetingEndTick - gameTime);
+                Component meetingText = Component.translatable("hud.noellesroles.fool.meeting_active",
+                        remainingTicks / 20);
                 context.drawString(renderer, meetingText, xOffset, yOffset, 0xFFD700);
                 yOffset += lineHeight;
+
+                if (comp.voteInProgress && comp.voteEndTick > 0 && comp.voteEndTick != comp.meetingEndTick) {
+                    long voteRemainingTicks = Math.max(0, comp.voteEndTick - gameTime);
+                    Component voteText = Component.translatable("hud.noellesroles.fool.vote_active",
+                            voteRemainingTicks / 20);
+                    context.drawString(renderer, voteText, xOffset, yOffset, 0xFFAA55);
+                    yOffset += lineHeight;
+                }
             }
 
             // 冷却

@@ -750,20 +750,7 @@ public class ModPacketsReciever {
         org.agmas.noellesroles.roles.fool.FoolTarotVoteC2SPacket.ID,
         (payload, context) -> {
           ServerPlayer player = context.player();
-          // 投票逻辑需要由TarotAssemblyManager收集并在会议结束时统一处理
-          // 此处简化：直接记录投票
-          SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
-              .get(player.level());
-          ServerPlayer fool = org.agmas.noellesroles.roles.fool.TarotAssemblyManager
-              .findFoolPlayer((net.minecraft.server.level.ServerLevel) player.level(), gameWorldComponent);
-          if (fool != null) {
-            org.agmas.noellesroles.roles.fool.FoolPlayerComponent foolComp =
-                org.agmas.noellesroles.roles.fool.FoolPlayerComponent.KEY.get(fool);
-            // 存储投票（使用临时映射，在会议结束时处理）
-            player.displayClientMessage(
-                Component.translatable("message.noellesroles.fool.vote_cast")
-                    .withStyle(ChatFormatting.GREEN), true);
-          }
+        org.agmas.noellesroles.roles.fool.TarotAssemblyManager.submitVote(player, payload.votedFor());
         });
   }
 

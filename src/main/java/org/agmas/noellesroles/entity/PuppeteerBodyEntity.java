@@ -14,6 +14,7 @@ import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.component.ModComponents;
@@ -79,6 +80,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
             // 设置自定义名称
             this.setCustomName(Component.translatable("entity.manipulator_body.name", owner.getName()));
             this.setCustomNameVisible(false);
+            this.setPose(owner.getPose());
         }
     }
 
@@ -104,6 +106,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
         }
         return null;
     }
+
 
     /**
      * 获取皮肤 GameProfile（用于客户端渲染）

@@ -28,7 +28,7 @@ public abstract class MobEffectKeyMixin {
         if (player == null)
             return false;
         final var options = instance.options;
-        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA)
+        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)
                 || player.hasEffect(ModEffects.GHOST_CURSE)) {
             if (this.same(NoellesrolesClient.abilityBind)) {
                 return true;
@@ -39,7 +39,10 @@ public abstract class MobEffectKeyMixin {
                     || this.same(options.keyUp) || this.same(options.keyShift) || this.same(options.keyDown))
                 return true;
         }
-        if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)) {
+        if (player.hasEffect(ModEffects.TAROT_ASSEMBLY)){
+            if (this.same(options.keyInventory))return true;
+        }
+        if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
             if (this.same(options.keyAttack) || this.same(options.keyDrop) || this.same(options.keyUse))
                 return true;
         }
