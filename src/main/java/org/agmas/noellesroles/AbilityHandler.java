@@ -41,7 +41,8 @@ public class AbilityHandler {
 
     public static void handler(ServerPlayer player) {
         // 通用技能服务端处理
-
+        if (player.isSpectator())
+            return;
         SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                 .get(player);
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
@@ -517,6 +518,8 @@ public class AbilityHandler {
     }
 
     public static void handlerWithTarget(ServerPlayer player, UUID targetUUID) {
+        if (player.isSpectator())
+            return;
         SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                 .get(player);
 
