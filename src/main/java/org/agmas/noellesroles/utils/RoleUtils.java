@@ -200,12 +200,35 @@ public class RoleUtils extends MCItemsUtils {
         return count;
     }
 
-    public static void sendWelcomeAnnouncement(ServerPlayer player) {
+    public static void sendWelcomeAnnouncement(ServerPlayer player, ResourceLocation identifier, final int size) {
+        if (identifier == null)
+            return;
+        ServerPlayNetworking.send(player, new AnnounceWelcomePayload(
+                identifier.toString(), size, 0));
+    }
+
+    public static void sendWelcomeAnnouncement(ServerPlayer player, ResourceLocation identifier) {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
         final var size = gameWorldComponent.getAllKillerPlayers().size();
-        ServerPlayNetworking.send(player, new AnnounceWelcomePayload(
-                gameWorldComponent.getRole(player).getIdentifier().toString(), size, 0));
+        if (identifier == null)
+            return;
+        sendWelcomeAnnouncement(player, identifier, size);
+    }
+
+    public static void sendWelcomeAnnouncement(ServerPlayer player, SRERole role) {
+        if (role == null) {
+            return;
+        }
+        var identifier = role.getIdentifier();
+        sendWelcomeAnnouncement(player, identifier);
+    }
+
+    public static void sendWelcomeAnnouncement(ServerPlayer player) {
+        SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                .get(player.level());
+        SRERole role = gameWorldComponent.getRole(player);
+        sendWelcomeAnnouncement(player, role);
     }
 
     public static void changeRole(Player player, SRERole role) {

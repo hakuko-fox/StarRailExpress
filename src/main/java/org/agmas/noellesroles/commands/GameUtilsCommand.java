@@ -11,6 +11,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.*;
+import io.wifi.starrailexpress.command.ConfigCommand;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
@@ -82,12 +83,20 @@ public class GameUtilsCommand {
                       .then(Commands.literal("assign_event").executes((ctx) -> {
                         ServerPlayer player = ctx.getSource().getPlayerOrException();
                         SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
+                        if (role == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Player doesn't have any roles!"));
+                        }
                         ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
                         return 1;
                       }))
                       .then(Commands.literal("remove_event").executes((ctx) -> {
                         ServerPlayer player = ctx.getSource().getPlayerOrException();
                         SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
+                        if (role == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Player doesn't have any roles!"));
+                        }
                         ModdedRoleRemoved.EVENT.invoker().removeModdedRole(player, role);
                         return 1;
                       })))
