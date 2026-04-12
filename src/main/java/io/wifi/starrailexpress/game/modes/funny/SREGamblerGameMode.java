@@ -76,8 +76,8 @@ public class SREGamblerGameMode extends SREMurderGameMode {
         }
         for (ServerPlayer player : gamblerPlayers) {
             gameWorldComponent.addRole(player, ModRoles.GAMBLER, false);
-            ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, ModRoles.GAMBLER);
-            GamblerPlayerComponent.KEY.get(player).setDrawInterval(20 * 15);
+            // ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, ModRoles.GAMBLER);
+            GamblerPlayerComponent.KEY.get(player).initWithDrawInterval(20 * 15);
             RoleUtils.sendWelcomeAnnouncement(player);
             MCItemsUtils.insertStackInFreeSlot(player, ModItems.ONCE_REVOLVER.getDefaultInstance());
             player.addEffect(new MobEffectInstance(
