@@ -811,11 +811,12 @@ public class NoellesrolesClient implements ClientModInitializer {
                     client.setScreen(new RoleIntroduceScreen(client.player));
                 });
             }
+            boolean abilityPressed = abilityBind.consumeClick();
             if (client.player.isCreative()) {
                 if (foolPrayerBind.consumeClick()) {
                     ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
                 }
-                if (abilityBind.consumeClick()) {
+                if (abilityPressed) {
                     if (SREClient.gameComponent.isRole(client.player, ModRoles.ATTENDANT)) {
                         ClientPlayNetworking.send(new AbilityC2SPacket());
                     }
@@ -835,9 +836,11 @@ public class NoellesrolesClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
             }
 
-            if (abilityBind.consumeClick()) {
+            if (abilityPressed) {
                 if (SREClient.gameComponent.isRole(client.player, ModRoles.THE_FOOL)) {
                     ClientPlayNetworking.send(new AbilityC2SPacket());
+                } else {
+                    ClientAbilityHandler.handler(client);
                 }
             }
 
@@ -879,9 +882,6 @@ public class NoellesrolesClient implements ClientModInitializer {
 
             handleStalkerContinuousInput(client);
 
-            if (abilityBind.consumeClick()) {
-                ClientAbilityHandler.handler(client);
-            }
         });
 
         // 注册里世界场景管理器tick
