@@ -1267,7 +1267,8 @@ public class ModEventsRegister {
             // 更新烟雾区域和迷幻区域
             ServerSmokeAreaManager.tick();
             HallucinationAreaManager.tick();
-            for (ServerLevel level : server.getAllLevels()) {
+            ServerLevel level = server.overworld();
+            {
                 org.agmas.noellesroles.roles.fool.TarotAssemblyManager.serverLevelTick(level);
             }
         }));

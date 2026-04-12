@@ -1,7 +1,6 @@
 package org.agmas.noellesroles.roles.fool;
 
 import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import net.minecraft.core.HolderLookup;
@@ -124,24 +123,32 @@ public class FoolPlayerComponent implements RoleComponent {
     public Player getPlayer() {
         return player;
     }
-static {
-    AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
-        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorld.isRole(player, ModRoles.THE_FOOL)) {
-            FoolPlayerComponent foolPlayerComponent = KEY.get(player.level());
-            if (foolPlayerComponent.protectionSource.equals(killer.getUUID())){
-                if (player instanceof ServerPlayer serverPlayer){
-                    serverPlayer.sendSystemMessage(Component.translatable("message.noellesroles.fool.protection_immune",killer.getDisplayName().getString()),true );
-                    serverPlayer.playNotifySound(SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.PLAYERS, 1.0f,1.0f);
-                    ((ServerPlayer) killer).playNotifySound(SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.PLAYERS, 1.0f,1.0f);
-                    ((ServerPlayer) killer).sendSystemMessage(Component.translatable("message.noellesroles.fool.protection_immune",player.getDisplayName().getString()),true);
+
+    static {
+        AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorld.isRole(player, ModRoles.THE_FOOL)) {
+                FoolPlayerComponent foolPlayerComponent = KEY.get(player.level());
+                if (foolPlayerComponent.protectionSource.equals(killer.getUUID())) {
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        serverPlayer
+                                .sendSystemMessage(Component.translatable("message.noellesroles.fool.protection_immune",
+                                        killer.getDisplayName().getString()), true);
+                        serverPlayer.playNotifySound(SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.PLAYERS, 1.0f,
+                                1.0f);
+                        ((ServerPlayer) killer).playNotifySound(SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR,
+                                SoundSource.PLAYERS, 1.0f, 1.0f);
+                        ((ServerPlayer) killer)
+                                .sendSystemMessage(Component.translatable("message.noellesroles.fool.protection_immune",
+                                        player.getDisplayName().getString()), true);
+                    }
+                    return false;
                 }
-                return false;
             }
-        }
-        return true;
-    });
-}
+            return true;
+        });
+    }
+
     @Override
     public void init() {
         tarotMembers.clear();
@@ -253,6 +260,7 @@ static {
 
     /**
      * 消耗庇护效果
+     * 
      * @return true 如果庇护被消耗
      */
     public boolean consumeProtection(UUID attackerUuid) {
