@@ -1,5 +1,6 @@
 package pro.fazeclan.river.stupid_express.role.initiate;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -69,10 +70,6 @@ public class InitiateUtils {
             if (initiateCount == 0) {
                 return;
             }
-            // 安全时间
-            if (initiates.stream().anyMatch(p -> p.hasEffect(ModEffects.NO_COLLIDE))) {
-                return;
-            }
             // 如果有2个或更多初学者，不做任何修改
             if (initiateCount >= 2) {
                 return;
@@ -84,6 +81,13 @@ public class InitiateUtils {
 
                 // 检查是否是5秒的整倍数时刻
                 if (gameTime % FIVE_SECONDS_TICKS == 0) {
+
+                    // 安全时间
+                    if (initiates.stream().anyMatch(p -> p.hasEffect(ModEffects.NO_COLLIDE))) {
+                        return;
+                    }
+
+                    SRE.LOGGER.info("change_count:" + initiates.size());
                     ServerPlayer initiate = initiates.get(0);
                     clearModItems(initiate);
                     StupidRoleUtils.changeRole(initiate, SERoles.AMNESIAC);

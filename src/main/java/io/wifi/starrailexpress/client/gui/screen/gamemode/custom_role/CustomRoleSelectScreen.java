@@ -69,7 +69,7 @@ public class CustomRoleSelectScreen extends Screen {
     }
 
     public CustomRoleSelectScreen(Player player) {
-        super(Component.translatable("gui.noellesroles.gambler.title").withStyle(ChatFormatting.GOLD,
+        super(Component.translatable("gui.sre.gamemode.custom.title").withStyle(ChatFormatting.GOLD,
                 ChatFormatting.BOLD));
         this.component = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
 
@@ -328,7 +328,7 @@ public class CustomRoleSelectScreen extends Screen {
         if (this.minecraft.player.hasEffect(ModEffects.NO_COLLIDE)) {
             guiGraphics.drawCenteredString(font,
                     Component
-                            .translatable("gui.sre.gamemode.subtitle",
+                            .translatable("gui.sre.gamemode.custom.subtitle",
                                     this.minecraft.player.getEffect(ModEffects.NO_COLLIDE).getDuration() / 20)
                             .withStyle(ChatFormatting.WHITE),
                     width / 2, 45,

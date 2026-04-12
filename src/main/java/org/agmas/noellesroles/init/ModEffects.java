@@ -131,7 +131,7 @@ public class ModEffects {
     public static final Holder<MobEffect> MOOD_REGENERATION = register("mood_regeneration",
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7AF2D2));
     /**
-     无敌
+     * 无敌
      */
     public static final Holder<MobEffect> INVINCIBLE = register("invincible",
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7AF2D2));
@@ -232,14 +232,16 @@ public class ModEffects {
      * 初始化所有药水效果
      */
     public static boolean pierceDeath = false;
+
     public static void init() {
-        AllowPlayerDeath.EVENT.register( (player, deathReason) -> {
-            if (pierceDeath){
+        AllowPlayerDeath.EVENT.register((player, deathReason) -> {
+            if (pierceDeath) {
                 pierceDeath = false;
                 return true;
             }
-            if (player.hasEffect(ModEffects.INVINCIBLE)|| player.hasEffect(ModEffects.TAROT_ASSEMBLY)){
-
+            if (deathReason.equals(Noellesroles.id("bomb_death")))
+                return true;
+            if (player.hasEffect(ModEffects.INVINCIBLE) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
                 return false;
             }
             return true;
