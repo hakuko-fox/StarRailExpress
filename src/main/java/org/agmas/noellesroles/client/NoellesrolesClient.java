@@ -459,7 +459,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     if (client.screen instanceof LootInfoScreen screen) {
                         screen.setLotteryChance(screen.getLotteryChance() - 1);
                     }
-                    client.setScreen(new LootScreen(payload.poolID(), payload.quality(), payload.ansID(), client.screen));
+                    client.setScreen(
+                            new LootScreen(payload.poolID(), payload.quality(), payload.ansID(), client.screen));
                 }
             });
         });
@@ -514,7 +515,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(LootDataRefreshS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
             client.execute(() -> {
-                Minecraft minecraft  = Minecraft.getInstance();
+                Minecraft minecraft = Minecraft.getInstance();
                 if (minecraft.screen instanceof LootInfoScreen screen) {
                     screen.setCoinNumber(payload.coinNumber());
                     screen.setLotteryChance(payload.lootChance());
@@ -823,23 +824,14 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             }
 
-                org.agmas.noellesroles.roles.fool.FoolPlayerComponent foolComponent =
-                    org.agmas.noellesroles.roles.fool.FoolPlayerComponent.KEY.get(client.player);
-                boolean inTarotAssembly = client.player.hasEffect(ModEffects.TAROT_ASSEMBLY);
-//            if (client.screen instanceof org.agmas.noellesroles.client.screen.FoolTarotVoteScreen
-//                    && (!foolComponent.inMeeting || !foolComponent.voteInProgress)) {
-//                client.setScreen(null);
-//            }
-
-            if (foolPrayerBind.consumeClick()) {
-                ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
-            }
-
-            if (abilityBind.consumeClick()) {
-                if (SREClient.gameComponent.isRole(client.player, ModRoles.THE_FOOL)) {
-                    ClientPlayNetworking.send(new AbilityC2SPacket());
-                }
-            }
+            org.agmas.noellesroles.roles.fool.FoolPlayerComponent foolComponent = org.agmas.noellesroles.roles.fool.FoolPlayerComponent.KEY
+                    .get(client.player);
+            boolean inTarotAssembly = client.player.hasEffect(ModEffects.TAROT_ASSEMBLY);
+            // if (client.screen instanceof
+            // org.agmas.noellesroles.client.screen.FoolTarotVoteScreen
+            // && (!foolComponent.inMeeting || !foolComponent.voteInProgress)) {
+            // client.setScreen(null);
+            // }
 
             if (inTarotAssembly) {
                 if (client.options.keyUse.consumeClick()) {
@@ -876,7 +868,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                     i++;
                 }
             }
-
+            if (foolPrayerBind.consumeClick()) {
+                ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolPrayerC2SPacket());
+            }
             handleStalkerContinuousInput(client);
 
             if (abilityBind.consumeClick()) {

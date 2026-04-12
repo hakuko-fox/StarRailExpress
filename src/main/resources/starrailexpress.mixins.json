@@ -34,7 +34,8 @@
     "server.PlayerDiscord",
     "util.EntitySelectorMixin",
     "whitelist.ServerHandshakePacketListenerImplMixin",
-    "world.ChunkSerializerMixin"
+    "world.ChunkSerializerMixin",
+    "command.ExecuteCommandInvoker"
   ],
   "injectors": {
     "defaultRequire": 1
