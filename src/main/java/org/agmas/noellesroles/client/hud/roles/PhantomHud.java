@@ -8,6 +8,7 @@ import net.minecraft.util.CommonColors;
 import net.minecraft.world.effect.MobEffects;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 
 public class PhantomHud {
@@ -17,7 +18,8 @@ public class PhantomHud {
             Minecraft client = Minecraft.getInstance();
             if (SREClient.isPlayerSpectator())
                 return;
-
+            if (client.player.hasEffect(ModEffects.SKILL_BANED))
+                return;
             SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                     .get(client.player);
 

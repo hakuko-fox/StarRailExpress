@@ -443,6 +443,8 @@ public class CommonClientHudRenderer {
       Minecraft client = Minecraft.getInstance();
       Component text = null;
       int color = 0xFFFFFFFF;
+      if (client.player.hasEffect(ModEffects.SKILL_BANED))
+        return;
       GhostPlayerComponent ghostComponent = GhostPlayerComponent.KEY.get(client.player);
       if (!ghostComponent.abilityUnlocked) {
         text = Component.translatable("gui.noellesroles.ghost.locked");
@@ -596,10 +598,12 @@ public class CommonClientHudRenderer {
     // 忍者 HUD（模仿幽灵 Phantom）
     RoleHudRenderCallback.EVENT.register(ModRoles.NINJA_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
-      if (client.player == null) return;
+      if (client.player == null)
+        return;
 
       NinjaPlayerComponent ninjaComp = NinjaPlayerComponent.KEY.get(client.player);
-      if (ninjaComp == null) return;
+      if (ninjaComp == null)
+        return;
 
       int screenWidth = guiGraphics.guiWidth();
       int screenHeight = guiGraphics.guiHeight();
