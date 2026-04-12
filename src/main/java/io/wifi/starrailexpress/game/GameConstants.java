@@ -175,6 +175,7 @@ public class GameConstants {
 
     public static class DeathReasons {
         public static ResourceLocation BACKFIRE = SRE.id("backfire");
+        public static ResourceLocation EXECUTE = SRE.id("execute");
         public static ResourceLocation GENERIC = SRE.id("generic");
         public static ResourceLocation KNIFE = SRE.id("knife_stab");
         public static ResourceLocation REVOLVER = SRE.id("revolver_shot");
