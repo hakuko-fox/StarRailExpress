@@ -14,7 +14,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.RoleSkill;
+import org.agmas.noellesroles.RoleSkill.RoleSkillContext;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -124,7 +127,13 @@ public class FoolPlayerComponent implements RoleComponent {
         return player;
     }
 
+    public static void useSkill(RoleSkillContext context){
+        ServerPlayer player = context.player();
+        org.agmas.noellesroles.roles.fool.TarotAssemblyManager.startAssembly(player);
+    }
+
     static {
+        RoleSkill.register(ModRoles.THE_FOOL, FoolPlayerComponent::useSkill);
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
             if (gameWorld.isRole(player, ModRoles.THE_FOOL)) {
