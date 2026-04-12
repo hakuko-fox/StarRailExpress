@@ -35,7 +35,7 @@ public class GamblerHud {
             int y = screenHeight - 30; // 距离底部
 
             Font textRenderer = client.font;
-            int roleDrawLeft = GamblerPlayerComponent.DRAW_INTERVAL - gamblerComponent.roleDrawTimer;
+            int roleDrawLeft = gamblerComponent.drawInterval - gamblerComponent.roleDrawTimer;
             if (gamblerComponent.selectedRole != null) {
                 Component readyText = Component.translatable("hud.noellesroles.gambler.selected_tip",
                         RoleUtils.getRoleName(gamblerComponent.selectedRole));

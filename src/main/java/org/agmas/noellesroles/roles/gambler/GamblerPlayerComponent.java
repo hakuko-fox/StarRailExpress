@@ -37,7 +37,7 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
     public List<ResourceLocation> availableRoles = new ArrayList<>();
     public ResourceLocation selectedRole = null;
     public int roleDrawTimer = 0;
-    public static final int DRAW_INTERVAL = 30 * 20; // 30秒 //debug
+    public int drawInterval = 30 * 20; // 30秒 //debug
 
     @Override
     public Player getPlayer() {
@@ -50,12 +50,17 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
         this.availableRoles.clear();
         this.selectedRole = null;
         this.roleDrawTimer = 0;
+        this.drawInterval = 30 * 20;
         this.sync();
     }
 
     @Override
     public void clear() {
         this.init();
+    }
+
+    public void setDrawInterval(int ticks) {
+        this.drawInterval = ticks;
     }
 
     public GamblerPlayerComponent(Player player) {
@@ -72,7 +77,7 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
             return;
         if (!gameWorld.isRunning())
             return;
-        if (roleDrawTimer < DRAW_INTERVAL)
+        if (roleDrawTimer < drawInterval)
             roleDrawTimer++;
     }
 
@@ -87,7 +92,7 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
             return;
 
         roleDrawTimer++;
-        if (roleDrawTimer >= DRAW_INTERVAL) {
+        if (roleDrawTimer >= drawInterval) {
             roleDrawTimer = 0;
             drawNewRole();
         }
@@ -101,9 +106,9 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
 
         // 过滤掉禁用的角色、赌徒自己、彩蛋/特殊角色，以及已经在列表中的角色
         List<SRERole> validRoles = allRoles.stream()
-            .filter(role -> !role.identifier().equals(ModRoles.GAMBLER_ID))
-            .filter(role -> !availableRoles.contains(role.identifier()))
-            .collect(Collectors.toList());
+                .filter(role -> !role.identifier().equals(ModRoles.GAMBLER_ID))
+                .filter(role -> !availableRoles.contains(role.identifier()))
+                .collect(Collectors.toList());
 
         if (!validRoles.isEmpty()) {
             Collections.shuffle(validRoles);
@@ -139,6 +144,7 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
 
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("usedAbility", this.usedAbility);
+        tag.putInt("di", this.drawInterval);
 
         ListTag rolesTag = new ListTag();
         for (ResourceLocation roleId : availableRoles) {
@@ -154,8 +160,12 @@ public class GamblerPlayerComponent implements RoleComponent, ServerTickingCompo
     }
 
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        this.usedAbility = tag.getBoolean("usedAbility");
-
+        this.usedAbility = tag.contains("usedAbility") && tag.getBoolean("usedAbility");
+        if (tag.contains("di")) {
+            this.drawInterval = tag.getInt("di");
+        } else {
+            this.drawInterval = 30 * 20;
+        }
         availableRoles.clear();
         if (tag.contains("availableRoles")) {
             ListTag rolesTag = tag.getList("availableRoles", Tag.TAG_STRING);
