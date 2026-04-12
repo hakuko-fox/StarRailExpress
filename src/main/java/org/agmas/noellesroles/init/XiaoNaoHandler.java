@@ -13,6 +13,9 @@ import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.server.level.ServerPlayer;
 
+/**
+ * 小脑惩罚
+ */
 public class XiaoNaoHandler {
 
     public static void registerEvent() {
