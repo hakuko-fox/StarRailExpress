@@ -847,10 +847,16 @@ public class NoellesrolesClient implements ClientModInitializer {
 
                 boolean pauseOpen = client.screen instanceof net.minecraft.client.gui.screens.PauseScreen;
                 if (pauseOpen && !foolMeetingPauseHandled) {
-                    ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolLeaveMeetingC2SPacket());
-                    client.setScreen(null);
+                    if (SREClient.gameComponent.isRole(client.player, ModRoles.THE_FOOL)) {
+                        foolMeetingPauseHandled = true;
+                    } else {
+                        ClientPlayNetworking.send(new org.agmas.noellesroles.roles.fool.FoolLeaveMeetingC2SPacket());
+                        client.setScreen(null);
+                    }
                 }
-                foolMeetingPauseHandled = pauseOpen;
+                if (!pauseOpen) {
+                    foolMeetingPauseHandled = false;
+                }
             } else {
                 foolMeetingPauseHandled = false;
             }

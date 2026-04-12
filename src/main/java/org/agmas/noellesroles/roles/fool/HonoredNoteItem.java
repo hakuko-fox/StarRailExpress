@@ -65,6 +65,7 @@ public class HonoredNoteItem extends NoteItem implements AdventureUsable {
                     "§6灰雾之上的神秘主宰",
                     "§6执掌好运的黄黑之王"
             );
+
         }
         
         // 调用父类的 useOn 逻辑来放置纸条
@@ -79,7 +80,7 @@ public class HonoredNoteItem extends NoteItem implements AdventureUsable {
     /**
      * 自定义的尊名纸条实体，具有特殊属性
      */
-    private static class HonoredNoteEntity extends NoteEntity {
+    public static class HonoredNoteEntity extends NoteEntity {
         public HonoredNoteEntity(Level world) {
             super(io.wifi.starrailexpress.index.TMMEntities.NOTE, world);
         }

@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.roles.fool;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.entity.NoteEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -30,12 +31,32 @@ public class PrayerHandler {
      */
     public static void startPrayer(ServerPlayer player) {
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(player.level());
+        ServerLevel serverLevel = (ServerLevel) player.level();
+        ServerPlayer fool = TarotAssemblyManager.findFoolPlayer(serverLevel, gameComponent);
+        FoolPlayerComponent foolComp = fool != null ? FoolPlayerComponent.KEY.get(fool) : null;
 
         // 愚者自己不需要祷告
         if (gameComponent.isRole(player, ModRoles.THE_FOOL)) {
-            FoolPlayerComponent foolComp = FoolPlayerComponent.KEY.get(player);
-            if (foolComp.inMeeting) {
+            FoolPlayerComponent selfFoolComp = FoolPlayerComponent.KEY.get(player);
+            if (selfFoolComp.inMeeting) {
                 TarotAssemblyManager.requestVoteScreen(player);
+            }
+            return;
+        }
+
+        // 已经是成员时，会议中的 J 优先用于入会/打开投票页，不再要求附近必须有尊名纸条
+        if (foolComp != null && foolComp.isTarotMember(player.getUUID())) {
+            if (foolComp.inMeeting) {
+                if (foolComp.meetingOriginalPositions.containsKey(player.getUUID())) {
+                    TarotAssemblyManager.requestVoteScreen(player);
+                } else {
+                    TarotAssemblyManager.memberJoinMeeting(player);
+                }
+            } else {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.fool.already_member")
+                                .withStyle(ChatFormatting.YELLOW),
+                        true);
             }
             return;
         }
@@ -50,28 +71,6 @@ public class PrayerHandler {
         }
 
         // 检查是否已经是塔罗会成员
-        ServerLevel serverLevel = (ServerLevel) player.level();
-        ServerPlayer fool = TarotAssemblyManager.findFoolPlayer(serverLevel, gameComponent);
-        if (fool != null) {
-            FoolPlayerComponent foolComp = FoolPlayerComponent.KEY.get(fool);
-            if (foolComp.isTarotMember(player.getUUID())) {
-                // 已经是成员——如果愚者在开会议，加入会议
-                if (foolComp.inMeeting) {
-                    if (foolComp.meetingOriginalPositions.containsKey(player.getUUID())) {
-                        TarotAssemblyManager.requestVoteScreen(player);
-                    } else {
-                        TarotAssemblyManager.memberJoinMeeting(player);
-                    }
-                } else {
-                    player.displayClientMessage(
-                            Component.translatable("message.noellesroles.fool.already_member")
-                                    .withStyle(ChatFormatting.YELLOW),
-                            true);
-                }
-                return;
-            }
-        }
-
         // 开始祷告读条（使用服务端tick计数）
         // 注意：在简化实现中，我们直接完成祷告而不实现3秒读条
         // 完整实现中应使用组件的isPraying状态 + serverTick检查
@@ -117,10 +116,10 @@ public class PrayerHandler {
                 playerPos.x + NOTE_DETECTION_RANGE, playerPos.y + NOTE_DETECTION_RANGE,
                 playerPos.z + NOTE_DETECTION_RANGE);
 
-        List<ArmorStand> entities = player.level().getEntitiesOfClass(ArmorStand.class, searchBox,
-                entity -> entity.getTags().contains("fool_honored_note"));
+        List<HonoredNoteItem.HonoredNoteEntity> entities = player.level().getEntitiesOfClass(HonoredNoteItem.HonoredNoteEntity.class, searchBox,
+                entity -> true);
 
-        for (ArmorStand noteEntity : entities) {
+        for (NoteEntity noteEntity : entities) {
             double distance = player.distanceTo(noteEntity);
             if (distance <= NOTE_DETECTION_RANGE) {
                 // 检查视线无障碍
