@@ -64,7 +64,7 @@ public class TarotAssemblyManager {
     public static void startAssembly(ServerPlayer fool) {
         FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(fool);
         long currentTick = fool.level().getGameTime();
-        if (comp.tarotMembers.size()< LEAST_MEMBER_REQUIRED){
+        if (comp.tarotMembers.isEmpty()){
             fool.displayClientMessage(
                     Component.translatable("message.noellesroles.fool.tarot_not_enough_members")
                             .withStyle(ChatFormatting.RED),
