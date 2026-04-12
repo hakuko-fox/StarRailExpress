@@ -61,7 +61,7 @@ public abstract class ExecuteCommandInvoker {
   }
 
   @Inject(method = "addConditionals", at = @At("RETURN"), cancellable = true)
-  private static void mymod$addCustomConditionals(
+  private static void sre$addCustomConditionals(
       CommandNode<CommandSourceStack> commandNode,
       LiteralArgumentBuilder<CommandSourceStack> literalArgumentBuilder,
       boolean isIf,
@@ -69,62 +69,55 @@ public abstract class ExecuteCommandInvoker {
       CallbackInfoReturnable<ArgumentBuilder<CommandSourceStack, ?>> cir) {
     literalArgumentBuilder.then(
         Commands.literal("sre:role")
-            .then(sre$addConditional(
-                commandNode,
+            .then(
                 Commands.argument("target_player", EntityArgument.player())
-                    .then(Commands.argument("role_id", RoleArgumentType.create(false))),
-                isIf,
-                ctx -> {
-                  ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
-                  SRERole compare_role = RoleArgumentType.getRole(ctx, "role_id");
-                  var roleWorldComponent = SRERoleWorldComponent.KEY.get(player.level());
-                  SRERole player_role = roleWorldComponent.getRole(player);
-                  if (player_role == null) {
-                    return (isIf ? false : true);
-                  }
-                  if (RoleUtils.compareRole(compare_role, player_role)) {
-                    return (isIf ? true : false);
-                  }
-                  return (isIf ? false : true);
-                })));
+                    .then(sre$addConditional( // ← 移到这里
+                        commandNode,
+                        Commands.argument("role_id", RoleArgumentType.create(false)), // 最末端，无子节点
+                        isIf,
+                        ctx -> {
+                          ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
+                          SRERole compare_role = RoleArgumentType.getRole(ctx, "role_id");
+                          var roleWorldComponent = SRERoleWorldComponent.KEY.get(player.level());
+                          SRERole player_role = roleWorldComponent.getRole(player);
+                          if (player_role == null)
+                            return false;
+                          return RoleUtils.compareRole(compare_role, player_role);
+                        }))));
+
     literalArgumentBuilder.then(
         Commands.literal("sre:modifier")
-            .then(sre$addConditional(
-                commandNode,
+            .then(
                 Commands.argument("target_player", EntityArgument.player())
-                    .then(Commands.argument("modifier_id", ModifierArgumentType.create())),
-                isIf,
-                ctx -> {
-                  ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
-                  SREModifier compare_modifier = ModifierArgumentType.getModifier(ctx, "modifier_id");
-                  var worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
-                  if (compare_modifier == null) {
-                    return (isIf ? false : true);
-                  }
-                  if (worldModifierComponent.isModifier(player, compare_modifier)) {
-                    return (isIf ? true : false);
-                  }
-                  return (isIf ? false : true);
-                })));
+                    .then(sre$addConditional(
+                        commandNode,
+                        Commands.argument("modifier_id", ModifierArgumentType.create()),
+                        isIf,
+                        ctx -> {
+                          ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
+                          SREModifier compare_modifier = ModifierArgumentType.getModifier(ctx, "modifier_id");
+                          if (compare_modifier == null)
+                            return false;
+                          var worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
+                          return worldModifierComponent.isModifier(player, compare_modifier);
+                        }))));
+
     literalArgumentBuilder.then(
         Commands.literal("sre:role_type")
-            .then(sre$addConditional(
-                commandNode,
+            .then(
                 Commands.argument("target_player", EntityArgument.player())
-                    .then(Commands.argument("role_type", IntegerArgumentType.integer(0, 5))),
-                isIf,
-                ctx -> {
-                  ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
-                  int role_type = IntegerArgumentType.getInteger(ctx, "role_type");
-
-                  var roleWorldComponent = SRERoleWorldComponent.KEY.get(player.level());
-                  SRERole player_role = roleWorldComponent.getRole(player);
-                  int player_role_type = PlayerRoleWeightManager.getRoleType(player_role);
-                  if (player_role_type == role_type) {
-                    return (isIf ? true : false);
-                  }
-                  return (isIf ? false : true);
-                })));
+                    .then(sre$addConditional(
+                        commandNode,
+                        Commands.argument("role_type", IntegerArgumentType.integer(0, 5)),
+                        isIf,
+                        ctx -> {
+                          ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
+                          int role_type = IntegerArgumentType.getInteger(ctx, "role_type");
+                          var roleWorldComponent = SRERoleWorldComponent.KEY.get(player.level());
+                          SRERole player_role = roleWorldComponent.getRole(player);
+                          int player_role_type = PlayerRoleWeightManager.getRoleType(player_role);
+                          return player_role_type == role_type;
+                        }))));
     cir.setReturnValue(literalArgumentBuilder);
   }
 }
