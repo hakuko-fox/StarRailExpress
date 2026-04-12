@@ -400,7 +400,7 @@ public class ModRoles {
    * - 只能购买撬锁器和刀（130金币）
    * - 10%概率刷新
    */
-  public static SRERole CREEPER = TMMRoles.registerRole(new CreeperRole(
+  public static SRERole CREEPER = TMMRoles.registerRole(new RainbowCreeperRole(
       CREEPER_ID, // 角色 ID
       new Color(0, 128, 0).getRGB(), // 绿色 - 代表苦力怕
       false, // isInnocent = 杀手阵营
