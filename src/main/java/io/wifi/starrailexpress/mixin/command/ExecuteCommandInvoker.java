@@ -108,7 +108,7 @@ public abstract class ExecuteCommandInvoker {
                 Commands.argument("target_player", EntityArgument.player())
                     .then(sre$addConditional(
                         commandNode,
-                        Commands.argument("role_type", IntegerArgumentType.integer(0, 5)),
+                        Commands.argument("role_type", IntegerArgumentType.integer(-1, 5)),
                         isIf,
                         ctx -> {
                           ServerPlayer player = EntityArgument.getPlayer(ctx, "target_player");
