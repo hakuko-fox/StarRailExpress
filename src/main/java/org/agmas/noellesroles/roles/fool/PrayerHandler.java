@@ -92,8 +92,15 @@ public class PrayerHandler {
 
         FoolPlayerComponent foolComp = FoolPlayerComponent.KEY.get(fool);
 
-        // 添加为塔罗会成员
-        foolComp.addTarotMember(player.getUUID());
+        // 检查是否已达到最大成员数
+        if (!foolComp.addTarotMember(player.getUUID())) {
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.fool.tarot_members_full",
+                            FoolPlayerComponent.MAX_TAROT_MEMBERS)
+                            .withStyle(ChatFormatting.RED),
+                    true);
+            return;
+        }
 
         // 通知玩家
         player.displayClientMessage(

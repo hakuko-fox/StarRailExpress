@@ -1709,6 +1709,7 @@
   "message.noellesroles.fool.already_member": "You are already a Tarot Assembly member",
   "message.noellesroles.fool.prayer_complete": "Prayer complete. You are now a Tarot Assembly member",
   "message.noellesroles.fool.player_prayed": "%s has sought your blessing",
+  "message.noellesroles.fool.tarot_members_full": "Tarot Assembly is full (max %d members)",
   "message.noellesroles.fool.tarot_cooldown": "Tarot Assembly on cooldown (%ds)",
   "message.noellesroles.fool.tarot_started": "Tarot Assembly has begun!",
   "message.noellesroles.fool.tarot_invite_title": "The Fool summons you above the mist",

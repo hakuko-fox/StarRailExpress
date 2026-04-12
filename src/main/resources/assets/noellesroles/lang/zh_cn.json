@@ -1826,6 +1826,7 @@
   "message.noellesroles.fool.already_member": "你已经是塔罗会成员了",
   "message.noellesroles.fool.prayer_complete": "祷告完成，你已成为塔罗会成员",
   "message.noellesroles.fool.player_prayed": "%s 祈求了你的眷顾",
+  "message.noellesroles.fool.tarot_members_full": "塔罗会已满员（最多%d人）",
   "message.noellesroles.fool.tarot_cooldown": "塔罗会冷却中（%d秒）",
   "message.noellesroles.fool.tarot_started": "塔罗会已召开！",
   "message.noellesroles.fool.tarot_invite_title": "愚者大人召您进入迷雾之上",

@@ -44,6 +44,9 @@ public class FoolPlayerComponent implements RoleComponent {
     // ==================== 塔罗会成员列表（存储在愚者身上） ====================
     /** 所有拥有"塔罗会成员"标签的玩家UUID */
     public Set<UUID> tarotMembers = new HashSet<>();
+    
+    /** 塔罗会最大成员数量 */
+    public static final int MAX_TAROT_MEMBERS = 12;
 
     // ==================== 处刑者手枪 ====================
     /** 处刑者手枪当前子弹数（最大1） */
@@ -195,10 +198,15 @@ public class FoolPlayerComponent implements RoleComponent {
 
     /**
      * 添加塔罗会成员
+     * @return true 如果添加成功，false 如果已达到最大成员数
      */
-    public void addTarotMember(UUID playerUuid) {
+    public boolean addTarotMember(UUID playerUuid) {
+        if (tarotMembers.size() >= MAX_TAROT_MEMBERS) {
+            return false;
+        }
         tarotMembers.add(playerUuid);
         this.sync();
+        return true;
     }
 
     /**
