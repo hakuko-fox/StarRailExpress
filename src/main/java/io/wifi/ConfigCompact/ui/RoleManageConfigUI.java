@@ -1,6 +1,5 @@
 package io.wifi.ConfigCompact.ui;
 
-import io.wifi.starrailexpress.api.TMMRoles;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -12,6 +11,11 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.noellesroles.utils.RoleUtils;
 
+import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
+
+import java.text.Collator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -84,13 +88,15 @@ public class RoleManageConfigUI {
                 }
             }
         }
-        for (var info : RoleEnableStatus.entrySet()) {
+        ArrayList<Entry<String, Boolean>> entrySets = new ArrayList<>(RoleEnableStatus.entrySet());
+        sortRoles(entrySets);
+        for (var info : entrySets) {
             var roleId = info.getKey();
             roleCategory.addEntry(
                     entryBuilder
                             .startBooleanToggle(
                                     Component.translatable("option.starrailexpress.role_enable_option",
-                                            RoleUtils.getRoleName(ResourceLocation.tryParse(roleId))),
+                                            RoleUtils.getTeamName(ResourceLocation.tryParse(roleId)),RoleUtils.getRoleName(ResourceLocation.tryParse(roleId)), roleId),
                                     info.getValue())
                             .setDefaultValue(true) // Recommended: Used when user click "Reset"
                             .setTooltip(Component.translatable("option.starrailexpress.role_id_tooltip",
@@ -104,7 +110,7 @@ public class RoleManageConfigUI {
                     entryBuilder
                             .startBooleanToggle(
                                     Component.translatable("option.starrailexpress.modifier_enable_option",
-                                            RoleUtils.getModifierName(ResourceLocation.tryParse(roleId))),
+                                            RoleUtils.getModifierName(ResourceLocation.tryParse(roleId)), roleId),
                                     info.getValue())
                             .setDefaultValue(true) // Recommended: Used when user click "Reset"
                             .setTooltip(Component.translatable("option.starrailexpress.role_id_tooltip",
@@ -149,6 +155,34 @@ public class RoleManageConfigUI {
             }
         });
         return builder.build();
+    }
+
+    private static void sortRoles(ArrayList<Entry<String, Boolean>> clone) {
+        Collator collator = Collator.getInstance();
+        boolean killerFirst = false;
+        clone.sort((ea, eb) -> {
+            SRERole a = TMMRoles.ROLES.get(ResourceLocation.parse(ea.getKey()));
+            SRERole b = TMMRoles.ROLES.get(ResourceLocation.parse(eb.getKey()));
+            int rt_a = RoleUtils.getRoleType(a);
+            int rt_b = RoleUtils.getRoleType(b);
+            if (a != null && b != null) {
+                if (rt_a > rt_b)
+                    return killerFirst ? -1 : 1;
+                if (rt_a < rt_b)
+                    return killerFirst ? 1 : -1;
+                if (a.identifier().getNamespace().equals(b.identifier().getNamespace())) {
+                    String r_a = RoleUtils.getRoleName(a).getString();
+                    String r_b = RoleUtils.getRoleName(b).getString();
+                    return collator.compare(r_a, r_b);
+                } else {
+                    String nameSpaceA = a.identifier().getNamespace();
+                    String nameSpaceB = b.identifier().getNamespace();
+                    return collator.compare(nameSpaceA, nameSpaceB);
+                }
+            } else {
+                return 0;
+            }
+        });
     }
 
     public static void startConfigUI() {

@@ -67,7 +67,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             CustomRoleGameModeTeamsPlayerComponent.KEY.get(player).setTeam(0);
             player.addEffect(new MobEffectInstance(
                     ModEffects.NO_COLLIDE,
-                    selectionTick,
+                    selectionTick + 20,
                     10,
                     true, // ambient - 环境效果（粒子更少更透明）
                     false, // showParticles - 不显示粒子
@@ -75,7 +75,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             ));
             player.addEffect(new MobEffectInstance(
                     MobEffects.INVISIBILITY,
-                    selectionTick,
+                    selectionTick + 20,
                     10,
                     true, // ambient - 环境效果（粒子更少更透明）
                     false, // showParticles - 不显示粒子

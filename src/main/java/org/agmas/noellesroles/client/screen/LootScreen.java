@@ -414,14 +414,19 @@ public class LootScreen extends AbstractPixelScreen {
         // 抽卡结束后延迟一秒，缩放抽卡结果，并显示相关信息
         else if (isLooting) {
             isLooting = false;
-            // 播放升级音效
-            Minecraft.getInstance().getSoundManager().play(
-                    SimpleSoundInstance.forUI(
-                            SoundEvents.PLAYER_LEVELUP,  // 升级音效
-                            1.0F,  // 音量
-                            1.0F   // 音高
-                    )
-            );
+            if (trueQualityAndId.first > 3)
+                // 出金音效
+                Minecraft.getInstance().getSoundManager().play(
+                        SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.8F, 1.05F));
+            else
+                // 播放升级音效
+                Minecraft.getInstance().getSoundManager().play(
+                        SimpleSoundInstance.forUI(
+                                SoundEvents.PLAYER_LEVELUP,  // 升级音效
+                                1.0F,  // 音量
+                                1.0F   // 音高
+                        )
+                );
             animations.clear();
             Card endCard = cards.get(endCardIdx);
             // 卡片缩放：贝塞尔曲线，先放大再回弹到目标大小

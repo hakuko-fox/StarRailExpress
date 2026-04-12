@@ -33,6 +33,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
@@ -199,12 +200,35 @@ public class RoleUtils extends MCItemsUtils {
         return count;
     }
 
-    public static void sendWelcomeAnnouncement(ServerPlayer player) {
+    public static void sendWelcomeAnnouncement(ServerPlayer player, ResourceLocation identifier, final int size) {
+        if (identifier == null)
+            return;
+        ServerPlayNetworking.send(player, new AnnounceWelcomePayload(
+                identifier.toString(), size, 0));
+    }
+
+    public static void sendWelcomeAnnouncement(ServerPlayer player, ResourceLocation identifier) {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
         final var size = gameWorldComponent.getAllKillerPlayers().size();
-        ServerPlayNetworking.send(player, new AnnounceWelcomePayload(
-                gameWorldComponent.getRole(player).getIdentifier().toString(), size, 0));
+        if (identifier == null)
+            return;
+        sendWelcomeAnnouncement(player, identifier, size);
+    }
+
+    public static void sendWelcomeAnnouncement(ServerPlayer player, SRERole role) {
+        if (role == null) {
+            return;
+        }
+        var identifier = role.getIdentifier();
+        sendWelcomeAnnouncement(player, identifier);
+    }
+
+    public static void sendWelcomeAnnouncement(ServerPlayer player) {
+        SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                .get(player.level());
+        SRERole role = gameWorldComponent.getRole(player);
+        sendWelcomeAnnouncement(player, role);
     }
 
     public static void changeRole(Player player, SRERole role) {
@@ -410,5 +434,64 @@ public class RoleUtils extends MCItemsUtils {
         } else {
             return getRoleOrModifierDescription(selectedRole);
         }
+    }
+
+    public static Component getTeamName(int roleType) {
+        Component teamName = Component.translatable("Unknown").withStyle(ChatFormatting.GRAY);
+        if (roleType == 1) {
+            teamName = Component.translatable("display.type.role.innocent").withStyle(ChatFormatting.GREEN);
+        } else if (roleType == 2) {
+            teamName = Component.translatable("display.type.role.neutral").withStyle(ChatFormatting.YELLOW);
+        } else if (roleType == 3) {
+            teamName = Component.translatable("display.type.role.neutral_for_killer")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE);
+        } else if (roleType == 4) {
+            teamName = Component.translatable("display.type.role.killer").withStyle(ChatFormatting.RED);
+        } else if (roleType == 5) {
+            teamName = Component.translatable("display.type.role.vigilante").withStyle(ChatFormatting.AQUA);
+        }
+        return teamName;
+    }
+
+    public static Component getTeamNameWithoutColor(int roleType) {
+        Component teamName = Component.translatable("Unknown").withStyle(ChatFormatting.GRAY);
+        if (roleType == 1) {
+            teamName = Component.translatable("display.type.role.innocent");
+        } else if (roleType == 2) {
+            teamName = Component.translatable("display.type.role.neutral");
+        } else if (roleType == 3) {
+            teamName = Component.translatable("display.type.role.neutral_for_killer");
+        } else if (roleType == 4) {
+            teamName = Component.translatable("display.type.role.killer");
+        } else if (roleType == 5) {
+            teamName = Component.translatable("display.type.role.vigilante");
+        }
+        return teamName;
+    }
+
+    public static int getRoleType(SRERole role) {
+        return PlayerRoleWeightManager.getRoleType(role);
+    }
+
+    public static Component getTeamNameWithoutColor(ResourceLocation roleId) {
+        SRERole role = getRole(roleId);
+        int roleType = PlayerRoleWeightManager.getRoleType(role);
+        return getTeamNameWithoutColor(roleType);
+    }
+
+    public static Component getTeamName(ResourceLocation roleId) {
+        SRERole role = getRole(roleId);
+        int roleType = PlayerRoleWeightManager.getRoleType(role);
+        return getTeamName(roleType);
+    }
+
+    public static Component getTeamNameWithoutColor(SRERole role) {
+        int roleType = PlayerRoleWeightManager.getRoleType(role);
+        return getTeamNameWithoutColor(roleType);
+    }
+
+    public static Component getTeamName(SRERole role) {
+        int roleType = PlayerRoleWeightManager.getRoleType(role);
+        return getTeamName(roleType);
     }
 }

@@ -7,8 +7,11 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.*;
+import io.wifi.starrailexpress.command.ConfigCommand;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
@@ -28,15 +31,20 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
+import org.agmas.harpymodloader.events.ModdedRoleAssigned;
+import org.agmas.harpymodloader.events.ModdedRoleRemoved;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.effects.TimeStopEffect;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
 import org.agmas.noellesroles.utils.MapScannerManager;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 
@@ -52,6 +60,52 @@ public class GameUtilsCommand {
         (dispatcher, registryAccess, environment) -> {
           dispatcher.register(
               Commands.literal("tmm:game").requires(source -> Harpymodloader.isMojangVerify && source.hasPermission(2))
+                  .then(Commands.literal("role")
+                      .then(Commands.literal("silent_change")
+                          .then(Commands.argument("role", RoleArgumentType.create(false)).executes((ctx) -> {
+                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                            SRERole role = RoleArgumentType.getRole(ctx, "role");
+                            var cca = SRERoleWorldComponent.KEY.get(player.level());
+                            cca.addRole(player, role);
+                            return 1;
+                          })
+                              .then(Commands.literal("no_sync").executes((ctx) -> {
+                                ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                SRERole role = RoleArgumentType.getRole(ctx, "role");
+                                var cca = SRERoleWorldComponent.KEY.get(player.level());
+                                cca.addRole(player.getUUID(), role, false);
+                                return 1;
+                              }))))
+                      .then(Commands.literal("send_welcome").executes((ctx) -> {
+                        ServerPlayer player = ctx.getSource().getPlayerOrException();
+                        RoleUtils.sendWelcomeAnnouncement(player);
+                        return 1;
+                      }))
+                      .then(Commands.literal("sync_roles").executes((ctx) -> {
+                        ServerLevel level = ctx.getSource().getLevel();
+                        SRERoleWorldComponent.KEY.get(level).sync();
+                        return 1;
+                      }))
+                      .then(Commands.literal("assign_event").executes((ctx) -> {
+                        ServerPlayer player = ctx.getSource().getPlayerOrException();
+                        SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
+                        if (role == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Player doesn't have any roles!"));
+                        }
+                        ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
+                        return 1;
+                      }))
+                      .then(Commands.literal("remove_event").executes((ctx) -> {
+                        ServerPlayer player = ctx.getSource().getPlayerOrException();
+                        SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
+                        if (role == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Player doesn't have any roles!"));
+                        }
+                        ModdedRoleRemoved.EVENT.invoker().removeModdedRole(player, role);
+                        return 1;
+                      })))
                   .then(Commands.literal("tests")
                       .then(Commands.literal("math").executes((context) -> {
                         ServerPlayNetworking.send(context.getSource().getPlayerOrException(),

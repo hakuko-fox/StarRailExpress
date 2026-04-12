@@ -9,6 +9,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.noellesroles.blood.BloodMain;
 import org.agmas.noellesroles.commands.*;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -77,39 +78,14 @@ public class Noellesroles implements ModInitializer {
      *         - 4: Killer
      */
     public static int getRoleType$Int(SRERole role) {
-        if (role == null)
-            return -1;
-        if (role.isInnocent() && !role.canUseKiller()) {
-            return 0;
-        }
-        if (role.isInnocent()) {
-            return 1;
-        }
-
-        if (role.isNeutrals() && !role.isNeutralForKiller()) {
-            return 2;
-        }
-        if (role.isNeutrals() && role.isNeutralForKiller()) {
-            return 3;
-        }
-        if (!role.isInnocent() && !role.canUseKiller() && !role.isNeutralForKiller()) {
-            return 2;
-        }
-        if (!role.isInnocent() && !role.canUseKiller() && role.isNeutralForKiller()) {
-            return 3;
-        }
-        if (role.canUseKiller()) {
-            return 4;
-        }
-        return -1; // Unknown
+        return PlayerRoleWeightManager.getRoleType(role);
     }
 
     public static List<SRERole> getAllRolesSorted() {
         return getAllRolesSorted(false);
     }
 
-    public static List<SRERole> getAllRolesSorted(boolean killerFirst) {
-        ArrayList<SRERole> clone = new ArrayList<>(TMMRoles.ROLES.values());
+    public static void sortRoles(ArrayList<SRERole> clone, boolean killerFirst) {
         Collator collator = Collator.getInstance();
         clone.sort((a, b) -> {
             int rt_a = getRoleType$Int(a);
@@ -132,6 +108,11 @@ public class Noellesroles implements ModInitializer {
                 return 0;
             }
         });
+    }
+
+    public static List<SRERole> getAllRolesSorted(boolean killerFirst) {
+        ArrayList<SRERole> clone = new ArrayList<>(TMMRoles.ROLES.values());
+        sortRoles(clone, killerFirst);
         return clone;
     }
 
@@ -214,7 +195,6 @@ public class Noellesroles implements ModInitializer {
 
         // 注册方块
         ModBlocks.initialize();
-
 
         // 注册血液粒子工厂
         Registry.register(BuiltInRegistries.PARTICLE_TYPE, Noellesroles.id("deathblood"),
