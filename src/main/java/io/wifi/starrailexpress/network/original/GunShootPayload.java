@@ -78,7 +78,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 ResourceLocation deathReason = isDerringer ? GameConstants.DeathReasons.DERRINGER
                         : GameConstants.DeathReasons.REVOLVER;
                 if (mainHandStack.is(ModItems.EXECUTIONER_GUN)){
-                    deathReason = GameConstants.DeathReasons.EXECUTIONER_GUN;
+                    deathReason = GameConstants.DeathReasons.EXECUTE;
                 }
 
                 boolean backfire = false;
