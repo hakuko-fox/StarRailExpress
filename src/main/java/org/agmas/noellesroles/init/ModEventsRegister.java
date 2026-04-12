@@ -697,6 +697,18 @@ public class ModEventsRegister {
                 }
             }
         });
+        AfterShieldAllowPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (victim.level() instanceof ServerLevel serverLevel) {
+                org.agmas.noellesroles.roles.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel, victim.getUUID());
+            }
+            return true;
+        });
+        AfterShieldAllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (victim.level() instanceof ServerLevel serverLevel) {
+                org.agmas.noellesroles.roles.fool.TarotAssemblyManager.clearTrackedTarget(serverLevel, victim.getUUID());
+            }
+            return true;
+        });
         ShootingFrenzyPlayerComponent.registerGunNoDropEvent();
         ExecutionerPlayerComponent.registerBackfireEvent();
         ShootingFrenzyPlayerComponent.registerFrenzyCooldownEvent();

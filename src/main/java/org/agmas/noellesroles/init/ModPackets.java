@@ -117,8 +117,14 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(
                 org.agmas.noellesroles.roles.fool.FoolTarotVoteC2SPacket.ID,
                 org.agmas.noellesroles.roles.fool.FoolTarotVoteC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                org.agmas.noellesroles.roles.fool.FoolExecutionerGunShootC2SPacket.ID,
+                org.agmas.noellesroles.roles.fool.FoolExecutionerGunShootC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(
                 org.agmas.noellesroles.roles.fool.FoolOpenTarotVoteS2CPacket.ID,
                 org.agmas.noellesroles.roles.fool.FoolOpenTarotVoteS2CPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(
+                org.agmas.noellesroles.roles.fool.FoolExecutionerGunShootC2SPacket.ID,
+                new org.agmas.noellesroles.roles.fool.FoolExecutionerGunShootC2SPacket.Receiver());
     }
 }

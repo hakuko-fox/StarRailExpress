@@ -53,6 +53,9 @@ public class FoolPlayerComponent implements RoleComponent {
     /** 异端效果结束的游戏时间（server tick） */
     public long hereticEndTick = 0;
 
+    /** 本局是否已经补发过开局处刑者手枪 */
+    public boolean starterGunGranted = false;
+
     // ==================== 庇护效果 ====================
     /** 庇护来源UUID（免疫来自该玩家的下一次伤害），null表示无庇护 */
     public UUID protectionSource = null;
@@ -121,6 +124,7 @@ public class FoolPlayerComponent implements RoleComponent {
         tarotCooldownEndTick = 0;
         hereticTarget = null;
         hereticEndTick = 0;
+        starterGunGranted = false;
         protectionSource = null;
         inMeeting = false;
         meetingStartTick = 0;
@@ -167,7 +171,7 @@ public class FoolPlayerComponent implements RoleComponent {
      * 检查异端效果是否有效
      */
     public boolean hasActiveHeretic(long currentTick) {
-        return hereticTarget != null && currentTick < hereticEndTick;
+        return hereticTarget != null;
     }
 
     /**
@@ -185,6 +189,11 @@ public class FoolPlayerComponent implements RoleComponent {
     public void clearHeretic() {
         this.hereticTarget = null;
         this.hereticEndTick = 0;
+        this.sync();
+    }
+
+    public void clearProtection() {
+        this.protectionSource = null;
         this.sync();
     }
 

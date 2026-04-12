@@ -10,13 +10,14 @@ import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.roles.fool.ExecutionerGunItem;
 import org.agmas.noellesroles.roles.fool.FoolPlayerComponent;
 
 /**
  * 愚者 HUD 渲染器
  *
  * 显示信息：
- * - 处刑者手枪弹药数
+ * - 处刑者手枪状态
  * - 塔罗会成员数
  * - 异端目标（如果有）
  * - 会议状态
@@ -64,10 +65,10 @@ public abstract class FoolHud {
             int xOffset = screenWidth - 200;
             int lineHeight = 12;
 
-            // 弹药数
-            Component bulletText = Component.translatable("hud.noellesroles.fool.bullets",
-                    comp.executionerBullets);
-            context.drawString(renderer, bulletText, xOffset, yOffset, comp.executionerBullets > 0 ? 0x55FF55 : 0xFF5555);
+                boolean hasGun = ExecutionerGunItem.hasExecutionerGun(player);
+                Component bulletText = Component.translatable("hud.noellesroles.fool.gun",
+                    Component.translatable(hasGun ? "hud.noellesroles.fool.gun_ready" : "hud.noellesroles.fool.gun_missing"));
+                context.drawString(renderer, bulletText, xOffset, yOffset, hasGun ? 0x55FF55 : 0xFF5555);
             yOffset += lineHeight;
 
             // 塔罗会成员数
@@ -80,9 +81,8 @@ public abstract class FoolHud {
             if (comp.hereticTarget != null) {
                 var info = client.player.connection.getPlayerInfo(comp.hereticTarget);
                 String name = info != null ? info.getProfile().getName() : "???";
-                long remainingTicks = Math.max(0, comp.hereticEndTick - (client.level != null ? client.level.getGameTime() : 0));
                 Component hereticText = Component.translatable("hud.noellesroles.fool.heretic",
-                        name, remainingTicks / 20);
+                        name);
                 context.drawString(renderer, hereticText, xOffset, yOffset, 0xFF0000);
                 yOffset += lineHeight;
             }

@@ -28,6 +28,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.repack.HSRItems;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,6 +77,9 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 boolean isDerringer = mainHandStack.is(TMMItems.DERRINGER);
                 ResourceLocation deathReason = isDerringer ? GameConstants.DeathReasons.DERRINGER
                         : GameConstants.DeathReasons.REVOLVER;
+                if (mainHandStack.is(ModItems.EXECUTIONER_GUN)){
+                    deathReason = GameConstants.DeathReasons.EXECUTE;
+                }
 
                 boolean backfire = false;
                 final var role = game.getRole(player);

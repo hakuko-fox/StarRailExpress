@@ -89,6 +89,13 @@ public class FoolRole extends NormalRole {
 
     @Override
     public void serverTick(ServerPlayer player) {
+        FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(player);
+        if (!comp.starterGunGranted) {
+            ExecutionerGunItem.ensureExecutionerGun(player);
+            comp.executionerBullets = 1;
+            comp.starterGunGranted = true;
+            comp.sync();
+        }
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(player.level());
         TarotAssemblyManager.serverTick(player, gameComponent);
         super.serverTick(player);

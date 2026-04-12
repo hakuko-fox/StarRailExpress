@@ -7,7 +7,6 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.particle.HandParticle;
 import io.wifi.starrailexpress.client.render.TMMRenderLayers;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.network.original.GunShootPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -25,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,9 +59,9 @@ public class ExecutionerGunItem extends Item {
             HitResult collision = getGunTarget(user);
             if (collision instanceof EntityHitResult entityHitResult) {
                 Entity target = entityHitResult.getEntity();
-                ClientPlayNetworking.send(new GunShootPayload(target.getId()));
+                ClientPlayNetworking.send(new FoolExecutionerGunShootC2SPacket(target.getId()));
             } else {
-                ClientPlayNetworking.send(new GunShootPayload(-1));
+                ClientPlayNetworking.send(new FoolExecutionerGunShootC2SPacket(-1));
             }
 
             user.setXRot(user.getXRot() - 4.0F);
@@ -95,16 +95,7 @@ public class ExecutionerGunItem extends Item {
         long currentTick = shooter.level().getGameTime();
         if (comp.hasActiveHeretic(currentTick) && comp.hereticTarget != null
                 && target.getUUID().equals(comp.hereticTarget)) {
-            // 目标是异端——消耗子弹
-            if (comp.executionerBullets > 0) {
-                comp.executionerBullets--;
-
-                // 设置庇护效果（免疫来自该异端的下一次伤害）
-                comp.setProtection(target.getUUID());
-
-                comp.sync();
-                return true; // 允许击杀
-            }
+            return true;
         }
 
         // 目标不是异端或没有子弹——空枪
@@ -131,5 +122,25 @@ public class ExecutionerGunItem extends Item {
             }
             return false;
         }, 15.0);
+    }
+
+    public static boolean hasExecutionerGun(Player player) {
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.is(ModItems.EXECUTIONER_GUN)) {
+                return true;
+            }
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (stack.is(ModItems.EXECUTIONER_GUN)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void ensureExecutionerGun(ServerPlayer player) {
+        if (!hasExecutionerGun(player)) {
+            player.getInventory().add(new ItemStack(ModItems.EXECUTIONER_GUN));
+        }
     }
 }
