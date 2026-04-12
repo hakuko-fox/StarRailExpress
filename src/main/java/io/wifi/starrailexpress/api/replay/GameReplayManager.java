@@ -758,4 +758,16 @@ public class GameReplayManager {
             GameReplayUtils.getReplayPlayerDisplayText(player, true),
             GameReplayUtils.getItemDisplayName(BuiltInRegistries.ITEM.getKey(item))));
   }
+
+  public Component recordPlayerNotKilled(Player killer, Player victim, ResourceLocation deathReason) {
+    if (killer == null) {
+      return SRE.REPLAY_MANAGER.recordCustomEvent(
+          Component.translatable("replay.event.game.failed_death",
+              GameReplayUtils.getReplayPlayerDisplayText(victim, true)));
+    }
+    return SRE.REPLAY_MANAGER.recordCustomEvent(
+        Component.translatable("replay.event.game.failed_kill",
+            GameReplayUtils.getReplayPlayerDisplayText(victim, true),
+            GameReplayUtils.getReplayPlayerDisplayText(killer, true)));
+  }
 }

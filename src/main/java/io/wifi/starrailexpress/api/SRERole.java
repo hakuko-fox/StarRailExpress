@@ -274,12 +274,21 @@ public abstract class SRERole {
         }
     }
 
-    public boolean onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
+    public boolean allowDeath(Player victim, @Nullable Player killer, ResourceLocation deathReason, boolean spawnBody) {
         return true;
     }
 
-    public boolean onKill(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
+    public boolean afterShieldAllowDeath(Player victim, @Nullable Player killer, ResourceLocation deathReason,
+            boolean spawnBody) {
         return true;
+    }
+
+    public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
+        return;
+    }
+
+    public void onKill(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
+        return;
     }
 
     public void onFinishQuest(Player player, String quest) {

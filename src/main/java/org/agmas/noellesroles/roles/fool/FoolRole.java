@@ -1,18 +1,13 @@
 package org.agmas.noellesroles.roles.fool;
 
 import io.wifi.starrailexpress.api.NormalRole;
-import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,23 +63,6 @@ public class FoolRole extends NormalRole {
 
         // 普通左轮（死亡后掉落的）正常处理
         return true;
-    }
-
-    @Override
-    public boolean onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
-            ResourceLocation deathReason) {
-        if (victim instanceof ServerPlayer serverPlayer) {
-            FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(serverPlayer);
-
-            // 死亡后掉落处刑者手枪（变为一次性手枪）
-            // 处刑者手枪在死亡时由物品掉落机制自然处理
-            // 普通玩家捡起后当作OnceRevolver使用
-
-            // 冷却变为6分钟
-            // （在TarotAssemblyManager.startAssembly中已根据存活状态判断）
-        }
-
-        return super.onDeath(victim, spawnBody, killer, deathReason);
     }
 
     @Override
