@@ -20,8 +20,10 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
+import io.wifi.starrailexpress.game.GameUtils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -293,18 +295,19 @@ public class TarotAssemblyManager {
      *
      * @param votes 投票映射：投票者UUID -> 被投票者UUID
      */
-    public static void processVoteResults(ServerPlayer fool, Map<UUID, UUID> votes, Set<UUID> eligibleTargets) {
+    public static void processVoteResults(ServerPlayer fool, Map<UUID, UUID> votes, Set<UUID> eligibleVoters) {
         FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(fool);
         ServerLevel serverLevel = (ServerLevel) fool.level();
         long currentTick = serverLevel.getGameTime();
+        Set<UUID> candidateTargets = collectVoteTargets(serverLevel, fool.getUUID());
 
         // 统计票数
         Map<UUID, Integer> voteCount = new HashMap<>();
         for (Map.Entry<UUID, UUID> entry : votes.entrySet()) {
             UUID voter = entry.getKey();
             UUID votedFor = entry.getValue();
-            if (!eligibleTargets.contains(voter)) continue;
-            if (!eligibleTargets.contains(votedFor)) continue;
+            if (!eligibleVoters.contains(voter)) continue;
+            if (!candidateTargets.contains(votedFor)) continue;
             if (voter.equals(votedFor)) continue;
             voteCount.merge(votedFor, 1, Integer::sum);
         }
@@ -324,42 +327,21 @@ public class TarotAssemblyManager {
             }
         }
 
-        // 检查是否投给了死人
-        if (tie || voteCount.isEmpty()) {
-            // 无产生异端（平票或无人投票或投到死人）
-            // 愚者获得一把"一次性手枪"
-            if (GameUtils.isPlayerAliveAndSurvival(fool)) {
-                net.minecraft.world.item.ItemStack onceRevolver = new net.minecraft.world.item.ItemStack(ModItems.ONCE_REVOLVER);
-                fool.getInventory().add(onceRevolver);
-                fool.displayClientMessage(
-                        Component.translatable("message.noellesroles.fool.vote_no_heretic")
-                                .withStyle(ChatFormatting.YELLOW),
-                        false);
-            }
+        ServerPlayer targetPlayer = hereticUuid != null
+            ? serverLevel.getServer().getPlayerList().getPlayer(hereticUuid)
+            : null;
+
+        if (tie || voteCount.isEmpty() || targetPlayer == null || !GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
+            giveOnceRevolverReward(fool);
         } else if (hereticUuid != null) {
             // 产生异端
             comp.setHeretic(hereticUuid, currentTick + HERETIC_DURATION_TICKS);
+            comp.setProtection(hereticUuid);
 
-            // 检查处刑者手枪子弹
-            if (comp.executionerBullets < 1 && GameUtils.isPlayerAliveAndSurvival(fool)) {
-                comp.executionerBullets = 1;
-                comp.sync();
-                fool.displayClientMessage(
-                        Component.translatable("message.noellesroles.fool.bullet_replenished")
-                                .withStyle(ChatFormatting.GOLD),
-                        false);
-            } else if (comp.executionerBullets >= 1 && GameUtils.isPlayerAliveAndSurvival(fool)) {
-                fool.displayClientMessage(
-                        Component.translatable("message.noellesroles.fool.bullet_full")
-                                .withStyle(ChatFormatting.YELLOW),
-                        false);
-            }
-
-            // 通知异端玩家
-            ServerPlayer hereticPlayer = serverLevel.getServer().getPlayerList().getPlayer(hereticUuid);
+            comp.executionerBullets = 1;
             fool.displayClientMessage(
-                    Component.translatable("message.noellesroles.fool.heretic_found",
-                            hereticPlayer != null ? hereticPlayer.getName().getString() : "???")
+                Component.translatable("message.noellesroles.fool.vote_target_locked",
+                    targetPlayer.getName().getString(), maxVotes)
                             .withStyle(ChatFormatting.RED),
                     false);
         }
@@ -422,7 +404,8 @@ public class TarotAssemblyManager {
         if (!comp.inMeeting || !comp.voteInProgress) return;
         if (!comp.canVote(player.getUUID())) return;
         if (player.getUUID().equals(votedFor)) return;
-        if (!comp.voteEligibleParticipants.contains(votedFor)) return;
+        if (votedFor.equals(fool.getUUID())) return;
+        if (!collectVoteTargets(serverLevel, fool.getUUID()).contains(votedFor)) return;
 
         comp.meetingVotes.put(player.getUUID(), votedFor);
         player.displayClientMessage(
@@ -448,40 +431,37 @@ public class TarotAssemblyManager {
 
     private static void finalizeVotingAndEndMeeting(ServerPlayer fool) {
         FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(fool);
-        Set<UUID> eligibleTargets = new HashSet<>(comp.voteEligibleParticipants);
+        Set<UUID> eligibleVoters = new HashSet<>(comp.voteEligibleParticipants);
         Map<UUID, UUID> votes = new HashMap<>(comp.meetingVotes);
-        processVoteResults(fool, votes, eligibleTargets);
+        processVoteResults(fool, votes, eligibleVoters);
         endMeeting(fool);
     }
 
-    private static Set<UUID> collectAliveParticipants(ServerLevel serverLevel, FoolPlayerComponent comp) {
-        Set<UUID> aliveParticipants = new HashSet<>();
+    private static Set<UUID> collectMeetingParticipants(FoolPlayerComponent comp) {
+        Set<UUID> participants = new HashSet<>();
         for (UUID participantUuid : comp.meetingOriginalPositions.keySet()) {
-            ServerPlayer participant = serverLevel.getServer().getPlayerList().getPlayer(participantUuid);
-            if (participant != null && GameUtils.isPlayerAliveAndSurvival(participant)) {
-                aliveParticipants.add(participantUuid);
-            }
+            participants.add(participantUuid);
         }
-        return aliveParticipants;
+        return participants;
     }
 
     private static void refreshVoteParticipants(ServerLevel serverLevel, FoolPlayerComponent comp) {
-        Set<UUID> aliveParticipants = collectAliveParticipants(serverLevel, comp);
+        Set<UUID> participants = collectMeetingParticipants(comp);
         comp.voteEligibleParticipants.clear();
-        comp.voteEligibleParticipants.addAll(aliveParticipants);
+        comp.voteEligibleParticipants.addAll(participants);
+        Set<UUID> candidateTargets = collectVoteTargets(serverLevel, comp.getPlayer().getUUID());
         comp.meetingVotes.entrySet().removeIf(entry ->
-                !aliveParticipants.contains(entry.getKey()) || !aliveParticipants.contains(entry.getValue()));
+                !participants.contains(entry.getKey()) || !candidateTargets.contains(entry.getValue()));
     }
 
     private static void openVoteScreenForPlayer(ServerPlayer voter, FoolPlayerComponent comp, long currentTick) {
         if (!comp.canVote(voter.getUUID())) return;
 
-        List<UUID> candidates = new ArrayList<>();
-        for (UUID candidateUuid : comp.voteEligibleParticipants) {
-            if (!candidateUuid.equals(voter.getUUID())) {
-                candidates.add(candidateUuid);
-            }
-        }
+        ServerLevel serverLevel = (ServerLevel) voter.level();
+        Map<UUID, Integer> voteCount = buildVoteCount(comp.meetingVotes, comp.voteEligibleParticipants,
+                collectVoteTargets(serverLevel, comp.getPlayer().getUUID()));
+        List<FoolOpenTarotVoteS2CPacket.CandidateEntry> candidates = buildCandidateEntries(serverLevel,
+                comp.getPlayer().getUUID(), voter.getUUID(), voteCount);
 
         if (candidates.isEmpty()) return;
         int remainingSeconds = Math.max(1, (int) Math.ceil((comp.meetingEndTick - currentTick) / 20.0D));
@@ -490,6 +470,75 @@ public class TarotAssemblyManager {
             Component.translatable("message.noellesroles.fool.vote_started")
                 .withStyle(ChatFormatting.GOLD),
             false);
+    }
+
+    private static Set<UUID> collectVoteTargets(ServerLevel serverLevel, UUID foolUuid) {
+        Set<UUID> targets = new HashSet<>();
+        SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
+            if (player.getUUID().equals(foolUuid)) {
+                continue;
+            }
+            if (gameComponent.getRole(player) == null) {
+                continue;
+            }
+            targets.add(player.getUUID());
+        }
+        return targets;
+    }
+
+    private static Map<UUID, Integer> buildVoteCount(Map<UUID, UUID> votes, Set<UUID> eligibleVoters,
+            Set<UUID> candidateTargets) {
+        Map<UUID, Integer> voteCount = new HashMap<>();
+        for (Map.Entry<UUID, UUID> entry : votes.entrySet()) {
+            UUID voter = entry.getKey();
+            UUID votedFor = entry.getValue();
+            if (!eligibleVoters.contains(voter) || !candidateTargets.contains(votedFor)) {
+                continue;
+            }
+            if (voter.equals(votedFor)) {
+                continue;
+            }
+            voteCount.merge(votedFor, 1, Integer::sum);
+        }
+        return voteCount;
+    }
+
+    private static List<FoolOpenTarotVoteS2CPacket.CandidateEntry> buildCandidateEntries(ServerLevel serverLevel,
+            UUID foolUuid, UUID voterUuid, Map<UUID, Integer> voteCount) {
+        SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
+        List<FoolOpenTarotVoteS2CPacket.CandidateEntry> candidates = new ArrayList<>();
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
+            if (player.getUUID().equals(foolUuid) || player.getUUID().equals(voterUuid)) {
+                continue;
+            }
+            if (gameComponent.getRole(player) == null) {
+                continue;
+            }
+            candidates.add(new FoolOpenTarotVoteS2CPacket.CandidateEntry(
+                    player.getUUID(),
+                    voteCount.getOrDefault(player.getUUID(), 0),
+                    GameUtils.isPlayerAliveAndSurvival(player)));
+        }
+        candidates.sort(Comparator
+                .comparingInt(FoolOpenTarotVoteS2CPacket.CandidateEntry::voteCount).reversed()
+                .thenComparing(entry -> {
+                    ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(entry.candidateId());
+                    return player != null ? player.getName().getString() : entry.candidateId().toString();
+                }, String.CASE_INSENSITIVE_ORDER));
+        return candidates;
+    }
+
+    private static void giveOnceRevolverReward(ServerPlayer fool) {
+        if (!GameUtils.isPlayerAliveAndSurvival(fool)) {
+            return;
+        }
+        net.minecraft.world.item.ItemStack onceRevolver = new net.minecraft.world.item.ItemStack(ModItems.ONCE_REVOLVER);
+        fool.getInventory().add(onceRevolver);
+        fool.displayClientMessage(
+                Component.translatable("message.noellesroles.fool.vote_no_heretic")
+                        .withStyle(ChatFormatting.YELLOW),
+                false);
     }
 
     private static void syncParticipantMeetingState(ServerPlayer player, boolean inMeeting, long meetingEndTick,
@@ -509,7 +558,6 @@ public class TarotAssemblyManager {
         PuppeteerBodyEntity puppet = new PuppeteerBodyEntity(ModEntities.PUPPETEER_BODY, serverLevel);
         puppet.setPos(player.getX(), player.getY(), player.getZ());
         puppet.setYRot(player.getYRot());
-        puppet.setCustomName(player.getDisplayName());
         puppet.setCustomNameVisible(false);
         puppet.setOwner(player);
         puppet.addTag("fool_meeting_puppet");

@@ -1833,8 +1833,8 @@
   "message.noellesroles.fool.left_meeting": "你已离开塔罗会",
   "message.noellesroles.fool.vote_cast": "投票已提交",
   "message.noellesroles.fool.vote_started": "塔罗会匿名投票开始了",
-  "message.noellesroles.fool.vote_no_heretic": "本次会议未产生异端，你获得了一把一次性手枪",
-  "message.noellesroles.fool.heretic_found": "异端已确定：%s（金色发光，持续60秒）",
+  "message.noellesroles.fool.vote_no_heretic": "本次会议平票、无人投票或第一名已死亡，你获得了一把一次性手枪",
+  "message.noellesroles.fool.vote_target_locked": "目标已锁定：%s（%d票），你获得了处刑者手枪并免疫其下一次伤害",
   "message.noellesroles.fool.bullet_replenished": "处刑者手枪弹药已补充",
   "message.noellesroles.fool.bullet_full": "子弹已满",
   "message.noellesroles.fool.empty_shot": "空枪——目标不是异端",
@@ -1852,6 +1852,9 @@
   "hud.noellesroles.fool.cooldown": "塔罗会冷却: %ds",
   "hud.noellesroles.fool.protection": "§a庇护效果: 免疫来自 %s 的下一次伤害",
   "screen.noellesroles.fool.vote.title": "塔罗会投票",
-  "screen.noellesroles.fool.vote.subtitle": "请选择一名其他存活参会者",
-  "screen.noellesroles.fool.vote.remaining": "剩余时间：%s秒"
+  "screen.noellesroles.fool.vote.subtitle": "请选择一名非愚者玩家，可包含死人",
+  "screen.noellesroles.fool.vote.remaining": "剩余时间：%s秒",
+  "screen.noellesroles.fool.vote.entry_votes": "%s票",
+  "screen.noellesroles.fool.vote.entry_alive": "存活",
+  "screen.noellesroles.fool.vote.entry_dead": "死亡"
 }

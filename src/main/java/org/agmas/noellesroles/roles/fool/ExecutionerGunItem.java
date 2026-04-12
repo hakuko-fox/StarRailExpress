@@ -99,9 +99,6 @@ public class ExecutionerGunItem extends Item {
             if (comp.executionerBullets > 0) {
                 comp.executionerBullets--;
 
-                // 设置庇护效果（免疫来自该异端的下一次伤害）
-                comp.setProtection(target.getUUID());
-
                 comp.sync();
                 return true; // 允许击杀
             }
