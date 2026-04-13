@@ -917,6 +917,15 @@ public class RoleShopHandler {
 
     // 乘务员商店
     {
+      // 乘务员专属商店 - 添加原版灯笼，价格 75 金币
+      ItemStack attendantLantern = Items.LANTERN.getDefaultInstance();
+      ATTENDANT_SHOP.add(new ShopEntry(attendantLantern, 75, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return RoleUtils.insertStackInFreeSlot(player, attendantLantern.copy());
+        }
+      });
+
       ShopContent.customEntries.put(
           ModRoles.ATTENDANT_ID, ATTENDANT_SHOP);
     }

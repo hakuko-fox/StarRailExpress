@@ -147,6 +147,7 @@ public class ModRolesInitialEventRegister {
             if (role.identifier().equals(ModRoles.ATTENDANT.identifier())) {
                 if (player instanceof ServerPlayer sp)
                     SRE.SendRoomInfoToPlayer(sp);
+                RoleInitialItems.addInitialItemsForRole(player, role);
                 return;
             }
             if (role.identifier().equals(ModRoles.GUEST_GHOST.identifier())) {

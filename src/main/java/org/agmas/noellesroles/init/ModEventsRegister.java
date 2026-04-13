@@ -1597,6 +1597,7 @@ public class ModEventsRegister {
                 "noellesroles:life_and_death_shape",
                 "noellesroles:noell_paperclip",
                 "minecraft:clock",
+                "minecraft:lantern",
                 "noellesroles:passbook",
                 "minecraft:written_book"));
 
