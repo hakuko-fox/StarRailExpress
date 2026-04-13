@@ -9,7 +9,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.item.TimeStopClock;
@@ -36,7 +35,7 @@ public class SuperLooseEnd extends NormalRole {
         super(identifier, color, isInnocent, canUseKiller, moodType, maxSprintTime, canSeeTime);
     }
     @Override
-    public boolean onKill(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
+    public void onKill(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason) {
         if (killer != null) {
             var effect = killer.getEffect(MobEffects.MOVEMENT_SPEED);
             int speedLvl = 0;
@@ -64,6 +63,6 @@ public class SuperLooseEnd extends NormalRole {
             else
                 killer.addItem(TMMItems.DEFENSE_VIAL.getDefaultInstance());
         }
-        return true;
+        return;
     }
 }
