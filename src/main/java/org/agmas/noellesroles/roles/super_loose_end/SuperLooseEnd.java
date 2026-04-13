@@ -2,20 +2,25 @@ package org.agmas.noellesroles.roles.super_loose_end;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.NormalRole;
+import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ItemComponentUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.component.CreeperPlayerComponent;
-import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.component.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.item.TimeStopClock;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * 超级亡命徒
+ *  - 击杀获得增益
+ */
 public class SuperLooseEnd extends NormalRole {
+    public static final RandomSource RANDOM = RandomSource.create();
     public static final int MAX_SPEED_LVL = 10;
     /**
      * @param identifier    the mod id and name of the role
@@ -47,11 +52,17 @@ public class SuperLooseEnd extends NormalRole {
                             false,                // 是否显示粒子效果
                             false                  // 是否显示图标
                     ));
-            ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
-            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, SREConfig.instance().antWarClockStopTick);
-            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, SREConfig.instance().antWarClockCooldownTick);
-            timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 1);
-            killer.addItem(timeStopClock);
+            // 每次击杀给予时停钟或防御药剂
+            int r = RANDOM.nextInt(100);
+            if (r < 50) {
+                ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
+                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, SREConfig.instance().antWarClockStopTick);
+                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, SREConfig.instance().antWarClockCooldownTick);
+                timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 1);
+                killer.addItem(timeStopClock);
+            }
+            else
+                killer.addItem(TMMItems.DEFENSE_VIAL.getDefaultInstance());
         }
         return true;
     }

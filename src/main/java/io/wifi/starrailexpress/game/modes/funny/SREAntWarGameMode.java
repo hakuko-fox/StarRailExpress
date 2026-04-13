@@ -39,12 +39,12 @@ public class SREAntWarGameMode extends WTLooseEndsGameMode {
     protected void initItemList() {
         super.initItemList();
         looseEndsItems.add(ModItems.PATROLLER_REVOLVER::getDefaultInstance);
-        looseEndsItems.add(() -> {
-            ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
-            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, SREConfig.instance().antWarClockStopTick);
-            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, SREConfig.instance().antWarClockCooldownTick);
-            return timeStopClock;
-        });
+//        looseEndsItems.add(() -> {
+//            ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
+//            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, SREConfig.instance().antWarClockStopTick);
+//            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, SREConfig.instance().antWarClockCooldownTick);
+//            return timeStopClock;
+//        });
         looseEndsItems.removeIf(item -> item.get().getItem() instanceof DerringerItem);
     }
     @Override
