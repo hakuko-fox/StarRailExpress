@@ -60,6 +60,7 @@ public class StupidExpress implements ModInitializer {
                 || r.identifier().equals(ModRoles.CREEPER_ID)
                 || r.identifier().equals(ModRoles.BASEBALL_PLAYER_ID)
                 || r.identifier().equals(ModRoles.MAGICIAN_ID)
+                || r.identifier().equals(ModRoles.SUPER_LOOSE_END_ID)
                 || r.identifier().equals(SERoles.INITIATE.identifier())
                 || r.identifier().equals(SpecialGameModeRoles.CUSTOM_PENDING.identifier())
                 || r.identifier().equals(ModRoles.JOJO_ID)
@@ -69,8 +70,8 @@ public class StupidExpress implements ModInitializer {
                 || r.identifier().equals(ModRoles.THE_FOOL_ID)
                 || (removeNonThisRoundRoles && Harpymodloader.ROLE_MAX.getOrDefault(r.identifier(), 1) <= 0)
                 || r.getOccupiedRoleCount() > 1
-                // 未解锁的职业强制从职业池中移除
-                );
+        // 未解锁的职业强制从职业池中移除
+        );
         return clone;
     }
 
