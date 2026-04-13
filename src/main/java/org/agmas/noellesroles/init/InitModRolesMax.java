@@ -22,6 +22,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 import java.util.ArrayList;
@@ -631,7 +632,7 @@ public class InitModRolesMax {
         /// REFUGEE
         if (players >= 12 && random.nextInt(0, 100) <= REFUGEE_CHANCE) {
             StupidExpress.LOGGER.info("Modifier [Refugee] enabled in this round!");
-            Harpymodloader.MODIFIER_MAX.put(StupidExpress.id("refugee"), 1);
+            Harpymodloader.MODIFIER_MAX.put(SEModifiers.REFUGEE.identifier(), 1);
         } else {
             Harpymodloader.MODIFIER_MAX.put(StupidExpress.id("refugee"), 0);
         }
