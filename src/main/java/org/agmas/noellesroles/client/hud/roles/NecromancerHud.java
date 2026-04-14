@@ -37,9 +37,9 @@ public class NecromancerHud {
             Font textRenderer = client.font;
             if (pc.cooldown > 0) {
                 // 显示技能冷却
-                float cdSeconds = pc.getCooldownSeconds();
+                int cdSeconds = (int) pc.getCooldownSeconds();
                 Component cdText = Component.translatable("hud.necromancer.cooldown",
-                        String.format("%.1f", cdSeconds));
+                        cdSeconds);
 
                 // 红色文字表示冷却中
                 context.drawString(textRenderer, cdText, x - textRenderer.width(cdText), y, CommonColors.RED);

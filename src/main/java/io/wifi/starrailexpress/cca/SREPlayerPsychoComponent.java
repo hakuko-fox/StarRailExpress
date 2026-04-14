@@ -175,8 +175,10 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         }
         MCItemsUtils.clearItem(player, psychoItem);
         if (checkIsGameRunning()) {
-            if (role != null) {
-                role.onPsychoOver(player, this);
+            if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                if (role != null) {
+                    role.onPsychoOver(player, this);
+                }
             }
         }
         return result;

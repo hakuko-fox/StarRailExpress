@@ -1469,7 +1469,7 @@ public class ModRoles {
       new Color(255, 174, 201).getRGB(), // 粉色 - 猫娘~
       false, // isInnocent = 好人阵营
       true, // canUseKiller = 无杀手能力
-      SRERole.MoodType.REAL, // 真实心情
+      SRERole.MoodType.FAKE, // 真实心情
       Integer.MAX_VALUE, // 标准冲刺时间
       true // 不显示计分板
   ) {
@@ -1484,7 +1484,7 @@ public class ModRoles {
       new Color(255, 174, 201).getRGB(), // 粉色 - 猫娘~
       false, // isInnocent = 好人阵营
       true, // canUseKiller = 无杀手能力
-      SRERole.MoodType.REAL, // 真实心情
+      SRERole.MoodType.FAKE, // 真实心情
       Integer.MAX_VALUE, // 标准冲刺时间
       true // 不显示计分板
   )).setCanSeeTime(true).setCanSeeCoin(true)
