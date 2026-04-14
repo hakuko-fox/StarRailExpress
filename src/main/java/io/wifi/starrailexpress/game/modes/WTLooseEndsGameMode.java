@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.game.modes;
 
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -97,10 +98,10 @@ public class WTLooseEndsGameMode extends GameMode {
             gameWorldComponent.addRole(player, TMMRoles.LOOSE_END);
     }
 
-    protected void sendPackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+    protected void sendLooseEndsWelcomePackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent, SRERole role) {
         for (ServerPlayer player : players) {
             ServerPlayNetworking.send(player,
-                    new AnnounceWelcomePayload(TMMRoles.LOOSE_END.identifier().toString(), -1, -1));
+                    new AnnounceWelcomePayload(role.identifier().toString(), -1, -1));
         }
     }
 
@@ -118,7 +119,7 @@ public class WTLooseEndsGameMode extends GameMode {
         initRoles(players, gameWorldComponent);
         initCoolDownItems(players, gameWorldComponent);
         initPlayerItems(players, gameWorldComponent);
-        sendPackets(players, gameWorldComponent);
+        sendLooseEndsWelcomePackets(players, gameWorldComponent, TMMRoles.LOOSE_END);
     }
 
     @Override

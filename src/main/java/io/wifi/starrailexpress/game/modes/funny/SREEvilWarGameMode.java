@@ -11,8 +11,6 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.WTLooseEndsGameMode;
 import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,6 +24,8 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.component.StalkerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
+
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 /**
  * 邪恶战局
  * <p>
- *     模式特性：每 7 狼（开局 1000 金币）对战 1 超级亡命徒（无友军透视，但是必定矮小）
+ * 模式特性：每 7 狼（开局 1000 金币）对战 1 超级亡命徒（无友军透视，但是必定矮小）
  * </p>
  */
 public class SREEvilWarGameMode extends WTLooseEndsGameMode {
@@ -47,22 +47,26 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             StupidExpress.id("tiny_modifier"), -0.15, AttributeModifier.Operation.ADD_VALUE);
     public static final int ADD_BALANCE_TIME = 600;
     int curTick = 0;
+
     public SREEvilWarGameMode(ResourceLocation identifier) {
         super(identifier);
         addBanedRoles();
     }
+
     protected void addBanedRoles() {
         // 禁用 水鬼，观者，布袋鬼
         BANED_ROLES.add(ModRoles.WATER_GHOST);
         BANED_ROLES.add(ModRoles.WATCHER);
         BANED_ROLES.add(ModRoles.MA_CHEN_XU);
     }
+
     @Override
     protected void initItemList() {
         super.initItemList();
         looseEndsItems.add(ModItems.PATROLLER_REVOLVER::getDefaultInstance);
         looseEndsItems.add(TMMItems.DEFENSE_VIAL::getDefaultInstance);
     }
+
     @Override
     protected void initCoolDownItems(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         super.initCoolDownItems(players, gameWorldComponent);
@@ -73,6 +77,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             itemCooldownManager.addCooldown(ModItems.PATROLLER_REVOLVER, cooldown);
         }
     }
+
     @Override
     protected void initRoles(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         // 每有一组狼人产生一个超级亡命徒：8人局对应 7 狼 1 亡命徒
@@ -87,8 +92,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                         !role.isInnocent() &&
                         role != TMMRoles.CIVILIAN &&
                         // 禁用角色
-                        !BANED_ROLES.contains(role)
-        );
+                        !BANED_ROLES.contains(role));
         List<SRERole> assignedKillers = killerPool.selectRoles(players.size() - superLooseEndCount);
         // 如果狼池不够，生成普通杀手池索引, 同时生成超级亡命徒所在索引
         List<Integer> numbers = new ArrayList<>();
@@ -98,7 +102,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
 
         Collections.shuffle(numbers);
         // 前 superLooseEndeCount 个是亡命徒，剩下的为普通杀手
-        List<Integer> otherAssignedIdxGroup = numbers.subList(0, superLooseEndCount + players.size() - assignedKillers.size());
+        List<Integer> otherAssignedIdxGroup = numbers.subList(0,
+                superLooseEndCount + players.size() - assignedKillers.size());
         otherAssignedIdxGroup.sort(Integer::compareTo);
 
         // 当索引等于亡命徒所在索引：分配亡命徒，否则分配杀手
@@ -106,37 +111,34 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             if (curOtherIdx < superLooseEndCount && i == otherAssignedIdxGroup.get(curOtherIdx)) {
                 gameWorldComponent.addRole(players.get(i), ModRoles.SUPER_LOOSE_END);
                 ++curOtherIdx;
-            }
-            else {
+            } else {
                 if (curOtherIdx < otherAssignedIdxGroup.size() && i == otherAssignedIdxGroup.get(curOtherIdx)) {
                     gameWorldComponent.addRole(players.get(i), TMMRoles.KILLER);
                     ++curOtherIdx;
-                }
-                else if (curKillerIdx < assignedKillers.size()) {
+                } else if (curKillerIdx < assignedKillers.size()) {
                     SRERole role = assignedKillers.get(curKillerIdx++);
                     gameWorldComponent.addRole(players.get(i), role);
                     SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(players.get(i));
                     // 阴谋家首次获取金币减少
                     if (role == ModRoles.CONSPIRATOR) {
                         playerShopComponent.setBalance(-300);
-                    // 潜行直接进入二阶段
+                        // 潜行直接进入二阶段
                     } else if (role == ModRoles.STALKER) {
                         StalkerPlayerComponent stalkerPlayerComponent = StalkerPlayerComponent.KEY.get(players.get(i));
                         stalkerPlayerComponent.advanceToPhase2();
                     }
-                }
-                else
+                } else
                     gameWorldComponent.addRole(players.get(i), TMMRoles.KILLER);
             }
         }
     }
+
     /** 初始化物品 */
     @Override
     protected void initPlayerItems(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players) {
             player.getInventory().clearContent();
-            if (gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END))
-            {
+            if (gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END)) {
                 // 添加亡命徒模式专属物品
                 for (Supplier<ItemStack> itemSupplier : looseEndsItems) {
                     ItemStack itemStack = itemSupplier.get();
@@ -147,15 +149,18 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             }
         }
     }
-    @Override
-    protected void sendPackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+
+    protected void sendEvilGameWelcomePackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players) {
             var role = gameWorldComponent.getRole(player);
-            ServerPlayNetworking.send(player,
-                    new AnnounceWelcomePayload(role.getIdentifier().toString(), 0,0));
+            if (role == null)
+                continue;
+            RoleUtils.sendWelcomeAnnouncement(player, role.identifier(), -1);
         }
     }
-    protected void initModifier(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent, ServerLevel serverWorld) {
+
+    protected void initModifier(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent,
+            ServerLevel serverWorld) {
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverWorld);
         // 所有亡命徒都有矮小修饰符
         for (ServerPlayer player : players) {
@@ -169,12 +174,15 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         // 一次性同步
         worldModifierComponent.sync();
     }
+
     @Override
-    public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players) {
+    public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+            List<ServerPlayer> players) {
         super.initializeGame(serverWorld, gameWorldComponent, players);
         initModifier(players, gameWorldComponent, serverWorld);
         curTick = 0;
     }
+
     @Override
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         GameUtils.WinStatus winStatus = GameUtils.WinStatus.NONE;
@@ -183,9 +191,10 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         for (ServerPlayer player : serverWorld.players()) {
             // passive money
             if (gameWorldComponent.canAutoAddMoney(player)) {
-//                Integer balanceToAdd = GameConstants.PASSIVE_MONEY_TICKER.apply(serverWorld.getGameTime());
-//                if (balanceToAdd > 0)
-//                    SREPlayerShopComponent.KEY.get(player).addToBalance(balanceToAdd);
+                // Integer balanceToAdd =
+                // GameConstants.PASSIVE_MONEY_TICKER.apply(serverWorld.getGameTime());
+                // if (balanceToAdd > 0)
+                // SREPlayerShopComponent.KEY.get(player).addToBalance(balanceToAdd);
                 if (curTick++ >= ADD_BALANCE_TIME) {
                     SREPlayerShopComponent.KEY.get(player).addToBalance(500);
                     curTick = 0;
@@ -209,7 +218,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             List<ServerPlayer> lastLooseEnds = new ArrayList<>();
 
             for (ServerPlayer player : serverWorld.players()) {
-                if ((gameWorldComponent.isRole(player, TMMRoles.LOOSE_END) || gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END))
+                if ((gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
+                        || gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END))
                         && !GameUtils.isPlayerEliminated(player)) {
                     hasLooseEndAlive = true;
                     lastLooseEnds.add(player);
@@ -246,10 +256,11 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
             winStatus = GameUtils.WinStatus.TIME;
 
-//        GameUtils.WinStatus modifiedWinStatus = AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld, winStatus, false);
-//        if (!modifiedWinStatus.equals(GameUtils.WinStatus.NOT_MODIFY)) {
-//            winStatus = modifiedWinStatus;
-//        }
+        // GameUtils.WinStatus modifiedWinStatus =
+        // AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld, winStatus, false);
+        // if (!modifiedWinStatus.equals(GameUtils.WinStatus.NOT_MODIFY)) {
+        // winStatus = modifiedWinStatus;
+        // }
         // game end on win and display
         if (winStatus != GameUtils.WinStatus.NONE
                 && gameWorldComponent.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE) {
