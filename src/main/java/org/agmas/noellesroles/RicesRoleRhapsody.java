@@ -513,7 +513,7 @@ public class RicesRoleRhapsody implements ModInitializer {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家存活
-            if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
+            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(context.player()))
                 return;
 
             // 验证消息不为空
