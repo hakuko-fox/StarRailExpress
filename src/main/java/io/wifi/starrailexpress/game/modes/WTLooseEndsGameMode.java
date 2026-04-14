@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -25,9 +26,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.agmas.harpymodloader.events.ModdedRoleAssigned;
+
 @SuppressWarnings("deprecation")
 public class WTLooseEndsGameMode extends GameMode {
     public final List<Supplier<ItemStack>> looseEndsItems = new ArrayList<>();
+
+    /** 触发角色初始化事件 */
+    public static void triggerRoleAssignedEvent(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+        for (ServerPlayer player : players) {
+            var role = gameWorldComponent.getRole(player);
+            // 触发角色初始化事件
+            if (role != null) {
+                if (role.canUseKiller()) {
+                    SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
+                    if (playerShopComponent.balance < GameConstants.getMoneyStart())
+                        playerShopComponent.setBalance(GameConstants.getMoneyStart());
+                }
+                ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
+            }
+        }
+    }
 
     public WTLooseEndsGameMode(ResourceLocation identifier) {
         super(identifier, 10, 2);
@@ -72,10 +91,12 @@ public class WTLooseEndsGameMode extends GameMode {
             }
         }
     }
+
     protected void initRoles(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players)
             gameWorldComponent.addRole(player, TMMRoles.LOOSE_END);
     }
+
     protected void sendPackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players) {
             ServerPlayNetworking.send(player,
