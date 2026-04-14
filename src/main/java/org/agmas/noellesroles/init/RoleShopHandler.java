@@ -524,9 +524,9 @@ public class RoleShopHandler {
     {
       // 厨师的商店
       var shop = new ArrayList<ShopEntry>();
-      shop.add(new ShopEntry(ModItems.A_BOTTLE_OF_WATER.getDefaultInstance(), 75,
+      shop.add(new ShopEntry(ModItems.A_BOTTLE_OF_WATER.getDefaultInstance(), 50,
           ShopEntry.Type.TOOL));
-      shop.add(new ShopEntry(ModItems.LINGSHI.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+      shop.add(new ShopEntry(ModItems.LINGSHI.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
       shop.add(new ShopEntry(ModItems.PAN.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(ModRoles.CHEF_ID, shop);
     }
