@@ -20,6 +20,7 @@ public class MathSolverScreen extends Screen {
     private int totalPages = 5;
     private int maxTime = 20 * 20; // 20s
 
+    private boolean haveSendPacket = false;
     private int currentIndex = 0;
 
     private final int BUTTON_WIDTH = 100;
@@ -88,6 +89,10 @@ public class MathSolverScreen extends Screen {
 
     public void solveFailed_and_sendPacket() {
         maxTrial = 0;
+        if(haveSendPacket){
+            return;
+        }
+        haveSendPacket = true;
         ClientPlayNetworking.send(new ProblemSetEventC2SPacket(false, forced));
     }
 
@@ -110,6 +115,10 @@ public class MathSolverScreen extends Screen {
 
     public void solveSuccess() {
         initFinished();
+        if(haveSendPacket){
+            return;
+        }
+        haveSendPacket = true;
         ClientPlayNetworking.send(new ProblemSetEventC2SPacket(true, forced));
     }
 
