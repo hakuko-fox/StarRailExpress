@@ -102,7 +102,8 @@ public class RevivalSelectionHandler {
                         a.playNotifySound(SoundEvents.TOTEM_USE, revived.getSoundSource(), 1.2f, 1.5f);
                         a.displayClientMessage(Component.translatable("hud.stupid_express.necromancer.revived_player",
                                 RoleUtils.getRoleOrModifierNameWithColor(ModRoles.CAT_NECROMANCER),
-                                RoleUtils.getRoleOrModifierNameWithColor(selectedRole)), true);
+                                RoleUtils.getRoleOrModifierNameWithColor(selectedRole))
+                                .withStyle(ChatFormatting.DARK_RED), true);
                     });
             revived.getInventory().clearContent();
             revived.teleportTo(body.getX(), body.getY(), body.getZ());
@@ -177,7 +178,8 @@ public class RevivalSelectionHandler {
                         a.playNotifySound(SoundEvents.TOTEM_USE, revived.getSoundSource(), 1.2f, 1.5f);
                         a.displayClientMessage(Component.translatable("hud.stupid_express.necromancer.revived_player",
                                 RoleUtils.getRoleOrModifierNameWithColor(SERoles.NECROMANCER),
-                                RoleUtils.getRoleOrModifierNameWithColor(selectedRole)), true);
+                                RoleUtils.getRoleOrModifierNameWithColor(selectedRole))
+                                .withStyle(ChatFormatting.DARK_RED), true);
                     });
             revived.getInventory().clearContent();
             revived.teleportTo(body.getX(), body.getY(), body.getZ());
