@@ -254,12 +254,13 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             p.removeEffect(ModEffects.SKILL_BANED);
             p.removeEffect(ModEffects.NO_COLLIDE);
             if (role != null) {
-                ModdedRoleAssigned.EVENT.invoker().assignModdedRole(p, role);
                 RoleUtils.sendWelcomeAnnouncement(p);
                 if (role.canUseKiller()) {
                     SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(p);
-                    playerShopComponent.setBalance(GameConstants.getMoneyStart());
+                    if (playerShopComponent.balance < GameConstants.getMoneyStart())
+                        playerShopComponent.setBalance(GameConstants.getMoneyStart());
                 }
+                ModdedRoleAssigned.EVENT.invoker().assignModdedRole(p, role);
             }
             ServerPlayNetworking.send(p, new CloseUiPayload());
         }

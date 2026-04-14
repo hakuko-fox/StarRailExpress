@@ -110,7 +110,8 @@ public class SREMurderGameMode extends GameMode {
                 Harpymodloader.LOGGER.debug("Assigned role " + value.getIdentifier() + " to " + key.getName());
                 if (value.canUseKiller()) {
                     SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(key);
-                    playerShopComponent.setBalance(100 + playerShopComponent.balance);
+                    if (playerShopComponent.balance < GameConstants.getMoneyStart())
+                        playerShopComponent.setBalance(GameConstants.getMoneyStart());
                 }
             } else {
                 // 如果没有分配角色，则分配默认平民角色
@@ -612,7 +613,7 @@ public class SREMurderGameMode extends GameMode {
         // check if out of time
         if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
             winStatus = GameUtils.WinStatus.TIME;
-        
+
         // game end on win and display
         GameUtils.WinStatus modifiedWinStatus = allowGameEnd(serverWorld, winStatus, false, gameWorldComponent);
         if (!modifiedWinStatus.equals(GameUtils.WinStatus.NOT_MODIFY)) {

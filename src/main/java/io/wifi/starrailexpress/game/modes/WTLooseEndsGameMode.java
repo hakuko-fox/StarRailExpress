@@ -1,10 +1,12 @@
 package io.wifi.starrailexpress.game.modes;
 
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -26,9 +28,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.agmas.harpymodloader.events.ModdedRoleAssigned;
+
 @SuppressWarnings("deprecation")
 public class WTLooseEndsGameMode extends GameMode {
     public final List<Supplier<ItemStack>> looseEndsItems = new ArrayList<>();
+
+    /** 触发角色初始化事件 */
+    public static void triggerRoleAssignedEvent(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+        for (ServerPlayer player : players) {
+            var role = gameWorldComponent.getRole(player);
+            // 触发角色初始化事件
+            if (role != null) {
+                if (role.canUseKiller()) {
+                    SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
+                    if (playerShopComponent.balance < GameConstants.getMoneyStart())
+                        playerShopComponent.setBalance(GameConstants.getMoneyStart());
+                }
+                ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
+            }
+        }
+    }
 
     public WTLooseEndsGameMode(ResourceLocation identifier) {
         super(identifier, 10, 2);
@@ -73,14 +93,16 @@ public class WTLooseEndsGameMode extends GameMode {
             }
         }
     }
+
     protected void initRoles(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players)
             gameWorldComponent.addRole(player, TMMRoles.LOOSE_END);
     }
-    protected void sendPackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+
+    protected void sendLooseEndsWelcomePackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent, SRERole role) {
         for (ServerPlayer player : players) {
             ServerPlayNetworking.send(player,
-                    new AnnounceWelcomePayload(TMMRoles.LOOSE_END.identifier().toString(), -1, -1));
+                    new AnnounceWelcomePayload(role.identifier().toString(), -1, -1));
         }
     }
     protected void assignModdedRole(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
@@ -103,7 +125,7 @@ public class WTLooseEndsGameMode extends GameMode {
         initRoles(players, gameWorldComponent);
         initCoolDownItems(players, gameWorldComponent);
         initPlayerItems(players, gameWorldComponent);
-        sendPackets(players, gameWorldComponent);
+        sendLooseEndsWelcomePackets(players, gameWorldComponent, TMMRoles.LOOSE_END);
     }
 
     @Override

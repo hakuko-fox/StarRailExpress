@@ -142,7 +142,7 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         tempCopiedRoleId = roleId;
         tempCopiedUsesRemaining = 3;
         tempSkillCooldown = 0;
-        useTemp = true;   // 复制后自动切到临时技能
+        useTemp = true; // 复制后自动切到临时技能
         isCopyMode = false; // 退出复制模式
         copyActionCooldown = COPY_ACTION_COOLDOWN; // 60秒
         // 复制新能力时重置召回者状态
@@ -157,7 +157,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     // ==================== 吃尸体 ====================
 
     public void startCharging(UUID corpseEntityUuid) {
-        if (isCharging) return;
+        if (isCharging)
+            return;
         isCharging = true;
         chargeTicks = 0;
         chargingCorpseUuid = corpseEntityUuid;
@@ -169,7 +170,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     public void cancelCharging() {
-        if (!isCharging) return;
+        if (!isCharging)
+            return;
         isCharging = false;
         chargeTicks = 0;
         chargingCorpseUuid = null;
@@ -179,8 +181,10 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     private void completeEat() {
         isCharging = false;
         chargeTicks = 0;
-        if (!(player instanceof ServerPlayer sp)) return;
-        if (chargingCorpseUuid == null) return;
+        if (!(player instanceof ServerPlayer sp))
+            return;
+        if (chargingCorpseUuid == null)
+            return;
 
         var bodies = sp.level().getEntities(
                 EntityTypeTest.forExactClass(PlayerBodyEntity.class),
@@ -208,6 +212,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
             this.sync();
             return;
         }
+        // 尸体会消失
+        corpse.discard();
 
         // 不能吃杀手和中立的能力
         if (!role.isInnocent()) {
@@ -237,7 +243,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
                     break;
                 }
             }
-            if (slotIndex == -1) slotIndex = 0;
+            if (slotIndex == -1)
+                slotIndex = 0;
             filledSlots++;
         } else {
             slotIndex = getOldestSlotIndex();
@@ -250,7 +257,6 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         slotFillOrder[slotIndex] = nextFillOrder++;
         activeSlotIndex = slotIndex;
 
-        corpse.discard();
         chargingCorpseUuid = null;
         copyActionCooldown = 40; // 2秒吃完后小冷却
 
@@ -270,16 +276,19 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     public void switchSlot() {
         // 构建有效选项列表：-1=临时, 0/1/2=槽位, -2=复制模式
         java.util.List<Integer> options = new java.util.ArrayList<>();
-        if (tempCopiedRoleId != null) options.add(-1); // 临时技能
+        if (tempCopiedRoleId != null)
+            options.add(-1); // 临时技能
         for (int i = 0; i < MAX_SLOTS; i++) {
-            if (slotRoleId[i] != null) options.add(i);  // 有效槽位
+            if (slotRoleId[i] != null)
+                options.add(i); // 有效槽位
         }
         options.add(-2); // 复制模式始终存在
 
         // 找当前位置
         int currentOpt = isCopyMode ? -2 : (useTemp ? -1 : activeSlotIndex);
         int currentIdx = options.indexOf(currentOpt);
-        if (currentIdx < 0) currentIdx = 0;
+        if (currentIdx < 0)
+            currentIdx = 0;
 
         // 切到下一个
         int nextIdx = (currentIdx + 1) % options.size();
@@ -287,7 +296,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
 
         isCopyMode = (nextOpt == -2);
         useTemp = (nextOpt == -1);
-        if (nextOpt >= 0) activeSlotIndex = nextOpt;
+        if (nextOpt >= 0)
+            activeSlotIndex = nextOpt;
 
         // 显示消息
         if (player instanceof ServerPlayer sp) {
@@ -351,13 +361,15 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         boolean isPermanent = !isTemp;
-        ImitatorSkillRegistry.SkillResult result = ImitatorSkillRegistry.execute(roleId, self, target, this, isPermanent);
+        ImitatorSkillRegistry.SkillResult result = ImitatorSkillRegistry.execute(roleId, self, target, this,
+                isPermanent);
 
         switch (result) {
             case SUCCESS -> {
                 applySkillCooldownAndConsume(roleId, isPermanent);
             }
             case HANDLED -> {
+                slotCooldown[activeSlotIndex] = 90 * 20;
                 // 技能内部已处理
             }
             case FAIL -> {
@@ -387,7 +399,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
             return false;
         }
 
-        if (!ImitatorSkillRegistry.isMessageSkill(roleId)) return false;
+        if (!ImitatorSkillRegistry.isMessageSkill(roleId))
+            return false;
 
         int currentCd = isTemp ? tempSkillCooldown : slotCooldown[activeSlotIndex];
         if (currentCd > 0) {
@@ -397,7 +410,8 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         boolean isPermanent = !isTemp;
-        ImitatorSkillRegistry.SkillResult result = ImitatorSkillRegistry.executeMessage(roleId, self, message, this, isPermanent);
+        ImitatorSkillRegistry.SkillResult result = ImitatorSkillRegistry.executeMessage(roleId, self, message, this,
+                isPermanent);
 
         if (result == ImitatorSkillRegistry.SkillResult.SUCCESS) {
             applySkillCooldownAndConsume(roleId, isPermanent);
@@ -416,6 +430,7 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
         int cd = ImitatorSkillRegistry.getCooldown(roleId);
         if (tempCopiedRoleId != null && tempCopiedRoleId.equals(roleId)) {
             tempSkillCooldown = cd;
+            slotCooldown[activeSlotIndex] = cd;
             if (!isPermanent) {
                 tempCopiedUsesRemaining--;
                 if (tempCopiedUsesRemaining <= 0) {
@@ -436,41 +451,52 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
      * 获取当前激活技能的冷却
      */
     public int getCurrentSkillCooldown() {
-        if (useTemp && tempCopiedRoleId != null) return tempSkillCooldown;
-        if (!useTemp && slotRoleId[activeSlotIndex] != null) return slotCooldown[activeSlotIndex];
-        if (tempCopiedRoleId != null) return tempSkillCooldown;
+        if (useTemp && tempCopiedRoleId != null)
+            return tempSkillCooldown;
+        if (!useTemp && slotRoleId[activeSlotIndex] != null)
+            return slotCooldown[activeSlotIndex];
+        if (tempCopiedRoleId != null)
+            return tempSkillCooldown;
         return 0;
     }
 
     // ==================== 查询方法 ====================
 
     public boolean hasAnyAbility() {
-        if (tempCopiedRoleId != null) return true;
+        if (tempCopiedRoleId != null)
+            return true;
         for (int i = 0; i < MAX_SLOTS; i++) {
-            if (slotRoleId[i] != null) return true;
+            if (slotRoleId[i] != null)
+                return true;
         }
         return false;
     }
 
     public ResourceLocation getCurrentAbilityRoleId() {
-        if (useTemp && tempCopiedRoleId != null) return tempCopiedRoleId;
-        if (!useTemp && slotRoleId[activeSlotIndex] != null) return slotRoleId[activeSlotIndex];
-        if (tempCopiedRoleId != null) return tempCopiedRoleId; // 回退
+        if (useTemp && tempCopiedRoleId != null)
+            return tempCopiedRoleId;
+        if (!useTemp && slotRoleId[activeSlotIndex] != null)
+            return slotRoleId[activeSlotIndex];
+        if (tempCopiedRoleId != null)
+            return tempCopiedRoleId; // 回退
         return null;
     }
 
     public ResourceLocation getSlotRoleId(int index) {
-        if (index < 0 || index >= MAX_SLOTS) return null;
+        if (index < 0 || index >= MAX_SLOTS)
+            return null;
         return slotRoleId[index];
     }
 
     public int getSlotCooldown(int index) {
-        if (index < 0 || index >= MAX_SLOTS) return 0;
+        if (index < 0 || index >= MAX_SLOTS)
+            return 0;
         return slotCooldown[index];
     }
 
     public boolean isSlotUnlimited(int index) {
-        if (index < 0 || index >= MAX_SLOTS) return false;
+        if (index < 0 || index >= MAX_SLOTS)
+            return false;
         return slotRoleId[index] != null; // 槽位都是永久的
     }
 
@@ -499,27 +525,31 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void serverTick() {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (!gameWorld.isRole(player, ModRoles.IMITATOR)) return;
+        if (!gameWorld.isRole(player, ModRoles.IMITATOR))
+            return;
 
         boolean needSync = false;
 
         // 复制动作冷却
         if (copyActionCooldown > 0) {
             copyActionCooldown--;
-            if (copyActionCooldown == 0) needSync = true;
+            if (copyActionCooldown == 0)
+                needSync = true;
         }
 
         // 临时技能冷却
         if (tempSkillCooldown > 0) {
             tempSkillCooldown--;
-            if (tempSkillCooldown == 0) needSync = true;
+            if (tempSkillCooldown == 0)
+                needSync = true;
         }
 
         // 槽位冷却
         for (int i = 0; i < MAX_SLOTS; i++) {
             if (slotCooldown[i] > 0) {
                 slotCooldown[i]--;
-                if (slotCooldown[i] == 0) needSync = true;
+                if (slotCooldown[i] == 0)
+                    needSync = true;
             }
         }
 
@@ -543,18 +573,24 @@ public class ImitatorPlayerComponent implements RoleComponent, ServerTickingComp
             }
         }
 
-        if (needSync) sync();
+        if (needSync)
+            sync();
     }
 
     @Override
     public void clientTick() {
-        if (copyActionCooldown > 1) copyActionCooldown--;
-        if (tempSkillCooldown > 1) tempSkillCooldown--;
+        if (copyActionCooldown > 1)
+            copyActionCooldown--;
+        if (tempSkillCooldown > 1)
+            tempSkillCooldown--;
         for (int i = 0; i < MAX_SLOTS; i++) {
-            if (slotCooldown[i] > 1) slotCooldown[i]--;
+            if (slotCooldown[i] > 1)
+                slotCooldown[i]--;
         }
-        if (imitBoxerInvulnTicks > 0) imitBoxerInvulnTicks--;
-        if (isCharging && chargeTicks < MAX_CHARGE_TICKS) chargeTicks++;
+        if (imitBoxerInvulnTicks > 0)
+            imitBoxerInvulnTicks--;
+        if (isCharging && chargeTicks < MAX_CHARGE_TICKS)
+            chargeTicks++;
     }
 
     // ==================== NBT Sync ====================
