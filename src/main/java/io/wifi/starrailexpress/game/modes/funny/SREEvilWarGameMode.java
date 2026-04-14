@@ -16,14 +16,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
-import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.component.StalkerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
@@ -92,8 +90,6 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                         !BANED_ROLES.contains(role)
         );
         List<SRERole> assignedKillers = killerPool.selectRoles(players.size() - superLooseEndCount);
-
-        RandomSource random = RandomSource.create();
         // 如果狼池不够，生成普通杀手池索引, 同时生成超级亡命徒所在索引
         List<Integer> numbers = new ArrayList<>();
         for (int i = 1; i <= players.size(); i++) {

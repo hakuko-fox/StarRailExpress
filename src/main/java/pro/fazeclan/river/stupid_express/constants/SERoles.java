@@ -120,7 +120,7 @@ public class SERoles {
 
         /// AVARICIOUS
 
-        AvariciousGoldHandler.onGameStart();
+        AvariciousGoldHandler.registerEvents();
 
     }
 
