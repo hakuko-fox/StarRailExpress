@@ -60,6 +60,10 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         BANED_ROLES.add(ModRoles.MA_CHEN_XU);
     }
     @Override
+    public boolean isLooseEndMode() {
+        return false;
+    }
+    @Override
     protected void initItemList() {
         super.initItemList();
         looseEndsItems.add(ModItems.PATROLLER_REVOLVER::getDefaultInstance);
@@ -177,6 +181,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players) {
         super.initializeGame(serverWorld, gameWorldComponent, players);
         initModifier(players, gameWorldComponent, serverWorld);
+        assignModdedRole(players, gameWorldComponent);
         curTick = 0;
     }
     @Override

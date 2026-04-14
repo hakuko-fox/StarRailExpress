@@ -29,7 +29,7 @@ import java.util.List;
 public class TimeStopClock extends Item {
     public static final String TAG_STOP_TIME = "StopTime";
     public static final String TAG_COOLDOWN = "CoolDown";
-    public static final int MAX_DURABILITY = 5;
+    public static final int MAX_DURABILITY = 100;
     public static final int DEFAULT_STOP_TIME = 100;
     public static final int DEFAULT_COOL_DOWN = 300;
 

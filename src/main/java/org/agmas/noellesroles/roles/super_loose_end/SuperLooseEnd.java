@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.init.ModItems;
@@ -68,11 +69,25 @@ public class SuperLooseEnd extends NormalRole {
             // 每次击杀给予时停钟或防御药剂
             int r = RANDOM.nextInt(100);
             if (r < 50) {
-                ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
-                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, SREConfig.instance().antWarClockStopTick);
-                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, SREConfig.instance().antWarClockCooldownTick);
-                timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 1);
-                killer.addItem(timeStopClock);
+                // 如果有缺失耐久的时停钟则恢复耐久，否则给予一个新的耐久为1的
+                Inventory inventory = killer.getInventory();
+                boolean hasRecovery = false;
+                for (var item : inventory.items) {
+                    if (item.isEmpty())
+                        continue;
+                    if (item.is(ModItems.TIME_STOP_CLOCK) && item.getDamageValue() > 0) {
+                        item.setDamageValue(item.getDamageValue() - 1);
+                        hasRecovery = true;
+                        break;
+                    }
+                }
+                if (!hasRecovery) {
+                    ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
+                    ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, SREConfig.instance().antWarClockStopTick);
+                    ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, SREConfig.instance().antWarClockCooldownTick);
+                    timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 1);
+                    killer.addItem(timeStopClock);
+                }
             }
             else
                 killer.addItem(TMMItems.DEFENSE_VIAL.getDefaultInstance());

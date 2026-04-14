@@ -14,6 +14,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemCooldowns;
+import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -82,6 +83,7 @@ public class SREAntWarGameMode extends WTLooseEndsGameMode {
             Objects.requireNonNull(player.getAttribute(Attributes.SCALE)).removeModifier(antModifier);
             Objects.requireNonNull(player.getAttribute(Attributes.SCALE)).addPermanentModifier(antModifier);
         }
+        assignModdedRole(players, gameWorldComponent);
     }
     @Override
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
