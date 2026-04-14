@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class WTLooseEndsGameMode extends GameMode {
         });
     }
 
-    protected void initCoolDownItems(List<ServerPlayer> players) {
+    protected void initCoolDownItems(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         int cooldown = GameConstants.getInTicks(0, 10);
         for (ServerPlayer player : players) {
             // 给所有人的武器添加冷却
@@ -60,7 +61,7 @@ public class WTLooseEndsGameMode extends GameMode {
     }
 
     /** 初始化亡命徒物品 */
-    protected void initPlayerItems(List<ServerPlayer> players) {
+    protected void initPlayerItems(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players) {
             player.getInventory().clearContent();
             // 添加亡命徒模式专属物品
@@ -76,10 +77,18 @@ public class WTLooseEndsGameMode extends GameMode {
         for (ServerPlayer player : players)
             gameWorldComponent.addRole(player, TMMRoles.LOOSE_END);
     }
-    protected void sendPackets(List<ServerPlayer> players) {
+    protected void sendPackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players) {
             ServerPlayNetworking.send(player,
                     new AnnounceWelcomePayload(TMMRoles.LOOSE_END.identifier().toString(), -1, -1));
+        }
+    }
+    /** 触发角色初始化事件 */
+    protected void triggerRoleAssignedEvent(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+        for (ServerPlayer player : players) {
+            var role = gameWorldComponent.getRole(player);
+            // 触发角色初始化事件
+            ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
         }
     }
 
@@ -93,10 +102,12 @@ public class WTLooseEndsGameMode extends GameMode {
             List<ServerPlayer> players) {
         SRETrainWorldComponent.KEY.get(serverWorld).setTimeOfDay(SRETrainWorldComponent.TimeOfDay.SUNDOWN);
 
-        initCoolDownItems(players);
-        initPlayerItems(players);
+        // 先分配职业再发物品：可以根据职业来分配
         initRoles(players, gameWorldComponent);
-        sendPackets(players);
+        initCoolDownItems(players, gameWorldComponent);
+        initPlayerItems(players, gameWorldComponent);
+        triggerRoleAssignedEvent(players, gameWorldComponent);
+        sendPackets(players, gameWorldComponent);
     }
 
     @Override
