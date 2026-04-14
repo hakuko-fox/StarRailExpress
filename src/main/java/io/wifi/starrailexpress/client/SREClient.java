@@ -93,6 +93,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
@@ -929,8 +930,10 @@ public class SREClient implements ClientModInitializer {
     private static void updateHudApiCache(Minecraft client) {
         if (gameComponent == null)
             return;
-        if(client.level == null) return;
-        cachedLooseEndPenalty = gameComponent.isRunning() && RefugeeComponent.KEY.get(client.level).isAnyRevivals && DeathPenaltyComponent.KEY.get(client.player).hasPenalty();
+        if (client.level == null)
+            return;
+        cachedLooseEndPenalty = gameComponent.isRunning() && RefugeeComponent.KEY.get(client.level).isAnyRevivals
+                && DeathPenaltyComponent.KEY.get(client.player).hasPenalty();
         LocalPlayer player = client.player;
         cachedPlayerAliveAndInSurvival = GameUtils.isPlayerAliveAndSurvival(player);
         cachedPlayerAliveAndInSurvivalIgnoreShitSplit = GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
@@ -964,5 +967,19 @@ public class SREClient implements ClientModInitializer {
         }
         cachedCanRenderChatHud = canRender;
         cachedRenderVanillaHud = cachedRenderVanillaHud || isInLobby || player.isCreative();
+    }
+
+    public static void stalkerKnifeInventoryTick(ItemStack itemStack, Level level, Entity entity, int i, boolean b) {
+        Integer i1 = itemStack.get(SREDataComponentTypes.WEAPON_USED_TIME);
+        if (!((LocalPlayer) entity).isCrouching() || (i1 == null || i1 != 3))
+            return;
+        Entity crosshairPickEntity = Minecraft.getInstance().crosshairPickEntity;
+        // distance <=4
+        if (crosshairPickEntity != null && entity.distanceToSqr(crosshairPickEntity) > 16) {
+            return;
+        }
+        if (crosshairPickEntity instanceof Player && ((LocalPlayer) entity).getTicksUsingItem() > 3) {
+            ((LocalPlayer) entity).releaseUsingItem();
+        }
     }
 }

@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -193,6 +194,7 @@ public class RevivalSelectionHandler {
             playerShopComponent.setBalance(200);
 
             StupidRoleUtils.sendWelcomeAnnouncement(revived);
+            SREPlayerPsychoComponent.KEY.get(revived).startPsycho();
 
             return InteractionResult.CONSUME;
         }));
