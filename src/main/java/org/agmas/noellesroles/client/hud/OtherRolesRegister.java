@@ -17,6 +17,7 @@ public class OtherRolesRegister {
         ExecutionerHud.register();
         GamblerHud.register();
         InsaneHud.register();
+        NecromancerHud.register();
         MagicianHud.register();
         MonitorHud.register();
         MorphlingHud.register();

@@ -167,15 +167,17 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         if (this.player instanceof ServerPlayer serverPlayer) {
             ServerPlayNetworking.send(serverPlayer, new RemoveStatusBarPayload("Psycho"));
         }
-        
+
         Item psychoItem = TMMItems.BAT;
         SRERole role = SRERoleWorldComponent.KEY.get(this.player.level()).getRole(player);
         if (role != null) {
             psychoItem = role.getPsychoItem();
         }
         MCItemsUtils.clearItem(player, psychoItem);
-        if (role != null) {
-            role.onPsychoOver(player, this);
+        if (checkIsGameRunning()) {
+            if (role != null) {
+                role.onPsychoOver(player, this);
+            }
         }
         return result;
     }
