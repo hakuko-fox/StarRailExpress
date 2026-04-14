@@ -1594,6 +1594,7 @@ public class ModEventsRegister {
                 "noellesroles:signed_paper",
                 "noellesroles:mercenary_contract",
                 "noellesroles:diving_helmet",
+                "noellesroles:night_vision_glasses",
                 "noellesroles:life_and_death_shape",
                 "noellesroles:noell_paperclip",
                 "minecraft:clock",
