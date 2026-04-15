@@ -198,7 +198,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         for (ServerPlayer player : players) {
             if (gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END)) {
                 worldModifierComponent.addModifier(player.getUUID(), SEModifiers.TINY, false);
-                worldModifierComponent.addModifier(player.getUUID(), SEModifiers.FEATHER, false);
+//                worldModifierComponent.addModifier(player.getUUID(), SEModifiers.FEATHER, false);
                 // 使玩家缩小
                 Objects.requireNonNull(player.getAttribute(Attributes.SCALE)).removeModifier(tinyModifier);
                 Objects.requireNonNull(player.getAttribute(Attributes.SCALE)).addPermanentModifier(tinyModifier);
