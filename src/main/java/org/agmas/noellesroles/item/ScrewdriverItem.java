@@ -155,7 +155,8 @@ public class ScrewdriverItem extends Item implements AdventureUsable {
                     if (isLockSmith || isEngineer || player.isCreative()) {
                         if (player.getCooldowns().isOnCooldown(context.getItemInHand().getItem()))
                             return InteractionResult.FAIL;
-                        player.getCooldowns().addCooldown(context.getItemInHand().getItem(), 20 * 30);
+                        if (!player.isCreative())
+                            player.getCooldowns().addCooldown(context.getItemInHand().getItem(), 20 * 30);
                         world.playSound(null, lowerPos.getX() + 0.5, lowerPos.getY() + 1, lowerPos.getZ() + 0.5,
                                 TMMSounds.BLOCK_DOOR_TOGGLE, SoundSource.BLOCKS, 0.7f, 1.5f);
                         if (!world.isClientSide) {
