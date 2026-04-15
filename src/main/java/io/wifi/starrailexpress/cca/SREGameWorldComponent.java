@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.roles.fool.TarotAssemblyManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -548,6 +549,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public static void isPlayerOutGameAreas(ServerPlayer player, AreasWorldComponent areas) {
+        if (player.isSpectator() || player.isCreative())
+            return;
         final var block = player.level()
                 .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
         final var block1 = player.level()
@@ -556,9 +559,15 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         final var block2 = player.level()
                 .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() - 2), (int) player.getZ()))
                 .getBlock();
-        if (!(player.getZ() >= 18000)) {
+        if (!(player.getZ() >= 19000)) {
             if (player.getY() < areas.playArea.minY
                     || !areas.canSwim && (block == Blocks.WATER && block1 == Blocks.WATER && block2 == Blocks.WATER)) {
+                GameUtils.killPlayer(player, false,
+                        player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                        GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
+            }
+        } else {
+            if (!TarotAssemblyManager.havingMeeting) {
                 GameUtils.killPlayer(player, false,
                         player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                         GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
