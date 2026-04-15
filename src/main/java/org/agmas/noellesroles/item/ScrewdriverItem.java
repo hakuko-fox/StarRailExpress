@@ -162,8 +162,8 @@ public class ScrewdriverItem extends Item implements AdventureUsable {
                                 TMMSounds.BLOCK_DOOR_TOGGLE, SoundSource.BLOCKS, 0.7f, 1.5f);
                         if (!world.isClientSide) {
                             doorEntity.setBlasted(false);
-                            unBlastNearBy(context);
                             doorEntity.setOpen(true);
+                            unBlastNearBy(context);
                             doorEntity.setChanged();
                             player.displayClientMessage(
                                     Component.translatable("message.noellesroles.locksmith.fix")
@@ -192,6 +192,7 @@ public class ScrewdriverItem extends Item implements AdventureUsable {
                 if (world.getBlockEntity(lowerPos) instanceof SmallDoorBlockEntity entity) {
                     entity.setBlasted(false);
                     entity.setOpen(true);
+                    entity.setChanged();
                 }
             }
         }
