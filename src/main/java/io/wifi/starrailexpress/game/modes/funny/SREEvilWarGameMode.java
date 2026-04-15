@@ -181,7 +181,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     }
 
     /** 发送欢迎包，根据特定角色发送 */
-    protected void sendWelcomePackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+    @Override
+    protected void sendWelcomePackets(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent, SRERole role1) {
         int looseEndCount = players.size() / (SREConfig.instance().evilWarKillGroupNumber + 1);
         looseEndCount = Math.max(looseEndCount, 1);
         int killerCount = players.size() - looseEndCount;
