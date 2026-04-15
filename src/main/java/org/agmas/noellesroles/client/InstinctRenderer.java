@@ -560,7 +560,7 @@ public class InstinctRenderer {
                         if (RoleUtils.compareRole(target_role, RedHouseRoles.PACHURI)) {
                             return RedHouseRoles.PACHURI.color();
                         }
-                        return RedHouseRoles.FURANDORU.color();
+                        return new Color(2, 224, 2).getRGB();
                     }
                     return -1;
                 }
@@ -690,7 +690,7 @@ public class InstinctRenderer {
                                 if (RoleUtils.compareRole(target_role, RedHouseRoles.PACHURI)) {
                                     return RedHouseRoles.PACHURI.color();
                                 } else if (RoleUtils.compareRole(target_role, RedHouseRoles.FURANDORU)) {
-                                    return new Color(253, 114, 255).getRGB();
+                                    return RedHouseRoles.FURANDORU.color();
                                 }
                             }
                         }
