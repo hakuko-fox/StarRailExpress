@@ -68,7 +68,7 @@ public class GameUtilsCommand {
                           .executes((ctx) -> {
                             var source = ctx.getSource();
                             ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-                            Item item = ItemArgument.getItem(ctx, "player").getItem();
+                            Item item = ItemArgument.getItem(ctx, "item").getItem();
                             int time = IntegerArgumentType.getInteger(ctx, "time");
                             player.getCooldowns().addCooldown(item, time);
                             source
