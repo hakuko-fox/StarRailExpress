@@ -21,6 +21,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.ConfigWorldComponent;
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
@@ -55,13 +56,16 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
 
     // ==================== 常量定义 ====================
     public static final Holder.Reference<SoundEvent> MUSIC_DISC_LAVA_CHICKEN_CUT = registerForHolder(
-            ResourceLocation.withDefaultNamespace("music_disc.lava_chicken_cut"));
+            Noellesroles.id("music_disc.lava_chicken_cut"));
     public static final Holder.Reference<SoundEvent> MUSIC_DISC_CREATOR_CUT = registerForHolder(
-            ResourceLocation.withDefaultNamespace("music_disc.creator_cut"));
+            Noellesroles.id("music_disc.creator_cut"));
     public static final Holder.Reference<SoundEvent> MUSIC_DISC_BROKEN_MOON = registerForHolder(
-            ResourceLocation.withDefaultNamespace("music_disc.broken_moon"));
+            Noellesroles.id("music_disc.broken_moon"));
     public static final Holder.Reference<SoundEvent> MUSIC_DISC_PIGSTEP_CUT = registerForHolder(
-            ResourceLocation.withDefaultNamespace("music_disc.pigstep_cut"));
+            Noellesroles.id("music_disc.pigstep_cut"));
+    public static final Holder.Reference<SoundEvent> MUSIC_DISC_LUPINUS = registerForHolder(
+            Noellesroles.id("music_disc.lupinus"));
+
     /** 主动技能冷却时间（4800 tick） */
     public static final int ABILITY_COOLDOWN = 4800;
 
@@ -79,7 +83,8 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
             MUSIC_DISC_PIGSTEP_CUT.value(),
             MUSIC_DISC_LAVA_CHICKEN_CUT.value(),
             MUSIC_DISC_CREATOR_CUT.value(),
-            MUSIC_DISC_BROKEN_MOON.value()
+            MUSIC_DISC_BROKEN_MOON.value(),
+            MUSIC_DISC_LUPINUS.value()
     };
 
     // ==================== 状态变量 ====================
@@ -315,6 +320,9 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
                             true // showIcon（显示图标）
                     ));
                     break;
+                case 5:
+                    // 待添加效果 ===qwq===
+                    break;
                 default:
             }
 
@@ -367,7 +375,7 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
         this.currentMusicIndex = tag.contains("currentMusicIndex") ? tag.getInt("currentMusicIndex") : -1;
         this.musicRemainingTicks = tag.contains("musicRemainingTicks") ? tag.getInt("musicRemainingTicks") : 0;
     }
-    
+
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }

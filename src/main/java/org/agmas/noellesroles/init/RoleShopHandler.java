@@ -1491,7 +1491,7 @@ public class RoleShopHandler {
         80,
         ShopEntry.Type.TOOL));
     // 歌手商店
-    for (int i = 1; i <= 4; i++) {
+    for (int i = 1; i <= 5; i++) {
       ItemStack singer_shop_item = ModItems.SINGER_MUSIC_DISC.getDefaultInstance();
       singer_shop_item.set(DataComponents.ITEM_NAME,
           Component.translatable("item.noellesroles.shop.singer.display_name.root",
