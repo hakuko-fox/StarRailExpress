@@ -252,9 +252,10 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     SREPlayerShopComponent.KEY.get(player).addToBalance(200);
                 }
                 else if(role == ModRoles.CREEPER) {
+                    SREPlayerShopComponent.KEY.get(player).addToBalance(500);
                     player.addItem(TMMItems.GRENADE.getDefaultInstance());
                 }
-                else
+                else if(role != ModRoles.SUPER_LOOSE_END)
                     // 默认获取500金币
                     SREPlayerShopComponent.KEY.get(player).addToBalance(500);
                 curTick = 0;
@@ -264,6 +265,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     StalkerPlayerComponent stalkerPlayerComponent = StalkerPlayerComponent.KEY.get(player);
                     // 潜行每30s获得 500 能量
                     stalkerPlayerComponent.energy += 500;
+                    // 每30s获得 4 击杀数
+                    stalkerPlayerComponent.phase2Kills += 4;
                     stalkerPlayerComponent.sync();
                 }
             }
