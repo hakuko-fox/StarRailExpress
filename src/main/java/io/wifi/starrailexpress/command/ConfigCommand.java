@@ -43,7 +43,7 @@ public class ConfigCommand {
 
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(Commands.literal("tmm:config")
-        .requires(source -> source.hasPermission(2))
+        .requires(source -> source.hasPermission(3))
         .executes(ConfigCommand::showConfig)
         .then(Commands.literal("config")
             .then(Commands.argument("config", StringArgumentType.string())

@@ -6,7 +6,6 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
-import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -15,6 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import pro.fazeclan.river.stupid_express.constants.SERoles;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
@@ -104,25 +105,21 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
     public void startDisguiseRandomRole() {
         ArrayList<ResourceLocation> killerRoles = new ArrayList<>();
         // 白名单：允许模拟的杀手职业
-        for (var r : Noellesroles.getEnableKillerRoles()) {
-            String path = r.identifier().getPath();
-            if (path.equals("morphling")           // 变形者
-                    || path.equals("blood_feudist")     // 仇杀客
-                    || path.equals("watcher")      // 观者
-                    || path.equals("executioner")  // 刽子手
-                    || path.equals("swapper")      // 交换者
-                    || path.equals("imitator")     // 模仿者
-                    || path.equals("party_killer") // 派对狂
-                    || path.equals("stalker")      // 潜行者
-                    || path.equals("bandit")       // 强盗
-                    || path.equals("cleaner")      // 清道夫
-                    || path.equals("trapper")      // 设陷者
-                    || path.equals("the_insane_damned_paranoid_killer_of_doom_death_destruction_and_waffles")  // 亡语杀手
-                    || path.equals("phantom")      // 幽灵
-                    || path.equals("avaricious")) { // 扒手
-                killerRoles.add(r.identifier());
-            }
-        }
+        killerRoles.add(ModRoles.MORPHLING_ID);
+        killerRoles.add(ModRoles.BLOOD_FEUDIST_ID);
+        killerRoles.add(ModRoles.WATCHER_ID);
+        killerRoles.add(ModRoles.EXECUTIONER_ID);
+        killerRoles.add(ModRoles.SWAPPER_ID);
+        killerRoles.add(ModRoles.IMITATOR_ID);
+        killerRoles.add(ModRoles.PARTY_KILLER_ID);
+        killerRoles.add(ModRoles.STALKER_ID);
+        killerRoles.add(ModRoles.BANDIT_ID);
+        killerRoles.add(ModRoles.CLEANER_ID);
+        killerRoles.add(ModRoles.TRAPPER_ID);
+        killerRoles.add(ModRoles.THE_INSANE_DAMNED_PARANOID_KILLER_OF_DOOM_DEATH_DESTRUCTION_AND_WAFFLES_ID);
+        killerRoles.add(ModRoles.PHANTOM_ID);
+        killerRoles.add(SERoles.AVARICIOUS.identifier());
+
         if (killerRoles.isEmpty()) {
             killerRoles.add(TMMRoles.KILLER.identifier());
         }
@@ -181,7 +178,6 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
         this.init();
     }
 
-    
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }
