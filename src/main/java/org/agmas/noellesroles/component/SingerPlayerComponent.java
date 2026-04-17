@@ -323,7 +323,7 @@ public class SingerPlayerComponent implements RoleComponent, ServerTickingCompon
                     break;
                 case 5:
                     // Lupinus唱片：1.5格内给2秒禁止移动效果，不对自己生效
-                    if (distance <= 1.5 * 1.5 && target.getUUID() != this.player.getUUID()) {
+                    if (distance <= 4 * 4 && target.getUUID() != this.player.getUUID()) {
                         target.addEffect(new MobEffectInstance(
                                 ModEffects.MOVE_BANED,
                                 40, // 持续时间（2秒 = 40 tick）

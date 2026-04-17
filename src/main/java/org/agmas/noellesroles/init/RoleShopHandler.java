@@ -1507,8 +1507,8 @@ public class RoleShopHandler {
           .withStyle(ChatFormatting.GRAY));
       singer_shop_item.set(DataComponents.LORE, new ItemLore(lores));
       final int idx = i;
-      // 第5张唱片(Lupinus)价格为350金币，其他为100金币
-      int price = (i == 5) ? 350 : 100;
+      // 第5张唱片(Lupinus)价格为500金币，其他为100金币
+      int price = (i == 5) ? 500 : 100;
       SINGER_SHOP.add(new ShopEntry(singer_shop_item, price, ShopEntry.Type.TOOL) {
         public boolean onBuy(@NotNull Player player) {
           return SingerPlayerComponent.buyDisc(player, idx);
