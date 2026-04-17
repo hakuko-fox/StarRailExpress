@@ -55,6 +55,7 @@ public class TemporaryEffectPlayerComponent implements RoleComponent, ServerTick
     public void init() {
         this.staminaBoost = 0f;
         this.dogskinPlasterProtectionEnd = 0;
+        this.heliumEndTick = 0;  // 游戏结束时清除氦气效果
         this.sync();
     }
     
