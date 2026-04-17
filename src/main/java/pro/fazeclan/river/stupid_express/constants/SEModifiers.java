@@ -165,6 +165,14 @@ public class SEModifiers {
             false,
             false));
 
+    public static SREModifier BLACK_WHITE = HMLModifiers.registerModifier(new SREModifier(
+            StupidExpress.id("black_white"),
+            Color.BLACK.getRGB(),
+            null,
+            new ArrayList<>(List.of(ModRoles.MONOKUMA)),
+            false,
+            false));
+
     // 标记不屈的一次性免疫是否已被消耗（基于 UUID 的运行时集合）
     public static Set<UUID> UNYIELDING_IMMUNITY_USED = ConcurrentHashMap.newKeySet();
 

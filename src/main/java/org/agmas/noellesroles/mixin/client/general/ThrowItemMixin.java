@@ -5,6 +5,7 @@ import net.minecraft.client.player.LocalPlayer;
 import org.agmas.noellesroles.item.StalkerKnifeItem;
 import org.agmas.noellesroles.item.ThrowingKnife;
 import org.agmas.noellesroles.packet.TryThrowItemPacket;
+import org.agmas.noellesroles.roles.monokuma.YinYangSwordItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,7 +18,7 @@ public class ThrowItemMixin
     public void drop(boolean bl, CallbackInfoReturnable<Boolean> cir)
     {
         LocalPlayer player = (LocalPlayer) (Object) this;
-        if (player.getMainHandItem().getItem() instanceof ThrowingKnife || player.getMainHandItem().getItem() instanceof StalkerKnifeItem){
+        if (player.getMainHandItem().getItem() instanceof ThrowingKnife || player.getMainHandItem().getItem() instanceof StalkerKnifeItem || player.getMainHandItem().getItem() instanceof YinYangSwordItem){
             ClientPlayNetworking.send(new TryThrowItemPacket());
             cir.setReturnValue( false);
             cir.cancel();

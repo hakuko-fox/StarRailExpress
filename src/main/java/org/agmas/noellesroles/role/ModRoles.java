@@ -194,6 +194,9 @@ public class ModRoles {
   // 愚者 (好人阵营)
   public static final ResourceLocation THE_FOOL_ID = Noellesroles.id("the_fool");
 
+  // 黑白 (中立阵营)
+  public static final ResourceLocation MONOKUMA_ID = Noellesroles.id("monokuma");
+
   public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
       GUEST_GHOST_ID, // 角色 ID
       new Color(175, 245, 130).getRGB(), // 不知道啥颜色
@@ -1477,6 +1480,77 @@ public class ModRoles {
       .setMax(1)
       .setEnableChance(30)
       .setEnableNeededPlayerCount(12);
+
+  /**
+   * 黑白角色 - 中立阵营（伪装义警）
+   * - 中立阵营 (isInnocent = false, canUseKiller = false)
+   * - 对外伪装为义警
+   * - 假心情系统
+   * - 标准冲刺时间
+   * - 三阶段机制：伪装义警 → 狂暴前奏 → 黑白熊
+   * - 黑白熊形态无敌+光环效果
+   * - 获胜条件：游戏结束时6格内最近玩家的阵营
+   */
+  public static SRERole MONOKUMA = TMMRoles.registerRole(new NormalRole(
+      MONOKUMA_ID, // 角色 ID
+      new Color(128, 128, 128).getRGB(), // 灰色 - 代表黑白双面
+      false, // isInnocent = 非乘客阵营
+      false, // canUseKiller = 无杀手能力
+      SRERole.MoodType.FAKE, // 假心情
+      TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+      true // 隐藏计分板
+  ) {
+
+
+    @Override
+    public boolean onPsychoGiveItem(Player player, io.wifi.starrailexpress.cca.SREPlayerPsychoComponent comp) {
+      // 黑白已经在 onHitTriggered 中给了阴阳剑，不需要再给球棒
+      return true;
+    }
+
+    @Override
+    public Item getPsychoItem() {
+      return org.agmas.noellesroles.init.ModItems.YINYANG_SWORD;
+    }
+
+    @Override
+    public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+      // 黑白熊形态无法捡起任何物品
+      var comp = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player).orElse(null);
+      if (comp != null && comp.phase == 3) {
+        return item -> true; // 禁止捡起所有物品
+      }
+      return super.cantPickupItem(player);
+    }
+
+//    @Override
+//    public java.util.List<net.minecraft.world.item.ItemStack> getDefaultItems() {
+//      return java.util.List.of(
+//          new net.minecraft.world.item.ItemStack(TMMItems.REVOLVER)
+//      );
+//    }
+
+
+//    @Override
+//    public ResourceLocation getDisplayRole(Player player) {
+//      // 对所有人（包括自己）显示为义警
+//      var comp = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player).orElse(null);
+//      if (comp != null && comp.phase <= 2) {
+//        return TMMRoles.VIGILANTE.identifier();
+//      }
+//      return super.getDisplayRole(player);
+//    }
+  })
+      .setNeutralForKiller(false) // 杀手视角为好人
+      .setCanSeeTeammateKiller(false)
+      .setCanPickUpRevolver(false) // 伪装义警可以捡枪
+      .setNeutrals(true)
+      .setCanUseInstinct(true) // 不能使用杀手直觉
+      .setComponentKey(org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY)
+      .setCanSeeCoin(true)
+      .setMax(1)
+      .setEnableChance(15)
+      .setEnableNeededPlayerCount(10);
 
   public static SRERole CAT_KILLER = TMMRoles.registerRole(new NormalRole(
       SRE.wifiId("cat_killer"), // 角色 ID

@@ -96,6 +96,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.roles.monokuma.YinYangSwordItem;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import org.agmas.noellesroles.client.NoellesrolesClient;
@@ -899,6 +900,8 @@ public class SREClient implements ClientModInitializer {
         if (player.getMainHandItem().getItem() instanceof KnifeItem)
             return true;
         if (player.getMainHandItem().getItem() instanceof GrenadeItem)
+            return true;
+        if (player.getMainHandItem().getItem() instanceof YinYangSwordItem)
             return true;
         return false;
     };

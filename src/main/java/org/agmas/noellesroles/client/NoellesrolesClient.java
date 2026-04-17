@@ -928,6 +928,22 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
 
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.level == null) {
+                MonokumaSceneManager.INSTANCE.forceRestore();
+                return;
+            }
+
+            boolean monokumaActive = client.player.hasEffect(ModEffects.MONOKUMA_FRENZY);
+            if (monokumaActive && !MonokumaSceneManager.INSTANCE.isActive()) {
+                MonokumaSceneManager.INSTANCE.activate();
+            } else if (!monokumaActive && MonokumaSceneManager.INSTANCE.isActive()) {
+                MonokumaSceneManager.INSTANCE.deactivate();
+            }
+
+            MonokumaSceneManager.INSTANCE.tick();
+        });
+
         ItemTooltipCallback.EVENT.register(((itemStack, tooltipContext, tooltipType, list) -> {
             tooltipHelper(TMMItems.DEFENSE_VIAL, itemStack, list);
             tooltipHelper(ModItems.DELUSION_VIAL, itemStack, list);
@@ -971,6 +987,43 @@ public class NoellesrolesClient implements ClientModInitializer {
                             net.minecraft.world.item.component.CustomData.EMPTY);
                     // 非炸弹客始终不可见
                     return 0.0F;
+                });
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.YINYANG_SWORD, Noellesroles.id("charging"),
+                (stack, world, entity, seed) -> {
+                    if (!(entity instanceof Player player)) {
+                        return 0.0F;
+                    }
+                    var component = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player)
+                            .orElse(null);
+                    if (component == null) {
+                        return 0.0F;
+                    }
+                    return component.aoeChargeTimer > 0 ? 1.0F : 0.0F;
+                });
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.YINYANG_SWORD, Noellesroles.id("charge"),
+                (stack, world, entity, seed) -> {
+                    if (!(entity instanceof Player player)) {
+                        return 0.0F;
+                    }
+                    var component = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player)
+                            .orElse(null);
+                    if (component == null || component.aoeChargeTimer <= 0) {
+                        return 0.0F;
+                    }
+                    return 1.0F - ((float) component.aoeChargeTimer
+                            / org.agmas.noellesroles.roles.monokuma.YinYangSwordItem.CHARGE_TIME);
+                });
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.YINYANG_SWORD, Noellesroles.id("dash"),
+                (stack, world, entity, seed) -> {
+                    if (!(entity instanceof Player player)) {
+                        return 0.0F;
+                    }
+                    var component = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player)
+                            .orElse(null);
+                    if (component == null || component.dashAnimTimer <= 0) {
+                        return 0.0F;
+                    }
+                    return 1.0F;
                 });
         // 当前死亡惩罚
         OnMessageBelowMoneyRenderer.EVENT.register((minecraft, guiGraphics, deltaTracker) -> {

@@ -26,6 +26,7 @@ import org.agmas.noellesroles.roles.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.roles.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.roles.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.roles.manipulator.ManipulatorPlayerComponent;
+import org.agmas.noellesroles.roles.monokuma.MonokumaEventHandler;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -578,6 +579,18 @@ public class InstinctRenderer {
                     return -1;
                 }
 
+                // 黑白熊形态：对所有人隐藏高亮
+                if (SREClient.gameComponent.isRole(target_player, ModRoles.MONOKUMA)
+                        && MonokumaEventHandler.isMonokumaBearForm(target_player)
+                        && SREClient.isPlayerAliveAndInSurvival()) {
+                    return -2;
+                }
+                // 黑白狂暴前奏：杀手看到灰色
+                if (SREClient.gameComponent.isRole(target_player, ModRoles.MONOKUMA)
+                        && MonokumaEventHandler.isInFrenzy(target_player)
+                        && SREClient.isPlayerAliveAndInSurvival()) {
+                    return Color.RED.getRGB();
+                }
                 // 秉烛人：杀手无法透视察觉
                 if (SREClient.gameComponent.isRole(target_player, ModRoles.CANDLE_BEARER) && isKillerTeam(self_role)
                         && SREClient.isPlayerAliveAndInSurvival()) {

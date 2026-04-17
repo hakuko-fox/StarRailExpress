@@ -260,6 +260,8 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
   public static final ComponentKey<org.agmas.noellesroles.roles.fool.FoolPlayerComponent> FOOL = org.agmas.noellesroles.roles.fool.FoolPlayerComponent.KEY;
 
+  public static final ComponentKey<org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent> MONOKUMA = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY;
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -563,6 +565,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, FOOL)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.roles.fool.FoolPlayerComponent::new);
+
+    // 注册黑白组件 - 存储阶段、狂暴前奏计时器、光环状态
+    registry.beginRegistration(Player.class, MONOKUMA)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

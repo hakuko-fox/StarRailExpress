@@ -364,6 +364,15 @@ public class ModPacketsReciever {
           }
         }
       }
+      // 阴阳剑Q键突进
+      if (player.getMainHandItem().getItem() instanceof org.agmas.noellesroles.roles.monokuma.YinYangSwordItem) {
+        if (SREGameWorldComponent.KEY.get(player.level()).isRole(player.getUUID(), ModRoles.MONOKUMA)) {
+          var comp = org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent.KEY.maybeGet(player).orElse(null);
+          if (comp != null && comp.phase == 2) {
+            org.agmas.noellesroles.roles.monokuma.YinYangSwordItem.performDashAttack(player);
+          }
+        }
+      }
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.VULTURE_PACKET, (payload, context) -> {
       final var player = context.player();

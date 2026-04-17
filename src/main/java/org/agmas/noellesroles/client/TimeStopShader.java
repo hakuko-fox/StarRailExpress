@@ -1,11 +1,13 @@
 package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.client.PostProcessor;
+import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.function.BooleanSupplier;
 
@@ -23,6 +25,9 @@ public class TimeStopShader {
     private float blackScreenStrength = 0.0f;   // 黑屏强度 (0~1)
     private boolean hasBlackMonitorEffect = false;// 是否有黑屏监控效果
     
+    // 水墨风状态
+    private float inkStrength = 0.0f;           // 水墨风强度 (0~1)
+    
     // 上一次的状态（用于检测效果开始或刷新）
     private boolean lastHasTimeStop = false;
     private int lastDuration = 0;
@@ -33,6 +38,10 @@ public class TimeStopShader {
     private static final float ANIMATION_DURATION = 1.95f;  // 动画总时长（秒），延长 30%
     private static final float RECOVER_ADVANCE = 1.4f;      // 提前恢复时间（秒），加快 30%
     private static final float STOP_TRANSITION_SPEED = 0.4f; // stopAmount 过渡速度，加快 30%
+    
+    // 水墨风淡入淡出速度
+    private static final float INK_FADE_IN_SPEED = 0.03f;
+    private static final float INK_FADE_OUT_SPEED = 0.05f;
 
     public void initPostProcessor() {
         if (m_post != null) return;
@@ -193,6 +202,40 @@ public class TimeStopShader {
             // 只要黑屏还可见，就继续渲染
             return blackScreenStrength > 0.01f;
         }));
+        
+        // 水墨风着色器
+        m_post.addSinglePassEntry("monokuma_ink", pass -> processPlayer(mc.player, () -> {
+            if (mc.player == null) return false;
+            
+            totalTime += 0.016f;
+            
+            // 检查是否应该显示水墨效果：狂暴前奏阶段
+            boolean isActive = mc.player.hasEffect(ModEffects.MONOKUMA_FRENZY);
+            if (SREClient.gameComponent==null|| !SREClient.gameComponent.isRole(mc.player, ModRoles.MONOKUMA))return false;
+            
+            if (isActive) {
+                inkStrength = Math.min(1.0f, inkStrength + INK_FADE_IN_SPEED);
+            } else {
+                inkStrength = Math.max(0.0f, inkStrength - INK_FADE_OUT_SPEED);
+            }
+            
+            if (inkStrength <= 0.01f) return false;
+            
+            var effect = pass.getEffect();
+            if (effect == null) return false;
+            
+            var strengthUniform = effect.safeGetUniform("Strength");
+            if (strengthUniform != null) {
+                strengthUniform.set(inkStrength);
+            }
+            
+            var timeUniform = effect.safeGetUniform("Time");
+            if (timeUniform != null) {
+                timeUniform.set(totalTime);
+            }
+            
+            return true;
+        }));
     }
 
     public void renderPostProcess(float partialTicks) {
@@ -207,6 +250,10 @@ public class TimeStopShader {
         effectStartTime = 0;
         lastHasTimeStop = false;
         lastDuration = 0;
+        blackScreenStrength = 0.0f;
+        hasBlackMonitorEffect = false;
+        lastHasBlackMonitor = false;
+        inkStrength = 0.0f;
     }
 
     public void forceStart() {

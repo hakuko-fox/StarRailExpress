@@ -169,6 +169,15 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xA9D6FF));
 
     /**
+     * 黑白狂暴前奏效果
+     * - 有害效果
+     * - 全服减速20%+无法打开背包+水墨风shader
+     * - 持续60秒
+     */
+    public static final Holder<MobEffect> MONOKUMA_FRENZY = register("monokuma_frenzy",
+            new org.agmas.noellesroles.roles.monokuma.MonokumaFrenzyEffect());
+
+    /**
      * 注册药水效果到注册表
      */
 

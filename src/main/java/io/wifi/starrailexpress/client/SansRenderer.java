@@ -18,6 +18,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import pro.fazeclan.river.stupid_express.client.StupidExpressClient;
@@ -168,14 +169,21 @@ public class SansRenderer {
         Minecraft mc = Minecraft.getInstance();
         m_post.addSinglePassEntry("insanity", pass -> {
             return processPlayer(mc.player, cap -> {
-                if (cap.getMood() > .35f && SREPlayerPsychoComponent.KEY.get(mc.player).psychoTicks <= 0)
+                int psychoTicks = SREPlayerPsychoComponent.KEY.get(mc.player).psychoTicks;
+                if (psychoTicks>0){
+                    if (SREClient.gameComponent==null||SREClient.gameComponent.isRole(mc.player, ModRoles.MONOKUMA))return false;
+                }
+                if (cap.getMood() > .35f && psychoTicks <= 0)
                     return false;
 
                 float finalIntensity = getLowSanFinalIntensity(mc.player, cap.getMood());
-                if (finalIntensity <= 0.001f && SREPlayerPsychoComponent.KEY.get(mc.player).psychoTicks <= 0) {
+                if (finalIntensity <= 0.001f && psychoTicks <= 0) {
                     return false;
                 }
 
+                if (psychoTicks>0){
+                    finalIntensity = 0.5f;
+                }
                 var effect = pass.getEffect();
                 if (effect == null)
                     return false;

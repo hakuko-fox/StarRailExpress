@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.roles.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.roles.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -72,6 +73,13 @@ public class CustomWinnerClass {
 
             if (CandleBearerPlayerComponent.checkCandleBearerVictory(serverLevel)) {
                 return WinStatus.CUSTOM;
+            }
+
+            // 黑白熊：依附最近玩家的阵营获胜
+            if (!winStatus.equals(WinStatus.NONE)) {
+                var monokumaResult = MonokumaPlayerComponent.checkMonokumaVictory(serverLevel, winStatus);
+                // monokumaResult != null 表示黑白熊成功依附，不修改整体胜负
+                // monokumaResult == null 表示黑白熊失败，同样不修改
             }
 
             if (winStatus.equals(WinStatus.TIME) || winStatus.equals(WinStatus.PASSENGERS)

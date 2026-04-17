@@ -99,6 +99,17 @@ public class ModItems {
             new FakeBatItem(new Item.Properties().stacksTo(1)),
             "fake_bat");
 
+
+    /**
+     * 阴阳剑 - 黑白狂暴前奏武器
+     * - 左键：黑白粒子突进
+     * - 右键：前摇1秒范围伤害
+     */
+    public static final Item YINYANG_SWORD = register(
+            new org.agmas.noellesroles.roles.monokuma.YinYangSwordItem(
+                    new Item.Properties().stacksTo(1)),
+            "yinyang_sword");
+
     public static final Item FAKE_PSYCHO_MODE = register(
             new Item(new Item.Properties().stacksTo(1)),
             "fake_psycho_mode");

@@ -84,6 +84,7 @@
     "client.roles.insane.InsaneKillerRenderMixin",
     "client.roles.insane.KeyBindingMixin",
     "client.roles.ma_chen_xu.OtherworldShaderMixin",
+    "client.roles.monokuma.MonokumaInkShaderMixin",
     "client.roles.manipulator.CameraMixin",
     "client.roles.manipulator.KeyBindingMixin",
     "client.roles.manipulator.ManipulatorScreenMixin",

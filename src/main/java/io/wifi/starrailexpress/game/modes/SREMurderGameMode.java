@@ -36,6 +36,9 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.roles.monokuma.MonokumaPlayerComponent;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,6 +92,7 @@ public class SREMurderGameMode extends GameMode {
         assignRole(serverWorld, gameWorldComponent, players);
     }
 
+    public static List<UUID> MONOKUMA_CACHE = new ArrayList<>();
     public static void assignRole(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         // 新的模块化角色分配流程
@@ -104,7 +108,13 @@ public class SREMurderGameMode extends GameMode {
             final var key = entry.getKey();
             final var value = entry.getValue();
             if (value != null) {
-                gameWorldComponent.addRole(key, value, false);
+                if (entry.getValue().getIdentifier().equals(ModRoles.MONOKUMA_ID)) {
+                    gameWorldComponent.addRole(key, TMMRoles.VIGILANTE, false);
+                    MONOKUMA_CACHE.add(key.getUUID());
+                    MonokumaPlayerComponent.KEY.get( key).init();
+                }else {
+                    gameWorldComponent.addRole(key, value, false);
+                }
 
                 value.getDefaultItems().forEach(item -> key.getInventory().placeItemBackInInventory(item));
                 Harpymodloader.LOGGER.debug("Assigned role " + value.getIdentifier() + " to " + key.getName());
@@ -139,10 +149,12 @@ public class SREMurderGameMode extends GameMode {
         int modifierRoleCount = (int) ((float) players.size()
                 * HarpyModLoaderConfig.HANDLER.instance().modifierMultiplier);
         assignModifiers(modifierRoleCount, serverWorld, gameWorldComponent, players);
+
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
+        MONOKUMA_CACHE.clear();
     }
 
     // 执行指定函数的辅助方法
@@ -275,6 +287,10 @@ public class SREMurderGameMode extends GameMode {
         // 统一将临时存储的修饰符添加到组件中
         for (Map.Entry<UUID, List<SREModifier>> entry : tempModifierAssignments.entrySet()) {
             UUID playerUuid = entry.getKey();
+            if (MONOKUMA_CACHE.contains(playerUuid)){
+                worldModifierComponent.addModifier(playerUuid, SEModifiers.BLACK_WHITE, false);
+                MONOKUMA_CACHE.remove(playerUuid);
+            }
             for (SREModifier mod : entry.getValue()) {
                 var p = serverWorld.getPlayerByUUID(playerUuid);
                 worldModifierComponent.addModifier(playerUuid, mod, false);

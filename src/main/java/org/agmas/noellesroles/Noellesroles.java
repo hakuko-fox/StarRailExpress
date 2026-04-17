@@ -139,6 +139,7 @@ public class Noellesroles implements ModInitializer {
         );
         HSRConstants.init();
         Harpymodloader.HIDDEN_MODIFIERS.add(SEModifiers.REFUGEE.identifier().getPath());
+        Harpymodloader.HIDDEN_MODIFIERS.add(SEModifiers.BLACK_WHITE.identifier().getPath());
         // 初始化模组角色列表
         ModRoles.init();
         // 初始化修饰符
@@ -158,6 +159,7 @@ public class Noellesroles implements ModInitializer {
 
         // 注册事件处理器
         ModEventsRegister.registerEvents();
+        org.agmas.noellesroles.roles.monokuma.MonokumaEventHandler.register();
 
         // 注册命令
         BroadcastCommand.register();

@@ -128,6 +128,9 @@ public class InitModRolesMax {
         // 运动员每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ATHLETE_ID, 1);
 
+        // 黑白每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.MONOKUMA_ID, 1);
+
         // 明星每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.SUPERSTAR_ID, 1);
 

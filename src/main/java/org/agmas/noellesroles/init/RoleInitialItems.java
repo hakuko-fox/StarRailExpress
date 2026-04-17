@@ -8,6 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 
@@ -105,6 +106,11 @@ public class RoleInitialItems {
             return item;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.ELF, elfItems);
+
+//        //黑白
+//        List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();
+//        elfItems.add(TMMItems.REVOLVER::getDefaultInstance);
+//        INITIAL_ITEMS_MAP.put(ModRoles.MONOKUMA, monokuma_items);
 
         List<Supplier<ItemStack>> ninjaItems = new ArrayList<>();
         ninjaItems.add(() -> {
