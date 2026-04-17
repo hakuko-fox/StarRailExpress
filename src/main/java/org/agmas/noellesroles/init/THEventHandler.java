@@ -43,7 +43,7 @@ public class THEventHandler {
     public static SRERole getRandomRole() {
         var roles = Noellesroles.getEnableAndAvailableRoles(true);
         if (roles.isEmpty())
-            return TMMRoles.CIVILIAN;
+            return TMMRoles.KILLER;
         Collections.shuffle(roles);
         return roles.getFirst();
     }
