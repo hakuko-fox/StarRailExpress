@@ -16,6 +16,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.item.CocktailItem;
+import io.wifi.starrailexpress.item.SREItemProperties;
 import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import io.wifi.starrailexpress.util.Scheduler;
@@ -82,9 +83,9 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
             float speedModifier = 1.0f;
 
             SREPlayerMoodComponent srePlayerMoodComponent = SREPlayerMoodComponent.KEY.get(player);
-            if (srePlayerMoodComponent.isLowerThanDepressed()){
+            if (srePlayerMoodComponent.isLowerThanDepressed()) {
                 speedModifier *= 0.8f;
-            }else if (srePlayerMoodComponent.isHigherThanAngry()){
+            } else if (srePlayerMoodComponent.isHigherThanAngry()) {
                 speedModifier *= 1.2f;
             }
             if (player.hasEffect(MobEffects.MOVEMENT_SPEED)) {
@@ -151,6 +152,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
         }
         Player self = (Player) (Object) this;
         if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(self) || this.getMainHandItem().is(TMMItems.KNIFE)
+                || this.getMainHandItem().getItem() instanceof SREItemProperties.LeftClickHurtable
                 || IsPlayerPunchable.EVENT.invoker().gotPunchable(target)
                 || AllowPlayerPunching.EVENT.invoker().allowPunching(self)) {
             // 在攻击实体之前调用角色的左键点击实体方法

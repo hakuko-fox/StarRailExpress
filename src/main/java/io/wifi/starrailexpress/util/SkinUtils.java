@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.util;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.index.SRECosmetics;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -75,6 +76,16 @@ public class SkinUtils {
         skinsComponent.getUnlockedSkins().clear();
     }
     
+    /**
+     * 从物品堆栈获取物品类型名称
+     * @param itemStack 物品堆栈
+     * @return 物品类型名称
+     */
+    public static ResourceLocation getItemTypeResourceLocation(ItemStack itemStack) {
+        Item item = itemStack.getItem();
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+        return itemId;
+    }
     /**
      * 从物品堆栈获取物品类型名称
      * @param itemStack 物品堆栈

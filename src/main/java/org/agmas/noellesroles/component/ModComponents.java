@@ -254,12 +254,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "party_killer"),
       org.agmas.noellesroles.roles.party.PartyPlayerComponent.class);
 
-  static {
-    // 将 ModComponents.PARTY 赋值给 PartyPlayerComponent.KEY，确保组件能正确同步
-    org.agmas.noellesroles.roles.party.PartyPlayerComponent.KEY = PARTY;
-  }
-
-
   public static final ComponentKey<org.agmas.noellesroles.roles.fool.FoolPlayerComponent> FOOL = org.agmas.noellesroles.roles.fool.FoolPlayerComponent.KEY;
 
   public ModComponents() {

@@ -1,5 +1,7 @@
 package org.agmas.noellesroles.voice;
 
+import org.agmas.noellesroles.voice.client.HeliumBuzzClientReceiver;
+
 import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import net.fabricmc.api.EnvType;
@@ -22,11 +24,6 @@ public class HeliumBuzzVoicechatPlugin implements VoicechatPlugin {
         if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) {
             return;
         }
-        try {
-            Class<?> cls = Class.forName("org.agmas.noellesroles.voice.client.HeliumBuzzClientReceiver");
-            cls.getMethod("register", EventRegistration.class).invoke(null, r);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to wire HeliumBuzz client receiver", e);
-        }
+        HeliumBuzzClientReceiver.register(r);
     }
 }

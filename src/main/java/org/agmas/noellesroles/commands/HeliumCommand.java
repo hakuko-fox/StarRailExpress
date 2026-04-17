@@ -16,7 +16,7 @@ import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
 public class HeliumCommand {
   public static void register() {
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-        dispatcher.register(Commands.literal("sre_helium").requires(source -> source.hasPermission(2))
+        dispatcher.register(Commands.literal("sre:helium").requires(source -> source.hasPermission(2))
           .then(Commands.argument("target", EntityArgument.player())
             .executes(HeliumCommand::executeWithTarget)
             .then(Commands.argument("seconds", IntegerArgumentType.integer(1))

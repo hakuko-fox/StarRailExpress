@@ -9,6 +9,8 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
+import io.wifi.starrailexpress.item.SREItemProperties;
+import io.wifi.starrailexpress.util.SkinUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -47,17 +49,29 @@ public class ServerPlayerEntityMixin {
             return;
         }
         ServerPlayer self = (ServerPlayer) (Object) this;
-        if(self.isSpectator()){
+        if (self.isSpectator()) {
             return;
         }
-        if (self.getMainHandItem().is(TMMItems.BAT)
+        var mainhandItem = self.getMainHandItem();
+        if (mainhandItem.is(TMMItems.BAT)
                 && self.getAttackStrengthScale(0.75F) >= 1f) {
             if (target instanceof ServerPlayer playerTarget) {
                 GameUtils.killPlayer(playerTarget, true, self, GameConstants.DeathReasons.BAT);
             }
-            if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity){
+            if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
                 puppeteerBodyEntity.playerHurt(self, GameConstants.DeathReasons.BAT);
-
+            }
+            CrosshairaddonsCompat.onAttack(target);
+            self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
+            ci.cancel();
+            return;
+        } else if (mainhandItem.getItem() instanceof SREItemProperties.LeftClickKillable
+                && self.getAttackStrengthScale(0.75F) >= 1f) {
+            if (target instanceof ServerPlayer playerTarget) {
+                GameUtils.killPlayer(playerTarget, true, self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+            }
+            if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
+                puppeteerBodyEntity.playerHurt(self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
             }
             CrosshairaddonsCompat.onAttack(target);
             self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
@@ -66,8 +80,9 @@ public class ServerPlayerEntityMixin {
         }
 
         // 双节棍左键和Shift+左键攻击处理
-        if (self.getMainHandItem().is(TMMItems.NUNCHUCK) && target instanceof ServerPlayer playerTarget
-                && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(playerTarget) && self instanceof ServerPlayer spself) {
+        if (mainhandItem.is(TMMItems.NUNCHUCK) && target instanceof ServerPlayer playerTarget
+                && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(playerTarget)
+                && self instanceof ServerPlayer spself) {
             boolean isShiftLeftClick = self.isShiftKeyDown();
             int direction = isShiftLeftClick ? 2 : 1; // Shift+左键=2(向后), 左键=1(向右)
             io.wifi.starrailexpress.network.original.NunchuckHitPayload

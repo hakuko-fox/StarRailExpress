@@ -3,7 +3,6 @@ package org.agmas.noellesroles.roles.party;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
@@ -17,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
@@ -30,7 +29,7 @@ import java.util.UUID;
  */
 public class PartyPlayerComponent implements RoleComponent, ServerTickingComponent {
     // KEY 在 ModComponents 中定义，避免类加载顺序问题
-    public static ComponentKey<PartyPlayerComponent> KEY;
+    public static ComponentKey<PartyPlayerComponent> KEY = ModComponents.PARTY;
 
     private final Player player;
 

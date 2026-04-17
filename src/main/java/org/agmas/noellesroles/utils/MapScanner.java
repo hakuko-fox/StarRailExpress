@@ -15,8 +15,10 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.HoneyBottleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -98,7 +100,7 @@ public class MapScanner {
                             if (items.size() > 0) {
                                 ItemStack item_0 = items.get(0);
                                 Item item_ = item_0.getItem();
-                                if ((item_ instanceof CocktailItem)) {
+                                if ((item_ instanceof CocktailItem) || (item_ instanceof PotionItem) || (item_ instanceof HoneyBottleItem)) {
                                     GameUtils.taskBlocks.put(blockPos6, 2);
                                 } else {
                                     FoodProperties foodPro = item_0.get(DataComponents.FOOD);
