@@ -19,6 +19,7 @@ import org.agmas.noellesroles.roles.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.roles.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.roles.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.roles.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import org.agmas.noellesroles.roles.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.roles.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.roles.vulture.VulturePlayerComponent;
@@ -240,6 +241,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<TemporaryEffectPlayerComponent> TEMPORARY_EFFECT = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "temporary_effect"),
       TemporaryEffectPlayerComponent.class);
+
+  // 氦气变声组件 - 独立同步给所有玩家
+  public static final ComponentKey<HeliumBuzzPlayerComponent> HELIUM_BUZZ = HeliumBuzzPlayerComponent.KEY;
 
   public static final ComponentKey<LocksmithInspirationComponent> LOCKSMITH_INSPIRATION = ComponentRegistry
       .getOrCreate(
@@ -495,6 +499,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, TEMPORARY_EFFECT)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(TemporaryEffectPlayerComponent::new);
+
+    // 注册氦气变声组件 - 独立同步给所有玩家以便变声效果生效
+    registry.beginRegistration(Player.class, HELIUM_BUZZ)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(HeliumBuzzPlayerComponent::new);
 
     // 注册锁匠灵感组件 - 存储灵感点数和看门进度
     registry.beginRegistration(Player.class, LOCKSMITH_INSPIRATION)

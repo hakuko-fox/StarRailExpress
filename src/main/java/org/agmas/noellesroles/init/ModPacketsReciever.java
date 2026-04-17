@@ -56,6 +56,7 @@ import org.agmas.noellesroles.roles.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.roles.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.roles.party.PartyPlayerComponent;
 import org.agmas.noellesroles.roles.voodoo.VoodooPlayerComponent;
+import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import org.agmas.noellesroles.roles.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.utils.RoleUtils;
 import java.util.*;
@@ -773,9 +774,9 @@ public class ModPacketsReciever {
                 .filter(GameUtils::isPlayerAliveAndSurvival).count();
             int threshold = Math.max(1, (int) (aliveCount / 5));
 
-            // 为目标设置氦气变声（4分钟）
-            TemporaryEffectPlayerComponent temp = TemporaryEffectPlayerComponent.KEY.get(target);
-            temp.setHeliumEffect(4 * 60);
+            // 为目标设置氦气变声（4分钟 = 240秒 = 4800 ticks）
+            HeliumBuzzPlayerComponent buzz = HeliumBuzzPlayerComponent.KEY.get(target);
+            buzz.apply(4 * 60 * 20, 1);  // 4分钟，强度1
 
             // 记录到组件
             PartyPlayerComponent pc = PartyPlayerComponent.KEY.get(player);

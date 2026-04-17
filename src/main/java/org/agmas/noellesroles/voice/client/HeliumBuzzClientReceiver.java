@@ -6,7 +6,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import org.agmas.noellesroles.voice.HeliumPitchShifter;
 
 import java.util.Map;
@@ -61,8 +62,8 @@ public class HeliumBuzzClientReceiver {
             return;
         }
 
-        TemporaryEffectPlayerComponent comp = TemporaryEffectPlayerComponent.KEY.get(player);
-        if (comp == null || !comp.hasHeliumEffect()) {
+        HeliumBuzzPlayerComponent comp = ModComponents.HELIUM_BUZZ.get(player);
+        if (comp == null || !comp.isActive()) {
             SHIFTERS.remove(speaker);
             return;
         }
@@ -77,8 +78,8 @@ public class HeliumBuzzClientReceiver {
      * Calculate the pitch ratio based on the remaining effect time.
      * Applies a fade-out effect when the effect is about to end.
      */
-    private static float pitchRatioFor(TemporaryEffectPlayerComponent comp) {
-        int remaining = comp.getRemainingHeliumTicks();
+    private static float pitchRatioFor(HeliumBuzzPlayerComponent comp) {
+        int remaining = comp.getTicksRemaining();
         if (remaining >= (int) RAMP_OUT_TICKS) {
             return BASE_HELIUM_RATIO;
         }
