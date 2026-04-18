@@ -58,19 +58,36 @@ public class SREModifier {
             serverTickEvent.accept(player);
     }
 
+    /**
+     * 在启用的状态下，最大分配数量。
+     * 
+     * @param count 最大数量
+     * @return
+     */
     public SREModifier setMax(int count) {
         maxCount = count;
         return this;
     };
 
+    /**
+     * 启用需要的玩家数量。
+     * 
+     * @param count 玩家数量
+     * @return
+     */
     public SREModifier setEnableNeededPlayerCount(int count) {
         enableNeedPlayerCount = count;
         return this;
     };
 
-
-    public SREModifier setEnableChance(int cahnce) {
-        enableChance = cahnce;
+    /**
+     * 启用概率（%）
+     * 
+     * @param chance
+     * @return
+     */
+    public SREModifier setEnableChance(int chance) {
+        enableChance = chance;
         return this;
     };
 
@@ -128,7 +145,6 @@ public class SREModifier {
         this.canOnlyBeAppliedTo = canOnlyBeAppliedTo;
     }
 
-    
     /**
      * 获取一局里最大可出现此修饰符数量。-1表示不变。
      * 
@@ -154,7 +170,7 @@ public class SREModifier {
         return maxCount;
     }
 
-    public SREModifier setCannotAppliedToVigilante(boolean flag){
+    public SREModifier setCannotAppliedToVigilante(boolean flag) {
         this.notVigilante = flag;
         return this;
     }
