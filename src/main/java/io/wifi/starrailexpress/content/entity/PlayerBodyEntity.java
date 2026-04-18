@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 import java.util.UUID;
 
-public class PlayerBodyEntity extends Mob {
+public class PlayerBodyEntity extends LivingEntity {
     private static final EntityDataAccessor<Optional<UUID>> PLAYER = SynchedEntityData.defineId(PlayerBodyEntity.class,
             EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<String> DEATH_REASON = SynchedEntityData.defineId(PlayerBodyEntity.class,
@@ -23,7 +23,7 @@ public class PlayerBodyEntity extends Mob {
     private static final EntityDataAccessor<Optional<UUID>> KILLER = SynchedEntityData.defineId(PlayerBodyEntity.class,
             EntityDataSerializers.OPTIONAL_UUID);
 
-    public PlayerBodyEntity(EntityType<? extends Mob> entityType, Level world) {
+    public PlayerBodyEntity(EntityType<? extends LivingEntity> entityType, Level world) {
         super(entityType, world);
     }
 
