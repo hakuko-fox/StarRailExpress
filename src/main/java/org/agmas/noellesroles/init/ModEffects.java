@@ -31,7 +31,7 @@ public class ModEffects {
                 public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
                     if (livingEntity.level().getGameTime() % 20 == 0)
                         livingEntity.addEffect(new MobEffectInstance(
-                                ModEffects.NO_COLLIDE,
+                                ModEffects.SAFE_TIME,
                                 40, // 持续时间 30s（tick）
                                 5, // 等级（0 = 速度 I）
                                 true, // ambient（环境效果，如信标）
@@ -44,6 +44,8 @@ public class ModEffects {
     public static final Holder<MobEffect> TURN_BANED = register("turn_baned",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> USED_BANED = register("used_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> ONLY_NO_COLLIDE = register("only_no_collide",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
 
     /**
@@ -58,7 +60,7 @@ public class ModEffects {
      * - 中性效果
      * - 绿色粒子
      */
-    public static final Holder<MobEffect> NO_COLLIDE = register("no_collide", new NoCollideEffect());
+    public static final Holder<MobEffect> SAFE_TIME = register("safe_time", new NoCollideEffect());
 
     /**
      * 鬼缚效果（布袋鬼攻击诅咒）
@@ -88,7 +90,7 @@ public class ModEffects {
                     }
                     if (livingEntity.level().getGameTime() % 20 == 0)
                         livingEntity.addEffect(new MobEffectInstance(
-                                ModEffects.NO_COLLIDE,
+                                ModEffects.SAFE_TIME,
                                 40, // 持续时间 30s（tick）
                                 5, // 等级（0 = 速度 I）
                                 true, // ambient（环境效果，如信标）

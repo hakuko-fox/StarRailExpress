@@ -71,7 +71,7 @@ public class SpiritCloakItem extends Item {
             // 施加抗性提升255效果（实际无敌） + 虚弱255（无法攻击） + 发光效果
             serverPlayer.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE,
                     INVULNERABLE_DURATION, 254, false, false, false));
-            serverPlayer.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE,
+            serverPlayer.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME,
                     INVULNERABLE_DURATION, 254, false, false, false));
             serverPlayer.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY,
                     INVULNERABLE_DURATION, 254, false, false, false));

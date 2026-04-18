@@ -466,7 +466,7 @@ public class InstinctRenderer {
                     }
                 }
                 if (SREClient.gameComponent.isRole(self, RedHouseRoles.PACHURI)) {
-                    if (!self.hasEffect(ModEffects.NO_COLLIDE)) {
+                    if (!self.hasEffect(ModEffects.SAFE_TIME)) {
                         if (target.distanceToSqr(self) <= 25) {
                             if (SREClient.gameComponent.isRole(target_player, RedHouseRoles.FURANDORU)) {
                                 return RedHouseRoles.FURANDORU.color();
@@ -477,7 +477,7 @@ public class InstinctRenderer {
                 if (SREClient.gameComponent.isRole(self, ModRoles.CHEF)) {
                     // LoggerFactory.getLogger("renderer").info("glowTick {}",
                     // bartenderPlayerComponent.glowTicks);
-                    if (self.hasEffect(ModEffects.NO_COLLIDE))
+                    if (self.hasEffect(ModEffects.SAFE_TIME))
                         return -1;
                     int t = FoodDrinkGlowComponent.KEY.get(self).glowTicks
                             .getOrDefault(target.getScoreboardName(), new HashMap<>())
@@ -489,7 +489,7 @@ public class InstinctRenderer {
                 if (SREClient.gameComponent.isRole(self, ModRoles.BARTENDER)) {
                     // LoggerFactory.getLogger("renderer").info("glowTick {}",
                     // bartenderPlayerComponent.glowTicks);
-                    if (self.hasEffect(ModEffects.NO_COLLIDE))
+                    if (self.hasEffect(ModEffects.SAFE_TIME))
                         return -1;
                     if (armorPlayerComponent.getArmor() > 0 && playerPoisonComponent.poisonTicks > 0) {
                         return (new Color(186, 255, 65).getRGB());
@@ -718,7 +718,7 @@ public class InstinctRenderer {
                     }
 
                     if (SREClient.gameComponent.isRole(self, RedHouseRoles.REMILIA)) {
-                        if (!self.hasEffect(ModEffects.NO_COLLIDE)) {
+                        if (!self.hasEffect(ModEffects.SAFE_TIME)) {
                             if (target.distanceToSqr(self) <= 25) {
                                 if (RoleUtils.compareRole(target_role, RedHouseRoles.PACHURI)) {
                                     return RedHouseRoles.PACHURI.color();

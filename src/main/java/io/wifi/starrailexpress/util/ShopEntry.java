@@ -12,7 +12,7 @@ public class ShopEntry extends dev.doctor4t.wathe.util.ShopEntry {
     }
 
     public boolean isSafeTime(@NotNull Player player) {
-        return player.hasEffect(ModEffects.NO_COLLIDE);
+        return player.hasEffect(ModEffects.SAFE_TIME);
     }
 
     public boolean canDisplay(@NotNull Player player) {

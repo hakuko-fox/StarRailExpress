@@ -82,7 +82,7 @@ public class InitiateUtils {
                 if (gameTime % FIVE_SECONDS_TICKS == 0) {
 
                     // 安全时间
-                    if (initiates.stream().anyMatch(p -> p.hasEffect(ModEffects.NO_COLLIDE))) {
+                    if (initiates.stream().anyMatch(p -> p.hasEffect(ModEffects.SAFE_TIME))) {
                         return;
                     }
 

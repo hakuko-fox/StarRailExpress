@@ -64,8 +64,8 @@ public class CustomPendingHud {
                                 .withStyle(ChatFormatting.GREEN);
                         context.drawString(font, tip, x - font.width(tip), y + 15, 0xFFFFFFFF);
                     }
-                    if (client.player.hasEffect(ModEffects.NO_COLLIDE)) {
-                        int roleDrawLeft = client.player.getEffect(ModEffects.NO_COLLIDE).getDuration();
+                    if (client.player.hasEffect(ModEffects.SAFE_TIME)) {
+                        int roleDrawLeft = client.player.getEffect(ModEffects.SAFE_TIME).getDuration();
                         // 显示技能冷却
                         int cdSeconds = roleDrawLeft / 20;
                         Component cdText = Component.translatable("hud.custom_pending.tip",

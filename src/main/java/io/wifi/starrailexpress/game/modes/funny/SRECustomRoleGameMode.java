@@ -58,7 +58,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             gameWorldComponent.addRole(player, SpecialGameModeRoles.CUSTOM_PENDING, false);
             CustomRoleGameModeTeamsPlayerComponent.KEY.get(player).setTeam(0);
             player.addEffect(new MobEffectInstance(
-                    ModEffects.NO_COLLIDE,
+                    ModEffects.SAFE_TIME,
                     selectionTick + 20,
                     10,
                     true, // ambient - 环境效果（粒子更少更透明）
@@ -242,7 +242,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         for (ServerPlayer p : players) {
             SRERole role = roleWorldComponent.getRole(p);
             p.removeEffect(ModEffects.SKILL_BANED);
-            p.removeEffect(ModEffects.NO_COLLIDE);
+            p.removeEffect(ModEffects.SAFE_TIME);
             if (role != null) {
                 RoleUtils.sendWelcomeAnnouncement(p);
                 if (role.canUseKiller()) {

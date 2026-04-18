@@ -199,7 +199,7 @@ public class GhostPlayerComponent implements RoleComponent, ServerTickingCompone
             return;
         if (player.isCreative())
             return;
-        if (player.hasEffect(ModEffects.NO_COLLIDE))
+        if (player.hasEffect(ModEffects.SAFE_TIME))
             return;
         if (player.hasEffect(ModEffects.SKILL_BANED))
             return;
@@ -264,7 +264,7 @@ public class GhostPlayerComponent implements RoleComponent, ServerTickingCompone
         if (player.isCreative())
             return;
 
-        if (player.hasEffect(ModEffects.NO_COLLIDE))
+        if (player.hasEffect(ModEffects.SAFE_TIME))
             return;
         if (player.hasEffect(ModEffects.SKILL_BANED))
             return;

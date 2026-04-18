@@ -154,7 +154,7 @@ public class ModPacketsReciever {
       });
     });
     ServerPlayNetworking.registerGlobalReceiver(ProblemSetEventC2SPacket.ID, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       ServerPlayer player = context.player();
       boolean isForced = payload.forced();
@@ -264,7 +264,7 @@ public class ModPacketsReciever {
       RoleUtils.insertStackInFreeSlot(player, cooked_food);
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORPH_PACKET, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
@@ -301,7 +301,7 @@ public class ModPacketsReciever {
     });
     // 操纵师数据包处理
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MANIPULATOR_PACKET, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
@@ -332,7 +332,7 @@ public class ModPacketsReciever {
       final var player = context.player();
       if (player.isSpectator())
         return;
-      if (player.hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (player.hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       ItemStack mainHandItem = player.getMainHandItem();
       if (mainHandItem.getItem() instanceof ThrowingKnife tk) {
@@ -386,7 +386,7 @@ public class ModPacketsReciever {
       final var player = context.player();
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(player.level());
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       if (!gameWorldComponent.isSkillAvailable) {
         player.displayClientMessage(
@@ -461,7 +461,7 @@ public class ModPacketsReciever {
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.SWAP_PACKET, (payload, context) -> {
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       if (gameWorldComponent.isRole(context.player(), ModRoles.SWAPPER)) {
         SREAbilityPlayerComponent abilityPlayerComponent = SREAbilityPlayerComponent.KEY
@@ -583,7 +583,7 @@ public class ModPacketsReciever {
         });
 
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.ABILITY_PACKET, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       RoleSkill.beginUse(context.player());
     });
@@ -592,7 +592,7 @@ public class ModPacketsReciever {
       RoleSkill.beginUseWithTarget(context.player(), payload.target());
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.INSANE_KILLER_ABILITY_PACKET, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       ServerPlayer player = (ServerPlayer) context.player();
       var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
@@ -619,7 +619,7 @@ public class ModPacketsReciever {
     // 消防斧攻击包处理
     ServerPlayNetworking.registerGlobalReceiver(FireAxeStabPayload.ID, (payload, context) -> {
       ServerPlayer player = context.player();
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       // 验证目标是否存在且在范围内
       if (!(player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target))
@@ -683,7 +683,7 @@ public class ModPacketsReciever {
     });
 
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MONITOR_MARK_PACKET, (payload, context) -> {
-      if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
           .get(context.player().level());
@@ -721,7 +721,7 @@ public class ModPacketsReciever {
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.WATER_GHOST_SKILL_PACKET,
         (payload, context) -> {
-          if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
             return;
           org.agmas.noellesroles.packet.WaterGhostUseSkillC2SPacket.handle(payload, context);
           ConfigWorldComponent.onPlayerUsedSkill(context.player());
@@ -730,7 +730,7 @@ public class ModPacketsReciever {
     // 苦力怕技能包处理
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.CREEPER_ABILITY_PACKET,
         (payload, context) -> {
-          if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
             return;
           ServerPlayer player = context.player();
           SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
@@ -751,7 +751,7 @@ public class ModPacketsReciever {
     // 派对狂技能包处理
     ServerPlayNetworking.registerGlobalReceiver(PartyKillerC2SPacket.TYPE,
         (payload, context) -> {
-          if (context.player().hasEffect(ModEffects.NO_COLLIDE))
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))
             return;
           ServerPlayer player = context.player();
           SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
@@ -813,7 +813,7 @@ public class ModPacketsReciever {
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.game.roles.Innocent.fool.FoolPrayerC2SPacket.ID,
         (payload, context) -> {
-          if (context.player().hasEffect(ModEffects.NO_COLLIDE))// 安全时间
+          if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
             return;
           ServerPlayer player = context.player();
           SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY

@@ -117,8 +117,8 @@ public class CommonClientHudRenderer {
       }
       {
         if (SREClient.gameComponent.isRunning()) {
-          if (client.player.hasEffect(ModEffects.NO_COLLIDE)) {
-            var effect = client.player.getEffect(ModEffects.NO_COLLIDE);
+          if (client.player.hasEffect(ModEffects.SAFE_TIME)) {
+            var effect = client.player.getEffect(ModEffects.SAFE_TIME);
             Component message = Component.translatable("hud.noellesroles.safe_time", effect.getDuration() / 20)
                 .withStyle(ChatFormatting.GREEN);
             guiGraphics.drawCenteredString(client.font, message, guiGraphics.guiWidth() / 2, 40,
@@ -1053,7 +1053,7 @@ public class CommonClientHudRenderer {
 
       // 显示冷却或就绪状态
       int dy = yOffset - font.lineHeight - 4;
-      if (client.player.hasEffect(ModEffects.NO_COLLIDE)) {
+      if (client.player.hasEffect(ModEffects.SAFE_TIME)) {
         var cdText = Component.translatable("hud.noellesroles.safe_time", thiefComponent.cooldown / 20)
             .withStyle(ChatFormatting.RED);
         guiGraphics.drawString(font, cdText, xOffset - font.width(cdText), dy, Color.WHITE.getRGB());

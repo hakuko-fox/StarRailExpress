@@ -1565,7 +1565,7 @@ public class ModEventsRegister {
             return false;
         });
         SRE.canCollide.add(a -> {
-            if (a.hasEffect(MobEffects.INVISIBILITY) || a.hasEffect(ModEffects.NO_COLLIDE)) {
+            if (a.hasEffect(MobEffects.INVISIBILITY) || a.hasEffect(ModEffects.SAFE_TIME)) {
                 return true;
             }
             return false;
@@ -1579,7 +1579,7 @@ public class ModEventsRegister {
         SRE.cantPushableBy.add(entity -> {
             if (entity instanceof Player serverPlayer) {
                 if (serverPlayer.hasEffect(MobEffects.INVISIBILITY)
-                        || serverPlayer.hasEffect(ModEffects.NO_COLLIDE)) {
+                        || serverPlayer.hasEffect(ModEffects.SAFE_TIME)) {
                     return true;
                 } else {
                     var modifiers = WorldModifierComponent.KEY.get(serverPlayer.level());

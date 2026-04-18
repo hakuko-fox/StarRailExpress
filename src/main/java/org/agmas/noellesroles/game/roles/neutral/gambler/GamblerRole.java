@@ -46,8 +46,8 @@ public class GamblerRole extends SRERole {
                 if (sp.getMainHandItem().is(ModItems.ONCE_REVOLVER)) {
                     sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 }
-                if (sp.hasEffect(ModEffects.NO_COLLIDE)) {
-                    sp.removeEffect(ModEffects.NO_COLLIDE);
+                if (sp.hasEffect(ModEffects.SAFE_TIME)) {
+                    sp.removeEffect(ModEffects.SAFE_TIME);
                     // 取消自己的安全时间。
                 }
                 RoleUtils.dropAndClearAllGuns(sp);

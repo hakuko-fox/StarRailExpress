@@ -798,7 +798,7 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
         if (!gwc.isRole(player, ModRoles.THIEF))
             return;
 
-        if (player.hasEffect(ModEffects.NO_COLLIDE)) // 安全时间
+        if (player.hasEffect(ModEffects.SAFE_TIME)) // 安全时间
             return;
         if (this.honorCost < 100)
             return;
@@ -842,7 +842,7 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
     }
 
     public void clientTick() {
-        if (player.hasEffect(ModEffects.NO_COLLIDE)) // 安全时间
+        if (player.hasEffect(ModEffects.SAFE_TIME)) // 安全时间
             return;
         if (this.cooldown > 1) {
             this.cooldown--;

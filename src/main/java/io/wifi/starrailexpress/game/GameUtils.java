@@ -405,9 +405,9 @@ public class GameUtils {
 //            cooldowns.addCooldown(HSRItems.TOXIN, time);
 //            cooldowns.addCooldown(HSRItems.ANTIDOTE, time);
 
-            if (!player.hasEffect(ModEffects.NO_COLLIDE))
+            if (!player.hasEffect(ModEffects.SAFE_TIME))
                 player.addEffect(new MobEffectInstance(
-                        ModEffects.NO_COLLIDE,
+                        ModEffects.SAFE_TIME,
                         (int) (time), // 持续时间 30s（tick）
                         0, // 等级（0 = 速度 I）
                         true, // ambient（环境效果，如信标）

@@ -80,7 +80,7 @@ public class SREGamblerGameMode extends SREMurderGameMode {
             RoleUtils.sendWelcomeAnnouncement(player);
             MCItemsUtils.insertStackInFreeSlot(player, ModItems.ONCE_REVOLVER.getDefaultInstance());
             player.addEffect(new MobEffectInstance(
-                    ModEffects.NO_COLLIDE,
+                    ModEffects.SAFE_TIME,
                     safeTick,
                     10, // 10级别确保不会被替换
                     true, // ambient - 环境效果（粒子更少更透明）
