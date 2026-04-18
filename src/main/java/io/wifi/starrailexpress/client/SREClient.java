@@ -28,12 +28,12 @@ import io.wifi.starrailexpress.client.util.ClientScheduler;
 import io.wifi.starrailexpress.client.util.MyBackgroundAmbience;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
-import io.wifi.starrailexpress.contents.block.SecurityMonitorBlock;
-import io.wifi.starrailexpress.contents.entity.FirecrackerEntity;
-import io.wifi.starrailexpress.contents.entity.NoteEntity;
-import io.wifi.starrailexpress.contents.entity.PlayerBodyEntity;
-import io.wifi.starrailexpress.contents.item.GrenadeItem;
-import io.wifi.starrailexpress.contents.item.KnifeItem;
+import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
+import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
+import io.wifi.starrailexpress.content.entity.NoteEntity;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.item.GrenadeItem;
+import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.ClientHeldItemSwitchEvent;
@@ -595,9 +595,9 @@ public class SREClient implements ClientModInitializer {
             context.client().execute(() -> context.client().setScreen(new ProgressionPassScreen()));
         });
         ClientPlayNetworking.registerGlobalReceiver(
-                io.wifi.starrailexpress.contents.mail.OpenMailboxScreenPayload.ID, (payload, context) -> {
+                io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.ID, (payload, context) -> {
                     context.client().execute(() -> context.client().setScreen(
-                            new io.wifi.starrailexpress.contents.mail.MailboxScreen()));
+                            new io.wifi.starrailexpress.content.mail.MailboxScreen()));
                 });
         // ClientPlayNetworking.registerGlobalReceiver(
         // io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID, (payload,

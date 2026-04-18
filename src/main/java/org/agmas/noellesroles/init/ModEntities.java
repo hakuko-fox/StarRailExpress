@@ -182,10 +182,10 @@ public class ModEntities {
                     .build());
 
     @SuppressWarnings("deprecation")
-    public static final EntityType<io.wifi.starrailexpress.contents.entity.NoteEntity> GIANT_NOTE = Registry.register(
+    public static final EntityType<io.wifi.starrailexpress.content.entity.NoteEntity> GIANT_NOTE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             Noellesroles.id("giant_note"),
-            FabricEntityTypeBuilder.<io.wifi.starrailexpress.contents.entity.NoteEntity>create(MobCategory.MISC, io.wifi.starrailexpress.contents.entity.NoteEntity::new)
+            FabricEntityTypeBuilder.<io.wifi.starrailexpress.content.entity.NoteEntity>create(MobCategory.MISC, io.wifi.starrailexpress.content.entity.NoteEntity::new)
                     .dimensions(EntityDimensions.fixed(2.5F, 2.5F))
                     .trackRangeBlocks(128)
                     .trackedUpdateRate(10)

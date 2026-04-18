@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.contents.item.GrenadeItem;
+import io.wifi.starrailexpress.content.item.GrenadeItem;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundSource;

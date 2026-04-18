@@ -1,7 +1,8 @@
 package org.agmas.noellesroles.mixin.client.roles.insane;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.wifi.starrailexpress.contents.entity.PlayerBodyEntity;
+
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.index.TMMEntities;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;

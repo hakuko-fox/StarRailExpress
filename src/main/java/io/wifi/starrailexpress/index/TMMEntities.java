@@ -2,11 +2,11 @@ package io.wifi.starrailexpress.index;
 
 import dev.doctor4t.ratatouille.util.registrar.EntityTypeRegistrar;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.contents.block.entity.SeatEntity;
-import io.wifi.starrailexpress.contents.entity.FirecrackerEntity;
-import io.wifi.starrailexpress.contents.entity.GrenadeEntity;
-import io.wifi.starrailexpress.contents.entity.NoteEntity;
-import io.wifi.starrailexpress.contents.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.block.entity.SeatEntity;
+import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
+import io.wifi.starrailexpress.content.entity.GrenadeEntity;
+import io.wifi.starrailexpress.content.entity.NoteEntity;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;

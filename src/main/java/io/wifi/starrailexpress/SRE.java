@@ -13,12 +13,12 @@ import io.wifi.starrailexpress.api.replay.ReplayApiInitializer;
 import io.wifi.starrailexpress.api.replay.ReplayPayload;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
-import io.wifi.starrailexpress.contents.block.DoorPartBlock;
-import io.wifi.starrailexpress.contents.command.*;
-import io.wifi.starrailexpress.contents.command.argument.GameModeArgumentType;
-import io.wifi.starrailexpress.contents.command.argument.MapLoadArgumentType;
-import io.wifi.starrailexpress.contents.command.argument.SkinArgumentType;
-import io.wifi.starrailexpress.contents.command.argument.TimeOfDayArgumentType;
+import io.wifi.starrailexpress.content.block.DoorPartBlock;
+import io.wifi.starrailexpress.content.command.*;
+import io.wifi.starrailexpress.content.command.argument.GameModeArgumentType;
+import io.wifi.starrailexpress.content.command.argument.MapLoadArgumentType;
+import io.wifi.starrailexpress.content.command.argument.SkinArgumentType;
+import io.wifi.starrailexpress.content.command.argument.TimeOfDayArgumentType;
 import io.wifi.starrailexpress.event.AFKEventHandler;
 import io.wifi.starrailexpress.event.EntityInteractionHandler;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
@@ -241,9 +241,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             ReloadReadyAreaCommand.register(dispatcher);
             EntityDataCommand.register(dispatcher);
             MoodChangeCommand.register(dispatcher);
-            io.wifi.starrailexpress.contents.command.MapVoteCommand.register(dispatcher);
-            io.wifi.starrailexpress.contents.command.CreateWaypointCommand.register(dispatcher);
-            io.wifi.starrailexpress.contents.command.ToggleWaypointsCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.MapVoteCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.CreateWaypointCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.ToggleWaypointsCommand.register(dispatcher);
             AFKCommand.register(dispatcher);
             ShowStatsCommand.register(dispatcher);
             ShowSelectedMapUICommand.register(dispatcher);
@@ -372,18 +372,18 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                 net.exmo.sre.client.chat.ChatDialogueAdvancePayload.CODEC);
 
         // Mailbox
-        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.contents.mail.OpenMailboxScreenPayload.ID,
-                io.wifi.starrailexpress.contents.mail.OpenMailboxScreenPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.contents.mail.MailClaimC2SPayload.ID,
-                io.wifi.starrailexpress.contents.mail.MailClaimC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.contents.mail.MailDeleteC2SPayload.ID,
-                io.wifi.starrailexpress.contents.mail.MailDeleteC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.contents.mail.MailClaimAllC2SPayload.ID,
-                io.wifi.starrailexpress.contents.mail.MailClaimAllC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.contents.mail.MailDeleteAllReadC2SPayload.ID,
-                io.wifi.starrailexpress.contents.mail.MailDeleteAllReadC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.contents.mail.MailMarkReadC2SPayload.ID,
-                io.wifi.starrailexpress.contents.mail.MailMarkReadC2SPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.ID,
+                io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
+                io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.ID,
+                io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.ID,
+                io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.ID,
+                io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.ID,
+                io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.CODEC);
     }
 
     private void registerGlobalReceivers() {
@@ -418,16 +418,16 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                 new UseAssassinationItemPayload.Receiver());
 
         // Mailbox receivers
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.contents.mail.MailClaimC2SPayload.ID,
-                new io.wifi.starrailexpress.contents.mail.MailClaimC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.contents.mail.MailDeleteC2SPayload.ID,
-                new io.wifi.starrailexpress.contents.mail.MailDeleteC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.contents.mail.MailClaimAllC2SPayload.ID,
-                new io.wifi.starrailexpress.contents.mail.MailClaimAllC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.contents.mail.MailDeleteAllReadC2SPayload.ID,
-                new io.wifi.starrailexpress.contents.mail.MailDeleteAllReadC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.contents.mail.MailMarkReadC2SPayload.ID,
-                new io.wifi.starrailexpress.contents.mail.MailMarkReadC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
+                new io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.ID,
+                new io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.ID,
+                new io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.ID,
+                new io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.Receiver());
+        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.ID,
+                new io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.Receiver());
 
         // Chat Dialogue advance handler
         ServerPlayNetworking.registerGlobalReceiver(

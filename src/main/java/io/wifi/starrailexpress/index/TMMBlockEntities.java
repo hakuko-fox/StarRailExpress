@@ -2,8 +2,8 @@ package io.wifi.starrailexpress.index;
 
 import dev.doctor4t.ratatouille.util.registrar.BlockEntityTypeRegistrar;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.contents.block.entity.HornBlockEntity;
-import io.wifi.starrailexpress.contents.block_entity.*;
+import io.wifi.starrailexpress.content.block.entity.HornBlockEntity;
+import io.wifi.starrailexpress.content.block_entity.*;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 public interface TMMBlockEntities {

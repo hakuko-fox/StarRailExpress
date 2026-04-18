@@ -1,10 +1,10 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.contents.block.SmallDoorBlock;
-import io.wifi.starrailexpress.contents.block.TrainDoorBlock;
-import io.wifi.starrailexpress.contents.block_entity.DoorBlockEntity;
-import io.wifi.starrailexpress.contents.block_entity.SmallDoorBlockEntity;
+import io.wifi.starrailexpress.content.block.SmallDoorBlock;
+import io.wifi.starrailexpress.content.block.TrainDoorBlock;
+import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
+import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import io.wifi.starrailexpress.util.AdventureUsable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;

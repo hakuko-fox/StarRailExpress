@@ -5,7 +5,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.api.impl.GrenadeChargeableItem;
 import io.wifi.starrailexpress.api.impl.KnifeChargeableItem;
-import io.wifi.starrailexpress.contents.item.*;
+import io.wifi.starrailexpress.content.item.*;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;

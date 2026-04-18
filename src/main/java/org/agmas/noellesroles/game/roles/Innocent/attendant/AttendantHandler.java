@@ -1,8 +1,8 @@
 package org.agmas.noellesroles.game.roles.Innocent.attendant;
 
-import io.wifi.starrailexpress.contents.block.NeonPillarBlock;
-import io.wifi.starrailexpress.contents.block.NeonTubeBlock;
-import io.wifi.starrailexpress.contents.block.ToggleableFacingLightBlock;
+import io.wifi.starrailexpress.content.block.NeonPillarBlock;
+import io.wifi.starrailexpress.content.block.NeonTubeBlock;
+import io.wifi.starrailexpress.content.block.ToggleableFacingLightBlock;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;

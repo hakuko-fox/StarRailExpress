@@ -2,7 +2,7 @@ package io.wifi.starrailexpress.index.wathe_bridge;
 
 import dev.doctor4t.ratatouille.util.registrar.BlockRegistrar;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.contents.block.*;
+import io.wifi.starrailexpress.content.block.*;
 import io.wifi.starrailexpress.index.TMMProperties;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.util.BlockSettingsAdditions;

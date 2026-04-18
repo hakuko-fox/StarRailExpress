@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
-import io.wifi.starrailexpress.contents.item.CocktailItem;
+import io.wifi.starrailexpress.content.item.CocktailItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;

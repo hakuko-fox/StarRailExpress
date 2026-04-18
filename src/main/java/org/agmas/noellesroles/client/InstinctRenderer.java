@@ -7,7 +7,7 @@ import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.contents.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGetInstinctHighlight;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -82,7 +82,7 @@ public class InstinctRenderer {
             if (GameUtils.isPlayerSpectatingOrCreative(self))
                 return -1;
 
-            if (!(target instanceof io.wifi.starrailexpress.contents.entity.NoteEntity note))
+            if (!(target instanceof io.wifi.starrailexpress.content.entity.NoteEntity note))
                 return -1;
             if (SREClient.gameComponent.isRole(self, ModRoles.AWESOME_BINGLUS)) {
                 return getGradientColor(note.getId());

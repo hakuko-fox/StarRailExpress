@@ -2,7 +2,7 @@ package org.agmas.noellesroles.mixin.client.roles.vulture;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.client.render.entity.PlayerBodyEntityRenderer;
-import io.wifi.starrailexpress.contents.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.agmas.noellesroles.game.roles.Innocent.coroner.BodyDeathReasonComponent;
 import org.spongepowered.asm.mixin.Mixin;

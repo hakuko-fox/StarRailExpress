@@ -19,7 +19,7 @@ import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
-public class GiantNoteItem extends io.wifi.starrailexpress.contents.item.NoteItem {
+public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem {
     public GiantNoteItem(Properties settings) {
         super(settings);
     }
@@ -111,7 +111,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.contents.item.NoteIte
     }
 
     @Override
-    protected io.wifi.starrailexpress.contents.entity.NoteEntity createNoteEntity(Level world) {
-        return (io.wifi.starrailexpress.contents.entity.NoteEntity) ModEntities.GIANT_NOTE.create(world);
+    protected io.wifi.starrailexpress.content.entity.NoteEntity createNoteEntity(Level world) {
+        return (io.wifi.starrailexpress.content.entity.NoteEntity) ModEntities.GIANT_NOTE.create(world);
     }
 }

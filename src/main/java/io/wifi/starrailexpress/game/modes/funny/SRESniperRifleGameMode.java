@@ -1,8 +1,8 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.contents.item.DerringerItem;
-import io.wifi.starrailexpress.contents.item.KnifeItem;
+import io.wifi.starrailexpress.content.item.DerringerItem;
+import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.modes.WTLooseEndsGameMode;
 import io.wifi.starrailexpress.index.TMMItems;

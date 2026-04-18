@@ -10,7 +10,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerStatsComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.contents.entity.NoteEntity;
+import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.event.AllowShootRevolverDrop.ShouldDropResult;
 import io.wifi.starrailexpress.game.GameConstants;

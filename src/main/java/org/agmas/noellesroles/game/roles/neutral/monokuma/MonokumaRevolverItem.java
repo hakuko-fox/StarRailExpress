@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.game.roles.neutral.monokuma;
 
-import io.wifi.starrailexpress.contents.item.RevolverItem;
+import io.wifi.starrailexpress.content.item.RevolverItem;
 import net.minecraft.world.item.Item;
 
 /**

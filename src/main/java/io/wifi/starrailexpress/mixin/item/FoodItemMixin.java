@@ -2,7 +2,7 @@
 package io.wifi.starrailexpress.mixin.item;
 
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
-import io.wifi.starrailexpress.contents.item.CocktailItem;
+import io.wifi.starrailexpress.content.item.CocktailItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;

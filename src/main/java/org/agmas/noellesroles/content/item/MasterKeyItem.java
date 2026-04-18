@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
-import io.wifi.starrailexpress.contents.block.SmallDoorBlock;
+import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;

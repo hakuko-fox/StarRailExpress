@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.client.screen;
 
-import io.wifi.starrailexpress.contents.item.CocktailItem;
+import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;

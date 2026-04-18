@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.entity;
 
-import io.wifi.starrailexpress.contents.block_entity.DoorBlockEntity;
+import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;

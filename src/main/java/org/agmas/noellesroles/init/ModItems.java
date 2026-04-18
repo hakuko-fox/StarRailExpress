@@ -174,7 +174,7 @@ public class ModItems {
      * - 中毒时间：40-70秒
      */
     public static final Item TOILET_POISON = register(
-            new io.wifi.starrailexpress.contents.item.ToiletPoisonItem(new Item.Properties().stacksTo(1)),
+            new io.wifi.starrailexpress.content.item.ToiletPoisonItem(new Item.Properties().stacksTo(1)),
             "toilet_poison");
 
     /**

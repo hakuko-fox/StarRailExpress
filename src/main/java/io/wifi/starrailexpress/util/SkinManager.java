@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.util;
 
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
-import io.wifi.starrailexpress.contents.item.Colors;
+import io.wifi.starrailexpress.content.item.Colors;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;

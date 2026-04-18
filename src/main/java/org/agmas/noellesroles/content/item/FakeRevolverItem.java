@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
-import io.wifi.starrailexpress.contents.item.RevolverItem;
+import io.wifi.starrailexpress.content.item.RevolverItem;
 import io.wifi.starrailexpress.network.original.GunShootPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.world.InteractionHand;

@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
-import io.wifi.starrailexpress.contents.item.KnifeItem;
+import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;

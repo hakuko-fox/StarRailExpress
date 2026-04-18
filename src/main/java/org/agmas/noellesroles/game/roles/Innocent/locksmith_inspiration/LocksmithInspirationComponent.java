@@ -111,13 +111,13 @@ public class LocksmithInspirationComponent implements RoleComponent, ServerTicki
         if (block instanceof DoorBlock) {
             return true;
         }
-        if (level.getBlockEntity(pos) instanceof io.wifi.starrailexpress.contents.block_entity.DoorBlockEntity) {
+        if (level.getBlockEntity(pos) instanceof io.wifi.starrailexpress.content.block_entity.DoorBlockEntity) {
             return true;
         }
-        if (level.getBlockEntity(pos.below()) instanceof io.wifi.starrailexpress.contents.block_entity.DoorBlockEntity) {
+        if (level.getBlockEntity(pos.below()) instanceof io.wifi.starrailexpress.content.block_entity.DoorBlockEntity) {
             return true;
         }
-        return level.getBlockEntity(pos.above()) instanceof io.wifi.starrailexpress.contents.block_entity.DoorBlockEntity;
+        return level.getBlockEntity(pos.above()) instanceof io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
     }
 
     public int getInspirationPoints() {

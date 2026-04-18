@@ -8,7 +8,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts;
-import io.wifi.starrailexpress.contents.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -1487,7 +1487,7 @@ public class ModRoles {
         return InteractionResult.PASS;
       if (!(player instanceof net.minecraft.server.level.ServerPlayer sp))
         return InteractionResult.PASS;
-      if (target instanceof io.wifi.starrailexpress.contents.entity.PlayerBodyEntity body) {
+      if (target instanceof io.wifi.starrailexpress.content.entity.PlayerBodyEntity body) {
         org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent comp = ModComponents.IMITATOR.get(sp);
         if (!comp.isCharging) {
           comp.startCharging(body.getUUID());

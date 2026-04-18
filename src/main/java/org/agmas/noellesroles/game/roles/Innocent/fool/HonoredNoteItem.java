@@ -2,8 +2,8 @@ package org.agmas.noellesroles.game.roles.Innocent.fool;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerNoteComponent;
-import io.wifi.starrailexpress.contents.entity.NoteEntity;
-import io.wifi.starrailexpress.contents.item.NoteItem;
+import io.wifi.starrailexpress.content.entity.NoteEntity;
+import io.wifi.starrailexpress.content.item.NoteItem;
 import io.wifi.starrailexpress.util.AdventureUsable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

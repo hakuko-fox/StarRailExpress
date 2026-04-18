@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.client.screen;
 
 import io.wifi.starrailexpress.api.SREGameModes;
-import io.wifi.starrailexpress.contents.command.MapVoteCommand;
+import io.wifi.starrailexpress.content.command.MapVoteCommand;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;

@@ -2,7 +2,7 @@ package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.contents.item.SkinableItem;
+import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.world.InteractionHand;
@@ -15,11 +15,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+
+import static io.wifi.starrailexpress.content.item.RevolverItem.spawnHandParticle;
+
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.BanditRevolverShootPayload;
 import org.jetbrains.annotations.NotNull;
-
-import static io.wifi.starrailexpress.contents.item.RevolverItem.spawnHandParticle;
 
 public class BanditRevolverItem extends SkinableItem {
 

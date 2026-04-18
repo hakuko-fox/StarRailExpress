@@ -3,7 +3,7 @@ package io.wifi.starrailexpress.network.original;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerNunchuckComponent;
-import io.wifi.starrailexpress.contents.item.NunchuckItem;
+import io.wifi.starrailexpress.content.item.NunchuckItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
