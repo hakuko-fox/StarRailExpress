@@ -593,11 +593,11 @@ public abstract class SRERole {
     /**
      * 启用概率（%）
      * 
-     * @param count
+     * @param chance
      * @return
      */
-    public SRERole setEnableChance(int cahnce) {
-        enableChance = cahnce;
+    public SRERole setEnableChance(int chance) {
+        enableChance = chance;
         return this;
     }
 
