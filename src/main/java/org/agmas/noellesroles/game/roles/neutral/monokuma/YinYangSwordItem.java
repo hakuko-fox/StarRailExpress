@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.neutral.monokuma;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -131,6 +133,17 @@ public class YinYangSwordItem extends Item {
     }
 
     // ==================== AOE 释放（由 component tick 调用） ====================
+
+    @Override
+    public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int i, boolean bl) {
+        if (entity instanceof ServerPlayer sp){
+            if (sp.getMainHandItem().is(itemStack.getItem())) {
+                if (!sp.getCooldowns().isOnCooldown(itemStack.getItem())) {
+                    sp.sendSystemMessage(Component.translatable("message.noellesroles.yinyang_dash_tip"), true);
+                }
+            }
+        }
+    }
 
     /**
      * 蓄力完成后自动释放范围攻击并向前冲刺
