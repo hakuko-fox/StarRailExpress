@@ -67,16 +67,15 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                     mainHandStack.set(SREDataComponentTypes.USED, true);
                 }
             }
-
             if (mainHandStack.is(TMMItemTags.GUNS)
                     && player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
-                    && target.distanceTo(player) < 70.0) {
+                    && target.distanceToSqr(player) < 30 * 30) {
                 SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
                 Item revolver = TMMItems.REVOLVER;
                 boolean isDerringer = mainHandStack.is(TMMItems.DERRINGER);
                 ResourceLocation deathReason = isDerringer ? GameConstants.DeathReasons.DERRINGER
                         : GameConstants.DeathReasons.REVOLVER;
-                if (mainHandStack.is(ModItems.EXECUTIONER_GUN)){
+                if (mainHandStack.is(ModItems.EXECUTIONER_GUN)) {
                     deathReason = GameConstants.DeathReasons.EXECUTE;
                 }
 

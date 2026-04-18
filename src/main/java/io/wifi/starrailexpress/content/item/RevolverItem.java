@@ -92,8 +92,7 @@ public class RevolverItem extends SkinableItem {
 //                        var owner = puppeteerBodyEntity.getOwner();
 //                        return owner != null && GameUtils.isPlayerAliveAndSurvival(owner);
 //                    }
-                    return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player);
-
+                    return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
                 }, 20f);
     }
 
