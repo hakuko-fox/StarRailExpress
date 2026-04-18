@@ -786,7 +786,7 @@
   "tip.noellesroles.postman.balance": "金幣：%s",
   "==================== 私家偵探消息 ====================": "",
   "message.noellesroles.detective.on_cooldown": "技能冷卻中，還需 %s 秒",
-  "message.noellesroles.detective.insufficient_funds": "金幣不足！需要 200 金幣",
+  "message.noellesroles.detective.insufficient_funds": "金幣不足！需要 150 金幣",
   "message.noellesroles.detective.invalid_target": "無效的目標！",
   "message.noellesroles.detective.cannot_inspect_self": "不能審查自己！",
   "message.noellesroles.detective.target_moved": "目標玩家移動了，審查結束",
