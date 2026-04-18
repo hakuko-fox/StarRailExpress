@@ -24,7 +24,7 @@ public abstract class PandaClientMixin extends Animal {
         super(entityType, level);
     }
 
-    @Inject(method = "tick", at = @At("RETURN"))
+    @Inject(method = "tick", at = @At("TAIL"))
     public void tick(CallbackInfo ci) {
         PandaClientHandle.pandaMap.forEach(
                 (uuid,panda) -> {
