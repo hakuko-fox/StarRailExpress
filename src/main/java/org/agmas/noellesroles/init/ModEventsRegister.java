@@ -1122,7 +1122,7 @@ public class ModEventsRegister {
                 insaneKillerPlayerComponent.init();
             }
             if (gameWorldComponent.isRole(playerEntity, ModRoles.JOJO)) {
-                int dropCount = 1 + MCItemsUtils.hasItem(playerEntity, TMMItemTags.GUNS);
+                int dropCount = 1 + MCItemsUtils.countItem(playerEntity, TMMItemTags.GUNS);
                 while (dropCount > 0) {
                     playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     dropCount--;
