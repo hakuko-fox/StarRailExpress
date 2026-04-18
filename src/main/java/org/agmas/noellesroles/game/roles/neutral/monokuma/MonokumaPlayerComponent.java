@@ -217,12 +217,12 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
         // 给予无敌效果（永久）
         player.addEffect(new MobEffectInstance(
                 ModEffects.INVINCIBLE,
-                Integer.MAX_VALUE,
+                -1,
                 0,
                 true, false, false));
         player.addEffect(new MobEffectInstance(
                 MobEffects.INVISIBILITY,
-                Integer.MAX_VALUE,
+                -1,
                 0,
                 true, false, false));
 
@@ -243,6 +243,8 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
             org.agmas.noellesroles.packet.BroadcastMessageS2CPacket packet = new org.agmas.noellesroles.packet.BroadcastMessageS2CPacket(
                     append);
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, packet);
+            if (p.hasEffect(ModEffects.MONOKUMA_FRENZY))
+                p.removeEffect(ModEffects.MONOKUMA_FRENZY);
         }
 
         // 播放音效
@@ -358,7 +360,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
             if (!player.hasEffect(ModEffects.INVINCIBLE)) {
                 player.addEffect(new MobEffectInstance(
                         ModEffects.INVINCIBLE,
-                        Integer.MAX_VALUE,
+                        -1,
                         0,
                         true, false, false));
             }
