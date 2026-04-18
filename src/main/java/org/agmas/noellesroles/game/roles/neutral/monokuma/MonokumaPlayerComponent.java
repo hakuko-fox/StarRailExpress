@@ -57,6 +57,8 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
     public static final int AURA_COIN_INTERVAL = 5 * 20;
     public static final int AURA_COIN_AMOUNT = 8;
 
+    /** 仅服务端：杀人计数 */
+    public int kill_count = 0;
     // ==================== 状态 ====================
 
     private final Player player;
@@ -113,6 +115,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
         this.aoeChargeTimer = 0;
         this.dashAnimTimer = 0;
         this.isMonokumaMarked = true;
+        this.kill_count = 0;
         this.sync();
     }
 
@@ -124,6 +127,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
         this.aoeChargeTimer = 0;
         this.dashAnimTimer = 0;
         this.isMonokumaMarked = false;
+        this.kill_count = 0;
         this.sync();
     }
 
@@ -141,6 +145,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
 
         phase = 2;
         frenzyTimer = FRENZY_DURATION;
+        this.kill_count = 0;
 
         // 给予护盾（需2枪才能死）
         SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
@@ -193,7 +198,10 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
 
     public void onKillPlayer() {
         if (phase == 2) {
-            transformToMonokuma();
+            kill_count++;
+            if (kill_count >= 3) {
+                transformToMonokuma();
+            }
         }
     }
 
@@ -203,6 +211,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
     private void transformToMonokuma() {
         if (!(player instanceof ServerPlayer sp))
             return;
+        kill_count = 0;
         SREPlayerPsychoComponent.KEY.get(this.player).stopPsychoAndRefreshPsychoCount(true);
         phase = 3;
         frenzyTimer = 0;
@@ -239,7 +248,6 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
                         .withStyle(ChatFormatting.BOLD, ChatFormatting.DARK_PURPLE));
 
         for (ServerPlayer p : serverLevel.players()) {
-
             org.agmas.noellesroles.packet.BroadcastMessageS2CPacket packet = new org.agmas.noellesroles.packet.BroadcastMessageS2CPacket(
                     append);
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(p, packet);
