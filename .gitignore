@@ -5,11 +5,13 @@ run/*
 out/*
 .vscode/*
 bin/*
+.apt_generated/*
 
 /.kilocode/
 /run/
 /.idea/
 bin/
+.apt_generated/
 
 commitCache
 /.vscode/

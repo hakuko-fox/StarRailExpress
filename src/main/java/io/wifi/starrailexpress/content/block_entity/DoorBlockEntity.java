@@ -161,6 +161,7 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
     }
 
     public void blast() {
+        this.setJammed(0);
         if (!this.open) {
             this.toggle(false);
         }
