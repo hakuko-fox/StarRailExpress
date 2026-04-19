@@ -8,6 +8,9 @@ import net.minecraft.resources.ResourceLocation;
 
 import static net.fabricmc.fabric.api.event.EventFactory.createArrayBacked;
 
+/**
+ * 获取玩家皮肤事件。
+ */
 @Environment(EnvType.CLIENT)
 public interface OnGettingPlayerSkin {
     public static class PlayerSkinResult {
@@ -44,6 +47,9 @@ public interface OnGettingPlayerSkin {
         }
     }
 
+    /**
+     * 获取玩家皮肤事件。
+     */
     Event<OnGettingPlayerSkin> EVENT = createArrayBacked(OnGettingPlayerSkin.class,
             listeners -> (player) -> {
                 for (OnGettingPlayerSkin listener : listeners) {
@@ -55,6 +61,5 @@ public interface OnGettingPlayerSkin {
                 return null;
             });
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     PlayerSkinResult onGetSkin(AbstractClientPlayer abstractClientPlayerEntity);
 }

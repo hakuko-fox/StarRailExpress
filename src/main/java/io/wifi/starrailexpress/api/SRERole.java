@@ -635,6 +635,15 @@ public abstract class SRERole {
     };
 
     /**
+     * 获取普通状态下的皮肤
+     * 
+     * @return 返回皮肤地址。如果不改变皮肤则返回null
+     */
+    public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
+        return null;
+    };
+
+    /**
      * 获取疯魔皮肤
      * 
      * @return

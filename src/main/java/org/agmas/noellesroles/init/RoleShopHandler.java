@@ -484,7 +484,7 @@ public class RoleShopHandler {
         CAT_KILLER_SHOP.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(), 0, ShopEntry.Type.WEAPON) {
           @Override
           public boolean onBuy(@NotNull Player player) {
-            return SREPlayerShopComponent.usePsychoMode(player);
+            return SREPlayerShopComponent.usePsychoMode(player, 1.5);
           }
         });
         ShopContent.customEntries.put(ModRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
@@ -1059,7 +1059,7 @@ public class RoleShopHandler {
     // 超级亡命徒商店
     {
       ShopContent.customEntries.put(
-              SpecialGameModeRoles.SUPER_LOOSE_END.identifier(), SUPER_LOOSE_END_SHOP);
+          SpecialGameModeRoles.SUPER_LOOSE_END.identifier(), SUPER_LOOSE_END_SHOP);
     }
 
     // 故障机器人商店

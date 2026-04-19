@@ -34,12 +34,17 @@
   - `seconds`: 秒数 (0-60)
 - **示例**: `/tmm:autoStart 30`
 
-### `tmm:custom_replay record <message>`
+### `sre:show_replay`
+显示当前回访记录
+- **权限**: 2
+- **示例**: `/sre:show_replay`
+
+### `sre:show_replay record <message>`
 自定义重播事件
 - **权限**: 2
 - **参数**:
   - `message`: 消息内容
-- **示例**: `/tmm:custom_replay record "游戏开始"`
+- **示例**: `/sre:custom_replay record "游戏开始"`
 
 ### `tmm:entityData set|get <targets> <data>`
 实体数据管理

@@ -41,12 +41,22 @@ public class PlayerEntityRendererMixin {
             cir.cancel();
             return;
         }
+        // 获取普通状态下职业皮肤
+        SRERole role = SREClient.gameComponent.getRole(abstractClientPlayerEntity.getUUID());
+        PlayerSkin.Model model = abstractClientPlayerEntity.getSkin().model();
+        boolean isSLIM = (model == PlayerSkin.Model.SLIM);
+        if (role != null) {
+            ResourceLocation rolenormalskinresult = role.getNormalSkin(abstractClientPlayerEntity, isSLIM);
+            if (rolenormalskinresult != null) {
+                cir.setReturnValue(rolenormalskinresult);
+                cir.cancel();
+                return;
+            }
+        }
+        // 获取疯魔状态下职业皮肤
         if (SREClient.PLAYER_PSYCHO_CACHE.getOrDefault(abstractClientPlayerEntity.getUUID(), false)) {
-            PlayerSkin.Model model = abstractClientPlayerEntity.getSkin().model();
-            boolean isSLIM = (model == PlayerSkin.Model.SLIM);
             String suffix = isSLIM ? "_thin" : "";
             ResourceLocation texture = SRE.watheId("textures/entity/psycho" + suffix + ".png");
-            SRERole role = SREClient.gameComponent.getRole(abstractClientPlayerEntity.getUUID());
             if (role != null) {
                 var res = role.getPsychoSkin(abstractClientPlayerEntity, isSLIM);
                 if (res != null) {

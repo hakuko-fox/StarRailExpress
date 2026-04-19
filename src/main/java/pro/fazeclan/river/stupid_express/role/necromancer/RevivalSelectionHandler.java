@@ -90,7 +90,8 @@ public class RevivalSelectionHandler {
             if (cooldown.hasCooldown()) {
                 return InteractionResult.PASS;
             }
-            cooldown.setCooldown(3 * 60 * 20);
+            // 1分半钟cd
+            cooldown.setCooldown(120 * 20);
             nc.decreaseAvailableRevives();
             nc.sync();
 
