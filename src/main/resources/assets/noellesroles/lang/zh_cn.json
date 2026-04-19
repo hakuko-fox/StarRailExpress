@@ -149,7 +149,7 @@
   "item.noellesroles.reversing_card": "反转卡",
   "item.noellesroles.telephone": "电话",
   "noellesroles.game.devil_roulette.tooltip.magnifying_glass": "显示下一发是否为实弹",
-  "noellesroles.game.devil_roulette.tooltip.chewing": "回复一点生命",
+  "noellesroles.game.devil_roulette.tooltip.chewing": "回复一点生命，不会超过最大生命值",
   "noellesroles.game.devil_roulette.tooltip.clip": "重新装填子弹和发放道具",
   "noellesroles.game.devil_roulette.tooltip.steel_ball": "下一发若为实弹则造成伤害+1",
   "noellesroles.game.devil_roulette.tooltip.reversing_card": "实弹转为虚弹，虚弹转为实弹",

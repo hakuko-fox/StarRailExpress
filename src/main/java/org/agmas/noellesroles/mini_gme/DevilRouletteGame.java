@@ -41,7 +41,7 @@ public class DevilRouletteGame {
     );
     public static final List<Supplier<ItemStack>> rouletteItems = new ArrayList<>();
     public static final int START_ITEM_NUMBER = 3;
-    public static final int START_HEALTH = 5;
+    public static final int MAX_HEALTH = 5;
     public static final int RELOAD_ITEM_NUMBER = 1;
     public static final int GUN_BULLET_SLOT_NUMBER = 6;
     static {
@@ -94,9 +94,13 @@ public class DevilRouletteGame {
         }
         public void addHealth(int health) {
             this.health += health;
+            if(this.health > MAX_HEALTH)
+                this.health = MAX_HEALTH;
+            else if (this.health < 0)
+                this.health = 0;
         }
         protected Player player;
-        protected int health = START_HEALTH;
+        protected int health = MAX_HEALTH;
     }
     public DevilRouletteGame(Player player1, Player player2, RandomSource random) {
         playerDataList = new ArrayList<>();
