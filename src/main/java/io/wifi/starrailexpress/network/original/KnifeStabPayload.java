@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.network.original;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -14,7 +15,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public record KnifeStabPayload(int target) implements CustomPacketPayload {
@@ -48,7 +48,8 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             var cooldowns = player.getCooldowns();
             if (!player.isCreative()
                     && !SREGameWorldComponent.KEY.get(player.level()).isRole(player, TMMRoles.LOOSE_END)
-                    && !SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.SUPER_LOOSE_END)) {
+                    && !SREGameWorldComponent.KEY.get(player.level()).isRole(player,
+                            SpecialGameModeRoles.SUPER_LOOSE_END)) {
                 cooldowns.addCooldown(TMMItems.KNIFE, GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE));
             }
         }

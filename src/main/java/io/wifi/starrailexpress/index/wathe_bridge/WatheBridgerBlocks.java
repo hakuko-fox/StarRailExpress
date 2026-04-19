@@ -23,7 +23,6 @@ import net.minecraft.world.level.material.PushReaction;
 
 import java.util.function.ToIntFunction;
 
-@SuppressWarnings("unchecked")
 public interface WatheBridgerBlocks {
     BlockRegistrar registrar = new BlockRegistrar(SRE.WATHE_MOD_ID);
 

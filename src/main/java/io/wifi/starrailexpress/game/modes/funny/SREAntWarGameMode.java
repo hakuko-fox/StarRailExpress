@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.item.DerringerItem;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -15,7 +16,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemCooldowns;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class SREAntWarGameMode extends WTLooseEndsGameMode {
     @Override
     protected void initRoles(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : players) {
-            gameWorldComponent.addRole(player, ModRoles.SUPER_LOOSE_END);
+            gameWorldComponent.addRole(player, SpecialGameModeRoles.SUPER_LOOSE_END);
         }
     }
     @Override

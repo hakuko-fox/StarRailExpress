@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.index;
 import dev.doctor4t.ratatouille.util.registrar.ItemRegistrar;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.impl.GrenadeChargeableItem;
 import io.wifi.starrailexpress.api.impl.KnifeChargeableItem;
@@ -16,7 +17,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
-import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.ArrayList;
 
@@ -95,7 +95,7 @@ public interface TMMItems {
 
         // 亡命徒，超级亡命徒 可以直接使用防御药剂
         DefenseItem.canUseByRightClickRolePaths.add(TMMRoles.LOOSE_END.identifier().getPath());
-        DefenseItem.canUseByRightClickRolePaths.add(ModRoles.SUPER_LOOSE_END.identifier().getPath());
+        DefenseItem.canUseByRightClickRolePaths.add(SpecialGameModeRoles.SUPER_LOOSE_END.identifier().getPath());
 
         registrar.registerEntries();
 

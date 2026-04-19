@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -644,7 +645,7 @@ public class InstinctRenderer {
                 // 小丑&LOOSE END
                 if ((SREClient.gameComponent.isRole(self, ModRoles.JESTER)
                         || SREClient.gameComponent.isRole(self, TMMRoles.LOOSE_END)
-                        || SREClient.gameComponent.isRole(self, ModRoles.SUPER_LOOSE_END))
+                        || SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END))
                         && SREClient.isPlayerAliveAndInSurvival()) {
                     if (SREClient.gameComponent.isRole(target_player, ModRoles.GHOST)) {
                         return -2;

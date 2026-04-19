@@ -4,6 +4,7 @@ import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.item.KnifeItem;
@@ -1058,7 +1059,7 @@ public class RoleShopHandler {
     // 超级亡命徒商店
     {
       ShopContent.customEntries.put(
-              ModRoles.SUPER_LOOSE_END_ID, SUPER_LOOSE_END_SHOP);
+              SpecialGameModeRoles.SUPER_LOOSE_END.identifier(), SUPER_LOOSE_END_SHOP);
     }
 
     // 故障机器人商店

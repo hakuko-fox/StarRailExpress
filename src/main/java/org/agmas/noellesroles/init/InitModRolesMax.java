@@ -89,7 +89,6 @@ public class InitModRolesMax {
         // 某些角色可能需要限制每局游戏中的数量
         // 复仇者每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.AVENGER_ID, 1);
-        Harpymodloader.setRoleMaximum(ModRoles.SUPER_LOOSE_END_ID, 1);
 
         // 滑头鬼每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.SLIPPERY_GHOST_ID, 1);

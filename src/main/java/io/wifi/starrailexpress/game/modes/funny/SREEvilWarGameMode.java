@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -11,8 +12,6 @@ import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemCooldowns;
@@ -22,7 +21,6 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
@@ -107,7 +105,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             if (forcePlayer != null) {
                 SRERole role = entry.getValue();
                 if (role != null) {
-                    if (role == ModRoles.SUPER_LOOSE_END)
+                    if (role == SpecialGameModeRoles.SUPER_LOOSE_END)
                         --superLooseEndCount;
                     gameWorldComponent.addRole(forcePlayer, role);
                 }
@@ -145,7 +143,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         // 当索引等于亡命徒所在索引：分配亡命徒，否则分配杀手
         for (int i = 0, curOtherIdx = 0, curKillerIdx = 0; i < playersWithoutForcedRoles.size(); ++i) {
             if (curOtherIdx < superLooseEndCount && i == otherAssignedIdxGroup.get(curOtherIdx)) {
-                gameWorldComponent.addRole(playersWithoutForcedRoles.get(i), ModRoles.SUPER_LOOSE_END);
+                gameWorldComponent.addRole(playersWithoutForcedRoles.get(i), SpecialGameModeRoles.SUPER_LOOSE_END);
                 ++curOtherIdx;
             } else {
                 if (curOtherIdx < otherAssignedIdxGroup.size() && i == otherAssignedIdxGroup.get(curOtherIdx)) {
@@ -172,7 +170,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         for (ServerPlayer player : players) {
             player.getInventory().clearContent();
             SRERole role = gameWorldComponent.getRole(player);
-            if (role == ModRoles.SUPER_LOOSE_END) {
+            if (role == SpecialGameModeRoles.SUPER_LOOSE_END) {
                 // 添加亡命徒模式专属物品
                 for (Supplier<ItemStack> itemSupplier : looseEndsItems) {
                     ItemStack itemStack = itemSupplier.get();
@@ -217,7 +215,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverWorld);
         // 所有亡命徒都有矮小修饰符
         for (ServerPlayer player : players) {
-            if (gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END)) {
+            if (gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
                 worldModifierComponent.addModifier(player.getUUID(), SEModifiers.TINY, false);
 //                worldModifierComponent.addModifier(player.getUUID(), SEModifiers.FEATHER, false);
                 // 使玩家缩小
@@ -251,7 +249,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 playerShopComponent.setBalance(0);
             }
             // 超级亡命徒开局 0 块
-            else if (role == ModRoles.SUPER_LOOSE_END){
+            else if (role == SpecialGameModeRoles.SUPER_LOOSE_END){
                 playerShopComponent.setBalance(0);
             }
             else if (role == ModRoles.CLEANER) {
@@ -323,7 +321,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 else if(role == ModRoles.CONSPIRATOR) {
                     SREPlayerShopComponent.KEY.get(player).addToBalance(200);
                 }
-                else if(role != ModRoles.SUPER_LOOSE_END)
+                else if(role != SpecialGameModeRoles.SUPER_LOOSE_END)
                     // 默认获取500金币
                     SREPlayerShopComponent.KEY.get(player).addToBalance(500);
 
@@ -347,7 +345,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 else if (role == ModRoles.EXECUTIONER) {
                     ExecutionerPlayerComponent executionerPlayerComponent = ExecutionerPlayerComponent.KEY.get(player);
                     for (ServerPlayer target : serverWorld.players())
-                        if (!GameUtils.isPlayerEliminated(target) && gameWorldComponent.isRole(target, ModRoles.SUPER_LOOSE_END)) {
+                        if (!GameUtils.isPlayerEliminated(target) && gameWorldComponent.isRole(target, SpecialGameModeRoles.SUPER_LOOSE_END)) {
                             executionerPlayerComponent.target = target.getUUID();
                             executionerPlayerComponent.sync();
                         }
@@ -375,7 +373,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
 
             for (ServerPlayer player : serverWorld.players()) {
                 if ((gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
-                        || gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END))
+                        || gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END))
                         && !GameUtils.isPlayerEliminated(player)) {
                     hasLooseEndAlive = true;
                     lastLooseEnds.add(player);
@@ -388,7 +386,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 boolean hasOtherAlive = false;
                 for (ServerPlayer player : serverWorld.players()) {
                     if ((!gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)
-                            && !gameWorldComponent.isRole(player, ModRoles.SUPER_LOOSE_END))
+                            && !gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END))
                             && !GameUtils.isPlayerEliminated(player)) {
                         hasOtherAlive = true;
                         break;

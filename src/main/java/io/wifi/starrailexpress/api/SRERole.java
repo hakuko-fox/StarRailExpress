@@ -37,6 +37,7 @@ public abstract class SRERole {
     private final Random random = new Random();
     private ResourceLocation identifier;
     private boolean canSeeCoin = true;
+    private boolean canBeRandomed = true;
     private boolean canSeeBodyDeathReason = false;
     private boolean canSeeBodyRoleInfo = false;
     private boolean canUseInstinct = false;
@@ -52,6 +53,20 @@ public abstract class SRERole {
         this.clientTickEvent = event;
         return this;
     };
+
+    public boolean canBeRandomed() {
+        return this.canBeRandomed;
+    }
+
+    /**
+     * 是否可以出现在其他角色（例如赌徒）的随机池
+     * 
+     * @return
+     */
+    public SRERole setCanBeRandomedByOtherRoles(boolean flag) {
+        this.canBeRandomed = flag;
+        return this;
+    }
 
     public boolean isKillerTeam() {
         return !this.isInnocent && (this.isNeutralForKiller || this.canUseKiller);

@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.content.item;
 
+import io.wifi.starrailexpress.api.SpecialGameModeRoles;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.world.InteractionHand;
@@ -10,7 +11,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.ArrayList;
 
@@ -62,7 +62,7 @@ public class DefenseItem extends Item {
                     if (livingEntity instanceof Player player) {
                         var bartenderComponent = SREArmorPlayerComponent.KEY.get(player);
                         // 超级亡命徒可以无限饮用药剂叠盾
-                        if (role == ModRoles.SUPER_LOOSE_END) {
+                        if (role == SpecialGameModeRoles.SUPER_LOOSE_END) {
                             bartenderComponent.addArmor();
                             itemStack.consume(1, livingEntity);
                             return itemStack;
