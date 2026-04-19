@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.content.block.*;
+import io.wifi.starrailexpress.content.block.api.AutoResetBlockInterface;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.LecternBlock;
@@ -110,6 +111,8 @@ public class MapResetManager {
                     } else if (blockState.getBlock() instanceof ToggleableFacingLightBlock) {
                         GameUtils.resetPoints.add(blockPos6);
                     } else if (blockState.getBlock() instanceof VentHatchBlock) {
+                        GameUtils.resetPoints.add(blockPos6);
+                    } else if (blockState.getBlock() instanceof AutoResetBlockInterface) {
                         GameUtils.resetPoints.add(blockPos6);
                     }
                 }

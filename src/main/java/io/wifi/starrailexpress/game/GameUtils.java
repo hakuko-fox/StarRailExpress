@@ -1428,10 +1428,10 @@ public class GameUtils {
         return player != null && (player.isSpectator() || player.isCreative());
     }
 
-    record BlockEntityInfo(CompoundTag nbt, DataComponentMap components) {
+    public record BlockEntityInfo(CompoundTag nbt, DataComponentMap components) {
     }
 
-    record BlockInfo(BlockPos pos, BlockState state, @Nullable BlockEntityInfo blockEntityInfo) {
+    public record BlockInfo(BlockPos pos, BlockState state, @Nullable BlockEntityInfo blockEntityInfo) {
     }
 
     public static void resetEntities(ServerLevel serverWorld) {

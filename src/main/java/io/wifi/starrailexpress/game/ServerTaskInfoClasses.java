@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.content.block.*;
+import io.wifi.starrailexpress.content.block.api.AutoResetBlockInterface;
 import io.wifi.starrailexpress.content.block_entity.*;
 import io.wifi.starrailexpress.game.GameUtils.BlockEntityInfo;
 import net.minecraft.ChatFormatting;
@@ -177,6 +178,8 @@ public class ServerTaskInfoClasses {
                             } else if (blockState.getBlock() instanceof ToggleableFacingLightBlock) {
                                 GameUtils.resetPoints.add(blockPos7);
                             } else if (blockState.getBlock() instanceof VentHatchBlock) {
+                                GameUtils.resetPoints.add(blockPos7);
+                            } else if (blockState.getBlock() instanceof AutoResetBlockInterface) {
                                 GameUtils.resetPoints.add(blockPos7);
                             }
                         }
@@ -390,6 +393,18 @@ public class ServerTaskInfoClasses {
                 } else if (blockState.getBlock() instanceof VentHatchBlock) {
                     blockState = blockState.setValue(VentHatchBlock.OPEN, false);
                     list2.add(new GameUtils.BlockInfo(blockPos7, blockState, null));
+                } else if (blockState.getBlock() instanceof AutoResetBlockInterface arbi) {
+                    blockState = arbi.onReset(serverWorld, blockState, blockPos7);
+                    BlockEntity entity = serverWorld.getBlockEntity(blockPos6);
+                    BlockEntityInfo entityinfo = null;
+                    if (entity != null) {
+                        entityinfo = arbi.onResetBlockEntity(serverWorld, blockState, entity, blockPos7);
+                    }
+                    if (entityinfo != null) {
+                        list3.add(new GameUtils.BlockInfo(blockPos7, blockState, entityinfo));
+                    } else {
+                        list2.add(new GameUtils.BlockInfo(blockPos7, blockState, null));
+                    }
                 }
             }
 
