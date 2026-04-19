@@ -88,7 +88,7 @@ public class SREConfig implements ConfigData {
     // 物品冷却时间配置（秒）- 服务端只读
 
     @ConfigEntry.Category(value = "cooldowns")
-    public int knifeCooldown = 30;
+    public int knifeCooldown = 25;
     @ConfigEntry.Category(value = "cooldowns")
     public int revolverCooldown = 15;
     @ConfigEntry.Category(value = "cooldowns")
