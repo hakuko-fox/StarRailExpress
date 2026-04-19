@@ -28,6 +28,7 @@ import org.agmas.noellesroles.utils.WheelchairEffectBlockHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class WheelchairEntity extends Mob {
 
@@ -320,7 +321,7 @@ public class WheelchairEntity extends Mob {
     @Override
     protected void positionRider(Entity passenger, MoveFunction moveFunction) {
         if (this.hasPassenger(passenger)) {
-            double offsetY = 0;
+            double offsetY = -0.1;
             double offsetZ = 0;
             double offsetX = 0.0;
             Vec3 offset = new Vec3(offsetX, offsetY, offsetZ)
@@ -360,8 +361,31 @@ public class WheelchairEntity extends Mob {
         return this.position();
     }
 
+    /**
+     * 检查玩家准星是否指向实体下方 1 格高度范围内。
+     */
+    private boolean isPlayerLookingAtLowerPart(Player player) {
+        // 获取玩家视线
+        Vec3 eyePos = player.getEyePosition();
+        Vec3 lookVec = player.getLookAngle();
+        double range = 5.0; // 最大交互距离
+
+        // 构建高度为 1 的临时交互碰撞箱（从实体脚部起 +1 格）
+        AABB fullBox = this.getBoundingBox();
+        AABB interactBox = new AABB(
+                fullBox.minX, this.getY(), fullBox.minZ,
+                fullBox.maxX, this.getY() + 1.0, fullBox.maxZ);
+
+        // 射线检测
+        Optional<Vec3> hit = interactBox.clip(eyePos, eyePos.add(lookVec.scale(range)));
+        return hit.isPresent();
+    }
+
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (!isPlayerLookingAtLowerPart(player)) {
+            return InteractionResult.PASS; // 准星未指向下方 1 格区域，拒绝交互
+        }
         if (this.getPassengers().isEmpty() && player.isShiftKeyDown()) {
             if (!this.level().isClientSide) {
                 ItemStack wheelchairItem = new ItemStack(ModItems.WHEELCHAIR);

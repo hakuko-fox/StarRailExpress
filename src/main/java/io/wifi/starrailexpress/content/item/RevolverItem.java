@@ -22,9 +22,9 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.NotNull;
 
-
 public class RevolverItem extends SkinableItem {
     public static final ResourceLocation ITEM_ID = SRE.id("revolver");
+
     public RevolverItem(Properties settings) {
         super(settings.durability(4)); // 设置最大耐久度为4
     }
@@ -87,11 +87,7 @@ public class RevolverItem extends SkinableItem {
 
     public static HitResult getGunTarget(Player user) {
         return ProjectileUtil.getHitResultOnViewVector(user,
-                entity ->{
-//                    if (entity instanceof PuppeteerBodyEntity puppeteerBodyEntity){
-//                        var owner = puppeteerBodyEntity.getOwner();
-//                        return owner != null && GameUtils.isPlayerAliveAndSurvival(owner);
-//                    }
+                entity -> {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
                 }, 20f);
     }
