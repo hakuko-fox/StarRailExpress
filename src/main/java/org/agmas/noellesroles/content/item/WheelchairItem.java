@@ -20,6 +20,8 @@ import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 
+import io.wifi.starrailexpress.index.TMMBlocks;
+
 import java.util.Objects;
 
 public class WheelchairItem extends Item {
@@ -68,6 +70,9 @@ public class WheelchairItem extends Item {
       if (player.getCooldowns().isOnCooldown(ModItems.WHEELCHAIR)) {
          return InteractionResultHolder.pass(itemStack);
       }
+      if (player.getCooldowns().isOnCooldown(TMMBlocks.ACACIA_BRANCH.asItem())) {
+         return InteractionResultHolder.pass(itemStack);
+      }
       if (!itemStack.is(ModItems.WHEELCHAIR))
          return InteractionResultHolder.pass(itemStack);
       if (level.isClientSide)
@@ -87,6 +92,8 @@ public class WheelchairItem extends Item {
          level.gameEvent(player, GameEvent.ENTITY_PLACE, entity.position());
          player.stopRiding();
          player.startRiding(entity);
+         player.getCooldowns().addCooldown(TMMBlocks.ACACIA_BRANCH.asItem(), 10);
+
          return InteractionResultHolder.consume(itemStack);
       }
    }
