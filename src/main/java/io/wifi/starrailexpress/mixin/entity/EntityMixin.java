@@ -26,6 +26,16 @@ public class EntityMixin {
     @Shadow
     private Level level;
 
+    @Inject(method = "dismountTo", at = @At("HEAD"), cancellable = true)
+    public void dismountTo(double d, double e, double f, CallbackInfo ci) {
+        Entity self = (Entity) (Object) this;
+        if (self.level().isClientSide) {
+            if (self instanceof Player) {
+                ci.cancel();
+            }
+        }
+    }
+
     @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;vibrationAndSoundEffectsFromBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;ZZLnet/minecraft/world/phys/Vec3;)Z", ordinal = 0))
     public void moving(MoverType p_19973_, Vec3 p_19974_, CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
