@@ -249,10 +249,10 @@ public class WheelchairEntity extends Mob {
             rider.addEffect(new MobEffectInstance(
                     MobEffects.MOVEMENT_SPEED,
                     140, // 持续时间（tick）
-                    2,   // 等级（2 = Speed III，对应原来的 2x 加速）
+                    2, // 等级（2 = Speed III，对应原来的 2x 加速）
                     false, // ambient
-                    true,  // showParticles
-                    true   // showIcon
+                    true, // showParticles
+                    true // showIcon
             ));
             this.hasSpeedEffect = true;
             return true;
@@ -355,6 +355,12 @@ public class WheelchairEntity extends Mob {
     }
 
     @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
+        // 玩家下座位时，位置与轮椅完全一致
+        return this.position();
+    }
+
+    @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (this.getPassengers().isEmpty() && player.isShiftKeyDown()) {
             if (!this.level().isClientSide) {
@@ -368,7 +374,8 @@ public class WheelchairEntity extends Mob {
             }
             return InteractionResult.SUCCESS;
         }
-        if (this.getPassengers().isEmpty() && !player.isShiftKeyDown() && !player.getCooldowns().isOnCooldown(TMMBlocks.ACACIA_BRANCH.asItem())) {
+        if (this.getPassengers().isEmpty() && !player.isShiftKeyDown()
+                && !player.getCooldowns().isOnCooldown(TMMBlocks.ACACIA_BRANCH.asItem())) {
             if (!this.level().isClientSide) {
                 player.startRiding(this, true);
                 player.getCooldowns().addCooldown(TMMBlocks.ACACIA_BRANCH.asItem(), 10);
