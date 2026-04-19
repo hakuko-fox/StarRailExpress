@@ -53,9 +53,11 @@ public class ServerPlayerEntityMixin {
             return;
         }
         Entity target = ctarget;
-        if (target instanceof WheelchairEntity wc) {
-            if (wc.getRider() != null) {
-                target = wc.getRider();
+        if (!self.isCreative()) {
+            if (target instanceof WheelchairEntity wc) {
+                if (wc.getRider() != null) {
+                    target = wc.getRider();
+                }
             }
         }
         var mainhandItem = self.getMainHandItem();

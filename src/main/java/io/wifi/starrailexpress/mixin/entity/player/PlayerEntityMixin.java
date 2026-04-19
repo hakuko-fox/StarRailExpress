@@ -153,13 +153,15 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
             original.call(ttarget);
             return;
         }
+        Player self = (Player) (Object) this;
         Entity target = ttarget;
-        if (target instanceof WheelchairEntity wc) {
-            if (wc.getRider() != null) {
-                target = wc.getRider();
+        if (!self.isCreative()) {
+            if (target instanceof WheelchairEntity wc) {
+                if (wc.getRider() != null) {
+                    target = wc.getRider();
+                }
             }
         }
-        Player self = (Player) (Object) this;
         if ((self.isSpectator() || self.isCreative()) || this.getMainHandItem().is(TMMItems.KNIFE)
                 || this.getMainHandItem().getItem() instanceof SREItemProperties.LeftClickHurtable
                 || IsPlayerPunchable.EVENT.invoker().gotPunchable(target)
