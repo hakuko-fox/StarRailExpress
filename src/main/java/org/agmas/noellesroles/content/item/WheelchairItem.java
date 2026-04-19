@@ -54,6 +54,8 @@ public class WheelchairItem extends Item {
                !Objects.equals(blockPos, blockPos2) && direction == Direction.UP);
          useOnContext.getPlayer().getCooldowns().addCooldown(ModItems.WHEELCHAIR, 40);
          if (we != null) {
+            we.setYRot(useOnContext.getPlayer().getYRot());
+
             we.durability = itemStack.getMaxDamage() - itemStack.getDamageValue();
             itemStack.consume(1, useOnContext.getPlayer());
             level.gameEvent(useOnContext.getPlayer(), GameEvent.ENTITY_PLACE, blockPos);
@@ -81,14 +83,16 @@ public class WheelchairItem extends Item {
       if (level.isClientSide)
          return InteractionResultHolder.success(itemStack);
       EntityType<WheelchairEntity> entityType = ModEntities.WHEELCHAIR;
-      BlockPos bc = player.getOnPos();
       player.getCooldowns().addCooldown(ModItems.WHEELCHAIR, 40);
-      WheelchairEntity entity = entityType.spawn((ServerLevel) level, itemStack, player, bc.above(),
-            MobSpawnType.SPAWN_EGG, false, false);
+      WheelchairEntity entity = entityType.create((ServerLevel) level);
+
       if (entity == null) {
          return InteractionResultHolder.pass(itemStack);
       } else {
+         entity.setPos(player.getX(), player.getY(), player.getZ());
+         entity.setYRot(player.getYRot());
          entity.durability = itemStack.getMaxDamage() - itemStack.getDamageValue();
+         level.addFreshEntity(entity);
 
          itemStack.consume(1, player);
          player.awardStat(Stats.ITEM_USED.get(this));
@@ -101,7 +105,11 @@ public class WheelchairItem extends Item {
       }
    }
 
-   public boolean spawnsEntity(ItemStack itemStack, EntityType<?> entityType) {
-      return Objects.equals(ModEntities.WHEELCHAIR, entityType);
+   public static WheelchairEntity createEntity(EntityType<WheelchairEntity> entityType, ServerLevel level) {
+      WheelchairEntity entity = entityType.create(level);
+      if (entity == null) {
+         return null;
+      }
+      return entity;
    }
 }
