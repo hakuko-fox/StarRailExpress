@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.neutral.super_loose_end;
+package org.agmas.noellesroles.game.roles.special.super_loose_end;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.NormalRole;
