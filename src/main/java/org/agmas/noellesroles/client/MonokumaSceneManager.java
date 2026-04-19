@@ -219,6 +219,10 @@ public class MonokumaSceneManager {
         if (!state.isCollisionShapeFullBlock(level, pos)) {
             return false;
         }
+        // 排除有方块实体的方块
+        if (level.getBlockEntity(pos) != null) {
+            return false;
+        }
         return true;
     }
 
