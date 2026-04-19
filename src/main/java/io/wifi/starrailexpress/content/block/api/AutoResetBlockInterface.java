@@ -15,7 +15,7 @@ public interface AutoResetBlockInterface {
      * @param pos
      * @return 应该返回重置后的 BlockState
      */
-    BlockState onReset(ServerLevel level, BlockState state, BlockPos pos);
+    BlockState onResetBlockState(ServerLevel level, BlockState state, BlockPos pos);
 
     /**
      * 重置方块实体
