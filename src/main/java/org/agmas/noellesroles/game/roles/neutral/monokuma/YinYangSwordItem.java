@@ -39,6 +39,7 @@ public class YinYangSwordItem extends Item {
     /** 右键范围伤害半径 */
     private static final double AOE_RANGE = 3.2;
     /** Q键突进距离 */
+    @SuppressWarnings("unused")
     private static final double DASH_DISTANCE = 6.0;
 
     public YinYangSwordItem(Item.Properties settings) {
@@ -160,7 +161,7 @@ public class YinYangSwordItem extends Item {
         int count = 0;
         for (Player target : targets) {
             count++;
-            if (count >= 2) // 最多杀2人，避免超模
+            if (count >= 5) // 最多杀5人，避免超模
                 break;
             GameUtils.killPlayer(target, true, sp, Noellesroles.id("yinyang_sword_aoe"));
         }

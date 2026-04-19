@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREPlayerStatsComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -118,5 +119,11 @@ public abstract class GameMode {
 
     public boolean hasMood() {
         return true;
+    }
+
+    public Component getName() {
+        // 根据游戏模式ID返回本地化的名称
+        String gameModeId = this.identifier.getPath();
+        return Component.translatableWithFallback("hud.sre.tip.gamemode." + gameModeId, gameModeId);
     }
 }

@@ -37,6 +37,8 @@ import net.minecraft.world.item.HoneyBottleItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.level.Level;
+
+import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -146,13 +148,21 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
     }
 
     @WrapMethod(method = "attack")
-    public void attack(Entity target, Operation<Void> original) {
+    public void attack(Entity ttarget, Operation<Void> original) {
         if (SRE.isLobby) {
-            original.call(target);
+            original.call(ttarget);
             return;
         }
         Player self = (Player) (Object) this;
-        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(self) || this.getMainHandItem().is(TMMItems.KNIFE)
+        Entity target = ttarget;
+        if (!self.isCreative()) {
+            if (target instanceof WheelchairEntity wc) {
+                if (wc.getRider() != null) {
+                    target = wc.getRider();
+                }
+            }
+        }
+        if ((self.isSpectator() || self.isCreative()) || this.getMainHandItem().is(TMMItems.KNIFE)
                 || this.getMainHandItem().getItem() instanceof SREItemProperties.LeftClickHurtable
                 || IsPlayerPunchable.EVENT.invoker().gotPunchable(target)
                 || AllowPlayerPunching.EVENT.invoker().allowPunching(self)) {

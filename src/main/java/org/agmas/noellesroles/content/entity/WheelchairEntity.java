@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.entity;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.index.TMMBlocks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -27,6 +28,7 @@ import org.agmas.noellesroles.utils.WheelchairEffectBlockHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class WheelchairEntity extends Mob {
 
@@ -53,7 +55,9 @@ public class WheelchairEntity extends Mob {
     private Vec3 lastPos = null;
 
     // ===== 减速与红石冷却 =====
+    @SuppressWarnings("unused")
     private int slowTime; // ticks remaining for slow effect
+    @SuppressWarnings("unused")
     private float slowMultiplier = 1.0f; // applied multiplier when slowed
     private int redstoneCooldown; // ticks until redstone can trigger again
     private int emeraldCooldown; // ticks until emerald boost can be applied again
@@ -246,10 +250,10 @@ public class WheelchairEntity extends Mob {
             rider.addEffect(new MobEffectInstance(
                     MobEffects.MOVEMENT_SPEED,
                     140, // 持续时间（tick）
-                    2,   // 等级（2 = Speed III，对应原来的 2x 加速）
+                    2, // 等级（2 = Speed III，对应原来的 2x 加速）
                     false, // ambient
-                    true,  // showParticles
-                    true   // showIcon
+                    true, // showParticles
+                    true // showIcon
             ));
             this.hasSpeedEffect = true;
             return true;
@@ -315,10 +319,20 @@ public class WheelchairEntity extends Mob {
     }
 
     @Override
+    public boolean shouldShowName() {
+        return false;
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return false;
+    }
+
+    @Override
     protected void positionRider(Entity passenger, MoveFunction moveFunction) {
         if (this.hasPassenger(passenger)) {
-            double offsetY = -0.1;
-            double offsetZ = -0.2;
+            double offsetY = -0.2;
+            double offsetZ = 0;
             double offsetX = 0.0;
             Vec3 offset = new Vec3(offsetX, offsetY, offsetZ)
                     .yRot(-this.getYRot() * (float) Math.PI / 180.0F);
@@ -352,7 +366,36 @@ public class WheelchairEntity extends Mob {
     }
 
     @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
+        // 玩家下座位时，位置与轮椅完全一致
+        return this.position();
+    }
+
+    /**
+     * 检查玩家准星是否指向实体下方 1 格高度范围内。
+     */
+    private boolean isPlayerLookingAtLowerPart(Player player) {
+        // 获取玩家视线
+        Vec3 eyePos = player.getEyePosition();
+        Vec3 lookVec = player.getLookAngle();
+        double range = 5.0; // 最大交互距离
+
+        // 构建高度为 1 的临时交互碰撞箱（从实体脚部起 +1 格）
+        AABB fullBox = this.getBoundingBox();
+        AABB interactBox = new AABB(
+                fullBox.minX, this.getY(), fullBox.minZ,
+                fullBox.maxX, this.getY() + 1.0, fullBox.maxZ);
+
+        // 射线检测
+        Optional<Vec3> hit = interactBox.clip(eyePos, eyePos.add(lookVec.scale(range)));
+        return hit.isPresent();
+    }
+
+    @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (!isPlayerLookingAtLowerPart(player)) {
+            return InteractionResult.PASS; // 准星未指向下方 1 格区域，拒绝交互
+        }
         if (this.getPassengers().isEmpty() && player.isShiftKeyDown()) {
             if (!this.level().isClientSide) {
                 ItemStack wheelchairItem = new ItemStack(ModItems.WHEELCHAIR);
@@ -365,9 +408,11 @@ public class WheelchairEntity extends Mob {
             }
             return InteractionResult.SUCCESS;
         }
-        if (this.getPassengers().isEmpty() && !player.isShiftKeyDown()) {
+        if (this.getPassengers().isEmpty() && !player.isShiftKeyDown()
+                && !player.getCooldowns().isOnCooldown(TMMBlocks.ACACIA_BRANCH.asItem())) {
             if (!this.level().isClientSide) {
                 player.startRiding(this, true);
+                player.getCooldowns().addCooldown(TMMBlocks.ACACIA_BRANCH.asItem(), 10);
                 if (this.getControllingPassenger() == null)
                     this.addPassenger(player);
             }
@@ -384,9 +429,16 @@ public class WheelchairEntity extends Mob {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+
         if (source.isCreativePlayer() || source.is(DamageTypes.GENERIC_KILL)) {
             this.discard();
             return true;
+        } else {
+            Entity passenger = this.getFirstPassenger();
+            if (passenger instanceof Player player && player.isAlive()) {
+                // 伤害转移给乘客玩家
+                return player.hurt(source, amount);
+            }
         }
         return false;
     }

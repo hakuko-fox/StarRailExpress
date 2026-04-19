@@ -18,6 +18,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -43,13 +44,21 @@ public class ServerPlayerEntityMixin {
     }
 
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
-    public void attack(Entity target, CallbackInfo ci) {
+    public void attack(Entity ctarget, CallbackInfo ci) {
         if (SRE.isLobby) {
             return;
         }
         ServerPlayer self = (ServerPlayer) (Object) this;
         if (self.isSpectator()) {
             return;
+        }
+        Entity target = ctarget;
+        if (!self.isCreative()) {
+            if (target instanceof WheelchairEntity wc) {
+                if (wc.getRider() != null) {
+                    target = wc.getRider();
+                }
+            }
         }
         var mainhandItem = self.getMainHandItem();
         if (mainhandItem.is(TMMItems.BAT)

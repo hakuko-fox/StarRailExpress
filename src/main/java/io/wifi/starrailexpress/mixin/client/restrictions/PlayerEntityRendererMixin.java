@@ -33,6 +33,8 @@ public class PlayerEntityRendererMixin {
     @Inject(method = "getTextureLocation(Lnet/minecraft/client/player/AbstractClientPlayer;)Lnet/minecraft/resources/ResourceLocation;", at = @At("HEAD"), cancellable = true)
     private void tmm$psychoSkinTexture(
             AbstractClientPlayer abstractClientPlayerEntity, CallbackInfoReturnable<ResourceLocation> cir) {
+        if (SREClient.gameComponent == null)
+            return;
         var result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(abstractClientPlayerEntity);
         if (result == OnGettingPlayerSkin.PlayerSkinResult.DEFAULT) {
             return;

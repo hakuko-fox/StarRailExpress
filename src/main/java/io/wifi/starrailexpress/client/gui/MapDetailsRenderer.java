@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.client.gui;
 
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.data.MapConfig;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
@@ -77,7 +78,8 @@ public class MapDetailsRenderer {
         }
 
         int alphaInt = (int) (alpha * 255);
-        if (alphaInt <= 0) return;
+        if (alphaInt <= 0)
+            return;
 
         // 更新动画
         updateAnimations(delta, elapsed);
@@ -185,7 +187,8 @@ public class MapDetailsRenderer {
      * 渲染上下黑框
      */
     private static void renderBlackBars(FakeGuiGraphics context, int screenWidth, int screenHeight) {
-        if (currentBarHeightRatio <= 0f) return;
+        if (currentBarHeightRatio <= 0f)
+            return;
 
         int barHeight = (int) (screenHeight * currentBarHeightRatio);
 
@@ -223,12 +226,12 @@ public class MapDetailsRenderer {
         int centerY = screenHeight / 2;
         int maxDistance = (int) Math.sqrt(centerX * centerX + centerY * centerY);
 
-        int vignetteAlpha = (int)(VIGNETTE_INTENSITY * alpha * 0.7f); // 降低整体强度
+        int vignetteAlpha = (int) (VIGNETTE_INTENSITY * alpha * 0.7f); // 降低整体强度
 
         // 在屏幕边缘绘制多个同心圆实现渐变
         for (int radius = maxDistance; radius > maxDistance * 0.7; radius--) {
-            float distanceRatio = (float)(maxDistance - radius) / (maxDistance * 0.3f);
-            int circleAlpha = (int)(vignetteAlpha * distanceRatio * 0.3f);
+            float distanceRatio = (float) (maxDistance - radius) / (maxDistance * 0.3f);
+            int circleAlpha = (int) (vignetteAlpha * distanceRatio * 0.3f);
             int circleColor = (circleAlpha << 24) | 0x000000;
 
             // 绘制圆形边缘（简化为矩形近似）
@@ -237,10 +240,14 @@ public class MapDetailsRenderer {
             int right = centerX + radius;
             int bottom = centerY + radius;
 
-            if (left < 0) left = 0;
-            if (top < 0) top = 0;
-            if (right > screenWidth) right = screenWidth;
-            if (bottom > screenHeight) bottom = screenHeight;
+            if (left < 0)
+                left = 0;
+            if (top < 0)
+                top = 0;
+            if (right > screenWidth)
+                right = screenWidth;
+            if (bottom > screenHeight)
+                bottom = screenHeight;
 
             // 绘制四条边
             context.fill(left, top, right, top + 1, circleColor); // 上边
@@ -256,13 +263,13 @@ public class MapDetailsRenderer {
     private static void renderFilmGrain(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 随机颗粒效果（简化实现）
         long time = System.currentTimeMillis();
-        int grainAlpha = (int)(alpha * 0.1f); // 非常淡的颗粒
+        int grainAlpha = (int) (alpha * 0.1f); // 非常淡的颗粒
 
         for (int i = 0; i < 50; i++) {
             float x = (float) ((time * 0.5 + i * 100) % screenWidth);
             float y = (float) ((Math.sin(time * 0.001 + i) * 100 + i * 20) % screenHeight);
             int grainColor = (grainAlpha << 24) | 0xFFFFFF;
-            context.fill((int)x, (int)y, (int)x + 1, (int)y + 1, grainColor);
+            context.fill((int) x, (int) y, (int) x + 1, (int) y + 1, grainColor);
         }
     }
 
@@ -271,7 +278,7 @@ public class MapDetailsRenderer {
      */
     private static void renderScanlines(FakeGuiGraphics context, int screenWidth, int screenHeight, int alpha) {
         // 每隔2像素绘制一条细线
-        int lineAlpha = (int)(alpha * 0.05f); // 非常淡的扫描线
+        int lineAlpha = (int) (alpha * 0.05f); // 非常淡的扫描线
 
         for (int y = 0; y < screenHeight; y += 2) {
             context.fill(0, y, screenWidth, y + 1, (lineAlpha << 24) | 0x000000);
@@ -287,7 +294,7 @@ public class MapDetailsRenderer {
         java.util.Random random = new java.util.Random(time / 100);
 
         int noiseCount = 30; // 噪点数量
-        int noiseAlpha = (int)(alpha * 0.04f); // 很淡的噪点
+        int noiseAlpha = (int) (alpha * 0.04f); // 很淡的噪点
 
         for (int i = 0; i < noiseCount; i++) {
             int x = random.nextInt(screenWidth);
@@ -305,20 +312,23 @@ public class MapDetailsRenderer {
      * 渲染左上角内容
      */
     private static void renderTopLeftContent(FakeGuiGraphics context, Font font,
-                                             String mapName, String mapDesc, int alpha) {
+            String mapName, String mapDesc, int alpha) {
         int currentY = TOP_MARGIN;
 
         // 1. 渲染地图标题（大字体，带动画效果）
         renderTitle(context, font, mapName, currentY, alpha);
-        currentY += (int)(font.lineHeight * TITLE_SCALE) + LINE_SPACING;
+        currentY += (int) (font.lineHeight * TITLE_SCALE) + LINE_SPACING;
 
         // 2. 渲染作者信息
         renderAuthor(context, font, currentY, alpha);
-        currentY += (int)(font.lineHeight * AUTHOR_SCALE) + LINE_SPACING;
+        currentY += (int) (font.lineHeight * AUTHOR_SCALE) + LINE_SPACING;
 
         // 3. 渲染地图描述
         if (!mapDesc.isEmpty() && !mapDesc.equals("map." + mapId + ".desc")) {
-            renderDescription(context, font, mapDesc, currentY, alpha);
+            renderDescription(context, font, SREClient.gameComponent.gameMode.getName().getString() + "\n" + mapDesc,
+                    currentY, alpha);
+        } else {
+            renderDescription(context, font, SREClient.gameComponent.gameMode.getName().getString(), currentY, alpha);
         }
 
         // 4. 渲染地图ID（最小号）
@@ -332,7 +342,7 @@ public class MapDetailsRenderer {
         context.pose().pushPose();
 
         // 应用位置和动画效果
-        int titleX = LEFT_MARGIN + (int)titleOffsetX;
+        int titleX = LEFT_MARGIN + (int) titleOffsetX;
         context.pose().translate(titleX, y, 0);
 
         // 应用脉动缩放
@@ -445,7 +455,7 @@ public class MapDetailsRenderer {
         MapDetailsRenderer.mapId = mapId;
         MapDetailsRenderer.mapDescription = mapDescription;
         MapDetailsRenderer.mapAuthor = mapAuthor != null ? mapAuthor : "";
-        displayStartTime = System.currentTimeMillis() + GameConstants.FADE_TIME /20 * 1000;
+        displayStartTime = System.currentTimeMillis() + GameConstants.FADE_TIME / 20 * 1000;
 
         // 重置动画状态
         titleOffsetX = 0f;
