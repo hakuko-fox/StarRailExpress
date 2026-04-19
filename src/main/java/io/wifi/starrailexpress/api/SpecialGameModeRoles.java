@@ -1,8 +1,8 @@
 package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.SRE;
-import org.agmas.noellesroles.game.roles.neutral.super_loose_end.SuperLooseEnd;
-import org.agmas.noellesroles.roles.dirt.Dirt;
+import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEnd;
+import org.agmas.noellesroles.game.roles.special.dirt.Dirt;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import java.awt.Color;
 
@@ -12,6 +12,12 @@ public class SpecialGameModeRoles {
       new NormalRole(SRE.wifiId("custom_pending"), 0x5CFF4A, false, false, SRERole.MoodType.NONE, -1, true))
       .setCanPickUpRevolver(false).setNeutrals(true).setNeutralForKiller(false).setCanBeRandomedByOtherRoles(false).setMax(0);
 
+  /**
+   * 职业：超级亡命徒
+   * <p>
+   *     - 击杀获得增益
+   * </p>
+   */
   public static SRERole SUPER_LOOSE_END = TMMRoles.registerRole(new SuperLooseEnd(
       SRE.xiaoheihandId("super_loose_end"),
       new Color(0xFF77AA).getRGB(),
@@ -27,7 +33,7 @@ public class SpecialGameModeRoles {
   /**
    * 职业：土块
    * <p>
-   * 轮盘赌模式特殊职业
+   *  - 轮盘赌模式特殊职业
    * </p>
    */
   public static SRERole DIRT = TMMRoles.registerRole(new Dirt(

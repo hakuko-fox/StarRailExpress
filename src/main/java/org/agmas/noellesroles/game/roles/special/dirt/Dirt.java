@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.roles.dirt;
+package org.agmas.noellesroles.game.roles.special.dirt;
 
 import io.wifi.starrailexpress.api.SRERole;
 import net.minecraft.resources.ResourceLocation;
