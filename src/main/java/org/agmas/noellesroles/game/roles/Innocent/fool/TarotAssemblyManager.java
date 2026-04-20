@@ -54,6 +54,7 @@ public class TarotAssemblyManager {
     private static final int BLINDNESS_DURATION_TICKS = MEETING_DURATION_TICKS + VOTE_DURATION_TICKS + 60;
     private static final int MANUAL_ADVANCE_LOCK_TICKS = 20;
 
+    @SuppressWarnings("unused")
     private static final int LEAST_MEMBER_REQUIRED = 1;
 
     /**
@@ -318,6 +319,7 @@ public class TarotAssemblyManager {
      *
      * @param votes 投票映射：投票者UUID -> 被投票者UUID
      */
+    @SuppressWarnings("unused")
     public static void processVoteResults(ServerPlayer fool, Map<UUID, UUID> votes, Set<UUID> eligibleVoters) {
         FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(fool);
         ServerLevel serverLevel = (ServerLevel) fool.level();

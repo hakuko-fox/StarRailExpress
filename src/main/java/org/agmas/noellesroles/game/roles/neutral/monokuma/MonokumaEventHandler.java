@@ -90,9 +90,6 @@ public class MonokumaEventHandler {
                 comp.onHitTriggered();
                 return false;
             }
-            if (comp.phase == 3) {
-                return false;
-            }
             return true;
         });
     }

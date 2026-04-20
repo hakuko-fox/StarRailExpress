@@ -118,9 +118,6 @@ public class GameUtils {
     }
 
     public static void limitPlayerToBox(ServerPlayer player, AABB box) {
-        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.serverLevel());
-        if (gameWorldComponent.isRole(player, ModRoles.THE_FOOL))
-            return;
         Vec3 playerPos = player.position();
         Vec3 teleportPos = playerPos;
 
@@ -727,9 +724,7 @@ public class GameUtils {
         }
     }
 
-    public static void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
-        boolean isLooseEnds = gameComponent.getGameMode() == SREGameModes.LOOSE_ENDS;
-        
+    public static void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent, boolean isLooseEnds) {
         // --- 新增统计数据更新逻辑 (胜利/失败) ---
         GameUtils.WinStatus winStatus = roundEnd.getWinStatus();
         // SREWorldBlackoutComponent.KEY.get(world).reset();

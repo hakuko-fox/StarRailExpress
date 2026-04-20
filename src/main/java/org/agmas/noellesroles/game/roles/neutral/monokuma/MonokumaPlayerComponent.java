@@ -20,6 +20,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.agmas.noellesroles.init.ModEffects;
@@ -293,7 +294,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         // 体力光环：给范围内玩家无限奔跑效果
-        if (sp.level().getGameTime() % 20 == 0) {
+        if (sp.level().getGameTime() % 100 == 0) {
             for (ServerPlayer target : serverLevel.players()) {
                 if (target == sp)
                     continue;
@@ -302,7 +303,7 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
                 if (sp.distanceTo(target) <= AURA_RANGE) {
                     target.addEffect(new MobEffectInstance(
                             ModEffects.INFINITE_STAMINA,
-                            40, // 2秒，持续刷新
+                            110, // 2秒，持续刷新
                             0,
                             true, false, false));
                 }
@@ -333,9 +334,8 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
             }
             if (frenzyTimer <= 0) {
 
-
-                    GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.BLACK_WHITE_TIMEOUT);
-                    clear();
+                GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.BLACK_WHITE_TIMEOUT);
+                clear();
 
                 // 试炼失败
                 return;
@@ -373,6 +373,13 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
             if (!player.hasEffect(ModEffects.INVINCIBLE)) {
                 player.addEffect(new MobEffectInstance(
                         ModEffects.INVINCIBLE,
+                        -1,
+                        0,
+                        true, false, false));
+            }
+            if (!player.hasEffect(MobEffects.INVISIBILITY)) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.INVISIBILITY,
                         -1,
                         0,
                         true, false, false));
