@@ -1,9 +1,9 @@
 package org.agmas.harpymodloader.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.commands.CommandSourceStack;
@@ -15,71 +15,61 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
-import org.agmas.harpymodloader.events.ModdedRoleAssigned;
-import org.agmas.harpymodloader.events.ModdedRoleRemoved;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 public class ChangeRoleCommand {
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("changeRole")
-                .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
-                .then(Commands.argument("player", EntityArgument.player())
-                        .then(Commands.argument("role", RoleArgumentType.create())
-                                .executes(ChangeRoleCommand::execute))));
-    }
+  public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+    dispatcher.register(Commands.literal("changeRole")
+        .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+        .then(Commands.argument("player", EntityArgument.player())
+            .then(Commands.argument("role", RoleArgumentType.create())
+                .executes((ctx) -> execute(ctx, true, false))
+                .then(Commands.argument("record_replay", BoolArgumentType.bool())
+                    .then(Commands.argument("add_stats", BoolArgumentType.bool())
+                        .executes((ctx) -> execute(ctx, BoolArgumentType.getBool(ctx, "record_replay"),
+                            BoolArgumentType.getBool(ctx, "add_stats"))))))));
+  }
 
-    private static int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        try {
-            if (!Harpymodloader.isMojangVerify) {
-                return 1;
-            }
-            ServerPlayer targetPlayer = EntityArgument.getPlayer(context, "player");
-            SRERole newRole = RoleArgumentType.getRole(context, "role");
-
-            // 获取游戏世界组件
-            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(targetPlayer.level());
-
-            // 获取玩家当前角色
-            SRERole oldRole = gameWorldComponent.getRole(targetPlayer);
-
-            // 移除旧角色事件
-            if (oldRole != null) {
-                ModdedRoleRemoved.EVENT.invoker().removeModdedRole(targetPlayer, oldRole);
-            }
-
-            // 分配新角色
-            gameWorldComponent.addRole(targetPlayer, newRole);
-
-            // 触发新角色分配事件
-            ModdedRoleAssigned.EVENT.invoker().assignModdedRole(targetPlayer, newRole);
-
-            if (gameWorldComponent.isRunning()) {
-                SRE.REPLAY_MANAGER.recordPlayerRoleChange(targetPlayer.getUUID(), oldRole, newRole);
-            }
-
-            // 发送反馈消息
-            final MutableComponent newRoleText = Harpymodloader.getRoleName(newRole).withColor(newRole.color())
-                    .withStyle(style -> style.withHoverEvent(
-                            new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                    Component.literal(newRole.identifier().toString()))));
-
-            if (oldRole != null) {
-                final MutableComponent oldRoleText = Harpymodloader.getRoleName(oldRole).withColor(oldRole.color())
-                        .withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                Component.literal(oldRole.identifier().toString()))));
-                context.getSource()
-                        .sendSuccess(() -> Component.translatable("commands.changerole.success.changed", oldRoleText,
-                                newRoleText, targetPlayer.getName()), true);
-            } else {
-                context.getSource().sendSuccess(() -> Component.translatable("commands.changerole.success.assigned",
-                        newRoleText, targetPlayer.getName()), true);
-            }
-
-            // 通知玩家角色已改变
-            // targetPlayer.displayClientMessage(Component.translatable("commands.changerole.player.notification", newRoleText), false);
-        } catch (Exception e) {
-            e.printStackTrace();
-            context.getSource().sendFailure(Component.literal(e.getMessage()));
-        }
+  private static int execute(CommandContext<CommandSourceStack> context, boolean record, boolean addStats)
+      throws CommandSyntaxException {
+    try {
+      if (!Harpymodloader.isMojangVerify) {
         return 1;
+      }
+      ServerPlayer targetPlayer = EntityArgument.getPlayer(context, "player");
+      SRERole newRole = RoleArgumentType.getRole(context, "role");
+
+      // 获取游戏世界组件
+      SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(targetPlayer.level());
+      SRERole oldRole = gameWorldComponent.getRole(targetPlayer);
+
+      RoleUtils.changeRole(targetPlayer, newRole, record, addStats);
+
+      // 发送反馈消息
+      final MutableComponent newRoleText = Harpymodloader.getRoleName(newRole).withColor(newRole.color())
+          .withStyle(style -> style.withHoverEvent(
+              new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                  Component.literal(newRole.identifier().toString()))));
+
+      if (oldRole != null) {
+        final MutableComponent oldRoleText = Harpymodloader.getRoleName(oldRole).withColor(oldRole.color())
+            .withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                Component.literal(oldRole.identifier().toString()))));
+        context.getSource()
+            .sendSuccess(() -> Component.translatable("commands.changerole.success.changed", oldRoleText,
+                newRoleText, targetPlayer.getName()), true);
+      } else {
+        context.getSource().sendSuccess(() -> Component.translatable("commands.changerole.success.assigned",
+            newRoleText, targetPlayer.getName()), true);
+      }
+
+      // 通知玩家角色已改变
+      // targetPlayer.displayClientMessage(Component.translatable("commands.changerole.player.notification",
+      // newRoleText), false);
+    } catch (Exception e) {
+      e.printStackTrace();
+      context.getSource().sendFailure(Component.literal(e.getMessage()));
     }
+    return 1;
+  }
 }
