@@ -28,6 +28,7 @@
   "commands.changerole.player.notification": "您的角色已更改為 %1$s",
   "commands.changemodifier.player.notification.add": "成功為玩家 %s 添加修飾符 %s",
   "commands.changemodifier.player.notification.remove": "成功為玩家 %s 刪除修飾符 %s",
+  "commands.changemodifier.player.notification.nothing_change": "對玩家 %s 的修飾符 %s 修改失敗：未知",
   "commands.changemodifier.player.notification.failed.nostart": "修飾符修改失敗：未啟動遊戲！",
   "announcement.star.modifier": "附加詞條 ",
   "announcement.star.no_modifiers": "沒有附加詞條",
@@ -41,7 +42,7 @@
   "category.starrailexpress.config.role": "角色",
   "category.starrailexpress.config.modifier": "修飾符",
   "option.starrailexpress.role_id_tooltip": "ID: %s",
-  "option.starrailexpress.role_enable_option": "職業：%s",
-  "option.starrailexpress.modifier_enable_option": "修飾符：%s",
+  "option.starrailexpress.role_enable_option": "[%s] 職業：%s (%s)",
+  "option.starrailexpress.modifier_enable_option": "修飾符：%s (%s)",
   "category.starrailexpress.config.other": "其他"
 }
