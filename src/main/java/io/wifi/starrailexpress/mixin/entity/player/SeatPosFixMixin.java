@@ -25,7 +25,7 @@ public class SeatPosFixMixin {
                 if (player.level().getBlockState(new BlockPos(lx, ly + 1, lz)).getBlock() instanceof MountableBlock) {
                     player.teleportTo(lastPos.x, lastPos.y + 2.25, lastPos.z);
                 } else {
-                    player.teleportTo(lastPos.x, lastPos.y, lastPos.z);
+                    player.teleportTo(lastPos.x, lastPos.y + 0.25, lastPos.z);
                 }
                 // 移除记录,防止连续坐椅子时累积高度
                 MountableBlock.lastPos.remove(player.getUUID());
@@ -33,7 +33,7 @@ public class SeatPosFixMixin {
                 // 下座椅添加cooldown
             } else {
                 var vec = player.position();
-                player.teleportTo(vec.x, vec.y, vec.z);
+                player.teleportTo(vec.x, vec.y + 0.25, vec.z);
             }
             ci.cancel();
 
