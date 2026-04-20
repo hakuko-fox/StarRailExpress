@@ -307,6 +307,8 @@ public class DevilRouletteTableEntity extends BlockEntity {
                         } else if (item == ModItems.CLIP) {
                             // 弹夹逻辑
                             game.reloadBullet();
+                            // 使用弹夹后获得一个道具
+                            game.sendItemToPlayer(player);
                             afterReload();
                         } else if (item == ModItems.STEEL_BALL) {
                             // 钢球逻辑

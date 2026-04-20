@@ -204,6 +204,9 @@ public class DevilRouletteGame {
         }
         return true;
     }
+    public void sendItemToPlayer(Player player) {
+        player.addItem(getRandomItem());
+    }
     /**
      * 开火操作
      * @param target 操作目标
