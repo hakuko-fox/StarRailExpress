@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -20,6 +21,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.agmas.noellesroles.init.ModEffects;
@@ -333,9 +335,8 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
             }
             if (frenzyTimer <= 0) {
 
-
-                    GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.BLACK_WHITE_TIMEOUT);
-                    clear();
+                GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.BLACK_WHITE_TIMEOUT);
+                clear();
 
                 // 试炼失败
                 return;
@@ -376,6 +377,22 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
                         -1,
                         0,
                         true, false, false));
+            }
+            if (player.level().getGameTime() % AURA_COIN_INTERVAL == 0) {
+                // 光环内玩家每5秒获得8金币、无限体力。
+                applyAuraToNearbyPlayers();
+            }
+        }
+    }
+
+    private void applyAuraToNearbyPlayers() {
+        for (var p : this.player.level().players()) {
+            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
+                continue;
+            }
+            if (p.distanceToSqr(this.player) <= AURA_RANGE * AURA_RANGE) {
+                p.addEffect(new MobEffectInstance(ModEffects.INFINITE_STAMINA, 110, 0, true, true, true));
+                SREPlayerShopComponent.KEY.get(p).addToBalance(AURA_COIN_AMOUNT);
             }
         }
     }
