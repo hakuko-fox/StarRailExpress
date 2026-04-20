@@ -3,7 +3,9 @@ package io.wifi.starrailexpress.api;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.replay.GameReplayData;
+import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
+import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
@@ -130,5 +132,17 @@ public abstract class GameMode {
     }
 
     public void stopGame(ServerLevel world) {
+    }
+
+    public void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd,
+            SREGameWorldComponent gameComponent) {
+        GameUtils.recordWinStats(world, roundEnd, gameComponent);
+    }
+
+    public void showReplay(ServerLevel world, SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
+        Component text = SRE.REPLAY_MANAGER.generateReplay();
+        for (ServerPlayer player : world.players()) {
+            GameReplayManager.sendSystemMessage(player, text);
+        }
     }
 }

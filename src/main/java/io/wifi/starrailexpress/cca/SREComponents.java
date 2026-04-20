@@ -9,13 +9,11 @@ import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.entity.EntityComponentFactoryRegistry;
 import org.ladysnake.cca.api.v3.entity.EntityComponentInitializer;
 import org.ladysnake.cca.api.v3.entity.RespawnCopyStrategy;
-import org.ladysnake.cca.api.v3.scoreboard.ScoreboardComponentFactoryRegistry;
-import org.ladysnake.cca.api.v3.scoreboard.ScoreboardComponentInitializer;
 import org.ladysnake.cca.api.v3.world.WorldComponentFactoryRegistry;
 import org.ladysnake.cca.api.v3.world.WorldComponentInitializer;
 
 public class SREComponents
-        implements WorldComponentInitializer, EntityComponentInitializer, ScoreboardComponentInitializer {
+        implements WorldComponentInitializer, EntityComponentInitializer {
     @Override
     public void registerWorldComponentFactories(@NotNull WorldComponentFactoryRegistry registry) {
         registry.register(SRETrainWorldComponent.KEY, SRETrainWorldComponent::new);
@@ -68,11 +66,4 @@ public class SREComponents
         registry.beginRegistration(Player.class, CustomRoleGameModeTeamsPlayerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY).end(CustomRoleGameModeTeamsPlayerComponent::new);
     }
-
-    @Override
-    public void registerScoreboardComponentFactories(@NotNull ScoreboardComponentFactoryRegistry registry) {
-        // 注册新的GameScoreboardComponent
-        registry.registerScoreboardComponent(SREGameScoreboardComponent.KEY, SREGameScoreboardComponent::new);
-    }
-
 }

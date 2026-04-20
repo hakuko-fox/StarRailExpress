@@ -11,7 +11,8 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 import org.ladysnake.cca.api.v3.component.tick.CommonTickingComponent;
 
 public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingComponent {
-    public static final ComponentKey<SREGameTimeComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("time"), SREGameTimeComponent.class);
+    public static final ComponentKey<SREGameTimeComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("time"),
+            SREGameTimeComponent.class);
     public final Level world;
     public int resetTime = 0;
     public int time = 0;
@@ -31,25 +32,28 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
     public int getResetTime() {
         return this.resetTime;
     }
+
     @Override
     public void tick() {
-        if (!world.isClientSide){
-            if (world.getServer().tickRateManager().isFrozen()){
+        if (!world.isClientSide) {
+            if (world.getServer().tickRateManager().isFrozen()) {
                 return;
             }
         }
-        if (!SREGameWorldComponent.KEY.get(this.world).isRunning()) return;
-        if (this.time <= 0) return;
+        if (!SREGameWorldComponent.KEY.get(this.world).isRunning())
+            return;
+        if (this.time <= 0)
+            return;
         this.time--;
         // 从每400tick增加到每600tick同步（30秒）
-        if (this.time % 600 == 0) this.sync();
-        
+        if (this.time % 600 == 0)
+            this.sync();
+
         // 更新计分板上的游戏计时器
         if (this.time % 20 == 0) { // 每秒更新一次计分板
             final var server = this.world.getServer();
-            if (server==null)return;
-            SREGameScoreboardComponent scoreboardComponent = SREGameScoreboardComponent.KEY.get(server.getScoreboard());
-            scoreboardComponent.updateGameTimers(this.world);
+            if (server == null)
+                return;
         }
     }
 

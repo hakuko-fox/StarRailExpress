@@ -5,8 +5,12 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.CommandNode;
+
+import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
+import io.wifi.starrailexpress.content.command.argument.GameModeArgumentType;
 import io.wifi.starrailexpress.content.command.misc.CommandPredicate;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -82,7 +86,6 @@ public abstract class ExecuteCommandInvoker {
                             return false;
                           return RoleUtils.compareRole(compare_role, player_role);
                         }))));
-
     literalArgumentBuilder.then(
         Commands.literal("sre:modifier")
             .then(
@@ -99,7 +102,17 @@ public abstract class ExecuteCommandInvoker {
                           var worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
                           return worldModifierComponent.isModifier(player, compare_modifier);
                         }))));
-
+    literalArgumentBuilder.then(
+        Commands.literal("sre:gamemode")
+            .then(sre$addConditional(
+                commandNode,
+                Commands.argument("gamemode", GameModeArgumentType.gameMode()),
+                isIf,
+                ctx -> {
+                  GameMode gameMode = GameModeArgumentType.getGameModeArgument(ctx, "gamemode");
+                  SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(ctx.getSource().getLevel());
+                  return gameWorldComponent.getGameMode().identifier.equals(gameMode.identifier);
+                })));
     literalArgumentBuilder.then(
         Commands.literal("sre:role_type")
             .then(

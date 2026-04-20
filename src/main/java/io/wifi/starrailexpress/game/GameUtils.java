@@ -5,7 +5,6 @@ import io.wifi.starrailexpress.DeathInfo;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.*;
-import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.content.command.AutoShutdownWhenNotRunningCommand;
@@ -673,7 +672,6 @@ public class GameUtils {
         RoleMethodDispatcher.onEndGame(world);
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(world);
         gameComponent.setPlayerCount(0);
-        boolean isLooseEnds = gameComponent.getGameMode() == SREGameModes.LOOSE_ENDS;
 
         // var areasWorldComponent = AreasWorldComponent.KEY.get(world);
         gameComponent.isSkillAvailable = false;
@@ -685,7 +683,53 @@ public class GameUtils {
         OnGameEnd.EVENT.invoker().onGameEnd(world, gameComponent);
         SRE.REPLAY_MANAGER.finalizeReplay(roundEnd.getWinStatus(), roundEnd);
         isGameStarted = false;
+        
+        gameComponent.getGameMode().recordWinStats(world,roundEnd, gameComponent);
+        // --- 结束新增统计数据更新逻辑 (胜利/失败) ---
+        // roundEnd.sync();
+        // Show replay to all players
+        gameComponent.getGameMode().showReplay(world,roundEnd, gameComponent);
 
+        SREWorldBlackoutComponent.KEY.get(world).reset();
+        SRETrainWorldComponent trainComponent = SRETrainWorldComponent.KEY.get(world);
+        trainComponent.setSpeed(0);
+
+        trainComponent.setTimeOfDay(SRETrainWorldComponent.TimeOfDay.NOON);
+
+        resetEntities(world);
+
+        // reset all players
+        for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
+            resetPlayerAfterGame(player);
+        }
+        HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
+
+        // reset game component
+        roundEnd.CustomWinnerPlayers.clear();
+
+        SREGameTimeComponent.KEY.get(world).reset();
+        gameComponent.clearRoleMap(false);
+        gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
+        trainComponent.setTime(0);
+        gameComponent.roleWorldComponent.sync();
+
+        roundEnd.sync();
+
+        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning) {
+            world.getServer().getPlayerList().broadcastSystemMessage(
+                    Component.translatable("\n\n\n\n%s\n",
+                            Component.translatable("sre.shutdown.waring", 10).withStyle(ChatFormatting.YELLOW)),
+                    false);
+            AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning = false;
+            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10 * 20, () -> {
+                world.getServer().halt(false);
+            }));
+        }
+    }
+
+    public static void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
+        boolean isLooseEnds = gameComponent.getGameMode() == SREGameModes.LOOSE_ENDS;
+        
         // --- 新增统计数据更新逻辑 (胜利/失败) ---
         GameUtils.WinStatus winStatus = roundEnd.getWinStatus();
         // SREWorldBlackoutComponent.KEY.get(world).reset();
@@ -837,49 +881,6 @@ public class GameUtils {
                 }
                 SREPlayerProgressionComponent.KEY.get(player).onRoundSettled(playerRole, isWinner);
             }
-        }
-        // --- 结束新增统计数据更新逻辑 (胜利/失败) ---
-        // roundEnd.sync();
-        // Show replay to all players
-        Component text = SRE.REPLAY_MANAGER.generateReplay();
-        for (ServerPlayer player : world.players()) {
-            GameReplayManager.sendSystemMessage(player, text);
-        }
-
-        SREWorldBlackoutComponent.KEY.get(world).reset();
-        SRETrainWorldComponent trainComponent = SRETrainWorldComponent.KEY.get(world);
-        trainComponent.setSpeed(0);
-
-        trainComponent.setTimeOfDay(SRETrainWorldComponent.TimeOfDay.NOON);
-
-        resetEntities(world);
-
-        // reset all players
-        for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
-            resetPlayerAfterGame(player);
-        }
-        HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
-
-        // reset game component
-        roundEnd.CustomWinnerPlayers.clear();
-
-        SREGameTimeComponent.KEY.get(world).reset();
-        gameComponent.clearRoleMap(false);
-        gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
-        trainComponent.setTime(0);
-        gameComponent.roleWorldComponent.sync();
-
-        roundEnd.sync();
-
-        if (AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning) {
-            world.getServer().getPlayerList().broadcastSystemMessage(
-                    Component.translatable("\n\n\n\n%s\n",
-                            Component.translatable("sre.shutdown.waring", 10).withStyle(ChatFormatting.YELLOW)),
-                    false);
-            AutoShutdownWhenNotRunningCommand.autoShutdownWhenGameNotRunning = false;
-            serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10 * 20, () -> {
-                world.getServer().halt(false);
-            }));
         }
     }
 
