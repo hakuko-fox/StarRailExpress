@@ -278,7 +278,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
                                             game.getCurBullet() ?
                                             "noellesroles.game.devil_roulette.tip.is_real_bullet" :
                                             "noellesroles.game.devil_roulette.tip.is_empty_bullet")
-                                            .withStyle(ChatFormatting.RED),
+                                            .withStyle(game.getCurBullet() ? ChatFormatting.RED : ChatFormatting.AQUA),
                                     true);
                         } else if (item == ModItems.CHEWING) {
                             // 口香糖
@@ -298,7 +298,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
                             player.displayClientMessage(
                                     Component.translatable(
                                 "noellesroles.game.devil_roulette.tip.reverse_bullet")
-                                        .withStyle(ChatFormatting.RED),
+                                        .withStyle(ChatFormatting.AQUA),
                                     true);
                         } else if (item == ModItems.TELEPHONE) {
                             // 电话逻辑
@@ -310,7 +310,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
                                         "noellesroles.game.devil_roulette.tip.random_real_bullet",
                                     idx + 1
                                     )
-                                    .withStyle(ChatFormatting.RED),
+                                    .withStyle(idx == -1 ? ChatFormatting.AQUA : ChatFormatting.RED),
                                 true);
                         }
                         else

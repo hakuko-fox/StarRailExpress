@@ -24,7 +24,7 @@ import java.util.function.Supplier;
  *      - 放大镜：查看下一发子弹是否是实弹
  *      - 口香糖：回复一点生命
  *      - 弹夹：重新换弹
- *      - 钢珠：下一发如果为实弹则造成2点伤害
+ *      - 钢珠：下一发如果为实弹则造成伤害+1
  *      - 反转卡：实弹转为虚弹，虚弹转为实弹
  *      - 手铐：多操作一回合
  *      - 电话：得知随机一枚实弹信息（该轮内第i发为实弹），不会显示已发射子弹，如果没有实弹也会告知
@@ -43,7 +43,7 @@ public class DevilRouletteGame {
     public static final List<Supplier<ItemStack>> rouletteItems = new ArrayList<>();
     public static final GamePlayerData NONE_PLAYER = new GamePlayerData(UUID.randomUUID());
     public static final int START_ITEM_NUMBER = 3;
-    public static final int START_HEALTH = 5;
+    public static final int MAX_HEALTH = 5;
     public static final int RELOAD_ITEM_NUMBER = 1;
     public static final int GUN_BULLET_SLOT_NUMBER = 6;
     static {
@@ -96,9 +96,13 @@ public class DevilRouletteGame {
         }
         public void addHealth(int health) {
             this.health += health;
+            if(this.health > MAX_HEALTH)
+                this.health = MAX_HEALTH;
+            else if (this.health < 0)
+                this.health = 0;
         }
         protected UUID playerUUID;
-        protected int health = START_HEALTH;
+        protected int health = MAX_HEALTH;
     }
     public DevilRouletteGame(UUID player1ID, UUID player2ID, RandomSource random, Level level) {
         playerDataList = new ArrayList<>();

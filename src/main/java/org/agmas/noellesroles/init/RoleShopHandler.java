@@ -41,6 +41,7 @@ import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerCompone
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -1811,6 +1812,55 @@ public class RoleShopHandler {
         TMMItems.LOCKPICK.getDefaultInstance(),
         75,
         ShopEntry.Type.TOOL));
+
+    // 隐身机会 - 175金币（图标为药水，购买后隐身机会+1）
+    {
+      var invisItem = Items.POTION.getDefaultInstance();
+      invisItem.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.candlebearer.shop.invisibility_charge")
+              .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
+      var invisLore = new ArrayList<Component>();
+      invisLore.add(Component.translatable("item.noellesroles.candlebearer.shop.invisibility_charge.lore1")
+          .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+      invisItem.set(DataComponents.LORE, new ItemLore(invisLore));
+
+      CANDLE_BEARER_SHOP.add(new ShopEntry(invisItem, 175, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          var comp = CandleBearerPlayerComponent.KEY.get(player);
+          if (comp == null) return false;
+          if (comp.invisibilityCharges >= CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES) return false;
+          comp.invisibilityCharges++;
+          if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                Component.translatable("message.noellesroles.candlebearer.charge_gained",
+                    comp.invisibilityCharges, CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES)
+                    .withStyle(ChatFormatting.GOLD),
+                true);
+          }
+          comp.sync();
+          return true;
+        }
+      });
+    }
+
+    // 蜡烛 - 50金币
+    {
+      var candleItem = Items.CANDLE.getDefaultInstance();
+      candleItem.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.candlebearer.shop.candle").withStyle(ChatFormatting.YELLOW));
+      var candleLore = new ArrayList<Component>();
+      candleLore.add(Component.translatable("item.noellesroles.candlebearer.shop.candle.lore1")
+          .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+      candleItem.set(DataComponents.LORE, new ItemLore(candleLore));
+
+      CANDLE_BEARER_SHOP.add(new ShopEntry(candleItem, 50, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
+        }
+      });
+    }
 
     // 超级亡命徒商店
     SUPER_LOOSE_END_SHOP.add(new ShopEntry(
