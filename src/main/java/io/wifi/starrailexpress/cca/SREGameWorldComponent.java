@@ -498,7 +498,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             if (this.gameStatus == GameStatus.ACTIVE) {
                 for (ServerPlayer player : serverWorld.players()) {
                     if (!GameUtils.isPlayerAliveAndSurvival(player) && isBound()
-                            && !GameUtils.isPlayerCreative(player)) {
+                            && !player.isCreative()) {
                         this.gameMode.limitSpectatorPlayer(player, this, areas);
                     }
                 }

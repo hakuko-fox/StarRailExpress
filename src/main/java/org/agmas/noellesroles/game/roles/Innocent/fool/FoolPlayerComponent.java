@@ -141,12 +141,13 @@ public class FoolPlayerComponent implements RoleComponent {
     static {
         AllowPlayerInAreas.EVENT.register((p) -> {
             if (TarotAssemblyManager.havingMeeting) {
-                double x_min = TarotAssemblyManager.MEETING_X - TarotAssemblySceneBuilder.HALL_HALF_WIDTH - 5;
-                double x_max = TarotAssemblyManager.MEETING_X + TarotAssemblySceneBuilder.HALL_HALF_WIDTH + 5;
-                double y_min = TarotAssemblyManager.MEETING_Y - TarotAssemblySceneBuilder.ROOM_HEIGHT - 2;
-                double y_max = TarotAssemblyManager.MEETING_Y + TarotAssemblySceneBuilder.ROOM_HEIGHT + 2;
-                double z_min = TarotAssemblyManager.MEETING_Z - TarotAssemblySceneBuilder.HALL_HALF_LENGTH - 5;
-                double z_max = TarotAssemblyManager.MEETING_Z + TarotAssemblySceneBuilder.HALL_HALF_LENGTH + 5;
+                final double PADDING = 10;
+                double x_min = TarotAssemblyManager.MEETING_X - TarotAssemblySceneBuilder.HALL_HALF_WIDTH - PADDING;
+                double x_max = TarotAssemblyManager.MEETING_X + TarotAssemblySceneBuilder.HALL_HALF_WIDTH + PADDING;
+                double y_min = TarotAssemblyManager.MEETING_Y - TarotAssemblySceneBuilder.ROOM_HEIGHT - PADDING;
+                double y_max = TarotAssemblyManager.MEETING_Y + TarotAssemblySceneBuilder.ROOM_HEIGHT + PADDING;
+                double z_min = TarotAssemblyManager.MEETING_Z - TarotAssemblySceneBuilder.HALL_HALF_LENGTH - PADDING;
+                double z_max = TarotAssemblyManager.MEETING_Z + TarotAssemblySceneBuilder.HALL_HALF_LENGTH + PADDING;
                 return new AABB(new Vec3(x_min, y_min, z_min), new Vec3(x_max, y_max, z_max)).contains(p.position());
             }
             return false;
