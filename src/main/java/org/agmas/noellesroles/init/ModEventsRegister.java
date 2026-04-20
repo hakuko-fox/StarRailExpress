@@ -1372,6 +1372,7 @@ public class ModEventsRegister {
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverLevel);
             boolean hasDio = false;
             boolean hasRecorder = false;
+            boolean hasCandlebearer = false;
             // 年兽除岁效果：给所有玩家分发4个鞭炮
             boolean hasNianShou = false;
             boolean hasArsonist = false;
@@ -1393,6 +1394,8 @@ public class ModEventsRegister {
                     hasDio = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.RECORDER)) {
                     hasRecorder = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.CANDLE_BEARER)) {
+                    hasCandlebearer = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NIAN_SHOU)) {
                     hasNianShou = true;
                 } else if (gameWorldComponent.isRole(p, SERoles.ARSONIST)) {
@@ -1434,6 +1437,14 @@ public class ModEventsRegister {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.recorder.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasCandlebearer) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.candlebearer.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }

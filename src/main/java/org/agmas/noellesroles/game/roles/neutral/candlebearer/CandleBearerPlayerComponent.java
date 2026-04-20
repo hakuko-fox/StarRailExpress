@@ -37,9 +37,9 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "candlebearer"),
             CandleBearerPlayerComponent.class);
 
-    public static final int MAX_INVISIBILITY_CHARGES = 3;
+    public static final int MAX_INVISIBILITY_CHARGES = 5;
     public static final int INVISIBILITY_DURATION_TICKS = 18 * 20;
-    public static final int LIVING_CANDLE_COOLDOWN_TICKS = 3 * 20;
+    public static final int LIVING_CANDLE_COOLDOWN_TICKS = 30; // 1.5秒
     public static final int GLOW_DELAY_TICKS = 6 * 20;
     public static final int GLOW_DURATION_TICKS = 5 * 20;
 
@@ -74,7 +74,7 @@ public class CandleBearerPlayerComponent implements RoleComponent, ServerTicking
         pendingPlayerGlow.clear();
         pendingCorpseGlow.clear();
         pendingCampfireSounds.clear();
-        invisibilityCharges = 0;
+        invisibilityCharges = 1;
         invisibilityTicks = 0;
         livingCandleCooldownTicks = 0;
         successfulCandles = 0;
