@@ -83,6 +83,8 @@ public class DevilRouletteGame {
         public boolean isTargetAlive = true;
         /** 是否切换操作者 */
         public boolean isSwitch = false;
+        /** 当前开火操作者UUID */
+        public UUID operatorUUID = NONE_PLAYER.playerUUID;
     }
     public static class GamePlayerData {
         GamePlayerData(UUID playerUUID) {
@@ -209,6 +211,7 @@ public class DevilRouletteGame {
      */
     public FireResult fire(Target target) {
         FireResult result = new FireResult();
+        result.operatorUUID = currentPlayerData.playerUUID;
         GamePlayerData targetPlayerData = playerDataList.get(indexOfResult(currentPlayerData.playerUUID, target));
         // 获取当前子弹，指针移向下一发子弹
         Boolean resultBullet = bulletList.get(curListIdx++);

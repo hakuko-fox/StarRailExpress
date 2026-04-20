@@ -36,13 +36,13 @@ import java.util.*;
 public class DevilRouletteTableEntity extends BlockEntity {
     public DevilRouletteTableEntity(BlockPos blockPos, BlockState blockState) {
         super(ModBlocks.DEVIL_ROULETTE_TABLE_ENTITY, blockPos, blockState);
+        Direction facing = blockState.getValue(BlockStateProperties.HORIZONTAL_FACING);
         CENTER_POS = new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 0.3, worldPosition.getZ() + 0.5);
-        BlockPos centerSidePos = worldPosition.relative(getFacing().getClockWise());
+        BlockPos centerSidePos = worldPosition.relative(facing.getClockWise());
         TIME_POS = new Vec3(centerSidePos.getX() + 0.5, centerSidePos.getY() + 0.2, centerSidePos.getZ() + 0.5);
 
         init();
         winnerText = null;
-        Direction facing = blockState.getValue(BlockStateProperties.HORIZONTAL_FACING);
         BlockPos posOffset = new BlockPos(0, -1, 0);
         for (int i = 2; i >= -2; i -= 4) {
             // 玩家视角的方向
@@ -82,6 +82,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
         curGunRotationY = 0;
 
         curAFKTick = 0;
+        curAFKCount = 1;
 
         for (var floatingText : floatingTexts.values())
             floatingText.discard();
@@ -103,16 +104,31 @@ public class DevilRouletteTableEntity extends BlockEntity {
         super.setRemoved();
         reset();
         if (winnerText != null) {
+
             winnerText.discard();
         }
     }
     public void serverTick(Level level, BlockPos pos, BlockState state) {
         // 当有玩家游玩时进行计数
-        if (frontPlayerUUID != null && backPlayerUUID != null && curAFKTick++ >= AFK_TICK) {
+        if (frontPlayerUUID == null && backPlayerUUID == null) {
+            return;
+        }
+
+        // 显示玩家剩余操作时长，如果大于5s则5s更新一次，否则每隔1s更新一次
+        if (curLeftTickGap == LEFT_TICK_LONG_GAP ||
+                (curLeftTickGap % LEFT_TICK_GAP == 0 && AFK_TICK - curAFKTick <= LEFT_TICK_LONG_GAP)) {
+            addFloatingText(TIME_POS, Component.literal((AFK_TICK - curAFKTick) / 20 + " Second"), 20, MIDDLE_SCALE);
+            if (curLeftTickGap >= LEFT_TICK_LONG_GAP)
+                curLeftTickGap = 0;
+        }
+        ++curLeftTickGap;
+
+        if (curAFKTick++ >= AFK_TICK){
             if (isGameActive()){
                 // 玩家未操作则自动向自己开火
                 processFireResult(game.fire(DevilRouletteGame.Target.self));
-                curAFKTick = AFK_TICK / 2;
+                // 挂机响应时长会越来越短，以尽快结束等待的对局
+                curAFKTick = Math.max(20, AFK_TICK / Math.max(2, ++curAFKCount));
             }
             // 游戏30未启动：重置
             else {
@@ -146,7 +162,8 @@ public class DevilRouletteTableEntity extends BlockEntity {
                 if (duration > 0) {
                     Scheduler.schedule(displayText::discard, duration);
                     tempSubDisplays.removeIf(display -> display == null || !display.isAlive());
-                    tempSubDisplays.add(displayText);
+                    if (isCollectFloatingText)
+                        tempSubDisplays.add(displayText);
                 }
                 else if (isCollectFloatingText) {
                     floatingTexts.put(text, displayText);
@@ -333,7 +350,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
         processFireResult(fireResult);
 
         // 当玩家进行了操作 则重置AFK计数
-        curAFKTick = 0;
+        resetTick();
 
         return ItemInteractionResult.SUCCESS;
     }
@@ -341,7 +358,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
         if (fireResult == null || level == null)
             return;
         int idxOffset = 0;
-        if (game.getCurrentPlayerData().getPlayerUUID() != frontPlayerUUID) {
+        if (fireResult.operatorUUID != frontPlayerUUID) {
             idxOffset = playerOperateArea.size() / 2;
         }
 
@@ -519,8 +536,8 @@ public class DevilRouletteTableEntity extends BlockEntity {
         frontPlayerName = Component.empty();
     }
     protected void removeBackPlayer() {
-        if (frontPlayerName != null) {
-            removeFloatingText(frontPlayerName);
+        if (backPlayerName != null) {
+            removeFloatingText(backPlayerName);
         }
         backPlayerUUID = null;
         backPlayerName = Component.empty();
@@ -553,6 +570,11 @@ public class DevilRouletteTableEntity extends BlockEntity {
     public boolean isFrontSeat(BlockPos pos) {
         return seatArea.contains(pos) && seatArea.indexOf(pos) < seatArea.size() / 2;
     }
+    public void resetTick() {
+        curAFKTick = 0;
+        curAFKCount = 1;
+        curLeftTickGap = 0;
+    }
     public Direction getFacing() {
         if (this.level == null) return Direction.NORTH;
         BlockState state = this.getBlockState();
@@ -578,6 +600,10 @@ public class DevilRouletteTableEntity extends BlockEntity {
     public static final Vec3 NORMAL_SCALE = new Vec3(1, 1, 1);
     /** 玩家AFK时间 */
     public static final int AFK_TICK = 20 * 30;
+    /** 显示玩家剩余时间的长间隔（超过5秒，每5s显示一次 */
+    public static final int LEFT_TICK_LONG_GAP = 100;
+    /** 显示玩家剩余时间的短间隔（小于5秒，每1s显示一次 */
+    public static final int LEFT_TICK_GAP = 20;
     public final Vec3 CENTER_POS;
     /** 玩家操作时间显示位置 */
     public final Vec3 TIME_POS;
@@ -616,5 +642,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
     protected ItemStack gunStack;
     protected boolean isCollectFloatingText;
     protected float curGunRotationY;
+    protected int curLeftTickGap;
     protected int curAFKTick;
+    protected int curAFKCount;
 }
