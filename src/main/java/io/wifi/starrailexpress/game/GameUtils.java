@@ -730,7 +730,7 @@ public class GameUtils {
     }
 
     public static void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd,
-            SREGameWorldComponent gameComponent, boolean isLooseEnds) {
+            SREGameWorldComponent gameComponent, boolean onlyOneWinner) {
         // --- 新增统计数据更新逻辑 (胜利/失败) ---
         GameUtils.WinStatus winStatus = roundEnd.getWinStatus();
         // SREWorldBlackoutComponent.KEY.get(world).reset();
@@ -738,7 +738,7 @@ public class GameUtils {
         boolean isLoversWin = winStatus == WinStatus.LOVERS;
         {
             UUID looseEndWinner = null;
-            if (isLooseEnds) {
+            if (onlyOneWinner) {
                 looseEndWinner = gameComponent.getLooseEndWinner();
             }
             for (ServerPlayer player : world.players()) {
@@ -750,7 +750,7 @@ public class GameUtils {
                     continue;
                 }
                 boolean isWinner = false;
-                if (isLooseEnds) {
+                if (onlyOneWinner) {
                     if (looseEndWinner == player.getUUID()) {
                         isWinner = true;
                     } else {

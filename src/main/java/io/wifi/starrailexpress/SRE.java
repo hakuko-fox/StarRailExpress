@@ -25,6 +25,8 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeModifiers;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.*;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
@@ -112,6 +114,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initScheduler();
         initCCAAuto();
         initSkinsNetworkSync();
+        SpecialGameModeRoles.init();
+        SpecialGameModeModifiers.init();
     }
 
     private void initCCAAuto() {

@@ -59,7 +59,7 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
     }
 
     @Override
-    public boolean isLooseEndMode() {
+    public boolean onlyOneWinner() {
         return true;
     }
 

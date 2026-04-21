@@ -441,7 +441,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             this.gameMode.writeToNbt(gameModeTag, wrapperLookup);
             nbtCompound.put("GameModeData", gameModeTag);
         }
-        if (this.gameMode.isLooseEndMode() && this.looseEndWinner != null)
+        if ((this.gameMode.isLooseEndMode() || this.gameMode.onlyOneWinner()) && this.looseEndWinner != null)
             nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
         if (gameStatus == GameStatus.INACTIVE) {
             return;
