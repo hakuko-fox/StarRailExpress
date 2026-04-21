@@ -14,6 +14,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
+import org.agmas.noellesroles.content.item.HotPotatoItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
 import org.agmas.noellesroles.content.item.ShisiyeItem;
 
@@ -23,6 +24,9 @@ public class FunnyItems {
   public static final ItemRegistrar registrar = new ItemRegistrar(Noellesroles.MOD_ID);
 
   // 波纹勋章
+  public static final Item HOT_POTATO = register(
+      new HotPotatoItem(new Item.Properties().stacksTo(1)),
+      "hot_potato");
   public static final Item BOWEN_BADGE = register(
       new BowenBadgeItem(new Item.Properties().stacksTo(1)),
       "bowen_badge");

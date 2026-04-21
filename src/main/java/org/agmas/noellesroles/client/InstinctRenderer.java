@@ -62,13 +62,22 @@ public class InstinctRenderer {
                 return -1;
             if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
                 return -1;
+            if (!SREClient.gameComponent.isRunning()) {
+                return -1;
+            }
             if (!SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()) {
                 return -1;
             }
             var self = Minecraft.getInstance().player;
             if (SREClient.gameComponent.gameMode.identifier.equals(SREGameModes.HIDE_AND_SEEK_MODE.identifier)) {
-                if (SREClient.gameComponent.isKillerTeam(self) && SREClient.gameComponent.isKillerTeam(target_player)) {
-                    return TMMRoles.KILLER.color();
+                if (SREClient.gameComponent.isKillerTeam(self)) {
+                    if (SREClient.gameComponent.isKillerTeam(target_player)) {
+                        return TMMRoles.KILLER.color();
+                    }
+                } else {
+                    if (self.hasEffect(ModEffects.SAFE_TIME) && SREClient.gameComponent.isKillerTeam(target_player)) {
+                        return TMMRoles.KILLER.color();
+                    }
                 }
                 if (self.hasEffect(MobEffects.GLOWING)) {
                     return TMMRoles.VIGILANTE.color();

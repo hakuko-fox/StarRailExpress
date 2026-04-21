@@ -76,4 +76,7 @@ public class SpecialGameModeRoles {
   public static void addRoleComponents(ComponentKey<? extends RoleComponent> componentKeyToAdd) {
     TMMRoles.COMPONENT_KEYS.add(componentKeyToAdd);
   }
+  public static void init(){
+    
+  }
 }

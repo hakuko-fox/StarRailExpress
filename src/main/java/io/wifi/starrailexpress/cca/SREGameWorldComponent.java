@@ -398,9 +398,12 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         } else {
             this.startingPlayerCount = 0;
         }
-        if (nbtCompound.contains("GameMode"))
+        if (nbtCompound.contains("GameMode")) {
             this.gameMode = SREGameModes.GAME_MODES.get(ResourceLocation.parse(nbtCompound.getString("GameMode")));
-        else
+            if (nbtCompound.contains("GameModeData", Tag.TAG_COMPOUND)) {
+                this.gameMode.readFromNbt(nbtCompound.getCompound("GameModeData"), wrapperLookup);
+            }
+        } else
             this.gameMode = null;
         if (nbtCompound.contains("GameStatus"))
             this.gameStatus = GameStatus.valueOf(nbtCompound.getString("GameStatus"));
@@ -432,9 +435,13 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     @Override
     public void writeToNbt(@NotNull CompoundTag nbtCompound, HolderLookup.Provider wrapperLookup) {
 
-        if (this.gameMode != null)
+        if (this.gameMode != null) {
             nbtCompound.putString("GameMode", this.gameMode.identifier.toString());
-        if (this.gameMode.isLooseEndMode() && this.looseEndWinner != null)
+            CompoundTag gameModeTag = new CompoundTag();
+            this.gameMode.writeToNbt(gameModeTag, wrapperLookup);
+            nbtCompound.put("GameModeData", gameModeTag);
+        }
+        if ((this.gameMode.isLooseEndMode() || this.gameMode.onlyOneWinner()) && this.looseEndWinner != null)
             nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
         if (gameStatus == GameStatus.INACTIVE) {
             return;

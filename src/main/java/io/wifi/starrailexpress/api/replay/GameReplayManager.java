@@ -401,7 +401,9 @@ public class GameReplayManager {
         SRE.SERVER.getPlayerList().getPlayers().forEach(
             player -> {
               if (gameWorldComponent != null && gameWorldComponent.isRunning()
-                  && !GameUtils.isPlayerAliveAndSurvival(player)) {
+                  && (!GameUtils.isPlayerAliveAndSurvival(player) || SRE.canSendReplay.stream().anyMatch((pre) -> {
+                      return pre.test(player);
+                    }))) {
                 try {
 
                   {

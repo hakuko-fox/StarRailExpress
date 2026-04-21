@@ -36,16 +36,6 @@ public class WorldModifierComponent implements AutoSyncedComponent, ServerTickin
 
     }
 
-    @Deprecated
-    public boolean isRole(@NotNull Player player, SREModifier modifier) {
-        return isModifier(player, modifier);
-    }
-
-    @Deprecated
-    public boolean isRole(@NotNull UUID uuid, SREModifier modifier) {
-        return isModifier(uuid, modifier);
-    }
-
     public boolean isModifier(@NotNull Player player, SREModifier modifier) {
         return this.isModifier(player.getUUID(), modifier);
     }

@@ -25,6 +25,8 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeModifiers;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.*;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
@@ -80,6 +82,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     public static List<Predicate<Entity>> canCollideEntity = new ArrayList<>();
     public static List<Predicate<DeathInfo>> canStickArmor = new ArrayList<>();
     public static List<Predicate<ServerPlayer>> cantSendReplay = new ArrayList<>();
+    public static List<Predicate<ServerPlayer>> canSendReplay = new ArrayList<>();
 
     public static ArrayList<String> canDropItem = new ArrayList<>();
     public static ArrayList<Predicate<Player>> canDrop = new ArrayList<>();
@@ -111,6 +114,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initScheduler();
         initCCAAuto();
         initSkinsNetworkSync();
+        SpecialGameModeRoles.init();
+        SpecialGameModeModifiers.init();
     }
 
     private void initCCAAuto() {

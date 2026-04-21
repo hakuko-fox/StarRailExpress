@@ -891,6 +891,10 @@ public class SREClient implements ClientModInitializer {
     }
 
     public static int getInstinctHighlight(Entity target) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || gameComponent == null) {
+            return -1;
+        }
         int invokerColor = OnGetInstinctHighlight.EVENT.invoker().GetInstinctHighlight(target, isInstinctEnabled());
         if (invokerColor != -1) {
             if (invokerColor == -2)
@@ -939,6 +943,7 @@ public class SREClient implements ClientModInitializer {
         return false;
     };
     private static boolean cachedPlayerAliveAndInSurvivalIgnoreShitSplit = false;
+    public static boolean cachedCanSeeTime = false;
 
     public static boolean isInstinctEnabled() {
         boolean canUseInstinct = isKiller();
@@ -972,6 +977,7 @@ public class SREClient implements ClientModInitializer {
                 && DeathPenaltyComponent.KEY.get(client.player).hasPenalty();
         LocalPlayer player = client.player;
         cachedPlayerAliveAndInSurvival = GameUtils.isPlayerAliveAndSurvival(player);
+        cachedCanSeeTime = SREClient.gameComponent.getGameMode().canAllPeopleSeeTime();
         cachedPlayerAliveAndInSurvivalIgnoreShitSplit = GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player);
         cachedPlayerSpectatingOrCreative = GameUtils.isPlayerSpectatingOrCreative(player);
         cachedPlayerCreative = player != null && player.isCreative();

@@ -33,7 +33,7 @@ public class SwitchMapCommand {
             .then(Commands.literal("reset_and_scan_all")
                 .requires(source -> source.hasPermission(3))
                 .executes(SwitchMapCommand::executeScanWithReset))
-                
+
             .then(Commands.literal("scan_all")
                 .requires(source -> source.hasPermission(3))
                 .executes(SwitchMapCommand::executeScanWithoutReset))
@@ -63,6 +63,7 @@ public class SwitchMapCommand {
               return showCurrentMap(context.getSource());
             }));
   }
+
   private static int executeScanWithoutReset(CommandContext<CommandSourceStack> context) {
     try {
       CommandSourceStack source = context.getSource();
@@ -95,8 +96,11 @@ public class SwitchMapCommand {
               MapResetManager.scanArea(serverWorld, areas);
               MapResetManager.saveArea(serverWorld);
               playerList.broadcastSystemMessage(
-                  Component.translatable("Scanned and saved reset points for map %s ! Total %s blocks!",
-                      Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size()).withStyle(ChatFormatting.GRAY),
+                  Component
+                      .translatable(
+                          "Scanned and saved reset points for map %s ! Total %s blocks!",
+                          Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size())
+                      .withStyle(ChatFormatting.GRAY),
                   false);
               MapScannerManager.scanAndSaveScannerArea(serverWorld, areas);
               HashMap<Integer, Boolean> map = new HashMap<>();
@@ -104,11 +108,15 @@ public class SwitchMapCommand {
                 map.putIfAbsent(entry.getValue(), true);
               }
               playerList.broadcastSystemMessage(
-                  Component.translatable("Scanned Task points! Total %s types!", map.size()).withStyle(ChatFormatting.GRAY), false);
+                  Component.translatable("Scanned Task points! Total %s types!", map.size())
+                      .withStyle(ChatFormatting.GRAY),
+                  false);
             }));
           } else {
             playerList.broadcastSystemMessage(
-                Component.translatable("Reseting and scaning map %s failed. [%s / %s]", mapName, now, total).withStyle(ChatFormatting.RED), false);
+                Component.translatable("Reseting and scaning map %s failed. [%s / %s]", mapName, now,
+                    total).withStyle(ChatFormatting.RED),
+                false);
           }
         }));
 
@@ -167,8 +175,11 @@ public class SwitchMapCommand {
               MapResetManager.scanArea(serverWorld, areas);
               MapResetManager.saveArea(serverWorld);
               playerList.broadcastSystemMessage(
-                  Component.translatable("Scanned and saved reset points for map %s ! Total %s blocks!",
-                      Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size()).withStyle(ChatFormatting.GRAY),
+                  Component
+                      .translatable(
+                          "Scanned and saved reset points for map %s ! Total %s blocks!",
+                          Component.nullToEmpty(areas.mapName), GameUtils.resetPoints.size())
+                      .withStyle(ChatFormatting.GRAY),
                   false);
               MapScannerManager.scanAndSaveScannerArea(serverWorld, areas);
               HashMap<Integer, Boolean> map = new HashMap<>();
@@ -176,20 +187,26 @@ public class SwitchMapCommand {
                 map.putIfAbsent(entry.getValue(), true);
               }
               playerList.broadcastSystemMessage(
-                  Component.translatable("Scanned Task points! Total %s types!", map.size()).withStyle(ChatFormatting.GRAY), false);
+                  Component.translatable("Scanned Task points! Total %s types!", map.size())
+                      .withStyle(ChatFormatting.GRAY),
+                  false);
             }));
             GameUtils.serverTaskQueue
-                .addFirst(new ServerTaskInfoClasses.FullTrainResetTask(areas, serverWorld, null, 0, false));
+                .addFirst(new ServerTaskInfoClasses.FullTrainResetTask(areas, serverWorld, null, 0,
+                    false));
           } else {
             playerList.broadcastSystemMessage(
-                Component.translatable("Reseting and scaning map %s failed. [%s / %s]", mapName, now, total).withStyle(ChatFormatting.RED), false);
+                Component.translatable("Reseting and scaning map %s failed. [%s / %s]", mapName, now,
+                    total).withStyle(ChatFormatting.RED),
+                false);
           }
         }));
 
       }
       GameUtils.serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(10, () -> {
         playerList.broadcastSystemMessage(
-            Component.translatable("\n\nAll scan and resets have finished!").withStyle(ChatFormatting.GREEN),
+            Component.translatable("\n\nAll scan and resets have finished!")
+                .withStyle(ChatFormatting.GREEN),
             false);
       }));
       source.sendSuccess(() -> Component.literal("Successfully add scan and reset tasks."), true);
@@ -257,7 +274,7 @@ public class SwitchMapCommand {
 
   private static int executeList(CommandSourceStack source) {
     ServerLevel serverWorld = source.getLevel();
-    List<String> availableMaps = MapManager.getAvailableMaps(serverWorld);
+    List<String> availableMaps = MapManager.getAvailableMaps(serverWorld, true);
 
     if (availableMaps.isEmpty()) {
       source.sendSuccess(
@@ -277,7 +294,7 @@ public class SwitchMapCommand {
                     .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                         Component.literal("CLICK TO SWITCH")))
                     .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                        "/tmm:switchmap load " + mapName))),
+                        "/tmm:switchmap load '" + mapName + "'"))),
             false);
       }
     }

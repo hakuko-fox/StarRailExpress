@@ -27,7 +27,7 @@ public class TimeRenderer {
             return;
         SRERole role = gameWorldComponent.getRole(player);
         cachedCanSeeTime = gameWorldComponent.isRunning() &&
-                (role != null && role.canSeeTime() || GameUtils.isPlayerSpectatingOrCreative(player));
+                (role != null && role.canSeeTime() || GameUtils.isPlayerSpectatingOrCreative(player) || SREClient.cachedCanSeeTime);
         if (cachedCanSeeTime) {
             int time = SREGameTimeComponent.KEY.get(player.level()).getTime();
             if (Math.abs(view.getTarget() - time) > 10)

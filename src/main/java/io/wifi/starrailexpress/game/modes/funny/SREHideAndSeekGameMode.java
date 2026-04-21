@@ -405,9 +405,14 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
     final public static int WARNING_DISTANCE = 5;
 
     @Override
+    public boolean canAllPeopleSeeTime() {
+        return true;
+    }
+
+    @Override
     public void tickClientGameLoop(Level world) {
         super.tickClientGameLoop(world);
-        if (world.getGameTime() % 20 == 0) {
+        if (world.getGameTime() % 5 == 0) {
             if (SREClient.cached_player != null) {
                 boolean isKillerTeam = SREClient.gameComponent.isKillerTeam(SREClient.cached_player);
                 boolean flag = world.players().stream().anyMatch(

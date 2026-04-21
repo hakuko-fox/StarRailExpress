@@ -15,6 +15,9 @@ import net.minecraft.world.phys.Vec3;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -230,7 +233,8 @@ public class MapManager {
             // 加载场景偏移配置（默认关闭）
             if (jsonObject.has("sceneOffset")) {
                 JsonObject sceneOffsetObj = jsonObject.getAsJsonObject("sceneOffset");
-                areas.sceneOffsetEnabled = sceneOffsetObj.has("enabled") && sceneOffsetObj.get("enabled").getAsBoolean();
+                areas.sceneOffsetEnabled = sceneOffsetObj.has("enabled")
+                        && sceneOffsetObj.get("enabled").getAsBoolean();
                 areas.sceneOffsetX = sceneOffsetObj.has("x") ? sceneOffsetObj.get("x").getAsDouble() : 0;
                 areas.sceneOffsetY = sceneOffsetObj.has("y") ? sceneOffsetObj.get("y").getAsDouble() : 125;
                 areas.sceneOffsetZ = sceneOffsetObj.has("z") ? sceneOffsetObj.get("z").getAsDouble() : 0;
@@ -470,12 +474,23 @@ public class MapManager {
     }
 
     /**
-     * 获取所有可用的地图列表
+     * 获取所有可用的地图列表（不含子文件夹）
      * 
      * @param serverWorld 服务器世界
      * @return 可用地图名称列表
      */
     public static List<String> getAvailableMaps(ServerLevel serverWorld) {
+        return getAvailableMaps(serverWorld, false);
+    }
+
+    /**
+     * 获取所有可用的地图列表
+     * 
+     * @param serverWorld 服务器世界
+     * @param childFolder 是否枚举子文件夹（若为 true，则返回“子文件夹名/文件”格式）
+     * @return 可用地图名称列表
+     */
+    public static List<String> getAvailableMaps(ServerLevel serverWorld, boolean childFolder) {
         List<String> maps = new ArrayList<>();
 
         try {
@@ -484,12 +499,18 @@ public class MapManager {
             File mapsDir = mapsDirPath.toFile();
 
             if (mapsDir.exists() && mapsDir.isDirectory()) {
-                File[] files = mapsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
-                if (files != null) {
-                    for (File file : files) {
-                        String fileName = file.getName();
-                        String mapName = fileName.substring(0, fileName.length() - 5); // 移除.json后缀
-                        maps.add(mapName);
+                if (childFolder) {
+                    // 递归收集所有 .json 文件，并转换为相对路径（不含扩展名）
+                    collectMapsRecursively(mapsDir.toPath(), mapsDir.toPath(), maps);
+                } else {
+                    // 只收集根目录下的 .json 文件
+                    File[] files = mapsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
+                    if (files != null) {
+                        for (File file : files) {
+                            String fileName = file.getName();
+                            String mapName = fileName.substring(0, fileName.length() - 5);
+                            maps.add(mapName);
+                        }
                     }
                 }
             }
@@ -498,5 +519,31 @@ public class MapManager {
         }
 
         return maps;
+    }
+
+    /**
+     * 递归遍历目录，收集所有 .json 文件的相对路径（不含扩展名）
+     *
+     * @param root 根目录（train_maps 的 Path）
+     * @param dir  当前遍历的目录
+     * @param maps 结果列表
+     * @throws IOException 可能发生的 IO 异常（已在外部捕获）
+     */
+    private static void collectMapsRecursively(Path root, Path dir, List<String> maps) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+            for (Path entry : stream) {
+                if (Files.isDirectory(entry)) {
+                    collectMapsRecursively(root, entry, maps);
+                } else if (entry.toString().toLowerCase().endsWith(".json")) {
+                    // 计算相对于 root 的路径，并移除 .json 后缀
+                    Path relativePath = root.relativize(entry);
+                    String pathStr = relativePath.toString();
+                    // 移除最后的 .json
+                    String mapName = pathStr.substring(0, pathStr.length() - 5);
+                    // 统一使用正斜杠作为分隔符，保证跨平台一致性
+                    maps.add(mapName.replace(File.separatorChar, '/'));
+                }
+            }
+        }
     }
 }

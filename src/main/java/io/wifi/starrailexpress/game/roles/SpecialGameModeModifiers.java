@@ -17,4 +17,8 @@ public class SpecialGameModeModifiers {
             new HashSet<>(),
             false,
             false)).setMax(0);
+
+    public static void init() {
+
+    }
 }
