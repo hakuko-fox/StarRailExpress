@@ -156,6 +156,7 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
         for (int i = 0; i < tagCount && i < players.size(); i++) {
             var p = players.get(i);
             modifierComponent.addModifier(p.getUUID(), SpecialGameModeModifiers.TNT_TAGGED, false);
+            MCItemsUtils.insertStackInFreeSlot(p, FunnyItems.HOT_POTATO.getDefaultInstance());
             if (i > 0) {
                 allTaggedPlayersMessage.append(", ");
             }
@@ -248,7 +249,9 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
         for (int i = 0; i < players.size(); i++) {
             var p = players.get(i);
             modifierComponent.removeModifier(p.getUUID(), SpecialGameModeModifiers.TNT_TAGGED, false);
-            GameUtils.killPlayer(p, true, p, SRE.id("bomb_death"), true);
+
+            MCItemsUtils.clearItem(p, FunnyItems.HOT_POTATO);
+            GameUtils.killPlayer(p, true, null, SRE.id("hot_potato"), true);
             if (i > 0) {
                 allTaggedPlayersMessage.append(", ");
             }
