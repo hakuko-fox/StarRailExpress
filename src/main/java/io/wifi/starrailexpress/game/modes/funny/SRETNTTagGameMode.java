@@ -184,6 +184,11 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
                 aliveCount++;
             }
         }
+        if (aliveCount <= 0) {
+            RoleUtils.customWinnerWin(serverWorld, "hot_potato", java.awt.Color.orange.getRGB());
+            GameUtils.stopGame(serverWorld);
+            return;
+        }
         if (haveSafeTime) {
             return;
         }
