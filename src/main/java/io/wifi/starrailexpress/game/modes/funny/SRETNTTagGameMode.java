@@ -2,7 +2,6 @@ package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SREGameModes;
-import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -192,7 +191,7 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
             if (alivePlayer != null) {
                 SREGameWorldComponent.KEY.get(serverWorld).setLooseEndWinner(alivePlayer.getUUID());
             }
-            RoleUtils.customWinnerWin(serverWorld, "hot_potato", TMMRoles.KILLER.color());
+            RoleUtils.customWinnerWin(serverWorld, "hot_potato", java.awt.Color.orange.getRGB());
             return;
         }
         if (this.nextBombTime > 0 && serverWorld.getGameTime() >= this.nextBombTime) {
