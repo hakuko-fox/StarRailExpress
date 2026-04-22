@@ -67,29 +67,27 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     public void serverTick() {
+        SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                .get(player.level());
+        if (!gameWorldComponent.isRole(player, ModRoles.EXECUTIONER))
+            return;
         // 如果目标已经死亡且executioner尚未获胜，解锁商店并重置目标
         if (target == null) {
-            SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorldComponent == null)
-                return;
             if (!gameWorldComponent.isRunning())
-                return;
-            if (!gameWorldComponent.isRole(player, ModRoles.EXECUTIONER))
                 return;
             assignRandomTarget(); // 分配新目标
 
         }
         if (target != null && !won) {
-            SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorldComponent == null)
-                return;
             if (!gameWorldComponent.isRunning())
                 return;
             if (!gameWorldComponent.isRole(player, ModRoles.EXECUTIONER))
                 return;
 
             Player targetPlayer = player.level().getPlayerByUUID(target);
-            if (targetPlayer == null || GameUtils.isPlayerEliminatedIgnoreShitSplit(targetPlayer)) {
+            var t_role = gameWorldComponent.getRole(targetPlayer);
+            if (t_role == null || targetPlayer == null || GameUtils.isPlayerEliminatedIgnoreShitSplit(targetPlayer)
+                    || !t_role.isInnocent() || t_role.isNeutrals()) {
                 // 目标死亡，解锁商店并分配新目标
                 this.shopUnlocked = true;
                 this.target = null;
@@ -112,8 +110,8 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
         if (target != null || won) {
             return;
         }
-
-        SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(player.level());
+        SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                .get(player.level());
         if (gameWorldComponent == null)
             return;
         List<Player> eligibleTargets = new ArrayList<>();
@@ -188,7 +186,8 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
 
     public static void registerBackfireEvent() {
         AllowShootRevolverDrop.EVENT.register((player, target) -> {
-            SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(player.level());
+            SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                    .get(player.level());
             if (gameWorldComponent.isRole(player, ModRoles.EXECUTIONER)) {
                 ExecutionerPlayerComponent executionerPlayerComponent = ExecutionerPlayerComponent.KEY.get(player);
                 if (executionerPlayerComponent.target != null
@@ -204,7 +203,7 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
         });
 
     }
-    
+
     @Override
     public void writeToNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
     }
