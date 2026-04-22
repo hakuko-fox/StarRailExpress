@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
 import org.agmas.noellesroles.content.entity.*;
 
 public class ModEntities {
@@ -189,6 +190,24 @@ public class ModEntities {
                     .dimensions(EntityDimensions.fixed(2.5F, 2.5F))
                     .trackRangeBlocks(128)
                     .trackedUpdateRate(10)
+                    .build());
+
+    /** 轮盘赌展示实体 */
+    public static final EntityType<DevilRouletteTableEntity.TableTextDisplay> TABLE_TEXT_DISpLAY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "table_text_display"),
+            FabricEntityTypeBuilder.<DevilRouletteTableEntity.TableTextDisplay>create(MobCategory.MISC,
+                            DevilRouletteTableEntity.TableTextDisplay::new)
+//                    .dimensions(EntityDimensions.fixed(0.2F, 0.2F))
+                    .trackRangeBlocks(32)
+                    .build());
+    public static final EntityType<DevilRouletteTableEntity.TableItemDisplay> TABLE_ITEM_DISPLAY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "table_item_display"),
+            FabricEntityTypeBuilder.<DevilRouletteTableEntity.TableItemDisplay>create(MobCategory.MISC,
+                            DevilRouletteTableEntity.TableItemDisplay::new)
+//                    .dimensions(EntityDimensions.fixed(0.2F, 0.2F))
+                    .trackRangeBlocks(32)
                     .build());
 
     /**

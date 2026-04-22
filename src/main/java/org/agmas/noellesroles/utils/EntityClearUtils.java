@@ -5,11 +5,11 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AreaEffectCloud;
-import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
+import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
 import org.agmas.noellesroles.content.entity.KuiXiPuppetEntity;
 import org.agmas.noellesroles.content.entity.LockEntity;
 import org.agmas.noellesroles.content.entity.LockEntityManager;
@@ -49,7 +49,9 @@ public class EntityClearUtils {
                         entity instanceof PlayerBodyEntity ||
                         entity instanceof WheelchairEntity ||
                         entity instanceof KuiXiPuppetEntity ||
-                        entity instanceof NoteEntity
+                        entity instanceof NoteEntity ||
+                        entity instanceof DevilRouletteTableEntity.TableTextDisplay ||
+                        entity instanceof DevilRouletteTableEntity.TableItemDisplay
                 ) {
                     entitiesToRemove.add(entity);
                 }

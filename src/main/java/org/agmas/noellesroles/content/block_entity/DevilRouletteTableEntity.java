@@ -40,6 +40,16 @@ import java.util.*;
 
 // TODO : 添加延迟开始和翻译键
 public class DevilRouletteTableEntity extends BlockEntity {
+    public static class TableTextDisplay extends Display.TextDisplay {
+        public TableTextDisplay(EntityType<?> entityType, Level level) {
+            super(entityType, level);
+        }
+    }
+    public static class TableItemDisplay extends Display.ItemDisplay {
+        public TableItemDisplay(EntityType<?> entityType, Level level) {
+            super(entityType, level);
+        }
+    }
     public DevilRouletteTableEntity(BlockPos blockPos, BlockState blockState) {
         super(ModBlocks.DEVIL_ROULETTE_TABLE_ENTITY, blockPos, blockState);
         Direction facing = blockState.getValue(BlockStateProperties.HORIZONTAL_FACING);
@@ -162,7 +172,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
      * 创建悬浮文字显示
      * - 会自动根据方块坐标偏移至中心
      */
-    protected Display.TextDisplay addFloatingTextInBlockPosCenter(BlockPos pos, Component text, int duration) {
+    protected TableTextDisplay addFloatingTextInBlockPosCenter(BlockPos pos, Component text, int duration) {
         return addFloatingText(new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5),
                 text, duration);
     }
@@ -170,14 +180,14 @@ public class DevilRouletteTableEntity extends BlockEntity {
      * 创建悬浮文字显示
      * - 如果已存在则仅修改文本，不会重置之前的定时器
      */
-    protected Display.TextDisplay addFloatingText(Vec3 pos, Component text, int duration, Vec3 scale) {
-        Display.TextDisplay displayText = null;
+    protected TableTextDisplay addFloatingText(Vec3 pos, Component text, int duration, Vec3 scale) {
+        TableTextDisplay displayText = null;
         if (level != null) {
             if (floatingTexts.containsKey(text)) {
                 displayText = floatingTexts.get(text);
             }
             else {
-                displayText = new Display.TextDisplay(EntityType.TEXT_DISPLAY ,level);
+                displayText = new TableTextDisplay(EntityType.TEXT_DISPLAY ,level);
                 if (duration > 0) {
                     Scheduler.schedule(displayText::discard, duration);
                     tempSubDisplays.removeIf(display -> display == null || !display.isAlive());
@@ -200,7 +210,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
         }
         return displayText;
     }
-    protected Display.TextDisplay addFloatingText(Vec3 pos, Component text, int duration) {
+    protected TableTextDisplay addFloatingText(Vec3 pos, Component text, int duration) {
         return addFloatingText(pos, text, duration, NORMAL_SCALE);
     }
     protected void removeFloatingText(Component text) {
@@ -209,7 +219,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
             floatingTexts.remove(text);
         }
     }
-    protected Display.TextDisplay replaceFloatingText(Component oldText, Component newText, int duration, Vec3 scale) {
+    protected TableTextDisplay replaceFloatingText(Component oldText, Component newText, int duration, Vec3 scale) {
         if (!floatingTexts.containsKey(oldText))
             return addFloatingText(CENTER_POS,
                     newText, duration);
@@ -254,7 +264,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
             offsetOperateText(operatorIdxOffset);
 
             // 创建左轮手枪
-            Display.ItemDisplay gun = new Display.ItemDisplay(EntityType.ITEM_DISPLAY, level);
+            TableItemDisplay gun = new TableItemDisplay(EntityType.ITEM_DISPLAY, level);
             gunStack = new ItemStack(TMMItems.REVOLVER);
             gun.setItemStack(gunStack);
             itemDisplays.put(gunStack, gun);
@@ -564,7 +574,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
      * @param additionalYaw 额外的 Y 轴旋转角度（度数）
      */
     public void updateGunRotation(float additionalYaw) {
-        Display.ItemDisplay gun = itemDisplays.get(gunStack);
+        TableItemDisplay gun = itemDisplays.get(gunStack);
         if (gun == null || !gun.isAlive()) return;
 
         curGunRotationY += additionalYaw;
@@ -703,8 +713,8 @@ public class DevilRouletteTableEntity extends BlockEntity {
     /**
      * 悬浮文本
      */
-    protected final Map<Component, Display.TextDisplay> floatingTexts = new HashMap<>();
-    protected final Map<ItemStack, Display.ItemDisplay> itemDisplays = new HashMap<>();
+    protected final Map<Component, TableTextDisplay> floatingTexts = new HashMap<>();
+    protected final Map<ItemStack, TableItemDisplay> itemDisplays = new HashMap<>();
     /** 游戏可用的座位区域
      * <p>
      *     前半是前方座位，后半是后方座位
@@ -728,7 +738,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
     protected Component shootSelfComponent;
     protected Component shootOppositeComponent;
     protected Component bulletComponent;
-    protected Display.TextDisplay winnerText;
+    protected TableTextDisplay winnerText;
     /** 前方玩家 */
     protected UUID frontPlayerUUID;
     /** 后方玩家 */
