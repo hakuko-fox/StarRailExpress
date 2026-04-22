@@ -156,6 +156,8 @@
   "noellesroles.game.devil_roulette.tooltip.steel_ball": "下一发若为实弹则造成伤害+1",
   "noellesroles.game.devil_roulette.tooltip.reversing_card": "实弹转为虚弹，虚弹转为实弹",
   "noellesroles.game.devil_roulette.tooltip.telephone": "得知随机一枚实弹位置（若无实弹也会告知）",
+  "noellesroles.game.devil_roulette.tip.play_with": "你的对手是: %s ,首次装填了 %s 发实弹",
+  "noellesroles.game.devil_roulette.tip.wait_player": "未匹配到对手或桌子，本轮轮空",
   "==================== 正文 ====================": "",
   "announcement.star.role.super_loose_end": "超级亡命徒",
   "announcement.star.goals.super_loose_end": "你获得了全部的力量...",

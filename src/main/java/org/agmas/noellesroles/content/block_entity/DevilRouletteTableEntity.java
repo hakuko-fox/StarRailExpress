@@ -98,6 +98,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
         bulletComponent = Component.empty();
 
         isCollectFloatingText = true;
+
         curGunRotationY = 0;
 
         curAFKTick = 0;
@@ -158,6 +159,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
                         processFireResult(game.forceGameOverByKillPlayer(frontPlayerUUID));
                     }
                 }
+                tempSubDisplays.removeIf(display -> display == null || display.isRemoved());
             }
             // 游戏30未启动：重置
             else {
@@ -190,7 +192,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
                 displayText = new TableTextDisplay(EntityType.TEXT_DISPLAY ,level);
                 if (duration > 0) {
                     Scheduler.schedule(displayText::discard, duration);
-                    tempSubDisplays.removeIf(display -> display == null || !display.isAlive());
+//                    tempSubDisplays.removeIf(display -> display == null || !display.isAlive());
                     if (isCollectFloatingText)
                         tempSubDisplays.add(displayText);
                 }
@@ -306,7 +308,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
             return;
         addPlayer(player1, true);
         addPlayer(player2, false);
-        this.startGame();
+        startGame();
     }
     /** 实际交互函数 */
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
@@ -649,7 +651,7 @@ public class DevilRouletteTableEntity extends BlockEntity {
     }
     // 召集玩家到桌子上
     public void convenePlayers() {
-        if (level != null) {
+        if (level != null && frontPlayerUUID != null && backPlayerUUID != null) {
             Player player1 = level.getPlayerByUUID(frontPlayerUUID);
             Player player2 = level.getPlayerByUUID(backPlayerUUID);
             if (player1 != null)
@@ -657,6 +659,12 @@ public class DevilRouletteTableEntity extends BlockEntity {
             if (player2 != null)
                 player2.teleportTo(CENTER_POS.x, CENTER_POS.y, CENTER_POS.z);
         }
+    }
+    public int getTrueBulletNumber() {
+        if (game != null) {
+            return game.getTrueBulletNumber();
+        }
+        return 0;
     }
     public boolean isGameActive() {
         return game != null && !game.isGameEnd();

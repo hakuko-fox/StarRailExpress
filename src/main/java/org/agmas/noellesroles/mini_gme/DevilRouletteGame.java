@@ -192,6 +192,11 @@ public class DevilRouletteGame {
         // 每轮发放道具
         switch (gameMode) {
             case Roulette -> {
+                for (var player : players) {
+                    // 每轮只发放一个道具
+                    for (int i = 0; i < 1; ++i)
+                        player.addItem(getRandomItem());
+                }
                 break;
             }
             default -> {
@@ -414,11 +419,11 @@ public class DevilRouletteGame {
     protected Level level;
     protected RandomSource random;
     /** 当前操作玩家 */
-    protected GamePlayerData currentPlayerData;
+    protected GamePlayerData currentPlayerData = NONE_PLAYER;
     protected GamePlayerData winner = null;
     protected GameMode gameMode = GameMode.Lobby;
     protected boolean isGameEnd = false;
-    protected int trueBulletNumber;
+    protected int trueBulletNumber = 0;
     protected int curListIdx = 0;
     protected int damage = 1;
 }
