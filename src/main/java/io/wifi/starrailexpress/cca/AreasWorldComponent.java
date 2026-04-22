@@ -38,9 +38,6 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public static enum ScrollAxis {
         X, Y, Z, NONE
     }
-
-    public ScrollAxis SceneScrollAxis = ScrollAxis.X;
-
     public HashSet<String> disabledTasks = new HashSet<>();
 
     public HashSet<String> getDisabledTasks() {
@@ -354,10 +351,6 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         if (tag.contains("sceneArea")) {
             this.sceneArea = getBoxFromNbt(tag, "sceneArea");
         }
-        if (tag.contains("SceneScrollAxis")) {
-            String tmp = tag.getString("SceneScrollAxis");
-            this.SceneScrollAxis = ScrollAxis.valueOf(tmp);
-        }
         this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
@@ -407,9 +400,6 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         }
         if (this.sceneArea != null) {
             writeBoxToNbt(tag, this.sceneArea, "sceneArea");
-        }
-        if (this.SceneScrollAxis != null) {
-            tag.putString("SceneScrollAxis", SceneScrollAxis.toString());
         }
         // writeVec3dToNbt(tag, this.playAreaOffset, "playAreaOffset");
         // writeBoxToNbt(tag, this.playArea, "playArea");

@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.game;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -27,16 +28,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapManager {
     private static final Gson gson = new Gson();
+    private static final Gson prettyGson = new GsonBuilder()
+            .setPrettyPrinting() // 关键步骤：启用格式化
+            .create();
     private static final Random random = new Random();
 
     /**
      * 保存当前地图配置到指定的地图文件
      * 
-     * @param serverWorld 服务器世界
-     * @param mapName     地图名称
+     * @param serverWorld   服务器世界
+     * @param mapName       地图名称
+     * @param overwriteFile 是否覆盖文件
      * @return 是否成功保存
      */
-    public static boolean saveCurrentMap(ServerLevel serverWorld, String mapName) {
+    public static boolean saveCurrentMap(ServerLevel serverWorld, String mapName, boolean overwriteFile) {
         try {
             // 获取AreasWorldComponent中的当前配置
             AreasWorldComponent areas = AreasWorldComponent.KEY.get(serverWorld);
@@ -52,7 +57,9 @@ public class MapManager {
             // 构建地图配置文件路径
             Path mapConfigPath = Paths.get(mapsDirPath.toString(), mapName + ".json");
             File mapConfigFile = mapConfigPath.toFile();
-
+            if (mapConfigFile.exists() && !overwriteFile) {
+                return false;
+            }
             // 创建JSON对象并填充当前地图配置，使用新的嵌套结构
             JsonObject jsonObject = new JsonObject();
 
@@ -137,6 +144,12 @@ public class MapManager {
                 }
             }
             jsonObject.add("roomPositions", roomPositionsObj);
+            jsonObject.addProperty("canJump", areas.canJump);
+            jsonObject.addProperty("canSwim", areas.canSwim);
+            jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
+            jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
+            jsonObject.addProperty("noReset", areas.noReset);
+            jsonObject.addProperty("mustCopy", areas.mustCopy);
 
             // 保存场景偏移配置
             JsonObject sceneOffsetObj = new JsonObject();
@@ -148,7 +161,7 @@ public class MapManager {
 
             // 写入文件
             FileWriter writer = new FileWriter(mapConfigFile);
-            gson.toJson(jsonObject, writer);
+            prettyGson.toJson(jsonObject, writer);
             writer.close();
 
             SRE.LOGGER.info("Successfully saved map: " + mapName);
@@ -209,24 +222,6 @@ public class MapManager {
                 areas.canJump = jsonObject.get("canJump").getAsBoolean();
             } else {
                 areas.canJump = false;
-            }
-            if (jsonObject.has("sceneScroll")) {
-                String scrollWay = jsonObject.get("sceneScroll").getAsString();
-                switch (scrollWay) {
-                    case "X":
-                        areas.SceneScrollAxis = AreasWorldComponent.ScrollAxis.X;
-                        break;
-                    case "Y":
-                        areas.SceneScrollAxis = AreasWorldComponent.ScrollAxis.Y;
-                        break;
-                    case "Z":
-                        areas.SceneScrollAxis = AreasWorldComponent.ScrollAxis.Z;
-                        break;
-                    default:
-                        areas.SceneScrollAxis = AreasWorldComponent.ScrollAxis.NONE;
-                }
-            } else {
-                areas.SceneScrollAxis = AreasWorldComponent.ScrollAxis.NONE;
             }
 
             if (jsonObject.has("canSwim")) {

@@ -1,17 +1,21 @@
 package io.wifi.starrailexpress.content.item.map_dev;
 
+import java.util.List;
+
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-public class MarkRoomItem extends Item {
+public class MapBuildHelperItem extends Item {
 
     public static Runnable openScreenCallback = null;
     
-    public MarkRoomItem(Properties properties) {
+    public MapBuildHelperItem(Properties properties) {
         super(properties);
     }
     @Override
@@ -27,5 +31,11 @@ public class MarkRoomItem extends Item {
         
         // 返回 success 但不消耗物品，等猜测完成后再消耗
         return InteractionResultHolder.success(stack);
+    }
+    
+    @Override
+    public void appendHoverText(ItemStack itemStack, TooltipContext tooltipContext, List<Component> list,
+            TooltipFlag tooltipFlag) {
+        list.add(Component.translatable(getDescriptionId() + ".tooltip"));
     }
 }

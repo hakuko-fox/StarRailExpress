@@ -3,7 +3,7 @@ package org.agmas.noellesroles.client;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.gui.screen.map_dev.MapBuildHelperScreen;
-import io.wifi.starrailexpress.content.item.map_dev.MarkRoomItem;
+import io.wifi.starrailexpress.content.item.map_dev.MapBuildHelperItem;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -125,7 +125,7 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      */
     public static void setupItemCallbacks() {
         // 设置阴谋之书页的GUI打开回调
-        MarkRoomItem.openScreenCallback = () -> {
+        MapBuildHelperItem.openScreenCallback = () -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null)
                 return;

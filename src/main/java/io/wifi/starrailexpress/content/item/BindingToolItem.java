@@ -1,5 +1,7 @@
 package io.wifi.starrailexpress.content.item;
 
+import java.util.List;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.block_entity.CameraBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SecurityMonitorBlockEntity;
@@ -10,6 +12,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -31,6 +35,13 @@ public class BindingToolItem extends Item {
         return new BlockPos(x2 - x1, y2 - y1, z2 - z1);
     }
 
+    @Override
+    public void appendHoverText(ItemStack itemStack, TooltipContext tooltipContext, List<Component> list,
+            TooltipFlag tooltipFlag) {
+        list.add(Component.translatable(getDescriptionId() + ".tooltip"));
+    }
+
+    // public item.starrailexpress.binding_tool.tooltip
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level world = context.getLevel();

@@ -44,7 +44,10 @@ public class ModItems {
             Noellesroles.id("misc"));
 
     public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote");
-    public static final Item PILL = register(new PillItem((new Item.Properties()).stacksTo(16).food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F).alwaysEdible().build())), "pill");
+    public static final Item PILL = register(
+            new PillItem((new Item.Properties()).stacksTo(16)
+                    .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F).alwaysEdible().build())),
+            "pill");
     public static final Item TOXIN = register(new ToxinItem((new Item.Properties()).stacksTo(1)), "toxin");
     public static final Item CATALYST = register(new CatalystItem((new Item.Properties()).stacksTo(1)), "catalyst");
     public static final Item BANDIT_REVOLVER = register(new BanditRevolverItem((new Item.Properties()).stacksTo(1)),
@@ -116,7 +119,6 @@ public class ModItems {
     public static final Item FAKE_BAT = register(
             new FakeBatItem(new Item.Properties().stacksTo(1)),
             "fake_bat");
-
 
     /**
      * 阴阳剑 - 黑白狂暴前奏武器
@@ -558,70 +560,67 @@ public class ModItems {
     public static final Item ZHANWEIFU2 = registrar.create("zhanweifu2",
             new Item(new Item.Properties().stacksTo(64)));
 
-
-
     // 轮盘赌物品
     public static final Item MAGNIFYING_GLASS = register(
             new Item(new Item.Properties().stacksTo(64)) {
                 @Override
                 public void appendHoverText(ItemStack stack, TooltipContext context,
-                                            List<Component> tooltip, TooltipFlag flag) {
+                        List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.translatable("noellesroles.game.devil_roulette.tooltip.magnifying_glass")
                             .withStyle(ChatFormatting.GRAY));
                 }
             },
             "magnifying_glass");
     public static final Item CHEWING = register(
-            new Item(new Item.Properties().stacksTo(64)){
+            new Item(new Item.Properties().stacksTo(64)) {
                 @Override
                 public void appendHoverText(ItemStack stack, TooltipContext context,
-                                            List<Component> tooltip, TooltipFlag flag) {
+                        List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.translatable("noellesroles.game.devil_roulette.tooltip.chewing")
                             .withStyle(ChatFormatting.GRAY));
                 }
             },
             "chewing");
     public static final Item CLIP = register(
-            new Item(new Item.Properties().stacksTo(64)){
+            new Item(new Item.Properties().stacksTo(64)) {
                 @Override
                 public void appendHoverText(ItemStack stack, TooltipContext context,
-                                            List<Component> tooltip, TooltipFlag flag) {
+                        List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.translatable("noellesroles.game.devil_roulette.tooltip.clip")
                             .withStyle(ChatFormatting.GRAY));
                 }
             },
             "clip");
     public static final Item STEEL_BALL = register(
-            new Item(new Item.Properties().stacksTo(64)){
+            new Item(new Item.Properties().stacksTo(64)) {
                 @Override
                 public void appendHoverText(ItemStack stack, TooltipContext context,
-                                            List<Component> tooltip, TooltipFlag flag) {
+                        List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.translatable("noellesroles.game.devil_roulette.tooltip.steel_ball")
                             .withStyle(ChatFormatting.GRAY));
                 }
             },
             "steel_ball");
     public static final Item REVERSING_CARD = register(
-            new Item(new Item.Properties().stacksTo(64)){
+            new Item(new Item.Properties().stacksTo(64)) {
                 @Override
                 public void appendHoverText(ItemStack stack, TooltipContext context,
-                                            List<Component> tooltip, TooltipFlag flag) {
+                        List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.translatable("noellesroles.game.devil_roulette.tooltip.reversing_card")
                             .withStyle(ChatFormatting.GRAY));
                 }
             },
             "reversing_card");
     public static final Item TELEPHONE = register(
-            new Item(new Item.Properties().stacksTo(64)){
+            new Item(new Item.Properties().stacksTo(64)) {
                 @Override
                 public void appendHoverText(ItemStack stack, TooltipContext context,
-                                            List<Component> tooltip, TooltipFlag flag) {
+                        List<Component> tooltip, TooltipFlag flag) {
                     tooltip.add(Component.translatable("noellesroles.game.devil_roulette.tooltip.telephone")
                             .withStyle(ChatFormatting.GRAY));
                 }
             },
             "telephone");
-
 
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
@@ -725,54 +724,69 @@ public class ModItems {
                 return new ItemLore(text);
             });
         };
-        ITEM_COOLDOWNS.put(ModItems.ANTIDOTE, getInTicks(1, 0));  // 60秒冷却
+        ITEM_COOLDOWNS.put(ModItems.ANTIDOTE, getInTicks(1, 0)); // 60秒冷却
         ITEM_COOLDOWNS.put(ModItems.TOXIN, getInTicks(0, 50));
         ITEM_COOLDOWNS.put(ModItems.BANDIT_REVOLVER, getInTicks(0, 40));
         ITEM_COOLDOWNS.put(TMMItems.SCORPION, getInTicks(0, 35));
         ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 75));
         // 毒药/80
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(ModItems.TOXIN.getDefaultInstance(), 80, ShopEntry.Type.POISON));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(ModItems.TOXIN.getDefaultInstance(), 80, ShopEntry.Type.POISON));
         // 毒药瓶/50
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 50, ShopEntry.Type.POISON));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 50, ShopEntry.Type.POISON));
         // 马桶毒药/40
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(ModItems.TOILET_POISON.getDefaultInstance(), 40, ShopEntry.Type.POISON));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(ModItems.TOILET_POISON.getDefaultInstance(), 40, ShopEntry.Type.POISON));
         // 毒蝎子/15
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(TMMItems.SCORPION.getDefaultInstance(), 15, ShopEntry.Type.POISON));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.SCORPION.getDefaultInstance(), 15, ShopEntry.Type.POISON));
         // 催化剂/100
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
         // 假药丸/30
         ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(ModItems.createPillStack(true), 30, ShopEntry.Type.TOOL));
         // 氯气弹/275
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(ModItems.CHLORINE_BOMB.getDefaultInstance(), 275, ShopEntry.Type.POISON));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(ModItems.CHLORINE_BOMB.getDefaultInstance(), 275, ShopEntry.Type.POISON));
         // 爆竹/10
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 10, ShopEntry.Type.TOOL));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 10, ShopEntry.Type.TOOL));
         // 便签/10
         ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), 10, ShopEntry.Type.TOOL));
         // 撬棍/35
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
         // 开锁器/100
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
         // 黑暗降临/100
-        ModItems.POISONER_SHOP_ENTRIES.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
-            public boolean onBuy(@NotNull Player player) {
-                return SREPlayerShopComponent.useBlackout(player);
-            }
-        });
-
+        ModItems.POISONER_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+                    public boolean onBuy(@NotNull Player player) {
+                        return SREPlayerShopComponent.useBlackout(player);
+                    }
+                });
 
         ModItems.BANDIT_SHOP_ENTRIES
                 .add(new ShopEntry(ModItems.BANDIT_REVOLVER.getDefaultInstance(), 175, ShopEntry.Type.WEAPON));
-        ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
-        ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 350, ShopEntry.Type.WEAPON));
-        ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.SCORPION.getDefaultInstance(), 40, ShopEntry.Type.POISON));
+        ModItems.BANDIT_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
+        ModItems.BANDIT_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 350, ShopEntry.Type.WEAPON));
+        ModItems.BANDIT_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.SCORPION.getDefaultInstance(), 40, ShopEntry.Type.POISON));
         ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 20, ShopEntry.Type.TOOL));
-        ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 10, ShopEntry.Type.TOOL));
-        ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
-        ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
-            public boolean onBuy(@NotNull Player player) {
-                return SREPlayerShopComponent.useBlackout(player);
-            }
-        });
+        ModItems.BANDIT_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 10, ShopEntry.Type.TOOL));
+        ModItems.BANDIT_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+        ModItems.BANDIT_SHOP_ENTRIES
+                .add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
+                    public boolean onBuy(@NotNull Player player) {
+                        return SREPlayerShopComponent.useBlackout(player);
+                    }
+                });
         ModItems.BANDIT_SHOP_ENTRIES.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), 10, ShopEntry.Type.TOOL));
     }
 

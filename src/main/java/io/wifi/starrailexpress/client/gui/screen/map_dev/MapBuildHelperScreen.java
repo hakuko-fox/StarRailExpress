@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 public class MapBuildHelperScreen extends Screen {
 
     public MapBuildHelperScreen(BlockPos position) {
-        super(Component.literal("Map Build Helper"));
+        super(Component.translatable("Map Build Helper: [%s]", position.toShortString()));
     }
-    
+
 }

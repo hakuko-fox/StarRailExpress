@@ -87,8 +87,14 @@ public class GameUtils {
     public static boolean isGameStarted = false;
 
     public static void teleportBackToRoom(Player player) {
-        Vec3 pos = GameUtils.getSpawnPos(AreasWorldComponent.KEY.get(player.level()),
-                GameUtils.roomToPlayer.get(player.getUUID()));
+        if (player == null)
+            return;
+        if (GameUtils.roomToPlayer.isEmpty())
+            return;
+
+        var areas = AreasWorldComponent.KEY.get(player.level());
+        Vec3 pos = GameUtils.getSpawnPos(areas,
+                GameUtils.roomToPlayer.getOrDefault(player.getUUID(), 0));
         if (pos != null) {
             player.teleportTo(pos.x(), pos.y() + 1, pos.z());
         } else {
