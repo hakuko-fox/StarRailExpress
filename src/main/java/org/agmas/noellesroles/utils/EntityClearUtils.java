@@ -49,9 +49,7 @@ public class EntityClearUtils {
                         entity instanceof PlayerBodyEntity ||
                         entity instanceof WheelchairEntity ||
                         entity instanceof KuiXiPuppetEntity ||
-                        entity instanceof NoteEntity ||
-                        entity instanceof Display.TextDisplay ||
-                        entity instanceof Display.ItemDisplay
+                        entity instanceof NoteEntity
                 ) {
                     entitiesToRemove.add(entity);
                 }
