@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 public final class MysqlPlayerDataStore {
     private static final Logger logger = LoggerFactory.getLogger(MysqlPlayerDataStore.class);
     private static final Pattern TABLE_PREFIX_PATTERN = Pattern.compile("[A-Za-z0-9_]*");
-    private static final long FAILURE_BACKOFF_MS = 15_000L;
+    private static final long FAST_FAIL_BACKOFF_MS = 15_000L;
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactory() {
         private int index = 1;
 
@@ -55,6 +55,7 @@ public final class MysqlPlayerDataStore {
         hikariConfig.setMinimumIdle(0);
         hikariConfig.setConnectionTimeout(getPoolConnectionTimeoutMs());
         hikariConfig.setValidationTimeout(getValidationTimeoutMs());
+        // 保持服务器可启动，连接异常时交给后续的快速失败保护处理。
         hikariConfig.setInitializationFailTimeout(0L);
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
@@ -232,7 +233,7 @@ public final class MysqlPlayerDataStore {
 
     private static void handleSqlFailure(String operation, UUID playerUuid, SQLException exception) {
         if (shouldFastFail(exception)) {
-            fastFailUntil = System.currentTimeMillis() + FAILURE_BACKOFF_MS;
+            fastFailUntil = System.currentTimeMillis() + FAST_FAIL_BACKOFF_MS;
         }
         logger.warn("{}玩家 {} 的 MySQL 同步数据失败。", operation, playerUuid, exception);
     }
@@ -259,15 +260,15 @@ public final class MysqlPlayerDataStore {
     }
 
     private static int getStatementTimeoutSeconds() {
-        return Math.max(1, (int) Math.ceil(Math.max(1000L, SREConfig.instance().mysqlSyncConnectTimeoutMs) / 1000.0));
+        return Math.max(1, (int) Math.ceil(getEffectiveConfigTimeoutMs() / 1000.0));
     }
 
     private static int getSocketTimeoutMs() {
-        return (int) Math.max(3000L, Math.max(1000L, SREConfig.instance().mysqlSyncConnectTimeoutMs) * 2L);
+        return (int) Math.max(3000L, getEffectiveConfigTimeoutMs() * 2L);
     }
 
     private static int getConnectTimeoutMs() {
-        return Math.max(1000, SREConfig.instance().mysqlSyncConnectTimeoutMs);
+        return (int) getEffectiveConfigTimeoutMs();
     }
 
     private static int getValidationTimeoutMs() {
@@ -276,6 +277,10 @@ public final class MysqlPlayerDataStore {
 
     private static int getPoolConnectionTimeoutMs() {
         return Math.max(2000, SREConfig.instance().mysqlSyncConnectTimeoutMs);
+    }
+
+    private static long getEffectiveConfigTimeoutMs() {
+        return Math.max(1000L, SREConfig.instance().mysqlSyncConnectTimeoutMs);
     }
 
     private static String buildJdbcUrl() {

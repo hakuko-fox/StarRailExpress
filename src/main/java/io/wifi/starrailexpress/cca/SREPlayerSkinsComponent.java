@@ -381,7 +381,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
                             }
                         }
                         if (this.databaseSyncQueued) {
-                            this.nextDatabaseSyncAt = 0L;
+                            flushSkinDataToDatabase(false);
                         }
                     });
                 })
