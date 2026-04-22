@@ -41,131 +41,139 @@ public class MapManager {
      * @param overwriteFile 是否覆盖文件
      * @return 是否成功保存
      */
+    public static boolean saveCurrentMapWithoutTry(ServerLevel serverWorld, String mapName, boolean overwriteFile)
+            throws Exception {
+        // 获取AreasWorldComponent中的当前配置
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(serverWorld);
+
+        // 创建地图目录
+        Path mapsDirPath = Paths.get(serverWorld.getServer().getWorldPath(LevelResource.ROOT).toString(),
+                "train_maps");
+        File mapsDir = mapsDirPath.toFile();
+        if (!mapsDir.exists()) {
+            mapsDir.mkdirs();
+        }
+
+        // 构建地图配置文件路径
+        Path mapConfigPath = Paths.get(mapsDirPath.toString(), mapName + ".json");
+        File mapConfigFile = mapConfigPath.toFile();
+        if (mapConfigFile.exists() && !overwriteFile) {
+            return false;
+        }
+        if (!mapConfigFile.getParentFile().exists()) {
+            mapConfigFile.getParentFile().mkdirs();
+        }
+        // 创建JSON对象并填充当前地图配置，使用新的嵌套结构
+        JsonObject jsonObject = new JsonObject();
+
+        // 保存出生点位置 - 使用嵌套对象
+        JsonObject spawnPosObj = new JsonObject();
+        spawnPosObj.addProperty("x", areas.getSpawnPos().pos.x());
+        spawnPosObj.addProperty("y", areas.getSpawnPos().pos.y());
+        spawnPosObj.addProperty("z", areas.getSpawnPos().pos.z());
+        spawnPosObj.addProperty("yaw", areas.getSpawnPos().yaw);
+        spawnPosObj.addProperty("pitch", areas.getSpawnPos().pitch);
+        jsonObject.add("spawnPos", spawnPosObj);
+
+        // 保存观战者出生点位置 - 使用嵌套对象
+        JsonObject spectatorSpawnPosObj = new JsonObject();
+        spectatorSpawnPosObj.addProperty("x", areas.getSpectatorSpawnPos().pos.x());
+        spectatorSpawnPosObj.addProperty("y", areas.getSpectatorSpawnPos().pos.y());
+        spectatorSpawnPosObj.addProperty("z", areas.getSpectatorSpawnPos().pos.z());
+        spectatorSpawnPosObj.addProperty("yaw", areas.getSpectatorSpawnPos().yaw);
+        spectatorSpawnPosObj.addProperty("pitch", areas.getSpectatorSpawnPos().pitch);
+        jsonObject.add("spectatorSpawnPos", spectatorSpawnPosObj);
+
+        // 保存准备区域 - 使用嵌套对象
+        JsonObject readyAreaObj = new JsonObject();
+        readyAreaObj.addProperty("minX", areas.getReadyArea().minX);
+        readyAreaObj.addProperty("minY", areas.getReadyArea().minY);
+        readyAreaObj.addProperty("minZ", areas.getReadyArea().minZ);
+        readyAreaObj.addProperty("maxX", areas.getReadyArea().maxX);
+        readyAreaObj.addProperty("maxY", areas.getReadyArea().maxY);
+        readyAreaObj.addProperty("maxZ", areas.getReadyArea().maxZ);
+        jsonObject.add("readyArea", readyAreaObj);
+
+        // 保存游戏区域偏移 - 使用嵌套对象
+        JsonObject playAreaOffsetObj = new JsonObject();
+        playAreaOffsetObj.addProperty("x", areas.getPlayAreaOffset().x());
+        playAreaOffsetObj.addProperty("y", areas.getPlayAreaOffset().y());
+        playAreaOffsetObj.addProperty("z", areas.getPlayAreaOffset().z());
+        jsonObject.add("playAreaOffset", playAreaOffsetObj);
+
+        // 保存游戏区域 - 使用嵌套对象
+        JsonObject playAreaObj = new JsonObject();
+        playAreaObj.addProperty("minX", areas.getPlayArea().minX);
+        playAreaObj.addProperty("minY", areas.getPlayArea().minY);
+        playAreaObj.addProperty("minZ", areas.getPlayArea().minZ);
+        playAreaObj.addProperty("maxX", areas.getPlayArea().maxX);
+        playAreaObj.addProperty("maxY", areas.getPlayArea().maxY);
+        playAreaObj.addProperty("maxZ", areas.getPlayArea().maxZ);
+        jsonObject.add("playArea", playAreaObj);
+
+        // 保存重置粘贴区域 - 使用嵌套对象
+        JsonObject resetPasteAreaObj = new JsonObject();
+        resetPasteAreaObj.addProperty("minX", areas.getResetPasteArea().minX);
+        resetPasteAreaObj.addProperty("minY", areas.getResetPasteArea().minY);
+        resetPasteAreaObj.addProperty("minZ", areas.getResetPasteArea().minZ);
+        resetPasteAreaObj.addProperty("maxX", areas.getResetPasteArea().maxX);
+        resetPasteAreaObj.addProperty("maxY", areas.getResetPasteArea().maxY);
+        resetPasteAreaObj.addProperty("maxZ", areas.getResetPasteArea().maxZ);
+        jsonObject.add("resetPasteArea", resetPasteAreaObj);
+
+        // 保存重置模板区域 - 使用嵌套对象
+        JsonObject resetTemplateAreaObj = new JsonObject();
+        resetTemplateAreaObj.addProperty("minX", areas.getResetTemplateArea().minX);
+        resetTemplateAreaObj.addProperty("minY", areas.getResetTemplateArea().minY);
+        resetTemplateAreaObj.addProperty("minZ", areas.getResetTemplateArea().minZ);
+        resetTemplateAreaObj.addProperty("maxX", areas.getResetTemplateArea().maxX);
+        resetTemplateAreaObj.addProperty("maxY", areas.getResetTemplateArea().maxY);
+        resetTemplateAreaObj.addProperty("maxZ", areas.getResetTemplateArea().maxZ);
+        jsonObject.add("resetTemplateArea", resetTemplateAreaObj);
+
+        // 保存房间数量
+        jsonObject.addProperty("roomCount", areas.getRoomCount());
+
+        // 保存房间位置 - 使用嵌套对象
+        JsonObject roomPositionsObj = new JsonObject();
+        for (int i = 1; i <= areas.getRoomCount(); i++) {
+            Vec3 roomPos = areas.getRoomPosition(i);
+            if (roomPos != null) {
+                JsonObject posObj = new JsonObject();
+                posObj.addProperty("x", roomPos.x());
+                posObj.addProperty("y", roomPos.y());
+                posObj.addProperty("z", roomPos.z());
+                roomPositionsObj.add(String.valueOf(i), posObj);
+            }
+        }
+        jsonObject.add("roomPositions", roomPositionsObj);
+        jsonObject.addProperty("canJump", areas.canJump);
+        jsonObject.addProperty("canSwim", areas.canSwim);
+        jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
+        jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
+        jsonObject.addProperty("noReset", areas.noReset);
+        jsonObject.addProperty("mustCopy", areas.mustCopy);
+
+        // 保存场景偏移配置
+        JsonObject sceneOffsetObj = new JsonObject();
+        sceneOffsetObj.addProperty("enabled", areas.sceneOffsetEnabled);
+        sceneOffsetObj.addProperty("x", areas.sceneOffsetX);
+        sceneOffsetObj.addProperty("y", areas.sceneOffsetY);
+        sceneOffsetObj.addProperty("z", areas.sceneOffsetZ);
+        jsonObject.add("sceneOffset", sceneOffsetObj);
+
+        // 写入文件
+        FileWriter writer = new FileWriter(mapConfigFile);
+        prettyGson.toJson(jsonObject, writer);
+        writer.close();
+
+        SRE.LOGGER.info("Successfully saved map: " + mapName);
+        return true;
+    }
+
     public static boolean saveCurrentMap(ServerLevel serverWorld, String mapName, boolean overwriteFile) {
         try {
-            // 获取AreasWorldComponent中的当前配置
-            AreasWorldComponent areas = AreasWorldComponent.KEY.get(serverWorld);
-
-            // 创建地图目录
-            Path mapsDirPath = Paths.get(serverWorld.getServer().getWorldPath(LevelResource.ROOT).toString(),
-                    "train_maps");
-            File mapsDir = mapsDirPath.toFile();
-            if (!mapsDir.exists()) {
-                mapsDir.mkdirs();
-            }
-
-            // 构建地图配置文件路径
-            Path mapConfigPath = Paths.get(mapsDirPath.toString(), mapName + ".json");
-            File mapConfigFile = mapConfigPath.toFile();
-            if (mapConfigFile.exists() && !overwriteFile) {
-                return false;
-            }
-            // 创建JSON对象并填充当前地图配置，使用新的嵌套结构
-            JsonObject jsonObject = new JsonObject();
-
-            // 保存出生点位置 - 使用嵌套对象
-            JsonObject spawnPosObj = new JsonObject();
-            spawnPosObj.addProperty("x", areas.getSpawnPos().pos.x());
-            spawnPosObj.addProperty("y", areas.getSpawnPos().pos.y());
-            spawnPosObj.addProperty("z", areas.getSpawnPos().pos.z());
-            spawnPosObj.addProperty("yaw", areas.getSpawnPos().yaw);
-            spawnPosObj.addProperty("pitch", areas.getSpawnPos().pitch);
-            jsonObject.add("spawnPos", spawnPosObj);
-
-            // 保存观战者出生点位置 - 使用嵌套对象
-            JsonObject spectatorSpawnPosObj = new JsonObject();
-            spectatorSpawnPosObj.addProperty("x", areas.getSpectatorSpawnPos().pos.x());
-            spectatorSpawnPosObj.addProperty("y", areas.getSpectatorSpawnPos().pos.y());
-            spectatorSpawnPosObj.addProperty("z", areas.getSpectatorSpawnPos().pos.z());
-            spectatorSpawnPosObj.addProperty("yaw", areas.getSpectatorSpawnPos().yaw);
-            spectatorSpawnPosObj.addProperty("pitch", areas.getSpectatorSpawnPos().pitch);
-            jsonObject.add("spectatorSpawnPos", spectatorSpawnPosObj);
-
-            // 保存准备区域 - 使用嵌套对象
-            JsonObject readyAreaObj = new JsonObject();
-            readyAreaObj.addProperty("minX", areas.getReadyArea().minX);
-            readyAreaObj.addProperty("minY", areas.getReadyArea().minY);
-            readyAreaObj.addProperty("minZ", areas.getReadyArea().minZ);
-            readyAreaObj.addProperty("maxX", areas.getReadyArea().maxX);
-            readyAreaObj.addProperty("maxY", areas.getReadyArea().maxY);
-            readyAreaObj.addProperty("maxZ", areas.getReadyArea().maxZ);
-            jsonObject.add("readyArea", readyAreaObj);
-
-            // 保存游戏区域偏移 - 使用嵌套对象
-            JsonObject playAreaOffsetObj = new JsonObject();
-            playAreaOffsetObj.addProperty("x", areas.getPlayAreaOffset().x());
-            playAreaOffsetObj.addProperty("y", areas.getPlayAreaOffset().y());
-            playAreaOffsetObj.addProperty("z", areas.getPlayAreaOffset().z());
-            jsonObject.add("playAreaOffset", playAreaOffsetObj);
-
-            // 保存游戏区域 - 使用嵌套对象
-            JsonObject playAreaObj = new JsonObject();
-            playAreaObj.addProperty("minX", areas.getPlayArea().minX);
-            playAreaObj.addProperty("minY", areas.getPlayArea().minY);
-            playAreaObj.addProperty("minZ", areas.getPlayArea().minZ);
-            playAreaObj.addProperty("maxX", areas.getPlayArea().maxX);
-            playAreaObj.addProperty("maxY", areas.getPlayArea().maxY);
-            playAreaObj.addProperty("maxZ", areas.getPlayArea().maxZ);
-            jsonObject.add("playArea", playAreaObj);
-
-            // 保存重置粘贴区域 - 使用嵌套对象
-            JsonObject resetPasteAreaObj = new JsonObject();
-            resetPasteAreaObj.addProperty("minX", areas.getResetPasteArea().minX);
-            resetPasteAreaObj.addProperty("minY", areas.getResetPasteArea().minY);
-            resetPasteAreaObj.addProperty("minZ", areas.getResetPasteArea().minZ);
-            resetPasteAreaObj.addProperty("maxX", areas.getResetPasteArea().maxX);
-            resetPasteAreaObj.addProperty("maxY", areas.getResetPasteArea().maxY);
-            resetPasteAreaObj.addProperty("maxZ", areas.getResetPasteArea().maxZ);
-            jsonObject.add("resetPasteArea", resetPasteAreaObj);
-
-            // 保存重置模板区域 - 使用嵌套对象
-            JsonObject resetTemplateAreaObj = new JsonObject();
-            resetTemplateAreaObj.addProperty("minX", areas.getResetTemplateArea().minX);
-            resetTemplateAreaObj.addProperty("minY", areas.getResetTemplateArea().minY);
-            resetTemplateAreaObj.addProperty("minZ", areas.getResetTemplateArea().minZ);
-            resetTemplateAreaObj.addProperty("maxX", areas.getResetTemplateArea().maxX);
-            resetTemplateAreaObj.addProperty("maxY", areas.getResetTemplateArea().maxY);
-            resetTemplateAreaObj.addProperty("maxZ", areas.getResetTemplateArea().maxZ);
-            jsonObject.add("resetTemplateArea", resetTemplateAreaObj);
-
-            // 保存房间数量
-            jsonObject.addProperty("roomCount", areas.getRoomCount());
-
-            // 保存房间位置 - 使用嵌套对象
-            JsonObject roomPositionsObj = new JsonObject();
-            for (int i = 1; i <= areas.getRoomCount(); i++) {
-                Vec3 roomPos = areas.getRoomPosition(i);
-                if (roomPos != null) {
-                    JsonObject posObj = new JsonObject();
-                    posObj.addProperty("x", roomPos.x());
-                    posObj.addProperty("y", roomPos.y());
-                    posObj.addProperty("z", roomPos.z());
-                    roomPositionsObj.add(String.valueOf(i), posObj);
-                }
-            }
-            jsonObject.add("roomPositions", roomPositionsObj);
-            jsonObject.addProperty("canJump", areas.canJump);
-            jsonObject.addProperty("canSwim", areas.canSwim);
-            jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
-            jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
-            jsonObject.addProperty("noReset", areas.noReset);
-            jsonObject.addProperty("mustCopy", areas.mustCopy);
-
-            // 保存场景偏移配置
-            JsonObject sceneOffsetObj = new JsonObject();
-            sceneOffsetObj.addProperty("enabled", areas.sceneOffsetEnabled);
-            sceneOffsetObj.addProperty("x", areas.sceneOffsetX);
-            sceneOffsetObj.addProperty("y", areas.sceneOffsetY);
-            sceneOffsetObj.addProperty("z", areas.sceneOffsetZ);
-            jsonObject.add("sceneOffset", sceneOffsetObj);
-
-            // 写入文件
-            FileWriter writer = new FileWriter(mapConfigFile);
-            prettyGson.toJson(jsonObject, writer);
-            writer.close();
-
-            SRE.LOGGER.info("Successfully saved map: " + mapName);
-            return true;
+            return saveCurrentMapWithoutTry(serverWorld, mapName, overwriteFile);
         } catch (Exception e) {
             SRE.LOGGER.error("Failed to save map: " + mapName, e);
             return false;

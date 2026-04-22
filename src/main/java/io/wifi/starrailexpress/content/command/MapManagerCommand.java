@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.content.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.*;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.AreasWorldComponent.PosWithOrientation;
@@ -399,21 +400,27 @@ public class MapManagerCommand {
 
   // ======================== 保存命令 ========================
 
-  private static int executeSave(CommandSourceStack source, String mapName, boolean overwriteFile) {
+  private static int executeSave(CommandSourceStack source, String mapName, boolean overwriteFile)
+      throws CommandSyntaxException {
     ServerLevel serverWorld = source.getLevel();
     SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverWorld);
     if (gameComponent.isRunning()) {
       source.sendFailure(Component.translatable("commands.sre.switchmap.error.game_running"));
       return 1;
     }
-    if (MapManager.saveCurrentMap(serverWorld, mapName, overwriteFile)) {
-      source.sendSuccess(
-          () -> Component.translatable("commands.sre.switchmap.save.success", mapName)
-              .withStyle(style -> style.withColor(0x00FF00)),
-          true);
-    } else {
-      source.sendFailure(Component.translatable("commands.sre.switchmap.error.save_failed", mapName));
+    try {
+      if (MapManager.saveCurrentMapWithoutTry(serverWorld, mapName, overwriteFile)) {
+        source.sendSuccess(
+            () -> Component.translatable("commands.sre.switchmap.save.success", mapName)
+                .withStyle(style -> style.withColor(0x00FF00)),
+            true);
+      } else {
+        source.sendFailure(Component.translatable("commands.sre.switchmap.error.save_failed", mapName));
+      }
+    } catch (Exception e) {
+      throw ConfigCommand.createSimpleSyntaxException(e);
     }
+
     return 1;
   }
 
