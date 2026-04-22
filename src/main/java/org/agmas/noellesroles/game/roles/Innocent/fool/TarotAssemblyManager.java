@@ -187,6 +187,8 @@ public class TarotAssemblyManager {
      */
     private static void teleportToMeeting(ServerPlayer player, FoolPlayerComponent foolComp,
             ServerLevel serverLevel) {
+        player.stopSleeping();
+        player.stopRiding();
         foolComp.meetingOriginalPositions.put(player.getUUID(),
                 new double[] { player.getX(), player.getY(), player.getZ(),
                         player.getYRot(), player.getXRot() });

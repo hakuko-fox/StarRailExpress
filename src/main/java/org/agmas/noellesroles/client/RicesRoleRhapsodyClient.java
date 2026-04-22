@@ -135,8 +135,10 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
                 BlockPos blockPos = blockHitResult.getBlockPos();
                 client.setScreen(new MapBuildHelperScreen(blockPos));
                 return true;
+            }else{
+                client.setScreen(new MapBuildHelperScreen(client.player.blockPosition()));
+                return true;
             }
-            return false;
 
         };
         ConspiracyPageItem.openScreenCallback = () -> {
