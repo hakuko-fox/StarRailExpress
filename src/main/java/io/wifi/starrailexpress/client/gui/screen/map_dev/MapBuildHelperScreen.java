@@ -21,14 +21,13 @@ import java.util.function.Consumer;
 public class MapBuildHelperScreen extends Screen {
 
     // ══════════════════════════════════════════════════════════════════
-    // 偏移量（静态：同一会话跨实例保持；文件：跨会话持久）
+    // 偏移量（静态 + 文件持久化）
     // ══════════════════════════════════════════════════════════════════
 
     private static double offsetX = 0;
     private static double offsetY = 0;
     private static double offsetZ = 0;
 
-    /** config/sre_map_offset.txt — 存 "dx,dy,dz" */
     private static final Path OFFSET_FILE = Path.of("config/sre_map_offset.txt");
 
     private static void loadOffset() {
@@ -58,18 +57,18 @@ public class MapBuildHelperScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
 
     private final BlockPos position;
-
-    /** 当前激活的 tab：0=Positions 1=Areas 2=Settings */
     private int activeTab = 0;
 
-    private EditBox dxBox;
-    private EditBox dyBox;
-    private EditBox dzBox;
-
-    /** 各 tab 的 widget 列表，用于统一切换 visible */
+    private EditBox dxBox, dyBox, dzBox;
     private final List<AbstractWidget> tabWidgets0 = new ArrayList<>();
     private final List<AbstractWidget> tabWidgets1 = new ArrayList<>();
     private final List<AbstractWidget> tabWidgets2 = new ArrayList<>();
+
+    // 面板居中定位
+    private int panelLeftX;
+    private int panelTopY;
+    private static final int PANEL_WIDTH = 340;
+    private static final int PANEL_HEIGHT = 320;
 
     // ══════════════════════════════════════════════════════════════════
     // 构造
@@ -108,17 +107,26 @@ public class MapBuildHelperScreen extends Screen {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 命令发送
+    // 命令发送（可选是否关闭界面）
     // ══════════════════════════════════════════════════════════════════
 
-    private void send(String cmd) {
+    /** 发送命令后关闭界面（用于大多数按钮） */
+    private void sendAndClose(String cmd) {
+        var p = Minecraft.getInstance().player;
+        if (p != null)
+            p.connection.sendCommand(cmd);
+        onClose();
+    }
+
+    /** 只发送命令，不关闭界面（用于 Boolean Settings） */
+    private void sendOnly(String cmd) {
         var p = Minecraft.getInstance().player;
         if (p != null)
             p.connection.sendCommand(cmd);
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // init
+    // init – 全部 UI 构建（所有坐标基于 panelLeftX / panelTopY）
     // ══════════════════════════════════════════════════════════════════
 
     @Override
@@ -127,45 +135,48 @@ public class MapBuildHelperScreen extends Screen {
         tabWidgets1.clear();
         tabWidgets2.clear();
 
-        final int cx = width / 2;
-        final int px = cx - 150; // 面板左边，宽度固定 300
-        final int bw = 145; // 按钮宽度（各半）
-        final int bh = 16; // 按钮高度
-        final int gap = 3; // 行间距
-        final int cy = 84; // 内容区起始 Y
+        final int bw = 158;
+        final int gap = 12;
+        final int bh = 22;
 
-        // ── 偏移量输入行 ──────────────────────────────────────────────
-        buildOffsetRow(px);
+        // 计算面板居中位置
+        panelLeftX = (width - PANEL_WIDTH) / 2 + gap / 2;
+        panelTopY = (height - PANEL_HEIGHT) / 2;
 
-        // ── Tab 栏 ────────────────────────────────────────────────────
-        buildTabBar(px, cx);
+        // ---------- 偏移量输入行 ----------
+        buildOffsetRow();
 
-        // ── Tab 0: Positions ─────────────────────────────────────────
+        // ---------- Tab 栏 ----------
+        buildTabBar();
+
+        // ---------- Tab 0: Positions（关闭界面）----------
+        final int cy = panelTopY + 114; // 内容区起始 Y（相对于屏幕）
+
         addTabWidget(tabWidgets0, ModernButton.builder(
                 Component.literal("Set Spawn Pos"),
-                b -> send(String.format("sre:area_manager set spawnPos %.4f %.4f %.4f %.4f %.4f",
+                b -> sendAndClose(String.format("sre:area_manager set spawnPos %.4f %.4f %.4f %.4f %.4f",
                         ax(), ay(), az(), playerYaw(), playerPitch())))
-                .bounds(px, cy, bw, bh)
+                .bounds(panelLeftX, cy, bw, bh)
                 .accentBar(AccentSide.LEFT)
                 .build());
 
         addTabWidget(tabWidgets0, ModernButton.builder(
                 Component.literal("Set Spectator Spawn"),
-                b -> send(String.format("sre:area_manager set spectatorSpawnPos %.4f %.4f %.4f %.4f %.4f",
+                b -> sendAndClose(String.format("sre:area_manager set spectatorSpawnPos %.4f %.4f %.4f %.4f %.4f",
                         ax(), ay(), az(), playerYaw(), playerPitch())))
-                .bounds(px + bw + gap, cy, bw, bh)
+                .bounds(panelLeftX + bw + gap, cy, bw, bh)
                 .accentBar(AccentSide.LEFT)
                 .build());
 
         addTabWidget(tabWidgets0, ModernButton.builder(
                 Component.literal("Set Play Area Offset"),
-                b -> send(String.format("sre:area_manager set playAreaOffset %.4f %.4f %.4f",
+                b -> sendAndClose(String.format("sre:area_manager set playAreaOffset %.4f %.4f %.4f",
                         ax(), ay(), az())))
-                .bounds(px, cy + bh + gap, bw * 2 + gap, bh)
+                .bounds(panelLeftX, cy + bh + gap, bw * 2 + gap, bh)
                 .accentBar(AccentSide.BOTTOM)
                 .build());
 
-        // ── Tab 1: Areas ─────────────────────────────────────────────
+        // ---------- Tab 1: Areas（关闭界面）----------
         final String[][] areas = {
                 { "readyArea", "Ready Area" },
                 { "playArea", "Play Area" },
@@ -174,28 +185,28 @@ public class MapBuildHelperScreen extends Screen {
                 { "resetPasteArea", "Reset Paste" },
         };
         for (int i = 0; i < areas.length; i++) {
-            final String aCmd = areas[i][0];
-            final String aLabel = areas[i][1];
+            final String cmd = areas[i][0];
+            final String label = areas[i][1];
             final int rowY = cy + i * (bh + gap);
 
             addTabWidget(tabWidgets1, ModernButton.builder(
-                    Component.literal(aLabel + "  [Min]"),
-                    b -> send(String.format("sre:area_manager set %s set min %.4f %.4f %.4f",
-                            aCmd, ax(), ay(), az())))
-                    .bounds(px, rowY, bw, bh)
+                    Component.literal(label + "  [Min]"),
+                    b -> sendAndClose(
+                            String.format("sre:area_manager set %s set min %.4f %.4f %.4f", cmd, ax(), ay(), az())))
+                    .bounds(panelLeftX, rowY, bw, bh)
                     .accentBar(AccentSide.LEFT)
                     .build());
 
             addTabWidget(tabWidgets1, ModernButton.builder(
-                    Component.literal(aLabel + "  [Max]"),
-                    b -> send(String.format("sre:area_manager set %s set max %.4f %.4f %.4f",
-                            aCmd, ax(), ay(), az())))
-                    .bounds(px + bw + gap, rowY, bw, bh)
+                    Component.literal(label + "  [Max]"),
+                    b -> sendAndClose(
+                            String.format("sre:area_manager set %s set max %.4f %.4f %.4f", cmd, ax(), ay(), az())))
+                    .bounds(panelLeftX + bw + gap, rowY, bw, bh)
                     .accentBar(AccentSide.RIGHT)
                     .build());
         }
 
-        // ── Tab 2: Settings ──────────────────────────────────────────
+        // ---------- Tab 2: Settings（不关闭界面，使用 sendOnly）----------
         final String[] boolFields = {
                 "canJump", "canSwim", "noReset",
                 "haveOutsideSound", "sceneOffsetEnabled", "mustCopy"
@@ -205,37 +216,42 @@ public class MapBuildHelperScreen extends Screen {
             final int rowY = cy + i * (bh + gap);
 
             addTabWidget(tabWidgets2, ModernButton.builder(
-                    Component.literal("✔  " + field), b -> send("sre:area_manager set " + field + " true"))
-                    .bounds(px, rowY, bw, bh)
+                    Component.literal("✔  " + field),
+                    b -> sendOnly("sre:area_manager set " + field + " true"))
+                    .bounds(panelLeftX, rowY, bw, bh)
                     .accentBar(AccentSide.LEFT)
                     .build());
 
             addTabWidget(tabWidgets2, ModernButton.builder(
-                    Component.literal("✘  " + field), b -> send("sre:area_manager set " + field + " false"))
-                    .bounds(px + bw + gap, rowY, bw, bh)
+                    Component.literal("✘  " + field),
+                    b -> sendOnly("sre:area_manager set " + field + " false"))
+                    .bounds(panelLeftX + bw + gap, rowY, bw, bh)
                     .accentBar(AccentSide.RIGHT)
                     .build());
         }
 
-        // 注册所有 tab widget，然后设置初始可见性
+        // 注册所有 widget，并同步可见性
         tabWidgets0.forEach(this::addRenderableWidget);
         tabWidgets1.forEach(this::addRenderableWidget);
         tabWidgets2.forEach(this::addRenderableWidget);
         syncTabVisibility();
     }
 
-    // ── 构建偏移量行 ──────────────────────────────────────────────────
+    // ── 偏移量行（紧凑且不超出面板）────────────────────────────────
+    private void buildOffsetRow() {
+        final int oy = panelTopY + 52; // 垂直起始位置
+        final int fh = 18;
+        final int labelW = 14;
+        final int fieldW = 64;
+        final int smallGap = 6;
+        final int bigGap = 12;
+        final int groupW = labelW + smallGap + fieldW;
+        final int resetW = 48;
+        final int totalW = groupW * 3 + bigGap * 2 + resetW;
+        final int startX = panelLeftX + (PANEL_WIDTH - totalW) / 2;
 
-    private void buildOffsetRow(int px) {
-        // 布局：[ΔX: 输入框] [ΔY: 输入框] [ΔZ: 输入框] [✕]
-        // 标签宽 16，字段宽 52，间距 8
-        final int oy = 37;
-        final int fh = 14;
-        final int fw = 52;
-        final int lw = 17;
-        final int seg = fw + lw + 6; // 每组（标签+字段+间隙）的宽度
-
-        dxBox = makeField(px + lw, oy, fw, fh, "0",
+        // ΔX 组
+        dxBox = makeField(startX + labelW + smallGap, oy, fieldW, fh, "0",
                 v -> {
                     try {
                         offsetX = Double.parseDouble(v);
@@ -243,7 +259,12 @@ public class MapBuildHelperScreen extends Screen {
                     } catch (Exception ignored) {
                     }
                 });
-        dyBox = makeField(px + lw + seg, oy, fw, fh, "0",
+        dxBox.setValue(fmtDouble(offsetX));
+        addRenderableWidget(dxBox);
+
+        // ΔY 组
+        int yStart = startX + groupW + bigGap;
+        dyBox = makeField(yStart + labelW + smallGap, oy, fieldW, fh, "0",
                 v -> {
                     try {
                         offsetY = Double.parseDouble(v);
@@ -251,7 +272,12 @@ public class MapBuildHelperScreen extends Screen {
                     } catch (Exception ignored) {
                     }
                 });
-        dzBox = makeField(px + lw + seg * 2, oy, fw, fh, "0",
+        dyBox.setValue(fmtDouble(offsetY));
+        addRenderableWidget(dyBox);
+
+        // ΔZ 组
+        int zStart = yStart + groupW + bigGap;
+        dzBox = makeField(zStart + labelW + smallGap, oy, fieldW, fh, "0",
                 v -> {
                     try {
                         offsetZ = Double.parseDouble(v);
@@ -259,57 +285,48 @@ public class MapBuildHelperScreen extends Screen {
                     } catch (Exception ignored) {
                     }
                 });
-
-        dxBox.setValue(fmtDouble(offsetX));
-        dyBox.setValue(fmtDouble(offsetY));
         dzBox.setValue(fmtDouble(offsetZ));
-
-        addRenderableWidget(dxBox);
-        addRenderableWidget(dyBox);
         addRenderableWidget(dzBox);
 
-        // 重置按钮
-        addRenderableWidget(ModernButton.builder(Component.literal("✕ Reset"), b -> {
-            offsetX = 0;
-            offsetY = 0;
-            offsetZ = 0;
+        // 重置按钮（不关闭界面）
+        int resetX = zStart + groupW + bigGap;
+        addRenderableWidget(ModernButton.builder(Component.literal("Reset"), b -> {
+            offsetX = offsetY = offsetZ = 0;
             dxBox.setValue("0");
             dyBox.setValue("0");
             dzBox.setValue("0");
             saveOffset();
-        }).bounds(px + lw + seg * 3 - 4, oy, 52, fh)
+        }).bounds(resetX, oy, resetW, fh)
                 .accentBar(AccentSide.BOTTOM)
                 .build());
     }
 
-    // ── 构建 Tab 栏 ────────────────────────────────────────────────────
-
-    private void buildTabBar(int px, int cx) {
-        final int tabY = 57;
-        final int tabH = 16;
+    // ── Tab 栏 ──────────────────────────────────────────────────────
+    private void buildTabBar() {
+        final int tabY = panelTopY + 74;
+        final int tabH = 22;
         final int tabW = 98;
-        final int tabG = 3;
+        final int tabGap = 12;
+        final int totalTabW = tabW * 3 + tabGap * 2;
+        final int startX = panelLeftX + (PANEL_WIDTH - totalTabW) / 2;
 
         String[] labels = { "Positions", "Areas", "Settings" };
         for (int i = 0; i < 3; i++) {
             final int idx = i;
             var builder = ModernButton.builder(Component.literal(labels[i]), b -> {
                 activeTab = idx;
-                rebuildWidgets();
-            }).bounds(px + i * (tabW + tabG), tabY, tabW, tabH);
+                init(minecraft, width, height); // 重建以刷新高亮
+            }).bounds(startX + i * (tabW + tabGap), tabY, tabW, tabH);
 
-            // 激活 tab 底部高亮
             if (activeTab == i)
                 builder.accentBar(AccentSide.BOTTOM);
             else
                 builder.accentBar();
-
             addRenderableWidget(builder.build());
         }
     }
 
-    // ── 辅助 ──────────────────────────────────────────────────────────
-
+    // ── 辅助方法 ────────────────────────────────────────────────────
     private void addTabWidget(List<AbstractWidget> list, AbstractWidget widget) {
         list.add(widget);
     }
@@ -328,94 +345,86 @@ public class MapBuildHelperScreen extends Screen {
         return box;
     }
 
-    /** 格式化 double：整数时不显示小数点，否则最多保留 4 位 */
     private static String fmtDouble(double v) {
         if (v == Math.floor(v) && !Double.isInfinite(v) && Math.abs(v) < 1e9)
             return String.valueOf((long) v);
-        // 去除尾部多余的 0
         String s = String.format("%.4f", v);
         s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
         return s;
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // 渲染
+    // 渲染（所有绘制坐标均基于 panelLeftX / panelTopY）
     // ══════════════════════════════════════════════════════════════════
 
     @Override
+    public void renderBackground(GuiGraphics g, int i, int j, float f) {
+        // 绘制居中面板背景
+        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + PANEL_WIDTH + 6, panelTopY + PANEL_HEIGHT + 3, 0xCC080C18);
+        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + PANEL_WIDTH + 6, panelTopY - 2, 0xFF5577CC);
+    }
+
+    @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
 
-        final int cx = width / 2;
-        final int px = cx - 150;
-        final int pw = 300;
+        final int cx = panelLeftX + PANEL_WIDTH / 2; // 面板中心X
 
-        // ── 面板背景 ────────────────────────────────────────────────
-        g.fill(px - 6, 3, px + pw + 6, height - 3, 0xCC080C18);
-        // 顶部强调线
-        g.fill(px - 6, 3, px + pw + 6, 4, 0xFF5577CC);
-        // 偏移行底部分隔线
-        g.fill(px, 54, px + pw, 55, 0x33AABBCC);
-        // Tab 栏底部分隔线
-        g.fill(px, 75, px + pw, 76, 0x33AABBCC);
-
-        // ── 标题 ─────────────────────────────────────────────────────
+        // 标题
         g.drawCenteredString(font,
                 Component.literal("Map Build Helper").withStyle(s -> s.withColor(0x55BBFF).withBold(true)),
-                cx, 7, 0xFFFFFF);
-
-        // ── 原始坐标 ─────────────────────────────────────────────────
+                cx, panelTopY + 10, 0xFFFFFF);
+        // 原始坐标
         g.drawCenteredString(font,
-                Component.literal(String.format(
-                        "Source  [%d, %d, %d]",
-                        position.getX(), position.getY(), position.getZ()))
+                Component
+                        .literal(String.format("Source  [%d, %d, %d]", position.getX(), position.getY(),
+                                position.getZ()))
                         .withStyle(s -> s.withColor(0x778899)),
-                cx, 18, 0xFFFFFF);
-
-        // ── 应用偏移后坐标 ───────────────────────────────────────────
+                cx, panelTopY + 22, 0xFFFFFF);
+        // 应用偏移后坐标
         boolean hasOffset = offsetX != 0 || offsetY != 0 || offsetZ != 0;
         g.drawCenteredString(font,
-                Component.literal(String.format(
-                        "Applied  [%.2f, %.2f, %.2f]", ax(), ay(), az()))
+                Component.literal(String.format("Applied  [%.2f, %.2f, %.2f]", ax(), ay(), az()))
                         .withStyle(s -> s.withColor(hasOffset ? 0x55DD88 : 0x445566)),
-                cx, 27, 0xFFFFFF);
+                cx, panelTopY + 32, 0xFFFFFF);
 
-        // ── 偏移量标签 ───────────────────────────────────────────────
-        final int oy = 37;
-        final int lw = 17;
-        final int fw = 52;
-        final int seg = fw + lw + 6;
-        drawLabel(g, "ΔX", px, oy + 3, 0xAABBCC);
-        drawLabel(g, "ΔY", px + seg, oy + 3, 0xAABBCC);
-        drawLabel(g, "ΔZ", px + seg * 2, oy + 3, 0xAABBCC);
+        // 手动绘制偏移量行的标签
+        final int oy = panelTopY + 52;
+        final int fh = 18;
+        final int labelW = 14;
+        final int fieldW = 64;
+        final int smallGap = 6;
+        final int bigGap = 12;
+        int groupW = labelW + smallGap + fieldW;
+        int resetW = 48;
+        int totalW = groupW * 3 + bigGap * 2 + resetW;
+        int startX = panelLeftX + (PANEL_WIDTH - totalW) / 2;
 
-        // ── Tab 内容区标题 ───────────────────────────────────────────
+        g.drawString(font, "ΔX", startX, oy + 4, 0xAABBCC, false);
+        int yStart = startX + groupW + bigGap;
+        g.drawString(font, "ΔY", yStart, oy + 4, 0xAABBCC, false);
+        int zStart = yStart + groupW + bigGap;
+        g.drawString(font, "ΔZ", zStart, oy + 4, 0xAABBCC, false);
+
+        // 分隔线
+        g.fill(panelLeftX, panelTopY + 70, panelLeftX + PANEL_WIDTH, panelTopY + 71, 0x33AABBCC);
+        g.fill(panelLeftX, panelTopY + 94, panelLeftX + PANEL_WIDTH, panelTopY + 95, 0x33AABBCC);
+
+        // Tab 内容区标题
         String[] tabTitles = { "Spawn / Offset", "AABB Areas", "Boolean Settings" };
         g.drawString(font,
                 Component.literal("▌ " + tabTitles[activeTab])
                         .withStyle(Style.EMPTY.withColor(0x5577CC).withBold(true)),
-                px, 78, 0xFFFFFF, false);
+                panelLeftX + 6, panelTopY + 98, 0xFFFFFF, false);
 
-        // ── Applied 坐标对应行（Areas tab 中提示用）──────────────────
+        // Areas tab 底部提示
         if (activeTab == 1) {
             g.drawString(font,
-                    Component.literal(String.format(
-                            "Pos: %.1f, %.1f, %.1f  (incl. offset)",
-                            ax(), ay(), az()))
+                    Component.literal(String.format("Pos: %.1f, %.1f, %.1f  (incl. offset)", ax(), ay(), az()))
                             .withStyle(s -> s.withColor(0x445566)),
-                    px + 2, height - 12, 0xFFFFFF, false);
+                    panelLeftX + 6, panelTopY + PANEL_HEIGHT - 12, 0xFFFFFF, false);
         }
-
-        super.render(g, mouseX, mouseY, partialTick);
     }
-
-    private void drawLabel(GuiGraphics g, String text, int x, int y, int color) {
-        g.drawString(font, text, x, y, color, false);
-    }
-
-    // ══════════════════════════════════════════════════════════════════
-    // 杂项
-    // ══════════════════════════════════════════════════════════════════
 
     @Override
     public boolean isPauseScreen() {

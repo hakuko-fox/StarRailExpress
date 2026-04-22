@@ -88,6 +88,7 @@ public class RoleUnlockProgressScreen extends Screen {
 
     // ─── 初始化 ──────────────────────────────────────────────────────────────
 
+    @SuppressWarnings("deprecation")
     @Override
     protected void init() {
         allEntries     = RoleUnlockManager.getInstance().buildClientEntries();
@@ -182,7 +183,9 @@ public class RoleUnlockProgressScreen extends Screen {
     // ─── 列表视图渲染 ────────────────────────────────────────────────────────
 
     private void renderListView(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        @SuppressWarnings("deprecation")
         int games = RoleUnlockManager.getInstance().getClientGlobalGamesPlayed();
+        @SuppressWarnings("deprecation")
         int total = RoleUnlockManager.UNLOCK_THRESHOLDS.size();
         int unlocked = (int) allEntries.stream().filter(RoleUnlockEntry::isUnlocked).count();
 
