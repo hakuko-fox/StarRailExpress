@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.content.item.map_dev;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -13,26 +14,28 @@ import net.minecraft.world.level.Level;
 
 public class MapBuildHelperItem extends Item {
 
-    public static Runnable openScreenCallback = null;
-    
+    public static Predicate<Player> openScreenCallback = null;
+
     public MapBuildHelperItem(Properties properties) {
         super(properties);
     }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
         ItemStack stack = user.getItemInHand(hand);
-        
+
         // 客户端：打开GUI
         if (world.isClientSide()) {
             if (openScreenCallback != null) {
-                openScreenCallback.run();
+                if (openScreenCallback.test(user)) {
+                    return InteractionResultHolder.success(stack);
+                }
             }
         }
-        
         // 返回 success 但不消耗物品，等猜测完成后再消耗
-        return InteractionResultHolder.success(stack);
+        return InteractionResultHolder.pass(stack);
     }
-    
+
     @Override
     public void appendHoverText(ItemStack itemStack, TooltipContext tooltipContext, List<Component> list,
             TooltipFlag tooltipFlag) {

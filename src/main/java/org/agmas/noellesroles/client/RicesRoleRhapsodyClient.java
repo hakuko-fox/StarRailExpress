@@ -125,16 +125,18 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      */
     public static void setupItemCallbacks() {
         // 设置阴谋之书页的GUI打开回调
-        MapBuildHelperItem.openScreenCallback = () -> {
+        MapBuildHelperItem.openScreenCallback = (p) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null)
-                return;
+                return false;
             HitResult hitResult = client.hitResult;
             if (hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockHitResult blockHitResult = (BlockHitResult) hitResult;
                 BlockPos blockPos = blockHitResult.getBlockPos();
                 client.setScreen(new MapBuildHelperScreen(blockPos));
+                return true;
             }
+            return false;
 
         };
         ConspiracyPageItem.openScreenCallback = () -> {
