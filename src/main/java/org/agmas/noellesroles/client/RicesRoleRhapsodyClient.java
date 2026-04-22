@@ -2,6 +2,8 @@ package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.client.gui.screen.map_dev.MapBuildHelperScreen;
+import io.wifi.starrailexpress.content.item.map_dev.MarkRoomItem;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -12,10 +14,14 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+
 import org.agmas.noellesroles.client.renderer.*;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.content.item.ConspiracyPageItem;
@@ -119,6 +125,18 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      */
     public static void setupItemCallbacks() {
         // 设置阴谋之书页的GUI打开回调
+        MarkRoomItem.openScreenCallback = () -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player == null)
+                return;
+            HitResult hitResult = client.hitResult;
+            if (hitResult.getType() == HitResult.Type.BLOCK) {
+                BlockHitResult blockHitResult = (BlockHitResult) hitResult;
+                BlockPos blockPos = blockHitResult.getBlockPos();
+                client.setScreen(new MapBuildHelperScreen(blockPos));
+            }
+
+        };
         ConspiracyPageItem.openScreenCallback = () -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null)
@@ -357,16 +375,19 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             return true;
         }
         if (gameWorld.isRole(client.player, ModRoles.NINJA)) {
-            if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return true;
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player))
+                return true;
             NinjaPlayerComponent ninjaComp = NinjaPlayerComponent.KEY.get(client.player);
-            if (ninjaComp == null) return true;
+            if (ninjaComp == null)
+                return true;
             if (ninjaComp.canUseAbility()) {
-                ClientPlayNetworking.send(new NinjaAbilityC2SPacket());  // 直接 new
+                ClientPlayNetworking.send(new NinjaAbilityC2SPacket()); // 直接 new
             } else if (ninjaComp.cooldown > 0) {
                 client.player.displayClientMessage(
                         Component.translatable("message.noellesroles.ninja.block_cooldown",
-                                        String.format("%.1f", ninjaComp.getCooldownSeconds()))
-                                .withStyle(ChatFormatting.RED), true);
+                                String.format("%.1f", ninjaComp.getCooldownSeconds()))
+                                .withStyle(ChatFormatting.RED),
+                        true);
             }
             return true;
         }
@@ -655,9 +676,9 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
         // 锁实体渲染器 - 使用自定义渲染器
         EntityRendererRegistry.register(ModEntities.LOCK_ENTITY, LockEntityRender::new);
         // 巨大便签实体渲染器 - 使用便签渲染器并放大5倍
-        EntityRendererRegistry.register(ModEntities.GIANT_NOTE, ctx -> new io.wifi.starrailexpress.client.render.entity.NoteEntityRenderer(ctx, 5.0F));
+        EntityRendererRegistry.register(ModEntities.GIANT_NOTE,
+                ctx -> new io.wifi.starrailexpress.client.render.entity.NoteEntityRenderer(ctx, 5.0F));
     }
-
 
     /**
      * 注册Screen

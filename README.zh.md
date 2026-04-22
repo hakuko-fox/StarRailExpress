@@ -177,7 +177,9 @@
   "disabledTasks": ["BREATHE"], // 禁用的任务
   "canSwim": true, // 是否允许玩家进入超过2格的水，设置为false将导致玩家进入2格水时死亡。
   "canJump": true, // 是否允许玩家跳跃
-  "haveOutsideSound": true // 是否有室外室内音效
+  "haveOutsideSound": true, // 是否有室外室内音效
+  "noReset": false, // 是否不进行重置（将会跳过重置环节）
+  "mustCopy": false // 是否强制复制性重置（将会无视enableAutoTranReset设置）
 }
 ```
 使用时请去掉里面的注释（`//`开头）

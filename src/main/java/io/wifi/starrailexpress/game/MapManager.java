@@ -195,6 +195,11 @@ public class MapManager {
                 areas.noReset = false;
             }
 
+            if (jsonObject.has("mustCopy")) {
+                areas.mustCopy = jsonObject.get("mustCopy").getAsBoolean();
+            } else {
+                areas.mustCopy = false;
+            }
             if (jsonObject.has("haveOutsideSound")) {
                 areas.haveOutsideSound = jsonObject.get("haveOutsideSound").getAsBoolean();
             } else {

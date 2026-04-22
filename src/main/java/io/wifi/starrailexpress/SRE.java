@@ -3,6 +3,7 @@ package io.wifi.starrailexpress;
 import com.google.common.reflect.Reflection;
 import com.google.gson.JsonObject;
 import io.wifi.ConfigCompact.ConfigEvents;
+import io.wifi.events.day_night_fight.DNF;
 import io.wifi.StarRailExpressID;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -116,6 +117,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initSkinsNetworkSync();
         SpecialGameModeRoles.init();
         SpecialGameModeModifiers.init();
+        DNF.init();
     }
 
     private void initCCAAuto() {

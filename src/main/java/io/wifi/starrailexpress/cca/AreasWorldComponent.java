@@ -161,6 +161,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public double sceneOffsetX = 0;
     public double sceneOffsetY = 125; // 默认向上偏移125格（场景放置在游玩区域下方100-150格）
     public double sceneOffsetZ = 0;
+    public boolean mustCopy = false;
 
     public PosWithOrientation getSpawnPos() {
         return spawnPos;

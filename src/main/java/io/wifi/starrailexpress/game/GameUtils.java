@@ -202,7 +202,7 @@ public class GameUtils {
             trueStartGame(world, gameMode, time);
             return;
         }
-        if (resetPoints.isEmpty() || SREConfig.instance().enableAutoTrainReset) {
+        if (areas.mustCopy || resetPoints.isEmpty() || SREConfig.instance().enableAutoTrainReset) {
             var task = new ServerTaskInfoClasses.FullTrainResetTask(areas, world, gameMode, time);
             serverTaskQueue.add(task);
         } else {

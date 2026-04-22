@@ -125,5 +125,6 @@ public interface TMMItems {
         ChargeableItemRegistry.register(TMMItems.KNIFE, new KnifeChargeableItem());
         ChargeableItemRegistry.register(TMMItems.GRENADE, new GrenadeChargeableItem());
         WatheBridgerItems.initialize();
+        DevItems.init();
     }
 }
