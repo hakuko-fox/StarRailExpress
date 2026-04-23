@@ -205,7 +205,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             return;
         }
 
-        int availableWidth = Math.max(1, (int) (this.width * 0.8f));
+        int availableWidth = Math.max(1, (int) (this.width * 0.6f));
         shopColumns = Math.max(1, availableWidth / SHOP_ITEM_SPACING_X);
 
         int totalRows = (count + shopColumns - 1) / shopColumns;
@@ -216,10 +216,13 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         int remainingRows = Math.max(0, totalRows - startRow);
         shopRowsOnCurrentPage = Math.max(1, Math.min(SHOP_MAX_ROWS_PER_PAGE, remainingRows));
 
-        int baseY = this.y - 50;
-        int offsetUp = shopRowsOnCurrentPage > 1 ? 20 : 0;
-        shopGridStartY = Math.max(SHOP_TOP_SAFE_Y, baseY - offsetUp);
+        int baseY = this.y;
 
+        if (remainingRows <= 0) {
+            baseY += 6;
+        }
+        int offsetUp = (shopRowsOnCurrentPage) * SHOP_ITEM_SPACING_Y;
+        shopGridStartY = Math.max(SHOP_TOP_SAFE_Y, baseY - offsetUp);
         for (int i = 0; i < count; i++) {
             var widget = shopWidgets.get(i);
             int globalRow = i / shopColumns;
@@ -235,7 +238,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             int localRow = globalRow - startRow;
             int itemsInThisRow = Math.min(shopColumns, count - globalRow * shopColumns);
 
-            int rowStartX = this.width / 2 - ((itemsInThisRow) * SHOP_ITEM_SPACING_X) / 2 + 11;
+            int rowStartX = this.width / 2 - ((itemsInThisRow) * SHOP_ITEM_SPACING_X) / 2 + 10;
             int x = rowStartX + col * SHOP_ITEM_SPACING_X;
             int y = shopGridStartY + localRow * SHOP_ITEM_SPACING_Y;
 
