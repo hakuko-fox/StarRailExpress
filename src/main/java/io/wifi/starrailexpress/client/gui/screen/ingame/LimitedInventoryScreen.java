@@ -235,14 +235,14 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             int localRow = globalRow - startRow;
             int itemsInThisRow = Math.min(shopColumns, count - globalRow * shopColumns);
 
-            int rowStartX = this.width / 2 - ((itemsInThisRow) * SHOP_ITEM_SPACING_X) / 2 + 10;
+            int rowStartX = this.width / 2 - ((itemsInThisRow) * SHOP_ITEM_SPACING_X) / 2 + 11;
             int x = rowStartX + col * SHOP_ITEM_SPACING_X;
             int y = shopGridStartY + localRow * SHOP_ITEM_SPACING_Y;
 
             widget.setPosition(x, y);
         }
 
-        shopNavY = Math.min(this.height - 24, shopGridStartY + shopRowsOnCurrentPage * SHOP_ITEM_SPACING_Y - 16) - 4;
+        shopNavY = Math.min(this.height - 24, shopGridStartY + shopRowsOnCurrentPage * SHOP_ITEM_SPACING_Y - 16) - 8;
 
         boolean needPaging = shopTotalPages > 1;
         if (shopPrevPageButton != null && shopNextPageButton != null) {
