@@ -370,6 +370,19 @@ public class ModItems {
     public static final Item WHEELCHAIR = register(
             new WheelchairItem(),
             "wheelchair");
+    // 新增物品：短管霰弹枪 / 防暴盾 / 警棍 / 对讲机
+    public static final Item SHORT_SHOTGUN = register(
+            new org.agmas.noellesroles.content.item.ShortShotgunItem(new Item.Properties().stacksTo(1).durability(1)),
+            "short_shotgun");
+    public static final Item RIOT_SHIELD = register(
+            new org.agmas.noellesroles.content.item.RiotShieldItem(new Item.Properties().stacksTo(1).durability(1)),
+            "riot_shield");
+    public static final Item BATON = register(
+            new org.agmas.noellesroles.content.item.BatonItem(new Item.Properties().stacksTo(1).durability(4)),
+            "baton");
+    public static final Item RADIO = register(
+            new org.agmas.noellesroles.content.item.RadioItem(new Item.Properties().stacksTo(1)),
+            "radio");
     /**
      * 锁
      * - 工程师专属物品
@@ -735,6 +748,7 @@ public class ModItems {
         ITEM_COOLDOWNS.put(ModItems.ANTIDOTE, getInTicks(1, 0)); // 60秒冷却
         ITEM_COOLDOWNS.put(ModItems.TOXIN, getInTicks(0, 50));
         ITEM_COOLDOWNS.put(ModItems.BANDIT_REVOLVER, getInTicks(0, 40));
+        ITEM_COOLDOWNS.put(ModItems.SHORT_SHOTGUN, getInTicks(30, 0));
         ITEM_COOLDOWNS.put(TMMItems.SCORPION, getInTicks(0, 35));
         ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 75));
         // 毒药/80

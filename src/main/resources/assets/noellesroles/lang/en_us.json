@@ -344,6 +344,7 @@
   "death_reason.noellesroles.dry_death": "Dried up to death",
   "death_reason.noellesroles.shot_innocent": "Killed an innocent civilian",
   "death_reason.noellesroles.insane_killer_death": "Could not reach that place",
+  "death_reason.noellesroles.baton_kill": "Killed by baton (mis‑kill)",
   "death_reason.noellesroles.throwing_knife_hit": "Throwing Knife",
   "death_reason.noellesroles.watcher_calm_kill": "Calm backlash",
   "death_reason.starrailexpress.insane_killer_death": "Could not reach that place",

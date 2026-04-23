@@ -68,6 +68,8 @@ import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.ServerSmokeAreaManager;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
+import org.agmas.noellesroles.content.item.BatonHandler;
+import org.agmas.noellesroles.content.item.RiotShieldHandler;
 import org.agmas.noellesroles.events.OnVendingMachinesBuyItems;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
@@ -746,6 +748,9 @@ public class ModEventsRegister {
         ShootingFrenzyPlayerComponent.registerFrenzyCooldownEvent();
 
         HoanMeirinFistPunchHandler.register();
+        // 注册警棍与防暴盾处理器
+        BatonHandler.register();
+        RiotShieldHandler.register();
         VoodooDeathHandler.registerEvents();
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();

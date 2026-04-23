@@ -38,6 +38,7 @@ public class XiaoNaoHandler {
                     if (gameWorldComponent.isRole(victim, ModRoles.VOODOO)) {
                         return;
                     }
+                    // 小脑(误杀)惩罚写这里
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
                         if (deathReason.getPath().equals("revolver_shot")
                                 || deathReason.getPath().equals("sniper_rifle")
@@ -53,6 +54,7 @@ public class XiaoNaoHandler {
                                 || deathReason.getPath().equals("poison")
                                 || deathReason.getPath().equals("throwing_knife_hit")
                                 || deathReason.getPath().equals("bowen")
+                                || deathReason.getPath().equals("baton_kill")
                                 || deathReason.getPath().equals("fire_axe")) {
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
 

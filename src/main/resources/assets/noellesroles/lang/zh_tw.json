@@ -395,6 +395,7 @@
   "message.hoan_meirin.tip_for_loney": "你感到有一點孤獨了...",
   "death_reason.noellesroles.hoan_meirin_lonely": "孤獨而終",
   "death_reason.noellesroles.hoan_meirin_attack": "功夫",
+  "death_reason.noellesroles.baton_kill": "被警棍誤殺",
   "message.hoan_meirin_attack.3": "💀 一擊斃命！",
   "message.hoan_meirin_attack.general": "拳擊 %s",
   "hud.hoan_meirin.lonely_tip": "請跑到人群當中去避免孤獨死去！",
