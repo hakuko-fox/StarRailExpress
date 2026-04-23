@@ -86,6 +86,7 @@ import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinFistPunc
 import org.agmas.noellesroles.game.roles.Innocent.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooDeathHandler;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorKilledPlayer;
+import org.agmas.noellesroles.game.roles.vigilante.guard.GuardPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
@@ -752,6 +753,8 @@ public class ModEventsRegister {
         // 注册警棍与防暴盾处理器
         BatonHandler.register();
         RiotShieldHandler.register();
+        // 注册保安技能
+        GuardPlayerComponent.register();
         VoodooDeathHandler.registerEvents();
         PlayerStatsBeforeRefugee.beforeLoadFunc = (player) -> {
             ModComponents.DEATH_PENALTY.get(player).init();
@@ -1170,6 +1173,13 @@ public class ModEventsRegister {
                 while (nunchuckCount > 0) {
                     playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     nunchuckCount--;
+                }
+            }
+            if (gameWorldComponent.isRole(playerEntity, ModRoles.GUARD)) {
+                int batonCount = SREItemUtils.clearItem(playerEntity, org.agmas.noellesroles.init.ModItems.BATON);
+                while (batonCount > 0) {
+                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    batonCount--;
                 }
             }
             if (gameWorldComponent.isRole(playerEntity, ModRoles.SEA_KING)) {

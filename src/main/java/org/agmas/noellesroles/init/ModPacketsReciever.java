@@ -546,7 +546,7 @@ public class ModPacketsReciever {
               comp.setStoredStr(message);
               return;
             }
-            if (playerShopComponent.balance < 100) {
+            if (playerShopComponent.balance < 50) {
               context.player().displayClientMessage(
                   Component.translatable("message.noellesroles.insufficient_funds"),
                   true);
@@ -566,7 +566,7 @@ public class ModPacketsReciever {
             if (comp != null) {
               comp.setStoredStr("");
             }
-            playerShopComponent.balance -= 100;
+            playerShopComponent.balance -= 50;
             playerShopComponent.sync();
 
             for (ServerPlayer player : Objects.requireNonNull(context.player().getServer())

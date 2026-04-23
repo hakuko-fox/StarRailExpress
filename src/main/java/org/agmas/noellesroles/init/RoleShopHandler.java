@@ -430,7 +430,32 @@ public class RoleShopHandler {
           return false;
         }
       });
+
+      // 监控失灵 - 60金币（小镇做题家专属）
+      SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+        }
+      });
+
       ShopContent.customEntries.put(ModRoles.EXAMPLER.getIdentifier(), SHOP);
+    }
+    {
+      // 广播员商店 - RADIO 可购买，150金币
+      var SHOP = new java.util.ArrayList<ShopEntry>();
+      SHOP.add(new ShopEntry(ModItems.RADIO.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean canBuy(@NotNull Player player) {
+          return !(MCItemsUtils.countItem(player, ModItems.RADIO) > 0);
+        }
+
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return RoleUtils.insertStackInFreeSlot(player, ModItems.RADIO.getDefaultInstance().copy());
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.BROADCASTER.getIdentifier(), SHOP);
     }
     {
       // 老人的商店
@@ -878,6 +903,13 @@ public class RoleShopHandler {
       shopEntries.add(new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
       shopEntries.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 15,
           ShopEntry.Type.TOOL));
+      // 监控失灵 - 60金币（清道夫专属）
+      shopEntries.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+        }
+      });
       ShopContent.customEntries.put(
           ModRoles.CLEANER_ID,
           shopEntries);
@@ -1334,6 +1366,13 @@ public class RoleShopHandler {
         return triggered;
       }
     });
+    // 监控失灵 - 60金币（刽子手专属）
+    柜子区的商店.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+      }
+    });
     {
       // 射击狂热 - 275金币（魔改psycho，狂暴模式）
       var 柜子区疯魔 = TMMItems.PSYCHO_MODE.getDefaultInstance();
@@ -1399,6 +1438,25 @@ public class RoleShopHandler {
         io.wifi.starrailexpress.index.TMMItems.LOCKPICK.getDefaultInstance(),
         50,
         ShopEntry.Type.TOOL));
+
+    // 闪光弹 - 100金币（滑头鬼专用）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
+      }
+    });
+
+    // 诱饵弹 - 25金币（滑头鬼专用）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
+
+    // 监控失灵 - 50金币（滑头鬼专属）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+      }
+    });
 
     // 关灯 - 300金币 (原版杀手商店物品)
     SLIPPERY_GHOST_SHOP.add(
@@ -1620,11 +1678,16 @@ public class RoleShopHandler {
       }
     });
 
-    // 强盗商店
-    // 刀 - 200金币
+    // 强盗商店（已调整价格与条目）
     BANDIT_SHOP.add(new ShopEntry(
         TMMItems.KNIFE.getDefaultInstance(),
         200,
+        ShopEntry.Type.WEAPON));
+
+    // 匪徒短管霰弹枪 - 450金币
+    BANDIT_SHOP.add(new ShopEntry(
+        ModItems.SHORT_SHOTGUN.getDefaultInstance(),
+        450,
         ShopEntry.Type.WEAPON));
 
     // 匪徒手枪 - 175金币
@@ -1646,7 +1709,15 @@ public class RoleShopHandler {
       }
     });
 
-    // 闪光弹 - 100金币
+    // 监控失灵 - 75金币（强盗专属）
+    BANDIT_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+      }
+    });
+
+    // 闪光弹
     BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 30, ShopEntry.Type.TOOL) {
       @Override
       public boolean canBuy(@NotNull Player player) {
@@ -1654,8 +1725,15 @@ public class RoleShopHandler {
       }
     });
 
-    // 诱饵弹 - 50金币
-    BANDIT_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+    // 诱饵弹 - 15金币
+    BANDIT_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
+
+    {
+      // 保安商店：远程监控台 - 150金币
+      var GUARD_SHOP = new java.util.ArrayList<ShopEntry>();
+      GUARD_SHOP.add(new ShopEntry(ModItems.MONITORING_TERMINAL.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+      ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
+    }
 
     // 小偷商店
     // 小偷的荣誉（金锭） - 根据人数动态计算价格

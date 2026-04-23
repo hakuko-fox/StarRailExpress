@@ -1778,5 +1778,22 @@
   "message.noellesroles.monokuma.frenzy_triggered": "has triggered the Monokuma Domain!",
   "message.noellesroles.monokuma.transform_title": "【Monokuma】",
   "message.noellesroles.monokuma.transform_message": "has completed the final judgment ritual and transformed into Monokuma!",
-  "message.noellesroles.monokuma.aura_coin": "🐼 Monokuma Aura: +%s Coins"
+  "message.noellesroles.monokuma.aura_coin": "🐼 Monokuma Aura: +%s Coins",
+  "==================== Guard Role ====================": "",
+  "announcement.star.role.guard": "Guard",
+  "announcement.star.role.noellesroles.guard": "Guard",
+  "announcement.star.goals.guard": "As the security guard on the train, protecting passengers is your duty!",
+  "announcement.star.win.guard": "Innocents win!",
+  "role.noellesroles.guard": "Guard",
+  "role.noellesroles.guard.desc": "Security personnel on the train, safeguarding passenger safety",
+  "item.noellesroles.riot_shield": "Riot Shield",
+  "item.noellesroles.riot_shield.tooltip": "Equip in offhand to block attacks",
+  "item.noellesroles.baton": "Baton",
+  "item.noellesroles.baton.tooltip.durability": "Durability: %s/%s",
+  "item.noellesroles.baton.tooltip.use": "Left-click to attack, can stun targets",
+  "item.noellesroles.radio": "Radio",
+  "hud.noellesroles.guard.shield_equipped": "Riot Shield equipped",
+  "hud.noellesroles.guard.shield_ready": "Press %s to toggle Riot Shield",
+  "message.noellesroles.guard.shield_taken": "Riot Shield moved to offhand",
+  "message.noellesroles.guard.shield_putaway": "Riot Shield stored"
 }

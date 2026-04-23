@@ -220,6 +220,17 @@ public class RoleInitialItems {
             return trident;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.WATER_GHOST, waterGhostItems);
+
+        // 保安初始物品 - 防暴盾 与 警棍
+        List<Supplier<ItemStack>> guardItems = new ArrayList<>();
+        guardItems.add(() -> ModItems.RIOT_SHIELD.getDefaultInstance());
+        guardItems.add(() -> ModItems.BATON.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.GUARD, guardItems);
+        
+        // 广播员初始物品 - 对讲机
+        List<Supplier<ItemStack>> broadcasterItems = new ArrayList<>();
+        broadcasterItems.add(() -> ModItems.RADIO.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.BROADCASTER, broadcasterItems);
     }
 
 }

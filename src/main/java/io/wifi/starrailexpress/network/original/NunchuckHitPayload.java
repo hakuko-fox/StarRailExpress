@@ -15,6 +15,8 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -107,6 +109,9 @@ public record NunchuckHitPayload(int targetId, int direction) implements CustomP
 
         // 造成1点伤害
         target.hurt(attacker.level().damageSources().playerAttack(attacker), 1.0f);
+
+        // 给目标施加1.5秒缓慢2效果
+        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 1));
 
         // 检查目标是否在方块侧面
         boolean targetNearBlock = NunchuckItem.isPlayerNearBlock(target);

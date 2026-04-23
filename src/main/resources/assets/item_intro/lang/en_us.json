@@ -46,6 +46,7 @@
   "item.noellesroles.diving_boots.desc": "Diving boots that grant Deep Sea Explorer III when worn.",
   "item.noellesroles.fake_knife.desc": "Fake knife that looks like a real knife; can be raised but cannot kill.",
   "item.noellesroles.sp_knife.desc": "Veteran profession's exclusive dagger.",
+  "item.noellesroles.yinyang_sword.desc": "Prelude weapon for Black & White Rampage. Left-click: Black & white particle dash, 6 blocks, kills. Right-click: 1 second charge, 4 block AOE, kills.",
   "item.noellesroles.fake_revolver.desc": "Fake gun that looks like a real gun; can fire five times but cannot cause any kills.",
   "item.noellesroles.fake_bat.desc": "Fake baseball bat that looks like a real bat but cannot deal damage.",
   "item.noellesroles.fake_psycho_mode.desc": "Fake psycho mode used to deceive others, exclusive to the magician profession.",
@@ -106,5 +107,16 @@
   "item.starrailexpress.camera.desc": "Surveillance camera, functions like real-world surveillance",
   "item.starrailexpress.dark_toilet.desc": "Dark toilet, task block; right-click to sit on it and complete the bathroom task.",
   "item.starrailexpress.light_toilet.desc": "Light-colored toilet, task block; right-click to sit on it and complete the bathroom task.",
-  "item.starrailexpress.security_monitor.desc": "Security monitor used to view the perspective of surveillance cameras."
+  "item.starrailexpress.security_monitor.desc": "Security monitor used to view the perspective of surveillance cameras.",
+  "item.noellesroles.monitoring_terminal.desc": "Remote monitoring terminal. Right-click a security monitor to bind first, then right-click to remotely view bound monitors.",
+  "item.noellesroles.ninja_knife.desc": "Disposable item, ninja's melee weapon; right-click to instantly assassinate the target, silent.",
+  "item.noellesroles.ninja_shuriken.desc": "Disposable item, ninja's ranged weapon; hold right-click to throw, silent.",
+  "item.noellesroles.mercenary_contract.desc": "Mercenary exclusive item. Others can right-click to sign a mercenary contract, select a target and pay 175 gold. The mercenary can right-click a signed contract to receive the payment and gain a wanted target. Contracts can be dropped with Q key.",
+  "item.noellesroles.riot_shield.desc": "Guard exclusive item. Equipped in offhand to block incoming attacks and provide protection.",
+  "item.noellesroles.baton.desc": "Guard exclusive item. Melee weapon with 4 durability; left-click to attack, can stun targets.",
+  "item.noellesroles.radio.desc": "Broadcaster exclusive item. Right-click to use; allows communication with other players.",
+  "item.noellesroles.short_shotgun.desc": "Short-range shotgun used by bandits; deals high damage at close range.",
+  "item.noellesroles.executioner_gun.desc": "Fool exclusive weapon. Can only deal damage to players with the 'Heresy' effect (instant kill). Starts with 1 bullet, can only be replenished through the Tarot Society.",
+  "item.noellesroles.honored_note.desc": "Fool exclusive item, purchasable at the shop (50 gold). Right-click walls/floors to place, creating an indestructible text entity. Players can press V near the note to pray and gain the 'Tarot Society Member' tag.",
+  "item.noellesroles.spirit_cloak.desc": "Fool exclusive item, purchasable at the shop (200 gold). Right-click to gain 5 seconds of invincibility, cannot attack, movement speed unchanged. 90 second cooldown."
 }

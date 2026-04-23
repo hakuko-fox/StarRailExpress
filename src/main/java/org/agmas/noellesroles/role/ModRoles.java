@@ -319,6 +319,10 @@ public class ModRoles {
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setVigilanteTeam(true).setCanSeeCoin(true).setCanPickUpRevolver(false).setCanAutoAddMoney(true);
+        public static final ResourceLocation GUARD_ID = Noellesroles.id("guard");
+        public static SRERole GUARD = TMMRoles.registerRole(
+                        new NormalRole(GUARD_ID, new Color(120, 120, 120).getRGB(), true, false, SRERole.MoodType.REAL,
+                                        TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setCanAutoAddMoney(false).setVigilanteTeam(true).setOccupiedRoleCount(1);
     public static SRERole WIND_YAOSE = TMMRoles.registerRole(
             new ExtraEffectRole(WIND_YAOSE_ID, new Color(127, 231, 255).getRGB(),
                     false, false, SRERole.MoodType.FAKE,

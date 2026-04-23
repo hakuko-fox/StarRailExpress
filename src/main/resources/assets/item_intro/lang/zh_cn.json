@@ -50,6 +50,7 @@
   "item.noellesroles.diving_boots.desc": "潜水靴子，穿戴时获得深海探索者3。",
   "item.noellesroles.fake_knife.desc": "假刀，外观像真刀，可以举起，但无法造成击杀。",
   "item.noellesroles.sp_knife.desc": "退伍军人职业的专属匕首。",
+  "item.noellesroles.yinyang_sword.desc": "黑白的武器。左键：黑白粒子突进6格击杀。右键：前摇1秒释放4格AOE击杀。",
   "item.noellesroles.fake_revolver.desc": "假枪，外观像真枪，只能射击五次，且无法造成任何击杀。",
   "item.noellesroles.fake_bat.desc": "假球棒，外观像真球棒但无法造成伤害。",
   "item.noellesroles.fake_psycho_mode.desc": "假疯狂模式，用于迷惑他人，魔术师职业专属。",
@@ -114,5 +115,12 @@
   "item.noellesroles.monitoring_terminal.desc": "远程监控终端。先右键安全监控器进行绑定，再右键即可远程查看已绑定监控器。",
   "item.noellesroles.ninja_knife.desc": "一次性用品，忍者的近战武器，右键立即刺杀目标，无声。",
   "item.noellesroles.ninja_shuriken.desc": "一次性用品，忍者的远程武器，长按右键发射，无声。",
-  "item.noellesroles.mercenary_contract.desc": "雇佣兵职业专属道具，其他人可以右键签订雇佣契约，选择目标并支付175金币，雇佣兵右键已签订的契约能够获得雇佣金并为雇佣兵提供通缉目标。契约可以按Q键丢出。"
+  "item.noellesroles.mercenary_contract.desc": "雇佣兵职业专属道具，其他人可以右键签订雇佣契约，选择目标并支付175金币，雇佣兵右键已签订的契约能够获得雇佣金并为雇佣兵提供通缉目标。契约可以按Q键丢出。",
+  "item.noellesroles.riot_shield.desc": "保安职业专属物品。装备在主手/副手举盾时可以抵挡一次正面的攻击并提供保护。",
+  "item.noellesroles.baton.desc": "保安职业专属物品。近战武器，拥有4点耐久。左键攻击，可以使目标眩晕，若目标在4秒内受到两次棍击则造成一次击杀。",
+  "item.noellesroles.radio.desc": "右键使用，可以与其他玩家进行远程通讯。",
+  "item.noellesroles.short_shotgun.desc": "一次性用品，可以击杀2格扇形范围内的所有人。",
+  "item.noellesroles.executioner_gun.desc": "愚者专属武器，只能对拥有“异端”效果的玩家造成伤害（一击必杀）。初始子弹数1，只能通过塔罗会补充子弹。",
+  "item.noellesroles.honored_note.desc": "愚者商店购买。右键墙壁/地面贴附，生成不可破坏的文本实体。玩家对着纸条按J键祷告，加入“塔罗会成员”。",
+  "item.noellesroles.spirit_cloak.desc": "愚者商店购买。右键使用后获得5秒无敌、无法攻击、移动速度不变。冷却90秒。"
 }
