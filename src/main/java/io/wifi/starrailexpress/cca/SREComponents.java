@@ -22,6 +22,7 @@ public class SREComponents
         registry.register(SRERoleWorldComponent.KEY, SRERoleWorldComponent::new);
         registry.register(AreasWorldComponent.KEY, AreasWorldComponent::new);
         registry.register(SREWorldBlackoutComponent.KEY, SREWorldBlackoutComponent::new);
+        registry.register(SREMonitorWorldComponent.KEY, SREMonitorWorldComponent::new);
         registry.register(SREGameTimeComponent.KEY, SREGameTimeComponent::new);
         registry.register(AutoStartComponent.KEY, AutoStartComponent::new);
         registry.register(SREGameRoundEndComponent.KEY, SREGameRoundEndComponent::new);

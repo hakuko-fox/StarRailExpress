@@ -279,7 +279,7 @@ public class SecurityMonitorBlock extends BaseEntityBlock {
         }
     }
 
-    private static void cycleToNextCamera(Player player, List<BlockPos> cameraPositions) {
+    public static void cycleToNextCamera(Player player, List<BlockPos> cameraPositions) {
         if (cameraPositions.isEmpty())
             return;
 

@@ -157,6 +157,23 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         return triggered;
     }
 
+    public static boolean useMonitorBroken(@NotNull Player player, int duration) {
+        SREMonitorWorldComponent monitorCCA = SREMonitorWorldComponent.KEY.get(player.level());
+        if (monitorCCA.brokenTime > 0)
+            return false;
+        boolean triggered = monitorCCA.triggerBroken(true, duration);
+        if (triggered) {
+            // 公共 Cooldown
+            player.level().players().forEach(
+                    p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN, GameConstants.getMonitorBrokenCooldownGlobal()));
+
+            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.BLACKOUT));
+            player.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
+                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
+        }
+        return triggered;
+    }
+
     public static boolean useBlackout(@NotNull Player player) {
         return useBlackout(player, SREWorldBlackoutComponent.getMaxDuration(player.level()));
     }

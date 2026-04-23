@@ -531,6 +531,8 @@
   "item.starrailexpress.binding_tool": "绑定工具",
   "item.starrailexpress.binding_tool.tooltip": "右键点击摄像头保存位置，再右键点击监控器进行绑定",
   "item.trainmurdermystery.bat": "球棒",
+  "item.trainmurdermystery.monitor_broken": "监控失灵",
+  "item.trainmurdermystery.monitor_broken.tooltip": "关闭车上所有的监控摄像头1分钟！",
   "item.trainmurdermystery.blackout": "停电",
   "item.trainmurdermystery.blackout.tooltip": "关闭车上所有灯光15到20秒\n使用你的直觉[Left-Alt]可以黑暗中看到你的目标\n购买后立即激活，有5分钟冷却时间",
   "item.trainmurdermystery.body_bag": "裹尸袋",

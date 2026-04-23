@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.client.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.cca.SREMonitorWorldComponent;
 import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -17,7 +17,6 @@ public class SecurityCameraHUD {
     // ResourceLocation.fromNamespaceAndPath("starrailexpress",
     // "textures/gui/security_monitor.png");
     private static final int HUD_WIDTH = 160;
-    private static final int HUD_HEIGHT = 40;
     private static long lastBlinkSwitchTime = System.currentTimeMillis();
     private static boolean shouldBlink = false;
 
@@ -32,13 +31,11 @@ public class SecurityCameraHUD {
             return;
         }
 
-        PoseStack poseStack = guiGraphics.pose();
-
+        if (SREMonitorWorldComponent.KEY.get(minecraft.level).isBroken()) {
+            renderBlackBackground(guiGraphics, screenWidth, screenHeight);
+        }
         // 更新闪烁效果
         updateBlinkEffect();
-
-        // 渲染监控HUD背景
-        // renderSecurityMonitorHUD(guiGraphics, screenWidth, screenHeight);
 
         // 渲染摄像头信息
         renderCameraInfo(guiGraphics, screenWidth, screenHeight);
@@ -50,28 +47,9 @@ public class SecurityCameraHUD {
         renderStatusIndicator(guiGraphics, screenWidth, screenHeight);
     }
 
-    // private static void renderSecurityMonitorHUD(GuiGraphics guiGraphics, int
-    // screenWidth, int screenHeight) {
-    // RenderSystem.setShader(GameRenderer::getPositionTexShader);
-    // RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-    // RenderSystem.setShaderTexture(0, SECURITY_MONITOR_TEXTURE);
-    //
-    // int x = (screenWidth - HUD_WIDTH) / 2;
-    // int y = 10;
-    //
-    // // 绘制监控HUD边框 - 如果在闪烁状态则改变颜色
-    // int borderColor = shouldBlink ? 0xFFFF0000 : 0xFF00FF00;
-    // guiGraphics.fill(x, y, x + HUD_WIDTH, y + 2, borderColor); // 顶边框
-    // guiGraphics.fill(x, y, x + 2, y + HUD_HEIGHT, borderColor); // 左边框
-    // guiGraphics.fill(x, y + HUD_HEIGHT - 2, x + HUD_WIDTH, y + HUD_HEIGHT,
-    // borderColor); // 底边框
-    // guiGraphics.fill(x + HUD_WIDTH - 2, y, x + HUD_WIDTH, y + HUD_HEIGHT,
-    // borderColor); // 右边框
-    //
-    // // 中间区域
-    // guiGraphics.fill(x + 2, y + 2, x + HUD_WIDTH - 2, y + HUD_HEIGHT - 2,
-    // 0x44002200); // 深绿色半透明背景
-    // }
+    private static void renderBlackBackground(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+        guiGraphics.fill(0, 0, screenWidth, screenHeight, java.awt.Color.BLACK.getRGB());
+    }
 
     private static void renderCameraInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         BlockPos cameraPos = SecurityMonitorBlock.getCurrentCameraPos();
@@ -120,8 +98,6 @@ public class SecurityCameraHUD {
         if (!SecurityMonitorBlock.isInSecurityMode() || !SREClientConfig.instance().enableSecurityCameraHUD) {
             return;
         }
-
-        PoseStack poseStack = guiGraphics.pose();
         int feedWidth = screenWidth / 4;
         int feedHeight = screenHeight / 4;
         int x = 10; // 左上角

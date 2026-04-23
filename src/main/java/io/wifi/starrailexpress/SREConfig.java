@@ -15,6 +15,7 @@ public class SREConfig implements ConfigData {
     public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
             SREConfig.class);
 
+
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public boolean enableNoLimitLoversInLoverMode = false;
@@ -92,6 +93,9 @@ public class SREConfig implements ConfigData {
     public int blackoutPrice = 100;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
+    public int monitorBrokenPrice = 100;
+    @ConfigSync(shouldSync = true)
+    @ConfigEntry.Category(value = "shop")
     public int notePrice = 10;
 
     // 物品冷却时间配置（秒）- 服务端只读
@@ -116,6 +120,10 @@ public class SREConfig implements ConfigData {
     public int blackoutCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")
     public int blackoutCooldownGlobal = 40;
+    @ConfigEntry.Category(value = "cooldowns")
+    public int monitorBrokenCooldown = 180;
+    @ConfigEntry.Category(value = "cooldowns")
+    public int monitorBrokenCooldownGlobal = 40;
     // 游戏配置 - 服务端只读
 
     // Bartender - Glow duration in seconds
@@ -135,6 +143,7 @@ public class SREConfig implements ConfigData {
     public int psychoModeDuration = 30;
     public int firecrackerDuration = 15;
     public int blackoutMaxDuration = 25;
+    public int monitorBrokenDuration = 30;
     public float blackoutRandomRangePercent = 0.32f;
     public boolean enableAutoTrainReset = false;
     public boolean verboseTrainResetLogs = true;

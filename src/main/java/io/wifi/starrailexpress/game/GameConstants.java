@@ -57,6 +57,7 @@ public class GameConstants {
         ITEM_COOLDOWNS.put(TMMItems.BODY_BAG, SREConfig.instance().bodyBagCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.PSYCHO_MODE, SREConfig.instance().psychoModeCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.BLACKOUT, SREConfig.instance().blackoutCooldown * 20);
+        ITEM_COOLDOWNS.put(TMMItems.MONITOR_BROKEN, SREConfig.instance().monitorBrokenCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.NUNCHUCK, 160); // 8秒冷却
         ITEM_COOLDOWNS.put(TMMItems.SNIPER_RIFLE, 80); // 4秒冷却
 
@@ -195,5 +196,9 @@ public class GameConstants {
 
     public static int getFurandoruSafeLine() {
         return SREConfig.instance().furandoruSafeTime * 20;
+    }
+
+    public static int getMonitorBrokenCooldownGlobal() {
+        return  SREConfig.instance().monitorBrokenCooldownGlobal * 20;
     }
 }

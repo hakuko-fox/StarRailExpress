@@ -69,6 +69,7 @@ public interface TMMItems {
             EQUIPMENT_GROUP);
     Item LETTER = registrar.create("letter", new Item(new Item.Properties().stacksTo(1)), EQUIPMENT_GROUP);
     Item BLACKOUT = registrar.create("blackout", new Item(new Item.Properties().stacksTo(1)));
+    Item MONITOR_BROKEN = registrar.create("monitor_broken", new Item(new Item.Properties().stacksTo(1)));
     Item PSYCHO_MODE = registrar.create("psycho_mode", new Item(new Item.Properties().stacksTo(1)));
     Item POISON_VIAL = registrar.create("poison_vial", new Item(new Item.Properties().stacksTo(1)),
             EQUIPMENT_GROUP);

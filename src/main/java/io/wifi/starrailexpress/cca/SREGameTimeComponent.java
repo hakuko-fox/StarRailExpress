@@ -86,7 +86,7 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
 
     @Override
     public void readFromNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        this.resetTime = tag.getInt("resetTime");
-        this.time = tag.getInt("time");
+        this.resetTime = tag.contains("resetTime") ? tag.getInt("resetTime") : 0;
+        this.time = tag.contains("time") ? tag.getInt("time") : 0;
     }
 }

@@ -160,7 +160,8 @@ public class TimeStopShader {
 
         // 黑屏监控着色器
         m_post.addSinglePassEntry("black", pass -> processPlayer(mc.player, () -> {
-            if (!mc.player.hasEffect(ModEffects.BLACK_MONITOR)) {
+            boolean flag = mc.player.hasEffect(ModEffects.BLACK_MONITOR);
+            if (!flag) {
                 // 如果没有效果，逐渐减少黑屏强度
                 if (blackScreenStrength > 0) {
                     blackScreenStrength = Math.max(0, blackScreenStrength - 0.05f);
