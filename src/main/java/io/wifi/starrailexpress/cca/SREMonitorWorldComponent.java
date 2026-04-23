@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.cca;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -39,7 +40,7 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
                 for (ServerPlayer player : serverWorld.players()) {
                     if (GameUtils.isPlayerAliveAndSurvival(player)) {
                         player.connection.send(new ClientboundSoundPacket(
-                                (SoundEvents.GENERIC_EXPLODE),
+                                BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.SHEEP_SHEAR),
                                 SoundSource.PLAYERS,
                                 player.getX(), player.getY(), player.getZ(), 100f, 1f, player.getRandom().nextLong()));
                     }
@@ -58,6 +59,11 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
     public void tick() {
         if (brokenTime > 0) {
             brokenTime--;
+            if (brokenTime == 0) {
+                if (!this.world.isClientSide) {
+                    sync();
+                }
+            }
         }
     }
 
