@@ -7,12 +7,12 @@ import io.wifi.starrailexpress.content.block.api.AutoResetBlockInterface;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import io.wifi.starrailexpress.content.block_entity.CameraBlockEntity;
 import io.wifi.starrailexpress.game.GameUtils.BlockEntityInfo;
+import io.wifi.starrailexpress.index.TMMBlockEntities;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -83,27 +83,23 @@ public class CameraBlock extends BaseEntityBlock implements TaskInstinctShowable
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
             BlockHitResult hit) {
-        if (!world.isClientSide) {
-            player.displayClientMessage(
-                    Component.literal("摄像头位置: X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ())
-                            .withStyle(ChatFormatting.YELLOW),
-                    true);
+        if (player.isCreative()) {
+            if (!world.isClientSide) {
+                player.displayClientMessage(
+                        Component.literal("摄像头位置: X=" + pos.getX() + ", Y=" + pos.getY() + ", Z=" + pos.getZ())
+                                .withStyle(ChatFormatting.YELLOW),
+                        true);
+            }
+            return InteractionResult.SUCCESS;
         }
-        return InteractionResult.SUCCESS;
+        return InteractionResult.PASS;
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
             BlockEntityType<T> type) {
-        return null;
-    }
-
-    @Override
-    public void tick(BlockState blockState, ServerLevel serverLevel, BlockPos blockPos, RandomSource randomSource) {
-        if (serverLevel.getBlockEntity(blockPos) instanceof CameraBlockEntity cbe) {
-            cbe.tick();
-        }
+        return createTickerHelper(type, TMMBlockEntities.CAMERA, CameraBlockEntity::tick);
     }
 
     @Override

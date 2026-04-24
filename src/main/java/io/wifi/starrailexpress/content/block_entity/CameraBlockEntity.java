@@ -1,10 +1,10 @@
 package io.wifi.starrailexpress.content.block_entity;
-
 import io.wifi.starrailexpress.index.TMMBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -29,11 +29,11 @@ public class CameraBlockEntity extends BlockEntity {
         this.broken = 0;
     }
 
-    public void tick() {
-        if (this.broken > 0) {
-            this.broken--;
-            if (this.broken == 0) {
-                this.setChanged();
+    public static void tick(Level world, BlockPos pos, BlockState state, CameraBlockEntity cameraBlockEntity) {
+        if (cameraBlockEntity.broken > 0) {
+            cameraBlockEntity.broken--;
+            if (cameraBlockEntity.broken == 0) {
+                cameraBlockEntity.setChanged();
             }
         }
     }
