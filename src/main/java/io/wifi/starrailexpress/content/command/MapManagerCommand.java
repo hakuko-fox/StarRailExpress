@@ -51,9 +51,9 @@ public class MapManagerCommand {
                           BlockPos trainMinPos = BlockPos.containing(areas.getResetTemplateArea().getMinPosition());
                           BlockPos trainMaxPos = BlockPos.containing(areas.getResetTemplateArea().getMaxPosition());
                           BoundingBox trainBox = BoundingBox.fromCorners(trainMinPos, trainMaxPos);
-                          for (int x = trainBox.minZ(); x <= trainBox.maxZ(); x++) {
+                          for (int z = trainBox.minZ(); z <= trainBox.maxZ(); z++) {
                             for (int y = trainBox.minY(); y <= trainBox.maxY(); y++) {
-                              for (int z = trainBox.minX(); z <= trainBox.maxX(); z++) {
+                              for (int x = trainBox.minX(); x <= trainBox.maxX(); x++) {
                                 if (level.getBlockState(new BlockPos(x, y, z)).is(TMMBlocks.CAMERA)) {
                                   smbe.addCameraPosition(
                                       BindingToolItem.CalcRelativePosition(blockPos, new BlockPos(x, y, z)));
