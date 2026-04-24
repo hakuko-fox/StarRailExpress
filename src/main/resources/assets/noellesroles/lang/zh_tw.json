@@ -15,6 +15,7 @@
   "info.screen.roleid.elf": "警長陣營\n你無法撿起手槍，開局自帶一把弓，可在商店中購買弩、毒箭、光靈箭。\n毒箭：被射中的人直接死亡\n光靈箭：被射中的人會發光，若光靈箭被射在牆面上則顯示6格半徑內的玩家人數。\n如果射殺了好人，則自己也會死亡。\n遊俠死後手上的弓和弩會變成左輪手槍掉在地上。",
   "info.screen.roleid.wind_yaose": "中立陣營\n與殺手一同勝利\n永久隱身\n擁有風精靈透視且走路沒有聲音\n主動技能: 將附近一定範圍內玩家的音量調至5%%\n商店可購買風彈，風彈可將一定範圍內的玩家彈開。",
   "info.screen.roleid.blood_feudist": "殺手陣營\n僅能在12人及以上對局中出現。\n擁有無限體力和假心情。\n每有人因誤殺平民而亡，你都會獲得100金幣。\n仇殺客進化獲得的藥水效果需要手動按技能鍵開啟/關閉。\n1人誤殺：永久速度1\n2人誤殺：永久急迫2\n3人誤殺：立刻獲得150金幣\n4人誤殺：永久速度2\n5人誤殺：免疫所有負面效果\n仇殺客的瘋狂模式購買CD更短。\n商店只能購買撬棍、開鎖器和瘋狂模式。",
+  "info.screen.roleid.delayer": "殺手陣營\n你可以透視攝像頭的位置。\n你可以在商店中購買鉗子，3點耐久，30秒cd，右鍵攝像頭可以使攝像頭失靈90秒。\n你擊殺玩家時時間會額外增加20秒。\n商店無法購買手榴彈和停電，且監控失靈更便宜。\n當你存在於場上，且遊戲時間只剩下1分25秒時，會增加30秒遊戲時間（僅觸發一次）。",
   "info.screen.roleid.photographer": "平民陣營\n可在商店中購買拍立得相機和相紙\n按下快門時，你可以致盲面前的人並使鏡頭中隱身的人顯形。\n可以拍攝照片記錄犯罪現場。\n物品欄中將相紙右鍵拖入相機裝填相紙。\n滾輪調整視距，Shift鍵調整閃光燈和曝光度,右鍵按下快門進行拍攝。\n拍好的照片可以Q鍵丟出來。\n死亡時掉落照片。",
   "info.screen.roleid.avenger": "平民陣營\n開局獲得一個保護目標\n在保護目標死後，你獲得一把左輪手槍，並且得知擊殺者的名字。\n保護目標有可能是好人/中立/殺手。\n若兇手為???則保護目標死於無來源傷害或死亡距離過遠",
   "info.screen.roleid.conspirator": "殺手陣營\n商店擁有一個死亡筆記，可以猜測他人的職業，猜中後目標玩家會因為心臟衰竭而死\n如果你猜中了私家偵探的身份，則會暴露自己的位置與資訊。\n商店部分物品價格改變，並且僅能購買筆記、刀、槍、開鎖器。\n猜錯三次會導致自己死亡。",
@@ -283,6 +284,9 @@
   "announcement.star.role.party_killer": "派對狂",
   "announcement.star.role.noellesroles.party_killer": "派對狂",
   "announcement.star.goals.party_killer": "他是否還是在遊樂園中為大家帶來歡笑的小丑？",
+  "announcement.star.role.delayer": "滯時鬼",
+  "announcement.star.role.noellesroles.delayer": "滯時鬼",
+  "announcement.star.goals.delayer": "為其他殺手同夥贏得更多的機會!",
   "announcement.star.win.party_killer": "殺手勝利！",
   "hud.noellesroles.party_killer.count": "派對計數: %s/%s",
   "hud.noellesroles.party_killer.ready": "派對已準備就緒！",
@@ -1667,6 +1671,8 @@
   "item.noellesroles.fire_axe.target_dead": "目標已經死亡！",
   "death_reason.noellesroles.fire_axe": "消防斧劈砍",
   "death_reason.starrailexpress.hot_potato": "燙手的山芋",
+  "item.noellesroles.camera_shears": "鉗子",
+  "item.noellesroles.camera_shears.tooltip": "右鍵點擊攝像頭將其破壞！",
   "item.noellesroles.rope": "繩索",
   "item.noellesroles.rope.tooltip.durability": "耐久度: %s/%s",
   "item.noellesroles.rope.tooltip.use": "右鍵：將前方直線距離10格內最近的玩家拉到自己身前",
@@ -1674,6 +1680,7 @@
   "item.noellesroles.rope.on_cooldown": "繩索正在冷卻中！",
   "item.noellesroles.rope.no_target": "前方沒有可拉取的目標！",
   "item.noellesroles.rope.success": "成功拉取了目標！",
+  "item.noellesroles.camera_shears.on_cooldown": "剪刀正在冷卻中！",
   "item.noellesroles.extinguisher": "滅火器",
   "item.noellesroles.extinguisher.tooltip.durability": "耐久度: %s/%s",
   "item.noellesroles.extinguisher.tooltip.use": "右鍵：對前方玩家噴射（緩慢+失明1.5秒，可清除被縱火犯澆上的汽油）",
@@ -1988,5 +1995,6 @@
   "hud.noellesroles.guard.shield_equipped": "防暴盾牌已裝備",
   "hud.noellesroles.guard.shield_ready": "按 %s 切換防暴盾牌",
   "message.noellesroles.guard.shield_taken": "已將防暴盾牌放至副手",
-  "message.noellesroles.guard.shield_putaway": "已將防暴盾牌收起"
+  "message.noellesroles.guard.shield_putaway": "已將防暴盾牌收起",
+  "item.noellesroles.camera_shears.use_failed_broken": "攝像頭已被破壞"
 }
