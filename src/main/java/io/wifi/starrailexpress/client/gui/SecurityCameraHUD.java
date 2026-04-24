@@ -36,6 +36,7 @@ public class SecurityCameraHUD {
 
         if (SREMonitorWorldComponent.KEY.get(minecraft.level).isBroken()) {
             renderRawColorBackground(guiGraphics, screenWidth, screenHeight, java.awt.Color.BLACK.getRGB());
+            isBroken = true;
         } else {
             if (cameraPos == null)
                 isBroken = true;
@@ -48,7 +49,7 @@ public class SecurityCameraHUD {
                 }
             }
             if (isBroken) {
-                renderRawColorBackground(guiGraphics, screenWidth, screenHeight, java.awt.Color.DARK_GRAY.getRGB());
+                renderRawColorBackground(guiGraphics, screenWidth, screenHeight, java.awt.Color.BLACK.getRGB());
             }
         }
         // 更新闪烁效果
