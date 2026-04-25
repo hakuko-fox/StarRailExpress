@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.mixin.command;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
@@ -12,6 +13,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.content.command.argument.GameModeArgumentType;
 import io.wifi.starrailexpress.content.command.misc.CommandPredicate;
+import io.wifi.starrailexpress.content.vote.VoteManager;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -129,6 +131,24 @@ public abstract class ExecuteCommandInvoker {
                           int player_role_type = PlayerRoleWeightManager.getRoleType(player_role);
                           return player_role_type == role_type;
                         }))));
+                         // ── 新增：sre:vote_status 条件 ──────────────────────────
+    literalArgumentBuilder.then(
+        Commands.literal("sre:vote_status")
+            .then(sre$addConditional(
+                commandNode,
+                Commands.argument("status", StringArgumentType.word())
+                    .suggests((ctx, builder) -> {
+                        builder.suggest("idle");
+                        builder.suggest("active");
+                        builder.suggest("paused");
+                        return builder.buildFuture();
+                    }),
+                isIf,
+                ctx -> {
+                    String desired = StringArgumentType.getString(ctx, "status");
+                    return VoteManager.isStatus(desired);
+                })));
+
     cir.setReturnValue(literalArgumentBuilder);
   }
 }

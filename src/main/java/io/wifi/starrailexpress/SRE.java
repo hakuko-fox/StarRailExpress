@@ -19,6 +19,10 @@ import io.wifi.starrailexpress.content.command.argument.GameModeArgumentType;
 import io.wifi.starrailexpress.content.command.argument.MapLoadArgumentType;
 import io.wifi.starrailexpress.content.command.argument.SkinArgumentType;
 import io.wifi.starrailexpress.content.command.argument.TimeOfDayArgumentType;
+import io.wifi.starrailexpress.content.vote.VoteManager;
+import io.wifi.starrailexpress.content.vote.command.SREVoteCommand;
+import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
+import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
 import io.wifi.starrailexpress.event.AFKEventHandler;
 import io.wifi.starrailexpress.event.EntityInteractionHandler;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
@@ -168,15 +172,20 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         GameUtils.registerEventForServerTickForDoingResetTasks();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             SERVER = server;
+            VoteManager.init(server);
+            VoteManager.registerEvents(); // 注册JOIN事件
             initConstants();
             GAME = new SREMurderGameMode(SRE.id("murder"));
             ServerMapConfig.getInstance(server);
             net.exmo.sre.client.chat.ChatDialogueManager.getInstance(server);
-            ServerTickEvents.START_SERVER_TICK.register(serv -> {
-                io.wifi.starrailexpress.game.voting.MapVotingManager.getInstance().tick();
-            });
             REPLAY_MANAGER = new GameReplayManager(server);
             SyncMapConfigPayload.sendToAllPlayers();
+        });
+        ServerTickEvents.START_SERVER_TICK.register(serv -> {
+            io.wifi.starrailexpress.game.voting.MapVotingManager.getInstance().tick();
+        });
+        ServerTickEvents.END_SERVER_TICK.register(serv -> {
+            VoteManager.onServerTick();
         });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             MysqlPlayerDataStore.shutdown();
@@ -225,6 +234,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void registerCommands() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
+            SREVoteCommand.register(dispatcher, registryAccess);
             GiveRoomKeyCommand.register(dispatcher);
             ListRoleInRoundCommand.register(dispatcher);
             StartCommand.register(dispatcher);
@@ -294,7 +304,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void registerPayloadTypes() {
         // Mod Whitelist Payload
-
+        PayloadTypeRegistry.playS2C().register(VoteSyncS2CPacket.TYPE, VoteSyncS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(VoteCastC2SPacket.TYPE, VoteCastC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(
                 net.exmo.sre.mod_whitelist.common.network.ModWhitelistPayload.ID,
                 net.exmo.sre.mod_whitelist.common.network.ModWhitelistPayload.CODEC);
@@ -400,6 +411,10 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
         UpdateSkinSelectedPayload.registerReceiver();
         UpdateNameTagSelectedPayload.registerReceiver();
+        // 服务端处理客户端投票包
+        ServerPlayNetworking.registerGlobalReceiver(VoteCastC2SPacket.TYPE, (packet, context) -> {
+            VoteManager.handleVoteCast(context.player(), packet.optionIndex());
+        });
         ServerPlayNetworking.registerGlobalReceiver(KnifeStabPayload.ID, new KnifeStabPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(ModVersionPacket.ID, new ModVersionPacket.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(GunShootPayload.ID, new GunShootPayload.Receiver());

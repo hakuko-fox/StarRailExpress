@@ -7,6 +7,8 @@ import io.wifi.starrailexpress.client.gui.ScopeOverlayRenderer;
 import io.wifi.starrailexpress.client.gui.screen.MapSelectorScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomBattleScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen;
+import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
+import io.wifi.starrailexpress.content.vote.client.VoteScreen;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -68,6 +70,8 @@ public class InputHandler {
             if (mapVotingComponent.isVotingActive()) {
                 // 打开投票界面
                 client.setScreen(new MapSelectorScreen());
+            } else if (ClientVoteCache.canReOpen() && !(client.screen instanceof VoteScreen)) {
+                client.setScreen(new VoteScreen());
             }
         }
 

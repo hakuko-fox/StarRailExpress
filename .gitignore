@@ -6,6 +6,8 @@ out/*
 .vscode/*
 bin/*
 .apt_generated/*
+tools/other/*
+/tools/other/
 
 /.kilocode/
 /run/
