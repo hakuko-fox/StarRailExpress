@@ -1,6 +1,7 @@
 package net.exmo.mixin.client;
 
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.compat.IrisHelper;
 import net.exmo.sre.EXSREClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -19,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class IsNightVisionMixin {
     @Inject(at = @At("HEAD"), method = "hasEffect", cancellable = true)
     public void hasEffect$sre$inject(Holder<MobEffect> holder, CallbackInfoReturnable<Boolean> cir) {
+        if (!IrisHelper.isIrisShaderPackInUse())return;
+
         var player = (LivingEntity) (Object) this;
         if (player instanceof LocalPlayer localPlayer) {
             LocalPlayer player1 = Minecraft.getInstance().player;
@@ -33,6 +36,8 @@ public class IsNightVisionMixin {
     }
     @Inject(at = @At("HEAD"), method = "getEffect", cancellable = true)
     public void getEffect$sre$inject(Holder<MobEffect> holder, CallbackInfoReturnable<MobEffectInstance> cir) {
+        if (!IrisHelper.isIrisShaderPackInUse())return;
+
         var player = (LivingEntity) (Object) this;
         if (player instanceof LocalPlayer localPlayer) {
             LocalPlayer player1 = Minecraft.getInstance().player;
