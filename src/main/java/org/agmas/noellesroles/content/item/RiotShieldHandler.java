@@ -8,6 +8,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.init.ModItems;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -19,13 +20,16 @@ public class RiotShieldHandler {
 
     public static boolean allowDeath(Player victim, Player attacker,
             ResourceLocation deathReason) {
-        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(attacker)
+        if ((attacker.isSpectator())
                 || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(victim))
             return true;
         if (!deathReason.equals(GameConstants.DeathReasons.REVOLVER)
                 && !deathReason.equals(GameConstants.DeathReasons.ARROW)
                 && !deathReason.equals(GameConstants.DeathReasons.DERRINGER)
-                && !!deathReason.equals(GameConstants.DeathReasons.BAT)
+                && !deathReason.equals(GameConstants.DeathReasons.TRIDENT)
+                && !deathReason.equals(GameConstants.DeathReasons.KNIFE)
+                && !deathReason.equals(GameConstants.DeathReasons.BAT)
+                && !deathReason.equals(SRE.TMMId("bat"))
                 && !deathReason.equals(GameConstants.DeathReasons.GRENADE))
             return true;
         // 如果受害者正在举盾且主手/副手持有我们的防暴盾，则阻挡并损坏盾
