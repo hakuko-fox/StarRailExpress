@@ -369,14 +369,6 @@ public class MonokumaPlayerComponent implements RoleComponent, ServerTickingComp
                         net.minecraft.world.item.ItemStack.EMPTY);
             }
 
-            // 确保无敌效果持续
-            if (!player.hasEffect(ModEffects.INVINCIBLE)) {
-                player.addEffect(new MobEffectInstance(
-                        ModEffects.INVINCIBLE,
-                        -1,
-                        0,
-                        true, false, false));
-            }
             if (!player.hasEffect(MobEffects.INVISIBILITY)) {
                 player.addEffect(new MobEffectInstance(
                         MobEffects.INVISIBILITY,
