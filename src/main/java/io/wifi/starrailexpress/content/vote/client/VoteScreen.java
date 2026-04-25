@@ -18,6 +18,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class VoteScreen extends Screen {
 
     private static final int BUTTON_WIDTH = 280;
@@ -68,7 +69,6 @@ public class VoteScreen extends Screen {
     public void rebuildWidgets() {
         buttons.clear();
         List<VoteOption> options = ClientVoteCache.getOptions();
-        @SuppressWarnings("unused")
         int y = CONTENT_Y;
         for (int i = 0; i < options.size(); i++) {
             buttons.add(new WidgetButton(i));
@@ -165,7 +165,8 @@ public class VoteScreen extends Screen {
     }
 
     private void castVote(int optionIndex) {
-        if (hasVoted && !ClientVoteCache.isAllowReVote()) return;
+        if (hasVoted && !ClientVoteCache.isAllowReVote())
+            return;
         ClientPlayNetworking.send(new VoteCastC2SPacket(optionIndex));
         hasVoted = true;
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
@@ -211,26 +212,21 @@ public class VoteScreen extends Screen {
             VoteOption option = ClientVoteCache.getOptions().get(optionIndex);
             Component display = option.display();
 
-            // 计算图标与文字的总宽度，以便整体居中
-            boolean hasIcon = option instanceof VoteOption.ItemOption || option instanceof ClientPlayerOption;
+            // 文字居中
             int textWidth = font.width(display);
-            int totalContentWidth = textWidth;
-            if (hasIcon) {
-                totalContentWidth += ICON_SIZE + ICON_TEXT_GAP;
-            }
             // 整体居中的起始 X
-            int startX = x + (w - totalContentWidth) / 2;
+            int startX = x + (w - textWidth) / 2;
 
             if (option instanceof VoteOption.ItemOption itemOpt) {
                 ItemStack stack = itemOpt.stack();
-                g.renderFakeItem(stack, startX, y + (h - ICON_SIZE) / 2);
-                g.drawString(font, display, startX + ICON_SIZE + ICON_TEXT_GAP, y + (h - 8) / 2, 0xFFFFFF);
+                g.renderFakeItem(stack, x + 8, y + (h - ICON_SIZE) / 2);
+                g.drawString(font, display, startX, y + (h - 8) / 2, 0xFFFFFF);
             } else if (option instanceof ClientPlayerOption playerOpt) {
                 UUID uuid = playerOpt.uuid();
                 PlayerInfo info = Minecraft.getInstance().getConnection().getPlayerInfo(uuid);
                 if (info != null) {
-                    PlayerFaceRenderer.draw(g, info.getSkin(), startX, y + (h - ICON_SIZE) / 2, ICON_SIZE);
-                    g.drawString(font, display, startX + ICON_SIZE + ICON_TEXT_GAP, y + (h - 8) / 2, 0xFFFFFF);
+                    PlayerFaceRenderer.draw(g, info.getSkin(), x + 8, y + (h - ICON_SIZE) / 2, ICON_SIZE);
+                    g.drawString(font, display, startX, y + (h - 8) / 2, 0xFFFFFF);
                 } else {
                     // 无头像时直接绘制纯文本（居中）
                     g.drawCenteredString(font, display, x + w / 2, y + (h - 8) / 2, 0xFFFFFF);

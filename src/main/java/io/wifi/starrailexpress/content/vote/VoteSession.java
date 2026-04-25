@@ -121,6 +121,26 @@ public class VoteSession {
 
     /** 获取最高票数的 resultId 和票数，若无投票则返回 null */
     @Nullable
+    public List<Map.Entry<String, Integer>> getTopResults() {
+        Map<String, Integer> results = getResults();
+        List<Map.Entry<String, Integer>> returnResult = new ArrayList<>();
+        if (results.isEmpty())
+            return null;
+        int maxValue = 0;
+        for (var it : results.entrySet()) {
+            maxValue = Math.max(it.getValue(), maxValue);
+        }
+
+        for (var it : results.entrySet()) {
+            if (it.getValue() > maxValue) {
+                returnResult.add(it);
+            }
+        }
+        return returnResult;
+    }
+
+    /** 获取最高票数的 resultId 和票数，若无投票则返回 null */
+    @Nullable
     public Map.Entry<String, Integer> getTopResult() {
         Map<String, Integer> results = getResults();
         if (results.isEmpty())

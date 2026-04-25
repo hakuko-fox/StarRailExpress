@@ -7,7 +7,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
@@ -189,14 +188,19 @@ public class GameUtilsCommand {
                           builder.addOption(VoteOption.player(p), p.getGameProfile().getName());
                         }
                         builder
-                            .duration(20 * 30) // 30 秒
+                            .duration(20 * 10) // 30 秒
                             .allowReVote(true)
                             .showResults(true)
-                            .syncInterval(20 * 5)
                             .callback(s -> {
+                              StringBuilder topResult = new StringBuilder();
+                              for (Entry<String, Integer> topResults : s.getTopResults()) {
+                                if (topResult.length() != 0)
+                                  topResult.append(",");
+                                topResult.append(topResults.getKey());
+                              }
                               for (ServerPlayer p : players) {
                                 p.sendSystemMessage(
-                                    Component.translatable("Select Result:\nWinner: %s", s.getTopResult().getKey()));
+                                    Component.translatable("Select Result:\nWinner: %s", topResult.toString()));
                               }
                             })
                             .start();
