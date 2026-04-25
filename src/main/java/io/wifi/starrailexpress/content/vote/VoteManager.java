@@ -133,7 +133,7 @@ public class VoteManager {
         if (currentSession != null && !currentSession.isEnded()) {
             return null;
         }
-        endCallbacks.clear();
+        clear();
         if (callback != null)
             addEndCallback(callback);
         return startVote(title, options, durationTicks, allowReVote, showResults, syncIntervalTicks, customEnd,
@@ -245,7 +245,7 @@ public class VoteManager {
      */
     public static void clear() {
         if (currentSession != null) {
-            currentSession.reset(server.getTickCount());
+            currentSession.reset(server.overworld().getGameTime());
             broadcastEnd();
             currentSession = null;
             optionsSent = false;

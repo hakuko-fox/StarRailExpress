@@ -132,7 +132,7 @@ public class VoteSession {
         }
 
         for (var it : results.entrySet()) {
-            if (it.getValue() > maxValue) {
+            if (it.getValue() >= maxValue) {
                 returnResult.add(it);
             }
         }
@@ -175,7 +175,7 @@ public class VoteSession {
         paused = false;
     }
 
-    void reset(int serverTick) {
+    void reset(long serverTick) {
         votes.clear();
         remainingTicks = 0;
         paused = false;
@@ -192,6 +192,10 @@ public class VoteSession {
         if (customEndPredicate != null && customEndPredicate.test(this))
             return true;
         return false;
+    }
+
+    void unmarkEnded() {
+        this.ended = false;
     }
 
     void markEnded() {
