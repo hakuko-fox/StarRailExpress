@@ -93,7 +93,7 @@ public class SREVoteCommand {
                         BoolArgumentType.getBool(ctx, "allowReVote"),
                         BoolArgumentType.getBool(ctx, "showResults"),
                         10, null))
-                    .then(Commands.argument("syncInterval", IntegerArgumentType.integer(1))
+                    .then(Commands.argument("syncInterval", IntegerArgumentType.integer(0))
                         .executes(ctx -> startVote(ctx,
                             IntegerArgumentType.getInteger(ctx, "duration"),
                             BoolArgumentType.getBool(ctx, "allowReVote"),

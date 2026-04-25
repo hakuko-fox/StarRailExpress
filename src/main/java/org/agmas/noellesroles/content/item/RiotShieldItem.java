@@ -1,8 +1,8 @@
 package org.agmas.noellesroles.content.item;
 
-import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.Item;
 
-public class RiotShieldItem extends ShieldItem {
+public class RiotShieldItem extends Item {
     public RiotShieldItem(Properties settings) {
         super(settings);
     }
