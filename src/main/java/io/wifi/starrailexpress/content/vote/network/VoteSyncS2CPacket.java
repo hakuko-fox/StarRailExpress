@@ -18,7 +18,7 @@ public record VoteSyncS2CPacket(
         Component title,
         boolean hasOptions,
         List<VoteOption> options,
-        int endTick,            // 服务端游戏刻，投票结束时间；-1 表示暂停
+        long endTick,            // 服务端游戏刻，投票结束时间；-1 表示暂停
         boolean showResults,
         Map<Integer, Integer> results,
         int totalVotes,
@@ -36,7 +36,7 @@ public record VoteSyncS2CPacket(
                     buf.writeVarInt(packet.options.size());
                     for (VoteOption opt : packet.options) writeOption(buf, opt);
                 }
-                buf.writeVarInt(packet.endTick);
+                buf.writeVarLong(packet.endTick);
                 buf.writeBoolean(packet.showResults);
                 if (packet.showResults) {
                     buf.writeMap(packet.results,
@@ -56,7 +56,7 @@ public record VoteSyncS2CPacket(
                     options = new ArrayList<>(size);
                     for (int i = 0; i < size; i++) options.add(readOption(buf));
                 }
-                int endTick = buf.readVarInt();
+                long endTick = buf.readVarLong();
                 boolean show = buf.readBoolean();
                 Map<Integer, Integer> results = Map.of();
                 int totalVotes = 0;
@@ -70,13 +70,13 @@ public record VoteSyncS2CPacket(
 
     // ── 工厂方法 ──────────────────────────────────────
     public static VoteSyncS2CPacket fullSync(VoteSession session) {
-        int endTick = session.isPaused() ? -1 : session.getEndTick();
+        long endTick = session.isPaused() ? -1 : session.getEndTick();
         return new VoteSyncS2CPacket(true, session.getTitle(), true, session.getOptions(),
                 endTick, session.isShowResults(), session.getResults(), session.getTotalVotes(), session.isAllowReVote());
     }
 
     public static VoteSyncS2CPacket update(VoteSession session) {
-        int endTick = session.isPaused() ? -1 : session.getEndTick();
+        long endTick = session.isPaused() ? -1 : session.getEndTick();
         return new VoteSyncS2CPacket(true, session.getTitle(), false, List.of(),
                 endTick, session.isShowResults(), session.getResults(), session.getTotalVotes(), session.isAllowReVote());
     }
@@ -94,7 +94,7 @@ public record VoteSyncS2CPacket(
         if (option.isPlayer()) {
             buf.writeByte(TYPE_PLAYER);
             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, option.display());
-            buf.writeUUID(((VoteOption.PlayerOption) option).player().getUUID());
+            buf.writeUUID(((VoteOption.PlayerOption) option).player());
         } else if (option.isItem()) {
             buf.writeByte(TYPE_ITEM);
             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, option.display());
@@ -112,8 +112,8 @@ public record VoteSyncS2CPacket(
         Component display = ComponentSerialization.TRUSTED_STREAM_CODEC.decode(buf);
         return switch (type) {
             case TYPE_PLAYER -> {
-                buf.readUUID();
-                yield VoteOption.text(display);
+                UUID uid = buf.readUUID();
+                yield VoteOption.player(display, uid);
             }
             case TYPE_ITEM -> {
                 CompoundTag tag = buf.readNbt();

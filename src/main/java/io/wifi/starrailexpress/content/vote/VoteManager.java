@@ -181,7 +181,7 @@ public class VoteManager {
         VoteSession session = new VoteSession(title, options, showResults, syncIntervalTicks,
                 durationTicks, customEnd, allowReVote, targetPlayers);
         optionsSent = false;
-        session.start(server.getTickCount());
+        session.start(server.overworld().getGameTime());
         currentSession = session;
         broadcastUpdate();
         return session;

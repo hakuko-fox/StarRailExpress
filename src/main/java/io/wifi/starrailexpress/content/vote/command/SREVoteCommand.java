@@ -141,7 +141,7 @@ public class SREVoteCommand {
             ctx.getSource().sendFailure(Component.literal("No vote data."));
             return 0;
           }
-          int remaining = session.isEnded() ? 0
+          long remaining = session.isEnded() ? 0
               : session.isPaused() ? -1 : Math.max(0, (session.getEndTick() - VoteManager.getCurrentTick()) / 20);
 
           Component msg = Component.literal("=== Vote Status ===");

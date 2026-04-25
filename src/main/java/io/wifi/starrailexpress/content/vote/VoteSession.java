@@ -13,11 +13,11 @@ public class VoteSession {
     private final Map<UUID, Integer> votes = new HashMap<>();
     private final boolean showResults;
     private int syncIntervalTicks;
-    private int endTick;
+    private long endTick;
     private Predicate<VoteSession> customEndPredicate;
     private boolean allowReVote;
     private boolean paused;
-    private int remainingTicks;
+    private long remainingTicks;
     private Component title;
     private boolean ended = false; // ★ 是否已结束
 
@@ -89,7 +89,7 @@ public class VoteSession {
         return ended;
     }
 
-    public int getEndTick() {
+    public long getEndTick() {
         return endTick;
     }
 
@@ -107,7 +107,7 @@ public class VoteSession {
         return votes.size();
     }
 
-    void start(int serverTick) {
+    void start(long serverTick) {
         this.endTick = serverTick + remainingTicks;
         this.paused = false;
         this.ended = false;

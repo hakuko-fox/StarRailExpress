@@ -5,8 +5,23 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.UUID;
 
 public record ClientPlayerOption(Component display, UUID uuid) implements VoteOption {
-    @Override public Component display() { return display; }
-    @Override public ResourceLocation typeId() { return ResourceLocation.withDefaultNamespace("player"); }
-    @Override public boolean isPlayer() { return true; }
-    @Override public boolean isItem() { return false; }
+    @Override
+    public Component display() {
+        return display;
+    }
+
+    @Override
+    public ResourceLocation typeId() {
+        return ResourceLocation.withDefaultNamespace("player");
+    }
+
+    @Override
+    public boolean isPlayer() {
+        return true;
+    }
+
+    @Override
+    public boolean isItem() {
+        return false;
+    }
 }

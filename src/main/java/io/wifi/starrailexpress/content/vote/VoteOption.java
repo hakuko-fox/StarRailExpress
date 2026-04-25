@@ -4,6 +4,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+
+import java.util.UUID;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 
 /**
@@ -25,10 +28,33 @@ public interface VoteOption {
 
     // ── 具体实现 ───────────────────────────────────────────
 
-    record PlayerOption(Player player) implements VoteOption {
+    class PlayerOption implements VoteOption {
+        private Component displayName = null;
+        private UUID player = null;
+
+        public UUID player() {
+            return player;
+        }
+
+        public PlayerOption(Component text, UUID uuid) {
+            this.player = uuid;
+            this.displayName = text;
+        }
+
+        public PlayerOption(UUID player) {
+            this.player = player;
+        }
+
+        public PlayerOption(Player player) {
+            if (player != null) {
+                this.player = player.getUUID();
+                this.displayName = player.getDisplayName();
+            }
+        }
+
         @Override
         public Component display() {
-            return player.getDisplayName();
+            return displayName;
         }
 
         @Override
@@ -98,6 +124,20 @@ public interface VoteOption {
     // 工厂方法
     static VoteOption player(Player player) {
         return new PlayerOption(player);
+    }
+
+    /**
+     * @deprecated
+     * 请使用 {@link #player(Component, UUID)} 代替。
+     */
+    @Deprecated
+    static VoteOption player(UUID player) {
+        return new PlayerOption(player);
+    }
+
+    // 工厂方法
+    static VoteOption player(Component text, UUID player) {
+        return new PlayerOption(text, player);
     }
 
     static VoteOption text(Component text) {
