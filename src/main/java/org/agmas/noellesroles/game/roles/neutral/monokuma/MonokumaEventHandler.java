@@ -1,7 +1,10 @@
 package org.agmas.noellesroles.game.roles.neutral.monokuma;
 
+import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.AllowGameEnd;
-import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -56,7 +59,7 @@ public class MonokumaEventHandler {
         // return false;
         // }
         // // 狂暴阶段(2)正常接受伤害判定（有护盾）
-        // // 黑白熊阶段(3)由 INVINCIBLE 效果处理
+        // // 黑白熊阶段(3)
         // return true;
         // });
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
@@ -72,7 +75,7 @@ public class MonokumaEventHandler {
             return true;
         });
 
-        AllowPlayerDeath.EVENT.register((player, deathReason) -> {
+        AfterShieldAllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (deathReason.equals(GameConstants.DeathReasons.FELL_OUT_OF_TRAIN))
                 return true;
             if (deathReason.equals(StupidExpress.id("ignited")))
@@ -89,6 +92,43 @@ public class MonokumaEventHandler {
                 StupidRoleUtils.sendWelcomeAnnouncement(sp);
                 comp.onHitTriggered();
                 return false;
+            } else if (comp.phase == 3) {
+                boolean flag = false;
+                var gameCCA = SREGameWorldComponent.KEY.get(player.level());
+                if (!flag) {
+                    if (killer != null) {
+                        if (gameCCA.isRole(player, ModRoles.MONOKUMA)) {
+                            if (gameCCA.isRole(killer, TMMRoles.LOOSE_END)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                if (!flag) {
+                    boolean hasGood = false, hasBad = false;
+                    final var players = player.level().players();
+                    for (var p : players) {
+                        if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p))
+                            continue;
+                        if (p.getUUID().equals(player.getUUID()))
+                            continue;
+                        SRERole role = gameCCA.getRole(p);
+                        if (role != null) {
+                            if (role.isCanUseKiller() && !role.isInnocent() && !role.isNeutrals()) {
+                                hasBad = true;
+                            }
+                            if (role.isInnocent()) {
+                                hasGood = true;
+                            }
+                            if (hasBad && hasGood)
+                                break;
+                        }
+                    }
+                    if (!hasBad || !hasGood) {
+                        flag = true;
+                    }
+                }
+                return flag;
             }
             return true;
         });
@@ -113,11 +153,6 @@ public class MonokumaEventHandler {
     // });
     // }
 
-    /**
-     * 黑白熊形态保护：
-     * - 无法被击杀（INVINCIBLE效果已处理）
-     * - 无法被控制（手铐、风弹）
-     */
     private static void registerMonokumaProtection() {
         // 黑白熊无法被验尸官查验
         // 这通过在杀手直觉/角色查看中返回特殊标记处理

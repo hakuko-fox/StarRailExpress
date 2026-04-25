@@ -20,7 +20,6 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
-import org.agmas.noellesroles.role.ModRoles;
 
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
@@ -266,10 +265,8 @@ public class ModEffects {
             }
             if (player.hasEffect(ModEffects.INVINCIBLE)) {
                 var gameComponent = SREGameWorldComponent.KEY.get(player.level());
-                if (gameComponent.isRole(player, ModRoles.MONOKUMA)) {
-                    if (gameComponent.isRole(killer, TMMRoles.LOOSE_END)) {
-                        return true;
-                    }
+                if (gameComponent.isRole(killer, TMMRoles.LOOSE_END)) {
+                    return true;
                 }
                 return false;
             }
