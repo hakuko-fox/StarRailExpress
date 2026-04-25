@@ -16,7 +16,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-
 import java.util.*;
 
 public class VoteScreen extends Screen {
@@ -76,7 +75,6 @@ public class VoteScreen extends Screen {
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
     }
 
-    // ⚡ 直接使用基于游戏刻的剩余秒数，不再需要本地平滑
     private int getRemainingSeconds() {
         return ClientVoteCache.getRemainingSeconds();
     }
@@ -89,7 +87,7 @@ public class VoteScreen extends Screen {
         // 标题
         graphics.drawCenteredString(font, title, width / 2, 20, 0xFFFFFF);
 
-        // 倒计时（基于游戏刻，精确且不会重置）
+        // 倒计时
         int displaySec = getRemainingSeconds();
         String timerText = displaySec >= 0 ? formatTime(displaySec) : "PAUSED";
         graphics.drawCenteredString(font, Component.literal(timerText).withStyle(ChatFormatting.YELLOW),
@@ -111,6 +109,7 @@ public class VoteScreen extends Screen {
         }
         graphics.disableScissor();
 
+        // 滚动条
         if (maxScroll > 0) {
             int scrollX = contentX + BUTTON_WIDTH + 2;
             int scrollH = scrollAreaHeight;
@@ -120,6 +119,22 @@ public class VoteScreen extends Screen {
             int thumbY = CONTENT_Y + (int) ((scrollH - thumbH) * ((double) scrollOffset / maxScroll));
             graphics.fill(scrollX, CONTENT_Y, scrollX + SCROLL_WIDTH, CONTENT_Y + scrollH, 0xFF111828);
             graphics.fill(scrollX, thumbY, scrollX + SCROLL_WIDTH, thumbY + thumbH, 0xFF556699);
+        }
+
+        // ---- 物品悬停 Tooltip 绘制 ----
+        drawY = CONTENT_Y - scrollOffset;
+        for (int i = 0; i < buttons.size(); i++) {
+            VoteOption option = ClientVoteCache.getOptions().get(i);
+            if (option instanceof VoteOption.ItemOption itemOpt) {
+                int btnY = drawY;
+                if (mouseX >= contentX && mouseX < contentX + BUTTON_WIDTH &&
+                        mouseY >= btnY && mouseY < btnY + BUTTON_HEIGHT) {
+                    ItemStack stack = itemOpt.stack();
+                    graphics.renderTooltip(font, stack, mouseX, mouseY);
+                    break; // 只显示一个物品的提示
+                }
+            }
+            drawY += BUTTON_HEIGHT + BUTTON_SPACING;
         }
     }
 
@@ -195,14 +210,8 @@ public class VoteScreen extends Screen {
                 ItemStack stack = itemOpt.stack();
                 g.renderFakeItem(stack, x + 3, y + (h - 16) / 2);
                 g.drawString(font, display, x + 26, y + (h - 8) / 2, 0xFFFFFF);
-                if (ClientVoteCache.isShowResults()) {
-                    int votes = ClientVoteCache.getResults().getOrDefault(optionIndex, 0);
-                    g.drawString(font, String.valueOf(votes), x + w - 20, y + (h - 8) / 2, 0xAAAAAA);
-                }
-                return;
-            }
-
-            if (option instanceof ClientPlayerOption playerOpt) {
+                // 不在此处画 tooltip，交给外层统一绘制
+            } else if (option instanceof ClientPlayerOption playerOpt) {
                 UUID uuid = playerOpt.uuid();
                 PlayerInfo info = Minecraft.getInstance().getConnection().getPlayerInfo(uuid);
                 if (info != null) {
@@ -211,14 +220,10 @@ public class VoteScreen extends Screen {
                 } else {
                     g.drawString(font, display, x + 8, y + (h - 8) / 2, 0xFFFFFF);
                 }
-                if (ClientVoteCache.isShowResults()) {
-                    int votes = ClientVoteCache.getResults().getOrDefault(optionIndex, 0);
-                    g.drawString(font, String.valueOf(votes), x + w - 20, y + (h - 8) / 2, 0xAAAAAA);
-                }
-                return;
+            } else {
+                g.drawCenteredString(font, display, x + w / 2, y + (h - 8) / 2, 0xFFFFFF);
             }
 
-            g.drawCenteredString(font, display, x + w / 2, y + (h - 8) / 2, 0xFFFFFF);
             if (ClientVoteCache.isShowResults()) {
                 int votes = ClientVoteCache.getResults().getOrDefault(optionIndex, 0);
                 g.drawString(font, String.valueOf(votes), x + w - 20, y + (h - 8) / 2, 0xAAAAAA);

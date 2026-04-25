@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
  * VoteSession session = VoteManager.builder(Component.literal("标题"))
  *         .addOption(VoteOption.text("选项 A"))
  *         .addOption(VoteOption.text("选项 B"))
+ *         .addOption(VoteOption.player(player))
+ *         .addOption(VoteOption.item(itemStack))
  *         .duration(20 * 30) // 30 秒
  *         .allowReVote(true)
  *         .showResults(true)
