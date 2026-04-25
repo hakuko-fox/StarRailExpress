@@ -474,11 +474,6 @@ public class RoleShopHandler {
       var SHOP = new java.util.ArrayList<ShopEntry>();
       SHOP.add(new ShopEntry(ModItems.RADIO.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
         @Override
-        public boolean canBuy(@NotNull Player player) {
-          return !(MCItemsUtils.countItem(player, ModItems.RADIO) > 0);
-        }
-
-        @Override
         public boolean onBuy(@NotNull Player player) {
           return RoleUtils.insertStackInFreeSlot(player, ModItems.RADIO.getDefaultInstance().copy());
         }
@@ -1467,8 +1462,8 @@ public class RoleShopHandler {
         50,
         ShopEntry.Type.TOOL));
 
-    // 闪光弹 - 100金币（滑头鬼专用）
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+    // 闪光弹 - 175金币（滑头鬼专用）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
       @Override
       public boolean canBuy(@NotNull Player player) {
         return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
