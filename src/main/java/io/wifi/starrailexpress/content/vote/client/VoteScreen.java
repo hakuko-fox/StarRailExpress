@@ -227,7 +227,7 @@ public class VoteScreen extends Screen {
         // 多选提示（列表上方）
         if (multiSelectMode) {
             Component hint = Component.translatable("vote.multi_select_hint", maxSelect, selectedIndices.size());
-            g.drawCenteredString(font, hint, contentX + BUTTON_WIDTH / 2, CONTENT_Y - 14, COL_TEXT_HINT);
+            g.drawCenteredString(font, hint, contentX + BUTTON_WIDTH / 2, CONTENT_Y - 20, COL_TEXT_HINT);
         }
 
         // 选项列表（裁剪区域）
