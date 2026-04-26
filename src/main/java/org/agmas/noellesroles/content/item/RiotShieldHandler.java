@@ -20,6 +20,8 @@ public class RiotShieldHandler {
 
     public static boolean allowDeath(Player victim, Player attacker,
             ResourceLocation deathReason) {
+        if (attacker == null)
+            return true;
         if ((attacker.isSpectator())
                 || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(victim))
             return true;
