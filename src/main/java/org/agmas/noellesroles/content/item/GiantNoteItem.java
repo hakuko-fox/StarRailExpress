@@ -31,7 +31,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
             var serverPlayer = player;
             SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(serverPlayer);
             if (playerShopComponent != null && serverPlayer != null && !serverPlayer.isShiftKeyDown()) {
-                if (playerShopComponent.balance >= 125) {
+                if (playerShopComponent.balance >= 50) {
                     SREPlayerNoteComponent component = SREPlayerNoteComponent.KEY.get(serverPlayer);
                     if (!component.written) {
                         serverPlayer.displayClientMessage(Component.translatable("message.note.write_sth").withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
@@ -44,7 +44,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
                             var note = createNoteEntity(world);
                             if (note == null) return InteractionResult.PASS;
 
-                            playerShopComponent.addToBalance(-125);
+                            playerShopComponent.addToBalance(-50);
 
                             note.setAttached(ModRoles.ENTITY_NOTE_MAKER, livingEntity.getUUID().toString());
                             note.setYRot(livingEntity.getYHeadRot());
@@ -65,7 +65,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
                         }
                     }
                 } else {
-                    serverPlayer.displayClientMessage(Component.translatable("message.note.not_enough_money",125).withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
+                    serverPlayer.displayClientMessage(Component.translatable("message.note.not_enough_money",50).withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
                 }
             }
         }
