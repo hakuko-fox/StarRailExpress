@@ -107,8 +107,16 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
             }
             return;
         }
+
+        if (SREClient.gameComponent == null) {
+            return;
+        }
         if (this.playerTaskComponent == null) {
             this.playerTaskComponent = SREPlayerTaskComponent.KEY.get(this.player);
+        }
+        if (!SREClient.gameComponent.getGameMode().hasMood()) {
+            this.mood = 1f;
+            return;
         }
         if (!this.playerTaskComponent.tasks.isEmpty()) {
             float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
@@ -167,30 +175,34 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
             return;
         }
         boolean shouldSync = false;
-        if (!this.playerTaskComponent.tasks.isEmpty()) {
-            float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
-            if (this.mood > 0) {
-                this.mood = this.mood
-                        - this.playerTaskComponent.tasks.size() * GameConstants.MOOD_DRAIN * drainMultiplier;
+        if (gameWorldComponent.gameMode.hasMood()) {
+            if (!this.playerTaskComponent.tasks.isEmpty()) {
+                float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
+                if (this.mood > 0) {
+                    this.mood = this.mood
+                            - this.playerTaskComponent.tasks.size() * GameConstants.MOOD_DRAIN * drainMultiplier;
+                }
+                if (this.mood < 0)
+                    this.mood = 0;
+                if (this.playerTaskComponent.nextTaskTimer % 100 == 0) { // 5s一次同步
+                    shouldSync = true;
+                }
             }
-            if (this.mood < 0)
-                this.mood = 0;
-            if (this.playerTaskComponent.nextTaskTimer % 100 == 0) { // 5s一次同步
-                shouldSync = true;
-            }
-        }
 
-        float moodRegen = ModEffects.getMoodRegenPerTick(this.player);
-        if (moodRegen > 0f && this.mood < 1f) {
-            this.mood = Math.min(1f, this.mood + moodRegen);
-            if (this.player.tickCount % 100 == 0) {
-                shouldSync = true;
+            float moodRegen = ModEffects.getMoodRegenPerTick(this.player);
+            if (moodRegen > 0f && this.mood < 1f) {
+                this.mood = Math.min(1f, this.mood + moodRegen);
+                if (this.player.tickCount % 200 == 0) {
+                    shouldSync = true;
+                }
             }
+
+        } else {
+            this.mood = 1f;
         }
 
         if (shouldSync)
             this.sync();
-
 
     }
 
@@ -274,8 +286,6 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registryLookup) {
         this.mood = tag.contains("mood", Tag.TAG_FLOAT) ? tag.getFloat("mood") : 1f;
     }
-
-
 
     public void addMood(float value) {
         var gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
