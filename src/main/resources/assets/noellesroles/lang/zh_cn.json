@@ -1,5 +1,6 @@
 {
   "unknown": "未知",
+  "sre.general.unknown": "未知",
   "commands.loot.error.execute_fail": "执行失败, 原因:\n %s",
   "commands.loot.success.add_or_degree_chance": "成功为玩家 %s 添加 %s 次抽奖次数. 当前总次数: %s",
   "info.screen.role.see_more": "... (更多信息请右键信纸查看)",
@@ -445,6 +446,7 @@
   "death_reason.starrailexpress.voodoo": "巫毒魔法",
   "hud.coroner.death_info": "死于 %s秒前，死因是",
   "hud.coroner.role_info": "身份为",
+  "hud.coroner.body.killer": "杀手是%s",
   "hud.coroner.sanity_requirements": "使用能力需要 50%% 理智值",
   "hud.pagination.next": "下一页",
   "hud.pagination.page": "第 %s/%s 页",

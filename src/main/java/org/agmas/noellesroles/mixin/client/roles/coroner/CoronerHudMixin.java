@@ -24,6 +24,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+
+import java.util.UUID;
+
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.component.ModComponents;
@@ -186,6 +189,19 @@ public abstract class CoronerHudMixin {
                         roleInfo = Component.translatable("message.noellesroles.penalty.limit.role");
                     }
                     context.drawString(renderer, roleInfo, -renderer.width(roleInfo) / 2, 48, CommonColors.WHITE);
+                }
+                if (SREClient.isPlayerSpectatingOrCreative() && !hasPenalty) {
+                    var killerName = Component.translatable("sre.general.unknown");
+                    UUID killerId = NoellesrolesClient.targetBody.getKillerUuid();
+                    if (killerId != null) {
+                        var b = SREClient.PLAYER_ENTRIES_CACHE.getOrDefault(killerId, null);
+                        if (b != null) {
+                            killerName = Component.literal(b.getProfile().getName());
+                        }
+                    }
+                    Component roleInfo = Component.translatable("hud.coroner.body.killer", killerName)
+                            .withColor(CommonColors.RED);
+                    context.drawString(renderer, roleInfo, -renderer.width(roleInfo) / 2, 64, CommonColors.WHITE);
                 }
                 if (SREClient.isRole(ModRoles.VULTURE)) {
                     if (bodyDeathReasonComponent.vultured) {

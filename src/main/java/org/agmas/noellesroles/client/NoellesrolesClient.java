@@ -765,6 +765,14 @@ public class NoellesrolesClient implements ClientModInitializer {
             currentBroadcastMessage.clear();
             ClientVoteCache.clear();
         });
+
+        ClientPlayConnectionEvents.DISCONNECT.register((a, b) -> {
+            // 加入游戏清空信息
+            currentBroadcastMessage.clear();
+            ClientVoteCache.clear();
+            SREClient.PLAYER_ENTRIES_CACHE.clear();
+        });
+        //
         ClientTickEvents.END_WORLD_TICK.register((client) -> {
             ClientVoteCache.clientTick();
             if (!hasInitStatusBar) {
