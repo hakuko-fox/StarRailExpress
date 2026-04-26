@@ -7,13 +7,16 @@ import org.agmas.noellesroles.utils.RoleUtils;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.CustomWinnerRole;
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -97,6 +100,22 @@ public class DNFRoles {
                     return DNFPlayerComponent.KEY.get(player).hasPersonalEnding()
                             ? GameUtils.WinStatus.CUSTOM
                             : GameUtils.WinStatus.NOT_MODIFY;
+                }
+
+                /**
+                 * 获取一局里最大可出现此职业数量。-1表示不变。
+                 * 
+                 * @param gameWorldComponent
+                 * @param serverLevel
+                 * @param players
+                 * @return
+                 */
+                @Override
+                public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
+                        List<ServerPlayer> players) {
+                    if (!gameWorldComponent.gameMode.identifier.equals(SREGameModes.DAY_NIGHT_FIGHT.identifier))
+                        return 0;
+                    return super.getRoundMaxCount(serverLevel, gameWorldComponent, players);
                 }
 
                 @Override
