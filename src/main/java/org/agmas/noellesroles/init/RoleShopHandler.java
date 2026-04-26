@@ -1264,7 +1264,14 @@ public class RoleShopHandler {
               return !WatcherPlayerComponent.KEY.get(player).isInCalmStance();
             }
           });
-      // 没有枪
+      // 左轮手枪 - 285金币（愤怒姿态）
+      shop.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 285, ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean canDisplay(Player player) {
+          return !WatcherPlayerComponent.KEY.get(player).isInCalmStance();
+        }
+      });
+      // 手榴弹
       shop.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), SREConfig.instance().grenadePrice,
           ShopEntry.Type.WEAPON) {
         @Override
