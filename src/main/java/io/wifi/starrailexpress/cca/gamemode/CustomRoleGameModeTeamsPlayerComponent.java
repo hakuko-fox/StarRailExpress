@@ -56,6 +56,7 @@ public class CustomRoleGameModeTeamsPlayerComponent
     @Override
     public void init() {
         this.team = 0;
+        this.selected = false;
         this.sync();
     }
 
