@@ -24,6 +24,7 @@ import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.functions.CommandFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.ServerFunctionManager;
@@ -198,7 +199,26 @@ public class SREVoteCommand {
       return 1;
     });
     var resultNode = Commands.literal("result").executes(ctx -> {
-      /* 类似原有 */ return 1;
+      var session = VoteManager.getCurrentSession();
+      if (session == null) {
+        ctx.getSource().sendFailure(Component.literal("No vote data."));
+        return 0;
+      }
+      Component msg = Component.literal("=== Vote Results ===")
+          .append("\nTitle: ").append(session.getTitle())
+          .append("\nTotal votes: " + session.getTotalVotes());
+
+      var results = session.getResults();
+      if (results.isEmpty()) {
+        msg = msg.copy().append("\nNo votes cast yet.");
+      } else {
+        for (var entry : results.entrySet()) {
+          msg = msg.copy().append("\n  [Option " + entry.getKey() + "]: " + entry.getValue() + " votes");
+        }
+      }
+      Component finalMsg = msg;
+      ctx.getSource().sendSuccess(() -> finalMsg, false);
+      return 1;
     });
 
     dispatcher.register(root
@@ -241,9 +261,9 @@ public class SREVoteCommand {
       builder.targetPlayers(targets);
     builder.callback(session -> {
       var tag = new CompoundTag();
-      var tag_results = new ListTag();
+      var tag_results = new CompoundTag();
       var tag_options = new ListTag();
-      var tag_top_results = new ListTag();
+      var tag_top_results = new CompoundTag();
       {
         // 存储options
         int idx = 0;
@@ -269,20 +289,21 @@ public class SREVoteCommand {
       {
         // 存储所有results
         for (var entry : session.getResults().entrySet()) {
-          var ttag = new CompoundTag();
-          ttag.putInt(entry.getKey(), entry.getValue());
-          tag_results.add(ttag);
+          tag_results.putInt(entry.getKey(), entry.getValue());
         }
       }
       {
         // 存储获胜者
 
         // 存储所有results
+        var tag_top_result_entries = new ListTag();
+        int count = 0;
         for (var entry : session.getTopResults()) {
-          var ttag = new CompoundTag();
-          ttag.putInt(entry.getKey(), entry.getValue());
-          tag_top_results.add(ttag);
+          tag_top_result_entries.add(StringTag.valueOf(entry.getKey()));
+          count = entry.getValue();
         }
+        tag_top_results.put("entries", tag_top_result_entries);
+        tag_top_results.putInt("count", count);
       }
       {
         tag.put("results", tag_results);

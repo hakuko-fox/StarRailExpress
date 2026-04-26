@@ -402,8 +402,10 @@ public class VoteScreen extends Screen {
             int by = CONTENT_Y + scrollH + 8;
             if (mouseX >= bx && mouseX < bx + CONFIRM_W
                     && mouseY >= by && mouseY < by + CONFIRM_H) {
-                if (!selectedIndices.isEmpty())
+                if (!selectedIndices.isEmpty()) {
+                    playClickSound();
                     castMultiVote();
+                }
                 return true;
             }
         }
@@ -411,18 +413,19 @@ public class VoteScreen extends Screen {
         int drawY = CONTENT_Y - scrollOffset;
         for (WidgetButton btn : buttons) {
             if (btn.mouseClicked(mouseX, mouseY, drawY)) {
+                playClickSound();
                 if (multiSelectMode) {
                     if (hasVoted && !ClientVoteCache.isAllowReVote())
                         return true;
 
                     // 取消选择：禁止清空所有选项
                     if (selectedIndices.contains(btn.optionIndex)) {
-                        if (selectedIndices.size() <= 1) {
-                            // 至少保留一项，播放拒绝音效
-                            minecraft.getSoundManager()
-                                    .play(SimpleSoundInstance.forUI(SoundEvents.VILLAGER_NO, 1.0f));
-                            return true;
-                        }
+                        // if (selectedIndices.size() <= 1) {
+                        // // 至少保留一项，播放拒绝音效
+                        // minecraft.getSoundManager()
+                        // .play(SimpleSoundInstance.forUI(SoundEvents.VILLAGER_NO, 1.0f));
+                        // return true;
+                        // }
                         selectedIndices.remove(btn.optionIndex);
                     } else {
                         if (selectedIndices.size() < maxSelect) {
@@ -478,7 +481,6 @@ public class VoteScreen extends Screen {
 
     private void afterVote() {
         hasVoted = true;
-        playClickSound();
         if (!ClientVoteCache.isAllowReVote())
             onClose();
     }
