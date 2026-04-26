@@ -11,6 +11,7 @@ import com.mojang.datafixers.util.Either;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.VoteOption;
+import io.wifi.starrailexpress.content.vote.VoteSession.VoteResultOption;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -24,7 +25,6 @@ import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.functions.CommandFunction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.ServerFunctionManager;
@@ -245,6 +245,27 @@ public class SREVoteCommand {
     return startVote(ctx, dur, allow, show, interval, targets, multiSelect, null);
   }
 
+  private static CompoundTag getVoteOptionCompoundTag(VoteResultOption optresult, CommandSourceStack source) {
+    var ttag = new CompoundTag();
+    var opt = optresult.option();
+    ttag.putInt("id", optresult.id());
+    ttag.putInt("count", optresult.count());
+    ttag.putString("rid", opt.resultId());
+    ttag.putString("display", Component.Serializer.toJson(opt.display(), source.registryAccess()));
+    ttag.putString("type", opt.typeId().toString());
+    if (opt.isItem() && opt instanceof VoteOption.ItemOption ito) {
+      ttag.put("item", ito.stack().save(source.registryAccess()));
+    } else if (opt.isPlayer() && opt instanceof VoteOption.PlayerOption ito) {
+      var player_info_tag = new CompoundTag();
+      player_info_tag.putUUID("id",
+          ito.uuid());
+      player_info_tag.putString("display_name",
+          ito.display().getString());
+      ttag.put("player", player_info_tag);
+    }
+    return ttag;
+  }
+
   private static int startVote(CommandContext<CommandSourceStack> ctx, int dur, boolean allow, boolean show,
       int interval, @Nullable Collection<ServerPlayer> targets, int multiSelect,
       com.mojang.datafixers.util.Pair<ResourceLocation, Either<CommandFunction<CommandSourceStack>, Collection<CommandFunction<CommandSourceStack>>>> func) {
@@ -266,34 +287,11 @@ public class SREVoteCommand {
     builder.callback(session -> {
       var tag = new CompoundTag();
       var tag_results = new CompoundTag();
-      var tag_options = new ListTag();
       var tag_top_results = new CompoundTag();
-      {
-        // 存储options
-        int idx = 0;
-        for (var opt : session.getOptions()) {
-          var ttag = new CompoundTag();
-          ttag.putInt("id", idx);
-          ttag.putString("display", Component.Serializer.toJson(opt.display(), source.registryAccess()));
-          ttag.putString("type", opt.typeId().toString());
-          if (opt.isItem() && opt instanceof VoteOption.ItemOption ito) {
-            ttag.put("item", ito.stack().save(source.registryAccess()));
-          } else if (opt.isPlayer() && opt instanceof VoteOption.PlayerOption ito) {
-            var player_info_tag = new CompoundTag();
-            player_info_tag.putUUID("id",
-                ito.uuid());
-            player_info_tag.putString("display_name",
-                ito.display().getString());
-            ttag.put("player", player_info_tag);
-          }
-          tag_options.add(ttag);
-          idx++;
-        }
-      }
       {
         // 存储所有results
         for (var entry : session.getResults().entrySet()) {
-          tag_results.putInt(entry.getKey(), entry.getValue());
+          tag_results.put(entry.getKey(), getVoteOptionCompoundTag(entry.getValue(), source));
         }
       }
       {
@@ -301,18 +299,14 @@ public class SREVoteCommand {
 
         // 存储所有results
         var tag_top_result_entries = new ListTag();
-        int count = 0;
         for (var entry : session.getTopResults()) {
-          tag_top_result_entries.add(StringTag.valueOf(entry.getKey()));
-          count = entry.getValue();
+          tag_top_result_entries.add(getVoteOptionCompoundTag(entry.getValue(), source));
         }
         tag_top_results.put("entries", tag_top_result_entries);
-        tag_top_results.putInt("count", count);
       }
       {
         tag.put("results", tag_results);
         tag.put("tops", tag_top_results);
-        tag.put("options", tag_options);
       }
       source.getServer().getCommandStorage().set(DATA_STORAGE_ID, tag);
       source.sendSystemMessage(

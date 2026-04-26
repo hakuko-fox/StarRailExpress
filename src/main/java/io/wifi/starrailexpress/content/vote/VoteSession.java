@@ -6,6 +6,37 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 
 public class VoteSession {
+    public static class VoteResultOption {
+        public int id;
+        public VoteOption option;
+        public int count;
+
+        public int id() {
+            return id;
+        }
+
+        public VoteOption option() {
+            return option;
+        }
+
+        public int count() {
+            return count;
+        }
+
+        public VoteResultOption(int id, VoteOption option, int count) {
+            this.id = id;
+            this.option = option;
+            this.count = count;
+        }
+
+        public void add() {
+            add(1);
+        }
+
+        public void add(int count) {
+            this.count++;
+        }
+    }
 
     private final List<VoteOption> options = new ArrayList<>();
     // 改动：每个玩家映射到其选择的选项索引集合
@@ -24,8 +55,8 @@ public class VoteSession {
     private final int maxSelectCount; // 最大可选项数
 
     VoteSession(Component title, List<VoteOption> options, boolean showResults, int syncIntervalTicks,
-                int durationTicks, Predicate<VoteSession> customEndPredicate, boolean allowReVote,
-                @Nullable Set<UUID> targetPlayers, int maxSelectCount) {
+            int durationTicks, Predicate<VoteSession> customEndPredicate, boolean allowReVote,
+            @Nullable Set<UUID> targetPlayers, int maxSelectCount) {
         this.title = title;
         this.options.addAll(options);
         this.showResults = showResults;
@@ -54,13 +85,18 @@ public class VoteSession {
 
     // 新投票方法：接收索引列表
     boolean castVote(UUID playerId, List<Integer> optionIndices) {
-        if (ended || !isAllowedToVote(playerId)) return false;
-        if (optionIndices.isEmpty()) return false;
+        if (ended || !isAllowedToVote(playerId))
+            return false;
+        if (optionIndices.isEmpty())
+            return false;
         for (int idx : optionIndices) {
-            if (idx < 0 || idx >= options.size()) return false;
+            if (idx < 0 || idx >= options.size())
+                return false;
         }
-        if (!allowReVote && votes.containsKey(playerId)) return false;
-        if (optionIndices.size() > maxSelectCount) return false;
+        if (!allowReVote && votes.containsKey(playerId))
+            return false;
+        if (optionIndices.size() > maxSelectCount)
+            return false;
         votes.put(playerId, new LinkedHashSet<>(optionIndices));
         return true;
     }
@@ -105,7 +141,8 @@ public class VoteSession {
     // 结果统计：每个玩家选择的每个选项都计一票
     public Map<Integer, Integer> getIndexResults() {
         Map<Integer, Integer> tally = new LinkedHashMap<>();
-        for (int i = 0; i < options.size(); i++) tally.put(i, 0);
+        for (int i = 0; i < options.size(); i++)
+            tally.put(i, 0);
         for (Set<Integer> choices : votes.values()) {
             for (int choice : choices) {
                 if (choice >= 0 && choice < options.size()) {
@@ -116,14 +153,18 @@ public class VoteSession {
         return tally;
     }
 
-    public Map<String, Integer> getResults() {
-        Map<String, Integer> tally = new LinkedHashMap<>();
-        for (VoteOption opt : options) tally.put(opt.resultId(), 0);
+    public Map<String, VoteResultOption> getResults() {
+        Map<String, VoteResultOption> tally = new LinkedHashMap<>();
+        int idx = 0;
+        for (VoteOption opt : options) {
+            tally.put(opt.resultId(), new VoteResultOption(idx, opt, 0));
+            idx++;
+        }
         for (Set<Integer> choices : votes.values()) {
             for (int choice : choices) {
                 if (choice >= 0 && choice < options.size()) {
-                    String id = options.get(choice).resultId();
-                    tally.merge(id, 1, Integer::sum);
+                    var opt = options.get(choice);
+                    tally.get(opt.resultId()).add();
                 }
             }
         }
@@ -131,24 +172,29 @@ public class VoteSession {
     }
 
     @Nullable
-    public List<Map.Entry<String, Integer>> getTopResults() {
-        Map<String, Integer> results = getResults();
-        if (results.isEmpty()) return null;
+    public List<Map.Entry<String, VoteResultOption>> getTopResults() {
+        Map<String, VoteResultOption> results = getResults();
+        if (results.isEmpty())
+            return null;
         int maxValue = 0;
-        for (int val : results.values()) maxValue = Math.max(maxValue, val);
-        List<Map.Entry<String, Integer>> top = new ArrayList<>();
+        for (VoteResultOption val : results.values())
+            maxValue = Math.max(maxValue, val.count);
+        List<Map.Entry<String, VoteResultOption>> top = new ArrayList<>();
         for (var entry : results.entrySet()) {
-            if (entry.getValue() >= maxValue) top.add(entry);
+            if (entry.getValue().count >= maxValue)
+                top.add(entry);
         }
         return top;
     }
 
     @Nullable
-    public Map.Entry<String, Integer> getTopResult() {
-        Map<String, Integer> results = getResults();
-        if (results.isEmpty()) return null;
+    public Map.Entry<String, VoteResultOption> getTopResult() {
+        Map<String, VoteResultOption> results = getResults();
+        if (results.isEmpty())
+            return null;
         return results.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
+                .max(Comparator.comparingInt(
+                        entry -> entry.getValue().count()))
                 .orElse(null);
     }
 
@@ -163,14 +209,16 @@ public class VoteSession {
     }
 
     void pause() {
-        if (paused || endTick < 0 || ended) return;
+        if (paused || endTick < 0 || ended)
+            return;
         // 注意：此处依赖外部传入当前 tick，将在 VoteManager 中调用时传入
         remainingTicks = Math.max(0, endTick - VoteManager.getCurrentTick());
         paused = true;
     }
 
     void resume(int serverTick) {
-        if (!paused || ended) return;
+        if (!paused || ended)
+            return;
         endTick = serverTick + remainingTicks;
         remainingTicks = 0;
         paused = false;
@@ -184,10 +232,14 @@ public class VoteSession {
     }
 
     boolean shouldEnd(long serverTick) {
-        if (ended) return true;
-        if (paused) return false;
-        if (endTick > 0 && serverTick >= endTick) return true;
-        if (customEndPredicate != null && customEndPredicate.test(this)) return true;
+        if (ended)
+            return true;
+        if (paused)
+            return false;
+        if (endTick > 0 && serverTick >= endTick)
+            return true;
+        if (customEndPredicate != null && customEndPredicate.test(this))
+            return true;
         return false;
     }
 

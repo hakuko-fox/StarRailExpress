@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.command.ConfigCommand;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.VoteOption;
+import io.wifi.starrailexpress.content.vote.VoteSession.VoteResultOption;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
@@ -194,7 +195,7 @@ public class GameUtilsCommand {
                             .maxSelect(3)
                             .callback(s -> {
                               StringBuilder topResult = new StringBuilder();
-                              for (Entry<String, Integer> topResults : s.getTopResults()) {
+                              for (Entry<String, VoteResultOption> topResults : s.getTopResults()) {
                                 if (topResult.length() != 0)
                                   topResult.append(", ");
                                 topResult.append(topResults.getKey());
