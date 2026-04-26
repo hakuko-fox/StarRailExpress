@@ -386,7 +386,7 @@ public class ModRoles {
             new NormalRole(CUCKOO_ID, new Color(200, 170, 60).getRGB(),
                     false, false, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, true))
-            .setCanSeeCoin(true).setComponentKey(ModComponents.CUCKOO).setCanBeRandomedByOtherRoles(false).setCanUseInstinct(true).setNeutrals(true).setOccupiedRoleCount(1);
+            .setCanSeeCoin(true).setComponentKey(ModComponents.CUCKOO).setCanBeRandomedByOtherRoles(false).setCanUseInstinct(true).setNeutrals(true).setOccupiedRoleCount(1).setEnableChance(45);
     public static SRERole JESTER = TMMRoles
             .registerRole(new NormalRole(JESTER_ID, new Color(186, 85, 211).getRGB(), false,
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
