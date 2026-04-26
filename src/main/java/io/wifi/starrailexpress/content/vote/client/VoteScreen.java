@@ -140,8 +140,22 @@ public class VoteScreen extends Screen {
             selectedIndices.clear();
             hasVoted = false;
         }
+
         updateLayout();
         rebuildWidgets();
+        restoreStateFromCache(); // 新加
+    }
+
+    private void restoreStateFromCache() {
+        this.hasVoted = ClientVoteCache.hasVoted();
+        this.selectedIndices.clear();
+        // 只恢复有效的索引（防止选项列表变动导致越界）
+        List<VoteOption> options = ClientVoteCache.getOptions();
+        for (int idx : ClientVoteCache.getSelectedIndices()) {
+            if (idx >= 0 && idx < options.size()) {
+                this.selectedIndices.add(idx);
+            }
+        }
     }
 
     @Override
@@ -467,6 +481,8 @@ public class VoteScreen extends Screen {
         if (hasVoted && !ClientVoteCache.isAllowReVote())
             return;
         ClientPlayNetworking.send(new VoteCastC2SPacket(List.of(optionIndex)));
+        // 同步到全局缓存
+        ClientVoteCache.onVoteSubmitted(List.of(optionIndex));
         afterVote();
     }
 
@@ -475,7 +491,10 @@ public class VoteScreen extends Screen {
             return;
         if (selectedIndices.isEmpty())
             return;
+
         ClientPlayNetworking.send(new VoteCastC2SPacket(new ArrayList<>(selectedIndices)));
+        // 同步到全局缓存
+        ClientVoteCache.onVoteSubmitted(new ArrayList<>(selectedIndices));
         afterVote();
     }
 

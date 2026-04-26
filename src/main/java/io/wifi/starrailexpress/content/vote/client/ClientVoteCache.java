@@ -34,6 +34,12 @@ public class ClientVoteCache {
         } else {
             active = false;
         }
+        
+        if (!packet.active()) {
+            // 投票会话结束，重置本地状态
+            hasVoted = false;
+            selectedIndices.clear();
+        }
     }
 
     public static boolean isActive() { return active; }
@@ -53,5 +59,21 @@ public class ClientVoteCache {
         long remainingTicks = endTick - (int) currentTick;
         long seconds = remainingTicks / 20;
         return (int)Math.max(0, seconds);
+    }
+    // 新增：客户端本地投票状态
+    private static boolean hasVoted = false;
+    private static final Set<Integer> selectedIndices = new LinkedHashSet<>();
+
+    // 新增 getter
+    public static boolean hasVoted() { return hasVoted; }
+    public static Set<Integer> getSelectedIndices() {
+        return Collections.unmodifiableSet(selectedIndices);
+    }
+
+    // 新增 setter（仅供 VoteScreen 调用）
+    public static void onVoteSubmitted(Collection<Integer> indices) {
+        hasVoted = true;
+        selectedIndices.clear();
+        selectedIndices.addAll(indices);
     }
 }
