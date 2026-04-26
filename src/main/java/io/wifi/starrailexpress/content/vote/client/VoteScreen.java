@@ -264,8 +264,8 @@ public class VoteScreen extends Screen {
                         mouseY >= drawY && mouseY < drawY + BUTTON_HEIGHT) {
                     var itemStack = itemOpt.stack();
                     List<Component> tooltiplist = new ArrayList<>(Screen.getTooltipFromItem(this.minecraft, itemStack));
-                    if (opt.description() != null)
-                        tooltiplist.add(opt.description());
+                    if (opt.description() != null && !opt.description().getString().isBlank())
+                        tooltiplist.addFirst(opt.description());
                     g.renderTooltip(font, tooltiplist,
                             itemStack.getTooltipImage(), mouseX, mouseY);
                     break;
@@ -274,7 +274,7 @@ public class VoteScreen extends Screen {
                 if (opt.description() != null) {
                     if (mouseX >= contentX && mouseX < contentX + BUTTON_WIDTH &&
                             mouseY >= drawY && mouseY < drawY + BUTTON_HEIGHT) {
-                        if (opt.description().getString().length() > 0)
+                        if (!opt.description().getString().isBlank())
                             g.renderTooltip(font, opt.description(), mouseX, mouseY);
                         break;
                     }
