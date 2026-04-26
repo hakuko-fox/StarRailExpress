@@ -56,7 +56,9 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         ArrayList<ServerPlayer> unassignedPlayers = new ArrayList<>(players);
         for (ServerPlayer player : unassignedPlayers) {
             gameWorldComponent.addRole(player, SpecialGameModeRoles.CUSTOM_PENDING, false);
-            CustomRoleGameModeTeamsPlayerComponent.KEY.get(player).setTeam(0);
+            var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
+            ccca.setSelected(false);
+            ccca.setTeam(0);
             player.addEffect(new MobEffectInstance(
                     ModEffects.SAFE_TIME,
                     selectionTick + 20,
@@ -156,7 +158,9 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                     int nc = roleTypesCount.getOrDefault(roleType, 0);
                     if (nc > 0) {
                         roleTypesCount.put(roleType, nc - 1);
-                        CustomRoleGameModeTeamsPlayerComponent.KEY.get(selectedPlayer).setTeamAndSync(roleType);
+                        var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(selectedPlayer);
+                        ccca.setSelected(false);
+                        ccca.setTeamAndSync(roleType);
                         PlayerRoleWeightManager.addWeight(selectedPlayer, roleType, 1);
                         unassignedPlayers.remove(selectedPlayer);
                     } else {
@@ -192,7 +196,9 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             Player selectedPlayer = super.pickPlayerWithProgressBias(serverWorld, unassignedPlayers, selectedRoleType);
             if (selectedPlayer != null) {
                 unassignedPlayers.remove(selectedPlayer);
-                CustomRoleGameModeTeamsPlayerComponent.KEY.get(selectedPlayer).setTeamAndSync(selectedRoleType);
+                var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(selectedPlayer);
+                ccca.setSelected(false);
+                ccca.setTeamAndSync(selectedRoleType);
                 PlayerRoleWeightManager.addWeight(selectedPlayer, selectedRoleType, 1);
 
                 roleSelector.removeFirst();
@@ -200,7 +206,9 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         }
         for (var up : unassignedPlayers) {
             // 职业不够分配平民
-            CustomRoleGameModeTeamsPlayerComponent.KEY.get(up).setTeamAndSync(1);
+            var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(up);
+            ccca.setSelected(false);
+            ccca.setTeamAndSync(1);
             PlayerRoleWeightManager.addWeight(up, 1, 1);
         }
 
