@@ -9,6 +9,7 @@ import io.wifi.events.day_night_fight.client.DNFHud;
 public class OtherRolesRegister {
 
     public static void registerSons() {
+        VoteHud.register();
         DNFHud.register();
         CustomPendingHud.register();
         AdmirerHud.register();
