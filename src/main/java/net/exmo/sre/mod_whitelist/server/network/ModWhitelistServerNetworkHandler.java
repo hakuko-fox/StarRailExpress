@@ -89,8 +89,8 @@ public class ModWhitelistServerNetworkHandler {
 			// Store the mod information for this player with network details
 			PlayerModInfoStorage.storePlayerMods(player.getUUID(), player.getName().getString(), payload.mods(), playerIP, playerMAC);
 			if (player.hasPermissions(2)){
-				MWLogger.LOGGER.info("Player {} from IP: {} passed mod whitelist check because op (mods: {})",
-						player.getName().getString(), playerIP, clientMods);
+				MWLogger.LOGGER.info("Player {} from IP: {} passed mod whitelist check because op",
+						player.getName().getString(), playerIP);
 				return;
 			}
 			// Check if mod filter is enabled
