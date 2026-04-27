@@ -190,7 +190,7 @@ public abstract class CoronerHudMixin {
                     }
                     context.drawString(renderer, roleInfo, -renderer.width(roleInfo) / 2, 48, CommonColors.WHITE);
                 }
-                if (SREClient.isPlayerSpectatingOrCreative() && !hasPenalty) {
+                if ((SREClient.isPlayerSpectatingOrCreative() || selfrole.canSeeBodyKiller()) && !hasPenalty) {
                     var killerName = Component.translatable("sre.general.unknown");
                     UUID killerId = NoellesrolesClient.targetBody.getKillerUuid();
                     if (killerId != null) {

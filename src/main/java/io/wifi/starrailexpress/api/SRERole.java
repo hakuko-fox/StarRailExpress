@@ -52,21 +52,23 @@ public abstract class SRERole {
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
 
-    public Random getRandom(){
+    public Random getRandom() {
         return random;
     }
+
     public SRERole setClientGameTickEvent(BiConsumer<Player, SREGameWorldComponent> event) {
         this.clientTickEvent = event;
         return this;
     };
-    public int getMoodColor(){
-        if (moodType == MoodType.FAKE){
+
+    public int getMoodColor() {
+        if (moodType == MoodType.FAKE) {
             return Color.red.getRGB();
         }
-        if (moodType == MoodType.REAL){
+        if (moodType == MoodType.REAL) {
             return Color.green.getRGB();
-        }
-        else return Color.PINK.getRGB();
+        } else
+            return Color.PINK.getRGB();
     }
 
     public boolean canBeRandomed() {
@@ -449,6 +451,7 @@ public abstract class SRERole {
 
     /**
      * 玩家按下技能键时触发（服务端）
+     * 
      * @param player
      * @return 是否成功触发，返回true取消后续逻辑。
      */
@@ -481,6 +484,18 @@ public abstract class SRERole {
 
     private Consumer<LimitedInventoryScreen> addChild;
     private boolean canAutoAddMoney = false;
+    private boolean bodyKillerVisibility = false;
+
+    /**
+     * 设置是否允许看到尸体的杀手
+     * 
+     * @param flag
+     * @return
+     */
+    public SRERole setCanSeeBodyKiller(boolean flag) {
+        this.bodyKillerVisibility = flag;
+        return this;
+    }
 
     public enum MoodType {
         NONE, REAL, FAKE
@@ -676,5 +691,9 @@ public abstract class SRERole {
 
     public int getRoleType() {
         return PlayerRoleWeightManager.getRoleType(this);
+    }
+
+    public boolean canSeeBodyKiller() {
+        return this.bodyKillerVisibility;
     };
 }

@@ -48,13 +48,13 @@ public class RedHouseRoles {
           }
           return InteractionResult.PASS;
         }
+
         @Override
-        public ResourceLocation getPsychoSkin(Player player, boolean isSlim) 
-        {
+        public ResourceLocation getPsychoSkin(Player player, boolean isSlim) {
           return SRE.id("textures/entity/custom_psycho/remilia.png");
         }
       })
-      .setCanSeeCoin(true).setCanSeeBodyDeathReason(true).setCanSeeBodyRoleInfo(true);
+      .setCanSeeCoin(true).setCanSeeBodyDeathReason(true).setCanSeeBodyRoleInfo(true).setCanSeeBodyKiller(true);
   // 独立中立：芙兰朵露
   public static SRERole FURANDORU = TMMRoles.registerRole(
       new NormalRole(FURANDORU_ID, new Color(177, 153, 130).getRGB(),
