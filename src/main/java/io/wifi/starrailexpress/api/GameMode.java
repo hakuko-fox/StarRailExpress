@@ -651,7 +651,7 @@ public abstract class GameMode {
                 final var gameTimeComponent = SREGameTimeComponent.KEY.get(victim.level());
                 this.addKillRewardTime(gameTimeComponent);
             }
-            if (!TrainVoicePlugin.isVoiceChatMissing()) {
+            if (!TrainVoicePlugin.isVoiceChatMissing() && victim.isSpectator()) {
                 TrainVoicePlugin.addPlayer(victim.getUUID());
             }
         }
