@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.init;
 
 import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
+import io.wifi.events.day_night_fight.DNF;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
@@ -267,6 +268,7 @@ public class RoleShopHandler {
     initializeBloodFeudistShop();
 
     ShopContent.register();
+    DNF.registerShops();
     {
       // 布袋鬼商店（诡舍·缚灵）
       // 设计要求：无法购买刀、枪、狂暴模式，只能购买强化领域的道具

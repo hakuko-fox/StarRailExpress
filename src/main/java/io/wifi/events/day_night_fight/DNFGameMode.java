@@ -16,11 +16,13 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.HashMap;
 
 public class DNFGameMode extends SREMurderGameMode {
@@ -37,13 +39,12 @@ public class DNFGameMode extends SREMurderGameMode {
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         Harpymodloader.refreshRoles();
-        DNF.registerBloodShop();
         SRETrainWorldComponent.KEY.get(serverWorld).setTimeOfDay(SRETrainWorldComponent.TimeOfDay.DAY);
         gameWorldComponent.clearRoleMap();
         addPlayersToTeam(serverWorld.getServer().createCommandSourceStack(), players, "harpymodloader_game");
         executeFunction(serverWorld.getServer().createCommandSourceStack(), "harpymodloader:start_game");
 
-        Map<Player, SRERole> roleAssignments = assignDnfRoles(players);
+        Map<Player, SRERole> roleAssignments = assignDnfRoles(serverWorld, players);
         long killerCount = roleAssignments.values().stream().filter(DNF::isDNFKiller).count();
         for (Map.Entry<Player, SRERole> entry : roleAssignments.entrySet()) {
             Player player = entry.getKey();
@@ -93,25 +94,65 @@ public class DNFGameMode extends SREMurderGameMode {
         currentDay = tag.getInt("CurrentDnfDay");
     }
 
-    private Map<Player, SRERole> assignDnfRoles(List<ServerPlayer> players) {
-        ArrayList<ServerPlayer> shuffled = new ArrayList<>(players);
-        Collections.shuffle(shuffled);
-        ArrayList<SRERole> roles = new ArrayList<>();
+    private Map<Player, SRERole> assignDnfRoles(ServerLevel serverWorld, List<ServerPlayer> players) {
+        ArrayList<ServerPlayer> unassigned = new ArrayList<>(players);
+        Collections.shuffle(unassigned);
 
         int maxSpecials = Math.max(1, Math.min(13, players.size() - Math.max(1, players.size() / 2)));
-        addRoles(roles, DNFRoles.KILLER, Math.min(4, Math.max(1, players.size() / 10)), maxSpecials);
-        addRoles(roles, DNFRoles.CHEF, players.size() >= 6 ? 1 : 0, maxSpecials);
-        addRoles(roles, DNFRoles.SOLDIER, 2, maxSpecials);
-        addRoles(roles, DNFRoles.PSYCHOLOGIST, 2, maxSpecials);
-        addRoles(roles, DNFRoles.LOCKSMITH, 4, maxSpecials);
-        while (roles.size() < players.size()) {
+
+        Map<Player, SRERole> roleAssignments = new HashMap<>();
+        for (Player player : players) {
+            roleAssignments.put(player, null);
+        }
+        Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
+
+        int killerCount = Math.min(4, Math.max(1, players.size() / 10));
+        int chefCount = players.size() >= 6 ? 1 : 0;
+        int soldierCount = 2;
+        int psychologistCount = 2;
+        int locksmithCount = 4;
+        // DNFRoles.KILLER;
+        // DNFRoles.CHEF;
+        // DNFRoles.SOLDIER;
+        // DNFRoles.PSYCHOLOGIST;
+        // DNFRoles.LOCKSMITH;
+        for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
+            Player player = serverWorld.getPlayerByUUID(entry.getKey());
+            if (player != null) {
+                SRERole role = entry.getValue();
+                if (role != null) {
+                    roleAssignments.put(player, role);
+                    if (RoleUtils.compareRole(role, DNFRoles.KILLER)) {
+                        killerCount--;
+                    } else if (RoleUtils.compareRole(role, DNFRoles.CHEF)) {
+                        chefCount--;
+                    } else if (RoleUtils.compareRole(role, DNFRoles.SOLDIER)) {
+                        soldierCount--;
+                    } else if (RoleUtils.compareRole(role, DNFRoles.PSYCHOLOGIST)) {
+                        psychologistCount--;
+                    } else if (RoleUtils.compareRole(role, DNFRoles.LOCKSMITH)) {
+                        locksmithCount--;
+                    }
+                }
+            }
+        }
+        unassigned.removeIf((p) -> {
+            return (roleAssignments.getOrDefault(p, null) != null);
+        });
+        ArrayList<SRERole> roles = new ArrayList<>();
+        addRoles(roles, DNFRoles.KILLER, killerCount, maxSpecials);
+        addRoles(roles, DNFRoles.CHEF, chefCount, maxSpecials);
+        addRoles(roles, DNFRoles.SOLDIER, soldierCount, maxSpecials);
+        addRoles(roles, DNFRoles.PSYCHOLOGIST, psychologistCount, maxSpecials);
+        addRoles(roles, DNFRoles.LOCKSMITH, locksmithCount, maxSpecials);
+        while (roles.size() < unassigned.size()) {
             roles.add(DNFRoles.CIVILIAN);
         }
         Collections.shuffle(roles);
 
         HashMap<Player, SRERole> assignments = new HashMap<>();
-        for (int i = 0; i < shuffled.size(); i++) {
-            assignments.put(shuffled.get(i), roles.get(i));
+        for (int i = 0; i < unassigned.size(); i++) {
+            assignments.put(unassigned.get(i), roles.get(i));
         }
         return assignments;
     }

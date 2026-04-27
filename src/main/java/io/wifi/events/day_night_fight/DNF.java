@@ -45,7 +45,7 @@ public class DNF {
         DNFItems.init();
         TMMRoles.addRoleComponents(DNFPlayerComponent.KEY);
         registerEvents();
-        registerBloodShop();
+        registerShops();
         DNFDebugCommand.register();
     }
 
@@ -116,7 +116,8 @@ public class DNF {
             return;
         }
 
-        ItemStack stack = lockpick ? DNFItems.LOCKPICK.getDefaultInstance() : DNFItems.FLYING_KNIFE.getDefaultInstance();
+        ItemStack stack = lockpick ? DNFItems.LOCKPICK.getDefaultInstance()
+                : DNFItems.FLYING_KNIFE.getDefaultInstance();
         if (!player.addItem(stack)) {
             player.drop(stack, false);
         }
@@ -207,13 +208,15 @@ public class DNF {
                 || state.is(Blocks.LIGHT_GRAY_CONCRETE_POWDER);
     }
 
-    public static void registerBloodShop() {
-        ArrayList<ShopEntry> shop = new ArrayList<>();
-        shop.add(new BloodShopEntry(DNFItems.FLYING_KNIFE.getDefaultInstance(), BLOOD_PRICE,
-                "item.starrailexpress.dnf_flying_knife"));
-        shop.add(new BloodShopEntry(DNFItems.LOCKPICK.getDefaultInstance(), BLOOD_PRICE,
-                "item.starrailexpress.dnf_lockpick"));
-        ShopContent.customEntries.put(DNFRoles.KILLER_ID, shop);
+    public static void registerShops() {
+        {
+            ArrayList<ShopEntry> shop = new ArrayList<>();
+            shop.add(new BloodShopEntry(DNFItems.FLYING_KNIFE.getDefaultInstance(), BLOOD_PRICE,
+                    "item.starrailexpress.dnf_flying_knife"));
+            shop.add(new BloodShopEntry(DNFItems.LOCKPICK.getDefaultInstance(), BLOOD_PRICE,
+                    "item.starrailexpress.dnf_lockpick"));
+            ShopContent.customEntries.put(DNFRoles.KILLER_ID, shop);
+        }
     }
 
     private static class BloodShopEntry extends ShopEntry {
