@@ -20,34 +20,30 @@ import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 
+/**
+ * DNF facade component:
+ * <p>
+ * 1) killer stats synced by {@link DNFKillerStatsComponent}
+ * 2) daily/chef task state synced by {@link DNFDailyTaskComponent}
+ * <p>
+ * This facade keeps old API usage unchanged while reducing sync payload fanout.
+ */
 public class DNFPlayerComponent implements RoleComponent {
     public static final ComponentKey<DNFPlayerComponent> KEY = ComponentRegistry.getOrCreate(
             SRE.id("dnf_killer"), DNFPlayerComponent.class);
 
     private final Player player;
-    private int blood;
-    private int bodiesEaten;
-    private int soldierEaten;
-    private int psychologistEaten;
-    private int locksmithEaten;
-    private int civilianEaten;
-    private long lastCorpseEatTick;
-    private boolean personalEnding;
-    private boolean hungerWarned;
-    private int dnfDay = -1;
-    private boolean ateToday;
-    private boolean drankToday;
-    private boolean mealTaskCompleted;
-    private boolean webCleanedToday;
-    private boolean dustCleanedToday;
-    private boolean toiletToday;
-    private boolean lectureToday;
-    private int chefFoodWorkToday;
-    private boolean chefWaterCheckedToday;
-    private boolean chefInitialFoodSeeded;
 
     public DNFPlayerComponent(Player player) {
         this.player = player;
+    }
+
+    private DNFKillerStatsComponent stats() {
+        return DNFKillerStatsComponent.KEY.get(player);
+    }
+
+    private DNFDailyTaskComponent daily() {
+        return DNFDailyTaskComponent.KEY.get(player);
     }
 
     @Override
@@ -58,173 +54,157 @@ public class DNFPlayerComponent implements RoleComponent {
     @Override
     public void init() {
         clear();
-        this.lastCorpseEatTick = player.level().getGameTime();
-        sync();
+        stats().setLastCorpseEatTick(player.level().getGameTime());
+        stats().sync();
+        daily().sync();
     }
 
     @Override
     public void clear() {
-        this.blood = 0;
-        this.bodiesEaten = 0;
-        this.soldierEaten = 0;
-        this.psychologistEaten = 0;
-        this.locksmithEaten = 0;
-        this.civilianEaten = 0;
-        this.lastCorpseEatTick = 0;
-        this.personalEnding = false;
-        this.hungerWarned = false;
-        this.dnfDay = -1;
-        this.ateToday = false;
-        this.drankToday = false;
-        this.mealTaskCompleted = false;
-        this.webCleanedToday = false;
-        this.dustCleanedToday = false;
-        this.toiletToday = false;
-        this.lectureToday = false;
-        this.chefFoodWorkToday = 0;
-        this.chefWaterCheckedToday = false;
-        this.chefInitialFoodSeeded = false;
-    }
-
-    public void sync() {
-        KEY.sync(this.player);
+        stats().clear();
+        daily().clear();
     }
 
     public int getBlood() {
-        return blood;
+        return stats().getBlood();
     }
 
     public int getBodiesEaten() {
-        return bodiesEaten;
+        return stats().getBodiesEaten();
     }
 
     public boolean hasPersonalEnding() {
-        return personalEnding;
+        return stats().hasPersonalEnding();
     }
 
     public float getTransformationProgress() {
-        float soldier = Math.min(1f, soldierEaten / 1f);
-        float psycho = Math.min(1f, psychologistEaten / 1f);
-        float locksmith = Math.min(1f, locksmithEaten / 1f);
-        float civilians = Math.min(1f, civilianEaten / 2f);
-        return (soldier + psycho + locksmith + civilians) / 4f;
+        return stats().getTransformationProgress();
     }
 
     public int getDnfDay() {
-        return dnfDay;
+        return daily().getDnfDay();
     }
 
     public int getChefFoodWorkToday() {
-        return chefFoodWorkToday;
+        return daily().getChefFoodWorkToday();
     }
 
     public boolean hasChefWaterCheckedToday() {
-        return chefWaterCheckedToday;
+        return daily().isChefWaterCheckedToday();
     }
 
     public void startDnfDay(ServerPlayer serverPlayer, int day, boolean isChef) {
-        if (this.dnfDay == day) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.getDnfDay() == day) {
             return;
         }
 
-        this.dnfDay = day;
-        this.ateToday = false;
-        this.drankToday = false;
-        this.mealTaskCompleted = false;
-        this.webCleanedToday = false;
-        this.dustCleanedToday = false;
-        this.toiletToday = false;
-        this.lectureToday = false;
-        this.chefFoodWorkToday = 0;
-        this.chefWaterCheckedToday = false;
+        daily.setDnfDay(day);
+        daily.setAteToday(false);
+        daily.setDrankToday(false);
+        daily.setMealTaskCompleted(false);
+        daily.setWebCleanedToday(false);
+        daily.setDustCleanedToday(false);
+        daily.setToiletToday(false);
+        daily.setLectureToday(false);
+        daily.setChefFoodWorkToday(0);
+        daily.setChefWaterCheckedToday(false);
 
         setupHudTasks(serverPlayer, isChef);
         if (isChef) {
             giveChefDailySupplies(serverPlayer);
         }
-        sync();
+        daily.sync();
     }
 
     public void markAteFood(ServerPlayer serverPlayer) {
-        this.ateToday = true;
-        tryCompleteMealTask(serverPlayer);
-        sync();
+        DNFDailyTaskComponent daily = daily();
+        daily.setAteToday(true);
+        tryCompleteMealTask(serverPlayer, daily);
+        daily.sync();
     }
 
     public void markDrankWater(ServerPlayer serverPlayer) {
-        this.drankToday = true;
-        tryCompleteMealTask(serverPlayer);
-        sync();
+        DNFDailyTaskComponent daily = daily();
+        daily.setDrankToday(true);
+        tryCompleteMealTask(serverPlayer, daily);
+        daily.sync();
     }
 
     public boolean cleanLibraryWeb(ServerPlayer serverPlayer) {
-        if (webCleanedToday) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isWebCleanedToday()) {
             return false;
         }
-        if (!completeSanTask(serverPlayer, "message.dnf.task.library_web")) {
+        if (!completeSanTask(serverPlayer, daily, "message.dnf.task.library_web")) {
             return false;
         }
-        webCleanedToday = true;
+        daily.setWebCleanedToday(true);
         removeHudTask(SREPlayerTaskComponent.Task.DNF_LIBRARY_WEB);
-        sync();
+        daily.sync();
         return true;
     }
 
     public boolean cleanPrisonDust(ServerPlayer serverPlayer) {
-        if (dustCleanedToday) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isDustCleanedToday()) {
             return false;
         }
-        if (!completeSanTask(serverPlayer, "message.dnf.task.prison_dust")) {
+        if (!completeSanTask(serverPlayer, daily, "message.dnf.task.prison_dust")) {
             return false;
         }
-        dustCleanedToday = true;
+        daily.setDustCleanedToday(true);
         removeHudTask(SREPlayerTaskComponent.Task.DNF_PRISON_DUST);
-        sync();
+        daily.sync();
         return true;
     }
 
     public boolean completeToilet(ServerPlayer serverPlayer) {
-        if (toiletToday) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isToiletToday()) {
             return false;
         }
-        if (!completeSanTask(serverPlayer, "message.dnf.task.toilet")) {
+        if (!completeSanTask(serverPlayer, daily, "message.dnf.task.toilet")) {
             return false;
         }
-        toiletToday = true;
+        daily.setToiletToday(true);
         removeHudTask(SREPlayerTaskComponent.Task.DNF_TOILET);
-        sync();
+        daily.sync();
         return true;
     }
 
     public boolean completeLecture(ServerPlayer serverPlayer) {
-        if (lectureToday) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isLectureToday()) {
             return false;
         }
-        if (!completeSanTask(serverPlayer, "message.dnf.task.lecture")) {
+        if (!completeSanTask(serverPlayer, daily, "message.dnf.task.lecture")) {
             return false;
         }
-        lectureToday = true;
+        daily.setLectureToday(true);
         removeHudTask(SREPlayerTaskComponent.Task.DNF_LECTURE);
-        sync();
+        daily.sync();
         return true;
     }
 
     public boolean useChefCapacity(ServerPlayer serverPlayer, int amount) {
-        if (chefFoodWorkToday + amount > DNF.CHEF_DAILY_FOOD_CAPACITY) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.getChefFoodWorkToday() + amount > DNF.CHEF_DAILY_FOOD_CAPACITY) {
             serverPlayer.displayClientMessage(Component.translatable("message.dnf.chef.capacity",
-                    chefFoodWorkToday, DNF.CHEF_DAILY_FOOD_CAPACITY).withStyle(ChatFormatting.YELLOW), true);
+                    daily.getChefFoodWorkToday(), DNF.CHEF_DAILY_FOOD_CAPACITY).withStyle(ChatFormatting.YELLOW), true);
             return false;
         }
-        chefFoodWorkToday += amount;
-        if (completeSanTask(serverPlayer, "message.dnf.task.chef_work")) {
+        daily.setChefFoodWorkToday(daily.getChefFoodWorkToday() + amount);
+        if (completeSanTask(serverPlayer, daily, "message.dnf.task.chef_work")) {
             removeHudTask(SREPlayerTaskComponent.Task.DNF_CHEF_WORK);
         }
-        sync();
+        daily.sync();
         return true;
     }
 
     public boolean checkChefWater(ServerPlayer serverPlayer) {
-        if (chefWaterCheckedToday) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isChefWaterCheckedToday()) {
             serverPlayer.displayClientMessage(Component.translatable("message.dnf.chef.water_already_checked")
                     .withStyle(ChatFormatting.GRAY), true);
             return false;
@@ -232,22 +212,23 @@ public class DNFPlayerComponent implements RoleComponent {
         if (!useChefCapacity(serverPlayer, DNF.CHEF_WATER_CHECK_COST)) {
             return false;
         }
-        chefWaterCheckedToday = true;
+        daily.setChefWaterCheckedToday(true);
         serverPlayer.displayClientMessage(Component.translatable("message.dnf.chef.water_checked")
                 .withStyle(ChatFormatting.AQUA), false);
-        sync();
+        daily.sync();
         return true;
     }
 
     public void giveInitialCafeteriaFood(ServerPlayer serverPlayer) {
-        if (chefInitialFoodSeeded) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isChefInitialFoodSeeded()) {
             return;
         }
-        chefInitialFoodSeeded = true;
+        daily.setChefInitialFoodSeeded(true);
         giveOrDrop(serverPlayer, new ItemStack(DNFItems.CORN_GRUEL, DNF.INITIAL_CAFETERIA_FOOD));
         serverPlayer.displayClientMessage(Component.translatable("message.dnf.chef.initial_food",
                 DNF.INITIAL_CAFETERIA_FOOD).withStyle(ChatFormatting.GREEN), false);
-        sync();
+        daily.sync();
     }
 
     private void giveChefDailySupplies(ServerPlayer serverPlayer) {
@@ -259,16 +240,16 @@ public class DNFPlayerComponent implements RoleComponent {
                 .withStyle(ChatFormatting.DARK_GREEN), false);
     }
 
-    private void tryCompleteMealTask(ServerPlayer serverPlayer) {
-        if (!mealTaskCompleted && ateToday && drankToday) {
-            mealTaskCompleted = true;
-            completeSanTask(serverPlayer, "message.dnf.task.meal");
+    private void tryCompleteMealTask(ServerPlayer serverPlayer, DNFDailyTaskComponent daily) {
+        if (!daily.isMealTaskCompleted() && daily.isAteToday() && daily.isDrankToday()) {
+            daily.setMealTaskCompleted(true);
+            completeSanTask(serverPlayer, daily, "message.dnf.task.meal");
             removeHudTask(SREPlayerTaskComponent.Task.DNF_MEAL);
         }
     }
 
-    private boolean completeSanTask(ServerPlayer serverPlayer, String messageKey) {
-        if (!messageKey.equals("message.dnf.task.meal") && !ateToday) {
+    private boolean completeSanTask(ServerPlayer serverPlayer, DNFDailyTaskComponent daily, String messageKey) {
+        if (!messageKey.equals("message.dnf.task.meal") && !daily.isAteToday()) {
             serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.need_food")
                     .withStyle(ChatFormatting.YELLOW), true);
             return false;
@@ -315,122 +296,59 @@ public class DNFPlayerComponent implements RoleComponent {
     }
 
     public void eatCorpse(ServerPlayer eater, ResourceLocation roleId, int bloodGain) {
-        this.blood += bloodGain;
-        this.bodiesEaten++;
-        this.lastCorpseEatTick = eater.level().getGameTime();
-        this.hungerWarned = false;
-
-        if (roleId.equals(DNFRoles.SOLDIER_ID)) {
-            soldierEaten++;
-        } else if (roleId.equals(DNFRoles.PSYCHOLOGIST_ID)) {
-            psychologistEaten++;
-        } else if (roleId.equals(DNFRoles.LOCKSMITH_ID)) {
-            locksmithEaten++;
-        } else if (roleId.equals(DNFRoles.CIVILIAN_ID)
-                || roleId.equals(io.wifi.starrailexpress.api.TMMRoles.CIVILIAN.identifier())) {
-            civilianEaten++;
-        }
-
-        if (!personalEnding && soldierEaten >= 1 && psychologistEaten >= 1 && locksmithEaten >= 1
-                && civilianEaten >= 2) {
-            personalEnding = true;
-        }
-        sync();
+        stats().eatCorpse(roleId, bloodGain);
     }
 
     public boolean spendBlood(int amount) {
-        if (blood < amount) {
-            return false;
-        }
-        blood -= amount;
-        sync();
-        return true;
+        return stats().spendBlood(amount);
     }
 
     public void setBlood(int blood) {
-        this.blood = Math.max(0, blood);
-        sync();
+        stats().setBlood(blood);
     }
 
     public void addBlood(int amount) {
-        setBlood(this.blood + amount);
+        stats().addBlood(amount);
     }
 
     public void checkHunger(ServerPlayer serverPlayer) {
-        if (lastCorpseEatTick <= 0) {
-            lastCorpseEatTick = serverPlayer.level().getGameTime();
-            sync();
+        DNFKillerStatsComponent stats = stats();
+        if (stats.getLastCorpseEatTick() <= 0) {
+            stats.setLastCorpseEatTick(serverPlayer.level().getGameTime());
+            stats.sync();
             return;
         }
 
-        long since = serverPlayer.level().getGameTime() - lastCorpseEatTick;
+        long since = serverPlayer.level().getGameTime() - stats.getLastCorpseEatTick();
         if (since >= DNF.TWO_DAYS_TICKS) {
             serverPlayer.displayClientMessage(Component.translatable("message.dnf.killer.starved")
                     .withStyle(ChatFormatting.DARK_RED), false);
             GameUtils.forceKillPlayer(serverPlayer, false, null, GameConstants.DeathReasons.GENERIC);
-        } else if (!hungerWarned && since >= DNF.TWO_DAYS_TICKS - 12000L) {
-            hungerWarned = true;
+        } else if (!stats.isHungerWarned() && since >= DNF.TWO_DAYS_TICKS - 12000L) {
+            stats.setHungerWarned(true);
             serverPlayer.displayClientMessage(Component.translatable("message.dnf.killer.hunger_warning")
                     .withStyle(ChatFormatting.RED), false);
-            sync();
+            stats.sync();
         }
     }
 
     @Override
     public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        writeToSyncNbt(tag, registryLookup);
+        // Deprecated facade state. Keep empty to avoid duplicate persistence and sync traffic.
     }
 
     @Override
     public void readFromNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        readFromSyncNbt(tag, registryLookup);
+        // Deprecated facade state. State migrated to dedicated components.
     }
 
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
-        tag.putInt("Blood", blood);
-        tag.putInt("BodiesEaten", bodiesEaten);
-        tag.putInt("SoldierEaten", soldierEaten);
-        tag.putInt("PsychologistEaten", psychologistEaten);
-        tag.putInt("LocksmithEaten", locksmithEaten);
-        tag.putInt("CivilianEaten", civilianEaten);
-        tag.putLong("LastCorpseEatTick", lastCorpseEatTick);
-        tag.putBoolean("PersonalEnding", personalEnding);
-        tag.putBoolean("HungerWarned", hungerWarned);
-        tag.putInt("DnfDay", dnfDay);
-        tag.putBoolean("AteToday", ateToday);
-        tag.putBoolean("DrankToday", drankToday);
-        tag.putBoolean("MealTaskCompleted", mealTaskCompleted);
-        tag.putBoolean("WebCleanedToday", webCleanedToday);
-        tag.putBoolean("DustCleanedToday", dustCleanedToday);
-        tag.putBoolean("ToiletToday", toiletToday);
-        tag.putBoolean("LectureToday", lectureToday);
-        tag.putInt("ChefFoodWorkToday", chefFoodWorkToday);
-        tag.putBoolean("ChefWaterCheckedToday", chefWaterCheckedToday);
-        tag.putBoolean("ChefInitialFoodSeeded", chefInitialFoodSeeded);
+        // Deprecated facade state. State migrated to dedicated components.
     }
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
-        this.blood = tag.getInt("Blood");
-        this.bodiesEaten = tag.getInt("BodiesEaten");
-        this.soldierEaten = tag.getInt("SoldierEaten");
-        this.psychologistEaten = tag.getInt("PsychologistEaten");
-        this.locksmithEaten = tag.getInt("LocksmithEaten");
-        this.civilianEaten = tag.getInt("CivilianEaten");
-        this.lastCorpseEatTick = tag.getLong("LastCorpseEatTick");
-        this.personalEnding = tag.getBoolean("PersonalEnding");
-        this.hungerWarned = tag.getBoolean("HungerWarned");
-        this.dnfDay = tag.getInt("DnfDay");
-        this.ateToday = tag.getBoolean("AteToday");
-        this.drankToday = tag.getBoolean("DrankToday");
-        this.mealTaskCompleted = tag.getBoolean("MealTaskCompleted");
-        this.webCleanedToday = tag.getBoolean("WebCleanedToday");
-        this.dustCleanedToday = tag.getBoolean("DustCleanedToday");
-        this.toiletToday = tag.getBoolean("ToiletToday");
-        this.lectureToday = tag.getBoolean("LectureToday");
-        this.chefFoodWorkToday = tag.getInt("ChefFoodWorkToday");
-        this.chefWaterCheckedToday = tag.getBoolean("ChefWaterCheckedToday");
-        this.chefInitialFoodSeeded = tag.getBoolean("ChefInitialFoodSeeded");
+        // Deprecated facade state. State migrated to dedicated components.
     }
 }
