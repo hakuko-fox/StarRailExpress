@@ -60,6 +60,11 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
     }
 
     @Override
+    public boolean shouldRecordPlayerStats() {
+        return false;
+    }
+
+    @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         Harpymodloader.setRoleMaximum(ModRoles.MAGICIAN_ID, 0);

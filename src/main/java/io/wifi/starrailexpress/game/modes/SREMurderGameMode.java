@@ -47,6 +47,11 @@ public class SREMurderGameMode extends GameMode {
         super(identifier, 10, 6);
     }
 
+    @Override
+    public boolean shouldRecordPlayerStats() {
+        return true;
+    }
+
     public SREMurderGameMode(ResourceLocation identifier, int defaultStartTime, int minPlayerCount) {
         super(identifier, defaultStartTime, minPlayerCount);
     }

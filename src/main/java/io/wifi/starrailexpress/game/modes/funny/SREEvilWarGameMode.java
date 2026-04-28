@@ -49,6 +49,11 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     int curReviveTick = 0;
     int curOneSecondTick = 0;
 
+    @Override
+    public boolean shouldRecordPlayerStats() {
+        return false;
+    }
+
     public SREEvilWarGameMode(ResourceLocation identifier) {
         super(identifier);
         addBanedRoles();

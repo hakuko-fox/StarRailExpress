@@ -42,6 +42,11 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         super(identifier, 10, 6);
     }
 
+    @Override
+    public boolean shouldRecordPlayerStats() {
+        return true;
+    }
+
     long roleSelectTimeout = -1;
     int selectionTick = -1;
 

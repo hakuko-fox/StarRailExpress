@@ -29,6 +29,11 @@ public class DNFGameMode extends SREMurderGameMode {
     private static final int TICKS_PER_DNF_DAY = 24000;
     private static final int DAYLIGHT_TICKS = 12000;
 
+    @Override
+    public boolean shouldRecordPlayerStats() {
+        return false;
+    }
+
     private int currentDay = -1;
 
     public DNFGameMode(ResourceLocation identifier) {

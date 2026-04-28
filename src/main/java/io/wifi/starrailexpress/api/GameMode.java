@@ -101,6 +101,15 @@ public abstract class GameMode {
     }
 
     /**
+     * 此模式是否计入玩家数据
+     * 
+     * @return
+     */
+    public boolean shouldRecordPlayerStats() {
+        return false;
+    }
+
+    /**
      * 此模式是否必须有职业（true将导致没职业的玩家变旁观）
      * 
      * @return
@@ -117,6 +126,7 @@ public abstract class GameMode {
     public boolean onlyOneWinner() {
         return this.isLooseEndMode();
     }
+
     /**
      * 是否是亡命徒模式
      * 
@@ -135,7 +145,9 @@ public abstract class GameMode {
      */
     public void recordPlayerStats(ServerLevel serverWorld, SREGameWorldComponent gameComponent,
             ArrayList<ServerPlayer> readyPlayerList) {
-        GameUtils.recordPlayerStats(serverWorld, gameComponent, readyPlayerList);
+        if (shouldRecordPlayerStats()) {
+            GameUtils.recordPlayerStats(serverWorld, gameComponent, readyPlayerList);
+        }
     }
 
     /**
@@ -253,7 +265,10 @@ public abstract class GameMode {
      */
     public void recordWinStats(ServerLevel world, SREGameRoundEndComponent roundEnd,
             SREGameWorldComponent gameComponent) {
-        GameUtils.recordWinStats(world, roundEnd, gameComponent, this.onlyOneWinner());
+        if (shouldRecordPlayerStats()) {
+            GameUtils.recordWinStats(world, roundEnd, gameComponent, this.onlyOneWinner());
+
+        }
     }
 
     /**
@@ -487,23 +502,29 @@ public abstract class GameMode {
             } // --- 新增统计数据更新逻辑 (击杀者) ---
         if (killer instanceof ServerPlayer serverKiller) {
             SREPlayerStatsComponent killerStats = SREPlayerStatsComponent.KEY.get(serverKiller);
-            killerStats.incrementTotalKills();
+            if (shouldRecordPlayerStats()) {
+                killerStats.incrementTotalKills();
+            }
+
             SREPlayerProgressionComponent.KEY.get(serverKiller).onPlayerKill();
 
             SRERole killerRole = gameWorldComponent.getRole(serverKiller);
             if (killerRole != null) {
                 killerRole.onKill(victim, spawnBody, killer, deathReason);
-                killerStats.getOrCreateRoleStats(killerRole.identifier()).incrementKillsAsRole();
-                // 更新阵营击杀数
-                if (killerRole.isVigilanteTeam()) {
-                    killerStats.incrementTotalSheriffKills();
-                } else if (killerRole.canUseKiller()) {
-                    killerStats.incrementTotalKillerKills();
-                } else if (killerRole.isNeutrals()) {
-                    killerStats.incrementTotalNeutralKills();
-                } else if (killerRole.isInnocent() && !killerRole.isVigilanteTeam()) {
-                    killerStats.incrementTotalCivilianKills();
+                if (shouldRecordPlayerStats()) {
+                    killerStats.getOrCreateRoleStats(killerRole.identifier()).incrementKillsAsRole();
+                    // 更新阵营击杀数
+                    if (killerRole.isVigilanteTeam()) {
+                        killerStats.incrementTotalSheriffKills();
+                    } else if (killerRole.canUseKiller()) {
+                        killerStats.incrementTotalKillerKills();
+                    } else if (killerRole.isNeutrals()) {
+                        killerStats.incrementTotalNeutralKills();
+                    } else if (killerRole.isInnocent() && !killerRole.isVigilanteTeam()) {
+                        killerStats.incrementTotalCivilianKills();
+                    }
                 }
+
                 // 检测是否为友军击杀
                 if (victim instanceof ServerPlayer serverVictim) {
                     SRERole victimRole = gameWorldComponent.getRole(serverVictim);
@@ -522,8 +543,10 @@ public abstract class GameMode {
                                     deathReason);
                         }
                         if (isTeamKill) {
-                            killerStats.incrementTotalTeamKills();
-                            killerStats.getOrCreateRoleStats(killerRole.identifier()).incrementTeamKillsAsRole();
+                            if (shouldRecordPlayerStats()) {
+                                killerStats.incrementTotalTeamKills();
+                                killerStats.getOrCreateRoleStats(killerRole.identifier()).incrementTeamKillsAsRole();
+                            }
                         }
                     }
                 }
@@ -538,18 +561,22 @@ public abstract class GameMode {
                 SRERole victimRole = gameWorldComponent.getRole(serverVictim);
                 victimRole.onDeath(victim, spawnBody, killer, deathReason);
                 SREPlayerStatsComponent victimStats = SREPlayerStatsComponent.KEY.get(serverVictim);
-                victimStats.incrementTotalDeaths();
+                if (shouldRecordPlayerStats()) {
+                    victimStats.incrementTotalDeaths();
+                }
                 if (victimRole != null) {
-                    victimStats.getOrCreateRoleStats(victimRole.identifier()).incrementDeathsAsRole();
-                    // 更新阵营死亡数
-                    if (victimRole.isVigilanteTeam()) {
-                        victimStats.incrementTotalSheriffDeaths();
-                    } else if (victimRole.canUseKiller()) {
-                        victimStats.incrementTotalKillerDeaths();
-                    } else if (victimRole.isNeutrals()) {
-                        victimStats.incrementTotalNeutralDeaths();
-                    } else if (victimRole.isInnocent() && !victimRole.isVigilanteTeam()) {
-                        victimStats.incrementTotalCivilianDeaths();
+                    if (shouldRecordPlayerStats()) {
+                        victimStats.getOrCreateRoleStats(victimRole.identifier()).incrementDeathsAsRole();
+                        // 更新阵营死亡数
+                        if (victimRole.isVigilanteTeam()) {
+                            victimStats.incrementTotalSheriffDeaths();
+                        } else if (victimRole.canUseKiller()) {
+                            victimStats.incrementTotalKillerDeaths();
+                        } else if (victimRole.isNeutrals()) {
+                            victimStats.incrementTotalNeutralDeaths();
+                        } else if (victimRole.isInnocent() && !victimRole.isVigilanteTeam()) {
+                            victimStats.incrementTotalCivilianDeaths();
+                        }
                     }
                 }
                 if (spawnBody) {

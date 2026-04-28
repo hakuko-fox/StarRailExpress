@@ -41,6 +41,11 @@ public class SREDevilRouletteGameMode extends GameMode {
     }
 
     @Override
+    public boolean shouldRecordPlayerStats() {
+        return false;
+    }
+
+    @Override
     public void finalizeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         super.finalizeGame(serverWorld, gameWorldComponent);
         rouletteTablePos.clear();

@@ -177,6 +177,11 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
     }
 
     @Override
+    public boolean shouldRecordPlayerStats() {
+        return false;
+    }
+
+    @Override
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         boolean haveSafeTime = false;
         int aliveCount = 0;
