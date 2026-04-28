@@ -27,6 +27,7 @@ import net.minecraft.world.level.Level;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -71,6 +72,15 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
         nextBombTime = -1;
         nextRoundTime = -1;
         super.initializeGame(serverWorld, gameWorldComponent, players);
+        var wmc = WorldModifierComponent.KEY.get(serverWorld);
+        for (ServerPlayer p : serverWorld.players()) {
+            MCItemsUtils.insertStackInFreeSlot(p, TMMItems.CROWBAR.getDefaultInstance());
+            int roleType = gameWorldComponent.getRoleType(p);
+            if(roleType==1||roleType==5){
+                wmc.addModifier(p.getUUID(), NRModifiers.EXPEDITION,false);
+            }
+        }
+        wmc.sync();
     }
 
     /**
@@ -100,9 +110,6 @@ public class SRETNTTagGameMode extends SREMurderGameMode {
     @Override
     public void afterInitializeGame(ServerLevel serverWorld, SREGameWorldComponent gameComponent,
             ArrayList<ServerPlayer> readyPlayerList) {
-        for (ServerPlayer p : serverWorld.players()) {
-            MCItemsUtils.insertStackInFreeSlot(p, TMMItems.CROWBAR.getDefaultInstance());
-        }
         super.afterInitializeGame(serverWorld, gameComponent, readyPlayerList);
     }
 
