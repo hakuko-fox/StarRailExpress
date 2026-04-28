@@ -162,6 +162,10 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> MERCENARY_SHOP = new ArrayList<>();
   // ==================== 超级亡命徒商店 ====================
   public static ArrayList<ShopEntry> SUPER_LOOSE_END_SHOP = new ArrayList<>();
+  // ==================== 飞行员商店 ====================
+  public static ArrayList<ShopEntry> PILOT_SHOP = new ArrayList<>();
+  // ==================== 影隼商店 ====================
+  public static ArrayList<ShopEntry> SHADOW_FALCON_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -619,6 +623,18 @@ public class RoleShopHandler {
       shop.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON));
 
       ShopContent.customEntries.put(ModRoles.MERCENARY_ID, shop);
+    }
+    {
+      // 布谷鸟（Cuckoo）商店：撬锁器 - 250金币
+      var SHOP = new ArrayList<ShopEntry>();
+      SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 250, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          // 将撬锁器放入玩家空位
+          return RoleUtils.insertStackInFreeSlot(player, TMMItems.LOCKPICK.getDefaultInstance());
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.CUCKOO.getIdentifier(), SHOP);
     }
     {
       // 游侠商店
@@ -1122,6 +1138,16 @@ public class RoleShopHandler {
           SpecialGameModeRoles.SUPER_LOOSE_END.identifier(), SUPER_LOOSE_END_SHOP);
     }
 
+    // 飞行员商店
+    {
+      ShopContent.customEntries.put(ModRoles.PILOT_ID, PILOT_SHOP);
+    }
+
+    // 影隼商店
+    {
+      ShopContent.customEntries.put(ModRoles.SHADOW_FALCON_ID, SHADOW_FALCON_SHOP);
+    }
+
     // 故障机器人商店
     {
       List<ShopEntry> glitchRobotShop = new ArrayList<>();
@@ -1377,6 +1403,8 @@ public class RoleShopHandler {
     SEA_KING_SHOP.clear();
     WATER_GHOST_SHOP.clear();
     CANDLE_BEARER_SHOP.clear();
+    PILOT_SHOP.clear();
+    SHADOW_FALCON_SHOP.clear();
 
     柜子区的商店.add(new ShopEntry(
         ModItems.BANDIT_REVOLVER.getDefaultInstance(),
@@ -1925,7 +1953,7 @@ public class RoleShopHandler {
         75,
         ShopEntry.Type.TOOL));
 
-    // 隐身机会 - 175金币（图标为药水，购买后隐身机会+1）
+    // 隐身机会 - 125金币（图标为药水，购买后隐身机会+1）
     {
       var invisItem = Items.POTION.getDefaultInstance();
       invisItem.set(DataComponents.ITEM_NAME,
@@ -1936,7 +1964,7 @@ public class RoleShopHandler {
           .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
       invisItem.set(DataComponents.LORE, new ItemLore(invisLore));
 
-      CANDLE_BEARER_SHOP.add(new ShopEntry(invisItem, 175, ShopEntry.Type.TOOL) {
+      CANDLE_BEARER_SHOP.add(new ShopEntry(invisItem, 125, ShopEntry.Type.TOOL) {
         @Override
         public boolean onBuy(@NotNull Player player) {
           var comp = CandleBearerPlayerComponent.KEY.get(player);
@@ -1979,5 +2007,94 @@ public class RoleShopHandler {
         ModItems.THROWING_KNIFE.getDefaultInstance(),
         100,
         ShopEntry.Type.TOOL));
+
+    // 飞行员商店
+    // 喷气背包 - 150金币
+    PILOT_SHOP.add(new ShopEntry(
+        ModItems.JETPACK.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+    // 鞘翅 - 300金币
+    PILOT_SHOP.add(new ShopEntry(
+        Items.ELYTRA.getDefaultInstance(),
+        300,
+        ShopEntry.Type.TOOL));
+    // 烟花火箭 - 50金币
+    PILOT_SHOP.add(new ShopEntry(
+        new ItemStack(Items.FIREWORK_ROCKET, 1),
+        50,
+        ShopEntry.Type.TOOL));
+
+    // 影隼商店
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.KNIFE.getDefaultInstance(),
+        130,
+        ShopEntry.Type.WEAPON));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        ModItems.THROWING_KNIFE.getDefaultInstance(),
+        200,
+        ShopEntry.Type.TOOL));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.CROWBAR.getDefaultInstance(),
+        35,
+        ShopEntry.Type.TOOL));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.GRENADE.getDefaultInstance(),
+        350,
+        ShopEntry.Type.WEAPON));
+    // 跳跃提升2药水 - 180金币，购买后给予30秒效果（图标为poison）
+    {
+      ItemStack jumpBoostPotion = Items.SPLASH_POTION.getDefaultInstance();
+      jumpBoostPotion.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.shadow_falcon.jump_boost")
+              .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
+      var jumpBoostLore = new ArrayList<Component>();
+      jumpBoostLore.add(Component.translatable("item.noellesroles.shadow_falcon.jump_boost.lore1")
+          .setStyle(Style.EMPTY.withItalic(false))
+          .withStyle(ChatFormatting.GRAY));
+      jumpBoostPotion.set(DataComponents.LORE, new ItemLore(jumpBoostLore));
+
+      SHADOW_FALCON_SHOP.add(new ShopEntry(jumpBoostPotion, 180, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          // 给予30秒跳跃提升2效果
+          player.addEffect(new MobEffectInstance(
+              MobEffects.JUMP,
+              30 * 20, // 30秒
+              1, // 等级1 = 跳跃提升2
+              false, // ambient
+              true, // showParticles
+              true // showIcon
+          ));
+          return true;
+        }
+      });
+    }
+    // 鞘翅 - 250金币，购买时额外给予10个烟花火箭
+    {
+      SHADOW_FALCON_SHOP.add(new ShopEntry(Items.ELYTRA.getDefaultInstance(), 250, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          // 给予鞘翅
+          if (!RoleUtils.insertStackInFreeSlot(player, Items.ELYTRA.getDefaultInstance().copy())) {
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.shadow_falcon.elytra_inventory_full"),
+                true);
+            return false;
+          }
+          // 额外给予10个烟花火箭
+          ItemStack fireworks = new ItemStack(Items.FIREWORK_ROCKET, 10);
+          if (!player.getInventory().add(fireworks)) {
+            // 背包满了就丢在地上
+            player.drop(fireworks, true);
+          }
+          return true;
+        }
+      });
+    }
   }
 }
