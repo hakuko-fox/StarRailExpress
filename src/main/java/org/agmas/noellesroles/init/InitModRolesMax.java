@@ -274,7 +274,7 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.SHADOW_FALCON_ID, 0);
 
         // 设置飞行员和影隼绑定生成
-        RoleAssignmentManager.addOccupationRole(ModRoles.PILOT, ModRoles.SHADOW_FALCON);
+        RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
     }
 
     public static void registerDynamic() {
@@ -586,7 +586,7 @@ public class InitModRolesMax {
                     isKonggangMap = konggangMaps.contains(currentMap);
                 }
                 if (isKonggangMap) {
-                    Harpymodloader.setRoleMaximum(ModRoles.PILOT_ID, 1);
+                    Harpymodloader.setRoleMaximum(ModRoles.PILOT_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.SHADOW_FALCON_ID, 1);
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.PILOT_ID, 0);
