@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.game.roles.Innocent.voodoo;
 
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -13,8 +14,11 @@ import org.agmas.noellesroles.role.ModRoles;
 public class VoodooDeathHandler {
     public static void registerEvents() {
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-            if (NoellesRolesConfig.HANDLER.instance().voodooNonKillerDeaths || killer != null) {
-                SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY.get(victim.level());
+            if (NoellesRolesConfig.HANDLER.instance().voodooNonKillerDeaths || killer != null
+                    || SREGameWorldComponent.KEY.get(victim.level()).gameMode.identifier
+                            .equals(SREGameModes.TNT_TAG_MODE.identifier)) {
+                SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                        .get(victim.level());
                 if (gameWorldComponent.isRole(victim, ModRoles.VOODOO)) {
                     VoodooPlayerComponent voodooPlayerComponent = (VoodooPlayerComponent) VoodooPlayerComponent.KEY
                             .get(victim);
@@ -22,7 +26,7 @@ public class VoodooDeathHandler {
                         Player voodooed = victim.level().getPlayerByUUID(voodooPlayerComponent.target);
                         if (voodooed != null) {
                             if (GameUtils.isPlayerAliveAndSurvival(voodooed) && voodooed != victim) {
-                                ConfigWorldComponent.onPlayerUsedSkill( (ServerPlayer) voodooed);
+                                ConfigWorldComponent.onPlayerUsedSkill((ServerPlayer) voodooed);
                                 GameUtils.forceKillPlayer(voodooed, true, null,
                                         Noellesroles.id("voodoo"));
                             }
