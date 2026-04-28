@@ -923,7 +923,7 @@ public class ModRoles {
             .setCanUseInstinct(true);
     public static SRERole VULTURE = TMMRoles
             .registerRole(new NormalRole(VULTURE_ID, new Color(210, 105, 30).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true)
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
                     .setComponentKey(VulturePlayerComponent.KEY))
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setCanSeeBodyDeathReason(true);
     public static SRERole CORONER = TMMRoles
