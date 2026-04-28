@@ -34,7 +34,7 @@
     "server.DecServerJoinPlayer",
     "server.DedicatedPlayerManagerMixin",
     "server.MaxPlayerAccessor",
-    "server.PlayerDiscord",
+    "server.PlayerDiscard",
     "util.EntitySelectorMixin",
     "whitelist.ServerHandshakePacketListenerImplMixin",
     "world.ChunkSerializerMixin"

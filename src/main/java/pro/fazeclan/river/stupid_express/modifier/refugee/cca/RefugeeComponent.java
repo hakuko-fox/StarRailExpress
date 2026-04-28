@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
 import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
@@ -280,7 +281,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         bodies.clear();
     }
 
-    public void onLooseEndDeath(Player who) {
+    public void onLooseEndDeath(Player who, ResourceLocation deathReason) {
         if (!(who instanceof ServerPlayer sp)) {
             return;
         }
@@ -300,6 +301,11 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             return false;
         });
         if (a) {
+            return;
+        }
+
+        if (deathReason.equals(GameConstants.DeathReasons.DISCONNECT)) {
+            afterLooseEndTryRestore(who);
             return;
         }
         isPendingRestore = true;
