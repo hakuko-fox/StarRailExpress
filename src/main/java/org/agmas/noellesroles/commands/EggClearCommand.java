@@ -80,16 +80,18 @@ public class EggClearCommand {
             }
         }
 
-        if (cleared > 0) {
+        final int finalCleared = cleared;
+        final int finalRange = (int) range;
+        if (finalCleared > 0) {
             source.sendSuccess(() -> Component.literal(
-                    "Cleared " + cleared + " cuckoo egg(s) within " + (int)range + " blocks range")
+                    "Cleared " + finalCleared + " cuckoo egg(s) within " + finalRange + " blocks range")
                     .withStyle(ChatFormatting.GREEN), true);
         } else {
             source.sendFailure(Component.literal(
-                    "No cuckoo eggs found within " + (int)range + " blocks range")
+                    "No cuckoo eggs found within " + finalRange + " blocks range")
                     .withStyle(ChatFormatting.YELLOW));
         }
 
-        return cleared;
+        return finalCleared;
     }
 }
