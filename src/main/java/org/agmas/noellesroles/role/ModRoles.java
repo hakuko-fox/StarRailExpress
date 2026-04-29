@@ -252,7 +252,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 显示计分板
-    )).setCanSeeCoin(true).setComponentKey(org.agmas.noellesroles.component.ModComponents.PILOT);
+    )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false).setComponentKey(org.agmas.noellesroles.component.ModComponents.PILOT);
 
     /**
      * 影隼角色 - 杀手阵营
@@ -278,7 +278,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限体力
             true // 隐藏计分板
-    )).setCanSeeCoin(true).setComponentKey(org.agmas.noellesroles.component.ModComponents.SHADOW_FALCON);
+    )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false).setComponentKey(org.agmas.noellesroles.component.ModComponents.SHADOW_FALCON);
 
     public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
             GUEST_GHOST_ID, // 角色 ID

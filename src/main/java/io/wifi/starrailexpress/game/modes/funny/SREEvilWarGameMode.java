@@ -24,6 +24,8 @@ import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerCom
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
+import io.wifi.events.day_night_fight.DNFRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -60,10 +62,13 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     }
 
     protected void addBanedRoles() {
-        // 禁用 水鬼，布袋鬼，猫娘杀手
+        // 禁用 水鬼，布袋鬼，猫娘杀手，影隼，寻找者，dnf_killer
         BANED_ROLES.add(ModRoles.WATER_GHOST);
         BANED_ROLES.add(ModRoles.MA_CHEN_XU);
         BANED_ROLES.add(ModRoles.CAT_KILLER);
+        BANED_ROLES.add(ModRoles.SHADOW_FALCON);
+        BANED_ROLES.add(SpecialGameModeRoles.SEEKER);
+        BANED_ROLES.add(DNFRoles.KILLER);
     }
 
     @Override
