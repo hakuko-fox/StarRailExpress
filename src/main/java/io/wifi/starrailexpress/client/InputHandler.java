@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.cca.MapVotingComponent;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.gui.ScopeOverlayRenderer;
+import io.wifi.starrailexpress.client.gui.screen.CommandMacroScreen;
 import io.wifi.starrailexpress.client.gui.screen.MapSelectorScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomBattleScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen;
@@ -30,6 +31,10 @@ public class InputHandler {
     public static KeyMapping openFourthRoomPeekScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.starrailexpress.open_fourth_room_peek_screen",
             GLFW.GLFW_KEY_UNKNOWN,
+            "category.starrailexpress.general"));
+    public static KeyMapping openCommandMacroScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.starrailexpress.open_command_macro_screen",
+            GLFW.GLFW_KEY_K,
             "category.starrailexpress.general"));
 
     public static void initialize() {
@@ -86,6 +91,13 @@ public class InputHandler {
                 } else if (client.player != null) {
                     client.player.displayClientMessage(Component.literal("请先看向自己房间的牌桌"), true);
                 }
+            }
+        }
+
+
+        if (openCommandMacroScreenKeybind.consumeClick()) {
+            if (!(client.screen instanceof CommandMacroScreen)) {
+                client.setScreen(new CommandMacroScreen());
             }
         }
 

@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomTableHud;
+import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.client.gui.screen.*;
 import io.wifi.starrailexpress.client.model.GeneralModelLoadingPlugin;
@@ -692,6 +693,7 @@ public class SREClient implements ClientModInitializer {
         // TMMCommandUI.init();
         // KeyPressHandler.register();
         InputHandler.initialize();
+        CommandMacroExecutor.initialize();
 
         // Register HUD rendering for security camera
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((guiGraphics, deltaTick) -> {
