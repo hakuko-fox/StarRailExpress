@@ -335,18 +335,19 @@ public class WayfarerPlayerComponent implements RoleComponent, ServerTickingComp
                 Component.translatable("message.noellesroles.wayfarer.phase.2.finish").withStyle(ChatFormatting.GOLD),
                 true);
         // 生成尸体
-        PlayerBodyEntity body = (PlayerBodyEntity) TMMEntities.PLAYER_BODY.create(this.player.level());
+        PlayerBodyEntity body = TMMEntities.PLAYER_BODY.create(this.player.level());
         if (body != null) {
-            body.setDeathReason(trueDeathReason.toString());
             body.setPlayerUuid(player.getUUID());
             Vec3 spawnPos = player.position().add(player.getLookAngle().normalize().scale(1.0));
             body.moveTo(spawnPos.x(), player.getY(), spawnPos.z(), player.getYHeadRot(), 0.0F);
             body.setYRot(player.getYHeadRot());
             body.setYHeadRot(player.getYHeadRot());
             player.level().addFreshEntity(body);
-            final var bodyDeathReasonComponent = PlayerBodyEntityComponent.KEY.get(body);
-            bodyDeathReasonComponent.playerRole = ModRoles.WAYFARER_ID;
-            bodyDeathReasonComponent.sync();
+
+            PlayerBodyEntityComponent component = PlayerBodyEntityComponent.KEY.get(body);
+            component.setDeathReason(trueDeathReason.toString(), false); // 不同步
+            component.playerRole = ModRoles.WAYFARER_ID; // 直接赋值，不触发同步
+            component.sync(); // 最终统一同步
         }
         // 传送
         this.player.teleportTo(this.pos.x, this.pos.y, this.pos.z);
