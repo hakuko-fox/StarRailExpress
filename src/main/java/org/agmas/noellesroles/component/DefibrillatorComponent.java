@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.init.ModEffects;
+import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
@@ -25,6 +26,7 @@ public class DefibrillatorComponent implements RoleComponent, ServerTickingCompo
     public long resurrectionTime = 0;
     public UUID corpseEntityId = null;
     public Vec3 deathPos = null;
+    public static ComponentKey<DefibrillatorComponent> KEY = ModComponents.DEFIBRILLATOR;
 
     public DefibrillatorComponent(Player player) {
         this.player = player;

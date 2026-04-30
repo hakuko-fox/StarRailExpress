@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.commands;
 
+import com.google.common.collect.Lists;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -467,25 +468,102 @@ public class GameUtilsCommand {
                   }).then(Commands.literal("stop").executes((context) -> {
                     return executePsycho(context, 0);
                   })))
+                  .then(Commands.literal("body")
+                      .then(Commands.literal("teleport").executes((ctx) -> {
+                        ServerPlayer player = ctx.getSource().getPlayerOrException();
+                        var body = GameUtils.findPlayerBodyEntity(player);
+                        if (body == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Cannot find the player body in the world!"));
+                        }
+                        player.teleportTo(body.getX(), body.getY(), body.getZ());
+
+                        ctx.getSource().sendSuccess(
+                            () -> Component.translatable("Teleport player %s to its body", player.getName()), true);
+                        return 1;
+                      }))
+                      .then(Commands.literal("kill").executes((ctx) -> {
+                        ServerPlayer player = ctx.getSource().getPlayerOrException();
+                        var body = GameUtils.findPlayerBodyEntity(player);
+                        if (body == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Cannot find the player body in the world!"));
+                        }
+                        body.discard();
+                        ctx.getSource().sendSuccess(
+                            () -> Component.translatable("Killed player body of %s", player.getName()), true);
+                        return 1;
+                      }))
+                      .then(Commands.literal("as_run")).fork(dispatcher.getRoot(), (commandContext) -> {
+                        List<CommandSourceStack> list = Lists.newArrayList();
+                        ServerPlayer player = commandContext.getSource().getPlayerOrException();
+                        var body = GameUtils.findPlayerBodyEntity(player);
+                        if (body == null) {
+                          throw ConfigCommand
+                              .createSimpleSyntaxException(new Exception("Cannot find the player body in the world!"));
+                        }
+                        list.add(body.createCommandSourceStack());
+                        return list;
+                      }))
                   .then(Commands.literal("revive")
-                      .then(Commands.argument("player", EntityArgument.player()).executes(ctx -> {
-                        ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-                        GameUtils.revivePlayer(player, player.getX(), player.getY(), player.getZ());
-                        ctx.getSource().sendSuccess(
-                            () -> Component.translatable("Revived player %s to pos %s", player.getName(),
-                                player.position().toString()),
-                            false);
-                        return 1;
-                      }).then(Commands.argument("pos", Vec3Argument.vec3(true)).executes(ctx -> {
-                        ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
-                        Vec3 pos = Vec3Argument.getVec3(ctx, "pos");
-                        GameUtils.revivePlayer(player, pos.x, pos.y, pos.z);
-                        ctx.getSource().sendSuccess(
-                            () -> Component.translatable("Revived player %s to pos %s", player.getName(),
-                                player.position().toString()),
-                            false);
-                        return 1;
-                      }))))
+                      .then(Commands.argument("player", EntityArgument.player())
+                          .executes(ctx -> {
+                            ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                            GameUtils.revivePlayer(player, player.getX(), player.getY(), player.getZ());
+                            ctx.getSource().sendSuccess(
+                                () -> Component.translatable("Revived player %s to pos %s", player.getName(),
+                                    player.position().toString()),
+                                false);
+                            return 1;
+                          })
+
+                          .then(Commands.literal("to_body").executes((ctx) -> {
+                            ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                            var body = GameUtils.findPlayerBodyEntity(player);
+                            if (body == null) {
+                              throw ConfigCommand
+                                  .createSimpleSyntaxException(
+                                      new Exception("Cannot find the player body in the world!"));
+                            }
+                            Vec3 pos = body.position();
+                            GameUtils.revivePlayer(player, pos.x, pos.y, pos.z);
+                            ctx.getSource().sendSuccess(
+                                () -> Component.translatable("Revived player %s to pos %s", player.getName(),
+                                    player.position().toString()),
+                                false);
+                            return 1;
+                          })
+                              .then(Commands.argument("remove_body", BoolArgumentType.bool())
+                                  .executes(ctx -> {
+                                    ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                                    boolean removeBody = BoolArgumentType.getBool(ctx, "remove_body");
+                                    var body = GameUtils.findPlayerBodyEntity(player);
+                                    if (body == null) {
+                                      throw ConfigCommand
+                                          .createSimpleSyntaxException(
+                                              new Exception("Cannot find the player body in the world!"));
+                                    }
+                                    Vec3 pos = body.position();
+                                    GameUtils.revivePlayer(player, pos.x, pos.y, pos.z);
+                                    if (removeBody) {
+                                      body.discard();
+                                    }
+                                    ctx.getSource().sendSuccess(
+                                        () -> Component.translatable("Revived player %s to pos %s", player.getName(),
+                                            player.position().toString()),
+                                        false);
+                                    return 1;
+                                  })))
+                          .then(Commands.argument("pos", Vec3Argument.vec3(true)).executes(ctx -> {
+                            ServerPlayer player = EntityArgument.getPlayer(ctx, "player");
+                            Vec3 pos = Vec3Argument.getVec3(ctx, "pos");
+                            GameUtils.revivePlayer(player, pos.x, pos.y, pos.z);
+                            ctx.getSource().sendSuccess(
+                                () -> Component.translatable("Revived player %s to pos %s", player.getName(),
+                                    player.position().toString()),
+                                false);
+                            return 1;
+                          }))))
                   .then(Commands.literal("kill")
                       .then(Commands.argument("victim", EntityArgument.player())
                           .then(Commands.argument("death_reason", ResourceLocationArgument.id())

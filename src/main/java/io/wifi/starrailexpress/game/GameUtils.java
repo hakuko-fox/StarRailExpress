@@ -54,6 +54,8 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.events.ResetPlayerEvent;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
+import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.content.item.LetterItem;
 import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinFistPunchHandler;
@@ -217,6 +219,24 @@ public class GameUtils {
             var task = new ServerTaskInfoClasses.OnlySomeBlockResetTask(resetPoints, world, gameMode, time, areas);
             serverTaskQueue.add(task);
         }
+    }
+
+    public static PlayerBodyEntity findPlayerBodyEntity(ServerPlayer player) {
+        var serverLevel = player.serverLevel();
+        var bodies = serverLevel.getAllEntities();
+
+        List<PlayerBodyEntity> bodiesMatched = new ArrayList<>();
+        for (var body : bodies) {
+            if (body instanceof PlayerBodyEntity bodyEntity) {
+                if (bodyEntity.getPlayerUuid().equals(player.getUUID())) {
+                    bodiesMatched.add(bodyEntity);
+                    break;
+                }
+            }
+        }
+        if (bodiesMatched.isEmpty())
+            return null;
+        return bodiesMatched.getFirst();
     }
 
     public static void registerEventForServerTickForDoingResetTasks() {
@@ -1135,6 +1155,8 @@ public class GameUtils {
     }
 
     public static void revivePlayer(ServerPlayer player, double x, double y, double z) {
+        DeathPenaltyComponent.KEY.get(player).clear();
+        DefibrillatorComponent.KEY.get(player).clear();
         player.teleportTo(x, y, z);
         player.setGameMode(GameType.ADVENTURE);
         TrainVoicePlugin.resetPlayer(player.getUUID());
