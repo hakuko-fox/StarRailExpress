@@ -210,6 +210,21 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> PLAYER_ISOLATION = register("player_isolation",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
+    /**
+     * 重金属语音：让 simple voice chat 的说话音色变低沉
+     */
+    public static final Holder<MobEffect> HEAVY_METAL_VOICE = register("heavy_metal_voice",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x505050));
+    /**
+     * 扩音语音：扩大语音传播范围
+     */
+    public static final Holder<MobEffect> VOICE_RANGE_BOOST = register("voice_range_boost",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x8FD3FF));
+    /**
+     * 回响语音：让语音出现回音
+     */
+    public static final Holder<MobEffect> VOICE_ECHO = register("voice_echo",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xCBB6FF));
 public static final Holder<MobEffect> MONOKUMA_FRENZY = register("monokuma_frenzy",
             new org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaFrenzyEffect());
 
@@ -271,6 +286,30 @@ public static final Holder<MobEffect> MONOKUMA_FRENZY = register("monokuma_frenz
             return 0f;
         }
         return Mth.clamp(0.25f * (amp + 1), 0f, 1f);
+    }
+
+    public static float getHeavyMetalPitchRatio(LivingEntity entity) {
+        int amp = getAmplifier(entity, HEAVY_METAL_VOICE);
+        if (amp < 0) {
+            return 1f;
+        }
+        return Mth.clamp(1f - 0.15f * (amp + 1), 0.4f, 1f);
+    }
+
+    public static float getVoiceRangeMultiplier(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_RANGE_BOOST);
+        if (amp < 0) {
+            return 1f;
+        }
+        return 1f + (amp + 1);
+    }
+
+    public static int getVoiceEchoCount(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_ECHO);
+        if (amp < 0) {
+            return 0;
+        }
+        return Mth.clamp(amp + 1, 1, 5);
     }
 
     /**
