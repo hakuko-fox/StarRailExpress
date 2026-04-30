@@ -440,9 +440,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             CompoundTag gameModeTag = new CompoundTag();
             this.gameMode.writeToNbt(gameModeTag, wrapperLookup);
             nbtCompound.put("GameModeData", gameModeTag);
+
+            if ((this.gameMode.isLooseEndMode() || this.gameMode.onlyOneWinner()) && this.looseEndWinner != null)
+                nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
         }
-        if ((this.gameMode.isLooseEndMode() || this.gameMode.onlyOneWinner()) && this.looseEndWinner != null)
-            nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
         if (gameStatus == GameStatus.INACTIVE) {
             return;
         }
