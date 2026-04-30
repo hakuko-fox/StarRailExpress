@@ -177,6 +177,28 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               return;
             }
             if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
+              float voiceRangeMultiplier = ModEffects.getVoiceRangeMultiplier(player);
+              if (voiceRangeMultiplier > 1.0f) {
+                event.cancel();
+                double maxDistance = api.getVoiceChatDistance() * voiceRangeMultiplier;
+                var players = player.level().players();
+                if (players == null) {
+                  return;
+                }
+                players.forEach((p) -> {
+                  if (p.getUUID() != player.getUUID() && player.distanceTo(p) <= maxDistance) {
+                    VoicechatConnection con = api.getConnectionOf(p.getUUID());
+                    if (con != null && con.isInstalled() && con.isConnected()) {
+                      api.sendLocationalSoundPacketTo(con, event.getPacket()
+                          .locationalSoundPacketBuilder()
+                          .position(api.createPosition(player.getX(), player.getY(), player.getZ()))
+                          .distance((float) maxDistance)
+                          .build());
+                    }
+                  }
+                });
+                return;
+              }
               if (gameWorldComponent.isRole(player, ModRoles.NOISEMAKER)) {
                 event.cancel();
                 var players = player.level().players();
