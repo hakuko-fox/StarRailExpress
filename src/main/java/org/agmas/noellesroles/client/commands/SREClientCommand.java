@@ -8,7 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
 
-public class GameManagePanelCommand {
+public class SREClientCommand {
   public static void register() {
     ClientCommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess) -> {

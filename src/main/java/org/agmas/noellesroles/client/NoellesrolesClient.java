@@ -64,7 +64,7 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.client.blood.BloodMain;
-import org.agmas.noellesroles.client.commands.GameManagePanelCommand;
+import org.agmas.noellesroles.client.commands.SREClientCommand;
 import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
@@ -1241,7 +1241,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     }
 
     private void registerCommands() {
-        GameManagePanelCommand.register();
+        SREClientCommand.register();
     }
 
     private void ShowBroadcastMessage(Component message) {
