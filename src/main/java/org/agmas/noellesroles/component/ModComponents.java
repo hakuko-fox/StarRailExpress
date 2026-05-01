@@ -60,6 +60,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.pilot.PilotPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
@@ -326,6 +327,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "shadow_falcon"),
       ShadowFalconPlayerComponent.class);
 
+  public static final ComponentKey<SpellbreakerPlayerComponent> SPELLBREAKER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "spellbreaker"),
+      SpellbreakerPlayerComponent.class);
+
   // 飞行员组件 - 平民阵营，喷气背包
   public static final ComponentKey<PilotPlayerComponent> PILOT = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pilot"),
@@ -466,6 +471,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(GamblerPlayerComponent::new);
     registry.beginRegistration(Player.class, MorphlingPlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(MorphlingPlayerComponent::new);
+
     registry.beginRegistration(Player.class, VoodooPlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(VoodooPlayerComponent::new);
     registry.beginRegistration(Player.class, ExecutionerPlayerComponent.KEY)
@@ -629,6 +635,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(FoodDrinkGlowComponent::new);
 
+    registry.beginRegistration(Player.class, GhostStateComponent.KEY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(GhostStateComponent::new);
+
     // 注册射击狂热组件 - 刽子手的狂暴射击模式
     registry.beginRegistration(Player.class, SHOOTING_FRENZY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -652,6 +662,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SHADOW_FALCON)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ShadowFalconPlayerComponent::new);
+
+    registry.beginRegistration(Player.class, SPELLBREAKER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(SpellbreakerPlayerComponent::new);
 
     // 注册飞行员组件 - 存储喷气背包状态
     registry.beginRegistration(Player.class, PILOT)

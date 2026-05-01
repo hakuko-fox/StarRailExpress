@@ -1094,6 +1094,9 @@
   "gui.noellesroles.ghost.waiting": "Waiting for game start...",
   "message.noellesroles.ghost.ability_unlocked": "Your skill has been unlocked! You can now become invisible!",
   "message.noellesroles.ghost.last_stand": "An unseen force turned the hour hand!",
+  "gui.noellesroles.spellbreaker.locked": "Skill not unlocked",
+  "gui.noellesroles.spellbreaker.cooldown": "Spellbreak cooldown, %s seconds remaining",
+  "gui.noellesroles.spellbreaker.unlocked": "Spellbreak ready: Press G",
   "gui.noellesroles.candlebearer.progress": "Candle progress: %s/%s",
   "gui.noellesroles.candlebearer.charges": "Invisibility charges: %s/%s",
   "gui.noellesroles.candlebearer.living_cooldown": "Living dedication cooldown: %s seconds",
@@ -1836,5 +1839,17 @@
   "effect.noellesroles.dreamcore_filter": "Dreamcore Filter",
   "mob_effect.noellesroles.dreamcore_filter": "Dreamcore Filter",
   "effect.noellesroles.player_isolation": "Player Isolation",
-  "mob_effect.noellesroles.player_isolation": "Player Isolation"
+  "mob_effect.noellesroles.player_isolation": "Player Isolation",
+  "announcement.star.role.spellbreaker": "Spellbreaker",
+  "announcement.star.goals.spellbreaker": "Suppress passenger skills and inventory timing, control key areas, and hunt targets",
+  "info.screen.roleid.spellbreaker": "Killer team\nPress G to release a spellbreak field: non-killer players within 50m cannot use skills or open inventory for 20 seconds and receive the Fairyland filter.\nSpellbreaker Potion: for 15 seconds, hitting a non-killer player marks their next skill attempt to fail and gives them 30 seconds of skill ban.\nSilence Totem: throw an invisible totem lasting 30 seconds. Non-killer players within 15m continuously receive Slowness II and Blindness. Only one totem can exist at a time.",
+  "item.noellesroles.spellbreaker_potion": "Spellbreaker Potion",
+  "item.noellesroles.silence_totem": "Silence Totem",
+  "message.noellesroles.spellbreaker.area_silenced": "You are suppressed by a spellbreak field and cannot use skills or open your inventory",
+  "message.noellesroles.spellbreaker.ability_used": "Spellbreak field released, affecting %s players",
+  "message.noellesroles.spellbreaker.potion_used": "Spellbreaker Potion active. Attacks mark targets for 15 seconds",
+  "message.noellesroles.spellbreaker.next_skill_marked": "Your next skill attempt will be broken",
+  "message.noellesroles.spellbreaker.hit_marked": "Marked %s's next skill",
+  "message.noellesroles.spellbreaker.skill_failed": "Your skill was broken. Skill ban for 30 seconds",
+  "message.noellesroles.spellbreaker.item_only": "Only Spellbreakers can use this item"
 }

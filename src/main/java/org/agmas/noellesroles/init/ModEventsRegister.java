@@ -753,6 +753,7 @@ public class ModEventsRegister {
         ShootingFrenzyPlayerComponent.registerFrenzyCooldownEvent();
 
         HoanMeirinFistPunchHandler.register();
+        org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
         // 注册警棍与防暴盾处理器
         BatonHandler.register();
         RiotShieldHandler.register();

@@ -10,13 +10,16 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.flag.FeatureFlagSet;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.GhostStateComponent;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
@@ -24,12 +27,36 @@ import org.agmas.noellesroles.content.effects.TimeStopEffect;
 public class ModEffects {
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> INVENTORY_BANED = register("inventory_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+    public static final Holder<MobEffect> NEXT_SKILL_BANED = register("next_skill_baned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> TAROT_ASSEMBLY = register("tarot_assembly",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> BLACK_MONITOR = register("black_monitor",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> GHOST_STATE = register("ghost_state",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF){
+                @Override
+                public boolean shouldApplyEffectTickThisTick(int i, int j) {
+                    return true;
+                }
+
+
+
+                @Override
+                public boolean applyEffectTick(LivingEntity livingEntity, int i) {
+
+                    if (livingEntity instanceof ServerPlayer serverPlayer){
+                        GhostStateComponent ghostStateComponent = GhostStateComponent.KEY.get(serverPlayer);
+                        if (!ghostStateComponent.isGhostState()) {
+                            ghostStateComponent.isGhost = true;
+                            ghostStateComponent.sync();
+                        }
+                    }
+                    return super.applyEffectTick(livingEntity, i);
+                }
+            });
     public static final Holder<MobEffect> MOVE_BANED = register("move_baned",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF) {
                 @Override

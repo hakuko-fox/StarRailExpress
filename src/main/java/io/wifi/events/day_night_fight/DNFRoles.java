@@ -4,6 +4,7 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
+import io.wifi.events.day_night_fight.cca.DNFUnderworldComponent;
 import io.wifi.starrailexpress.api.*;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
@@ -20,6 +21,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import org.agmas.noellesroles.Noellesroles;
@@ -98,7 +100,7 @@ public class DNFRoles {
             if (serverPlayer.isAlive() && victim.isAlive() && serverPlayer.distanceTo(victim) <= 4.0) {
                 // 修改:让玩家进入里世界而不是直接死亡
                 if (victim instanceof ServerPlayer serverVictim) {
-                    DNF.sendPlayerToUnderworld(serverVictim);
+                    DNFUnderworldComponent.KEY.get(serverVictim).reduceTime();
                 }
             }
             if (serverPlayer.isAlive()) {
@@ -156,7 +158,14 @@ public class DNFRoles {
 
         @Override
         public List<ShopEntry> getShopEntries() {
-            return new ArrayList<>();
+            ArrayList<ShopEntry> shopEntries = new ArrayList<>();
+            shopEntries.add(new ShopEntry(Items.BARRIER.getDefaultInstance(),0, dev.doctor4t.wathe.util.ShopEntry.Type.TOOL){
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    return false;
+                }
+            });
+            return shopEntries;
         }
     }).setCanSeeCoin(false).setCanUseInstinct(false).setCanSeeTime(false).setCanGetBodyItems(true);
     public static final SRERole MANIAC = TMMRoles.registerRole(new DNFNormalRole(MANIAC_ID, 0x3A0010, false, true,

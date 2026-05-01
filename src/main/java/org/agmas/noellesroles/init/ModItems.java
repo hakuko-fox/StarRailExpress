@@ -287,6 +287,14 @@ public class ModItems {
             new DecoyGrenadeItem(new Item.Properties().stacksTo(8)),
             "decoy_grenade");
 
+    public static final Item SPELLBREAKER_POTION = register(
+            new SpellbreakerPotionItem(new Item.Properties().stacksTo(1)),
+            "spellbreaker_potion");
+
+    public static final Item SILENCE_TOTEM = register(
+            new SilenceTotemItem(new Item.Properties().stacksTo(8)),
+            "silence_totem");
+
     /**
      * 加固门道具
      * - 工程师专属物品
@@ -724,6 +732,7 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.WRITTEN_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.FLASH_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DECOY_GRENADE);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.SILENCE_TOTEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.PURIFY_BOMB);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.HONORED_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SPIRIT_CLOAK);

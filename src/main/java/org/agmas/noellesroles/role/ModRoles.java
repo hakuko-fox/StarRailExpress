@@ -56,6 +56,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
+import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
@@ -190,6 +191,7 @@ public class ModRoles {
     public static ResourceLocation SHOOTING_FRENZY_ID = Noellesroles.id("shooting_frenzy");
     public static ResourceLocation GAMBLER_ID = Noellesroles.id("gambler");
     public static ResourceLocation POISONER_ID = Noellesroles.id("poisoner");
+    public static ResourceLocation SPELLBREAKER_ID = Noellesroles.id("spellbreaker");
 
     public static ResourceLocation LOCKSMITH_ID = Noellesroles.id("locksmith");
     public static ResourceLocation EXAMPLER_ID = Noellesroles.id("exampler");
@@ -910,6 +912,12 @@ public class ModRoles {
     public static SRERole POISONER = TMMRoles
             .registerRole(new NormalRole(POISONER_ID, (new Color(115, 0, 57)).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true));
+
+    public static SRERole SPELLBREAKER = TMMRoles
+            .registerRole(new NormalRole(SPELLBREAKER_ID, (new Color(132, 46, 170)).getRGB(), false,
+                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
+                    .setComponentKey(SpellbreakerPlayerComponent.KEY))
+            .setCanSeeCoin(true);
 
     public static SRERole INSANE_KILLER = TMMRoles
             .registerRole(new NormalRole(

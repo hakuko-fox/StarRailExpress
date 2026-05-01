@@ -55,7 +55,7 @@ public class DerringerItem extends RevolverItem {
                 ClientPlayNetworking.send(new GunShootPayload(-1));
             }
             if (!used) {
-                user.setXRot(user.getXRot() - 4);
+                user.setXRot(user.getXRot() - 20);
                 spawnHandParticle();
                 if (!world.isClientSide) {
                     if (SRE.REPLAY_MANAGER != null) {

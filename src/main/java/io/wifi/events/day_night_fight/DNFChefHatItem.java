@@ -63,7 +63,6 @@ public class DNFChefHatItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.starrailexpress.dnf_chef_hat.tooltip")
                 .withStyle(ChatFormatting.GOLD));
-        tooltip.add(Component.translatable("item.starrailexpress.dnf_chef_hat.tooltip2")
-                .withStyle(ChatFormatting.GRAY));
+
     }
 }

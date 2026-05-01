@@ -42,6 +42,7 @@ import org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerCo
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
@@ -505,6 +506,34 @@ public class CommonClientHudRenderer {
         color = 0xFF5555; // 红色
       } else {
         text = Component.translatable("gui.noellesroles.ghost.unlocked");
+        color = 0x55FF55; // 绿色
+      }
+      int screenWidth = client.getWindow().getGuiScaledWidth();
+      int screenHeight = client.getWindow().getGuiScaledHeight();
+      int textWidth = client.font.width(text);
+
+      // 右下角显示，留出一些边距
+      int x = screenWidth - textWidth - 10;
+      int y = screenHeight - 20;
+
+      context.drawString(client.font, text, x, y, color);
+    });
+    RoleHudRenderCallback.EVENT.register(ModRoles.SPELLBREAKER_ID, (context, tickCounter) -> {
+      Minecraft client = Minecraft.getInstance();
+      Component text = null;
+      int color = 0xFFFFFFFF;
+      if (client.player.hasEffect(ModEffects.SKILL_BANED))
+        return;
+      SREAbilityPlayerComponent spellbreakerPlayerComponent = SREAbilityPlayerComponent.KEY.get(client.player);
+      if (!spellbreakerPlayerComponent.canUseAbility()) {
+        text = Component.translatable("gui.noellesroles.spellbreaker.locked");
+        color = 0xFFFF00; // 黄色
+      } else if (spellbreakerPlayerComponent.cooldown > 0) {
+        int seconds = (spellbreakerPlayerComponent.cooldown) / 20;
+        text = Component.translatable("gui.noellesroles.spellbreaker.cooldown", seconds);
+        color = 0xFF5555; // 红色
+      } else {
+        text = Component.translatable("gui.noellesroles.spellbreaker.unlocked");
         color = 0x55FF55; // 绿色
       }
       int screenWidth = client.getWindow().getGuiScaledWidth();

@@ -188,6 +188,16 @@ public class ModEntities {
                     .build());
 
     @SuppressWarnings("deprecation")
+    public static final EntityType<SilenceTotemEntity> SILENCE_TOTEM = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "silence_totem"),
+            FabricEntityTypeBuilder.<SilenceTotemEntity>create(MobCategory.MISC, SilenceTotemEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(32)
+                    .trackedUpdateRate(10)
+                    .build());
+
+    @SuppressWarnings("deprecation")
     public static final EntityType<io.wifi.starrailexpress.content.entity.NoteEntity> GIANT_NOTE = Registry
             .register(
                     BuiltInRegistries.ENTITY_TYPE,

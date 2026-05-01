@@ -2093,5 +2093,17 @@
   "effect.noellesroles.dreamcore_filter": "夢核濾鏡",
   "mob_effect.noellesroles.dreamcore_filter": "夢核濾鏡",
   "effect.noellesroles.player_isolation": "玩家隔離",
-  "mob_effect.noellesroles.player_isolation": "玩家隔離"
+  "mob_effect.noellesroles.player_isolation": "玩家隔離",
+  "announcement.star.role.spellbreaker": "破法者",
+  "announcement.star.goals.spellbreaker": "封禁乘客的技能與行動窗口，掌控關鍵區域並獵殺目標",
+  "info.screen.roleid.spellbreaker": "殺手陣營\n按G釋放破法力場：50米內非殺手玩家20秒內無法使用技能或打開背包，並獲得仙境濾鏡。\n破法藥劑：15秒內命中非殺手玩家會使其下一次技能嘗試失敗，並進入30秒技能封禁。\n沉默圖騰：投擲隱形圖騰，30秒內使15米內非殺手玩家持續緩慢II與失明。同一時間只能存在一個圖騰。",
+  "item.noellesroles.spellbreaker_potion": "破法藥劑",
+  "item.noellesroles.silence_totem": "沉默圖騰",
+  "message.noellesroles.spellbreaker.area_silenced": "你被破法力場壓制，暫時無法使用技能或打開背包",
+  "message.noellesroles.spellbreaker.ability_used": "破法力場展開，影響了%s名玩家",
+  "message.noellesroles.spellbreaker.potion_used": "破法藥劑生效，15秒內攻擊可標記目標",
+  "message.noellesroles.spellbreaker.next_skill_marked": "你的下一次技能嘗試將被破法",
+  "message.noellesroles.spellbreaker.hit_marked": "已標記%s的下一次技能",
+  "message.noellesroles.spellbreaker.skill_failed": "技能被破法，進入30秒封禁",
+  "message.noellesroles.spellbreaker.item_only": "只有破法者可以使用這個物品"
 }

@@ -36,6 +36,7 @@ import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
@@ -61,6 +62,9 @@ public class AbilityHandler {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
         if (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+            return;
+        }
+        if (SpellbreakerPlayerComponent.KEY.get(player).consumePendingSkillFail(player)) {
             return;
         }
         if (player.hasEffect(ModEffects.SKILL_BANED)) {
@@ -233,6 +237,10 @@ public class AbilityHandler {
                 return;
             }
             watcher.toggleStance();
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.SPELLBREAKER)) {
+            SpellbreakerPlayerComponent.KEY.get(player).useAbility();
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.COMMANDER)) {
@@ -555,6 +563,9 @@ public class AbilityHandler {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
         if (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+            return;
+        }
+        if (SpellbreakerPlayerComponent.KEY.get(player).consumePendingSkillFail(player)) {
             return;
         }
         if (player.hasEffect(ModEffects.SKILL_BANED)) {

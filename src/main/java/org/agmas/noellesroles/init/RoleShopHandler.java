@@ -274,6 +274,18 @@ public class RoleShopHandler {
     ShopContent.register();
     DNF.registerShops();
     {
+      var SHOP = new ArrayList<ShopEntry>();
+      SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), SREConfig.instance().lockpickPrice, ShopEntry.Type.TOOL));
+      SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+      SHOP.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), SREConfig.instance().knifePrice, ShopEntry.Type.WEAPON));
+      SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
+      SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), SREConfig.instance().shortShotgunPrice, ShopEntry.Type.WEAPON));
+      SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), SREConfig.instance().grenadePrice, ShopEntry.Type.WEAPON));
+      SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
+      SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(), 130, ShopEntry.Type.TOOL));
+      ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
+    }
+    {
       // 布袋鬼商店（诡舍·缚灵）
       // 设计要求：无法购买刀、枪、狂暴模式，只能购买强化领域的道具
       var MA_CHEN_XU_SHOP = new ArrayList<ShopEntry>();

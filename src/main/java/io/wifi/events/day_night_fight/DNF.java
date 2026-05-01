@@ -53,6 +53,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -195,8 +196,16 @@ public class DNF {
     public static InteractionResult eatBody(ServerPlayer player, PlayerBodyEntity body) {
         DNFPlayerComponent component = DNFPlayerComponent.KEY.get(player);
         ResourceLocation bodyRole = PlayerBodyEntityComponent.KEY.get(body).playerRole;
+        PlayerBodyEntityComponent playerBodyEntityComponent = PlayerBodyEntityComponent.KEY.get(body);
+        if (playerBodyEntityComponent.vultured){
+            player.displayClientMessage(Component.translatable("message.dnf.killer.blood",
+                    component.getBlood(), component.getBodiesEaten()).withStyle(ChatFormatting.RED), true);
+            return InteractionResult.FAIL;
+
+        }
         component.eatCorpse(player, bodyRole, BLOOD_PER_CORPSE);
-        body.discard();
+        playerBodyEntityComponent.vultured = true;
+        playerBodyEntityComponent.sync();
         player.level().playSound(null, body.blockPosition(), SoundEvents.HONEY_DRINK, SoundSource.PLAYERS, 0.8f, 0.55f);
 
         if (component.hasPersonalEnding()) {
@@ -342,7 +351,7 @@ public class DNF {
         underworld.enterUnderworld(cluePoint);
         
         // 设置玩家为旁观模式
-        player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+//        player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
         
         // 播放音效
         player.level().playSound(null, player.blockPosition(), 

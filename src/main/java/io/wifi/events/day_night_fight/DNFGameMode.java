@@ -8,16 +8,23 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
+import io.wifi.starrailexpress.util.SREItemUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BundleItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -83,6 +90,9 @@ public class DNFGameMode extends SREMurderGameMode {
 
         for (ServerPlayer player : players) {
             SRERole role = gameWorldComponent.getRole(player);
+            ItemStack defaultInstance = Items.BUNDLE.getDefaultInstance();
+            player.addItem(defaultInstance);
+            player.addEffect(new MobEffectInstance(ModEffects.MOOD_DRAIN_IMMUNITY, Integer.MAX_VALUE, 1, false, false,false));
             DNFPlayerComponent component = DNFPlayerComponent.KEY.get(player);
             component.init();
             component.startDnfDay(player, 0, role == DNFRoles.CHEF);

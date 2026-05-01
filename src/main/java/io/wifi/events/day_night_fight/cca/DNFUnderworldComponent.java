@@ -2,6 +2,7 @@ package io.wifi.events.day_night_fight.cca;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
+import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
  * 里世界CCA组件
@@ -19,7 +21,7 @@ import org.ladysnake.cca.api.v3.component.ComponentRegistry;
  * - 发光线索点位置
  * - 是否正在里世界中
  */
-public class DNFUnderworldComponent implements RoleComponent {
+public class DNFUnderworldComponent implements RoleComponent , ServerTickingComponent {
     public static final ComponentKey<DNFUnderworldComponent> KEY = ComponentRegistry.getOrCreate(
             SRE.id("dnf_underworld"), DNFUnderworldComponent.class);
 
@@ -185,5 +187,18 @@ public class DNFUnderworldComponent implements RoleComponent {
      */
     public int getRemainingSeconds() {
         return reviveCountdown % 60;
+    }
+
+    @Override
+    public void serverTick() {
+        DNFUnderworldComponent underworld = DNFUnderworldComponent.KEY.get(player);
+        if (underworld.isInUnderworld()) {
+            underworld.tick();
+
+            // 检查倒计时是否结束
+            if (underworld.getReviveCountdown() <= 0) {
+                GameUtils.killPlayer(player, true, null);
+            }
+        }
     }
 }

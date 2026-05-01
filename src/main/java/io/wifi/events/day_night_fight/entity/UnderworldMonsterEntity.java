@@ -34,7 +34,7 @@ public class UnderworldMonsterEntity extends Monster {
     }
 
     public static AttributeSupplier createAttributes() {
-        return AttributeSupplier.builder().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.MOVEMENT_SPEED, 1).add(Attributes.ATTACK_DAMAGE, 5.0).add(Attributes.KNOCKBACK_RESISTANCE, 1.0).build();
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.MOVEMENT_SPEED, 1).add(Attributes.ATTACK_DAMAGE, 5.0).add(Attributes.KNOCKBACK_RESISTANCE, 1.0).add(Attributes.FOLLOW_RANGE, 64.0).add(Attributes.SCALE, 1.25).build();
     }
 
     @Override
@@ -57,10 +57,10 @@ public class UnderworldMonsterEntity extends Monster {
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
                         getX(), getY() + 1, getZ(),
-                        3, 0.3, 0.5, 0.3, 0.02);
+                        5, 0.5, 0.7, 0.5, 0.1);
                 serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.GLOW,
                         getX(), getY() + random.nextFloat() * 2, getZ(),
-                        2, 0.2, 0.2, 0.2, 0.01);
+                        7, 0.4, 0.4, 0.4, 0.1);
             }
         }
         
@@ -101,15 +101,8 @@ public class UnderworldMonsterEntity extends Monster {
         if (!(level() instanceof ServerLevel serverLevel)) return;
         
         for (ServerPlayer player : serverLevel.players()) {
-            DNFUnderworldComponent underworld = DNFUnderworldComponent.KEY.get(player);
-            if (underworld.isInUnderworld()) {
-                underworld.tick();
-                
-                // 检查倒计时是否结束
-                if (underworld.getReviveCountdown() <= 0) {
-                    // TODO: 真正死亡逻辑
-                }
-            }
+
+
         }
     }
 

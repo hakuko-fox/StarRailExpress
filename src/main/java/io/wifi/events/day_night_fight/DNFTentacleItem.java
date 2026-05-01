@@ -101,6 +101,7 @@ public class DNFTentacleItem extends Item implements SREItemProperties.LeftClick
             player.getCooldowns().addCooldown(this, 200);
             return InteractionResultHolder.success(stack);
         }
+        player.getCooldowns().addCooldown(this, 15);
         player.displayClientMessage(Component.literal("前方没有可抓取目标").withStyle(ChatFormatting.GRAY), true);
         return InteractionResultHolder.fail(stack);
     }
