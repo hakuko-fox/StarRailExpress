@@ -57,7 +57,8 @@ public class DNFTaskToolItem extends Item {
             return;
         }
         BlockHitResult hit = DNF.findLookedAtBlock(player, 6.0);
-        if (hit == null || !(world.getBlockState(hit.getBlockPos()).getBlock() instanceof DNFTaskPointBlock block)) {
+        if (hit == null || !(world.getBlockState(hit.getBlockPos()).getBlock() instanceof DNFTaskPointBlock block)
+                || !block.isCleanableTask()) {
             player.displayClientMessage(Component.translatable("message.dnf.task_point.no_target")
                     .withStyle(ChatFormatting.YELLOW), true);
             return;
@@ -87,7 +88,7 @@ public class DNFTaskToolItem extends Item {
             return null;
         }
         return player.level().getBlockState(hit.getBlockPos()).getBlock() instanceof DNFTaskPointBlock block
-                ? block
+                && block.isCleanableTask() ? block
                 : null;
     }
 }

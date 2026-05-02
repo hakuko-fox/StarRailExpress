@@ -229,6 +229,25 @@ public class DNFWorldComponent implements AutoSyncedComponent, ServerTickingComp
         sync();
     }
 
+    @Nullable
+    public BlockPos getLabCenterPos() {
+        return map.labCenterPos;
+    }
+
+    public void setLabCenterPos(@Nullable BlockPos labCenterPos) {
+        map.labCenterPos = labCenterPos == null ? null : labCenterPos.immutable();
+        sync();
+    }
+
+    public double getLabRadius() {
+        return map.labRadius;
+    }
+
+    public void setLabRadius(double labRadius) {
+        map.labRadius = labRadius;
+        sync();
+    }
+
     public boolean isPlayerNearMeeting(ServerPlayer player) {
         if (map.meetingPos == null || map.meetingRadius <= 0) {
             return false;
@@ -574,6 +593,9 @@ public class DNFWorldComponent implements AutoSyncedComponent, ServerTickingComp
         @Nullable
         private BlockPos meetingPos;
         private double meetingRadius = 10.0;
+        @Nullable
+        private BlockPos labCenterPos;
+        private double labRadius = 50.0;
         private final Map<UUID, AABB> dormRooms = new HashMap<>();
 
         private void write(CompoundTag tag) {
@@ -585,6 +607,8 @@ public class DNFWorldComponent implements AutoSyncedComponent, ServerTickingComp
             putBox(tag, "CafeteriaArea", cafeteriaArea);
             putBlockPos(tag, "MeetingPos", meetingPos);
             tag.putDouble("MeetingRadius", meetingRadius);
+            putBlockPos(tag, "LabCenterPos", labCenterPos);
+            tag.putDouble("LabRadius", labRadius);
 
             ListTag dormList = new ListTag();
             for (Map.Entry<UUID, AABB> entry : dormRooms.entrySet()) {
@@ -605,6 +629,8 @@ public class DNFWorldComponent implements AutoSyncedComponent, ServerTickingComp
             cafeteriaArea = getBox(tag, "CafeteriaArea");
             meetingPos = getBlockPos(tag, "MeetingPos");
             meetingRadius = tag.getDouble("MeetingRadius");
+            labCenterPos = getBlockPos(tag, "LabCenterPos");
+            labRadius = tag.getDouble("LabRadius");
 
             dormRooms.clear();
             ListTag dormList = tag.getList("DormRooms", CompoundTag.TAG_COMPOUND);

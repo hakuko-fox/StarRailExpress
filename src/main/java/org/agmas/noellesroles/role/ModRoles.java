@@ -26,6 +26,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.Noellesroles;
 
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
@@ -83,6 +85,7 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * 角色定义类
@@ -1052,7 +1055,16 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
-    ).setComponentKey(PostmanPlayerComponent.KEY));;
+    ){
+
+            @Override
+            public List<ItemStack> getDefaultItems() {
+            ArrayList<ItemStack> itemStacks = new ArrayList<>();
+            itemStacks.add(new ItemStack(Items.BUNDLE));
+            return itemStacks;
+        }
+
+    }.setComponentKey(PostmanPlayerComponent.KEY));;
 
     /**
      * 私家侦探角色
@@ -1468,7 +1480,14 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
-    )).setComponentKey(ThiefPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+    ){
+                @Override
+                public List<ItemStack> getDefaultItems() {
+                    ArrayList<ItemStack> itemStacks = new ArrayList<>();
+                    itemStacks.add(new ItemStack(Items.BUNDLE));
+                    return itemStacks;
+                }
+            }).setComponentKey(ThiefPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false);;
 
     /**

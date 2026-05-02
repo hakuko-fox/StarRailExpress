@@ -202,6 +202,20 @@ public class VoteSession {
         return votes.size();
     }
 
+    public boolean hasVotedFor(UUID playerId, String resultId) {
+        Set<Integer> choices = votes.get(playerId);
+        if (choices == null || choices.isEmpty()) {
+            return false;
+        }
+        for (int choice : choices) {
+            if (choice >= 0 && choice < options.size()
+                    && Objects.equals(options.get(choice).resultId(), resultId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void start(long serverTick) {
         this.endTick = serverTick + remainingTicks;
         this.paused = false;

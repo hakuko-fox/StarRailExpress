@@ -153,9 +153,12 @@ public class DNFPlayerComponent implements RoleComponent {
         daily.setAteToday(false);
         daily.setDrankToday(false);
         daily.setMealTaskCompleted(false);
+        daily.setWaterDrinksToday(0);
+        daily.setWaterDrinksRequiredToday(serverPlayer.getRandom().nextFloat() < 0.30f ? 2 : 1);
         daily.setWebCleanedToday(false);
         daily.setDustCleanedToday(false);
         daily.setToiletToday(false);
+        daily.setToiletInProgress(false);
         daily.setLectureToday(false);
         daily.setChatToday(false);
         daily.setCleaningTasksToday(0);
@@ -210,15 +213,24 @@ public class DNFPlayerComponent implements RoleComponent {
         KEY.sync(serverPlayer);
     }
 
-    public void markDrankWater(ServerPlayer serverPlayer) {
+    public boolean markDrankWater(ServerPlayer serverPlayer) {
         DNFDailyTaskComponent daily = daily();
         if (daily.isDrankToday()) {
-            return;
+            serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.water_already_done")
+                    .withStyle(ChatFormatting.GRAY), true);
+            return false;
         }
-        daily.setDrankToday(true);
+        daily.setWaterDrinksToday(daily.getWaterDrinksToday() + 1);
         recoverSan(serverPlayer, DNF.SAN_WATER_GAIN, "message.dnf.task.water");
-        tryCompleteMealTask(serverPlayer, daily);
+        if (daily.getWaterDrinksToday() >= daily.getWaterDrinksRequiredToday()) {
+            daily.setDrankToday(true);
+            tryCompleteMealTask(serverPlayer, daily);
+        } else {
+            serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.water_need_more")
+                    .withStyle(ChatFormatting.AQUA), true);
+        }
         daily.sync();
+        return true;
     }
 
     public boolean cleanLibraryWeb(ServerPlayer serverPlayer) {
@@ -260,8 +272,10 @@ public class DNFPlayerComponent implements RoleComponent {
         daily.setCleaningInProgress(false);
         if (taskType == SREPlayerTaskComponent.Task.DNF_LIBRARY_WEB) {
             daily.setWebCleanedToday(true);
+            removeHudTask(SREPlayerTaskComponent.Task.DNF_LIBRARY_WEB);
         } else if (taskType == SREPlayerTaskComponent.Task.DNF_PRISON_DUST) {
             daily.setDustCleanedToday(true);
+            removeHudTask(SREPlayerTaskComponent.Task.DNF_PRISON_DUST);
         }
         recoverSan(serverPlayer, DNF.SAN_CLEANING_GAIN, messageKey);
         giveOrDrop(serverPlayer, DNFItems.CLEANING_BYPRODUCT.getDefaultInstance());
@@ -290,20 +304,61 @@ public class DNFPlayerComponent implements RoleComponent {
         return true;
     }
 
+    public boolean beginToiletTask(ServerPlayer serverPlayer) {
+        DNFDailyTaskComponent daily = daily();
+        if (daily.isToiletToday()) {
+            return false;
+        }
+        if (daily.isToiletInProgress()) {
+            serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.toilet_busy")
+                    .withStyle(ChatFormatting.GRAY), true);
+            return false;
+        }
+        if (!daily.isAteToday()) {
+            broadcastNeedFood(serverPlayer);
+            return false;
+        }
+        daily.setToiletInProgress(true);
+        daily.sync();
+        serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.toilet_started", 15)
+                .withStyle(ChatFormatting.GREEN), true);
+        return true;
+    }
+
+    public void cancelToiletTask(ServerPlayer serverPlayer) {
+        DNFDailyTaskComponent daily = daily();
+        if (!daily.isToiletInProgress()) {
+            return;
+        }
+        daily.setToiletInProgress(false);
+        daily.sync();
+        serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.toilet_cancelled")
+                .withStyle(ChatFormatting.GRAY), true);
+    }
+
+    public boolean finishToiletTask(ServerPlayer serverPlayer) {
+        DNFDailyTaskComponent daily = daily();
+        if (!daily.isToiletInProgress()) {
+            return false;
+        }
+        daily.setToiletInProgress(false);
+        return completeToilet(serverPlayer);
+    }
+
     public boolean completeLecture(ServerPlayer serverPlayer) {
         return completeChat(serverPlayer, null);
     }
 
     public boolean completeChat(ServerPlayer serverPlayer, ServerPlayer target) {
         DNFDailyTaskComponent daily = daily();
-        if (daily.isChatToday()) {
-            return false;
-        }
+        boolean firstChatToday = !daily.isChatToday();
         recoverSan(serverPlayer, DNF.SAN_CHAT_GAIN,
                 target == null ? "message.dnf.task.lecture" : "message.dnf.task.chat");
-        daily.setChatToday(true);
-        daily.setLectureToday(true);
-        removeHudTask(SREPlayerTaskComponent.Task.DNF_LECTURE);
+        if (firstChatToday) {
+            daily.setChatToday(true);
+            daily.setLectureToday(true);
+            removeHudTask(SREPlayerTaskComponent.Task.DNF_LECTURE);
+        }
         daily.sync();
         if (target != null) {
             target.displayClientMessage(Component.translatable("message.dnf.task.chat_target",
@@ -378,12 +433,17 @@ public class DNFPlayerComponent implements RoleComponent {
     private boolean completeSanTask(ServerPlayer serverPlayer, DNFDailyTaskComponent daily, String messageKey,
             float sanGain) {
         if (!daily.isAteToday()) {
-            serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.need_food")
-                    .withStyle(ChatFormatting.YELLOW), true);
+            broadcastNeedFood(serverPlayer);
             return false;
         }
         recoverSan(serverPlayer, sanGain, messageKey);
         return true;
+    }
+
+    private static void broadcastNeedFood(ServerPlayer serverPlayer) {
+        serverPlayer.server.getPlayerList().broadcastSystemMessage(Component.translatable(
+                "message.dnf.task.need_food.broadcast", serverPlayer.getDisplayName())
+                .withStyle(ChatFormatting.YELLOW), false);
     }
 
     private void recoverSan(ServerPlayer serverPlayer, float sanGain, String messageKey) {

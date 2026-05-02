@@ -24,7 +24,9 @@ public class DNFWaterItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!world.isClientSide && player instanceof ServerPlayer serverPlayer && DNF.isDayNightFightMode(world)) {
-            DNFPlayerComponent.KEY.get(serverPlayer).markDrankWater(serverPlayer);
+            if (!DNFPlayerComponent.KEY.get(serverPlayer).markDrankWater(serverPlayer)) {
+                return InteractionResultHolder.fail(stack);
+            }
             String poisoner = stack.getOrDefault(SREDataComponentTypes.POISONER, null);
             if (poisoner != null) {
                 SREPlayerPoisonComponent.KEY.get(serverPlayer).setPoisonTicks(

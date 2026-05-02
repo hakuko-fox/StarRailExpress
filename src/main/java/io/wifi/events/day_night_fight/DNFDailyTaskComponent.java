@@ -18,9 +18,12 @@ public class DNFDailyTaskComponent implements RoleComponent {
     private boolean ateToday;
     private boolean drankToday;
     private boolean mealTaskCompleted;
+    private int waterDrinksToday;
+    private int waterDrinksRequiredToday = 1;
     private boolean webCleanedToday;
     private boolean dustCleanedToday;
     private boolean toiletToday;
+    private boolean toiletInProgress;
     private boolean lectureToday;
     private boolean chatToday;
     private int cleaningTasksToday;
@@ -50,9 +53,12 @@ public class DNFDailyTaskComponent implements RoleComponent {
         this.ateToday = false;
         this.drankToday = false;
         this.mealTaskCompleted = false;
+        this.waterDrinksToday = 0;
+        this.waterDrinksRequiredToday = 1;
         this.webCleanedToday = false;
         this.dustCleanedToday = false;
         this.toiletToday = false;
+        this.toiletInProgress = false;
         this.lectureToday = false;
         this.chatToday = false;
         this.cleaningTasksToday = 0;
@@ -98,6 +104,22 @@ public class DNFDailyTaskComponent implements RoleComponent {
         this.mealTaskCompleted = mealTaskCompleted;
     }
 
+    public int getWaterDrinksToday() {
+        return waterDrinksToday;
+    }
+
+    public void setWaterDrinksToday(int waterDrinksToday) {
+        this.waterDrinksToday = waterDrinksToday;
+    }
+
+    public int getWaterDrinksRequiredToday() {
+        return Math.max(1, waterDrinksRequiredToday);
+    }
+
+    public void setWaterDrinksRequiredToday(int waterDrinksRequiredToday) {
+        this.waterDrinksRequiredToday = Math.max(1, waterDrinksRequiredToday);
+    }
+
     public boolean isWebCleanedToday() {
         return webCleanedToday;
     }
@@ -120,6 +142,14 @@ public class DNFDailyTaskComponent implements RoleComponent {
 
     public void setToiletToday(boolean toiletToday) {
         this.toiletToday = toiletToday;
+    }
+
+    public boolean isToiletInProgress() {
+        return toiletInProgress;
+    }
+
+    public void setToiletInProgress(boolean toiletInProgress) {
+        this.toiletInProgress = toiletInProgress;
     }
 
     public boolean isLectureToday() {
@@ -194,9 +224,12 @@ public class DNFDailyTaskComponent implements RoleComponent {
         tag.putBoolean("AteToday", ateToday);
         tag.putBoolean("DrankToday", drankToday);
         tag.putBoolean("MealTaskCompleted", mealTaskCompleted);
+        tag.putInt("WaterDrinksToday", waterDrinksToday);
+        tag.putInt("WaterDrinksRequiredToday", waterDrinksRequiredToday);
         tag.putBoolean("WebCleanedToday", webCleanedToday);
         tag.putBoolean("DustCleanedToday", dustCleanedToday);
         tag.putBoolean("ToiletToday", toiletToday);
+        tag.putBoolean("ToiletInProgress", toiletInProgress);
         tag.putBoolean("LectureToday", lectureToday);
         tag.putBoolean("ChatToday", chatToday);
         tag.putInt("CleaningTasksToday", cleaningTasksToday);
@@ -212,9 +245,14 @@ public class DNFDailyTaskComponent implements RoleComponent {
         this.ateToday = tag.getBoolean("AteToday");
         this.drankToday = tag.getBoolean("DrankToday");
         this.mealTaskCompleted = tag.getBoolean("MealTaskCompleted");
+        this.waterDrinksToday = tag.getInt("WaterDrinksToday");
+        this.waterDrinksRequiredToday = tag.contains("WaterDrinksRequiredToday")
+                ? Math.max(1, tag.getInt("WaterDrinksRequiredToday"))
+                : 1;
         this.webCleanedToday = tag.getBoolean("WebCleanedToday");
         this.dustCleanedToday = tag.getBoolean("DustCleanedToday");
         this.toiletToday = tag.getBoolean("ToiletToday");
+        this.toiletInProgress = tag.getBoolean("ToiletInProgress");
         this.lectureToday = tag.getBoolean("LectureToday");
         this.chatToday = tag.getBoolean("ChatToday");
         this.cleaningTasksToday = tag.getInt("CleaningTasksToday");

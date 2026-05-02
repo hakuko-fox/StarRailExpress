@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
 import io.wifi.events.day_night_fight.clue.ClueSystem;
+import io.wifi.starrailexpress.network.OpenClueArchivePayload;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -26,6 +28,8 @@ public class ClueSystemCommand {
                                 .executes(ctx -> setTimes(ctx.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(ctx, "count")))))
                 .then(Commands.literal("clear")
                         .executes(ctx -> clear(ctx.getSource().getPlayerOrException())))
+                .then(Commands.literal("open")
+                        .executes(ctx -> open(ctx.getSource().getPlayerOrException())))
                 .then(Commands.literal("list")
                         .executes(ctx -> list(ctx.getSource().getPlayerOrException())))
                 .then(Commands.literal("sendbook")
@@ -66,6 +70,11 @@ public class ClueSystemCommand {
         for (var clue : data.clues) {
             player.sendSystemMessage(Component.translatable("commands.sre.clue.list.entry", clue.title(), clue.clueEntityUuid()));
         }
+        return 1;
+    }
+
+    private static int open(ServerPlayer player) {
+        ServerPlayNetworking.send(player, OpenClueArchivePayload.INSTANCE);
         return 1;
     }
 

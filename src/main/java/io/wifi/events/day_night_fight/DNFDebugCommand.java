@@ -29,6 +29,7 @@ public class DNFDebugCommand {
                                 .then(Commands.literal("cleaning_byproduct").executes(ctx -> give(ctx, DNFItems.CLEANING_BYPRODUCT)))
                                 .then(Commands.literal("task_tool").executes(ctx -> give(ctx, DNFItems.TASK_TOOL)))
                                 .then(Commands.literal("cleaning_task_point").executes(ctx -> give(ctx, DNFItems.CLEANING_TASK_POINT_ITEM)))
+                                .then(Commands.literal("web_task_point").executes(ctx -> give(ctx, DNFItems.WEB_TASK_POINT_ITEM)))
                                 .then(Commands.literal("exchange_task_point").executes(ctx -> give(ctx, DNFItems.EXCHANGE_TASK_POINT_ITEM)))
                                 .then(Commands.literal("food").executes(DNFDebugCommand::giveFood))
                                 .then(Commands.literal("chef_supplies").executes(DNFDebugCommand::giveChefSupplies))

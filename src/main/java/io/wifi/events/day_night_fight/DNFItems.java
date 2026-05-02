@@ -140,10 +140,18 @@ public class DNFItems {
             new DNFTaskToolItem(new Item.Properties().stacksTo(1)));
     public static final Item CLEANING_TASK_POINT_ITEM = register("dnf_cleaning_task_point",
             new BlockItem(DNFBlocks.CLEANING_TASK_POINT, new Item.Properties()));
+    public static final Item WEB_TASK_POINT_ITEM = register("dnf_web_task_point",
+            new BlockItem(DNFBlocks.WEB_TASK_POINT, new Item.Properties()));
     public static final Item WHITE_BLOCK = register("white_block",
             new BlockItem(DNFBlocks.WHITE_BLOCK, new Item.Properties()));
     public static final Item EXCHANGE_TASK_POINT_ITEM = register("dnf_exchange_task_point",
             new BlockItem(DNFBlocks.EXCHANGE_TASK_POINT, new Item.Properties()));
+    public static final Item LAB_CARD = register("dnf_lab_card",
+            new DNFLabCardItem(new Item.Properties().stacksTo(16)));
+    public static final Item LAB_BLOCK_ITEM = register("dnf_lab_block",
+            new BlockItem(DNFBlocks.LAB_BLOCK, new Item.Properties()));
+    public static final Item HOTBAR_STORAGE_ITEM = register("dnf_hotbar_storage",
+            new BlockItem(DNFBlocks.HOTBAR_STORAGE, new Item.Properties()));
     public static final Block WASHING_MACHINE = registerBlock("dnf_washing_machine",
             new WashingMachineBlock(FabricBlockSettings.create()
                     .strength(2.0f)
@@ -179,7 +187,11 @@ public class DNFItems {
             entries.accept(CLEANING_BYPRODUCT);
             entries.accept(TASK_TOOL);
             entries.accept(CLEANING_TASK_POINT_ITEM);
+            entries.accept(WEB_TASK_POINT_ITEM);
             entries.accept(EXCHANGE_TASK_POINT_ITEM);
+            entries.accept(LAB_CARD);
+            entries.accept(LAB_BLOCK_ITEM);
+            entries.accept(HOTBAR_STORAGE_ITEM);
             entries.accept(WASHING_MACHINE_ITEM);
         });
         ChargeableItemRegistry.register(TASK_TOOL, new ChargeableItem() {

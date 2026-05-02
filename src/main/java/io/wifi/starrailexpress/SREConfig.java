@@ -230,6 +230,21 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "clue")
     public String clueBookshelfDimension = "minecraft:overworld";
 
+    // 里世界传送配置
+    @ConfigEntry.Category(value = "underworld")
+    @Tooltip(count = 2)
+    public int underworldLabCenterX = 0;
+    @ConfigEntry.Category(value = "underworld")
+    public int underworldLabCenterY = 64;
+    @ConfigEntry.Category(value = "underworld")
+    public int underworldLabCenterZ = 0;
+    @ConfigEntry.Category(value = "underworld")
+    @Tooltip(count = 2)
+    public double underworldLabRadius = 50.0;
+    @ConfigEntry.Category(value = "underworld")
+    @Tooltip(count = 3)
+    public int underworldLabTeleportOffsetY = -20;
+
     @ConfigEntry.Category(value = "progression")
     public boolean enableProgressionSystem = false;
     @ConfigEntry.Category(value = "progression")

@@ -1,19 +1,21 @@
 package io.wifi.events.day_night_fight;
 
 import io.wifi.events.day_night_fight.block.DNFBlocks;
+import io.wifi.events.day_night_fight.block_entity.DNFBlockEntities;
 import io.wifi.events.day_night_fight.cca.DNFClothingComponent;
 import io.wifi.events.day_night_fight.cca.DNFPlayerComponent;
 import io.wifi.events.day_night_fight.cca.DNFUnderworldComponent;
 import io.wifi.events.day_night_fight.cca.DNFWorldComponent;
 import io.wifi.events.day_night_fight.entity.DNFEntities;
+import io.wifi.events.day_night_fight.gui.DNFMenus;
 import io.wifi.events.day_night_fight.commands.ClueSystemCommand;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.VoteOption;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
@@ -72,6 +74,8 @@ public class DNF {
     public static final int DAYLIGHT_TICKS = 5 * 60 * 20;
     public static final int NIGHT_TICKS = 5 * 60 * 20;
     public static final int TWO_DAYS_TICKS = 2 * (DAYLIGHT_TICKS + NIGHT_TICKS);
+    public static final int CHAT_FOCUS_TICKS = 5 * 20;
+    public static final int TOILET_TASK_TICKS = 15 * 20;
     public static final int CLEANING_TICKS = 8 * 20;
     public static final int MAX_DAILY_CLEANING_TASKS = 3;
     public static final float INITIAL_SAN = 0.5f;
@@ -92,12 +96,18 @@ public class DNF {
     public static final float SAN_NO_CLOTHES_PENALTY = 0.8f;
     public static final float SAN_DIRTY_CLOTHES_PENALTY = 0.6f;
     public static final int REDEMPTION_HEART_COST = 5;
+    public static BlockPos DEFAULT_LAB_CENTER = new BlockPos(0, 64, 0);
+    public static double DEFAULT_LAB_RADIUS = 50.0;
+    public static int LAB_TELEPORT_OFFSET_Y = -20;
 
     private static boolean eventsRegistered;
     private static boolean winnerPredicatesRegistered;
+    private static final java.util.Set<UUID> CHAT_FOCUSING_PLAYERS = new java.util.HashSet<>();
 
     public static void init() {
         DNFBlocks.initialize();
+        DNFBlockEntities.initialize();
+        DNFMenus.initialize();
         DNFItems.init();
         DNFEntities.initialize();
         TMMRoles.addRoleComponents(DNFPlayerComponent.KEY);
@@ -108,6 +118,21 @@ public class DNF {
         registerWinnerPredicates();
         DNFDebugCommand.register();
         DNFRuleBookCommand.register();
+        applyUnderworldConfig();
+    }
+
+    /**
+     * 应用配置文件中的里世界传送配置到世界组件
+     */
+    private static void applyUnderworldConfig() {
+        SREConfig config = SREConfig.instance();
+        DEFAULT_LAB_CENTER = new BlockPos(
+                config.underworldLabCenterX,
+                config.underworldLabCenterY,
+                config.underworldLabCenterZ
+        );
+        DEFAULT_LAB_RADIUS = config.underworldLabRadius;
+        LAB_TELEPORT_OFFSET_Y = config.underworldLabTeleportOffsetY;
     }
 
     private static void registerWinnerPredicates() {
@@ -551,44 +576,12 @@ public class DNF {
                         .withStyle(ChatFormatting.GRAY), true);
                 return InteractionResult.SUCCESS;
             }
-            if (state.is(Blocks.COBWEB)) {
-                if (component.beginCleaningTask(serverPlayer)) {
-                    BlockState originalState = state;
-                    net.minecraft.core.BlockPos pos = hitResult.getBlockPos().immutable();
-                    io.wifi.starrailexpress.util.Scheduler.schedule(() -> {
-                        if (!serverPlayer.hasDisconnected()
-                                && isDayNightFightMode(serverPlayer.level())
-                                && serverPlayer.level().getBlockState(pos).is(originalState.getBlock())) {
-                            serverPlayer.level().destroyBlock(pos, false, serverPlayer);
-                        }
-                        DNFPlayerComponent.KEY.get(serverPlayer).finishCleaningTask(serverPlayer,
-                                SREPlayerTaskComponent.Task.DNF_LIBRARY_WEB, "message.dnf.task.library_web");
-                    }, CLEANING_TICKS);
-                    return InteractionResult.SUCCESS;
-                }
-                return InteractionResult.PASS;
-            }
             if (state.is(Blocks.LECTERN)) {
                 return component.completeLecture(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
             }
             if (state.getBlock() instanceof ToiletBlock) {
-                return component.completeToilet(serverPlayer) ? InteractionResult.SUCCESS : InteractionResult.PASS;
-            }
-            if (isDustBlock(state)) {
-                if (component.beginCleaningTask(serverPlayer)) {
-                    BlockState originalState = state;
-                    net.minecraft.core.BlockPos pos = hitResult.getBlockPos().immutable();
-                    io.wifi.starrailexpress.util.Scheduler.schedule(() -> {
-                        if (!serverPlayer.hasDisconnected()
-                                && isDayNightFightMode(serverPlayer.level())
-                                && serverPlayer.level().getBlockState(pos).is(originalState.getBlock())) {
-                            serverPlayer.level().destroyBlock(pos, false, serverPlayer);
-                        }
-                        DNFPlayerComponent.KEY.get(serverPlayer).finishCleaningTask(serverPlayer,
-                                SREPlayerTaskComponent.Task.DNF_PRISON_DUST, "message.dnf.task.prison_dust");
-                    }, CLEANING_TICKS);
-                    return InteractionResult.SUCCESS;
-                }
+                beginToiletTask(serverPlayer, clickedPos);
+                return InteractionResult.PASS;
             }
             return InteractionResult.PASS;
         });
@@ -601,17 +594,23 @@ public class DNF {
                 if (tryPoisonerMeetChef(serverPlayer, target)) {
                     return InteractionResult.SUCCESS;
                 }
-                return DNFPlayerComponent.KEY.get(serverPlayer).completeChat(serverPlayer, target)
-                        ? InteractionResult.SUCCESS
-                        : InteractionResult.PASS;
+                if (!serverPlayer.isShiftKeyDown()) {
+                    serverPlayer.displayClientMessage(Component.translatable("message.dnf.task.chat_shift_required")
+                            .withStyle(ChatFormatting.YELLOW), true);
+                    return InteractionResult.PASS;
+                }
+                beginChatFocus(serverPlayer, target);
+                return InteractionResult.SUCCESS;
             }
             if (!(entity instanceof PlayerBodyEntity)) {
                 return InteractionResult.PASS;
             }
-            SRERole role = SREGameWorldComponent.KEY.get(world).getRole(serverPlayer);
-            if (role == DNFRoles.CHEF && !serverPlayer.isShiftKeyDown()) {
+            if (!serverPlayer.isShiftKeyDown()) {
+                serverPlayer.displayClientMessage(Component.translatable("message.dnf.vote.shift_required")
+                        .withStyle(ChatFormatting.YELLOW), true);
                 return InteractionResult.PASS;
             }
+            SRERole role = SREGameWorldComponent.KEY.get(world).getRole(serverPlayer);
             if (isDNFAntagonist(role)) {
                 return InteractionResult.PASS;
             }
@@ -686,53 +685,94 @@ public class DNF {
         BlockPos meetingPos = world.getMeetingPos();
         double meetingRadius = world.getMeetingRadius();
         
-        var top = session.getTopResults();
-        if (top == null || top.isEmpty()) {
+        if (session.getTotalVotes() <= 0) {
             reporter.serverLevel().getServer().getPlayerList().broadcastSystemMessage(
                     Component.translatable("message.dnf.vote.no_response").withStyle(ChatFormatting.GRAY),
                     false);
             return;
         }
 
-        String resultId = top.get(0).getKey();
         List<ServerPlayer> joinedPlayers = new ArrayList<>();
-        
-        // 传送选择参加的玩家到会议位置
-        if ("join".equals(resultId)) {
-            for (ServerPlayer voter : voters) {
-                DNFPlayerComponent playerComp = DNFPlayerComponent.KEY.get(voter);
-                // 传送到会议位置
-                voter.teleportTo(
-                    voter.serverLevel(),
-                    meetingPos.getX() + 0.5,
-                    meetingPos.getY() + 1.0,
-                    meetingPos.getZ() + 0.5,
-                    voter.getYRot(),
-                    voter.getXRot()
-                );
-                playerComp.setJoinedMeeting(true, voter);
-                joinedPlayers.add(voter);
-                voter.displayClientMessage(Component.translatable("message.dnf.vote.teleported_to_meeting")
-                        .withStyle(ChatFormatting.AQUA), false);
+        for (ServerPlayer voter : voters) {
+            if (!session.hasVotedFor(voter.getUUID(), "join")) {
+                continue;
             }
-            
+            DNFPlayerComponent playerComp = DNFPlayerComponent.KEY.get(voter);
+            voter.teleportTo(
+                voter.serverLevel(),
+                meetingPos.getX() + 0.5,
+                meetingPos.getY() + 1.0,
+                meetingPos.getZ() + 0.5,
+                voter.getYRot(),
+                voter.getXRot()
+            );
+            playerComp.setJoinedMeeting(true, voter);
+            joinedPlayers.add(voter);
+            voter.displayClientMessage(Component.translatable("message.dnf.vote.teleported_to_meeting")
+                    .withStyle(ChatFormatting.AQUA), false);
+        }
+
+        if (!joinedPlayers.isEmpty()) {
             reporter.serverLevel().getServer().getPlayerList().broadcastSystemMessage(
                     Component.translatable("message.dnf.vote.players_joined_meeting", joinedPlayers.size())
                             .withStyle(ChatFormatting.YELLOW),
                     false);
-            
-            // 稍后启动主投票
             reporter.serverLevel().getServer().execute(() -> {
-                if (VoteManager.getCurrentSession() == null) {
-                    startMainVote(reporter, joinedPlayers);
-                }
+                startMainVote(reporter, joinedPlayers);
             });
-        } else {
-            reporter.serverLevel().getServer().getPlayerList().broadcastSystemMessage(
-                    Component.translatable("message.dnf.vote.meeting_cancelled")
-                            .withStyle(ChatFormatting.GRAY),
-                    false);
+            return;
         }
+
+        reporter.serverLevel().getServer().getPlayerList().broadcastSystemMessage(
+                Component.translatable("message.dnf.vote.meeting_cancelled")
+                        .withStyle(ChatFormatting.GRAY),
+                false);
+    }
+
+    private static void beginChatFocus(ServerPlayer player, ServerPlayer target) {
+        UUID playerId = player.getUUID();
+        if (!CHAT_FOCUSING_PLAYERS.add(playerId)) {
+            player.displayClientMessage(Component.translatable("message.dnf.task.chat_busy")
+                    .withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
+        UUID targetId = target.getUUID();
+        player.displayClientMessage(Component.translatable("message.dnf.task.chat_started",
+                target.getDisplayName(), CHAT_FOCUS_TICKS / 20).withStyle(ChatFormatting.GREEN), true);
+        io.wifi.starrailexpress.util.Scheduler.schedule(() -> {
+            CHAT_FOCUSING_PLAYERS.remove(playerId);
+            if (player.hasDisconnected() || !isDayNightFightMode(player.level()) || !isDnfAlive(player)) {
+                return;
+            }
+            if (!(player.serverLevel().getPlayerByUUID(targetId) instanceof ServerPlayer currentTarget)
+                    || !isDnfAlive(currentTarget)
+                    || player.distanceToSqr(currentTarget) > 6.0 * 6.0
+                    || findLookedAtPlayer(player, 6.0) != currentTarget) {
+                player.displayClientMessage(Component.translatable("message.dnf.task.chat_cancelled")
+                        .withStyle(ChatFormatting.GRAY), true);
+                return;
+            }
+            DNFPlayerComponent.KEY.get(player).completeChat(player, currentTarget);
+        }, CHAT_FOCUS_TICKS);
+    }
+
+    private static void beginToiletTask(ServerPlayer player, BlockPos pos) {
+        DNFPlayerComponent component = DNFPlayerComponent.KEY.get(player);
+        if (!component.beginToiletTask(player)) {
+            return;
+        }
+        BlockPos toiletPos = pos.immutable();
+        io.wifi.starrailexpress.util.Scheduler.schedule(() -> {
+            if (player.hasDisconnected() || !isDayNightFightMode(player.level()) || !isDnfAlive(player)) {
+                return;
+            }
+            if (player.getVehicle() instanceof io.wifi.starrailexpress.content.block.entity.SeatEntity seat
+                    && toiletPos.equals(seat.getSeatPos())) {
+                DNFPlayerComponent.KEY.get(player).finishToiletTask(player);
+                return;
+            }
+            DNFPlayerComponent.KEY.get(player).cancelToiletTask(player);
+        }, TOILET_TASK_TICKS);
     }
 
     private static InteractionResult startMainVote(ServerPlayer reporter, List<ServerPlayer> voters) {
@@ -842,14 +882,6 @@ public class DNF {
                 }
             }
         }
-    }
-
-    private static boolean isDustBlock(BlockState state) {
-        return state.is(Blocks.GRAY_CARPET)
-                || state.is(Blocks.LIGHT_GRAY_CARPET)
-                || state.is(Blocks.BLACK_CARPET)
-                || state.is(Blocks.GRAY_CONCRETE_POWDER)
-                || state.is(Blocks.LIGHT_GRAY_CONCRETE_POWDER);
     }
 
     public static void registerShops() {

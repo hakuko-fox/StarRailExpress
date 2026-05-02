@@ -40,9 +40,13 @@ public class DNFTaskPointRenderer extends EntityRenderer<DNFTaskPointEntity> {
     }
 
     private ItemStack getDisplayStack(DNFTaskPointEntity entity) {
-        if (entity.level().getBlockState(entity.getSourcePos()).getBlock() instanceof DNFTaskPointBlock block
-                && block.getTaskPointType() == DNFTaskPointBlock.TaskPointType.EXCHANGE) {
-            return new ItemStack(Items.EMERALD);
+        if (entity.level().getBlockState(entity.getSourcePos()).getBlock() instanceof DNFTaskPointBlock block) {
+            if (block.getTaskPointType() == DNFTaskPointBlock.TaskPointType.EXCHANGE) {
+                return new ItemStack(Items.EMERALD);
+            }
+            if (block.getTaskPointType() == DNFTaskPointBlock.TaskPointType.WEB) {
+                return new ItemStack(Items.COBWEB);
+            }
         }
         return DNFItems.CLEANING_BYPRODUCT.getDefaultInstance();
     }

@@ -23,15 +23,20 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class DNFTaskPointBlock extends Block {
     public enum TaskPointType {
         CLEANING,
+        WEB,
         EXCHANGE
     }
 
@@ -42,14 +47,28 @@ public class DNFTaskPointBlock extends Block {
         this.type = type;
     }
 
+    @Override
+    protected VoxelShape getShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext) {
+        return super.getShape(blockState, blockGetter, blockPos, collisionContext);
+    }
+
+    @Override
+    protected RenderShape getRenderShape(BlockState blockState) {
+        return RenderShape.MODEL;
+    }
+
     public TaskPointType getTaskPointType() {
         return type;
+    }
+
+    public boolean isCleanableTask() {
+        return type == TaskPointType.CLEANING || type == TaskPointType.WEB;
     }
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (stack.is(DNFItems.TASK_TOOL)) {
+        if (stack.is(DNFItems.TASK_TOOL) && isCleanableTask()) {
             player.startUsingItem(hand);
             if (!world.isClientSide) {
                 world.playSound(null, pos, SoundEvents.BRUSH_GENERIC, SoundSource.BLOCKS, 0.6f, 0.9f);
@@ -126,6 +145,7 @@ public class DNFTaskPointBlock extends Block {
         ensureDisplayEntity(player.level(), pos);
         return switch (type) {
             case CLEANING -> completeCleaning(player, pos);
+            case WEB -> completeWeb(player, pos);
             case EXCHANGE -> exchangeByproduct(player, pos);
         };
     }
@@ -141,10 +161,27 @@ public class DNFTaskPointBlock extends Block {
         }
         component.finishCleaningTask(player, SREPlayerTaskComponent.Task.DNF_PRISON_DUST,
                 "message.dnf.task.task_point_cleaning");
+        player.level().destroyBlock(pos, false, player);
         player.level().playSound(null, pos, SoundEvents.BRUSH_GENERIC, SoundSource.BLOCKS, 1.0f, 1.1f);
         if (player.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                     10, 0.35, 0.25, 0.35, 0.02);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    private InteractionResult completeWeb(ServerPlayer player, BlockPos pos) {
+        DNFPlayerComponent component = DNFPlayerComponent.KEY.get(player);
+        if (!component.beginCleaningTask(player)) {
+            return InteractionResult.FAIL;
+        }
+        component.finishCleaningTask(player, SREPlayerTaskComponent.Task.DNF_LIBRARY_WEB,
+                "message.dnf.task.library_web");
+        player.level().destroyBlock(pos, false, player);
+        player.level().playSound(null, pos, SoundEvents.BRUSH_GENERIC, SoundSource.BLOCKS, 1.0f, 1.1f);
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.6, pos.getZ() + 0.5,
+                    12, 0.35, 0.25, 0.35, 0.02);
         }
         return InteractionResult.SUCCESS;
     }

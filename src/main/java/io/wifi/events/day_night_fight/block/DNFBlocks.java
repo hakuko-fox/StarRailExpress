@@ -37,6 +37,13 @@ public interface DNFBlocks {
                             .strength(0.3F)
                             .lightLevel(state -> 6)
                             .sound(SoundType.WOOL)));
+    Block WEB_TASK_POINT = registrar.create("dnf_web_task_point",
+            new DNFTaskPointBlock(DNFTaskPointBlock.TaskPointType.WEB,
+                    Block.Properties.ofFullCopy(Blocks.COBWEB)
+                            .noCollission()
+                            .strength(0.3F)
+                            .lightLevel(state -> 6)
+                            .sound(SoundType.WOOL)));
     Block EXCHANGE_TASK_POINT = registrar.create("dnf_exchange_task_point",
             new DNFTaskPointBlock(DNFTaskPointBlock.TaskPointType.EXCHANGE,
                     Block.Properties.ofFullCopy(Blocks.EMERALD_BLOCK)
@@ -44,6 +51,15 @@ public interface DNFBlocks {
                             .strength(0.6F)
                             .lightLevel(state -> 8)
                             .sound(SoundType.METAL)));
+    Block LAB_BLOCK = registrar.create("dnf_lab_block",
+            new LabBlock(Block.Properties.ofFullCopy(Blocks.PURPUR_BLOCK)
+                    .strength(1.5F)
+                    .lightLevel(state -> 10)
+                    .sound(SoundType.STONE)));
+    Block HOTBAR_STORAGE = registrar.create("dnf_hotbar_storage",
+            new HotbarStorageBlock(Block.Properties.ofFullCopy(Blocks.CHEST)
+                    .strength(2.5F)
+                    .sound(SoundType.WOOD)));
 
     static void initialize() {
         registrar.registerEntries();

@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.api.SREGameModes;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -43,8 +44,9 @@ public class BatonHandler {
         if (attacker.getCooldowns().isOnCooldown(ModItems.BATON)) {
             return InteractionResult.FAIL;
         }
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
+
         if (DNF.isDayNightFightMode(level)) {
-            SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
             if (!game.isRole(attacker, DNFRoles.SOLDIER)) {
                 return InteractionResult.FAIL;
             }
@@ -86,7 +88,12 @@ public class BatonHandler {
         if (rec.count >= 2) {
             // 击杀
             RECORDS.remove(aId);
-            io.wifi.starrailexpress.game.GameUtils.killPlayer(victim, true, attacker, org.agmas.noellesroles.Noellesroles.id("baton_kill"));
+            if (game.gameMode== SREGameModes.DAY_NIGHT_FIGHT){
+                io.wifi.starrailexpress.game.GameUtils.killPlayer(victim, true, null, org.agmas.noellesroles.Noellesroles.id("baton_kill"));
+            }
+            {
+                io.wifi.starrailexpress.game.GameUtils.killPlayer(victim, true, attacker, org.agmas.noellesroles.Noellesroles.id("baton_kill"));
+            }
             // 冷却
             attacker.getCooldowns().addCooldown(ModItems.BATON, 15 * 20);
             return InteractionResult.SUCCESS;

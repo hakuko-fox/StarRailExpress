@@ -6,6 +6,7 @@ import io.wifi.events.day_night_fight.DNFItems;
 import io.wifi.events.day_night_fight.DNFRoles;
 import io.wifi.events.day_night_fight.cca.DNFPlayerComponent;
 import io.wifi.events.day_night_fight.cca.DNFUnderworldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -13,6 +14,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 
@@ -76,6 +78,13 @@ public class DNFHud {
             boolean hasClock = mainHand.is(DNFItems.DNF_CLOCK) || offHand.is(DNFItems.DNF_CLOCK);
             
             int y = screenHeight - 60;
+
+            int sanPercent = Mth.clamp((int) (SREPlayerMoodComponent.KEY.get(client.player).getMood() * 100.0f),
+                    0, 100);
+            Component sanText = Component.translatable("hud.dnf.san", sanPercent);
+            int sanWidth = font.width(sanText);
+            context.drawString(font, sanText, screenWidth / 2 - sanWidth / 2, y, 0xAEE7FF, true);
+            y += 12;
             
             // 如果手持时钟,显示天数和时间
             if (hasClock) {

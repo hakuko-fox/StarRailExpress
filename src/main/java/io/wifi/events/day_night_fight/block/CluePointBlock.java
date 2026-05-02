@@ -33,6 +33,14 @@ public class CluePointBlock extends Block {
     }
 
     @Override
+    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, world, pos, oldState, movedByPiston);
+        if (!world.isClientSide) {
+            world.scheduleTick(pos, this, 1);
+        }
+    }
+
+    @Override
     public void animateTick(BlockState state, Level world, BlockPos pos, net.minecraft.util.RandomSource rand) {
         // 末地烛粒子效果 - 持续散发紫色粒子
         double x = pos.getX() + 0.5;
@@ -143,8 +151,8 @@ public class CluePointBlock extends Block {
         player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.dnf.underworld.revived")
                 .withStyle(net.minecraft.ChatFormatting.GREEN), true);
         
-        // 销毁线索点方块
-        player.level().setBlock(player.blockPosition(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+        // 销毁被触碰的线索点方块，而不是复活后玩家脚下的方块。
+        player.level().setBlock(cluePoint, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
         
         // 移除世界组件中的线索点记录
         DNFWorldComponent.KEY.get(player.level()).removeCluePoint(cluePoint);

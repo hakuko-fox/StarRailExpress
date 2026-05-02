@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.mixin;
 
+import io.wifi.events.day_night_fight.gui.HotbarStorageMenu;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.gui.CustomInventoryMenu;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -26,7 +27,7 @@ public class AbstractContainerMenuMixin {
         if (instance1 instanceof CustomInventoryMenu)
             return;
         if (!(instance1 instanceof InventoryMenu || instance1 instanceof PostmanScreenHandler
-                || instance1 instanceof DetectiveInspectScreenHandler)) {
+                || instance1 instanceof DetectiveInspectScreenHandler ||instance1 instanceof HotbarStorageMenu)) {
             ci.cancel();
         }
     }

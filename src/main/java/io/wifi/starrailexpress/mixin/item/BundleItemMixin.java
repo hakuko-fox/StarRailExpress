@@ -27,6 +27,7 @@ public class BundleItemMixin {
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     private void cancelUseIfFull(Level level, Player player, InteractionHand interactionHand, CallbackInfoReturnable<InteractionResultHolder<ItemStack>> cir) {
         if (!SRE.isLobby){
+            cir.setReturnValue(InteractionResultHolder.pass(player.getItemInHand(interactionHand)));
             cir.cancel();
         }
     }

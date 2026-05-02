@@ -151,7 +151,8 @@ public class DNFGameMode extends SREMurderGameMode {
         int soldierCount = scaledCount(playerCount, 2, 8, scale);
         int chefCount = playerCount >= 6 ? 1 : 0;
         int poisonerCount = playerCount >= 8 ? 1 : 0;
-        int psychologistCount = scaledCount(playerCount, 2, 12, scale);
+        int psychologistCount = 0;
+        //int psychologistCount = scaledCount(playerCount, 2, 12, scale);
         int locksmithCount = scaledCount(playerCount, 4, 10, scale);
         for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
@@ -275,7 +276,7 @@ public class DNFGameMode extends SREMurderGameMode {
             if (role == DNFRoles.CHEF) {
                 player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
                         "message.dnf.chef.new_day", currentDay + 1).withStyle(net.minecraft.ChatFormatting.DARK_GREEN),
-                        false);
+                        true);
             }
             DNF.updateNightTools(player);
             DNF.applyPhaseState(player, false);

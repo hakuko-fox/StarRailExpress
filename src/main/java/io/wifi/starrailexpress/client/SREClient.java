@@ -15,6 +15,9 @@ import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomTableHud;
+import io.wifi.events.day_night_fight.client.gui.clue.ClueArchiveScreen;
+import io.wifi.events.day_night_fight.client.gui.HotbarStorageScreen;
+import io.wifi.events.day_night_fight.gui.DNFMenus;
 import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.client.gui.screen.*;
@@ -72,6 +75,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.CloudStatus;
@@ -207,6 +211,7 @@ public class SREClient implements ClientModInitializer {
         ModelLoadingPlugin.register(new GeneralModelLoadingPlugin());
         // Register particle factories
         TMMParticles.registerFactories();
+        MenuScreens.register(DNFMenus.HOTBAR_STORAGE, HotbarStorageScreen::new);
 
         // Entity renderer registration
         EntityRendererRegistry.register(TMMEntities.SEAT, NoopRenderer::new);
@@ -353,6 +358,9 @@ public class SREClient implements ClientModInitializer {
         VoteClientReceiver.register();
         ClientPlayNetworking.registerGlobalReceiver(SecurityCameraModePayload.ID,
                 new SecurityCameraModePayload.ClientReceiver());
+        ClientPlayNetworking.registerGlobalReceiver(OpenClueArchivePayload.ID, (payload, context) -> {
+            context.client().execute(() -> context.client().setScreen(new ClueArchiveScreen()));
+        });
         ClientPlayNetworking.registerGlobalReceiver(IsLobbyConfigPayload.ID, (payload, context) -> {
             SREClient.isInLobby = payload.isLobby();
             SRE.isLobby = payload.isLobby();

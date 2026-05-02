@@ -45,7 +45,9 @@ public final class ClueSystem {
 
     public static boolean sendCluesAsBook(ServerPlayer player, List<UUID> clueUuids) {
         if (clueUuids.isEmpty() || clueUuids.size() > maxSelectable()) return false;
+        if (new HashSet<>(clueUuids).size() != clueUuids.size()) return false;
         SREPlayerClueComponent data = getData(player);
+        if (data.sendTimesLeft < 0) return false;
         List<SREPlayerClueComponent.ClueEntry> selected = new ArrayList<>();
         for (UUID uuid : clueUuids) {
             var found = data.clues.stream().filter(v -> v.clueEntityUuid().equals(uuid)).findFirst();
@@ -65,6 +67,9 @@ public final class ClueSystem {
         shelf.setChanged();
 
         for (UUID uuid : clueUuids) data.sentClues.add(uuid);
+        if (data.sendTimesLeft > 0) {
+            data.sendTimesLeft--;
+        }
         data.sync();
         return true;
     }
