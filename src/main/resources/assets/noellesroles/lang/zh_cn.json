@@ -2127,5 +2127,6 @@
   "message.noellesroles.spellbreaker.skill_failed": "你被剥夺力量，进入%s秒封禁",
   "message.noellesroles.spellbreaker.potion_success": "药剂已生效",
   "message.noellesroles.spellbreaker.no_target": "未选中目标",
-  "message.noellesroles.spellbreaker.item_only": "只有破法者可以使用这个物品"
+  "message.noellesroles.spellbreaker.item_only": "只有破法者可以使用这个物品",
+  "death_reason.noellesroles.dnf_tentacle": "深渊触须"
 }
