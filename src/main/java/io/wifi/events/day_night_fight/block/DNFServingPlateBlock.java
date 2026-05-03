@@ -156,9 +156,7 @@ public class DNFServingPlateBlock extends BaseEntityBlock {
         if (!DNF.isDNFPoisoner(player)) {
             return false;
         }
-        if (!DNF.isNight(player)) {
-            return false;
-        }
+
         if (!plate.hasFood()) {
             player.displayClientMessage(Component.translatable("message.dnf.plate.no_food_to_poison")
                     .withStyle(ChatFormatting.GRAY), true);

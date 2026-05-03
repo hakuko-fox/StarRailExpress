@@ -53,8 +53,8 @@ public class DNFGameMode extends SREMurderGameMode {
         return false;
     }
 
-    private int currentDay = 0;
-    private Phase currentPhase = Phase.DAY;
+    public int currentDay = 0;
+    public Phase currentPhase = Phase.DAY;
     private int phaseTicks = 0;
 
     private static final java.util.Map<String, String> PHASE_MESSAGES = new java.util.HashMap<>();
@@ -366,7 +366,7 @@ public class DNFGameMode extends SREMurderGameMode {
         }
     }
 
-    private enum Phase {
+    public enum Phase {
         DAY,
         DUSK,
         NIGHT

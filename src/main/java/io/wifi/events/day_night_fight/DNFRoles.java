@@ -14,6 +14,7 @@ import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.AllowPlayerOpenLockedDoor;
 import io.wifi.starrailexpress.event.CantPlayerOpenDoor;
 import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.ShopEntry;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -80,6 +81,17 @@ public class DNFRoles {
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
             true) {
+                @Override
+                public List<ShopEntry> getShopEntries() {
+                    ArrayList<ShopEntry> shopEntries = new ArrayList<>();
+                    shopEntries.add(new ShopEntry(Items.BARRIER.getDefaultInstance(),0, dev.doctor4t.wathe.util.ShopEntry.Type.TOOL){
+                        @Override
+                        public boolean canBuy(@NotNull Player player) {
+                            return false;
+                        }
+                    });
+                    return shopEntries;
+                }
                                       @Override
                                       public void serverTick(ServerPlayer player) {
                                           player.addEffect(new MobEffectInstance(ModEffects.GHOST_STATE, 25, 6, false, false, false));
@@ -296,6 +308,14 @@ public class DNFRoles {
                     if (player.level().getGameTime() % 20 == 0) {
                         DNF.updateNightTools(player);
                         component.checkHunger(player);
+                    }
+                    if (!DNF.isNight(player)){
+                        SREPlayerPsychoComponent srePlayerPsychoComponent = SREPlayerPsychoComponent.KEY.get(player);
+                        if (srePlayerPsychoComponent.psychoTicks>0){
+                            SREItemUtils.clearItem(player,DNFItems.ABYSS_TENTACLE);
+                            srePlayerPsychoComponent.stopPsychoAndRefreshPsychoCount(true);
+                            srePlayerPsychoComponent.sync();
+                        }
                     }
                 }
 
@@ -542,7 +562,7 @@ public class DNFRoles {
             player.displayClientMessage(Component.translatable(killed
                     ? "message.dnf.psychologist.result_killer"
                     : "message.dnf.psychologist.result_clean", target.getDisplayName())
-                    .withStyle(killed ? ChatFormatting.RED : ChatFormatting.GREEN), false);
+                    .withStyle(killed ? ChatFormatting.RED : ChatFormatting.GREEN), true);
             return true;
         }
     }.setMax(2))

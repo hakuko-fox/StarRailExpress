@@ -131,5 +131,7 @@ public class DNFHud {
         RoleHudRenderCallback.EVENT.register(DNFRoles.LOCKSMITH_ID, renderer::accept);
         RoleHudRenderCallback.EVENT.register(DNFRoles.MANIAC_ID, renderer::accept);
         RoleHudRenderCallback.EVENT.register(DNFRoles.DNF_ABYSS_ID, renderer::accept);
+        RoleHudRenderCallback.EVENT.register(DNFRoles.GHOST_ID, renderer::accept);
+        RoleHudRenderCallback.EVENT.register(DNFRoles.POISONER_ID, renderer::accept);
     }
 }

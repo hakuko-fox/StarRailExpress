@@ -7,6 +7,7 @@ import io.wifi.events.day_night_fight.cca.DNFPlayerComponent;
 import io.wifi.events.day_night_fight.cca.DNFUnderworldComponent;
 import io.wifi.events.day_night_fight.cca.DNFWorldComponent;
 import io.wifi.events.day_night_fight.entity.DNFEntities;
+import io.wifi.events.day_night_fight.entity.UnderworldMonsterEntity;
 import io.wifi.events.day_night_fight.gui.DNFMenus;
 import io.wifi.events.day_night_fight.commands.ClueSystemCommand;
 import io.wifi.starrailexpress.SREConfig;
@@ -17,6 +18,7 @@ import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.content.block.entity.SeatEntity;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.VoteOption;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
@@ -28,6 +30,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.SREItemUtils;
+import io.wifi.starrailexpress.util.Scheduler;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
@@ -51,11 +54,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
@@ -67,19 +72,17 @@ import org.agmas.noellesroles.utils.RoleUtils;
 
 import com.mojang.brigadier.CommandDispatcher;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.UUID;
+import java.util.*;
 
 public class DNF {
     public static final int BLOOD_PER_CORPSE = 10;
     public static final int BLOOD_PRICE = 10;
     public static final int KNIFE_COOLDOWN_TICKS = 50 * 20;
     public static final int CROWBAR_COOLDOWN_TICKS = 300 * 20;
-    public static final int FIRST_DAYLIGHT_TICKS = 2 * 60 * 20;
-    public static final int DAYLIGHT_TICKS = 5 * 60 * 20;
+    public static final int FIRST_DAYLIGHT_TICKS = 3 * 60 * 20;
+    public static final int DAYLIGHT_TICKS = 6 * 60 * 20;
     public static final int DUSK_TICKS = 2 * 60 * 20;
-    public static final int NIGHT_TICKS = 5 * 60 * 20;
+    public static final int NIGHT_TICKS = 3 * 60 * 20;
     public static final int TWO_DAYS_TICKS = 2 * (DAYLIGHT_TICKS + DUSK_TICKS + NIGHT_TICKS);
     public static final int CHAT_FOCUS_TICKS = 5 * 20;
     public static final int TOILET_TASK_TICKS = 15 * 20;
@@ -111,7 +114,7 @@ public class DNF {
 
     private static boolean eventsRegistered;
     private static boolean winnerPredicatesRegistered;
-    private static final java.util.Set<UUID> CHAT_FOCUSING_PLAYERS = new java.util.HashSet<>();
+    private static final Set<UUID> CHAT_FOCUSING_PLAYERS = new HashSet<>();
 
     public static void init() {
         DNFBlocks.initialize();
@@ -252,12 +255,15 @@ public class DNF {
 
     public static boolean isDayNightFightMode(Level world) {
         return world != null && SREGameWorldComponent.KEY.get(world).getGameMode().identifier
-                .equals(io.wifi.starrailexpress.api.SREGameModes.DAY_NIGHT_FIGHT_ID);
+                .equals(SREGameModes.DAY_NIGHT_FIGHT_ID);
     }
 
     public static boolean isNight(Player player) {
         if (player == null) {
             return false;
+        }
+        if (!player.level().isClientSide){
+            return ((DNFGameMode) SREGameModes.DAY_NIGHT_FIGHT).currentPhase == DNFGameMode.Phase.NIGHT;
         }
         SRETrainWorldComponent.TimeOfDay timeOfDay = SRETrainWorldComponent.KEY.get(player.level()).getTimeOfDay();
         return player.level().isNight()
@@ -346,7 +352,7 @@ public class DNF {
         }
     }
 
-    public static void removeAll(ServerPlayer player, net.minecraft.world.item.Item item) {
+    public static void removeAll(ServerPlayer player, Item item) {
         for (List<ItemStack> compartment : player.getInventory().compartments) {
             for (int i = 0; i < compartment.size(); i++) {
                 if (compartment.get(i).is(item)) {
@@ -433,7 +439,7 @@ public class DNF {
     /**
      * 在里世界生成怪物
      */
-    public static void spawnUnderworldMonster(net.minecraft.server.level.ServerLevel serverLevel, ServerPlayer player) {
+    public static void spawnUnderworldMonster(ServerLevel serverLevel, ServerPlayer player) {
         // 在玩家附近生成怪物
         double angle = Math.random() * Math.PI * 2;
         double distance = 15 + Math.random() * 10; // 15-25格距离
@@ -443,10 +449,10 @@ public class DNF {
         int z = (int)(player.getZ() + Math.sin(angle) * distance);
         
         BlockPos spawnPos = new BlockPos(x, y, z);
-        BlockPos groundPos = serverLevel.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, spawnPos);
+        BlockPos groundPos = serverLevel.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, spawnPos);
         
-        io.wifi.events.day_night_fight.entity.UnderworldMonsterEntity monster = 
-                io.wifi.events.day_night_fight.entity.DNFEntities.UNDERWORLD_MONSTER.create(serverLevel);
+        UnderworldMonsterEntity monster =
+                DNFEntities.UNDERWORLD_MONSTER.create(serverLevel);
         
         if (monster != null) {
             monster.moveTo(groundPos.getX() + 0.5, groundPos.getY(), groundPos.getZ() + 0.5, 0, 0);
@@ -820,7 +826,7 @@ public class DNF {
         UUID targetId = target.getUUID();
         player.displayClientMessage(Component.translatable("message.dnf.task.chat_started",
                 target.getDisplayName(), CHAT_FOCUS_TICKS / 20).withStyle(ChatFormatting.GREEN), true);
-        io.wifi.starrailexpress.util.Scheduler.schedule(() -> {
+        Scheduler.schedule(() -> {
             CHAT_FOCUSING_PLAYERS.remove(playerId);
             if (player.hasDisconnected() || !isDayNightFightMode(player.level()) || !isDnfAlive(player)) {
                 return;
@@ -843,11 +849,11 @@ public class DNF {
             return;
         }
         BlockPos toiletPos = pos.immutable();
-        io.wifi.starrailexpress.util.Scheduler.schedule(() -> {
+        Scheduler.schedule(() -> {
             if (player.hasDisconnected() || !isDayNightFightMode(player.level()) || !isDnfAlive(player)) {
                 return;
             }
-            if (player.getVehicle() instanceof io.wifi.starrailexpress.content.block.entity.SeatEntity seat
+            if (player.getVehicle() instanceof SeatEntity seat
                     && toiletPos.equals(seat.getSeatPos())) {
                 DNFPlayerComponent.KEY.get(player).finishToiletTask(player);
                 return;
@@ -954,7 +960,7 @@ public class DNF {
         RoleUtils.customWinnerWin(serverLevel, "dnf_redemption", 0x3A7F55);
     }
 
-    private static boolean hasItem(ServerPlayer player, net.minecraft.world.item.Item item, int count) {
+    private static boolean hasItem(ServerPlayer player, Item item, int count) {
         int found = 0;
         for (List<ItemStack> compartment : player.getInventory().compartments) {
             for (ItemStack stack : compartment) {
@@ -969,7 +975,7 @@ public class DNF {
         return false;
     }
 
-    private static void consumeItem(ServerPlayer player, net.minecraft.world.item.Item item, int count) {
+    private static void consumeItem(ServerPlayer player, Item item, int count) {
         int remaining = count;
         for (List<ItemStack> compartment : player.getInventory().compartments) {
             for (ItemStack stack : compartment) {
