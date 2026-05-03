@@ -1203,6 +1203,7 @@
   "message.dnf.chef.diary_chef_only": "Only a Chef can understand this old diary.",
   "message.dnf.chef.diary_found": "You found the old chef's diary. It mentions the Poisoner and several potions labeled Path of Redemption.",
   "message.dnf.chef.diary_already_found": "You have already taken the old chef's diary.",
+  "message.dnf.chef.diary_read": "You read the old chef's diary again.",
   "message.dnf.redemption.wrong_role": "Only the Poisoner or Chef can use this formula.",
   "message.dnf.redemption.recipe_locked": "You have not unlocked the redemption formula.",
   "message.dnf.redemption.already_crafted": "The redemption potions have already been crafted.",
@@ -1297,5 +1298,16 @@
   "item.starrailexpress.dnf_water_dispenser": "Water Dispenser",
   "block.trainmurdermystery.dnf_hotbar_storage": "Hotbar Storage",
   "item.starrailexpress.dnf_hotbar_storage": "Hotbar Storage",
-  "container.starrailexpress.dnf_hotbar_storage": "Hotbar Storage"
+  "container.starrailexpress.dnf_hotbar_storage": "Hotbar Storage",
+  "info.screen.roleid.dnf_killer": "The Killer's weapon is a flying knife, which can deal damage to players. The Killer can see the location of all players.",
+  "info.screen.roleid.dnf_maniac": "The Maniac is a hidden role that can help the Killer win.",
+  "info.screen.roleid.dnf_soldier": "The Soldier has a chance to resist the Killer's attack once per day.",
+  "info.screen.roleid.dnf_chef": "The Chef can craft food and purify toxins.",
+  "info.screen.roleid.dnf_poisoner": "The Poisoner can poison food.",
+  "info.screen.roleid.dnf_psychologist": "The Psychologist can check a player's mental state.",
+  "info.screen.roleid.dnf_locksmith": "The Locksmith can open locked containers.",
+  "info.screen.roleid.dnf_civilian": "The Civilian is on the good team and needs to find the Killer.",
+  "info.screen.roleid.dnf_abyss": "The Abyss can swallow corpses.",
+  "info.screen.roleid.dnf_ghost": "The Ghost can see other players after death.",
+  "info.screen.role.see_more": "Press Tab for more"
 }

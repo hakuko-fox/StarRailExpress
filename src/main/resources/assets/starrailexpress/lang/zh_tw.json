@@ -1385,6 +1385,7 @@
   "message.dnf.chef.diary_chef_only": "只有廚師能讀懂這本舊日記。",
   "message.dnf.chef.diary_found": "你找到了老廚師的日記。它提到了毒師和幾瓶名為“救贖之道”的藥劑。",
   "message.dnf.chef.diary_already_found": "你已經拿走過老廚師的日記了。",
+  "message.dnf.chef.diary_read": "你又讀了一遍老廚師的日記。",
   "message.dnf.redemption.wrong_role": "只有毒師或廚師能使用這份配方。",
   "message.dnf.redemption.recipe_locked": "你還沒有解鎖救贖配方。",
   "message.dnf.redemption.already_crafted": "救贖藥劑已經製作完成。",
@@ -1479,5 +1480,6 @@
   "item.starrailexpress.dnf_water_dispenser": "飲水機",
   "block.trainmurdermystery.dnf_hotbar_storage": "快捷欄儲物箱",
   "item.starrailexpress.dnf_hotbar_storage": "快捷欄儲物箱",
-  "container.starrailexpress.dnf_hotbar_storage": "快捷欄儲物箱"
+  "container.starrailexpress.dnf_hotbar_storage": "快捷欄儲物箱",
+  "info.screen.role.see_more": "按 Tab 查看更多"
 }
