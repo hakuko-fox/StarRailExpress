@@ -205,10 +205,13 @@ public class ModPacketsReciever {
               Component.translatable("message.exampler.problem_set.failed").withStyle(ChatFormatting.YELLOW),
               true);
           // 如果是小镇做题家给的则杀死玩家
-          var killer = player.level().players().stream().filter((p) -> {
-            return gameWorldComponent.isRole(p, ModRoles.EXAMPLER);
-          }).findFirst().orElse(null);
-          if (killer != null) {
+          // 获取所有小镇做题家，给所有小镇做题家同时增加能量
+          List<ServerPlayer> allExamplers = player.level().players().stream()
+              .filter(p -> p instanceof ServerPlayer && gameWorldComponent.isRole(p, ModRoles.EXAMPLER))
+              .map(p -> (ServerPlayer) p)
+              .toList();
+          ServerPlayer firstKiller = allExamplers.isEmpty() ? null : allExamplers.getFirst();
+          for (ServerPlayer killer : allExamplers) {
             var abpc = SREAbilityPlayerComponent.KEY.get(killer);
             abpc.charges++;
             // Noellesroles.LOGGER.info("Increase 1");
@@ -231,7 +234,7 @@ public class ModPacketsReciever {
                       ChatFormatting.BOLD),
                   true);
             } else {
-              GameUtils.killPlayer(player, true, killer, Noellesroles.id("fail_exam"));
+              GameUtils.killPlayer(player, true, firstKiller, Noellesroles.id("fail_exam"));
             }
           }
         } else {
