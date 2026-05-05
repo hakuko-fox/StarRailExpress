@@ -929,10 +929,10 @@ public class EntityInteractionBlockScreen extends Screen {
                                     }));
                 }
                 case NEED_CUSTOM_TASK -> {
-                    // 自定义任务ID
-                    addRenderableWidget(new EditBox(this.font, centerX - 100, y, 200, 20,
-                            Component.translatable("gui.entity_interaction_block.custom_task_id")));
-                    stringInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.custom_task_id"));
+                    // 自定义任务ID - 直接创建并保存引用 (使用固定文本以便识别)
+                    stringInput = new EditBox(this.font, centerX - 100, y, 200, 20,
+                            Component.literal("custom_task_id"));
+                    addRenderableWidget(stringInput);
                 }
                 // PASS_THROUGH 不需要输入
             }
@@ -1418,10 +1418,10 @@ public class EntityInteractionBlockScreen extends Screen {
                     stringInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.custom_task_name"));
 
                     y += 25;
-                    // 任务ID
+                    // 任务ID (使用固定文本以便识别)
                     addRenderableWidget(new EditBox(this.font, centerX - 150, y, 300, 20,
-                            Component.translatable("gui.entity_interaction_block.custom_task_id")));
-                    EditBox taskIdInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.custom_task_id"));
+                            Component.literal("custom_task_id")));
+                    EditBox taskIdInput = findAndAttachInput(Component.literal("custom_task_id"));
                     if (taskIdInput != null) {
                         taskIdInput.setValue("custom_" + System.currentTimeMillis() % 10000);
                     }
@@ -1431,10 +1431,10 @@ public class EntityInteractionBlockScreen extends Screen {
                             .bounds(centerX - 100, y, 200, 15).build());
                 }
                 case COMPLETE_CUSTOM_TASK -> {
-                    // 任务ID
+                    // 任务ID (使用固定文本以便识别)
                     addRenderableWidget(new EditBox(this.font, centerX - 100, y, 200, 20,
-                            Component.translatable("gui.entity_interaction_block.custom_task_id")));
-                    stringInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.custom_task_id"));
+                            Component.literal("custom_task_id")));
+                    stringInput = findAndAttachInput(Component.literal("custom_task_id"));
                     y += 22;
                     addRenderableWidget(Button.builder(
                             Component.translatable("gui.entity_interaction_block.complete_custom_task_desc"), b -> {})

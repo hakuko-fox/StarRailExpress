@@ -50,7 +50,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     private int teleportPointId = -1; // 传送点数字ID
     // 方块冷却（期间不触发）
     private int blockCooldownTicks = 0;
-    private long blockCooldownEndTime = 0;
+    private int blockCooldownEndGameTime = 0; // 基于游戏时间的冷却结束时刻
 
     public EntityInteractionBlockEntity(BlockPos pos, BlockState state) {
         super(TMMBlockEntities.ENTITY_INTERACTION_BLOCK, pos, state);
@@ -128,13 +128,19 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
     // 方块冷却相关
     public boolean isInCooldown(long currentGameTime) {
-        return blockCooldownEndTime > currentGameTime;
+        return blockCooldownEndGameTime > 0 && currentGameTime <= blockCooldownEndGameTime;
     }
 
-    public void setBlockCooldown(int seconds) {
+    public void setBlockCooldown(int seconds, long currentGameTime) {
         this.blockCooldownTicks = seconds * 20;
-        this.blockCooldownEndTime = System.currentTimeMillis() / 50 + this.blockCooldownTicks;
+        this.blockCooldownEndGameTime = (int) (currentGameTime + this.blockCooldownTicks);
         setChanged();
+    }
+
+    // 不带游戏时间的旧方法，保持兼容
+    public void setBlockCooldown(int seconds) {
+        // 使用默认值，将在tick时正确设置
+        this.blockCooldownTicks = seconds * 20;
     }
 
     // 从服务端接收更新
@@ -200,7 +206,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 long lastTrigger = entity.lastTriggerTime.getOrDefault(player.getUUID(), 0L);
                 if (currentGameTime - lastTrigger >= entity.cooldownTicks) {
                     // 执行触发内容
-                    entity.executeActions(player, serverWorld, pos);
+                    entity.executeActions(player, serverWorld, pos, currentGameTime);
                     entity.lastTriggerTime.put(player.getUUID(), currentGameTime);
                 }
             }
@@ -525,13 +531,13 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     }
 
     // 执行触发内容
-    private void executeActions(ServerPlayer player, ServerLevel world, BlockPos pos) {
+    private void executeActions(ServerPlayer player, ServerLevel world, BlockPos pos, long currentGameTime) {
         for (TriggerAction action : actions) {
-            executeSingleAction(action, player, world, pos);
+            executeSingleAction(action, player, world, pos, currentGameTime);
         }
     }
 
-    private void executeSingleAction(TriggerAction action, ServerPlayer player, ServerLevel world, BlockPos pos) {
+    private void executeSingleAction(TriggerAction action, ServerPlayer player, ServerLevel world, BlockPos pos, long currentGameTime) {
         switch (action.type) {
             case EXECUTE_COMMAND -> {
                 // 执行指令
@@ -753,7 +759,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             case BLOCK_COOLDOWN -> {
                 // 方块进入冷却
                 int cooldownSeconds = (int) action.value;
-                this.setBlockCooldown(cooldownSeconds);
+                this.setBlockCooldown(cooldownSeconds, currentGameTime);
             }
             case CLEAR_ENTITIES -> {
                 // 清除范围内的指定实体
@@ -941,7 +947,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         tag.putBoolean("IsTeleportPoint", isTeleportPoint);
         tag.putInt("TeleportPointId", teleportPointId);
         tag.putInt("BlockCooldownTicks", blockCooldownTicks);
-        tag.putLong("BlockCooldownEndTime", blockCooldownEndTime);
+        tag.putInt("BlockCooldownEndGameTime", blockCooldownEndGameTime);
     }
 
     @Override
@@ -973,7 +979,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         isTeleportPoint = tag.getBoolean("IsTeleportPoint");
         teleportPointId = tag.getInt("TeleportPointId");
         blockCooldownTicks = tag.getInt("BlockCooldownTicks");
-        blockCooldownEndTime = tag.getLong("BlockCooldownEndTime");
+        blockCooldownEndGameTime = tag.getInt("BlockCooldownEndGameTime");
     }
 
     // 条件类型枚举

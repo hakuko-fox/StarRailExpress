@@ -1499,7 +1499,7 @@
   "condition.has_effect": "Has effect: %s",
   "condition.probability": "Probability %s%%",
   "condition.world_time": "World time is: %s",
-  "condition.entity_count": "Within %s blocks: %s entities %s %s %s",
+  "condition.entity_count": "Within %s blocks: %s entities, count %s %s",
   "condition.entity_count_any": "Within %s blocks: %s (any amount)",
   "condition.mood_value": "Mood value %s %s",
   "condition.is_psycho": "Is in psycho mode",
