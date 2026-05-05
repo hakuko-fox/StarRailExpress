@@ -3,6 +3,7 @@
   "============ 重置 ===========": "",
   "message.sre.reseting": "重置地图中 %s%%",
   "message.sre.starting": "游戏开始！",
+  "message.sre.game_end_prevented": "",
   "============ 投票 ============": "",
   "gui.sre.vote.title": "%s",
   "gui.sre.vote.subtitle": "按下 %s 投票",
@@ -689,6 +690,7 @@
   "task.outside": "呼吸新鲜空气 - 找一个能望到天空的地方",
   "task.sleep": "睡一觉",
   "task.read_book": "读书",
+  "task.random": "随机任务",
   "tip.cooldown": "冷却中：%s",
   "tip.derringer.used": "已使用：无法再射击，击杀一名目标可获得另一次机会！",
   "tip.door.jammed": "这扇门被卡住了，暂时无法打开！",
@@ -1458,6 +1460,9 @@
   "gui.entity_interaction_block.block_cooldown": "方块冷却（秒）",
   "gui.entity_interaction_block.entity_id": "实体ID",
   "gui.entity_interaction_block.entity_count": "数量（*为任意）",
+  "gui.entity_interaction_block.damage_duration_hint": "有效期(秒)",
+  "gui.entity_interaction_block.damage_duration_desc": "检测在指定秒数内是否受到过伤害",
+  "gui.entity_interaction_block.block_game_end_desc": "当条件满足时阻止游戏结束（时间耗尽除外）",
 
   "condition_type.pass_through": "玩家穿越实体交互方块时",
   "condition_type.timer": "自动定时",
@@ -1539,6 +1544,9 @@
   "condition.is_monitor_broken": "处于监控失灵期间",
   "condition.need_task_type": "需要完成 %s 任务",
   "condition.need_custom_task": "需要完成自定义任务：%s",
+  "condition.damaged_by_player": "受到过玩家伤害（%s秒内）",
+  "condition.damaged_by_non_player": "受到过非玩家伤害（%s秒内）",
+  "condition.block_game_end": "阻止游戏结束（时间耗尽除外）",
 
 
   "world_time.day": "白天",
@@ -1567,6 +1575,9 @@
   "condition_type.is_monitor_broken": "处于监控失灵期间",
   "condition_type.need_task_type": "需要完成特定类型任务",
   "condition_type.need_custom_task": "需要完成自定义任务",
+  "condition_type.damaged_by_player": "受到玩家伤害",
+  "condition_type.damaged_by_non_player": "受到非玩家伤害",
+  "condition_type.block_game_end": "阻止游戏结束",
 
 
   "action_type.give_effect": "给予状态效果",
@@ -1583,6 +1594,7 @@
   "action_type.end_blackout": "结束关灯",
   "action_type.fix_monitor": "修复监控",
   "action_type.add_custom_task": "添加自定义任务",
+  "action_type.add_extra_task": "额外添加任务",
   "action_type.complete_custom_task": "完成自定义任务",
   "action_type.narrator": "语音播报",
 
@@ -1604,7 +1616,8 @@
   "action.complete_task": "强制完成当前任务",
   "action.end_blackout": "结束关灯",
   "action.fix_monitor": "修复监控",
-  "action.add_custom_task": "添加自定义任务：%s (ID:%s)",
+  "action.add_custom_task": "添加自定义任务：%s (ID:%s) [%s]",
+  "action.add_extra_task": "额外添加任务：%s",
   "action.complete_custom_task": "完成自定义任务：%s",
   "action.narrator": "语音播报：%s [%s]",
 
@@ -1631,6 +1644,8 @@
   "action.set_time": "设为 %s",
   "action.game_win": "游戏胜利：%s",
   "action.coin_change": "金币 %s",
+  "action.prevent_game_end": "阻止游戏结束",
+  "action_type.prevent_game_end": "阻止游戏结束",
 
   "comparison.equals": "等于",
   "comparison.greater": "大于",
@@ -1730,8 +1745,14 @@
   "gui.entity_interaction_block.item_cooldown_desc": "使玩家手中物品进入冷却状态，输入物品ID(*为当前手持物品)、冷却时间(秒)",
   "gui.entity_interaction_block.block_cooldown_desc": "使实体交互方块进入冷却状态，期间不触发任何条件",
   "gui.entity_interaction_block.clear_entities_desc": "清除以实体交互方块为圆心指定半径范围内的实体，*为任意非玩家实体",
-  "gui.entity_interaction_block.add_custom_task_desc": "先清空当前任务，再添加自定义任务，需要填写任务名称和唯一ID",
+  "gui.entity_interaction_block.add_custom_task_desc": "添加自定义任务，根据设置清空或不清空当前任务，需要填写任务名称和唯一ID",
+  "gui.entity_interaction_block.clear_tasks_toggle": "设置清空模式",
+  "gui.entity_interaction_block.clear_tasks_true": "清空当前任务后添加",
+  "gui.entity_interaction_block.clear_tasks_false": "保留当前任务添加",
   "gui.entity_interaction_block.complete_custom_task_desc": "根据ID查找并完成玩家当前的自定义任务",
+  "gui.entity_interaction_block.task_type_hint": "任务类型(random为随机)",
+  "gui.entity_interaction_block.extra_task_type": "额外任务类型",
+  "gui.entity_interaction_block.add_extra_task_desc": "额外添加任务，不清空当前任务",
   "gui.entity_interaction_block.narrator_text": "语音播报内容",
   "gui.entity_interaction_block.narrator_mode": "播报模式",
   "gui.entity_interaction_block.narrator_interrupt": "打断",
@@ -1740,6 +1761,7 @@
 
   "message.custom_task.added": "§a[任务]§r 新任务：%s",
   "message.custom_task.completed": "§a[任务]§r 已完成：%s",
+  "message.extra_task.added": "§a[任务]§r 额外任务：%s",
   "message.teleport_point_not_found": "§c传送点 %s 不存在或在 %s 格范围外",
 
   "message.dnf.rules.given": "规则书已放入你的背包。",

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "starrailexpress:item/entity_interaction_block"
+    "layer0": "starrailexpress:item/entity_interaction_panel"
   }
 }

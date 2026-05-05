@@ -682,6 +682,7 @@
   "task.outside": "呼吸新鮮空氣 - 找一個能望到天空的地方",
   "task.sleep": "睡一覺",
   "task.read_book": "讀書",
+  "task.random": "隨機任務",
   "tip.cooldown": "冷卻中：%s",
   "tip.derringer.used": "已使用：無法再射擊，擊殺一名目標可獲得另一次機會！",
   "tip.door.jammed": "這扇門被卡住了，暫時無法打開！",

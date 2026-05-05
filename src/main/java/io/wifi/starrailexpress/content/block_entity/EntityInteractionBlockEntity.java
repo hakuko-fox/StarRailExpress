@@ -864,13 +864,17 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 monitor.reset();
             }
             case ADD_CUSTOM_TASK -> {
-                // 添加自定义任务：先清空当前任务，再添加自定义任务
+                // 添加自定义任务：根据clearTasks决定是否清空当前任务
                 SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-                // 清除当前所有任务
-                taskComponent.tasks.clear();
-                taskComponent.parallelTaskTypes.clear();
-                taskComponent.parallelTaskGenerated = false;
-                taskComponent.currentTaskAge = 0;
+
+                // 根据设置决定是否清空当前任务
+                if (action.clearTasks) {
+                    // 清空当前所有任务
+                    taskComponent.tasks.clear();
+                    taskComponent.parallelTaskTypes.clear();
+                    taskComponent.parallelTaskGenerated = false;
+                    taskComponent.currentTaskAge = 0;
+                }
 
                 // 创建自定义任务
                 String taskName = action.customTaskName != null ? action.customTaskName : "自定义任务";
@@ -890,6 +894,40 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
                 // 发送提示消息
                 player.sendSystemMessage(Component.translatable("message.custom_task.added", taskName));
+            }
+            case ADD_EXTRA_TASK -> {
+                // 额外添加任务：不清空当前任务，直接添加一个随机任务
+                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+                String taskType = action.taskType;
+
+                // 如果指定了任务类型，尝试使用该类型
+                SREPlayerTaskComponent.TrainTask newTask = null;
+                if (taskType != null && !taskType.isEmpty() && !"random".equalsIgnoreCase(taskType)) {
+                    // 尝试匹配指定的任务类型
+                    try {
+                        SREPlayerTaskComponent.Task enumTask = SREPlayerTaskComponent.Task.valueOf(taskType.toUpperCase());
+                        // 使用枚举的setFunction来创建任务
+                        newTask = enumTask.setFunction.apply(new CompoundTag());
+                    } catch (IllegalArgumentException e) {
+                        // 任务类型不存在，忽略
+                    }
+                }
+
+                // 如果没有指定类型或类型无效，随机生成任务
+                if (newTask == null) {
+                    // 使用任务组件的内部随机生成逻辑
+                    newTask = generateRandomTask(player);
+                }
+
+                if (newTask != null) {
+                    taskComponent.tasks.put(newTask.getType(), newTask);
+                    taskComponent.timesGotten.putIfAbsent(newTask.getType(), 1);
+                    taskComponent.timesGotten.put(newTask.getType(), taskComponent.timesGotten.get(newTask.getType()) + 1);
+                    // 发送提示消息
+                    player.sendSystemMessage(Component.translatable("message.extra_task.added", newTask.getName()));
+                }
+
+                taskComponent.sync();
             }
             case COMPLETE_CUSTOM_TASK -> {
                 // 完成自定义任务
@@ -1202,9 +1240,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         COMPLETE_TASK,         // 强制完成当前任务
         END_BLACKOUT,          // 结束关灯
         FIX_MONITOR,           // 修复监控
-        ADD_CUSTOM_TASK,       // 增加自定义任务（清空当前任务后添加）
+        ADD_CUSTOM_TASK,       // 增加自定义任务（根据clearTasks决定是否清空当前任务）
+        ADD_EXTRA_TASK,        // 额外添加任务（不清空当前任务，支持random随机任务）
         COMPLETE_CUSTOM_TASK,   // 完成自定义任务
-        NARRATOR               // 语音播报
+        NARRATOR              // 语音播报
     }
 
     // 条件数据类
@@ -1268,10 +1307,11 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         public String taskType;        // 任务类型（用于CHANGE_TASK）
         public int effectDuration;     // 效果持续时间（秒，用于GIVE_EFFECT）
         public int effectAmplifier;    // 效果等级（用于GIVE_EFFECT）
-        public String customTaskName;  // 自定义任务名称（用于ADD_CUSTOM_TASK）
+        public String customTaskName;  // 自定义任务名称（用于ADD_CUSTOM_TASK和ADD_EXTRA_TASK）
         public String customTaskId;    // 自定义任务ID（用于ADD_CUSTOM_TASK和COMPLETE_CUSTOM_TASK）
         public String narratorText;     // 语音播报文本（用于NARRATOR）
         public boolean narratorInterrupt; // 是否打断当前播报（用于NARRATOR）
+        public boolean clearTasks;       // 是否清空当前任务（用于ADD_CUSTOM_TASK，true=清空后添加，false=不清空直接添加）
 
         public CompoundTag toNbt() {
             CompoundTag tag = new CompoundTag();
@@ -1285,6 +1325,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             tag.putString("CustomTaskId", customTaskId != null ? customTaskId : "");
             tag.putString("NarratorText", narratorText != null ? narratorText : "");
             tag.putBoolean("NarratorInterrupt", narratorInterrupt);
+            tag.putBoolean("ClearTasks", clearTasks);
             return tag;
         }
 
@@ -1305,7 +1346,29 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             action.narratorText = tag.getString("NarratorText");
             if (action.narratorText.isEmpty()) action.narratorText = null;
             action.narratorInterrupt = tag.getBoolean("NarratorInterrupt");
+            action.clearTasks = tag.getBoolean("ClearTasks");
             return action;
         }
+    }
+
+    /**
+     * 生成随机任务
+     */
+    private static SREPlayerTaskComponent.TrainTask generateRandomTask(ServerPlayer player) {
+        java.util.List<SREPlayerTaskComponent.Task> availableTasks = SREPlayerTaskComponent.Task.getAvailableTasksList();
+        if (availableTasks.isEmpty()) {
+            return null;
+        }
+        // 过滤掉已存在的任务类型
+        SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+        java.util.List<SREPlayerTaskComponent.Task> filteredTasks = availableTasks.stream()
+                .filter(t -> !taskComponent.tasks.containsKey(t))
+                .collect(java.util.stream.Collectors.toList());
+        if (filteredTasks.isEmpty()) {
+            // 如果所有任务都已存在，返回任意一个可用任务
+            filteredTasks = new java.util.ArrayList<>(availableTasks);
+        }
+        SREPlayerTaskComponent.Task randomTask = filteredTasks.get(player.getRandom().nextInt(filteredTasks.size()));
+        return randomTask.setFunction.apply(new net.minecraft.nbt.CompoundTag());
     }
 }

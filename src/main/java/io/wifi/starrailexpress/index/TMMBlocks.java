@@ -14,6 +14,10 @@ import net.fabricmc.fabric.api.object.builder.v1.block.type.BlockSetTypeBuilder;
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.BlockFamily;
+import dev.doctor4t.ratatouille.util.registrar.BlockRegistrar;
+import dev.doctor4t.ratatouille.util.registrar.ItemRegistrar;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -38,6 +42,8 @@ import net.minecraft.world.level.material.PushReaction;
 @SuppressWarnings("unchecked")
 public interface TMMBlocks {
   BlockRegistrar registrar = new BlockRegistrar(SRE.TMM_MOD_ID);
+  BlockRegistrar sreBlockRegistrar = new BlockRegistrar(SRE.MOD_ID);
+  ItemRegistrar sreItemRegistrar = new ItemRegistrar(SRE.MOD_ID);
 
   // Metallic blocks
   Block TARNISHED_GOLD = registrar.createWithItem("tarnished_gold",
@@ -679,22 +685,26 @@ public interface TMMBlocks {
       TMMItems.DECORATION_GROUP);
 
   // 实体交互方块 - 普通版本
-  Block ENTITY_INTERACTION_BLOCK = registrar.createWithItem("entity_interaction_block",
+  Block ENTITY_INTERACTION_BLOCK = sreBlockRegistrar.create("entity_interaction_block",
       new EntityInteractionBlock(BlockBehaviour.Properties.of()
           .strength(-1.0F, 3600000.8F)
           .noOcclusion()
           .noCollission()
-          .sound(SoundType.STONE)),
-      new Item.Properties().rarity(Rarity.EPIC), CreativeModeTabs.OP_BLOCKS);
+          .sound(SoundType.STONE)));
+  Item ENTITY_INTERACTION_BLOCK_ITEM = sreItemRegistrar.create("entity_interaction_block",
+      new BlockItem(ENTITY_INTERACTION_BLOCK, new Item.Properties().rarity(Rarity.EPIC)),
+      new net.minecraft.resources.ResourceKey[] { CreativeModeTabs.OP_BLOCKS });
 
   // 实体交互方块 - 镶板版本
-  Block ENTITY_INTERACTION_PANEL = registrar.createWithItem("entity_interaction_panel",
+  Block ENTITY_INTERACTION_PANEL = sreBlockRegistrar.create("entity_interaction_panel",
       new EntityInteractionPanelBlock(BlockBehaviour.Properties.of()
           .strength(-1.0F, 3600000.8F)
           .noOcclusion()
           .noCollission()
-          .sound(SoundType.STONE)),
-      new Item.Properties().rarity(Rarity.EPIC), CreativeModeTabs.OP_BLOCKS);
+          .sound(SoundType.STONE)));
+  Item ENTITY_INTERACTION_PANEL_ITEM = sreItemRegistrar.create("entity_interaction_panel",
+      new BlockItem(ENTITY_INTERACTION_PANEL, new Item.Properties().rarity(Rarity.EPIC)),
+      new net.minecraft.resources.ResourceKey[] { CreativeModeTabs.OP_BLOCKS });
 
   private static Block createBranch(String name, Block wood, BlockRegistrar registrar) {
     return registrar.createWithItem(name,
@@ -898,9 +908,12 @@ public interface TMMBlocks {
     flammableBlockRegistry.add(STRIPPED_BAMBOO_POLE, 5, 20);
 
     registrar.registerEntries();
+    sreBlockRegistrar.registerEntries();
+    sreItemRegistrar.registerEntries();
 
     BuiltInRegistries.BLOCK.addAlias(SRE.id("small_train_door"), SRE.id("navy_steel_door"));
     BuiltInRegistries.ITEM.addAlias(SRE.id("small_train_door"), SRE.id("navy_steel_door"));
+
     WatheBridgerBlocks.initialize();
   }
 }

@@ -40,6 +40,9 @@ public class EntityInteractionBlockScreen extends Screen {
     private boolean isTeleportPoint = false;
     private int teleportPointId = -1;
 
+    // 额外任务类型选择（用于ADD_EXTRA_TASK）
+    private String extraTaskType = "random";
+
     // 死亡原因列表（用于DEATH条件）- 参考 GameConstants.DeathReasons + noellesroles + stupid_express
     private static final List<String> DEATH_REASONS = List.of(
             // 基础死亡原因 (GameConstants.DeathReasons)
@@ -402,7 +405,13 @@ public class EntityInteractionBlockScreen extends Screen {
             case FIX_MONITOR -> Component.translatable("action.fix_monitor").getString();
             case ADD_CUSTOM_TASK -> Component.translatable("action.add_custom_task",
                     action.customTaskName != null ? action.customTaskName : "?",
-                    action.customTaskId != null ? action.customTaskId : "?").getString();
+                    action.customTaskId != null ? action.customTaskId : "?",
+                    Component.translatable(action.clearTasks ?
+                            "gui.entity_interaction_block.clear_tasks_true" :
+                            "gui.entity_interaction_block.clear_tasks_false")).getString();
+            case ADD_EXTRA_TASK -> Component.translatable("action.add_extra_task",
+                    action.taskType != null && !action.taskType.isEmpty() && !"random".equalsIgnoreCase(action.taskType)
+                            ? action.taskType.toUpperCase() : "Random").getString();
             case COMPLETE_CUSTOM_TASK -> Component.translatable("action.complete_custom_task",
                     action.customTaskId != null ? action.customTaskId : "?").getString();
             case NARRATOR -> Component.translatable("action.narrator",
@@ -1064,6 +1073,7 @@ public class EntityInteractionBlockScreen extends Screen {
         private String selectedTaskType = "random";
         private boolean addTimeMode = true; // true=增加，false=减少
         private boolean narratorInterrupt = false; // 语音播报是否打断
+        private boolean clearTasks = true; // ADD_CUSTOM_TASK是否清空当前任务
         private int scrollY = 0;
         private static final int SCROLL_STEP = 15;
 
@@ -1432,7 +1442,22 @@ public class EntityInteractionBlockScreen extends Screen {
                     if (taskIdInput != null) {
                         taskIdInput.setValue("custom_" + System.currentTimeMillis() % 10000);
                     }
+
                     y += 22;
+                    // 清空任务切换按钮
+                    Button clearTasksBtn = Button.builder(
+                            Component.translatable("gui.entity_interaction_block.clear_tasks_toggle"),
+                            b -> {
+                                // 切换清空任务状态
+                                clearTasks = !clearTasks;
+                                b.setMessage(Component.translatable(clearTasks ?
+                                        "gui.entity_interaction_block.clear_tasks_true" :
+                                        "gui.entity_interaction_block.clear_tasks_false"));
+                            })
+                            .bounds(centerX - 100, y, 200, 20).build();
+                    addRenderableWidget(clearTasksBtn);
+
+                    y += 25;
                     addRenderableWidget(Button.builder(
                             Component.translatable("gui.entity_interaction_block.add_custom_task_desc"), b -> {})
                             .bounds(centerX - 100, y, 200, 15).build());
@@ -1445,6 +1470,21 @@ public class EntityInteractionBlockScreen extends Screen {
                     y += 22;
                     addRenderableWidget(Button.builder(
                             Component.translatable("gui.entity_interaction_block.complete_custom_task_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
+                }
+                case ADD_EXTRA_TASK -> {
+                    // 额外任务类型选择 - 使用已有翻译键 task.xxx
+                    addRenderableWidget(CycleButton.<String>builder(taskType ->
+                                    Component.translatable("task." + taskType))
+                            .withValues("random", "sleep", "read_book", "eat", "drink", "exercise",
+                                    "meditate", "bathe", "note_block", "toilet", "chair", "breathe")
+                            .withInitialValue(extraTaskType)
+                            .create(centerX - 100, y, 200, 20,
+                                    Component.translatable("gui.entity_interaction_block.extra_task_type"),
+                                    (b, taskType) -> extraTaskType = taskType));
+                    y += 25;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.add_extra_task_desc"), b -> {})
                             .bounds(centerX - 100, y, 200, 15).build());
                 }
                 case NARRATOR -> {
@@ -1571,12 +1611,18 @@ public class EntityInteractionBlockScreen extends Screen {
                         action.customTaskId = box.getValue();
                     }
                 }
+                action.clearTasks = clearTasks;
             }
 
             if (selectedType == EntityInteractionBlockEntity.ActionType.COMPLETE_CUSTOM_TASK) {
                 if (stringInput != null) {
                     action.customTaskId = stringInput.getValue();
                 }
+            }
+
+            // 保存额外任务参数
+            if (selectedType == EntityInteractionBlockEntity.ActionType.ADD_EXTRA_TASK) {
+                action.taskType = extraTaskType;
             }
 
             // 保存语音播报参数

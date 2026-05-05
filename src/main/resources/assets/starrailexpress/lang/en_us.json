@@ -2,6 +2,7 @@
   "============ 重置 ===========": "",
   "message.sre.reseting": "Resetting map %s%%",
   "message.sre.starting": "Game starting!",
+  "message.sre.game_end_prevented": "Game end has been prevented!",
   "========================": "",
   "sre.map_helper.title": "Map Build Helper",
   "sre.map_helper.source_pos": "Source [%d, %d, %d]",
@@ -625,6 +626,7 @@
   "task.outside": "Breathe fresh air - Find a place with a view of the sky",
   "task.sleep": "Take a nap",
   "task.read_book": "Read a book",
+  "task.random": "Random task",
   "tip.cooldown": "Cooldown: %s",
   "tip.derringer.used": "Used: cannot fire again, killing a target grants another chance!",
   "tip.door.jammed": "This door is jammed and cannot be opened right now!",
@@ -1389,6 +1391,9 @@
   "gui.entity_interaction_block.block_cooldown": "Block Cooldown (s)",
   "gui.entity_interaction_block.entity_id": "Entity ID",
   "gui.entity_interaction_block.entity_count": "Count (* for any)",
+  "gui.entity_interaction_block.damage_duration_hint": "Duration (seconds)",
+  "gui.entity_interaction_block.damage_duration_desc": "Check if damaged within specified seconds",
+  "gui.entity_interaction_block.block_game_end_desc": "Block game end when condition is met (except timeout)",
 
   "condition_type.pass_through": "Pass Through Block",
   "condition_type.timer": "Auto Timer",
@@ -1426,6 +1431,9 @@
   "condition_type.is_monitor_broken": "Is Monitor Broken",
   "condition_type.need_task_type": "Need Specific Task Type",
   "condition_type.need_custom_task": "Need Custom Task",
+  "condition_type.damaged_by_player": "Damaged By Player",
+  "condition_type.damaged_by_non_player": "Damaged By Non-Player",
+  "condition_type.block_game_end": "Block Game End",
 
 
   "world_time.day": "Day",
@@ -1466,6 +1474,7 @@
   "action_type.end_blackout": "End Blackout",
   "action_type.fix_monitor": "Fix Monitor",
   "action_type.add_custom_task": "Add Custom Task",
+  "action_type.add_extra_task": "Add Extra Task",
   "action_type.complete_custom_task": "Complete Custom Task",
   "action_type.narrator": "Narrator",
 
@@ -1517,6 +1526,9 @@
   "condition.is_monitor_broken": "Monitor is broken",
   "condition.need_task_type": "Need to complete %s task",
   "condition.need_custom_task": "Need to complete custom task: %s",
+  "condition.damaged_by_player": "Damaged by player (within %ss)",
+  "condition.damaged_by_non_player": "Damaged by non-player (within %ss)",
+  "condition.block_game_end": "Block game end (except time out)",
 
 
   "action.give_effect": "Give effect %s (%ss)",
@@ -1533,7 +1545,8 @@
   "action.complete_task": "Complete current task",
   "action.end_blackout": "End blackout",
   "action.fix_monitor": "Fix monitor",
-  "action.add_custom_task": "Add custom task: %s (ID:%s)",
+  "action.add_custom_task": "Add custom task: %s (ID:%s) [%s]",
+  "action.add_extra_task": "Add extra task: %s",
   "action.complete_custom_task": "Complete custom task: %s",
   "action.narrator": "Narrator: %s [%s]",
 
@@ -1665,8 +1678,14 @@
   "gui.entity_interaction_block.item_cooldown_desc": "Set cooldown for player's held item, input item ID (* for current item), cooldown time (seconds)",
   "gui.entity_interaction_block.block_cooldown_desc": "Put entity interaction block into cooldown, no triggers will fire during cooldown",
   "gui.entity_interaction_block.clear_entities_desc": "Remove entities within specified radius from block, * for any non-player entities",
-  "gui.entity_interaction_block.add_custom_task_desc": "Clear current tasks then add custom task, requires task name and unique ID",
+  "gui.entity_interaction_block.add_custom_task_desc": "Add custom task, choose whether to clear current tasks, requires task name and unique ID",
+  "gui.entity_interaction_block.clear_tasks_toggle": "Set clear mode",
+  "gui.entity_interaction_block.clear_tasks_true": "Clear current tasks before adding",
+  "gui.entity_interaction_block.clear_tasks_false": "Keep current tasks when adding",
   "gui.entity_interaction_block.complete_custom_task_desc": "Find and complete player's custom task by ID",
+  "gui.entity_interaction_block.task_type_hint": "Task type (random for random)",
+  "gui.entity_interaction_block.extra_task_type": "Extra task type",
+  "gui.entity_interaction_block.add_extra_task_desc": "Add extra task without clearing current tasks",
   "gui.entity_interaction_block.narrator_text": "Narrator text",
   "gui.entity_interaction_block.narrator_mode": "Narrator mode",
   "gui.entity_interaction_block.narrator_interrupt": "Interrupt",
@@ -1675,5 +1694,6 @@
 
   "message.custom_task.added": "§a[Task]§r New task: %s",
   "message.custom_task.completed": "§a[Task]§r Completed: %s",
+  "message.extra_task.added": "§a[Task]§r Extra task: %s",
   "message.teleport_point_not_found": "§cTeleport point %s not found or out of %s blocks range"
 }
