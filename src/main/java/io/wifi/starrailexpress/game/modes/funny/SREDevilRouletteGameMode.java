@@ -43,20 +43,14 @@ public class SREDevilRouletteGameMode extends GameMode {
         SRE.canSendReplay.add((p) -> {
             if (p == null)
                 return false;
-            if (SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
-                    .equals(SREGameModes.DEVIL_ROULETTE_MODE)) {
-                return true;
-            }
-            return false;
+            return SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
+                    .equals(SREGameModes.DEVIL_ROULETTE_ID);
         });
         SRE.canUseChatHudPlayer.add((p) -> {
             if (p == null)
                 return false;
-            if (SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
-                    .equals(SREGameModes.DEVIL_ROULETTE_MODE)) {
-                return true;
-            }
-            return false;
+            return SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
+                    .equals(SREGameModes.DEVIL_ROULETTE_ID);
         });
     }
 
