@@ -305,13 +305,13 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 }
                 imitatorPlayerComponent.sync();
             }
-            // 蕾米莉亚开局获得20分钟速度3
+            // 蕾米莉亚开局获得20分钟速度4
             else if (role == RedHouseRoles.REMILIA) {
                 player.removeEffect(MobEffects.MOVEMENT_SPEED);
                 player.addEffect(
                         new MobEffectInstance(
                                 MobEffects.MOVEMENT_SPEED,  // 速度效果
-                                20 * 120,                  // 持续时间（tick）
+                                20 * 1200,                  // 持续时间（tick）
                                 3,
                                 false,                // 是否显示粒子效果
                                 false                  // 是否显示图标
