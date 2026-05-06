@@ -1,6 +1,8 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -36,6 +38,28 @@ import java.util.function.Supplier;
  * </p>
  */
 public class SREDevilRouletteGameMode extends GameMode {
+    // 轮盘赌模式允许聊天
+    static {
+        SRE.canSendReplay.add((p) -> {
+            if (p == null)
+                return false;
+            if (SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
+                    .equals(SREGameModes.DEVIL_ROULETTE_MODE)) {
+                return true;
+            }
+            return false;
+        });
+        SRE.canUseChatHudPlayer.add((p) -> {
+            if (p == null)
+                return false;
+            if (SREGameWorldComponent.KEY.get(p.level()).getGameMode().identifier
+                    .equals(SREGameModes.DEVIL_ROULETTE_MODE)) {
+                return true;
+            }
+            return false;
+        });
+    }
+
     public static interface StartMatchHandler {
         void onStartMatch(DevilRouletteTableEntity tableEntity, Player player1, Player player2);
     }
@@ -55,7 +79,7 @@ public class SREDevilRouletteGameMode extends GameMode {
      * @param identifier the game mode identifier
      */
     public SREDevilRouletteGameMode(ResourceLocation identifier) {
-        super(identifier, 10, 2);
+        super(identifier, 99, 2);
         initModeItems();
     }
 
@@ -311,9 +335,9 @@ public class SREDevilRouletteGameMode extends GameMode {
      */
     public static final int START_DELAY_TIME = 200;
     /**
-     * 自动分配间隔
+     * 自动分配间隔 ： 30秒
      */
-    public static final int ASSIGN_INTERVAL = 1700;
+    public static final int ASSIGN_INTERVAL = 20 * 30;
     /**
      * 游戏对局结束每点生命值转化的金币数
      */
