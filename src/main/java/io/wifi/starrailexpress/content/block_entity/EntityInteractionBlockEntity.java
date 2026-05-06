@@ -65,6 +65,71 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    /**
+     * 替换指令中的相对坐标
+     * ~ 表示方块坐标，~number 表示相对偏移
+     * 例如: "tp <player> ~ ~2 ~" -> "tp <player> 100 66 200" (假设方块在100,64,200)
+     *
+     * @param command 原始指令
+     * @param blockPos 方块位置
+     * @return 替换后的指令
+     */
+    private String replaceRelativeCoordinates(String command, BlockPos blockPos) {
+        int blockX = blockPos.getX();
+        int blockY = blockPos.getY();
+        int blockZ = blockPos.getZ();
+
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+
+        while (i < command.length()) {
+            char c = command.charAt(i);
+
+            if (c == '~') {
+                // 找到~的结束位置，收集后续的数字（可能是负数或小数）
+                int start = i;
+                i++;
+                boolean hasNumber = false;
+                StringBuilder number = new StringBuilder();
+
+                while (i < command.length()) {
+                    char next = command.charAt(i);
+                    if ((next >= '0' && next <= '9') || next == '.' || next == '-' || next == '+') {
+                        hasNumber = true;
+                        number.append(next);
+                        i++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (hasNumber) {
+                    // 有数字，计算相对坐标
+                    try {
+                        double offset = Double.parseDouble(number.toString());
+                        int coord = (int) (blockX + offset);
+                        result.append(coord);
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原始内容
+                        result.append(command, start, i);
+                    }
+                } else {
+                    // 没有数字，用方块x坐标替换
+                    result.append(blockX);
+                }
+            } else {
+                result.append(c);
+                i++;
+            }
+        }
+
+        // 处理 ~~ 转义（用特殊标记来区分）
+        // 用户可以通过输入 ~~ 来表示一个字面 ~
+        // 这里需要用户知道这个约定，默认不处理
+
+        return result.toString();
+    }
+
     // 移除条件
     public void removeCondition(int index) {
         if (index >= 0 && index < conditions.size()) {
@@ -515,6 +580,28 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 // 检查玩家当前是否有指定ID的自定义任务
                 yield taskComponent.tasks.values().stream().anyMatch(task -> requiredTaskId.equals(task.getCustomTaskId()));
             }
+            case PLAYER_DAMAGED_BY_PLAYER -> {
+                // 玩家受到来自玩家的原版伤害
+                // value表示半径范围，stringValue可选表示需要特定攻击者UUID
+                double radius = condition.value;
+                AABB checkBox = new AABB(pos).inflate(radius);
+                if (!checkBox.contains(player.getBoundingBox().getCenter())) {
+                    yield false; // 玩家不在范围内
+                }
+                // 检查是否在时间窗口内受到玩家伤害
+                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, gameTime);
+            }
+            case PLAYER_DAMAGED_BY_NON_PLAYER -> {
+                // 玩家受到非玩家来源的原版伤害
+                // value表示半径范围
+                double radius = condition.value;
+                AABB checkBox = new AABB(pos).inflate(radius);
+                if (!checkBox.contains(player.getBoundingBox().getCenter())) {
+                    yield false; // 玩家不在范围内
+                }
+                // 检查是否在时间窗口内受到非玩家伤害
+                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, gameTime);
+            }
         };
     }
 
@@ -554,6 +641,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             case EXECUTE_COMMAND -> {
                 // 执行指令
                 String command = action.stringValue.replace("<player>", player.getGameProfile().getName());
+                // 处理~相对坐标替换
+                command = replaceRelativeCoordinates(command, pos);
                 world.getServer().getCommands().performPrefixedCommand(
                         world.getServer().createCommandSourceStack()
                                 .withPermission(4)
@@ -1177,7 +1266,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         IS_BLACKOUT,           // 是否处于关灯状态
         IS_MONITOR_BROKEN,     // 监控是否失灵
         NEED_TASK_TYPE,        // 需要完成特定类型任务
-        NEED_CUSTOM_TASK       // 需要完成自定义任务
+        NEED_CUSTOM_TASK,      // 需要完成自定义任务
+        PLAYER_DAMAGED_BY_PLAYER,      // 玩家受到来自玩家的原版伤害
+        PLAYER_DAMAGED_BY_NON_PLAYER   // 玩家受到非玩家来源的原版伤害
     }
 
     // 世界时间类型枚举

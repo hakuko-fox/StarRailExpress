@@ -89,5 +89,7 @@ public class SREComponents
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(io.wifi.events.day_night_fight.cca.DNFUnderworldComponent::new);
         registry.beginRegistration(Player.class, DNFInventoryBackupComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(DNFInventoryBackupComponent::new);
+        registry.beginRegistration(Player.class, SREPlayerDamageTrackerComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREPlayerDamageTrackerComponent::new);
     }
 }

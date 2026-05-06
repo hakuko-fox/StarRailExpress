@@ -1359,6 +1359,9 @@
   "gui.entity_interaction_block.team": "Team",
   "gui.entity_interaction_block.command": "Command (<player> for player)",
   "gui.entity_interaction_block.command_hint": "Tip: Use <player> to refer to triggering player",
+  "gui.entity_interaction_block.command_hint_relative": "Tip: Use <player> for player, use ~ for block coordinate offset",
+  "gui.entity_interaction_block.player_damaged_by_player_desc": "Detect if a player in range has been damaged by another player",
+  "gui.entity_interaction_block.player_damaged_by_non_player_desc": "Detect if a player in range has been damaged by non-player source",
   "gui.entity_interaction_block.seconds_star": "Seconds (* for infinite)",
   "gui.entity_interaction_block.shield_layers": "Shield Layers",
   "gui.entity_interaction_block.death_reason_optional": "Death Reason (Optional)",
@@ -1433,6 +1436,8 @@
   "condition_type.need_custom_task": "Need Custom Task",
   "condition_type.damaged_by_player": "Damaged By Player",
   "condition_type.damaged_by_non_player": "Damaged By Non-Player",
+  "condition_type.player_damaged_by_player": "Player In Range Damaged By Player",
+  "condition_type.player_damaged_by_non_player": "Player In Range Damaged By Non-Player",
   "condition_type.block_game_end": "Block Game End",
 
 
@@ -1528,6 +1533,8 @@
   "condition.need_custom_task": "Need to complete custom task: %s",
   "condition.damaged_by_player": "Damaged by player (within %ss)",
   "condition.damaged_by_non_player": "Damaged by non-player (within %ss)",
+  "condition.player_damaged_by_player": "Player in range damaged by player (%s blocks)",
+  "condition.player_damaged_by_non_player": "Player in range damaged by non-player (%s blocks)",
   "condition.block_game_end": "Block game end (except time out)",
 
 

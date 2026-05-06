@@ -1400,8 +1400,8 @@
   "task.dnf_poison_water": "污染水源",
   "task.dnf_redemption": "救赎之道",
 
-  "block.trainmurdermystery.entity_interaction_block": "实体交互方块",
-  "block.trainmurdermystery.entity_interaction_panel": "实体交互镶板",
+  "block.starrailexpress.entity_interaction_block": "实体交互方块",
+  "block.starrailexpress.entity_interaction_panel": "实体交互镶板",
   "gui.entity_interaction_block.title": "实体交互方块配置",
   "gui.entity_interaction_block.cooldown": "内置间隔",
   "gui.entity_interaction_block.cooldown_hint": "秒",
@@ -1463,6 +1463,9 @@
   "gui.entity_interaction_block.damage_duration_hint": "有效期(秒)",
   "gui.entity_interaction_block.damage_duration_desc": "检测在指定秒数内是否受到过伤害",
   "gui.entity_interaction_block.block_game_end_desc": "当条件满足时阻止游戏结束（时间耗尽除外）",
+  "gui.entity_interaction_block.player_damaged_by_player_desc": "检测方块范围内是否有玩家受到其他玩家的伤害",
+  "gui.entity_interaction_block.player_damaged_by_non_player_desc": "检测方块范围内是否有玩家受到非玩家来源的伤害",
+  "gui.entity_interaction_block.command_hint_relative": "提示：使用<player>指代触发玩家，使用~表示方块坐标偏移",
 
   "condition_type.pass_through": "玩家穿越实体交互方块时",
   "condition_type.timer": "自动定时",
@@ -1546,6 +1549,8 @@
   "condition.need_custom_task": "需要完成自定义任务：%s",
   "condition.damaged_by_player": "受到过玩家伤害（%s秒内）",
   "condition.damaged_by_non_player": "受到过非玩家伤害（%s秒内）",
+  "condition.player_damaged_by_player": "范围内玩家受到玩家伤害（%s格）",
+  "condition.player_damaged_by_non_player": "范围内玩家受到非玩家伤害（%s格）",
   "condition.block_game_end": "阻止游戏结束（时间耗尽除外）",
 
 
@@ -1575,8 +1580,10 @@
   "condition_type.is_monitor_broken": "处于监控失灵期间",
   "condition_type.need_task_type": "需要完成特定类型任务",
   "condition_type.need_custom_task": "需要完成自定义任务",
-  "condition_type.damaged_by_player": "受到玩家伤害",
-  "condition_type.damaged_by_non_player": "受到非玩家伤害",
+  "condition_type.damaged_by_player": "受到来自玩家的原版伤害",
+  "condition_type.damaged_by_non_player": "受到来自非玩家的原版伤害",
+  "condition_type.player_damaged_by_player": "范围内玩家受到其它玩家的原版伤害",
+  "condition_type.player_damaged_by_non_player": "范围内玩家受到非玩家的原版伤害",
   "condition_type.block_game_end": "阻止游戏结束",
 
 

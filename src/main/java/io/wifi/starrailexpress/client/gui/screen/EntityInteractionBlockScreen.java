@@ -340,6 +340,10 @@ public class EntityInteractionBlockScreen extends Screen {
                     Component.translatable("task_type." + (condition.stringValue != null ? condition.stringValue : "random"))).getString();
             case NEED_CUSTOM_TASK -> Component.translatable("condition.need_custom_task",
                     condition.stringValue != null ? condition.stringValue : "?").getString();
+            case PLAYER_DAMAGED_BY_PLAYER -> Component.translatable("condition.player_damaged_by_player",
+                    (int) condition.value).getString();
+            case PLAYER_DAMAGED_BY_NON_PLAYER -> Component.translatable("condition.player_damaged_by_non_player",
+                    (int) condition.value).getString();
         };
 
         return logicPrefix + conditionText;
@@ -949,6 +953,24 @@ public class EntityInteractionBlockScreen extends Screen {
                             Component.literal("custom_task_id"));
                     addRenderableWidget(stringInput);
                 }
+                case PLAYER_DAMAGED_BY_PLAYER, PLAYER_DAMAGED_BY_NON_PLAYER -> {
+                    // 玩家受到伤害 - 范围半径
+                    addRenderableWidget(new EditBox(this.font, centerX - 50, y, 100, 20,
+                            Component.translatable("gui.entity_interaction_block.blocks_radius")));
+                    valueInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.blocks_radius"));
+                    if (valueInput != null) {
+                        valueInput.setFilter(s -> s.matches("[0-9.]*"));
+                        valueInput.setValue("5"); // 默认5格范围
+                    }
+                    y += 22;
+                    // 添加详细描述
+                    String descKey = selectedType == EntityInteractionBlockEntity.ConditionType.PLAYER_DAMAGED_BY_PLAYER
+                            ? "gui.entity_interaction_block.player_damaged_by_player_desc"
+                            : "gui.entity_interaction_block.player_damaged_by_non_player_desc";
+                    addRenderableWidget(Button.builder(
+                            Component.translatable(descKey), b -> {})
+                            .bounds(centerX - 100, y, 200, 30).build());
+                }
                 // PASS_THROUGH 不需要输入
             }
 
@@ -1133,8 +1155,8 @@ public class EntityInteractionBlockScreen extends Screen {
                         stringInput.setMaxLength(500);
                     }
                     y += 25;
-                    addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.command_hint"),
-                            b -> {}).bounds(centerX - 150, y, 300, 15).build());
+                    addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.command_hint_relative"),
+                            b -> {}).bounds(centerX - 150, y, 300, 30).build());
                 }
                 case POISON -> {
                     // 中毒时长
