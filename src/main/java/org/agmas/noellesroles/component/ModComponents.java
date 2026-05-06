@@ -21,6 +21,7 @@ import org.agmas.noellesroles.game.roles.Innocent.glitch_robot.GlitchRobotPlayer
 import org.agmas.noellesroles.game.roles.Innocent.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.Innocent.magician.MagicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.postman.PostmanPlayerComponent;
@@ -335,6 +336,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<PilotPlayerComponent> PILOT = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "pilot"),
       PilotPlayerComponent.class);
+
+  // 肉汁组件 - 平民阵营，赏金系统
+  public static final ComponentKey<MeatballPlayerComponent> MEATBALL = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "meatball"),
+      MeatballPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -671,6 +677,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, PILOT)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(PilotPlayerComponent::new);
+
+    // 注册肉汁组件 - 存储赏金
+    registry.beginRegistration(Player.class, MEATBALL)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(MeatballPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

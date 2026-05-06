@@ -32,6 +32,7 @@ import org.agmas.noellesroles.Noellesroles;
 
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
@@ -41,6 +42,7 @@ import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerC
 import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.driver.DiverPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent;
@@ -186,6 +188,8 @@ public class ModRoles {
     public static final ResourceLocation PILOT_ID = Noellesroles.id("pilot");
     // 影隼角色 ID
     public static final ResourceLocation SHADOW_FALCON_ID = Noellesroles.id("shadow_falcon");
+    // 肉汁角色 ID
+    public static final ResourceLocation MEATBALL_ID = Noellesroles.id("meatball");
 
     // 杀手阵营角色 ID
     public static ResourceLocation MORPHLING_ID = Noellesroles.id("morphling");
@@ -289,6 +293,44 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限体力
             true // 隐藏计分板
     )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false).setComponentKey(org.agmas.noellesroles.component.ModComponents.SHADOW_FALCON);
+
+    /**
+     * 肉汁角色 - 乘客阵营
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 被动技能：san值消耗较慢
+     *   - 自带 mood_drain_reduction 效果等级2（减少60% san消耗）
+     * - 被动技能：独处保护
+     *   - 杀手/中立只能在与你单独相处时击杀你
+     *   - 条件：4格半径范围内（y轴为3格）没有其他好人
+     *   - 必须判断造成伤害的来源是否来自非乘客阵营
+     * - 被动技能：悬赏
+     *   - 每完成一个任务会增加自己40金币的悬赏
+     *   - HUD显示当前悬赏金额
+     *   - 杀手击杀你会获得所有悬赏
+     *   - 提示：请尽量通过非任务的方式回复san值
+     */
+    public static SRERole MEATBALL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballRole(
+            MEATBALL_ID, // 角色 ID
+            new Color(205, 133, 63).getRGB(), // 棕色 - 代表肉汁
+            true, // isInnocent = 乘客阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    ).addEffect(
+            new MobEffectInstance(
+                    ModEffects.MOOD_DRAIN_REDUCTION,
+                    30 * 20, // 持续时间 30s（tick），ambient=true时自动续期
+                    0, 
+                    true, // ambient（环境效果，如信标）
+                    false, // showParticles（显示粒子）
+                    false // showIcon（显示图标）
+            )))
+            .setCanSeeCoin(true).setComponentKey(ModComponents.MEATBALL).setOccupiedRoleCount(1);
 
     public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
             GUEST_GHOST_ID, // 角色 ID

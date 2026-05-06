@@ -46,5 +46,6 @@ public class OtherRolesRegister {
         FoolHud.register();
         SuperLooseEndHud.register();
         PartyKillerHud.register();
+        MeatballHud.register();
     }
 }

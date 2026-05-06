@@ -78,6 +78,7 @@ import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
 import org.agmas.noellesroles.game.roles.Innocent.avenger.AvengerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerComponent;
@@ -574,6 +575,57 @@ public class ModEventsRegister {
                     inControlCCA.sync();
                 }
             }
+        });
+
+        // 肉汁独处保护机制 - 杀手/中立只能在单独相处时击杀肉汁
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            
+            // 检查受害者是否是肉汁
+            if (!gameWorld.isRole(victim, ModRoles.MEATBALL)) {
+                return true;
+            }
+            
+            // 检查击杀者是否存在且是否为非乘客阵营
+            if (killer == null || gameWorld.isInnocent(killer)) {
+                return true;
+            }
+            
+            // 检查附近4格范围内（y轴3格）是否有其他好人
+            double safeDistanceSq = 4.0 * 4.0; // 水平4格距离平方
+            double safeHeightSq = 3.0 * 3.0; // y轴3格距离平方
+            
+            for (Player nearbyPlayer : victim.level().players()) {
+                if (nearbyPlayer == victim || nearbyPlayer == killer) {
+                    continue;
+                }
+                if (!GameUtils.isPlayerAliveAndSurvival(nearbyPlayer)) {
+                    continue;
+                }
+                
+                // 检查是否是好人阵营
+                if (gameWorld.isInnocent(nearbyPlayer)) {
+                    double dx = nearbyPlayer.getX() - victim.getX();
+                    double dy = nearbyPlayer.getY() - victim.getY();
+                    double dz = nearbyPlayer.getZ() - victim.getZ();
+                    
+                    // 检查是否在范围内（水平4格，y轴3格）
+                    double horizontalDistSq = dx * dx + dz * dz;
+                    if (horizontalDistSq <= safeDistanceSq && dy * dy <= safeHeightSq) {
+                        // 附近有好人在保护范围内，阻止击杀
+                        if (victim instanceof ServerPlayer sp) {
+                            sp.displayClientMessage(
+                                Component.translatable("message.noellesroles.meatball.protected")
+                                    .withStyle(ChatFormatting.GREEN),
+                                true
+                            );
+                        }
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
         });
         THEventHandler.registerEvents();
         NinjaPlayerComponent.registerEvents();

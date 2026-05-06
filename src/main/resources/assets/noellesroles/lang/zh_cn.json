@@ -118,6 +118,7 @@
   "info.screen.roleid.pilot": "平民阵营\n与影隼(杀手阵营)绑定生成。\n仅在空中地图刷新。\n飞行员可购买喷气背包、鞘翅和烟花火箭，按下技能键可脱下背包和鞘翅。\n蹲下激活喷气背包获得漂浮效果，耐久耗尽后喷气背包消失，喷气背包可以按Q键丢出给其它玩家，拥有60点耐久。\n飞行员使用喷气背包会获得漂浮5效果，其他人为漂浮1(除了影隼)。",
   "info.screen.roleid.shadow_falcon": "杀手阵营\n与飞行员(平民阵营)绑定生成。\n仅在空中地图刷新。\n你初始获得一个喷气背包，你使用喷气背包不会消耗耐久且推进能力更强。\n蹲下按技能键可脱下喷气背包和鞘翅\n主动技能-掠食：\n开局60秒冷却，使用后在技能期间浮空时拥有1层临时护盾(着陆后立刻消失，且重新起飞时不会补充护盾)，临时护盾会在技能结束后立刻消失。\n技能结束后进入240秒冷却。\n\n被动-反哺：\n影隼死亡时，所有存活的杀手将获得一个喷气背包。\n\n商店可购买刀、飞刀、手榴弹、撬棍、撬锁器、跳跃提升2、鞘翅(购买时附赠10个烟花火箭)。",
   "info.screen.roleid.spellbreaker": "杀手阵营\n按G释放破法力场：50米内非杀手玩家20秒内无法使用技能或打开背包，并获得仙境滤镜。\n破法药剂：对玩家使用后使其下一次技能尝试失败，并进入30秒技能封禁,45s有效。\n沉默图腾：投掷隐形图腾，30秒内使6米内非杀手玩家持续缓慢I与失明。同一时间只能存在一个图腾。",
+  "info.screen.roleid.meatball": "乘客阵营\n你的san值消耗较慢\n杀手/中立只能在与你独处的时候击杀你（4格半径范围内没有其他好人阵营时会被判定为独处）\n但是你每做一个任务会增加40金币的赏金\n杀手击杀你会获得所有赏金\n所以请尽量通过非任务的方式回复san值",
   "==================== 修饰符 ====================": "",
   "info.screen.modifier.lovers": "修饰符\n你会与另一名随机玩家绑定为恋人(恋人分配与阵营无关)。\n当恋人的其中一方死亡时，另一方会殉情而亡。\n若只有你与你的恋人存活到了最后，则恋人获胜。\n为了达成胜利条件，你可以击杀你的队友来取得胜利（特指杀手阵营）。\n当你的恋人是亡命徒时，在亡命徒期间被动死亡你可能无法复活。（因为你死于亡命徒死亡之后）",
   "info.screen.modifier.refugee": "修饰符\n拥有难民修饰符的玩家会在死亡120秒后复活成亡命徒，并进入亡命徒时刻。\n变成亡命徒后你需要击杀掉所有玩家才能获胜。\n若你在变成亡命徒后被别人杀死，则场上的游戏时间/物品栏/金币/理智回溯到亡命徒复活的时刻。\n- 请注意，只会恢复如上状态，其余状态可能会被清除或覆盖！\n- 例如：纵火犯纵火、傀儡尸体数量等。\n所有在亡命徒期间被杀死的玩家会复活。\n处于亡命徒期间，部分职业、修饰符的主动、被动将不可用。\n例如：\n- 亡语杀手变尸体及免死、死灵法师复活、复仇者复仇、爱慕者观察、秃鹫吃尸体\n- 傀儡师吃尸体、初学者变身、失忆患者选择尸体、双重人格主动切换（被动仍生效）\n- 红尘客阶段切换（除了获胜）、潜行者进阶二阶段、小偷技能、巡警被动",
@@ -2131,5 +2132,14 @@
   "message.noellesroles.spellbreaker.potion_success": "药剂已生效",
   "message.noellesroles.spellbreaker.no_target": "未选中目标",
   "message.noellesroles.spellbreaker.item_only": "只有破法者可以使用这个物品",
-  "death_reason.noellesroles.dnf_tentacle": "深渊触须"
+  "death_reason.noellesroles.dnf_tentacle": "深渊触须",
+  "=============== 肉汁 Meatball ===============": "",
+  "announcement.star.role.meatball": "肉汁",
+  "announcement.star.role.noellesroles.meatball": "肉汁",
+  "announcement.star.goals.meatball": "杀手只能在与你独处的时候将你击杀，多留意周围！",
+  "message.noellesroles.meatball.protected": "你受到了保护。",
+  "message.noellesroles.meatball.bounty_increased": "悬赏增加了！当前悬赏：%s金币",
+  "message.noellesroles.meatball.killer_reward": "你击杀了肉汁，获得了%s金币赏金！",
+  "hud.noellesroles.meatball.bounty": "悬赏：%s金币",
+  "hud.noellesroles.meatball.no_bounty": "暂无悬赏"
 }
