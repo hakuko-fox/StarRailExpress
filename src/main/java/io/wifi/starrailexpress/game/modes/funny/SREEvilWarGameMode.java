@@ -33,6 +33,7 @@ import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerCom
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorSkillRegistry;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
@@ -316,6 +317,11 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                                 false,                // 是否显示粒子效果
                                 false                  // 是否显示图标
                         ));
+            }
+            else if (role == ModRoles.TRAPPER) {
+                TrapperPlayerComponent trapperPlayerComponent = TrapperPlayerComponent.KEY.get(player);
+                trapperPlayerComponent.trapCharges = 0;
+                trapperPlayerComponent.sync();
             }
         }
         curBalanceTick = 0;
