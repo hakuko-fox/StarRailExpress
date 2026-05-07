@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.game.roles.killer.executioner;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -85,14 +86,13 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
                 return;
             if (!gameWorldComponent.isRole(player, ModRoles.EXECUTIONER))
                 return;
-
             Player targetPlayer = player.level().getPlayerByUUID(target);
             var t_role = gameWorldComponent.getRole(targetPlayer);
+            // 判断职业是否允许被绑定，否则就应该更换。
+            boolean needChange = judgeRole(t_role);
             if (t_role == null || targetPlayer == null || GameUtils.isPlayerEliminatedIgnoreShitSplit(targetPlayer)
-                    || !t_role.isInnocent() || t_role.isNeutrals()) {
-                if (RoleUtils.compareRole(t_role, SpecialGameModeRoles.SUPER_LOOSE_END)) {
-                    return;
-                }
+                    || needChange) {
+
                 // 目标死亡，解锁商店并分配新目标
                 this.shopUnlocked = true;
                 this.target = null;
@@ -100,6 +100,21 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
                 assignRandomTarget(); // 分配新目标
             }
         }
+    }
+
+    public static boolean judgeRole(SRERole t_role) {
+        if (t_role == null)
+            return true;
+        if (RoleUtils.compareRole(t_role, SpecialGameModeRoles.SUPER_LOOSE_END)) {
+            return false;
+        }
+        if (t_role.isInnocent()) {
+            return false;
+        }
+        if (t_role.isNeutrals() && !t_role.isNeutralForKiller()) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -130,7 +145,8 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
                 continue; // 只考虑存活玩家
             }
             final var role = gameWorldComponent.getRole(p);
-            if (role != null && role.isInnocent() && !role.isNeutrals()) { // 只考虑平民阵营
+            if (role != null
+                    && (role.isInnocent() && !role.isNeutrals() || role.isNeutrals() && !role.isNeutralForKiller())) { // 只考虑平民、中立阵营
                 eligibleTargets.add(p);
             }
         }
