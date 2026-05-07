@@ -290,11 +290,18 @@ public class EntityInteractionBlockScreen extends Screen {
             case TIMER -> Component.translatable("condition.timer.blocks_display", condition.value).getString();
             case TIME_ANCHOR -> Component.translatable("condition.time_anchor", formatTimeDisplay(condition.value),
                     Component.translatable("comparison." + condition.comparison.name().toLowerCase())).getString();
+            case ELAPSED_TIME -> Component.translatable("condition.elapsed_time", formatTimeDisplay(condition.value),
+                    Component.translatable("comparison." + condition.comparison.name().toLowerCase())).getString();
             case PROXIMITY_SPHERE -> Component.translatable("condition.proximity_sphere.blocks_display", condition.value).getString();
             case PROXIMITY_LINE -> Component.translatable("condition.proximity_line.blocks_display", condition.value,
                     Component.translatable("direction." + (condition.lineDirection != null ? condition.lineDirection.name().toLowerCase() : "all"))).getString();
             case HAS_ITEM -> Component.translatable("condition.has_item", condition.stringValue).getString();
-            case CLICK_BLOCK -> Component.translatable(condition.leftClick ? "condition.click_left" : "condition.click_right").getString();
+            case CLICK_BLOCK -> {
+                if (condition.triggerOnce) {
+                    yield Component.translatable("condition_type.click_block").getString() + " [一次性]";
+                }
+                yield Component.translatable("condition_type.click_block").getString();
+            }
             case LOOKING_AT -> Component.translatable("condition.looking_at.blocks_display", condition.value).getString();
             case STANDING_ON_BLOCK -> Component.translatable("condition.standing_on_block", condition.value, condition.stringValue).getString();
             case DEATH -> Component.translatable("condition.death", condition.stringValue != null ? condition.stringValue : "*").getString();
@@ -495,7 +502,7 @@ public class EntityInteractionBlockScreen extends Screen {
         private EntityInteractionBlockEntity.ComparisonType selectedComparison = EntityInteractionBlockEntity.ComparisonType.EQUALS;
         private EntityInteractionBlockEntity.TeamType selectedTeam = EntityInteractionBlockEntity.TeamType.CIVILIAN;
         private EntityInteractionBlockEntity.LineDirection selectedLineDirection = EntityInteractionBlockEntity.LineDirection.ALL;
-        private boolean leftClick = false;
+        private boolean triggerOnce = false;
         private int scrollY = 0;
         private static final int SCROLL_STEP = 15;
 
@@ -674,6 +681,41 @@ public class EntityInteractionBlockScreen extends Screen {
                                     Component.translatable("gui.entity_interaction_block.comparison"),
                                     (b, comp) -> selectedComparison = comp));
                 }
+                case ELAPSED_TIME -> {
+                    // 游戏经过的时间 - 分秒分离输入
+                    addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.elapsed_time_value"), b -> {}).bounds(centerX - 100, y, 200, 20).build());
+                    y += 25;
+
+                    // 分钟输入
+                    addRenderableWidget(new EditBox(this.font, centerX - 80, y, 50, 20,
+                            Component.translatable("gui.entity_interaction_block.minutes")));
+                    minutesInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.minutes"));
+                    if (minutesInput != null) {
+                        minutesInput.setFilter(s -> s.matches("[0-9]*"));
+                        minutesInput.setValue("0");
+                    }
+
+                    addRenderableWidget(Button.builder(Component.literal(":"), b -> {}).bounds(centerX - 25, y, 20, 20).build());
+
+                    // 秒输入
+                    addRenderableWidget(new EditBox(this.font, centerX, y, 50, 20,
+                            Component.translatable("gui.entity_interaction_block.seconds")));
+                    secondsInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.seconds"));
+                    if (secondsInput != null) {
+                        secondsInput.setFilter(s -> s.matches("[0-9]*"));
+                        secondsInput.setValue("0");
+                    }
+
+                    y += 30;
+                    // 比较类型
+                    addRenderableWidget(CycleButton.<EntityInteractionBlockEntity.ComparisonType>builder(comp ->
+                                    Component.translatable("comparison." + comp.name().toLowerCase()))
+                            .withValues(EntityInteractionBlockEntity.ComparisonType.values())
+                            .withInitialValue(selectedComparison)
+                            .create(centerX - 100, y, 200, 20,
+                                    Component.translatable("gui.entity_interaction_block.comparison"),
+                                    (b, comp) -> selectedComparison = comp));
+                }
                 case HAS_ITEM -> {
                     // 物品ID
                     addRenderableWidget(new EditBox(this.font, centerX - 150, y, 300, 20,
@@ -691,14 +733,14 @@ public class EntityInteractionBlockScreen extends Screen {
                             .bounds(centerX - 100, y, 200, 15).build());
                 }
                 case CLICK_BLOCK -> {
-                    // 左键/右键
-                    addRenderableWidget(CycleButton.<Boolean>builder(left ->
-                                    Component.translatable(left ? "gui.entity_interaction_block.left_click" : "gui.entity_interaction_block.right_click"))
+                    // 一次性触发选项
+                    addRenderableWidget(CycleButton.<Boolean>builder(once ->
+                                    Component.translatable(once ? "gui.entity_interaction_block.trigger_once" : "gui.entity_interaction_block.trigger_repeat"))
                             .withValues(true, false)
-                            .withInitialValue(leftClick)
+                            .withInitialValue(triggerOnce)
                             .create(centerX - 100, y, 200, 20,
-                                    Component.translatable("gui.entity_interaction_block.click_type"),
-                                    (b, left) -> leftClick = left));
+                                    Component.translatable("gui.entity_interaction_block.trigger_mode"),
+                                    (b, once) -> triggerOnce = once));
                 }
                 case STANDING_ON_BLOCK -> {
                     // 范围和方块ID
@@ -1063,7 +1105,7 @@ public class EntityInteractionBlockScreen extends Screen {
             condition.comparison = selectedComparison;
             condition.teamType = selectedTeam;
             condition.lineDirection = selectedLineDirection;
-            condition.leftClick = leftClick;
+            condition.triggerOnce = triggerOnce;
 
             // 处理世界时间类型
             if (selectedType == EntityInteractionBlockEntity.ConditionType.WORLD_TIME && stringInput != null) {

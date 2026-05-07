@@ -59,6 +59,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
     // 玩家点击追踪（用于CLICK_BLOCK条件）
     private final Map<UUID, Pair<Boolean, Long>> playerClicks = new HashMap<>(); // <PlayerUUID, <isLeftClick, timestamp>>
+    // 已触发过的点击记录（用于一次性触发）
+    private final Set<String> triggeredClicks = new HashSet<>(); // "uuid:timestamp"
 
     public EntityInteractionBlockEntity(BlockPos pos, BlockState state) {
         super(TMMBlockEntities.ENTITY_INTERACTION_BLOCK, pos, state);
@@ -305,6 +307,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         SREGameTimeComponent timeComponent = SREGameTimeComponent.KEY.get(world);
         // 使用 resetTime - time 计算游戏开始后经过的时间（tick）
         long elapsedGameTime = timeComponent.getResetTime() - timeComponent.getTime();
+        // 获取剩余时间（tick）
+        long remainingTime = timeComponent.getTime();
 
         // 处理碰撞箱计时
         if (entity.collisionEnabled) {
@@ -327,11 +331,18 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         List<ServerPlayer> playersInRange = serverWorld.getEntitiesOfClass(ServerPlayer.class, rangeBox);
 
         for (ServerPlayer player : playersInRange) {
-            // 检查所有条件是否满足
-            if (entity.checkConditions(player, serverWorld, pos, elapsedGameTime, entity.timerTick)) {
+            // 检查所有条件是否满足（传入剩余时间用于TIME_ANCHOR条件检查）
+            if (entity.checkConditions(player, serverWorld, pos, elapsedGameTime, remainingTime, entity.timerTick)) {
                 // 检查玩家冷却
                 long lastTrigger = entity.lastTriggerTime.getOrDefault(player.getUUID(), 0L);
                 if (elapsedGameTime - lastTrigger >= entity.cooldownTicks) {
+                    // 检查是否有 CLICK_BLOCK 条件需要特殊处理
+                    boolean hasClickBlockCondition = entity.conditions.stream()
+                            .anyMatch(c -> c.type == ConditionType.CLICK_BLOCK && c.triggerOnce);
+                    if (hasClickBlockCondition) {
+                        // 标记点击为已触发
+                        entity.markClickAsTriggered(player);
+                    }
                     // 执行触发内容
                     entity.executeActions(player, serverWorld, pos, elapsedGameTime);
                     entity.lastTriggerTime.put(player.getUUID(), elapsedGameTime);
@@ -341,19 +352,19 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     }
 
     // 检查条件（支持复杂逻辑运算）
-    private boolean checkConditions(ServerPlayer player, ServerLevel world, BlockPos pos, long gameTime, int timerTick) {
+    private boolean checkConditions(ServerPlayer player, ServerLevel world, BlockPos pos, long elapsedGameTime, long remainingGameTime, int timerTick) {
         if (conditions.isEmpty()) return false;
         if (conditions.size() == 1) {
-            return checkSingleCondition(conditions.get(0), player, world, pos, gameTime, timerTick);
+            return checkSingleCondition(conditions.get(0), player, world, pos, elapsedGameTime, remainingGameTime, timerTick);
         }
 
         // 使用逻辑运算符组合条件
-        boolean result = checkSingleCondition(conditions.get(0), player, world, pos, gameTime, timerTick);
+        boolean result = checkSingleCondition(conditions.get(0), player, world, pos, elapsedGameTime, remainingGameTime, timerTick);
 
         for (int i = 1; i < conditions.size(); i++) {
             TriggerCondition currentCondition = conditions.get(i);
             TriggerCondition previousCondition = conditions.get(i - 1);
-            boolean currentResult = checkSingleCondition(currentCondition, player, world, pos, gameTime, timerTick);
+            boolean currentResult = checkSingleCondition(currentCondition, player, world, pos, elapsedGameTime, remainingGameTime, timerTick);
 
             // 获取与前一个条件的逻辑运算符（默认AND）
             LogicOperator operator = previousCondition.logicOperator != null ? previousCondition.logicOperator : LogicOperator.AND;
@@ -369,7 +380,17 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         return result;
     }
 
-    private boolean checkSingleCondition(TriggerCondition condition, ServerPlayer player, ServerLevel world, BlockPos pos, long gameTime, int timerTick) {
+    // 标记点击为已触发（用于一次性触发）
+    private void markClickAsTriggered(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        if (playerClicks.containsKey(playerId)) {
+            long clickTime = playerClicks.get(playerId).getSecond();
+            String clickKey = playerId.toString() + ":" + clickTime;
+            triggeredClicks.add(clickKey);
+        }
+    }
+
+    private boolean checkSingleCondition(TriggerCondition condition, ServerPlayer player, ServerLevel world, BlockPos pos, long elapsedGameTime, long remainingGameTime, int timerTick) {
         return switch (condition.type) {
             case PASS_THROUGH -> {
                 // 玩家穿过方块时触发
@@ -382,15 +403,27 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 yield intervalTicks > 0 && timerTick % intervalTicks == 0;
             }
             case TIME_ANCHOR -> {
-                // 时间锚点触发
-                long gameTimeSeconds = gameTime / 20;
+                // 时间锚点触发（使用剩余时间作为判断依据）
+                long remainingSeconds = remainingGameTime / 20; // tick转秒
                 long targetSeconds = (long) (condition.value * 60); // 分钟转秒
                 yield switch (condition.comparison) {
-                    case EQUALS -> gameTimeSeconds == targetSeconds;
-                    case GREATER -> gameTimeSeconds > targetSeconds;
-                    case LESS -> gameTimeSeconds < targetSeconds;
-                    case GREATER_EQUAL -> gameTimeSeconds >= targetSeconds;
-                    case LESS_EQUAL -> gameTimeSeconds <= targetSeconds;
+                    case EQUALS -> remainingSeconds == targetSeconds;
+                    case GREATER -> remainingSeconds > targetSeconds;
+                    case LESS -> remainingSeconds < targetSeconds;
+                    case GREATER_EQUAL -> remainingSeconds >= targetSeconds;
+                    case LESS_EQUAL -> remainingSeconds <= targetSeconds;
+                };
+            }
+            case ELAPSED_TIME -> {
+                // 游戏经过的时间（使用已过去的时间作为判断依据）
+                long elapsedSeconds = elapsedGameTime / 20; // tick转秒
+                long targetSeconds = (long) (condition.value * 60); // 分钟转秒
+                yield switch (condition.comparison) {
+                    case EQUALS -> elapsedSeconds == targetSeconds;
+                    case GREATER -> elapsedSeconds > targetSeconds;
+                    case LESS -> elapsedSeconds < targetSeconds;
+                    case GREATER_EQUAL -> elapsedSeconds >= targetSeconds;
+                    case LESS_EQUAL -> elapsedSeconds <= targetSeconds;
                 };
             }
             case PROXIMITY_SPHERE -> {
@@ -444,12 +477,24 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                                 stack.getItem().builtInRegistryHolder().key().location().toString().equals(itemId));
             }
             case CLICK_BLOCK -> {
-                // 点击方块（需要玩家在方块范围内并点击）
+                // 右键方块（需要玩家在方块范围内并右键点击）
                 AABB blockBox = new AABB(pos).inflate(2); // 2格范围内
                 if (!blockBox.contains(player.getBoundingBox().getCenter())) {
                     yield false; // 玩家不在方块附近
                 }
-                yield checkPlayerClickCondition(player, condition.leftClick);
+                // 检查是否右键点击（false = 右键）
+                boolean clickValid = checkPlayerClickCondition(player, false);
+                if (!clickValid) {
+                    yield false;
+                }
+                // 检查是否是一次性触发且已经触发过
+                if (condition.triggerOnce) {
+                    String clickKey = player.getUUID().toString() + ":" + playerClicks.get(player.getUUID()).getSecond();
+                    if (triggeredClicks.contains(clickKey)) {
+                        yield false; // 已经触发过
+                    }
+                }
+                yield true;
             }
             case LOOKING_AT -> {
                 // 玩家看向方块
@@ -676,7 +721,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     yield false; // 玩家不在范围内
                 }
                 // 检查是否在时间窗口内受到玩家伤害
-                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, gameTime);
+                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, elapsedGameTime);
             }
             case PLAYER_DAMAGED_BY_NON_PLAYER -> {
                 // 玩家受到非玩家来源的原版伤害
@@ -687,7 +732,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     yield false; // 玩家不在范围内
                 }
                 // 检查是否在时间窗口内受到非玩家伤害
-                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, gameTime);
+                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, elapsedGameTime);
             }
         };
     }
@@ -1423,7 +1468,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         NEED_TASK_TYPE,        // 需要完成特定类型任务
         NEED_CUSTOM_TASK,      // 需要完成自定义任务
         PLAYER_DAMAGED_BY_PLAYER,      // 玩家受到来自玩家的原版伤害
-        PLAYER_DAMAGED_BY_NON_PLAYER   // 玩家受到非玩家来源的原版伤害
+        PLAYER_DAMAGED_BY_NON_PLAYER,  // 玩家受到非玩家来源的原版伤害
+        ELAPSED_TIME            // 游戏经过的时间
     }
 
     // 世界时间类型枚举
@@ -1510,12 +1556,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         public String stringValue;     // 字符串参数
         public ComparisonType comparison = ComparisonType.EQUALS;
         public TeamType teamType;
-        public boolean leftClick;      // 左键/右键（用于点击方块条件）
         public LogicOperator logicOperator = LogicOperator.AND; // 与下一个条件的逻辑关系
         public WorldTimeType worldTimeType; // 世界时间类型（用于WORLD_TIME条件）
         public int entityCount; // 实体数量（用于ENTITY_COUNT条件）
         public boolean checkAnyCount; // 是否检查任意数量（*表示不检查数量）
         public LineDirection lineDirection; // 直线范围方向（用于PROXIMITY_LINE条件）
+        public boolean triggerOnce = false; // 是否一次性触发（触发后不再触发，用于CLICK_BLOCK等）
 
         public CompoundTag toNbt() {
             CompoundTag tag = new CompoundTag();
@@ -1524,12 +1570,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             tag.putString("StringValue", stringValue != null ? stringValue : "");
             tag.putString("Comparison", comparison.name());
             if (teamType != null) tag.putString("TeamType", teamType.name());
-            tag.putBoolean("LeftClick", leftClick);
             tag.putString("LogicOperator", logicOperator.name());
             if (worldTimeType != null) tag.putString("WorldTimeType", worldTimeType.name());
             tag.putInt("EntityCount", entityCount);
             tag.putBoolean("CheckAnyCount", checkAnyCount);
             if (lineDirection != null) tag.putString("LineDirection", lineDirection.name());
+            tag.putBoolean("TriggerOnce", triggerOnce);
             return tag;
         }
 
@@ -1543,7 +1589,6 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             if (tag.contains("TeamType")) {
                 condition.teamType = TeamType.valueOf(tag.getString("TeamType"));
             }
-            condition.leftClick = tag.getBoolean("LeftClick");
             if (tag.contains("LogicOperator")) {
                 condition.logicOperator = LogicOperator.valueOf(tag.getString("LogicOperator"));
             } else {
@@ -1559,6 +1604,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             } else {
                 condition.lineDirection = LineDirection.ALL; // 默认值
             }
+            condition.triggerOnce = tag.contains("TriggerOnce") && tag.getBoolean("TriggerOnce");
             return condition;
         }
     }
