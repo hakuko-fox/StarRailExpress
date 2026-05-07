@@ -102,6 +102,11 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
         }
     }
 
+    /**
+     * 是否为不可选角色
+     * @param t_role
+     * @return 是否为<b>不可选</b>角色
+     */
     public static boolean judgeRole(SRERole t_role) {
         if (t_role == null)
             return true;
@@ -146,7 +151,7 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
             }
             final var role = gameWorldComponent.getRole(p);
             if (role != null
-                    && (role.isInnocent() && !role.isNeutrals() || role.isNeutrals() && !role.isNeutralForKiller())) { // 只考虑平民、中立阵营
+                    && !judgeRole(role)) { // 只考虑平民、中立阵营
                 eligibleTargets.add(p);
             }
         }
