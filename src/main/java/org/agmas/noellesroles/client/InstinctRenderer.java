@@ -725,11 +725,17 @@ public class InstinctRenderer {
                 // 小丑&LOOSE END
                 if ((SREClient.gameComponent.isRole(self, ModRoles.JESTER)
                         || SREClient.gameComponent.isRole(self, TMMRoles.LOOSE_END)
-                        || SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END))
+                        || SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END)
+                        || SREClient.gameComponent.isRole(self, SpecialGameModeRoles.DIRT))
                         && SREClient.isPlayerAliveAndInSurvival()) {
                     if (SREClient.gameComponent.isRole(target_player, ModRoles.GHOST)) {
                         return -2;
                     }
+//                    // 超级亡命徒无法看到隐身的人：hasEffect始终为false
+//                    if (SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END) &&
+//                        target_player.hasEffect(MobEffects.INVISIBILITY)) {
+//                        return -2;
+//                    }
                     return (Color.PINK.getRGB());
                 }
                 // // 柜子区
