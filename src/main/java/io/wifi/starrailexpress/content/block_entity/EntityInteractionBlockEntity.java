@@ -214,17 +214,33 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         SRERoleWorldComponent roles = SRERoleWorldComponent.KEY.get(world);
         SRERole role = roles.getRole(player);
         if (role == null) {
+            SRE.LOGGER.info("[传送调试] checkTeamMatch - 玩家: {}, 职业: null", player.getName().getString());
             return false;
         }
-        return switch (targetTeamType) {
+        
+        // 调试日志：显示玩家的职业属性
+        SRE.LOGGER.info("[传送调试] checkTeamMatch - 玩家: {}, 职业: {}, isInnocent: {}, isVigilanteTeam: {}, isNeutrals: {}, canUseKiller: {}, isNeutralForKiller: {}",
+                player.getName().getString(), 
+                role.getIdentifier(),
+                role.isInnocent(),
+                role.isVigilanteTeam(),
+                role.isNeutrals(),
+                role.canUseKiller(),
+                role.isNeutralForKiller());
+        
+        boolean result = switch (targetTeamType) {
             case CIVILIAN -> role.isInnocent() && !role.isVigilanteTeam();
             case SHERIFF -> role.isVigilanteTeam();
-            case NEUTRAL -> role.isNeutrals();
+            case NEUTRAL -> role.isNeutrals() || (!role.isInnocent() && !role.canUseKiller());
             case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
             case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
-            case KILLER -> role.canUseKiller() && !role.isNeutrals();
+            case KILLER -> role.canUseKiller() && !role.isInnocent();
             default -> true;
         };
+        
+        SRE.LOGGER.info("[传送调试] checkTeamMatch - 玩家: {}, 目标阵营: {}, 匹配结果: {}", 
+                player.getName().getString(), targetTeamType, result);
+        return result;
     }
 
     // 传送点相关getter/setter
@@ -554,7 +570,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     case NEUTRAL -> role.isNeutrals();
                     case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
                     case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
-                    case KILLER -> role.canUseKiller() && !role.isNeutrals();
+                    case KILLER -> role.canUseKiller() && !role.isNeutrals() && !role.isNeutralForKiller();
                 };
             }
             case HAS_KILLED -> {
@@ -769,27 +785,6 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     }
 
     private void executeSingleAction(TriggerAction action, ServerPlayer player, ServerLevel world, BlockPos pos, long currentGameTime) {
-        // 阵营过滤检查
-        if (action.targetTeamType != TeamType.ALL) {
-            SRERoleWorldComponent roles = SRERoleWorldComponent.KEY.get(world);
-            SRERole role = roles.getRole(player);
-            if (role == null) {
-                return; // 没有职业，跳过此动作
-            }
-            boolean teamMatch = switch (action.targetTeamType) {
-                case CIVILIAN -> role.isInnocent() && !role.isVigilanteTeam();
-                case SHERIFF -> role.isVigilanteTeam();
-                case NEUTRAL -> role.isNeutrals();
-                case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
-                case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
-                case KILLER -> role.canUseKiller() && !role.isNeutrals();
-                default -> true;
-            };
-            if (!teamMatch) {
-                return; // 阵营不匹配，跳过此动作
-            }
-        }
-
         switch (action.type) {
             case EXECUTE_COMMAND -> {
                 // 执行指令
@@ -992,8 +987,14 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 // 根据传送目标类型选择玩家
                 switch (action.teleportTarget) {
                     case 0 -> {
-                        // 触发玩家
-                        player.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                        // 触发玩家（需要阵营检查）
+                        SRE.LOGGER.info("[传送调试] 触发玩家: {}, 目标阵营: {}, 匹配结果: {}",
+                                player.getName().getString(), action.targetTeamType,
+                                checkTeamMatch(player, world, action.targetTeamType));
+                        if (checkTeamMatch(player, world, action.targetTeamType)) {
+                            player.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                            SRE.LOGGER.info("[传送调试] 触发玩家 {} 已传送", player.getName().getString());
+                        }
                     }
                     case 1 -> {
                         // 随机玩家（根据阵营过滤）
@@ -1001,18 +1002,29 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                                 .filter(p -> !p.isSpectator())
                                 .filter(p -> checkTeamMatch(p, world, action.targetTeamType))
                                 .toList();
+                        SRE.LOGGER.info("[传送调试] 随机传送 - 触发玩家: {}, 目标阵营: {}, 匹配玩家数: {}, 玩家列表: {}",
+                                player.getName().getString(), action.targetTeamType, eligiblePlayers.size(),
+                                eligiblePlayers.stream().map(p -> p.getName().getString()).toList());
                         if (!eligiblePlayers.isEmpty()) {
                             ServerPlayer randomPlayer = eligiblePlayers.get(world.getRandom().nextInt(eligiblePlayers.size()));
                             randomPlayer.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                            SRE.LOGGER.info("[传送调试] 随机选择并传送: {}", randomPlayer.getName().getString());
+                        } else {
+                            SRE.LOGGER.info("[传送调试] 没有匹配的玩家，未执行传送");
                         }
                     }
                     case 2 -> {
                         // 所有玩家（根据阵营过滤）
+                        List<ServerPlayer> teleportedPlayers = new ArrayList<>();
                         for (ServerPlayer p : world.players()) {
                             if (!p.isSpectator() && checkTeamMatch(p, world, action.targetTeamType)) {
                                 p.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                                teleportedPlayers.add(p);
                             }
                         }
+                        SRE.LOGGER.info("[传送调试] 所有玩家 - 触发玩家: {}, 目标阵营: {}, 传送玩家数: {}, 玩家列表: {}",
+                                player.getName().getString(), action.targetTeamType, teleportedPlayers.size(),
+                                teleportedPlayers.stream().map(p -> p.getName().getString()).toList());
                     }
                 }
             }
