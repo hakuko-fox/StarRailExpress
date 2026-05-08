@@ -143,13 +143,9 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
     }
 
     /**
-     * 切换偷取模式（蹲下按技能键）
+     * 切换偷取模式（蹲下按技能键）- 不受冷却影响
      */
     public void toggleMode() {
-        if (this.cooldown > 0) {
-            return;
-        }
-
         if (this.currentMode == MODE_STEAL_MONEY) {
             this.currentMode = MODE_STEAL_ITEM;
         } else if (this.currentMode == MODE_STEAL_ITEM) {
