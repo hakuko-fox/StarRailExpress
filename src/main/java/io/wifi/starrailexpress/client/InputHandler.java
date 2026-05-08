@@ -42,7 +42,7 @@ public class InputHandler {
             "category.starrailexpress.general"));
     public static KeyMapping openClueArchiveKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.starrailexpress.open_clue_archive",
-            GLFW.GLFW_KEY_J,
+            GLFW.GLFW_KEY_UNKNOWN,
             "category.starrailexpress.general"));
 
     public static void initialize() {

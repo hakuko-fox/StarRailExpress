@@ -121,7 +121,7 @@ public class FoodPlatterBlock extends BaseEntityBlock {
             for (ItemStack platterItem : platter) {
                 for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                     ItemStack invItem = player.getInventory().getItem(i);
-                    if (invItem.getItem() instanceof BundleItem bundleItem) {
+                    if (invItem.getItem() instanceof BundleItem) {
                         BundleContents bundleContents = invItem.get(DataComponents.BUNDLE_CONTENTS);
                         if (bundleContents != null) {
                             bundleContents.items().forEach(

@@ -123,7 +123,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "category.starrailexpress.keybinds"));
     public static KeyMapping foolPrayerBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key.noellesroles.fool_prayer",
-                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, "category.starrailexpress.keybinds"));
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, "category.starrailexpress.keybinds"));
     public static Player target;
     public static PlayerBodyEntity targetBody;
     public static Player targetFakeBody;
