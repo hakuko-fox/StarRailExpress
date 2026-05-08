@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.content.block_entity;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -9,6 +10,7 @@ import io.wifi.starrailexpress.index.TMMBlockEntities;
 import io.wifi.starrailexpress.network.EntityInteractionBlockPayload;
 import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -54,6 +56,11 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     // 方块冷却（期间不触发）
     private int blockCooldownTicks = 0;
     private int blockCooldownEndGameTime = 0; // 基于游戏时间的冷却结束时刻
+
+    // 玩家点击追踪（用于CLICK_BLOCK条件）
+    private final Map<UUID, Pair<Boolean, Long>> playerClicks = new HashMap<>(); // <PlayerUUID, <isLeftClick, timestamp>>
+    // 已触发过的点击记录（用于一次性触发）
+    private final Set<String> triggeredClicks = new HashSet<>(); // "uuid:timestamp"
 
     public EntityInteractionBlockEntity(BlockPos pos, BlockState state) {
         super(TMMBlockEntities.ENTITY_INTERACTION_BLOCK, pos, state);
@@ -175,6 +182,54 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         EntityInteractionBlockPayload.sendOpenUI(player, this.worldPosition, this);
     }
 
+    // 记录玩家点击（用于CLICK_BLOCK条件）
+    public void recordPlayerClick(ServerPlayer player, boolean isLeftClick) {
+        playerClicks.put(player.getUUID(), Pair.of(isLeftClick, player.level().getGameTime()));
+        setChanged();
+    }
+
+    // 检查玩家点击条件
+    private boolean checkPlayerClickCondition(ServerPlayer player, boolean requireLeftClick) {
+        UUID playerId = player.getUUID();
+        if (!playerClicks.containsKey(playerId)) {
+            return false;
+        }
+        Pair<Boolean, Long> clickData = playerClicks.get(playerId);
+        boolean clickedLeft = clickData.getFirst();
+        long clickTime = clickData.getSecond();
+        // 点击记录在10秒（200 tick）内有效
+        long currentTime = player.level().getGameTime();
+        if (currentTime - clickTime > 200) {
+            playerClicks.remove(playerId);
+            return false;
+        }
+        return clickedLeft == requireLeftClick;
+    }
+
+    // 检查玩家是否匹配目标阵营（用于传送逻辑）
+    private boolean checkTeamMatch(ServerPlayer player, ServerLevel world, TeamType targetTeamType) {
+        if (targetTeamType == TeamType.ALL) {
+            return true;
+        }
+        SRERoleWorldComponent roles = SRERoleWorldComponent.KEY.get(world);
+        SRERole role = roles.getRole(player);
+        if (role == null) {
+            return false;
+        }
+        
+        boolean result = switch (targetTeamType) {
+            case CIVILIAN -> role.isInnocent() && !role.isVigilanteTeam();
+            case SHERIFF -> role.isVigilanteTeam();
+            case NEUTRAL -> role.isNeutrals() || (!role.isInnocent() && !role.canUseKiller());
+            case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
+            case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
+            case KILLER -> role.canUseKiller() && !role.isInnocent();
+            default -> true;
+        };
+        
+        return result;
+    }
+
     // 传送点相关getter/setter
     public boolean isTeleportPoint() {
         return isTeleportPoint;
@@ -255,6 +310,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         SREGameTimeComponent timeComponent = SREGameTimeComponent.KEY.get(world);
         // 使用 resetTime - time 计算游戏开始后经过的时间（tick）
         long elapsedGameTime = timeComponent.getResetTime() - timeComponent.getTime();
+        // 获取剩余时间（tick）
+        long remainingTime = timeComponent.getTime();
 
         // 处理碰撞箱计时
         if (entity.collisionEnabled) {
@@ -277,11 +334,18 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         List<ServerPlayer> playersInRange = serverWorld.getEntitiesOfClass(ServerPlayer.class, rangeBox);
 
         for (ServerPlayer player : playersInRange) {
-            // 检查所有条件是否满足
-            if (entity.checkConditions(player, serverWorld, pos, elapsedGameTime, entity.timerTick)) {
+            // 检查所有条件是否满足（传入剩余时间用于TIME_ANCHOR条件检查）
+            if (entity.checkConditions(player, serverWorld, pos, elapsedGameTime, remainingTime, entity.timerTick)) {
                 // 检查玩家冷却
                 long lastTrigger = entity.lastTriggerTime.getOrDefault(player.getUUID(), 0L);
                 if (elapsedGameTime - lastTrigger >= entity.cooldownTicks) {
+                    // 检查是否有 CLICK_BLOCK 条件需要特殊处理
+                    boolean hasClickBlockCondition = entity.conditions.stream()
+                            .anyMatch(c -> c.type == ConditionType.CLICK_BLOCK && c.triggerOnce);
+                    if (hasClickBlockCondition) {
+                        // 标记点击为已触发
+                        entity.markClickAsTriggered(player);
+                    }
                     // 执行触发内容
                     entity.executeActions(player, serverWorld, pos, elapsedGameTime);
                     entity.lastTriggerTime.put(player.getUUID(), elapsedGameTime);
@@ -291,19 +355,19 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     }
 
     // 检查条件（支持复杂逻辑运算）
-    private boolean checkConditions(ServerPlayer player, ServerLevel world, BlockPos pos, long gameTime, int timerTick) {
+    private boolean checkConditions(ServerPlayer player, ServerLevel world, BlockPos pos, long elapsedGameTime, long remainingGameTime, int timerTick) {
         if (conditions.isEmpty()) return false;
         if (conditions.size() == 1) {
-            return checkSingleCondition(conditions.get(0), player, world, pos, gameTime, timerTick);
+            return checkSingleCondition(conditions.get(0), player, world, pos, elapsedGameTime, remainingGameTime, timerTick);
         }
 
         // 使用逻辑运算符组合条件
-        boolean result = checkSingleCondition(conditions.get(0), player, world, pos, gameTime, timerTick);
+        boolean result = checkSingleCondition(conditions.get(0), player, world, pos, elapsedGameTime, remainingGameTime, timerTick);
 
         for (int i = 1; i < conditions.size(); i++) {
             TriggerCondition currentCondition = conditions.get(i);
             TriggerCondition previousCondition = conditions.get(i - 1);
-            boolean currentResult = checkSingleCondition(currentCondition, player, world, pos, gameTime, timerTick);
+            boolean currentResult = checkSingleCondition(currentCondition, player, world, pos, elapsedGameTime, remainingGameTime, timerTick);
 
             // 获取与前一个条件的逻辑运算符（默认AND）
             LogicOperator operator = previousCondition.logicOperator != null ? previousCondition.logicOperator : LogicOperator.AND;
@@ -319,7 +383,17 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         return result;
     }
 
-    private boolean checkSingleCondition(TriggerCondition condition, ServerPlayer player, ServerLevel world, BlockPos pos, long gameTime, int timerTick) {
+    // 标记点击为已触发（用于一次性触发）
+    private void markClickAsTriggered(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        if (playerClicks.containsKey(playerId)) {
+            long clickTime = playerClicks.get(playerId).getSecond();
+            String clickKey = playerId.toString() + ":" + clickTime;
+            triggeredClicks.add(clickKey);
+        }
+    }
+
+    private boolean checkSingleCondition(TriggerCondition condition, ServerPlayer player, ServerLevel world, BlockPos pos, long elapsedGameTime, long remainingGameTime, int timerTick) {
         return switch (condition.type) {
             case PASS_THROUGH -> {
                 // 玩家穿过方块时触发
@@ -332,15 +406,27 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 yield intervalTicks > 0 && timerTick % intervalTicks == 0;
             }
             case TIME_ANCHOR -> {
-                // 时间锚点触发
-                long gameTimeSeconds = gameTime / 20;
+                // 时间锚点触发（使用剩余时间作为判断依据）
+                long remainingSeconds = remainingGameTime / 20; // tick转秒
                 long targetSeconds = (long) (condition.value * 60); // 分钟转秒
                 yield switch (condition.comparison) {
-                    case EQUALS -> gameTimeSeconds == targetSeconds;
-                    case GREATER -> gameTimeSeconds > targetSeconds;
-                    case LESS -> gameTimeSeconds < targetSeconds;
-                    case GREATER_EQUAL -> gameTimeSeconds >= targetSeconds;
-                    case LESS_EQUAL -> gameTimeSeconds <= targetSeconds;
+                    case EQUALS -> remainingSeconds == targetSeconds;
+                    case GREATER -> remainingSeconds > targetSeconds;
+                    case LESS -> remainingSeconds < targetSeconds;
+                    case GREATER_EQUAL -> remainingSeconds >= targetSeconds;
+                    case LESS_EQUAL -> remainingSeconds <= targetSeconds;
+                };
+            }
+            case ELAPSED_TIME -> {
+                // 游戏经过的时间（使用已过去的时间作为判断依据）
+                long elapsedSeconds = elapsedGameTime / 20; // tick转秒
+                long targetSeconds = (long) (condition.value * 60); // 分钟转秒
+                yield switch (condition.comparison) {
+                    case EQUALS -> elapsedSeconds == targetSeconds;
+                    case GREATER -> elapsedSeconds > targetSeconds;
+                    case LESS -> elapsedSeconds < targetSeconds;
+                    case GREATER_EQUAL -> elapsedSeconds >= targetSeconds;
+                    case LESS_EQUAL -> elapsedSeconds <= targetSeconds;
                 };
             }
             case PROXIMITY_SPHERE -> {
@@ -394,8 +480,24 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                                 stack.getItem().builtInRegistryHolder().key().location().toString().equals(itemId));
             }
             case CLICK_BLOCK -> {
-                // 点击方块（由方块处理）
-                yield false; // 这个条件由方块右键事件处理
+                // 右键方块（需要玩家在方块范围内并右键点击）
+                AABB blockBox = new AABB(pos).inflate(2); // 2格范围内
+                if (!blockBox.contains(player.getBoundingBox().getCenter())) {
+                    yield false; // 玩家不在方块附近
+                }
+                // 检查是否右键点击（false = 右键）
+                boolean clickValid = checkPlayerClickCondition(player, false);
+                if (!clickValid) {
+                    yield false;
+                }
+                // 检查是否是一次性触发且已经触发过
+                if (condition.triggerOnce) {
+                    String clickKey = player.getUUID().toString() + ":" + playerClicks.get(player.getUUID()).getSecond();
+                    if (triggeredClicks.contains(clickKey)) {
+                        yield false; // 已经触发过
+                    }
+                }
+                yield true;
             }
             case LOOKING_AT -> {
                 // 玩家看向方块
@@ -449,18 +551,19 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 var role = roles.getRole(player);
                 if (role == null) yield false;
                 yield switch (condition.teamType) {
+                    case ALL -> true; // 所有职业都匹配
                     case CIVILIAN -> role.isInnocent() && !role.isVigilanteTeam();
                     case SHERIFF -> role.isVigilanteTeam();
                     case NEUTRAL -> role.isNeutrals();
                     case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
                     case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
-                    case KILLER -> role.canUseKiller() && !role.isNeutrals();
+                    case KILLER -> role.canUseKiller() && !role.isNeutrals() && !role.isNeutralForKiller();
                 };
             }
             case HAS_KILLED -> {
-                // 击杀过其他玩家 - 检查玩家统计组件中的击杀记录
-                SREPlayerStatsComponent stats = SREPlayerStatsComponent.KEY.get(player);
-                yield stats.getTotalKills() > 0;
+                // 击杀过其他玩家 - 检查本局击杀数
+                SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(world);
+                yield gameWorldComponent.getPlayerKills(player.getUUID()) > 0;
             }
             case PLAYER_COUNT -> {
                 // 玩家数量条件
@@ -621,7 +724,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     yield false; // 玩家不在范围内
                 }
                 // 检查是否在时间窗口内受到玩家伤害
-                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, gameTime);
+                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, elapsedGameTime);
             }
             case PLAYER_DAMAGED_BY_NON_PLAYER -> {
                 // 玩家受到非玩家来源的原版伤害
@@ -632,7 +735,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     yield false; // 玩家不在范围内
                 }
                 // 检查是否在时间窗口内受到非玩家伤害
-                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, gameTime);
+                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, elapsedGameTime);
             }
         };
     }
@@ -669,89 +772,97 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     }
 
     private void executeSingleAction(TriggerAction action, ServerPlayer player, ServerLevel world, BlockPos pos, long currentGameTime) {
-        switch (action.type) {
-            case EXECUTE_COMMAND -> {
-                // 执行指令
-                String command = action.stringValue.replace("<player>", player.getGameProfile().getName());
-                // 处理~相对坐标替换
-                command = replaceRelativeCoordinates(command, pos);
-                world.getServer().getCommands().performPrefixedCommand(
-                        world.getServer().createCommandSourceStack()
-                                .withPermission(4)
-                                .withLevel(world),
-                        command
-                );
+        // 需要阵营过滤的触发类型（作用于玩家的动作）
+        Set<ActionType> playerActions = Set.of(
+                ActionType.POISON, ActionType.CURE_POISON, ActionType.SET_SHIELD, ActionType.DAMAGE_DEATH, ActionType.FORCE_KILL,
+                ActionType.MOOD_CHANGE, ActionType.CHANGE_ROLE, ActionType.CHANGE_TASK, ActionType.PSYCHO_MODE, ActionType.COIN_CHANGE,
+                ActionType.GIVE_EFFECT, ActionType.SHOW_TITLE, ActionType.ITEM_COOLDOWN, ActionType.SET_MOOD, ActionType.CURE_PSYCHO,
+                ActionType.CLEAR_TASKS, ActionType.COMPLETE_TASK, ActionType.ADD_CUSTOM_TASK, ActionType.ADD_EXTRA_TASK,
+                ActionType.COMPLETE_CUSTOM_TASK, ActionType.NARRATOR
+        );
+
+        // 特殊处理的动作类型（已有自己的玩家过滤逻辑）
+        Set<ActionType> specialActions = Set.of(
+                ActionType.TELEPORT, ActionType.RESURRECT, ActionType.BROADCAST_MESSAGE, ActionType.CLEAR_ENTITIES
+        );
+
+        // 需要玩家过滤的动作类型
+        if (playerActions.contains(action.type)) {
+            // 阵营过滤：从所有玩家中筛选符合阵营的玩家
+            List<ServerPlayer> eligiblePlayers;
+            if (action.targetTeamType == TeamType.ALL) {
+                // ALL 阵营：只作用于触发玩家
+                eligiblePlayers = List.of(player);
+            } else {
+                // 非 ALL 阵营：从所有玩家中筛选
+                eligiblePlayers = world.players().stream()
+                        .filter(p -> !p.isSpectator())
+                        .filter(p -> checkTeamMatch(p, world, action.targetTeamType))
+                        .toList();
             }
+
+            // 对每个符合条件的玩家执行动作
+            for (ServerPlayer targetPlayer : eligiblePlayers) {
+                executePlayerAction(action, targetPlayer, world, pos, currentGameTime);
+            }
+            return;
+        }
+
+        // 特殊动作或有自己过滤逻辑的动作，走原有逻辑
+        executeSpecialAction(action, player, world, pos, currentGameTime);
+    }
+
+    // 执行作用于玩家的动作
+    private void executePlayerAction(TriggerAction action, ServerPlayer player, ServerLevel world, BlockPos pos, long currentGameTime) {
+        switch (action.type) {
             case POISON -> {
-                // 中毒
                 SREPlayerPoisonComponent poison = SREPlayerPoisonComponent.KEY.get(player);
-                int ticks = (int) (action.value * 20); // 秒转tick
+                int ticks = (int) (action.value * 20);
                 poison.setPoisonTicks(ticks, null);
             }
             case CURE_POISON -> {
-                // 解毒
                 SREPlayerPoisonComponent poison = SREPlayerPoisonComponent.KEY.get(player);
                 poison.setPoisonTicks(0, null);
             }
             case SET_SHIELD -> {
-                // 设置护盾 - 直接设置armor值
                 SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
                 armor.armor = Math.max(0, (int) action.value);
                 armor.sync();
             }
             case DAMAGE_DEATH -> {
-                // 一般受击死亡
                 ResourceLocation deathReason = action.stringValue.isEmpty() ?
                         GameConstants.DeathReasons.GENERIC : ResourceLocation.parse(action.stringValue);
                 GameUtils.killPlayer(player, false, null, deathReason);
             }
             case FORCE_KILL -> {
-                // 强制死亡 - 使用forceKillPlayer，与巫毒师相同，无法被护盾/无敌状态阻挡
                 ResourceLocation deathReason = action.stringValue.isEmpty() ?
                         GameConstants.DeathReasons.GENERIC : ResourceLocation.parse(action.stringValue);
                 GameUtils.forceKillPlayer(player, true, null, deathReason);
             }
-            case ENABLE_COLLISION -> {
-                // 启用碰撞箱
-                this.collisionEnabled = true;
-                this.collisionRemainingTicks = action.value < 0 ? -1 : (int) (action.value * 20);
-            }
             case MOOD_CHANGE -> {
-                // 改变心情值
                 SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
                 float currentMood = mood.getMood();
                 mood.setMood((float) Math.max(-1, Math.min(1, currentMood + action.value)));
             }
             case CHANGE_ROLE -> {
-                // 改变职业
-                SRERoleWorldComponent roles = SRERoleWorldComponent.KEY.get(world);
-                String roleId = action.stringValue;
                 // TODO: 实现职业切换逻辑
-                // 参考初学者改变职业的实现
             }
             case CHANGE_TASK -> {
-                // 更改当前任务 - 参考厨师食物效果：清除当前任务并生成新任务
                 SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-                // 清除当前所有任务
                 taskComponent.tasks.clear();
                 taskComponent.parallelTaskTypes.clear();
                 taskComponent.parallelTaskGenerated = false;
                 taskComponent.currentTaskAge = 0;
 
                 SREPlayerTaskComponent.TrainTask newTask = null;
-
-                // 检查是否指定了特定任务类型
                 if (action.taskType != null && !action.taskType.isEmpty() && !action.taskType.equals("random")) {
-                    // 尝试根据名称创建指定任务
                     try {
                         SREPlayerTaskComponent.Task specifiedTask = SREPlayerTaskComponent.Task.valueOf(action.taskType.toUpperCase());
                         newTask = createTaskByType(specifiedTask);
                     } catch (IllegalArgumentException e) {
-                        // 无效的任务类型，回退到随机生成
                         newTask = taskComponent.generateTask();
                     }
                 } else {
-                    // 随机生成任务
                     newTask = taskComponent.generateTask();
                 }
 
@@ -759,92 +870,22 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     taskComponent.tasks.put(newTask.getType(), newTask);
                     taskComponent.timesGotten.putIfAbsent(newTask.getType(), 1);
                     taskComponent.timesGotten.put(newTask.getType(), taskComponent.timesGotten.get(newTask.getType()) + 1);
-                    // 重置任务分配时的情绪值
                     SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
                     taskComponent.moodWhenTaskAssigned = mood != null ? mood.getMood() : 1f;
                 }
                 taskComponent.sync();
             }
-            case RESURRECT -> {
-                // 复活范围内玩家 - 参考死灵法师的复活逻辑
-                double radius = action.value;
-                AABB box = new AABB(pos).inflate(radius);
-
-                // 获取范围内的尸体实体
-                List<PlayerBodyEntity> bodies = world.getEntitiesOfClass(PlayerBodyEntity.class, box);
-
-                for (PlayerBodyEntity body : bodies) {
-                    // 获取尸体对应的玩家
-                    ServerPlayer deadPlayer = (ServerPlayer) world.getPlayerByUUID(body.getPlayerUuid());
-                    if (deadPlayer == null) continue;
-                    if (!deadPlayer.isSpectator()) continue; // 只复活旁观模式的玩家
-
-                    // 复活玩家
-                    deadPlayer.getInventory().clearContent();
-                    deadPlayer.teleportTo(body.getX(), body.getY(), body.getZ());
-                    deadPlayer.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
-
-                    // 移除尸体
-                    body.remove(net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
-
-                    // 给予复活后的玩家基础金币
-                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(deadPlayer);
-                    shop.setBalance(200);
-
-                    // 播放复活音效和消息
-                    world.players().forEach(p -> {
-                        p.playNotifySound(net.minecraft.sounds.SoundEvents.TOTEM_USE,
-                                deadPlayer.getSoundSource(), 1.2f, 1.5f);
-                    });
-
-                    // 只复活一个玩家就结束（避免一次触发复活太多）
-                    break;
-                }
-            }
             case PSYCHO_MODE -> {
-                // 进入疯狂模式
                 SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
                 psycho.setPsychoTicks(GameConstants.getPsychoTimer());
             }
-            case BLACKOUT -> {
-                // 关灯 - 使用triggerBlackout触发
-                SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(world);
-                blackout.triggerBlackout(true);
-            }
-            case MONITOR_BROKEN -> {
-                // 监控失灵 - 使用triggerBroken触发
-                SREMonitorWorldComponent monitor = SREMonitorWorldComponent.KEY.get(world);
-                monitor.triggerBroken(true, 600); // 默认30秒(600 tick)
-            }
-            case ADD_TIME -> {
-                // 增加/减少游戏时间
-                SREGameTimeComponent time = SREGameTimeComponent.KEY.get(world);
-                int seconds = (int) (action.value * 60); // 分钟转秒
-                time.addTime(seconds * 20); // tick
-            }
-            case SET_TIME -> {
-                // 设置游戏时间
-                SREGameTimeComponent time = SREGameTimeComponent.KEY.get(world);
-                int seconds = (int) (action.value * 60); // 分钟转秒
-                time.setTime(seconds * 20); // tick
-            }
-            case GAME_WIN -> {
-                // 游戏胜利 - 参考RoleUtils.customWinnerWin的实现
-                String winnerMessage = action.stringValue.isEmpty() ? "custom" : action.stringValue;
-                SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
-                roundEnd.CustomWinnerID = winnerMessage;
-                roundEnd.setRoundEndData(world.players(), GameUtils.WinStatus.CUSTOM);
-                GameUtils.stopGame(world);
-            }
             case COIN_CHANGE -> {
-                // 增加/减少金币
                 SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
                 shop.addToBalance((int) action.value);
             }
             case GIVE_EFFECT -> {
-                // 给予状态效果
                 String effectId = action.stringValue;
-                int duration = action.effectDuration > 0 ? action.effectDuration * 20 : 200; // 默认10秒
+                int duration = action.effectDuration > 0 ? action.effectDuration * 20 : 200;
                 int amplifier = Math.max(0, action.effectAmplifier);
 
                 net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT
@@ -853,38 +894,18 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     player.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect, duration, amplifier));
                 }
             }
-            case TELEPORT -> {
-                // 传送到指定传送点（限制100格范围）
-                int targetId = (int) action.value;
-                BlockPos targetPos = findTeleportPoint(world, pos, targetId);
-                if (targetPos != null) {
-                    player.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
-                } else {
-                    // 传送目标不存在或在范围外
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.teleport_point_not_found", targetId, MAX_TELEPORT_RANGE));
-                }
-            }
             case SHOW_TITLE -> {
-                // 显示标题
                 String title = action.stringValue;
                 player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(Component.literal(title)));
             }
-            case BROADCAST_MESSAGE -> {
-                // 广播消息
-                String message = action.stringValue;
-                world.players().forEach(p -> p.sendSystemMessage(Component.literal(message)));
-            }
             case ITEM_COOLDOWN -> {
-                // 物品冷却
                 String itemId = action.stringValue;
-                int cooldownTicks = (int) (action.value * 20); // 秒转tick
+                int cooldownTicks = (int) (action.value * 20);
 
                 if ("*".equals(itemId)) {
-                    // 所有物品进入冷却
                     player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), cooldownTicks);
                     player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), cooldownTicks);
                 } else {
-                    // 特定物品
                     net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
                             .get(net.minecraft.resources.ResourceLocation.parse(itemId));
                     if (item != null) {
@@ -892,29 +913,271 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     }
                 }
             }
+            case SET_MOOD -> {
+                SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
+                if (action.stringValue != null && action.stringValue.equals("add")) {
+                    mood.addMood((float) action.value);
+                } else {
+                    mood.setMood((float) action.value);
+                }
+            }
+            case CURE_PSYCHO -> {
+                SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
+                if (psycho.getPsychoTicks() > 0) {
+                    psycho.stopPsychoAndSync();
+                }
+            }
+            case CLEAR_TASKS -> {
+                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+                taskComponent.tasks.clear();
+                taskComponent.parallelTaskTypes.clear();
+                taskComponent.parallelTaskGenerated = false;
+                taskComponent.sync();
+            }
+            case COMPLETE_TASK -> {
+                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+                if (!taskComponent.tasks.isEmpty()) {
+                    var firstTask = taskComponent.tasks.values().iterator().next();
+                    taskComponent.tasks.remove(firstTask.getType());
+                    taskComponent.parallelTaskTypes.remove(firstTask.getType());
+                    taskComponent.taskStreak++;
+                    if (taskComponent.tasks.isEmpty()) {
+                        taskComponent.currentTaskAge = 0;
+                        taskComponent.parallelTaskGenerated = false;
+                    }
+                    taskComponent.sync();
+                }
+            }
+            case ADD_CUSTOM_TASK -> {
+                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+
+                if (action.clearTasks) {
+                    taskComponent.tasks.clear();
+                    taskComponent.parallelTaskTypes.clear();
+                    taskComponent.parallelTaskGenerated = false;
+                    taskComponent.currentTaskAge = 0;
+                }
+
+                String taskName = action.customTaskName != null ? action.customTaskName : "自定义任务";
+                String taskId = action.customTaskId != null ? action.customTaskId : "custom_" + System.currentTimeMillis();
+
+                SREPlayerTaskComponent.CustomTask customTask = new SREPlayerTaskComponent.CustomTask(taskName, taskId);
+                taskComponent.tasks.put(customTask.getType(), customTask);
+                taskComponent.timesGotten.putIfAbsent(customTask.getType(), 1);
+                taskComponent.timesGotten.put(customTask.getType(), taskComponent.timesGotten.get(customTask.getType()) + 1);
+
+                SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
+                taskComponent.moodWhenTaskAssigned = mood != null ? mood.getMood() : 1f;
+                taskComponent.sync();
+
+                player.sendSystemMessage(Component.translatable("message.custom_task.added", taskName));
+            }
+            case ADD_EXTRA_TASK -> {
+                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+                String taskType = action.taskType;
+
+                SREPlayerTaskComponent.TrainTask newTask = null;
+                if (taskType != null && !taskType.isEmpty() && !"random".equalsIgnoreCase(taskType)) {
+                    try {
+                        SREPlayerTaskComponent.Task enumTask = SREPlayerTaskComponent.Task.valueOf(taskType.toUpperCase());
+                        newTask = enumTask.setFunction.apply(new CompoundTag());
+                    } catch (IllegalArgumentException e) {
+                        // 任务类型不存在，忽略
+                    }
+                }
+
+                if (newTask == null) {
+                    newTask = generateRandomTask(player);
+                }
+
+                if (newTask != null) {
+                    taskComponent.tasks.put(newTask.getType(), newTask);
+                    taskComponent.timesGotten.putIfAbsent(newTask.getType(), 1);
+                    taskComponent.timesGotten.put(newTask.getType(), taskComponent.timesGotten.get(newTask.getType()) + 1);
+                    player.sendSystemMessage(Component.translatable("message.extra_task.added", newTask.getName()));
+                }
+                taskComponent.sync();
+            }
+            case COMPLETE_CUSTOM_TASK -> {
+                String taskId = action.customTaskId;
+                if (taskId == null || taskId.isEmpty()) {
+                    return;
+                }
+
+                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
+                var iterator = taskComponent.tasks.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    var entry = iterator.next();
+                    var task = entry.getValue();
+                    if (taskId.equals(task.getCustomTaskId())) {
+                        iterator.remove();
+                        taskComponent.parallelTaskTypes.remove(task.getType());
+                        taskComponent.taskStreak++;
+                        player.sendSystemMessage(Component.translatable("message.custom_task.completed", task.getName()));
+                        break;
+                    }
+                }
+
+                if (taskComponent.tasks.isEmpty()) {
+                    taskComponent.currentTaskAge = 0;
+                    taskComponent.parallelTaskGenerated = false;
+                }
+                taskComponent.sync();
+            }
+            case NARRATOR -> {
+                String narratorText = action.narratorText;
+                if (narratorText != null && !narratorText.isEmpty()) {
+                    boolean shouldInterrupt = action.narratorInterrupt;
+                    Component textComponent = Component.literal(narratorText);
+                    ServerPlayNetworking.send(player, new CustomNarratorPacket(textComponent, shouldInterrupt));
+                }
+            }
+        }
+    }
+
+    // 执行特殊动作（已有自己过滤逻辑的动作）
+    private void executeSpecialAction(TriggerAction action, ServerPlayer player, ServerLevel world, BlockPos pos, long currentGameTime) {
+        switch (action.type) {
+            case EXECUTE_COMMAND -> {
+                String command = action.stringValue.replace("<player>", player.getGameProfile().getName());
+                command = replaceRelativeCoordinates(command, pos);
+                world.getServer().getCommands().performPrefixedCommand(
+                        world.getServer().createCommandSourceStack()
+                                .withPermission(4)
+                                .withLevel(world),
+                        command
+                );
+            }
+            case ENABLE_COLLISION -> {
+                this.collisionEnabled = true;
+                this.collisionRemainingTicks = action.value < 0 ? -1 : (int) (action.value * 20);
+            }
+            case BLACKOUT -> {
+                SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(world);
+                blackout.triggerBlackout(true);
+            }
+            case MONITOR_BROKEN -> {
+                SREMonitorWorldComponent monitor = SREMonitorWorldComponent.KEY.get(world);
+                monitor.triggerBroken(true, 600);
+            }
+            case ADD_TIME -> {
+                SREGameTimeComponent time = SREGameTimeComponent.KEY.get(world);
+                int seconds = (int) (action.value * 60);
+                time.addTime(seconds * 20);
+            }
+            case SET_TIME -> {
+                SREGameTimeComponent time = SREGameTimeComponent.KEY.get(world);
+                int seconds = (int) (action.value * 60);
+                time.setTime(seconds * 20);
+            }
+            case GAME_WIN -> {
+                String winnerMessage = action.stringValue.isEmpty() ? "custom" : action.stringValue;
+                SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
+                roundEnd.CustomWinnerID = winnerMessage;
+                roundEnd.setRoundEndData(world.players(), GameUtils.WinStatus.CUSTOM);
+                GameUtils.stopGame(world);
+            }
             case BLOCK_COOLDOWN -> {
-                // 方块进入冷却
                 int cooldownSeconds = (int) action.value;
                 this.setBlockCooldown(cooldownSeconds, currentGameTime);
             }
+            case END_BLACKOUT -> {
+                SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(world);
+                blackout.reset();
+            }
+            case FIX_MONITOR -> {
+                SREMonitorWorldComponent monitor = SREMonitorWorldComponent.KEY.get(world);
+                monitor.reset();
+            }
+            case TELEPORT -> {
+                int targetId = (int) action.value;
+                BlockPos targetPos = findTeleportPoint(world, pos, targetId);
+                if (targetPos == null) {
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.teleport_point_not_found", targetId, MAX_TELEPORT_RANGE));
+                    return;
+                }
+
+                switch (action.teleportTarget) {
+                    case 0 -> {
+                        // 触发玩家（需要阵营检查）
+                        if (action.targetTeamType == TeamType.ALL || checkTeamMatch(player, world, action.targetTeamType)) {
+                            player.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                        }
+                    }
+                    case 1 -> {
+                        // 随机玩家（根据阵营过滤）
+                        List<ServerPlayer> eligiblePlayers = world.players().stream()
+                                .filter(p -> !p.isSpectator())
+                                .filter(p -> action.targetTeamType == TeamType.ALL || checkTeamMatch(p, world, action.targetTeamType))
+                                .toList();
+                        if (!eligiblePlayers.isEmpty()) {
+                            ServerPlayer randomPlayer = eligiblePlayers.get(world.getRandom().nextInt(eligiblePlayers.size()));
+                            randomPlayer.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                        }
+                    }
+                    case 2 -> {
+                        // 所有玩家（根据阵营过滤）
+                        for (ServerPlayer p : world.players()) {
+                            if (!p.isSpectator() && (action.targetTeamType == TeamType.ALL || checkTeamMatch(p, world, action.targetTeamType))) {
+                                p.teleportTo(targetPos.getX() + 0.5, targetPos.getY(), targetPos.getZ() + 0.5);
+                            }
+                        }
+                    }
+                }
+            }
+            case RESURRECT -> {
+                double radius = action.value;
+                AABB box = new AABB(pos).inflate(radius);
+                List<PlayerBodyEntity> bodies = world.getEntitiesOfClass(PlayerBodyEntity.class, box);
+
+                for (PlayerBodyEntity body : bodies) {
+                    ServerPlayer deadPlayer = (ServerPlayer) world.getPlayerByUUID(body.getPlayerUuid());
+                    if (deadPlayer == null || !deadPlayer.isSpectator()) continue;
+
+                    if (action.targetTeamType != TeamType.ALL && !checkTeamMatch(deadPlayer, world, action.targetTeamType)) {
+                        continue;
+                    }
+
+                    deadPlayer.getInventory().clearContent();
+                    deadPlayer.teleportTo(body.getX(), body.getY(), body.getZ());
+                    deadPlayer.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
+                    body.remove(net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(deadPlayer);
+                    shop.setBalance(200);
+
+                    world.players().forEach(p -> {
+                        p.playNotifySound(net.minecraft.sounds.SoundEvents.TOTEM_USE,
+                                deadPlayer.getSoundSource(), 1.2f, 1.5f);
+                    });
+                    break;
+                }
+            }
+            case BROADCAST_MESSAGE -> {
+                String message = action.stringValue;
+                for (ServerPlayer p : world.players()) {
+                    if (action.targetTeamType == TeamType.ALL || checkTeamMatch(p, world, action.targetTeamType)) {
+                        p.sendSystemMessage(Component.literal(message));
+                    }
+                }
+            }
             case CLEAR_ENTITIES -> {
-                // 清除范围内的指定实体
                 double radius = action.value;
                 String entityId = action.stringValue;
-
                 AABB checkBox = new AABB(pos).inflate(radius);
                 var entitiesToRemove = new ArrayList<net.minecraft.world.entity.Entity>();
 
                 for (var entity : world.getEntities(null, checkBox)) {
                     boolean matches = false;
                     if ("*".equals(entityId)) {
-                        // * 表示任意实体（不包括玩家，避免误删）
                         matches = !(entity instanceof ServerPlayer);
                     } else if ("player".equalsIgnoreCase(entityId)) {
-                        // 特殊值 "player" 代表玩家实体
-                        matches = entity instanceof ServerPlayer;
+                        if (entity instanceof ServerPlayer serverPlayer) {
+                            matches = action.targetTeamType == TeamType.ALL || checkTeamMatch(serverPlayer, world, action.targetTeamType);
+                        } else {
+                            matches = false;
+                        }
                     } else if ("*all".equalsIgnoreCase(entityId)) {
-                        // *all 表示任意实体（包括玩家）
                         matches = true;
                     } else {
                         String id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
@@ -928,165 +1191,6 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
                 for (var entity : entitiesToRemove) {
                     entity.remove(net.minecraft.world.entity.Entity.RemovalReason.KILLED);
-                }
-            }
-            case SET_MOOD -> {
-                // 设置心情值（value为0表示直接设置，为1表示增减）
-                SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
-                if (action.stringValue != null && action.stringValue.equals("add")) {
-                    // 增减模式
-                    mood.addMood((float) action.value);
-                } else {
-                    // 直接设置模式
-                    mood.setMood((float) action.value);
-                }
-            }
-            case CURE_PSYCHO -> {
-                // 解除疯狂模式
-                SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
-                if (psycho.getPsychoTicks() > 0) {
-                    psycho.stopPsychoAndSync();
-                }
-            }
-            case CLEAR_TASKS -> {
-                // 清除所有任务
-                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-                taskComponent.tasks.clear();
-                taskComponent.parallelTaskTypes.clear();
-                taskComponent.parallelTaskGenerated = false;
-                taskComponent.sync();
-            }
-            case COMPLETE_TASK -> {
-                // 强制完成当前任务 - 模拟任务完成逻辑
-                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-                if (!taskComponent.tasks.isEmpty()) {
-                    // 获取第一个任务并完成它
-                    var firstTask = taskComponent.tasks.values().iterator().next();
-                    // 移除任务并增加连击计数
-                    taskComponent.tasks.remove(firstTask.getType());
-                    taskComponent.parallelTaskTypes.remove(firstTask.getType());
-                    taskComponent.taskStreak++;
-                    // 如果所有任务都完成了，重置状态
-                    if (taskComponent.tasks.isEmpty()) {
-                        taskComponent.currentTaskAge = 0;
-                        taskComponent.parallelTaskGenerated = false;
-                    }
-                    taskComponent.sync();
-                }
-            }
-            case END_BLACKOUT -> {
-                // 结束关灯
-                SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(world);
-                blackout.reset();
-            }
-            case FIX_MONITOR -> {
-                // 修复监控
-                SREMonitorWorldComponent monitor = SREMonitorWorldComponent.KEY.get(world);
-                monitor.reset();
-            }
-            case ADD_CUSTOM_TASK -> {
-                // 添加自定义任务：根据clearTasks决定是否清空当前任务
-                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-
-                // 根据设置决定是否清空当前任务
-                if (action.clearTasks) {
-                    // 清空当前所有任务
-                    taskComponent.tasks.clear();
-                    taskComponent.parallelTaskTypes.clear();
-                    taskComponent.parallelTaskGenerated = false;
-                    taskComponent.currentTaskAge = 0;
-                }
-
-                // 创建自定义任务
-                String taskName = action.customTaskName != null ? action.customTaskName : "自定义任务";
-                String taskId = action.customTaskId != null ? action.customTaskId : "custom_" + System.currentTimeMillis();
-
-                SREPlayerTaskComponent.CustomTask customTask = new SREPlayerTaskComponent.CustomTask(taskName, taskId);
-
-                taskComponent.tasks.put(customTask.getType(), customTask);
-                taskComponent.timesGotten.putIfAbsent(customTask.getType(), 1);
-                taskComponent.timesGotten.put(customTask.getType(), taskComponent.timesGotten.get(customTask.getType()) + 1);
-
-                // 重置任务分配时的情绪值
-                SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
-                taskComponent.moodWhenTaskAssigned = mood != null ? mood.getMood() : 1f;
-
-                taskComponent.sync();
-
-                // 发送提示消息
-                player.sendSystemMessage(Component.translatable("message.custom_task.added", taskName));
-            }
-            case ADD_EXTRA_TASK -> {
-                // 额外添加任务：不清空当前任务，直接添加一个随机任务
-                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-                String taskType = action.taskType;
-
-                // 如果指定了任务类型，尝试使用该类型
-                SREPlayerTaskComponent.TrainTask newTask = null;
-                if (taskType != null && !taskType.isEmpty() && !"random".equalsIgnoreCase(taskType)) {
-                    // 尝试匹配指定的任务类型
-                    try {
-                        SREPlayerTaskComponent.Task enumTask = SREPlayerTaskComponent.Task.valueOf(taskType.toUpperCase());
-                        // 使用枚举的setFunction来创建任务
-                        newTask = enumTask.setFunction.apply(new CompoundTag());
-                    } catch (IllegalArgumentException e) {
-                        // 任务类型不存在，忽略
-                    }
-                }
-
-                // 如果没有指定类型或类型无效，随机生成任务
-                if (newTask == null) {
-                    // 使用任务组件的内部随机生成逻辑
-                    newTask = generateRandomTask(player);
-                }
-
-                if (newTask != null) {
-                    taskComponent.tasks.put(newTask.getType(), newTask);
-                    taskComponent.timesGotten.putIfAbsent(newTask.getType(), 1);
-                    taskComponent.timesGotten.put(newTask.getType(), taskComponent.timesGotten.get(newTask.getType()) + 1);
-                    // 发送提示消息
-                    player.sendSystemMessage(Component.translatable("message.extra_task.added", newTask.getName()));
-                }
-
-                taskComponent.sync();
-            }
-            case COMPLETE_CUSTOM_TASK -> {
-                // 完成自定义任务
-                String taskId = action.customTaskId;
-                if (taskId == null || taskId.isEmpty()) {
-                    break;
-                }
-
-                SREPlayerTaskComponent taskComponent = SREPlayerTaskComponent.KEY.get(player);
-                // 查找并移除匹配的自定义任务
-                var iterator = taskComponent.tasks.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    var entry = iterator.next();
-                    var task = entry.getValue();
-                    if (taskId.equals(task.getCustomTaskId())) {
-                        iterator.remove();
-                        taskComponent.parallelTaskTypes.remove(task.getType());
-                        taskComponent.taskStreak++;
-                        // 发送提示消息
-                        player.sendSystemMessage(Component.translatable("message.custom_task.completed", task.getName()));
-                        break;
-                    }
-                }
-
-                // 如果所有任务都完成了，重置状态
-                if (taskComponent.tasks.isEmpty()) {
-                    taskComponent.currentTaskAge = 0;
-                    taskComponent.parallelTaskGenerated = false;
-                }
-                taskComponent.sync();
-            }
-            case NARRATOR -> {
-                // 语音播报
-                String narratorText = action.narratorText;
-                if (narratorText != null && !narratorText.isEmpty()) {
-                    boolean shouldInterrupt = action.narratorInterrupt;
-                    Component textComponent = Component.literal(narratorText);
-                    ServerPlayNetworking.send(player, new CustomNarratorPacket(textComponent, shouldInterrupt));
                 }
             }
         }
@@ -1307,7 +1411,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         NEED_TASK_TYPE,        // 需要完成特定类型任务
         NEED_CUSTOM_TASK,      // 需要完成自定义任务
         PLAYER_DAMAGED_BY_PLAYER,      // 玩家受到来自玩家的原版伤害
-        PLAYER_DAMAGED_BY_NON_PLAYER   // 玩家受到非玩家来源的原版伤害
+        PLAYER_DAMAGED_BY_NON_PLAYER,  // 玩家受到非玩家来源的原版伤害
+        ELAPSED_TIME            // 游戏经过的时间
     }
 
     // 世界时间类型枚举
@@ -1326,7 +1431,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
     // 阵营类型枚举
     public enum TeamType {
-        CIVILIAN, SHERIFF, NEUTRAL, NEUTRAL_KILLER, NEUTRAL_SPECIAL, KILLER
+        ALL, CIVILIAN, SHERIFF, NEUTRAL, NEUTRAL_KILLER, NEUTRAL_SPECIAL, KILLER
     }
 
     // 直线范围方向枚举
@@ -1394,12 +1499,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         public String stringValue;     // 字符串参数
         public ComparisonType comparison = ComparisonType.EQUALS;
         public TeamType teamType;
-        public boolean leftClick;      // 左键/右键（用于点击方块条件）
         public LogicOperator logicOperator = LogicOperator.AND; // 与下一个条件的逻辑关系
         public WorldTimeType worldTimeType; // 世界时间类型（用于WORLD_TIME条件）
         public int entityCount; // 实体数量（用于ENTITY_COUNT条件）
         public boolean checkAnyCount; // 是否检查任意数量（*表示不检查数量）
         public LineDirection lineDirection; // 直线范围方向（用于PROXIMITY_LINE条件）
+        public boolean triggerOnce = false; // 是否一次性触发（触发后不再触发，用于CLICK_BLOCK等）
 
         public CompoundTag toNbt() {
             CompoundTag tag = new CompoundTag();
@@ -1408,12 +1513,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             tag.putString("StringValue", stringValue != null ? stringValue : "");
             tag.putString("Comparison", comparison.name());
             if (teamType != null) tag.putString("TeamType", teamType.name());
-            tag.putBoolean("LeftClick", leftClick);
             tag.putString("LogicOperator", logicOperator.name());
             if (worldTimeType != null) tag.putString("WorldTimeType", worldTimeType.name());
             tag.putInt("EntityCount", entityCount);
             tag.putBoolean("CheckAnyCount", checkAnyCount);
             if (lineDirection != null) tag.putString("LineDirection", lineDirection.name());
+            tag.putBoolean("TriggerOnce", triggerOnce);
             return tag;
         }
 
@@ -1427,7 +1532,6 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             if (tag.contains("TeamType")) {
                 condition.teamType = TeamType.valueOf(tag.getString("TeamType"));
             }
-            condition.leftClick = tag.getBoolean("LeftClick");
             if (tag.contains("LogicOperator")) {
                 condition.logicOperator = LogicOperator.valueOf(tag.getString("LogicOperator"));
             } else {
@@ -1443,6 +1547,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             } else {
                 condition.lineDirection = LineDirection.ALL; // 默认值
             }
+            condition.triggerOnce = tag.contains("TriggerOnce") && tag.getBoolean("TriggerOnce");
             return condition;
         }
     }
@@ -1460,6 +1565,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         public String narratorText;     // 语音播报文本（用于NARRATOR）
         public boolean narratorInterrupt; // 是否打断当前播报（用于NARRATOR）
         public boolean clearTasks;       // 是否清空当前任务（用于ADD_CUSTOM_TASK，true=清空后添加，false=不清空直接添加）
+        // 阵营过滤类型（用于过滤触发内容对什么阵营生效，默认为ALL表示全部阵营）
+        public TeamType targetTeamType = TeamType.ALL;
+        // 传送目标类型（用于TELEPORT动作，0=触发玩家，1=随机玩家，2=所有玩家）
+        public int teleportTarget = 0;
 
         public CompoundTag toNbt() {
             CompoundTag tag = new CompoundTag();
@@ -1474,6 +1583,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             tag.putString("NarratorText", narratorText != null ? narratorText : "");
             tag.putBoolean("NarratorInterrupt", narratorInterrupt);
             tag.putBoolean("ClearTasks", clearTasks);
+            tag.putString("TargetTeamType", targetTeamType.name());
+            tag.putInt("TeleportTarget", teleportTarget);
             return tag;
         }
 
@@ -1495,6 +1606,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             if (action.narratorText.isEmpty()) action.narratorText = null;
             action.narratorInterrupt = tag.getBoolean("NarratorInterrupt");
             action.clearTasks = tag.getBoolean("ClearTasks");
+            if (tag.contains("TargetTeamType")) {
+                action.targetTeamType = TeamType.valueOf(tag.getString("TargetTeamType"));
+            } else {
+                action.targetTeamType = TeamType.ALL;
+            }
+            action.teleportTarget = tag.contains("TeleportTarget") ? tag.getInt("TeleportTarget") : 0;
             return action;
         }
     }
