@@ -1399,7 +1399,6 @@
   "task.dnf_poison_deposit": "投放毒藥",
   "task.dnf_poison_water": "污染水源",
   "task.dnf_redemption": "救贖之道",
-
   "block.starrailexpress.entity_interaction_block": "實體交互方塊",
   "block.starrailexpress.entity_interaction_panel": "實體交互鑲板",
   "gui.entity_interaction_block.title": "實體交互方塊配置",
@@ -1419,9 +1418,7 @@
   "gui.entity_interaction_block.elapsed_time_value": "經過時間（分:秒）",
   "gui.entity_interaction_block.comparison": "比較方式",
   "gui.entity_interaction_block.id": "ID",
-  "gui.entity_interaction_block.left_click": "左鍵",
   "gui.entity_interaction_block.right_click": "右鍵",
-  "gui.entity_interaction_block.click_type": "點擊類型",
   "gui.entity_interaction_block.trigger_mode": "觸發模式",
   "gui.entity_interaction_block.trigger_once": "一次性",
   "gui.entity_interaction_block.trigger_repeat": "可重複",
@@ -1443,11 +1440,40 @@
   "gui.entity_interaction_block.coin_amount_signed": "金幣（負數減少）",
   "gui.entity_interaction_block.confirm": "確認",
   "gui.entity_interaction_block.cancel": "取消",
-
   "gui.entity_interaction_block.teleport_point": "傳送點設置",
   "gui.entity_interaction_block.teleport_point_title": "設置傳送點",
   "gui.entity_interaction_block.is_teleport_point": "是否是傳送點",
   "gui.entity_interaction_block.teleport_id_input": "傳送點ID",
+  "gui.entity_interaction_block.task_marker": "任務路標",
+  "gui.entity_interaction_block.task_marker_title": "任務路標設置",
+  "gui.entity_interaction_block.is_task_marker": "是否為任務路標",
+  "gui.entity_interaction_block.task_marker_color": "任務框顏色",
+  "gui.entity_interaction_block.task_marker_color_hint": "輸入顏色名稱或十六進制值",
+  "gui.entity_interaction_block.task_instinct_id": "任務本能ID",
+  "gui.entity_interaction_block.task_instinct_id_hint": "輸入數字ID",
+  "gui.entity_interaction_block.task_highlight_task_type_desc": "任務類型過濾",
+  "gui.entity_interaction_block.task_all": "全部",
+  "gui.entity_interaction_block.task_type_select": "選擇任務類型",
+  "gui.entity_interaction_block.task_highlight_custom_id_desc": "自定義任務ID",
+  "gui.entity_interaction_block.task_highlight_custom_id_hint": "輸入自定義任務ID",
+  "gui.entity_interaction_block.task_marker_desc": "任務標記名稱，顯示在任務列表和透視中",
+  "gui.entity_interaction_block.task_highlight_condition": "透視條件",
+  "task_highlight_condition.none": "無",
+  "task_highlight_condition.always": "常駐",
+  "task_highlight_condition.normal_task": "一般任務",
+  "task_highlight_condition.custom_task": "自定義任務",
+  "task_highlight_condition.trigger_condition": "觸發條件",
+  "action.enable_task_highlight": "任務透視",
+  "gui.entity_interaction_block.enable_task_highlight_desc": "當條件滿足時啟用或禁用玩家的任務點透視功能",
+  "gui.entity_interaction_block.enable_task_highlight_requirement": "玩家需要先開啟任務透視才能看到效果",
+  "gui.entity_interaction_block.task_highlight_mode": "模式",
+  "gui.entity_interaction_block.enable": "啟用",
+  "gui.entity_interaction_block.disable": "禁用",
+  "gui.entity_interaction_block.task_highlight_none_desc": "不啟用任務透視",
+  "gui.entity_interaction_block.task_highlight_always_desc": "只要開啟任務透視就會顯示",
+  "gui.entity_interaction_block.task_highlight_normal_task_desc": "當玩家有任務時顯示",
+  "gui.entity_interaction_block.task_highlight_custom_task_desc": "當玩家有對應自定義任務時顯示",
+  "gui.entity_interaction_block.task_highlight_trigger_desc": "需要觸發內容「任務透視」才會顯示",
   "gui.entity_interaction_block.yes": "是",
   "gui.entity_interaction_block.no": "否",
   "gui.entity_interaction_block.player_count": "玩家數量",
@@ -1470,7 +1496,6 @@
   "gui.entity_interaction_block.player_damaged_by_player_desc": "檢測方塊範圍內是否有玩家受到其他玩家的傷害",
   "gui.entity_interaction_block.player_damaged_by_non_player_desc": "檢測方塊範圍內是否有玩家受到非玩家來源的傷害",
   "gui.entity_interaction_block.command_hint_relative": "提示：使用<player>指代觸發玩家，使用~表示方塊座標偏移",
-
   "condition_type.pass_through": "玩家穿越實體交互方塊時",
   "condition_type.timer": "自動定時",
   "condition_type.time_anchor": "遊戲時間錨點",
@@ -1488,7 +1513,6 @@
   "condition_type.role_is": "特定職業",
   "condition_type.role_team": "職業陣營",
   "condition_type.has_killed": "玩家曾擊殺過其他玩家",
-
   "action_type.execute_command": "執行指令",
   "action_type.poison": "中毒",
   "action_type.cure_poison": "解毒",
@@ -1507,7 +1531,6 @@
   "action_type.set_time": "設置時間",
   "action_type.game_win": "遊戲勝利",
   "action_type.coin_change": "改變金幣",
-
   "condition.pass_through": "玩家穿過方塊",
   "condition.timer": "每 %s 秒觸發",
   "condition.timer.blocks_display": "每 %s 秒觸發一次",
@@ -1518,7 +1541,6 @@
   "condition.proximity_line": "在 %s 格直線範圍內",
   "condition.proximity_line.blocks_display": "玩家在 %s 格範圍內（直線/%s）",
   "condition.has_item": "擁有物品：%s",
-  "condition.click_left": "左鍵點擊方塊",
   "condition.click_right": "右鍵點擊方塊",
   "condition.looking_at": "在 %s 格內看向方塊",
   "condition.looking_at.blocks_display": "看向方塊距離 %s 格",
@@ -1558,14 +1580,11 @@
   "condition.player_damaged_by_player": "範圍內玩家受到玩家傷害（%s格）",
   "condition.player_damaged_by_non_player": "範圍內玩家受到非玩家傷害（%s格）",
   "condition.block_game_end": "阻止遊戲結束（時間耗盡除外）",
-
-
   "world_time.day": "白天",
   "world_time.noon": "中午",
   "world_time.sunset": "傍晚",
   "world_time.night": "夜晚",
   "world_time.midnight": "午夜",
-
   "condition_type.player_count": "玩家數量",
   "condition_type.alive_players": "存活玩家數量",
   "condition_type.is_sneaking": "潛行狀態",
@@ -1591,8 +1610,6 @@
   "condition_type.player_damaged_by_player": "範圍內玩家受到其他玩家的原版傷害",
   "condition_type.player_damaged_by_non_player": "範圍內玩家受到非玩家的原版傷害",
   "condition_type.block_game_end": "阻止遊戲結束",
-
-
   "action_type.give_effect": "給予狀態效果",
   "action_type.teleport": "傳送到傳送點",
   "action_type.show_title": "顯示標題",
@@ -1610,11 +1627,7 @@
   "action_type.add_extra_task": "額外添加任務",
   "action_type.complete_custom_task": "完成自定義任務",
   "action_type.narrator": "語音播報",
-
-
-
-
-
+  "action_type.enable_task_highlight": "任務透視",
   "action.give_effect": "給予效果 %s (%s秒)",
   "action.teleport": "傳送到傳送點 #%s",
   "action.show_title": "顯示標題：%s",
@@ -1633,12 +1646,10 @@
   "action.add_extra_task": "額外添加任務：%s",
   "action.complete_custom_task": "完成自定義任務：%s",
   "action.narrator": "語音播報：%s [%s]",
-
   "logic.and": "與",
   "logic.or": "或",
   "logic.nand": "與非",
   "logic.nor": "或非",
-
   "action.execute_command": "執行：%s",
   "action.poison": "中毒 %s 秒",
   "action.cure_poison": "解毒",
@@ -1659,13 +1670,11 @@
   "action.coin_change": "金幣 %s",
   "action.prevent_game_end": "阻止遊戲結束",
   "action_type.prevent_game_end": "阻止遊戲結束",
-
   "comparison.equals": "等於",
   "comparison.greater": "大於",
   "comparison.less": "小於",
   "comparison.greater_equal": "大於等於",
   "comparison.less_equal": "小於等於",
-
   "team.civilian": "平民",
   "team.sheriff": "警長",
   "team.neutral": "中立",
@@ -1687,7 +1696,6 @@
   "gui.entity_interaction_block.teleport_trigger": "觸發玩家",
   "gui.entity_interaction_block.teleport_random": "隨機玩家",
   "gui.entity_interaction_block.teleport_all": "所有玩家",
-
   "task_type.random": "隨機",
   "task_type.sleep": "睡覺",
   "task_type.read_book": "讀書",
@@ -1700,7 +1708,6 @@
   "task_type.toilet": "上廁所",
   "task_type.chair": "休息",
   "task_type.breathe": "呼吸新鮮空氣",
-
   "gui.entity_interaction_block.task_type": "任務類型",
   "gui.entity_interaction_block.custom_task_id": "自定義任務ID",
   "gui.entity_interaction_block.custom_task_name": "自定義任務名稱",
@@ -1719,7 +1726,6 @@
   "direction.down": "下(-Y)",
   "gui.entity_interaction_block.blocks_distance": "距離(格)",
   "gui.entity_interaction_block.minutes": "分",
-  "gui.entity_interaction_block.seconds": "秒",
   "gui.entity_interaction_block.mood_hint": "心情值(0-1，支持小數)",
   "gui.entity_interaction_block.mood_desc": "0=最低心情 0.5=中等 1=最高心情",
   "gui.entity_interaction_block.armor_hint": "護盾值(整數)",
@@ -1799,12 +1805,10 @@
   "gui.entity_interaction_block.narrator_interrupt": "打斷",
   "gui.entity_interaction_block.narrator_queue": "排隊",
   "gui.entity_interaction_block.narrator_desc": "向玩家發送語音播報，true=打斷當前播報，false=排隊等待",
-
   "message.custom_task.added": "§a[任務]§r 新任務：%s",
   "message.custom_task.completed": "§a[任務]§r 已完成：%s",
   "message.extra_task.added": "§a[任務]§r 額外任務：%s",
   "message.teleport_point_not_found": "§c傳送點 %s 不存在或在 %s 格範圍外",
-
   "message.dnf.rules.given": "規則書已放入你的背包。",
   "message.dnf.rules.given_all_players": "已為所有玩家發送了對應職業的規則書。",
   "message.dnf.vote.not_enough_san": "報告屍體需要 %s%% san。",
@@ -1918,5 +1922,6 @@
   "message.dnf.killer.revived": "你已作為殺手復活！",
   "command.dnf.time_skip.not_in_dnf": "此命令只能在晝夜戰模式中使用",
   "command.dnf.time_skip.day_skipped": "已成功跳過到下一天",
-  "command.dnf.time_skip.phase_skipped": "已成功跳過到下一階段"
+  "command.dnf.time_skip.phase_skipped": "已成功跳過到下一階段",
+  "message.disconnect.afk": "你因為掛機被踢出遊戲"
 }

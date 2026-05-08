@@ -6,10 +6,12 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.block.*;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import io.wifi.starrailexpress.content.block_entity.BeveragePlateBlockEntity;
+import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.network.EntityInteractionBlockPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -32,7 +34,9 @@ import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class MapScanner {
     public static void registerMapScanEvent() {
@@ -47,7 +51,49 @@ public class MapScanner {
             for (var player : serverLevel.players()) {
                 ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(GameUtils.taskBlocks));
             }
+            // 强制同步所有 EntityInteractionBlockEntity 的数据到所有客户端
+            // 这确保客户端的 BlockEntity 数据与服务端一致，使渲染器能正确工作
+            syncEntityInteractionBlockEntities(serverLevel);
         });
+    }
+
+    /**
+     * 强制同步所有 EntityInteractionBlockEntity 的数据到所有客户端
+     * 这确保客户端的 BlockEntity 数据与服务端一致，使渲染器能正确工作
+     */
+    public static void syncEntityInteractionBlockEntities(ServerLevel serverLevel) {
+        List<BlockPos> entityInteractionBlockPositions = new ArrayList<>();
+        var areas = AreasWorldComponent.KEY.get(serverLevel);
+        BlockPos backupMinPos = BlockPos.containing(areas.getResetTemplateArea().getMinPosition());
+        BlockPos backupMaxPos = BlockPos.containing(areas.getResetTemplateArea().getMaxPosition());
+        BoundingBox backupTrainBox = BoundingBox.fromCorners(backupMinPos, backupMaxPos);
+        BlockPos trainMinPos = BlockPos.containing(areas.getResetPasteArea().getMinPosition());
+        BlockPos trainMaxPos = trainMinPos.offset(backupTrainBox.getLength());
+        BoundingBox trainBox = BoundingBox.fromCorners(trainMinPos, trainMaxPos);
+
+        // 遍历所有方块，找出 EntityInteractionBlock
+        for (int k = trainBox.minZ(); k <= trainBox.maxZ(); k++) {
+            for (int l = trainBox.minY(); l <= trainBox.maxY(); l++) {
+                for (int m = trainBox.minX(); m <= trainBox.maxX(); m++) {
+                    BlockPos blockPos = new BlockPos(m, l, k);
+                    var blockState = serverLevel.getBlockState(blockPos);
+                    if (blockState.getBlock() instanceof EntityInteractionBlock) {
+                        entityInteractionBlockPositions.add(blockPos);
+                    }
+                }
+            }
+        }
+
+        // 强制同步每个 EntityInteractionBlockEntity 的数据
+        for (BlockPos pos : entityInteractionBlockPositions) {
+            var be = serverLevel.getBlockEntity(pos);
+            if (be instanceof EntityInteractionBlockEntity entity) {
+                // 向所有玩家发送同步数据包
+                for (var player : serverLevel.players()) {
+                    EntityInteractionBlockPayload.sendSyncBlockEntity(player, pos, entity);
+                }
+            }
+        }
     }
 
     public static void scanAllTaskBlocks(ServerLevel serverLevel) {
@@ -118,6 +164,9 @@ public class MapScanner {
                         }
                     } else if (blockState.getBlock() instanceof SprinklerBlock) {
                         GameUtils.taskBlocks.put(blockPos6, 3);
+                    } else if (blockState.getBlock() instanceof EntityInteractionBlock eib) {
+                        // 使用自定义的任务本能ID
+                        GameUtils.taskBlocks.put(blockPos6, EntityInteractionBlock.getCustomTaskInstinctId(localLevel, blockPos6));
                     } else if (blockState.getBlock() instanceof TaskInstinctShowableInterface it) {
                         GameUtils.taskBlocks.put(blockPos6, it.taskInstinctId());
                     }

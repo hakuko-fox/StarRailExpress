@@ -40,6 +40,14 @@ public class EntityInteractionBlockScreen extends Screen {
     private boolean isTeleportPoint = false;
     private int teleportPointId = -1;
 
+    // 任务路标设置
+    private boolean isTaskMarker = false;
+    private int taskMarkerColor = 0xFFFFFF;
+    private EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition = EntityInteractionBlockEntity.TaskHighlightCondition.NONE;
+    private String taskHighlightTaskType = "*";
+    private String taskHighlightCustomTaskId = "";
+    private int taskInstinctId = 100;
+
     // 额外任务类型选择（用于ADD_EXTRA_TASK）
     private String extraTaskType = "random";
 
@@ -97,6 +105,22 @@ public class EntityInteractionBlockScreen extends Screen {
         this.teleportPointId = teleportPointId;
     }
 
+    public EntityInteractionBlockScreen(BlockPos pos, List<EntityInteractionBlockEntity.TriggerCondition> conditions,
+                                        List<EntityInteractionBlockEntity.TriggerAction> actions, int cooldownTicks,
+                                        boolean isTeleportPoint, int teleportPointId,
+                                        boolean isTaskMarker, int taskMarkerColor,
+                                        EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition,
+                                        String taskHighlightTaskType, String taskHighlightCustomTaskId,
+                                        int taskInstinctId) {
+        this(pos, conditions, actions, cooldownTicks, isTeleportPoint, teleportPointId);
+        this.isTaskMarker = isTaskMarker;
+        this.taskMarkerColor = taskMarkerColor;
+        this.taskHighlightCondition = taskHighlightCondition;
+        this.taskHighlightTaskType = taskHighlightTaskType != null ? taskHighlightTaskType : "*";
+        this.taskHighlightCustomTaskId = taskHighlightCustomTaskId != null ? taskHighlightCustomTaskId : "";
+        this.taskInstinctId = taskInstinctId;
+    }
+
     @Override
     protected void init() {
         super.init();
@@ -123,6 +147,11 @@ public class EntityInteractionBlockScreen extends Screen {
         // 传送点设置（右侧）
         addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.teleport_point"),
                 b -> this.minecraft.setScreen(new TeleportPointScreen(this)))
+                .bounds(this.width - 250, topY, 120, BUTTON_HEIGHT).build());
+
+        // 任务路标设置（最右侧）
+        addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.task_marker"),
+                b -> this.minecraft.setScreen(new TaskMarkerScreen(this)))
                 .bounds(this.width - 130, topY, 120, BUTTON_HEIGHT).build());
 
         // ===== 计算布局区域 =====
@@ -462,13 +491,26 @@ public class EntityInteractionBlockScreen extends Screen {
             cooldownTicks = 40;
         }
 
-        EntityInteractionBlockPayload.sendSaveConfig(blockPos, conditions, actions, cooldownTicks, isTeleportPoint, teleportPointId);
+        EntityInteractionBlockPayload.sendSaveConfig(blockPos, conditions, actions, cooldownTicks, isTeleportPoint, teleportPointId,
+                isTaskMarker, taskMarkerColor, taskHighlightCondition, taskHighlightTaskType, taskHighlightCustomTaskId, taskInstinctId);
         this.onClose();
     }
 
     public void setTeleportPoint(boolean isTeleportPoint, int teleportPointId) {
         this.isTeleportPoint = isTeleportPoint;
         this.teleportPointId = teleportPointId;
+    }
+
+    public void setTaskMarker(boolean isTaskMarker, int taskMarkerColor,
+                              EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition,
+                              String taskHighlightTaskType, String taskHighlightCustomTaskId,
+                              int taskInstinctId) {
+        this.isTaskMarker = isTaskMarker;
+        this.taskMarkerColor = taskMarkerColor;
+        this.taskHighlightCondition = taskHighlightCondition;
+        this.taskHighlightTaskType = taskHighlightTaskType;
+        this.taskHighlightCustomTaskId = taskHighlightCustomTaskId;
+        this.taskInstinctId = taskInstinctId;
     }
 
     @Override
@@ -1900,6 +1942,214 @@ public class EntityInteractionBlockScreen extends Screen {
                 }
             }
             parent.setTeleportPoint(isTeleport, id);
+            this.minecraft.setScreen(parent);
+        }
+
+        @Override
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+            guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    // 任务路标设置子界面
+    private class TaskMarkerScreen extends Screen {
+        private final EntityInteractionBlockScreen parent;
+        private boolean isTaskMarker;
+        private int taskMarkerColor;
+        private EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition;
+        private String taskHighlightTaskType;
+        private String taskHighlightCustomTaskId;
+        private int taskInstinctId;
+        private EditBox colorInput;
+        private EditBox taskTypeInput;
+        private EditBox customTaskIdInput;
+        private EditBox taskInstinctIdInput;
+
+        public TaskMarkerScreen(EntityInteractionBlockScreen parent) {
+            super(Component.translatable("gui.entity_interaction_block.task_marker_title"));
+            this.parent = parent;
+            this.isTaskMarker = parent.isTaskMarker;
+            this.taskMarkerColor = parent.taskMarkerColor;
+            this.taskHighlightCondition = parent.taskHighlightCondition;
+            this.taskHighlightTaskType = parent.taskHighlightTaskType;
+            this.taskHighlightCustomTaskId = parent.taskHighlightCustomTaskId;
+            this.taskInstinctId = parent.taskInstinctId;
+        }
+
+        @Override
+        protected void init() {
+            super.init();
+            this.clearWidgets();
+
+            int centerX = this.width / 2;
+            int y = 50;
+
+            // 标题说明
+            addRenderableWidget(Button.builder(
+                    Component.translatable("gui.entity_interaction_block.task_marker_desc"), b -> {})
+                    .bounds(centerX - 180, y, 360, 30).build());
+            y += 40;
+
+            // 是否为任务路标
+            addRenderableWidget(CycleButton.<Boolean>builder(tm ->
+                            Component.translatable(tm ? "gui.entity_interaction_block.yes" : "gui.entity_interaction_block.no"))
+                    .withValues(true, false)
+                    .withInitialValue(isTaskMarker)
+                    .create(centerX - 100, y, 200, 20,
+                            Component.translatable("gui.entity_interaction_block.is_task_marker"),
+                            (b, tm) -> {
+                                isTaskMarker = tm;
+                                this.init();
+                            }));
+            y += 35;
+
+            if (isTaskMarker) {
+                // 任务框颜色设置
+                addRenderableWidget(Button.builder(
+                        Component.translatable("gui.entity_interaction_block.task_marker_color"), b -> {})
+                        .bounds(centerX - 100, y, 200, 20).build());
+                y += 22;
+
+                colorInput = new EditBox(this.font, centerX - 100, y, 200, 20,
+                        Component.translatable("gui.entity_interaction_block.task_marker_color_hint"));
+                colorInput.setFilter(s -> s.matches("[0-9A-Fa-f]*"));
+                // 将颜色值转为十六进制字符串
+                String colorStr = String.format("%06X", taskMarkerColor & 0xFFFFFF);
+                colorInput.setValue(colorStr);
+                addRenderableWidget(colorInput);
+                y += 30;
+
+                // 任务本能ID设置
+                addRenderableWidget(Button.builder(
+                        Component.translatable("gui.entity_interaction_block.task_instinct_id"), b -> {})
+                        .bounds(centerX - 100, y, 200, 20).build());
+                y += 22;
+
+                taskInstinctIdInput = new EditBox(this.font, centerX - 100, y, 200, 20,
+                        Component.translatable("gui.entity_interaction_block.task_instinct_id_hint"));
+                taskInstinctIdInput.setFilter(s -> s.matches("[0-9]*"));
+                taskInstinctIdInput.setValue(String.valueOf(taskInstinctId));
+                addRenderableWidget(taskInstinctIdInput);
+                y += 30;
+
+                // 基础条件设置
+                addRenderableWidget(Button.builder(
+                        Component.translatable("gui.entity_interaction_block.task_highlight_condition"), b -> {})
+                        .bounds(centerX - 100, y, 200, 20).build());
+                y += 25;
+
+                // 条件类型选择
+                addRenderableWidget(CycleButton.<EntityInteractionBlockEntity.TaskHighlightCondition>builder(cond ->
+                                Component.translatable("task_highlight_condition." + cond.name().toLowerCase()))
+                        .withValues(EntityInteractionBlockEntity.TaskHighlightCondition.values())
+                        .withInitialValue(taskHighlightCondition)
+                        .create(centerX - 120, y, 240, 20,
+                                Component.empty(),
+                                (b, cond) -> {
+                                    taskHighlightCondition = cond;
+                                    this.init();
+                                }));
+                y += 30;
+
+                // 根据条件类型显示不同输入
+                switch (taskHighlightCondition) {
+                    case NORMAL_TASK -> {
+                        // 一般任务 - 选择任务类型
+                        addRenderableWidget(Button.builder(
+                                Component.translatable("gui.entity_interaction_block.task_highlight_task_type_desc"), b -> {})
+                                .bounds(centerX - 150, y, 300, 20).build());
+                        y += 25;
+
+                        // 使用 CycleButton 选择预设任务类型
+                        addRenderableWidget(CycleButton.<String>builder(type ->
+                                        Component.literal(type.equals("*") ?
+                                                Component.translatable("gui.entity_interaction_block.task_all").getString() :
+                                                type.toUpperCase()))
+                                .withValues("*", "sleep", "read_book", "eat", "drink", "exercise",
+                                        "meditate", "bathe", "note_block", "toilet", "chair", "breathe")
+                        .withInitialValue(taskHighlightTaskType)
+                                .create(centerX - 120, y, 240, 20,
+                                        Component.translatable("gui.entity_interaction_block.task_type_select"),
+                                        (b, type) -> taskHighlightTaskType = type));
+                        y += 30;
+                    }
+                    case CUSTOM_TASK -> {
+                        // 自定义任务 - 输入自定义任务ID
+                        addRenderableWidget(Button.builder(
+                                Component.translatable("gui.entity_interaction_block.task_highlight_custom_id_desc"), b -> {})
+                                .bounds(centerX - 150, y, 300, 20).build());
+                        y += 25;
+
+                        customTaskIdInput = new EditBox(this.font, centerX - 100, y, 200, 20,
+                                Component.translatable("gui.entity_interaction_block.task_highlight_custom_id_hint"));
+                        customTaskIdInput.setValue(taskHighlightCustomTaskId);
+                        addRenderableWidget(customTaskIdInput);
+                        y += 30;
+                    }
+                    default -> {
+                        // ALWAYS 或 NONE 不需要额外输入
+                    }
+                }
+
+                // 条件说明提示
+                if (taskHighlightCondition == EntityInteractionBlockEntity.TaskHighlightCondition.NONE) {
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.task_highlight_none_desc"), b -> {})
+                            .bounds(centerX - 150, y, 300, 25).build());
+                } else if (taskHighlightCondition == EntityInteractionBlockEntity.TaskHighlightCondition.ALWAYS) {
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.task_highlight_always_desc"), b -> {})
+                            .bounds(centerX - 150, y, 300, 25).build());
+                } else if (taskHighlightCondition == EntityInteractionBlockEntity.TaskHighlightCondition.NORMAL_TASK) {
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.task_highlight_normal_task_desc"), b -> {})
+                            .bounds(centerX - 150, y, 300, 25).build());
+                } else if (taskHighlightCondition == EntityInteractionBlockEntity.TaskHighlightCondition.CUSTOM_TASK) {
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.task_highlight_custom_task_desc"), b -> {})
+                            .bounds(centerX - 150, y, 300, 25).build());
+                }
+            }
+
+            // 确认按钮
+            addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.confirm"),
+                    b -> confirm()).bounds(centerX - 105, this.height - 40, 100, 20).build());
+
+            // 取消按钮
+            addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.cancel"),
+                    b -> this.minecraft.setScreen(parent)).bounds(centerX + 5, this.height - 40, 100, 20).build());
+        }
+
+        private void confirm() {
+            int color = 0xFFFFFF;
+            if (colorInput != null && !colorInput.getValue().isEmpty()) {
+                try {
+                    color = Integer.parseInt(colorInput.getValue(), 16);
+                } catch (NumberFormatException e) {
+                    color = 0xFFFFFF;
+                }
+            }
+
+            int instinctId = 100;
+            if (taskInstinctIdInput != null && !taskInstinctIdInput.getValue().isEmpty()) {
+                try {
+                    instinctId = Integer.parseInt(taskInstinctIdInput.getValue());
+                } catch (NumberFormatException e) {
+                    instinctId = 100;
+                }
+            }
+
+            String taskType = taskHighlightTaskType;
+            String customId = taskHighlightCustomTaskId;
+            if (taskHighlightCondition == EntityInteractionBlockEntity.TaskHighlightCondition.NORMAL_TASK) {
+                taskType = taskHighlightTaskType != null ? taskHighlightTaskType : "*";
+            } else if (taskHighlightCondition == EntityInteractionBlockEntity.TaskHighlightCondition.CUSTOM_TASK) {
+                customId = customTaskIdInput != null ? customTaskIdInput.getValue() : "";
+            }
+
+            parent.setTaskMarker(isTaskMarker, color, taskHighlightCondition, taskType, customId, instinctId);
             this.minecraft.setScreen(parent);
         }
 

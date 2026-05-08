@@ -714,6 +714,8 @@ public class SREClient implements ClientModInitializer {
             NoellesrolesClient.isTaskInstinctEnabled = false;
             // isInstinctToggleEnabled = false;
         });
+        // 注册 EntityInteractionBlock 同步数据包的客户端接收器
+        EntityInteractionBlockPayload.registerClientReceiver();
         // 实体交互方块UI
         ClientPlayNetworking.registerGlobalReceiver(EntityInteractionBlockPayload.OpenUI.TYPE, (payload, context) -> {
             context.client().execute(() -> {
@@ -739,7 +741,25 @@ public class SREClient implements ClientModInitializer {
                 int cooldown = data.getInt("CooldownTicks");
                 boolean isTeleportPoint = data.getBoolean("IsTeleportPoint");
                 int teleportPointId = data.getInt("TeleportPointId");
-                context.client().setScreen(new io.wifi.starrailexpress.client.gui.screen.EntityInteractionBlockScreen(payload.pos(), conditions, actions, cooldown, isTeleportPoint, teleportPointId));
+
+                // 任务路标相关数据
+                boolean isTaskMarker = data.getBoolean("IsTaskMarker");
+                int taskMarkerColor = data.contains("TaskMarkerColor") ? data.getInt("TaskMarkerColor") : 0xFFFFFF;
+                io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition =
+                        io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity.TaskHighlightCondition.NONE;
+                if (data.contains("TaskHighlightCondition")) {
+                    taskHighlightCondition = io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity.TaskHighlightCondition.valueOf(
+                            data.getString("TaskHighlightCondition"));
+                }
+                String taskHighlightTaskType = data.getString("TaskHighlightTaskType");
+                if (taskHighlightTaskType == null || taskHighlightTaskType.isEmpty()) taskHighlightTaskType = "*";
+                String taskHighlightCustomTaskId = data.getString("TaskHighlightCustomTaskId");
+                if (taskHighlightCustomTaskId == null) taskHighlightCustomTaskId = "";
+                int taskInstinctId = data.contains("TaskInstinctId") ? data.getInt("TaskInstinctId") : 100;
+
+                context.client().setScreen(new io.wifi.starrailexpress.client.gui.screen.EntityInteractionBlockScreen(
+                        payload.pos(), conditions, actions, cooldown, isTeleportPoint, teleportPointId,
+                        isTaskMarker, taskMarkerColor, taskHighlightCondition, taskHighlightTaskType, taskHighlightCustomTaskId, taskInstinctId));
             });
         });
         // Chat Dialogue

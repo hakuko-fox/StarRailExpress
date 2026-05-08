@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMBlockEntities;
 import io.wifi.starrailexpress.network.EntityInteractionBlockPayload;
 import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
+import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
@@ -237,6 +238,82 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
     public int getTeleportPointId() {
         return teleportPointId;
+    }
+
+    // ===== 任务路标相关 =====
+    // 是否为任务路标
+    private boolean isTaskMarker = false;
+    // 任务框颜色（RGB，默认为白色）
+    private int taskMarkerColor = 0xFFFFFF;
+    // 任务透视条件类型
+    private TaskHighlightCondition taskHighlightCondition = TaskHighlightCondition.NONE;
+    // 一般任务类型（用于"一般任务"条件，*表示所有任务）
+    private String taskHighlightTaskType = "*";
+    // 自定义任务ID（用于"自定义任务"条件）
+    private String taskHighlightCustomTaskId = "";
+    // 任务本能ID（用于渲染时区分不同类型的任务标记，默认为100）
+    private int taskInstinctId = 100;
+
+    public boolean isTaskMarker() {
+        return isTaskMarker;
+    }
+
+    public int getTaskMarkerColor() {
+        return taskMarkerColor;
+    }
+
+    public TaskHighlightCondition getTaskHighlightCondition() {
+        return taskHighlightCondition;
+    }
+
+    public String getTaskHighlightTaskType() {
+        return taskHighlightTaskType;
+    }
+
+    public String getTaskHighlightCustomTaskId() {
+        return taskHighlightCustomTaskId;
+    }
+
+    public int getTaskInstinctId() {
+        return taskInstinctId;
+    }
+
+    public void setTaskMarker(boolean taskMarker) {
+        this.isTaskMarker = taskMarker;
+        setChanged();
+    }
+
+    public void setTaskMarkerColor(int color) {
+        this.taskMarkerColor = color;
+        setChanged();
+    }
+
+    public void setTaskHighlightCondition(TaskHighlightCondition condition) {
+        this.taskHighlightCondition = condition;
+        setChanged();
+    }
+
+    public void setTaskHighlightTaskType(String taskType) {
+        this.taskHighlightTaskType = taskType != null ? taskType : "*";
+        setChanged();
+    }
+
+    public void setTaskHighlightCustomTaskId(String customTaskId) {
+        this.taskHighlightCustomTaskId = customTaskId != null ? customTaskId : "";
+        setChanged();
+    }
+
+    public void setTaskInstinctId(int id) {
+        this.taskInstinctId = id;
+        setChanged();
+    }
+
+    // 任务透视条件类型枚举
+    public enum TaskHighlightCondition {
+        NONE,           // 无（不使用任务透视）
+        ALWAYS,         // 常驻透视
+        NORMAL_TASK,    // 一般任务时透视
+        CUSTOM_TASK     // 自定义任务时透视
     }
 
     // 方块冷却相关
@@ -1337,6 +1414,16 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         tag.putInt("TeleportPointId", teleportPointId);
         tag.putInt("BlockCooldownTicks", blockCooldownTicks);
         tag.putInt("BlockCooldownEndGameTime", blockCooldownEndGameTime);
+
+        // 任务路标相关
+        tag.putBoolean("IsTaskMarker", isTaskMarker);
+        tag.putInt("TaskMarkerColor", taskMarkerColor);
+        if (taskHighlightCondition != null) {
+            tag.putString("TaskHighlightCondition", taskHighlightCondition.name());
+        }
+        tag.putString("TaskHighlightTaskType", taskHighlightTaskType != null ? taskHighlightTaskType : "*");
+        tag.putString("TaskHighlightCustomTaskId", taskHighlightCustomTaskId != null ? taskHighlightCustomTaskId : "");
+        tag.putInt("TaskInstinctId", taskInstinctId);
     }
 
     @Override
@@ -1370,6 +1457,20 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         teleportPointId = tag.contains("TeleportPointId") ? tag.getInt("TeleportPointId") : -1;
         blockCooldownTicks = tag.getInt("BlockCooldownTicks");
         blockCooldownEndGameTime = tag.getInt("BlockCooldownEndGameTime");
+
+        // 任务路标相关
+        isTaskMarker = tag.getBoolean("IsTaskMarker");
+        taskMarkerColor = tag.contains("TaskMarkerColor") ? tag.getInt("TaskMarkerColor") : 0xFFFFFF;
+        if (tag.contains("TaskHighlightCondition")) {
+            taskHighlightCondition = TaskHighlightCondition.valueOf(tag.getString("TaskHighlightCondition"));
+        } else {
+            taskHighlightCondition = TaskHighlightCondition.NONE;
+        }
+        taskHighlightTaskType = tag.getString("TaskHighlightTaskType");
+        if (taskHighlightTaskType.isEmpty()) taskHighlightTaskType = "*";
+        taskHighlightCustomTaskId = tag.getString("TaskHighlightCustomTaskId");
+        if (taskHighlightCustomTaskId == null) taskHighlightCustomTaskId = "";
+        taskInstinctId = tag.contains("TaskInstinctId") ? tag.getInt("TaskInstinctId") : 100;
     }
 
     // 条件类型枚举

@@ -25,6 +25,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
+import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -129,6 +130,8 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static Player targetFakeBody;
     public static Player hudTarget;
     public static boolean isTaskInstinctEnabled = false;
+    // 记录被触发启用透视的任务路标位置
+    public static Set<BlockPos> enabledTaskMarkerPositions = new HashSet<>();
     public static boolean isShowHelpDisplay = true;
     private static boolean foolMeetingPauseHandled = false;
     public static Map<UUID, UUID> SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
@@ -333,6 +336,31 @@ public class NoellesrolesClient implements ClientModInitializer {
                     NoellesrolesClient.taskBlocks.put(set.getKey(), set.getValue());
                 }
             }
+        });
+        ClientPlayNetworking.registerGlobalReceiver(EnableTaskHighlightPacket.ID, (payload, context) -> {
+            final var client = context.client();
+            client.execute(() -> {
+                if (payload.enable()) {
+                    // 启用任务透视功能
+                    if (!NoellesrolesClient.isTaskInstinctEnabled) {
+                        NoellesrolesClient.isTaskInstinctEnabled = true;
+                        if (client.player != null) {
+                            client.player.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.tip.taskpoint_instinct_enable")
+                                            .withStyle(net.minecraft.ChatFormatting.GREEN), true);
+                        }
+                    }
+                    // 添加被启用的任务路标位置
+                    if (payload.blockPos() != null && !payload.blockPos().equals(net.minecraft.core.BlockPos.ZERO)) {
+                        NoellesrolesClient.enabledTaskMarkerPositions.add(payload.blockPos());
+                    }
+                } else {
+                    // 禁用任务透视 - 从集合中移除位置
+                    if (payload.blockPos() != null && !payload.blockPos().equals(net.minecraft.core.BlockPos.ZERO)) {
+                        NoellesrolesClient.enabledTaskMarkerPositions.remove(payload.blockPos());
+                    }
+                }
+            });
         });
         ClientPlayNetworking.registerGlobalReceiver(BroadcastMessageS2CPacket.ID, (payload, context) -> {
             final var client = context.client();

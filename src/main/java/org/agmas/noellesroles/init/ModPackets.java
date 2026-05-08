@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.init;
 
+import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -131,5 +132,8 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(
                 org.agmas.noellesroles.game.roles.Innocent.fool.FoolExecutionerGunShootC2SPacket.ID,
                 new org.agmas.noellesroles.game.roles.Innocent.fool.FoolExecutionerGunShootC2SPacket.Receiver());
+
+        // 注册启用任务透视网络包
+        PayloadTypeRegistry.playS2C().register(EnableTaskHighlightPacket.ID, EnableTaskHighlightPacket.CODEC);
     }
 }
