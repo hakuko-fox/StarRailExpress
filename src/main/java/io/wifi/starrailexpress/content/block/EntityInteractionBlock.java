@@ -20,7 +20,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;

@@ -72,13 +72,13 @@ import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.content.item.BatonHandler;
 import org.agmas.noellesroles.content.item.BenevolenceSwordHandler;
+import org.agmas.noellesroles.content.item.BombItem;
 import org.agmas.noellesroles.content.item.RiotShieldHandler;
 import org.agmas.noellesroles.events.OnVendingMachinesBuyItems;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
 import org.agmas.noellesroles.game.roles.Innocent.avenger.AvengerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerComponent;
@@ -806,7 +806,7 @@ public class ModEventsRegister {
         ShootingFrenzyPlayerComponent.registerGunNoDropEvent();
         ExecutionerPlayerComponent.registerBackfireEvent();
         ShootingFrenzyPlayerComponent.registerFrenzyCooldownEvent();
-
+        BombItem.registerEvents();
         HoanMeirinFistPunchHandler.register();
         org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
         // 注册警棍与防暴盾处理器
