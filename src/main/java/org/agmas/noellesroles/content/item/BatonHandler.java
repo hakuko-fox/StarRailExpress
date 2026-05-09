@@ -12,9 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import org.agmas.noellesroles.init.ModItems;
-import io.wifi.events.day_night_fight.DNF;
-import io.wifi.events.day_night_fight.DNFRoles;
-import io.wifi.events.day_night_fight.cca.DNFWorldComponent;
+
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
@@ -46,17 +44,7 @@ public class BatonHandler {
         }
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
 
-        if (DNF.isDayNightFightMode(level)) {
-            if (!game.isRole(attacker, DNFRoles.SOLDIER)) {
-                return InteractionResult.FAIL;
-            }
-            UUID votedTarget = DNFWorldComponent.KEY.get(level).getVotedTarget();
-            if (votedTarget == null || !votedTarget.equals(victim.getUUID())) {
-                attacker.displayClientMessage(Component.translatable("message.dnf.soldier.baton_no_target")
-                        .withStyle(ChatFormatting.YELLOW), true);
-                return InteractionResult.FAIL;
-            }
-        }
+
 
         UUID aId = attacker.getUUID();
         HitRecord rec = RECORDS.get(aId);
@@ -88,9 +76,7 @@ public class BatonHandler {
         if (rec.count >= 2) {
             // 击杀
             RECORDS.remove(aId);
-            if (game.gameMode== SREGameModes.DAY_NIGHT_FIGHT){
-                io.wifi.starrailexpress.game.GameUtils.killPlayer(victim, true, null, org.agmas.noellesroles.Noellesroles.id("baton_kill"));
-            }
+
             {
                 io.wifi.starrailexpress.game.GameUtils.killPlayer(victim, true, attacker, org.agmas.noellesroles.Noellesroles.id("baton_kill"));
             }

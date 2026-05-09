@@ -49,7 +49,7 @@ public class MinecraftClientMixin {
     @WrapOperation(method = "handleKeybinds", at = @At(value = "FIELD", target = "Lnet/minecraft/world/entity/player/Inventory;selected:I"))
     private void tmm$invalid(@NotNull Inventory instance, int value, Operation<Void> original) {
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(instance.player.level());
-        if (gameComponent.gameStatus == SREGameWorldComponent.GameStatus.ACTIVE&&gameComponent.gameMode== SREGameModes.DAY_NIGHT_FIGHT){
+        if (gameComponent.gameStatus == SREGameWorldComponent.GameStatus.ACTIVE){
             original.call(instance, value);
             return;
         }

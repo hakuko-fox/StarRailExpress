@@ -10,8 +10,7 @@ import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomBattleScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.content.vote.client.VoteScreen;
-import io.wifi.events.day_night_fight.DNF;
-import io.wifi.events.day_night_fight.client.gui.clue.ClueArchiveScreen;
+
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.RequestOpenClueArchivePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -85,7 +84,7 @@ public class InputHandler {
                 client.setScreen(new MapSelectorScreen());
             } else if (ClientVoteCache.canReOpen() && !(client.screen instanceof VoteScreen)) {
                 if ("dnf_meeting_vote".equals(ClientVoteCache.getTypeId())
-                        && !DNF.isInConfiguredMeetingArea(client.player)) {
+                        ) {
                     if (client.player != null) {
                         client.player.displayClientMessage(
                                 Component.translatable("message.dnf.vote.must_be_near_meeting"), true);
@@ -97,10 +96,7 @@ public class InputHandler {
         }
 
         if (openClueArchiveKeybind.consumeClick()) {
-            if (client.screen instanceof ClueArchiveScreen) {
-                client.setScreen(null);
-                return;
-            }
+
             if (client.screen != null) {
                 return;
             }

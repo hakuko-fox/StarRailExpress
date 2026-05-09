@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.client;
 
-import io.wifi.events.day_night_fight.cca.DNFUnderworldComponent;
 import io.wifi.starrailexpress.client.PostProcessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -63,9 +62,7 @@ public class ImmersiveFilterShader {
             if (effectTime != null) effectTime.set(totalTime);
             var darkness = effect.safeGetUniform("Darkness");
             if (darkness != null) {
-                float value = effectHolder == ModEffects.AFTERLIFE_FILTER
-                        ? DNFUnderworldComponent.KEY.get(mc.player).getDarkness()
-                        : 0.0f;
+                float value =0.0f;
                 darkness.set(value);
             }
             return true;

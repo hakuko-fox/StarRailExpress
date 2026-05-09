@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.init;
 
 import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
-import io.wifi.events.day_night_fight.DNF;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
@@ -272,7 +272,7 @@ public class RoleShopHandler {
     initializeBloodFeudistShop();
 
     ShopContent.register();
-    DNF.registerShops();
+
     {
       var SHOP = new ArrayList<ShopEntry>();
       SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), SREConfig.instance().lockpickPrice, ShopEntry.Type.TOOL));

@@ -87,6 +87,8 @@ public interface TMMItems {
     Item NOTE = registrar.create("note", new NoteItem(new Item.Properties().stacksTo(4)), EQUIPMENT_GROUP);
     Item NUNCHUCK = registrar.create("nunchuck", new NunchuckItem(new Item.Properties().stacksTo(1)),
             EQUIPMENT_GROUP);
+    Item EMOJI_HELMET = registrar.create("emoji_helmet", new EmojiHelmetItem(new Item.Properties().stacksTo(1)),
+            EQUIPMENT_GROUP);
 
     public static void initialize() {
         INVISIBLE_ITEMS.add(TMMItems.NOTE);

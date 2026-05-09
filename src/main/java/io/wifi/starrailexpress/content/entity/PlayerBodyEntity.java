@@ -97,7 +97,7 @@ public class PlayerBodyEntity extends LivingEntity {
         SimpleContainer inv = getComponent().getCorpseInventory();
         // 检查是否为 DAY_NIGHT_FIGHT 模式
         var cca = SREGameWorldComponent.KEY.get(this.level());
-        boolean isDayNightFight = cca != null && cca.gameMode == SREGameModes.DAY_NIGHT_FIGHT;
+        boolean isDayNightFight = false;
         
         if (isDayNightFight) {
             // DAY_NIGHT_FIGHT 模式：护甲槽位在36-39，副手在40
@@ -128,7 +128,7 @@ public class PlayerBodyEntity extends LivingEntity {
         SimpleContainer inv = getComponent().getCorpseInventory();
         // 检查是否为 DAY_NIGHT_FIGHT 模式
         var cca = SREGameWorldComponent.KEY.get(this.level());
-        boolean isDayNightFight = cca != null && cca.gameMode == SREGameModes.DAY_NIGHT_FIGHT;
+        boolean isDayNightFight = false;
         
         if (isDayNightFight) {
             // DAY_NIGHT_FIGHT 模式：护甲槽位在36-39，副手在40
@@ -191,7 +191,7 @@ public class PlayerBodyEntity extends LivingEntity {
         
         // 检查是否为 DAY_NIGHT_FIGHT 模式
         var cca = SREGameWorldComponent.KEY.get(this.level());
-        boolean isDayNightFight = cca != null && cca.gameMode == SREGameModes.DAY_NIGHT_FIGHT;
+        boolean isDayNightFight = false;
         
         if (isDayNightFight) {
             // DAY_NIGHT_FIGHT 模式：同步所有物品栏（快捷栏+主物品栏+护甲+副手）
@@ -305,7 +305,7 @@ public class PlayerBodyEntity extends LivingEntity {
             
             // 检查是否为 DAY_NIGHT_FIGHT 模式
             var cca = SREGameWorldComponent.KEY.get(serverPlayer.level());
-            boolean isDayNightFight = cca != null && cca.gameMode == SREGameModes.DAY_NIGHT_FIGHT;
+            boolean isDayNightFight =false;
             
             // 殡仪员特殊检查 - canMorticianOpenCorpse 已经检查了冷却
             if (canMorticianOpenCorpse(serverPlayer)) {
@@ -419,7 +419,7 @@ public class PlayerBodyEntity extends LivingEntity {
         SimpleContainer inv = getComponent().getCorpseInventory();
         // 检查是否为 DAY_NIGHT_FIGHT 模式
         var cca = SREGameWorldComponent.KEY.get(this.level());
-        boolean isDayNightFight = cca != null && cca.gameMode == SREGameModes.DAY_NIGHT_FIGHT;
+        boolean isDayNightFight = false;
         
         int checkSlots = isDayNightFight ? 54 : 14;
         for (int i = 0; i < checkSlots; i++) {

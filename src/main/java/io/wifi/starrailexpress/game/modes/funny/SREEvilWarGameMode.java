@@ -37,7 +37,7 @@ import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
-import io.wifi.events.day_night_fight.DNFRoles;
+
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -82,7 +82,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         BANED_ROLES.add(ModRoles.CAT_KILLER);
         BANED_ROLES.add(ModRoles.SHADOW_FALCON);
         BANED_ROLES.add(SpecialGameModeRoles.SEEKER);
-        BANED_ROLES.add(DNFRoles.KILLER);
+
     }
 
     @Override

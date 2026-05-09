@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.SRE;
-import io.wifi.events.day_night_fight.DNFGameMode;
+
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.modes.WTLooseEndsGameMode;
 import io.wifi.starrailexpress.game.modes.funny.*;
@@ -56,7 +56,6 @@ public class SREGameModes {
     public static final GameMode HIDE_AND_SEEK_MODE = registerGameMode(
             new SREHideAndSeekGameMode(HIDE_AND_SEEK_MODE_ID));
     public static final GameMode TNT_TAG_MODE = registerGameMode(new SRETNTTagGameMode(TNT_TAG_MODE_ID));
-    public static final GameMode DAY_NIGHT_FIGHT = registerGameMode(new DNFGameMode(DAY_NIGHT_FIGHT_ID));
     //
     // written by canyuesama
     public static final GameMode FOURTH_ROOM = registerGameMode(new FourthRoomGameMode(FOURTH_ROOM_ID));

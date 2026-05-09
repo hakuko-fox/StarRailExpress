@@ -7,23 +7,17 @@ import dev.doctor4t.ratatouille.client.util.OptionLocker;
 import dev.doctor4t.ratatouille.client.util.ambience.AmbienceUtil;
 import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
-import io.wifi.events.day_night_fight.block.DNFBlocks;
-import io.wifi.events.day_night_fight.block_entity.HologramDisplayBlockEntity;
-import io.wifi.events.day_night_fight.entity.ClueRenderer;
-import io.wifi.events.day_night_fight.entity.DNFEntities;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
-import io.wifi.events.day_night_fight.client.gui.clue.ClueArchiveHud;
+
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomClientState;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomTableHud;
-import io.wifi.events.day_night_fight.client.gui.clue.ClueArchiveScreen;
-import io.wifi.events.day_night_fight.client.gui.HotbarStorageScreen;
-import io.wifi.events.day_night_fight.block_entity.DNFBlockEntities;
-import io.wifi.events.day_night_fight.gui.DNFMenus;
+
 import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
 import io.wifi.starrailexpress.client.gui.*;
 import io.wifi.starrailexpress.client.gui.screen.*;
@@ -38,6 +32,7 @@ import io.wifi.starrailexpress.client.util.MyBackgroundAmbience;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
+import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity;
 import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
@@ -78,6 +73,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.CameraType;
@@ -93,6 +89,7 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
@@ -104,6 +101,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
@@ -213,19 +211,14 @@ public class SREClient implements ClientModInitializer {
         ModelLoadingPlugin.register(new GeneralModelLoadingPlugin());
         // Register particle factories
         TMMParticles.registerFactories();
-        MenuScreens.register(DNFMenus.HOTBAR_STORAGE, HotbarStorageScreen::new);
+
 
         // Entity renderer registration
         EntityRendererRegistry.register(TMMEntities.SEAT, NoopRenderer::new);
         EntityRendererRegistry.register(TMMEntities.FIRECRACKER, FirecrackerEntityRenderer::new);
         EntityRendererRegistry.register(TMMEntities.GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
-        EntityRendererRegistry.register(io.wifi.events.day_night_fight.entity.DNFEntities.UNDERWORLD_MONSTER, 
-                io.wifi.events.day_night_fight.client.renderer.UnderworldMonsterRenderer::new);
-        EntityRendererRegistry.register(io.wifi.events.day_night_fight.entity.DNFEntities.TASK_POINT,
-                io.wifi.events.day_night_fight.client.renderer.DNFTaskPointRenderer::new);
-        EntityRendererRegistry.register(DNFEntities.CLUE_POINT,
-                ClueRenderer::new);
+
 
         // Register entity model layers
         TMMModelLayers.initialize();
@@ -265,7 +258,6 @@ public class SREClient implements ClientModInitializer {
                 TMMBlocks.RUSTED_WHEEL,
                 TMMBlocks.BARRIER_PANEL,
                 TMMBlocks.FOOD_PLATTER,
-                DNFBlocks.SERVING_PLATE,
                 TMMBlocks.DRINK_TRAY,
                 TMMBlocks.LIGHT_BARRIER,
                 TMMBlocks.HORN);
@@ -312,13 +304,10 @@ public class SREClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 TMMBlockEntities.BEVERAGE_PLATE,
                 PlateBlockEntityRenderer::new);
-        BlockEntityRenderers.register(
-                DNFBlockEntities.SERVING_PLATE,
-                PlateBlockEntityRenderer::new);
+
 
         BlockEntityRenderers.register(TMMBlockEntities.HORN, HornBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
-        BlockEntityRenderers.register(TMMBlockEntities.HOLOGRAM_DISPLAY, HologramDisplayBlockEntityRenderer::new);
 
         AmbienceUtil.registerBackgroundAmbience(
                 new BackgroundAmbience(TMMSounds.AMBIENT_PSYCHO_DRONE, player -> gameComponent.isPsychoActive(), 20));
@@ -368,9 +357,7 @@ public class SREClient implements ClientModInitializer {
         VoteClientReceiver.register();
         ClientPlayNetworking.registerGlobalReceiver(SecurityCameraModePayload.ID,
                 new SecurityCameraModePayload.ClientReceiver());
-        ClientPlayNetworking.registerGlobalReceiver(OpenClueArchivePayload.ID, (payload, context) -> {
-            context.client().execute(() -> context.client().setScreen(new ClueArchiveScreen()));
-        });
+
         ClientPlayNetworking.registerGlobalReceiver(IsLobbyConfigPayload.ID, (payload, context) -> {
             SREClient.isInLobby = payload.isLobby();
             SRE.isLobby = payload.isLobby();
@@ -715,7 +702,7 @@ public class SREClient implements ClientModInitializer {
             // isInstinctToggleEnabled = false;
         });
         // 注册 EntityInteractionBlock 同步数据包的客户端接收器
-        EntityInteractionBlockPayload.registerClientReceiver();
+        registerClientReceiver();
         // 实体交互方块UI
         ClientPlayNetworking.registerGlobalReceiver(EntityInteractionBlockPayload.OpenUI.TYPE, (payload, context) -> {
             context.client().execute(() -> {
@@ -813,7 +800,7 @@ public class SREClient implements ClientModInitializer {
             AFKRenderer.renderAFKEffects(guiGraphics, deltaTick.getRealtimeDeltaTicks());
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
             FourthRoomTableHud.render(guiGraphics);
-            ClueArchiveHud.render(guiGraphics);
+
             // RoleUnlockHudRenderer.render(guiGraphics);
 
             // // 添加地图详情渲染
@@ -864,7 +851,38 @@ public class SREClient implements ClientModInitializer {
             }
         });
     }
+    /**
+     * 在客户端初始化时注册 SyncBlockEntity 数据包的接收器
+     * 这个方法需要在客户端初始化代码（SREClient.java）中调用
+     */
+    public static void registerClientReceiver() {
+        PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.SyncBlockEntity.TYPE, EntityInteractionBlockPayload.SyncBlockEntity.CODEC);
+        ClientPlayNetworking.registerGlobalReceiver(EntityInteractionBlockPayload.SyncBlockEntity.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                Level clientLevel = Minecraft.getInstance().level;
+                if (clientLevel != null) {
+                    BlockEntity be = clientLevel.getBlockEntity(payload.pos());
+                    if (be instanceof EntityInteractionBlockEntity entity) {
+                        CompoundTag data = payload.data();
+                        // 直接更新 BlockEntity 的数据，不打开 UI
+                        entity.setTeleportPoint(data.getBoolean("IsTeleportPoint"));
+                        entity.setTeleportPointId(data.getInt("TeleportPointId"));
+                        entity.setTaskMarker(data.getBoolean("IsTaskMarker"));
+                        entity.setTaskMarkerColor(data.contains("TaskMarkerColor") ? data.getInt("TaskMarkerColor") : 0xFFFFFF);
+                        if (data.contains("TaskHighlightCondition")) {
+                            entity.setTaskHighlightCondition(EntityInteractionBlockEntity.TaskHighlightCondition.valueOf(data.getString("TaskHighlightCondition")));
+                        }
+                        entity.setTaskHighlightTaskType(data.getString("TaskHighlightTaskType"));
+                        entity.setTaskHighlightCustomTaskId(data.getString("TaskHighlightCustomTaskId"));
+                        entity.setTaskInstinctId(data.contains("TaskInstinctId") ? data.getInt("TaskInstinctId") : 100);
 
+                        // 手动调用 setChanged 通知客户端 BlockEntity 已更新
+                        entity.setChanged();
+                    }
+                }
+            });
+        });
+    }
     private static void updateInstinctCache(Minecraft client) {
         HashSet<UUID> toRemove = new HashSet<>();
         for (var entry : cachedHighLightMap.entrySet()) {

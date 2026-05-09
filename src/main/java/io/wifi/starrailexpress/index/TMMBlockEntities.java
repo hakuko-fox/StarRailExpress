@@ -2,7 +2,7 @@ package io.wifi.starrailexpress.index;
 
 import dev.doctor4t.ratatouille.util.registrar.BlockEntityTypeRegistrar;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.events.day_night_fight.block_entity.HologramDisplayBlockEntity;
+
 import io.wifi.starrailexpress.content.block.entity.HornBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.*;
 import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity;
@@ -34,8 +34,7 @@ public interface TMMBlockEntities {
                     org.agmas.noellesroles.game.modes.fourthroom.block.FourthRoomTableBlockEntity::new,
                     TMMBlocks.FOURTH_ROOM_TABLE));
 
-    BlockEntityType<HologramDisplayBlockEntity> HOLOGRAM_DISPLAY = registrar.create("hologram_display",
-            BlockEntityType.Builder.of(HologramDisplayBlockEntity::new, TMMBlocks.HOLOGRAM_DISPLAY));
+
 
     BlockEntityType<EntityInteractionBlockEntity> ENTITY_INTERACTION_BLOCK = registrar.create("entity_interaction_block",
             BlockEntityType.Builder.of(EntityInteractionBlockEntity::new, TMMBlocks.ENTITY_INTERACTION_BLOCK, TMMBlocks.ENTITY_INTERACTION_PANEL));

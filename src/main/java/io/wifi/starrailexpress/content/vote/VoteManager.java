@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.Nullable;
 
-import io.wifi.events.day_night_fight.DNF;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.vote.VoteOption.ItemOption;
 import io.wifi.starrailexpress.content.vote.VoteOption.PlayerOption;
@@ -164,7 +164,7 @@ public class VoteManager {
             player.displayClientMessage(Component.translatable("vote.not_allowed").withStyle(ChatFormatting.RED), true);
             return;
         }
-        if ("dnf_meeting_vote".equals(session.getTypeId()) && !DNF.canUseMeetingVote(player)) {
+        if ("dnf_meeting_vote".equals(session.getTypeId())) {
             player.displayClientMessage(Component.translatable("message.dnf.vote.must_be_near_meeting")
                     .withStyle(ChatFormatting.YELLOW), true);
             return;

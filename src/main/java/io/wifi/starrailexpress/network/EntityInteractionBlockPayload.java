@@ -5,7 +5,7 @@ import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.client.Minecraft;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -147,38 +147,7 @@ public class EntityInteractionBlockPayload {
         });
     }
 
-    /**
-     * 在客户端初始化时注册 SyncBlockEntity 数据包的接收器
-     * 这个方法需要在客户端初始化代码（SREClient.java）中调用
-     */
-    public static void registerClientReceiver() {
-        PayloadTypeRegistry.playS2C().register(SyncBlockEntity.TYPE, SyncBlockEntity.CODEC);
-        ClientPlayNetworking.registerGlobalReceiver(SyncBlockEntity.TYPE, (payload, context) -> {
-            context.client().execute(() -> {
-                Level clientLevel = Minecraft.getInstance().level;
-                if (clientLevel != null) {
-                    BlockEntity be = clientLevel.getBlockEntity(payload.pos());
-                    if (be instanceof EntityInteractionBlockEntity entity) {
-                        CompoundTag data = payload.data();
-                        // 直接更新 BlockEntity 的数据，不打开 UI
-                        entity.setTeleportPoint(data.getBoolean("IsTeleportPoint"));
-                        entity.setTeleportPointId(data.getInt("TeleportPointId"));
-                        entity.setTaskMarker(data.getBoolean("IsTaskMarker"));
-                        entity.setTaskMarkerColor(data.contains("TaskMarkerColor") ? data.getInt("TaskMarkerColor") : 0xFFFFFF);
-                        if (data.contains("TaskHighlightCondition")) {
-                            entity.setTaskHighlightCondition(EntityInteractionBlockEntity.TaskHighlightCondition.valueOf(data.getString("TaskHighlightCondition")));
-                        }
-                        entity.setTaskHighlightTaskType(data.getString("TaskHighlightTaskType"));
-                        entity.setTaskHighlightCustomTaskId(data.getString("TaskHighlightCustomTaskId"));
-                        entity.setTaskInstinctId(data.contains("TaskInstinctId") ? data.getInt("TaskInstinctId") : 100);
-                        
-                        // 手动调用 setChanged 通知客户端 BlockEntity 已更新
-                        entity.setChanged();
-                    }
-                }
-            });
-        });
-    }
+
 
     public static void sendOpenUI(ServerPlayer player, BlockPos pos, EntityInteractionBlockEntity entity) {
         CompoundTag data = new CompoundTag();

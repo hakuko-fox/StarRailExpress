@@ -3,7 +3,7 @@ package io.wifi.starrailexpress;
 import com.google.common.reflect.Reflection;
 import com.google.gson.JsonObject;
 import io.wifi.ConfigCompact.ConfigEvents;
-import io.wifi.events.day_night_fight.DNF;
+
 import io.wifi.StarRailExpressID;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -122,7 +122,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         initSkinsNetworkSync();
         SpecialGameModeRoles.init();
         SpecialGameModeModifiers.init();
-        DNF.init();
+
     }
 
     private void initCCAAuto() {
@@ -232,7 +232,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void registerCommands() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-            DNF.registerCommands(dispatcher,registryAccess,environment);
+
             SREVoteCommand.register(dispatcher, registryAccess);
             NarratorCommand.register(dispatcher,registryAccess);
             GiveRoomKeyCommand.register(dispatcher);
@@ -381,7 +381,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PayloadTypeRegistry.playC2S().register(StoreBuyPayload.ID, StoreBuyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestOpenClueArchivePayload.ID, RequestOpenClueArchivePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(SendClueBookPayload.ID, SendClueBookPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.VoteForMapPayload.ID,
                 io.wifi.starrailexpress.network.VoteForMapPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SecurityCameraExitRequestPayload.ID,
@@ -434,7 +433,6 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(NoteEditPayload.ID, new NoteEditPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(RequestOpenClueArchivePayload.ID,
                 new RequestOpenClueArchivePayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(SendClueBookPayload.ID, new SendClueBookPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.VoteForMapPayload.ID,
                 (payload, context) -> {
                     io.wifi.starrailexpress.network.VoteForMapPayload.Handler.handle(payload, context.player());

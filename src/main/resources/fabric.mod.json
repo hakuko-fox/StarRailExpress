@@ -165,9 +165,6 @@
       "starrailexpress:role",
       "starrailexpress:dnf_inventory_backup",
       "starrailexpress:monitor",
-      "starrailexpress:dnf_world",
-      "starrailexpress:dnf_underworld",
-      "starrailexpress:dnf_clothing",
 
       "starrailexpress:body_entity",
       "starrailexpress:mood",

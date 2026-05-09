@@ -586,8 +586,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (player.isSpectator() || player.isCreative())
             return;
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorldComponent.gameMode == SREGameModes.DAY_NIGHT_FIGHT)
-            return;
+
         final var block = player.level()
                 .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
         final var block1 = player.level()

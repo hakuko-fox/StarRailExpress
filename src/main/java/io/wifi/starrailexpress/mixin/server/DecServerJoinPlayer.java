@@ -40,16 +40,16 @@ public class DecServerJoinPlayer {
         // }
         if (gameWorldComponent.getGameStatus() == GameStatus.ACTIVE) {
             if (serverPlayer.level() instanceof ServerLevel serverWorld) {
-                if (gameWorldComponent.gameMode != SREGameModes.DAY_NIGHT_FIGHT) {
+
                     AreasWorldComponent areas = AreasWorldComponent.KEY.get(serverWorld);
                     AreasWorldComponent.PosWithOrientation spectatorSpawnPos = areas.getSpectatorSpawnPos();
                     serverPlayer.teleportTo(serverWorld, spectatorSpawnPos.pos.x(), spectatorSpawnPos.pos.y(),
                             spectatorSpawnPos.pos.z(), spectatorSpawnPos.yaw, spectatorSpawnPos.pitch);
                     serverPlayer.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
-                }
+
             }
         } else {
-            if (gameWorldComponent.gameMode != SREGameModes.DAY_NIGHT_FIGHT) {
+
                 if (serverPlayer.level() instanceof ServerLevel serverWorld) {
                     BlockPos spawn = serverWorld.getSharedSpawnPos();
                     float angle = serverWorld.getSharedSpawnAngle();
@@ -59,7 +59,7 @@ public class DecServerJoinPlayer {
                     if (!serverPlayer.isCreative())
                         serverPlayer.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
                 }
-            }
+
         }
         SyncMapConfigPayload.sendToPlayer(serverPlayer);
         SREGameWorldComponent.KEY.syncWith(serverPlayer, (ComponentProvider) serverPlayer.level());

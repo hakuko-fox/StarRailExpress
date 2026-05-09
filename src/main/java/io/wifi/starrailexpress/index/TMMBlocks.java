@@ -3,7 +3,7 @@ package io.wifi.starrailexpress.index;
 import java.util.function.ToIntFunction;
 
 import dev.doctor4t.ratatouille.util.registrar.BlockRegistrar;
-import io.wifi.events.day_night_fight.block.HologramDisplayBlock;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.block.*;
 import io.wifi.starrailexpress.content.block.EntityInteractionBlock;
@@ -545,10 +545,7 @@ public interface TMMBlocks {
       TMMItems.DECORATION_GROUP);
   Block CARGO_BOX = registrar.createWithItem("cargo_box", new CargoBoxBlock(BlockBehaviour.Properties.of().strength(1)
       .sound(SoundType.COPPER).mapColor(MapColor.COLOR_GRAY).noOcclusion()), TMMItems.DECORATION_GROUP);
-  Block DNF_WASHING_MACHINE = registrar.createWithItem("dnf_washing_machine",
-      new io.wifi.events.day_night_fight.DNFWashingMachineBlock(BlockBehaviour.Properties.of()
-          .forceSolidOn().strength(1.2f).sound(SoundType.METAL).mapColor(MapColor.COLOR_LIGHT_GRAY)),
-      TMMItems.DECORATION_GROUP);
+
   Block WHITE_LOUNGE_COUCH = registrar.createWithItem("white_lounge_couch",
       new LoungeCouch(
           BlockBehaviour.Properties.of().noOcclusion().forceSolidOn().strength(0.5f).sound(SoundType.CHISELED_BOOKSHELF)),
@@ -675,14 +672,7 @@ public interface TMMBlocks {
       new org.agmas.noellesroles.game.modes.fourthroom.block.FourthRoomTableBlock(),
       TMMItems.EQUIPMENT_GROUP);
 
-  // 全息展示方块
-  Block HOLOGRAM_DISPLAY = registrar.createWithItem("hologram_display",
-      new HologramDisplayBlock(BlockBehaviour.Properties.of()
-          .strength(0.5f)
-          .sound(SoundType.GLASS)
-          .noOcclusion()
-          .lightLevel(state -> 15)), // 发光效果
-      TMMItems.DECORATION_GROUP);
+
 
   // 实体交互方块 - 普通版本
   Block ENTITY_INTERACTION_BLOCK = sreBlockRegistrar.create("entity_interaction_block",

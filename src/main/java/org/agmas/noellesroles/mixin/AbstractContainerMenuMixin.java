@@ -1,7 +1,5 @@
 package org.agmas.noellesroles.mixin;
 
-import io.wifi.events.day_night_fight.DNF;
-import io.wifi.events.day_night_fight.gui.HotbarStorageMenu;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -30,13 +28,11 @@ public class AbstractContainerMenuMixin {
             return;
         SREGameWorldComponent sreGameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
 
-        if (sreGameWorldComponent !=null&&sreGameWorldComponent.gameStatus == SREGameWorldComponent.GameStatus.ACTIVE &&sreGameWorldComponent.gameMode== SREGameModes.DAY_NIGHT_FIGHT&&!DNF.isDNFKiller( player)){
-            return;
-        }
+
         if (instance1 instanceof CustomInventoryMenu)
             return;
         if (!(instance1 instanceof InventoryMenu || instance1 instanceof PostmanScreenHandler
-                || instance1 instanceof DetectiveInspectScreenHandler ||instance1 instanceof HotbarStorageMenu ||instance1.getClass().getPackage().getName().contains("supplementaries"))) {
+                || instance1 instanceof DetectiveInspectScreenHandler  ||instance1.getClass().getPackage().getName().contains("supplementaries"))) {
             ci.cancel();
         }
     }

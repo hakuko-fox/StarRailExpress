@@ -1,6 +1,6 @@
 package io.wifi.starrailexpress.content.gui;
 
-import io.wifi.events.day_night_fight.DNFChefHatItem;
+
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;

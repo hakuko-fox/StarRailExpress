@@ -31,10 +31,7 @@ public abstract class MinecraftClientMixin {
 
         SREGameWorldComponent gameComponent = SREClient.gameComponent;
         if (gameComponent!=null){
-            if (gameComponent.gameMode== SREGameModes.DAY_NIGHT_FIGHT){
-                original.call(instance, screen);
-                return;
-            }
+
         if (gameComponent.getFade() > 0) {
             return;
         }

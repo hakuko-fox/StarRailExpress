@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.mixin.roles.stalker;
 
-import io.wifi.events.day_night_fight.DNFRoles;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
