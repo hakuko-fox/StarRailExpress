@@ -582,36 +582,36 @@ public class ModEventsRegister {
         // 肉汁独处保护机制 - 杀手/中立只能在单独相处时击杀肉汁
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
-            
+
             // 检查受害者是否是肉汁
             if (!gameWorld.isRole(victim, ModRoles.MEATBALL)) {
                 return true;
             }
-            
+
             // 检查是否是炸弹客炸弹伤害（不触发独处保护）
             if (deathReason != null && deathReason.getPath().equals("bomb_death")) {
                 return true;
             }
-            
+
             // 检查是否是中毒伤害（不触发独处保护）
             if (deathReason != null && deathReason.getPath().equals("poison")) {
                 return true;
             }
-            
+
             // 检查是否是阴谋家心脏骤停伤害（不触发独处保护）
             if (deathReason != null && deathReason.getPath().equals("heart_attack")) {
                 return true;
             }
-            
+
             // 检查击杀者是否存在且是否为非乘客阵营
             if (killer == null || gameWorld.isInnocent(killer)) {
                 return true;
             }
-            
+
             // 检查附近4格范围内（y轴3格）是否有其他好人
             double safeDistanceSq = 4.0 * 4.0; // 水平4格距离平方
             double safeHeightSq = 3.0 * 3.0; // y轴3格距离平方
-            
+
             for (Player nearbyPlayer : victim.level().players()) {
                 if (nearbyPlayer == victim || nearbyPlayer == killer) {
                     continue;
@@ -619,29 +619,28 @@ public class ModEventsRegister {
                 if (!GameUtils.isPlayerAliveAndSurvival(nearbyPlayer)) {
                     continue;
                 }
-                
+
                 // 检查是否是好人阵营
                 if (gameWorld.isInnocent(nearbyPlayer)) {
                     double dx = nearbyPlayer.getX() - victim.getX();
                     double dy = nearbyPlayer.getY() - victim.getY();
                     double dz = nearbyPlayer.getZ() - victim.getZ();
-                    
+
                     // 检查是否在范围内（水平4格，y轴3格）
                     double horizontalDistSq = dx * dx + dz * dz;
                     if (horizontalDistSq <= safeDistanceSq && dy * dy <= safeHeightSq) {
                         // 附近有好人在保护范围内，阻止击杀
                         if (victim instanceof ServerPlayer sp) {
                             sp.displayClientMessage(
-                                Component.translatable("message.noellesroles.meatball.protected")
-                                    .withStyle(ChatFormatting.GREEN),
-                                true
-                            );
+                                    Component.translatable("message.noellesroles.meatball.protected")
+                                            .withStyle(ChatFormatting.GREEN),
+                                    true);
                         }
                         return false;
                     }
                 }
             }
-            
+
             return true;
         });
         THEventHandler.registerEvents();
@@ -700,7 +699,8 @@ public class ModEventsRegister {
                             sp.displayClientMessage(Component.translatable("message.sre.unyielding.immune_killer")
                                     .withStyle(ChatFormatting.RED), true);
                             // 播放盾牌格挡音效，让附近所有人听到
-                            sp.serverLevel().playSound(null, sp.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.MASTER,
+                            sp.serverLevel().playSound(null, sp.blockPosition(), SoundEvents.SHIELD_BLOCK,
+                                    SoundSource.MASTER,
                                     1.0F, 1.0F);
                             // 释放不灭图腾粒子效果
                             ServerLevel level = sp.serverLevel();
@@ -726,18 +726,22 @@ public class ModEventsRegister {
                             .add(victim.getUUID());
                     // 播放盾牌格挡音效，让附近所有人听到
                     if (victim instanceof ServerPlayer sp) {
-                        sp.serverLevel().playSound(null, sp.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.MASTER,
+                        sp.serverLevel().playSound(null, sp.blockPosition(), SoundEvents.SHIELD_BLOCK,
+                                SoundSource.MASTER,
                                 1.0F, 1.0F);
                         sp.displayClientMessage(Component.translatable("message.sre.unyielding.immune_civilian")
                                 .withStyle(ChatFormatting.GREEN), true);
                         // 释放不灭图腾粒子效果
                         ServerLevel level = sp.serverLevel();
-                        for (int i = 0; i < 30; i++) {
-                            level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-                                    sp.getX() + level.random.nextDouble() * 2.0 - 1.0,
-                                    sp.getY() + 0.5 + level.random.nextDouble() * 2.5,
-                                    sp.getZ() + level.random.nextDouble() * 2.0 - 1.0,
-                                    1, 0, 0, 0, 0);
+                        for (var p : level.players()) {
+                            // boolean sendParticles( ServerPlayer player, ParticleOptions type, boolean
+                            // longDistance, double posX, double posY, double posZ, int particleCount,
+                            // double xOffset, double yOffset, double zOffset, double speed)
+                            level.sendParticles(p, ParticleTypes.TOTEM_OF_UNDYING, true,
+                                    sp.getX(),
+                                    sp.getY(),
+                                    sp.getZ(),
+                                    30, 1, 1, 1, 0);
                         }
                     }
                     return false;
@@ -1841,7 +1845,7 @@ public class ModEventsRegister {
                 "noellesroles:passbook",
                 "minecraft:written_book"));
         BuiltInRegistries.ITEM.entrySet().stream()
-                .filter(entry ->SRE.canDropItem.contains(entry.getKey().toString()))
+                .filter(entry -> SRE.canDropItem.contains(entry.getKey().toString()))
                 .map(entry -> entry.getValue().getDefaultInstance().getItem())
                 .forEach(item -> {
                     ModEventsRegister.canThrowItems.add(item);

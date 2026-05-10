@@ -24,8 +24,7 @@ public class EntityInteractionBlockPayload {
         public static final StreamCodec<FriendlyByteBuf, OpenUI> CODEC = StreamCodec.composite(
                 BlockPos.STREAM_CODEC, OpenUI::pos,
                 ByteBufCodecs.COMPOUND_TAG, OpenUI::data,
-                OpenUI::new
-        );
+                OpenUI::new);
 
         @Override
         public Type<OpenUI> type() {
@@ -39,8 +38,7 @@ public class EntityInteractionBlockPayload {
         public static final StreamCodec<FriendlyByteBuf, SyncBlockEntity> CODEC = StreamCodec.composite(
                 BlockPos.STREAM_CODEC, SyncBlockEntity::pos,
                 ByteBufCodecs.COMPOUND_TAG, SyncBlockEntity::data,
-                SyncBlockEntity::new
-        );
+                SyncBlockEntity::new);
 
         @Override
         public Type<SyncBlockEntity> type() {
@@ -54,8 +52,7 @@ public class EntityInteractionBlockPayload {
         public static final StreamCodec<FriendlyByteBuf, SaveConfig> CODEC = StreamCodec.composite(
                 BlockPos.STREAM_CODEC, SaveConfig::pos,
                 ByteBufCodecs.COMPOUND_TAG, SaveConfig::data,
-                SaveConfig::new
-        );
+                SaveConfig::new);
 
         @Override
         public Type<SaveConfig> type() {
@@ -67,13 +64,13 @@ public class EntityInteractionBlockPayload {
      * 构建 SaveConfig 的 NBT 数据
      */
     public static CompoundTag buildSaveConfigData(BlockPos pos,
-                                                  List<EntityInteractionBlockEntity.TriggerCondition> conditions,
-                                                  List<EntityInteractionBlockEntity.TriggerAction> actions, int cooldown,
-                                                  boolean isTeleportPoint, int teleportPointId,
-                                                  boolean isTaskMarker, int taskMarkerColor,
-                                                  EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition,
-                                                  String taskHighlightTaskType, String taskHighlightCustomTaskId,
-                                                  int taskInstinctId) {
+            List<EntityInteractionBlockEntity.TriggerCondition> conditions,
+            List<EntityInteractionBlockEntity.TriggerAction> actions, int cooldown,
+            boolean isTeleportPoint, int teleportPointId,
+            boolean isTaskMarker, int taskMarkerColor,
+            EntityInteractionBlockEntity.TaskHighlightCondition taskHighlightCondition,
+            String taskHighlightTaskType, String taskHighlightCustomTaskId,
+            int taskInstinctId) {
         CompoundTag data = new CompoundTag();
 
         ListTag conditionsTag = new ListTag();

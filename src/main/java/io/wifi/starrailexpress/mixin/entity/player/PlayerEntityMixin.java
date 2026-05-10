@@ -167,6 +167,12 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
                 || IsPlayerPunchable.EVENT.invoker().gotPunchable(target)
                 || AllowPlayerPunching.EVENT.invoker().allowPunching(self)) {
             // 在攻击实体之前调用角色的左键点击实体方法
+            if (this.getMainHandItem().getItem() instanceof SREItemProperties.LeftClickHurtable itt) {
+                var result = itt.onTryHurt(self, target, this.getMainHandItem());
+                if (result == InteractionResult.CONSUME){
+                    return;
+                }
+            }
             var result = io.wifi.starrailexpress.api.RoleMethodDispatcher.callLeftClickEntity(self, target);
             if (result != InteractionResult.CONSUME)
                 original.call(target);
@@ -236,7 +242,6 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
     @Inject(method = "canEat(Z)Z", at = @At("HEAD"), cancellable = true)
     private void tmm$allowEatingRegardlessOfHunger(boolean ignoreHunger, @NotNull CallbackInfoReturnable<Boolean> cir) {
         if (SRE.isLobby) {
-            cir.setReturnValue(ignoreHunger);
             return;
         }
 
