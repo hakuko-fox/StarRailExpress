@@ -2274,13 +2274,13 @@ public class DrawingBoardRecognizer {
     // ==================== 识别方法 ====================
 
     /**
-     * 识别 16x16 像素数据
+     * 识别 16x16 像素数据 - 使用多算法融合
      */
     public int recognize(byte[][] pixels) {
         if (pixels == null || pixels.length != 16 || pixels[0].length != 16) {
             return UNKNOWN;
         }
-        
+
         // 检查画板是否全部为默认白色(1)，如果是则不识别
         boolean allWhite = true;
         for (int y = 0; y < 16; y++) {
@@ -2295,13 +2295,42 @@ public class DrawingBoardRecognizer {
         if (allWhite) {
             return UNKNOWN;
         }
-        
+
         // 复制像素数据以避免修改原始数据
         byte[][] normalizedPixels = normalizeColors(pixels);
-        // 将白色转换为透明（黑色），只关注有颜色的部分
         double[] features = SimpleKNN.matrixToFeature(normalizedPixels, true);
-        // 提高阈值到 0.7，减少误识别
-        return knn.predictWithThreshold(features, 0.7);
+
+        // 多算法融合检测
+        Map<Integer, Integer> votes = new java.util.HashMap<>();
+
+        // 算法1: 标准欧氏距离（精确匹配）
+        int result1 = knn.predictWithThresholdByAlgorithm(features, 0.6, "euclidean");
+        if (result1 != -1) {
+            votes.put(result1, votes.getOrDefault(result1, 0) + 2);  // 权重2
+        }
+
+        // 算法2: 宽松形状匹配（允许多余像素）
+        int result2 = knn.predictWithThresholdByAlgorithm(features, 0.5, "shape");
+        if (result2 != -1) {
+            votes.put(result2, votes.getOrDefault(result2, 0) + 1);  // 权重1
+        }
+
+        // 算法3: 多算法融合（按严格程度加权投票）
+        int result3 = knn.predictMultiAlgorithm(features);
+        if (result3 != -1) {
+            votes.put(result3, votes.getOrDefault(result3, 0) + 1);
+        }
+
+        // 返回得票最多的标签
+        int bestLabel = UNKNOWN;
+        int bestCount = 0;
+        for (Map.Entry<Integer, Integer> entry : votes.entrySet()) {
+            if (entry.getValue() > bestCount) {
+                bestCount = entry.getValue();
+                bestLabel = entry.getKey();
+            }
+        }
+        return bestLabel;
     }
 
     /**

@@ -34,36 +34,251 @@ public class SimpleKNN {
      */
     public void addSample(double[] features, int label) {
         Sample s = new Sample();
-        s.features = features.clone(); // 防御性拷贝
+        s.features = features.clone();
         s.label = label;
         samples.add(s);
     }
 
+    // 辅助类：存储邻居的距离和标签
+    private static class Neighbor {
+        double distance;
+        int label;
+        Neighbor(double distance, int label) {
+            this.distance = distance;
+            this.label = label;
+        }
+    }
+
+    // ========== 算法1: 标准欧氏距离 ==========
+    private double euclideanDistance(double[] a, double[] b) {
+        if (a.length != b.length) {
+            throw new IllegalArgumentException("Feature vectors must have same length");
+        }
+        double sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            double diff = a[i] - b[i];
+            sum += diff * diff;
+        }
+        return Math.sqrt(sum);
+    }
+
+    // ========== 算法2: 宽松形状匹配 ==========
+    // 允许多余像素，主要关注形状轮廓和颜色
+    // 惩罚权重: 多余像素=0.05, 遗漏像素=0.3, 颜色差异=1.0
+    private double shapeAwareDistance(double[] a, double[] b) {
+        return shapeAwareDistance(a, b, 0.05, 0.3, 1.0);
+    }
+
     /**
-     * 预测样本类别（无阈值，总是返回一个标签）
-     * @param features 特征向量
-     * @return 预测的类别标签
+     * 宽松形状匹配（可调参数版）
+     * @param extraPenalty 多余像素惩罚 (建议 0.01~0.1)
+     * @param missingPenalty 遗漏像素惩罚 (建议 0.2~0.5)
+     * @param colorPenalty 颜色差异惩罚 (建议 1.0)
+     */
+    public double shapeAwareDistance(double[] a, double[] b, double extraPenalty, double missingPenalty, double colorPenalty) {
+        if (a.length != b.length) {
+            throw new IllegalArgumentException("Feature vectors must have same length");
+        }
+
+        double sum = 0;
+        int validCount = 0;
+
+        for (int i = 0; i < a.length; i++) {
+            double va = a[i];
+            double vb = b[i];
+
+            // 透明/背景像素（≈0）不参与距离计算
+            boolean aIsTransparent = Math.abs(va) < 0.01;
+            boolean bIsTransparent = Math.abs(vb) < 0.01;
+
+            if (aIsTransparent && bIsTransparent) {
+                continue;
+            }
+
+            if (aIsTransparent) {
+                // 样本无此像素，输入多了像素（多余笔触）- 极小惩罚
+                sum += extraPenalty * vb * vb;
+            } else if (bIsTransparent) {
+                // 输入无此像素，样本有（遗漏笔触）- 中等惩罚
+                sum += missingPenalty * va * va;
+            } else {
+                // 两者都有像素，计算颜色差异
+                double diff = va - vb;
+                sum += colorPenalty * diff * diff;
+                validCount++;
+            }
+        }
+
+        if (validCount > 0) {
+            return Math.sqrt(sum / validCount);
+        }
+        return Math.sqrt(sum);
+    }
+
+    // ========== 算法3: 纯形状匹配（忽略颜色） ==========
+    // 只关注有像素的位置，不比较颜色值
+    private double pureShapeDistance(double[] a, double[] b) {
+        if (a.length != b.length) {
+            throw new IllegalArgumentException("Feature vectors must have same length");
+        }
+
+        double sum = 0;
+        int validCount = 0;
+
+        for (int i = 0; i < a.length; i++) {
+            double va = a[i];
+            double vb = b[i];
+
+            boolean aHasColor = Math.abs(va) > 0.01;
+            boolean bHasColor = Math.abs(vb) > 0.01;
+
+            if (aHasColor && bHasColor) {
+                // 两者都有颜色，贡献0
+                validCount++;
+            } else if (aHasColor) {
+                // a有颜色，b没有
+                sum += 1.0;
+            } else if (bHasColor) {
+                // b有颜色，a没有
+                sum += 1.0;
+            }
+        }
+
+        // 返回形状差异比例
+        if (validCount > 0) {
+            return sum / (validCount + sum);
+        }
+        return sum;
+    }
+
+    // ========== 算法4: 颜色直方图匹配 ==========
+    // 统计每种颜色的像素数量，比较颜色分布
+    private double colorHistogramDistance(double[] a, double[] b, int colorLevels) {
+        if (a.length != b.length) {
+            throw new IllegalArgumentException("Feature vectors must have same length");
+        }
+
+        // 统计颜色直方图
+        int[] histA = new int[colorLevels];
+        int[] histB = new int[colorLevels];
+
+        for (int i = 0; i < a.length; i++) {
+            // 透明像素不统计
+            if (Math.abs(a[i]) > 0.01) {
+                int bin = Math.min((int) (a[i] * colorLevels), colorLevels - 1);
+                histA[bin]++;
+            }
+            if (Math.abs(b[i]) > 0.01) {
+                int bin = Math.min((int) (b[i] * colorLevels), colorLevels - 1);
+                histB[bin]++;
+            }
+        }
+
+        // 计算直方图差异（使用卡方距离）
+        double sum = 0;
+        for (int i = 0; i < colorLevels; i++) {
+            if (histA[i] + histB[i] > 0) {
+                sum += (histA[i] - histB[i]) * (histA[i] - histB[i]) / (double) (histA[i] + histB[i]);
+            }
+        }
+        return sum;
+    }
+
+    // ========== 算法5: 重心偏移容忍匹配 ==========
+    // 计算形状的加权重心，允许位置有一定偏移
+    private double centroidAwareDistance(double[] a, double[] b, int width, int height) {
+        if (a.length != b.length || a.length != width * height) {
+            throw new IllegalArgumentException("Invalid dimensions");
+        }
+
+        // 计算重心
+        double cxA = 0, cyA = 0, weightA = 0;
+        double cxB = 0, cyB = 0, weightB = 0;
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int idx = i * width + j;
+                if (Math.abs(a[idx]) > 0.01) {
+                    cxA += j;
+                    cyA += i;
+                    weightA++;
+                }
+                if (Math.abs(b[idx]) > 0.01) {
+                    cxB += j;
+                    cyB += i;
+                    weightB++;
+                }
+            }
+        }
+
+        if (weightA > 0) { cxA /= weightA; cyA /= weightA; }
+        if (weightB > 0) { cxB /= weightB; cyB /= weightB; }
+
+        // 重心偏移惩罚
+        double dx = cxA - cxB;
+        double dy = cyA - cyB;
+        double centroidPenalty = Math.sqrt(dx * dx + dy * dy) * 0.1;
+
+        // 像素数量差异惩罚
+        double countDiff = Math.abs(weightA - weightB) / Math.max(weightA, weightB);
+        double countPenalty = countDiff * 0.2;
+
+        return centroidPenalty + countPenalty;
+    }
+
+    // ========== 预测方法 ==========
+
+    /**
+     * 标准KNN预测（精确匹配）
      */
     public int predict(double[] features) {
+        return predictByAlgorithm(features, "euclidean");
+    }
+
+    /**
+     * 宽松形状匹配预测（允许多余像素）
+     */
+    public int predictShapeMatch(double[] features) {
+        return predictByAlgorithm(features, "shape");
+    }
+
+    /**
+     * 纯形状匹配预测（忽略颜色，只看轮廓）
+     */
+    public int predictPureShape(double[] features) {
+        return predictByAlgorithm(features, "pureShape");
+    }
+
+    /**
+     * 重心偏移容忍预测
+     */
+    public int predictCentroidAware(double[] features, int width, int height) {
+        return predictByAlgorithmWithDims(features, "centroid", width, height);
+    }
+
+    /**
+     * 根据指定算法预测
+     * @param algorithm "euclidean", "shape", "pureShape"
+     */
+    public int predictByAlgorithm(double[] features, String algorithm) {
         if (samples.isEmpty()) {
             throw new IllegalStateException("No training samples added");
         }
 
-        // 1. 计算与所有样本的欧氏距离，取前 k 个最近的邻居
         PriorityQueue<Neighbor> heap = new PriorityQueue<>(Comparator.comparingDouble(n -> n.distance));
         for (Sample s : samples) {
-            double dist = euclideanDistance(features, s.features);
+            double dist = calculateDistance(features, s.features, algorithm);
             heap.offer(new Neighbor(dist, s.label));
         }
 
-        // 2. 统计前 k 个邻居的标签投票
+        // K近邻投票
         Map<Integer, Integer> labelCount = new HashMap<>();
         for (int i = 0; i < k && !heap.isEmpty(); i++) {
             Neighbor neighbor = heap.poll();
             labelCount.put(neighbor.label, labelCount.getOrDefault(neighbor.label, 0) + 1);
         }
 
-        // 3. 返回得票最高的标签
+        // 返回得票最高的标签
         int bestLabel = -1;
         int bestCount = -1;
         for (Map.Entry<Integer, Integer> entry : labelCount.entrySet()) {
@@ -75,13 +290,121 @@ public class SimpleKNN {
         return bestLabel;
     }
 
+    public int predictByAlgorithmWithDims(double[] features, String algorithm, int width, int height) {
+        if (samples.isEmpty()) {
+            throw new IllegalStateException("No training samples added");
+        }
+
+        PriorityQueue<Neighbor> heap = new PriorityQueue<>(Comparator.comparingDouble(n -> n.distance));
+        for (Sample s : samples) {
+            double dist = calculateDistanceWithDims(features, s.features, algorithm, width, height);
+            heap.offer(new Neighbor(dist, s.label));
+        }
+
+        Map<Integer, Integer> labelCount = new HashMap<>();
+        for (int i = 0; i < k && !heap.isEmpty(); i++) {
+            Neighbor neighbor = heap.poll();
+            labelCount.put(neighbor.label, labelCount.getOrDefault(neighbor.label, 0) + 1);
+        }
+
+        int bestLabel = -1;
+        int bestCount = -1;
+        for (Map.Entry<Integer, Integer> entry : labelCount.entrySet()) {
+            if (entry.getValue() > bestCount) {
+                bestCount = entry.getValue();
+                bestLabel = entry.getKey();
+            }
+        }
+        return bestLabel;
+    }
+
+    private double calculateDistance(double[] a, double[] b, String algorithm) {
+        switch (algorithm) {
+            case "shape": return shapeAwareDistance(a, b);
+            case "pureShape": return pureShapeDistance(a, b);
+            case "histogram": return colorHistogramDistance(a, b, 8);
+            default: return euclideanDistance(a, b);
+        }
+    }
+
+    private double calculateDistanceWithDims(double[] a, double[] b, String algorithm, int width, int height) {
+        switch (algorithm) {
+            case "centroid": return centroidAwareDistance(a, b, width, height);
+            default: return calculateDistance(a, b, algorithm);
+        }
+    }
+
+    /**
+     * 多算法融合预测 - 同时使用多种算法，返回投票最多的标签
+     * 按严格程度分配权重：越严格权重越高
+     */
+    public int predictMultiAlgorithm(double[] features) {
+        return predictMultiAlgorithmWithDims(features, 16, 16);
+    }
+
+    /**
+     * 多算法融合预测（带尺寸参数，用于重心算法）
+     */
+    public int predictMultiAlgorithmWithDims(double[] features, int width, int height) {
+        Map<Integer, Integer> totalVotes = new HashMap<>();
+
+        // 算法严格程度排名（从高到低）:
+        // 1. euclidean    - 最严格，逐像素精确匹配
+        // 2. histogram    - 颜色直方图，统计颜色分布
+        // 3. shape        - 宽松形状匹配，允许多余像素
+        // 4. pureShape    - 忽略颜色，只看轮廓
+        // 5. centroid     - 最宽松，只看位置和数量
+
+        // euclidean（权重5）
+        int result1 = predictByAlgorithm(features, "euclidean");
+        if (result1 != -1) {
+            totalVotes.put(result1, totalVotes.getOrDefault(result1, 0) + 5);
+        }
+
+        // histogram（权重4）
+        int result2 = predictByAlgorithm(features, "histogram");
+        if (result2 != -1) {
+            totalVotes.put(result2, totalVotes.getOrDefault(result2, 0) + 4);
+        }
+
+        // shape（权重3）
+        int result3 = predictByAlgorithm(features, "shape");
+        if (result3 != -1) {
+            totalVotes.put(result3, totalVotes.getOrDefault(result3, 0) + 3);
+        }
+
+        // pureShape（权重2）
+        int result4 = predictByAlgorithm(features, "pureShape");
+        if (result4 != -1) {
+            totalVotes.put(result4, totalVotes.getOrDefault(result4, 0) + 2);
+        }
+
+        // centroid（权重1）
+        int result5 = predictByAlgorithmWithDims(features, "centroid", width, height);
+        if (result5 != -1) {
+            totalVotes.put(result5, totalVotes.getOrDefault(result5, 0) + 1);
+        }
+
+        // 返回得票最高的
+        int bestLabel = -1;
+        int bestCount = 0;
+        for (Map.Entry<Integer, Integer> entry : totalVotes.entrySet()) {
+            if (entry.getValue() > bestCount) {
+                bestCount = entry.getValue();
+                bestLabel = entry.getKey();
+            }
+        }
+        return bestLabel;
+    }
+
     /**
      * 预测样本类别，带最低匹配度要求（基于投票比例）
-     * @param features      特征向量
-     * @param minMatchRatio 最低匹配度，范围 (0,1]，例如 0.6 表示最高得票数至少占 K 的 60%
-     * @return 预测的类别标签，如果匹配度不足则返回 -1
      */
     public int predictWithThreshold(double[] features, double minMatchRatio) {
+        return predictWithThresholdByAlgorithm(features, minMatchRatio, "euclidean");
+    }
+
+    public int predictWithThresholdByAlgorithm(double[] features, double minMatchRatio, String algorithm) {
         if (samples.isEmpty()) {
             throw new IllegalStateException("No training samples added");
         }
@@ -89,21 +412,18 @@ public class SimpleKNN {
             throw new IllegalArgumentException("minMatchRatio must be in (0,1]");
         }
 
-        // 1. 计算距离，取前 k 个最近邻居
         PriorityQueue<Neighbor> heap = new PriorityQueue<>(Comparator.comparingDouble(n -> n.distance));
         for (Sample s : samples) {
-            double dist = euclideanDistance(features, s.features);
+            double dist = calculateDistance(features, s.features, algorithm);
             heap.offer(new Neighbor(dist, s.label));
         }
 
-        // 2. 投票统计
         Map<Integer, Integer> labelCount = new HashMap<>();
         for (int i = 0; i < k && !heap.isEmpty(); i++) {
             Neighbor neighbor = heap.poll();
             labelCount.put(neighbor.label, labelCount.getOrDefault(neighbor.label, 0) + 1);
         }
 
-        // 3. 找出最高得票数
         int maxVotes = 0;
         int bestLabel = -1;
         for (Map.Entry<Integer, Integer> entry : labelCount.entrySet()) {
@@ -113,21 +433,14 @@ public class SimpleKNN {
             }
         }
 
-        // 4. 检查匹配度
         double confidence = (double) maxVotes / k;
         if (confidence >= minMatchRatio) {
             return bestLabel;
         } else {
-            return -1;   // 未达到最低匹配度，拒绝识别
+            return -1;
         }
     }
 
-    /**
-     * 预测样本类别，基于最近邻居的绝对距离阈值（可选）
-     * @param features    特征向量
-     * @param maxDistance 允许的最大欧氏距离（需根据特征维度和数值范围调参）
-     * @return 预测类别，如果最近距离 > maxDistance 则返回 -1
-     */
     public int predictWithDistanceLimit(double[] features, double maxDistance) {
         if (samples.isEmpty()) return -1;
 
@@ -147,29 +460,6 @@ public class SimpleKNN {
         } else {
             return -1;
         }
-    }
-
-    // 辅助类：存储邻居的距离和标签
-    private static class Neighbor {
-        double distance;
-        int label;
-        Neighbor(double distance, int label) {
-            this.distance = distance;
-            this.label = label;
-        }
-    }
-
-    // 计算两个特征向量的欧氏距离
-    private double euclideanDistance(double[] a, double[] b) {
-        if (a.length != b.length) {
-            throw new IllegalArgumentException("Feature vectors must have same length");
-        }
-        double sum = 0;
-        for (int i = 0; i < a.length; i++) {
-            double diff = a[i] - b[i];
-            sum += diff * diff;
-        }
-        return Math.sqrt(sum);
     }
 
     // ========== 便捷工具：将字节矩阵转为 double 特征向量 ==========
