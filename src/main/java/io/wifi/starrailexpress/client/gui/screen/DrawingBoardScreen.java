@@ -61,7 +61,7 @@ public class DrawingBoardScreen extends Screen {
         super(Component.translatable("starrailexpress.drawing_board.title"));
         for (int y = 0; y < CANVAS_SIZE; y++) {
             for (int x = 0; x < CANVAS_SIZE; x++) {
-                canvas[y][x] = 0;
+                canvas[y][x] = 1;
             }
         }
     }
@@ -138,7 +138,7 @@ public class DrawingBoardScreen extends Screen {
     private void clearCanvas() {
         for (int y = 0; y < CANVAS_SIZE; y++) {
             for (int x = 0; x < CANVAS_SIZE; x++) {
-                canvas[y][x] = 0;
+                canvas[y][x] = 1;
             }
         }
         lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
@@ -273,12 +273,12 @@ public class DrawingBoardScreen extends Screen {
                 if (selectedTool == 0) {
                     canvas[y][x] = (byte) selectedColor;
                 } else {
-                    canvas[y][x] = 0;
+                    canvas[y][x] = 1;
                 }
                 isDrawing = true;
                 return true;
             } else if (button == 1) {
-                canvas[y][x] = 0;
+                canvas[y][x] = 1;
                 isDrawing = true;
                 return true;
             }
@@ -307,10 +307,10 @@ public class DrawingBoardScreen extends Screen {
                 if (selectedTool == 0) {
                     canvas[y][x] = (byte) selectedColor;
                 } else {
-                    canvas[y][x] = 0;
+                    canvas[y][x] = 1;
                 }
             } else if (button == 1) {
-                canvas[y][x] = 0;
+                canvas[y][x] = 1;
             }
             return true;
         }

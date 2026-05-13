@@ -469,46 +469,48 @@ public class DrawingBoardRecognizer {
 
     // ==================== 物品图案生成方法 ====================
 
+    // 刀 - 左下至右上对角线，柄在左下
     private byte[][] createKnifePattern() {
         byte[][] p = new byte[16][16];
         for (int i = 3; i < 14; i++) {
-            p[i][i] = 10;  // 刀刃 - 灰色金属
-            if (i < 13) p[i][i + 1] = 10;
+            p[16 - i - 1][i] = 10;  // 刀刃 - 灰色金属 (从左下到右上)
+            if (i < 13) p[16 - i - 2][i] = 10;
         }
-        p[13][13] = 10; p[14][13] = 10; p[14][14] = 10;  // 手柄 - 灰色
+        p[13][3] = 15; p[14][2] = 15; p[14][3] = 15;  // 手柄 - 棕色 (左下)
         return p;
     }
 
     private byte[][] createKnifePattern2() {
         byte[][] p = new byte[16][16];
         for (int i = 2; i < 13; i++) {
-            p[i + 1][i] = 10;  // 刀刃 - 灰色金属
-            if (i < 12) p[i + 2][i] = 10;
+            p[15 - i - 1][i] = 10;  // 刀刃 - 灰色金属 (从左下到右上)
+            if (i < 12) p[15 - i - 2][i] = 10;
         }
-        p[14][12] = 10; p[15][12] = 10;  // 手柄 - 灰色
+        p[14][2] = 15; p[15][1] = 15;  // 手柄 - 棕色 (左下)
         return p;
     }
 
+    // 撬棍 - J顺时针旋转180度 (即反J，├形状，柄在下)
     private byte[][] createCrowbarPattern() {
         byte[][] p = new byte[16][16];
-        for (int x = 4; x < 12; x++) p[10][x] = 10;
-        for (int y = 6; y < 11; y++) p[y][4] = 10;
-        p[5][3] = 10; p[5][4] = 10;
+        for (int x = 4; x < 12; x++) p[5][x] = 10;  // 横杆在上方
+        for (int y = 5; y < 11; y++) p[y][11] = 10;  // 垂直杆在右侧
+        p[11][10] = 10; p[11][11] = 10;  // 钩在下方
         return p;
     }
 
     private byte[][] createCrowbarPattern2() {
         byte[][] p = new byte[16][16];
-        for (int x = 3; x < 11; x++) p[11][x] = 10;
-        for (int y = 7; y < 12; y++) p[y][3] = 10;
-        p[6][2] = 10; p[6][3] = 10;
+        for (int x = 5; x < 13; x++) p[5][x] = 10;  // 横杆在上方
+        for (int y = 5; y < 11; y++) p[y][12] = 10;  // 垂直杆在右侧
+        p[11][11] = 10; p[11][12] = 10;  // 钩在下方
         return p;
     }
 
     private byte[][] createFirecrackerPattern() {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 12; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 12;  // 红棕色主体
+            for (int x = 6; x < 10; x++) p[y][x] = 2;  // 红色主体
         }
         p[4][8] = 5; p[3][8] = 5; p[2][7] = 5;  // 引线
         return p;
@@ -517,34 +519,35 @@ public class DrawingBoardRecognizer {
     private byte[][] createFirecrackerPattern2() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 11; y++) {
-            for (int x = 5; x < 9; x++) p[y][x] = 12;  // 红棕色主体
+            for (int x = 5; x < 9; x++) p[y][x] = 2;  // 红色主体
         }
         p[3][7] = 5; p[2][7] = 5; p[1][6] = 5;  // 引线
         return p;
     }
 
+    // 左轮手枪 - 右下至左上，柄在右下
     private byte[][] createRevolverPattern() {
         byte[][] p = new byte[16][16];
-        for (int x = 3; x < 13; x++) p[8][x] = 10;
-        for (int x = 10; x < 14; x++) p[7][x] = 10;
-        for (int y = 9; y < 14; y++) p[y][5] = 10;
-        p[13][6] = 10; p[14][6] = 10;
+        for (int x = 3; x < 13; x++) p[8][15 - x] = 10;  // 枪管 - 灰色 (从右到左)
+        for (int x = 10; x < 14; x++) p[7][15 - x] = 10;  // 枪托 - 灰色 (从右到左)
+        for (int y = 9; y < 14; y++) p[y][10] = 15;  // 握把 - 棕色 (在右下)
+        p[13][11] = 15; p[14][11] = 15;  // 握把 - 棕色 (在右下)
         return p;
     }
 
     private byte[][] createRevolverPattern2() {
         byte[][] p = new byte[16][16];
-        for (int x = 2; x < 12; x++) p[9][x] = 10;
-        for (int x = 9; x < 13; x++) p[8][x] = 10;
-        for (int y = 10; y < 14; y++) p[y][4] = 10;
-        p[14][5] = 10;
+        for (int x = 4; x < 14; x++) p[9][15 - x] = 10;  // 枪管 - 灰色 (从右到左)
+        for (int x = 10; x < 14; x++) p[8][15 - x] = 10;  // 枪托 - 灰色 (从右到左)
+        for (int y = 10; y < 14; y++) p[y][11] = 15;  // 握把 - 棕色 (在右下)
+        p[14][12] = 15;  // 握把 - 棕色 (在右下)
         return p;
     }
 
     private byte[][] createNotePattern() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 12; y++) {
-            for (int x = 3; x < 13; x++) p[y][x] = 15;  // 便签 - 棕色
+            for (int x = 3; x < 13; x++) p[y][x] = 12;  // 便签 - 深红色（米黄色）
         }
         return p;
     }
@@ -552,7 +555,7 @@ public class DrawingBoardRecognizer {
     private byte[][] createNotePattern2() {
         byte[][] p = new byte[16][16];
         for (int y = 3; y < 11; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 15;  // 便签 - 棕色
+            for (int x = 4; x < 12; x++) p[y][x] = 12;  // 便签 - 深红色（米黄色）
         }
         return p;
     }
@@ -561,7 +564,7 @@ public class DrawingBoardRecognizer {
         byte[][] p = new byte[16][16];
         for (int y = 3; y < 13; y++) {
             for (int x = 2; x < 14; x++) {
-                if (y < 5 || y > 10 || (x > 3 && x < 12)) p[y][x] = 11;
+                if (y < 5 || y > 10 || (x > 3 && x < 12)) p[y][x] = 12;  // 裹尸袋 - 深红色（棕色）
             }
         }
         return p;
@@ -571,7 +574,7 @@ public class DrawingBoardRecognizer {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 12; y++) {
             for (int x = 3; x < 13; x++) {
-                if (y < 6 || y > 9 || (x > 4 && x < 11)) p[y][x] = 11;
+                if (y < 6 || y > 9 || (x > 4 && x < 11)) p[y][x] = 12;  // 裹尸袋 - 深红色（棕色）
             }
         }
         return p;
@@ -831,7 +834,7 @@ public class DrawingBoardRecognizer {
         for (int y = 3; y < 13; y++) {
             for (int x = 3; x < 13; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 5) p[y][x] = 10;  // 头盔 - 灰色
+                if (dist < 5) p[y][x] = 7;  // 头盔 - 青色
             }
         }
         for (int y = 6; y < 10; y++) {
@@ -846,7 +849,7 @@ public class DrawingBoardRecognizer {
         for (int y = 4; y < 12; y++) {
             for (int x = 4; x < 12; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 10;  // 头盔 - 灰色
+                if (dist < 4.5) p[y][x] = 7;  // 头盔 - 青色
             }
         }
         for (int y = 6; y < 10; y++) {
@@ -1595,35 +1598,35 @@ public class DrawingBoardRecognizer {
 
     // ==================== 更多变体样本（放宽识别用）====================
 
-    // 刀的更多变体
+    // 刀的更多变体 - 左下至右上，柄在左下
     private byte[][] createKnifePattern3() {
         byte[][] p = new byte[16][16];
-        for (int i = 4; i < 12; i++) p[i][i] = 2;
-        p[12][12] = 10; p[13][12] = 10;
+        for (int i = 4; i < 12; i++) p[16 - i - 1][i] = 2;  // 刀刃 - 红色
+        p[12][4] = 15; p[13][4] = 15;  // 手柄 - 棕色 (左下)
         return p;
     }
 
     private byte[][] createKnifePattern4() {
         byte[][] p = new byte[16][16];
-        for (int i = 5; i < 14; i++) p[i][i - 2] = 2;
-        p[13][11] = 10; p[14][11] = 10;
+        for (int i = 5; i < 14; i++) p[16 - i - 1][i - 2] = 2;  // 刀刃 - 红色
+        p[13][5] = 15; p[14][5] = 15;  // 手柄 - 棕色 (左下)
         return p;
     }
 
-    // 撬棍的更多变体
+    // 撬棍的更多变体 - J旋转180度 (├形状，柄在下)
     private byte[][] createCrowbarPattern3() {
         byte[][] p = new byte[16][16];
-        for (int x = 5; x < 11; x++) p[9][x] = 10;
-        for (int y = 7; y < 10; y++) p[y][5] = 10;
-        p[6][4] = 10;
+        for (int x = 5; x < 11; x++) p[6][x] = 10;  // 横杆在上方
+        for (int y = 6; y < 10; y++) p[y][10] = 10;  // 垂直杆在右侧
+        p[10][9] = 10;  // 钩在下方
         return p;
     }
 
     private byte[][] createCrowbarPattern4() {
         byte[][] p = new byte[16][16];
-        for (int x = 4; x < 12; x++) p[8][x] = 10;
-        for (int y = 5; y < 9; y++) p[y][4] = 10;
-        p[4][3] = 10; p[4][4] = 10;
+        for (int x = 4; x < 12; x++) p[7][x] = 10;  // 横杆在上方
+        for (int y = 7; y < 10; y++) p[y][11] = 10;  // 垂直杆在右侧
+        p[10][10] = 10; p[10][11] = 10;  // 钩在下方
         return p;
     }
 
@@ -1646,21 +1649,21 @@ public class DrawingBoardRecognizer {
         return p;
     }
 
-    // 左轮的更多变体
+    // 左轮的更多变体 - 右下至左上，柄在右下
     private byte[][] createRevolverPattern3() {
         byte[][] p = new byte[16][16];
-        for (int x = 4; x < 12; x++) p[7][x] = 10;
-        for (int x = 9; x < 13; x++) p[6][x] = 10;
-        for (int y = 8; y < 13; y++) p[y][4] = 10;
+        for (int x = 4; x < 12; x++) p[7][15 - x] = 10;  // 枪管 - 灰色 (从右到左)
+        for (int x = 9; x < 13; x++) p[6][15 - x] = 10;  // 枪托 - 灰色 (从右到左)
+        for (int y = 8; y < 13; y++) p[y][11] = 15;  // 握把 - 棕色 (在右下)
         return p;
     }
 
     private byte[][] createRevolverPattern4() {
         byte[][] p = new byte[16][16];
-        for (int x = 3; x < 11; x++) p[10][x] = 10;
-        for (int x = 8; x < 12; x++) p[9][x] = 10;
-        for (int y = 11; y < 14; y++) p[y][5] = 10;
-        p[14][6] = 10;
+        for (int x = 5; x < 13; x++) p[10][15 - x] = 10;  // 枪管 - 灰色 (从右到左)
+        for (int x = 8; x < 12; x++) p[9][15 - x] = 10;  // 枪托 - 灰色 (从右到左)
+        for (int y = 11; y < 14; y++) p[y][10] = 15;  // 握把 - 棕色 (在右下)
+        p[14][11] = 15;  // 握把 - 棕色 (在右下)
         return p;
     }
 
@@ -1668,7 +1671,7 @@ public class DrawingBoardRecognizer {
     private byte[][] createNotePattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 11; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 1;
+            for (int x = 4; x < 12; x++) p[y][x] = 12;  // 便签 - 深红色（米黄色）
         }
         return p;
     }
@@ -1676,7 +1679,7 @@ public class DrawingBoardRecognizer {
     private byte[][] createNotePattern4() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 13; y++) {
-            for (int x = 3; x < 13; x++) p[y][x] = 1;
+            for (int x = 3; x < 13; x++) p[y][x] = 12;  // 便签 - 深红色（米黄色）
         }
         return p;
     }
@@ -1686,7 +1689,7 @@ public class DrawingBoardRecognizer {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 12; y++) {
             for (int x = 4; x < 12; x++) {
-                if (y < 7 || y > 9 || (x > 5 && x < 10)) p[y][x] = 11;
+                if (y < 7 || y > 9 || (x > 5 && x < 10)) p[y][x] = 12;  // 裹尸袋 - 深红色（棕色）
             }
         }
         return p;
@@ -1696,7 +1699,7 @@ public class DrawingBoardRecognizer {
         byte[][] p = new byte[16][16];
         for (int y = 3; y < 14; y++) {
             for (int x = 2; x < 14; x++) {
-                if (y < 6 || y > 11 || (x > 4 && x < 12)) p[y][x] = 11;
+                if (y < 6 || y > 11 || (x > 4 && x < 12)) p[y][x] = 12;  // 裹尸袋 - 深红色（棕色）
             }
         }
         return p;
@@ -1789,7 +1792,7 @@ public class DrawingBoardRecognizer {
     private byte[][] createKunaiPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 12; y++) p[y][8] = 10;  // 刀身 - 灰色
-        for (int x = 6; x < 11; x++) p[4][x] = 2;  // 刀尖 - 红色
+        for (int x = 6; x < 11; x++) p[4][x] = 10;  // 刀尖 - 灰色
         p[6][6] = 15; p[6][10] = 15;  // 手柄装饰 - 棕色
         return p;
     }
@@ -1862,7 +1865,7 @@ public class DrawingBoardRecognizer {
         for (int y = 4; y < 12; y++) {
             for (int x = 4; x < 12; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 10;  // 头盔 - 灰色
+                if (dist < 4.5) p[y][x] = 7;  // 头盔 - 青色
             }
         }
         for (int y = 6; y < 10; y++) {
@@ -1875,10 +1878,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createDivingBootsPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 9; y++) {
-            for (int x = 5; x < 9; x++) p[y][x] = 10;
+            for (int x = 5; x < 9; x++) p[y][x] = 15;  // 靴身 - 棕色
         }
         for (int y = 9; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 10;
+            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 靴底 - 黑色
         }
         return p;
     }
@@ -1889,11 +1892,11 @@ public class DrawingBoardRecognizer {
         for (int y = 6; y < 10; y++) {
             for (int x = 3; x < 6; x++) {
                 double dist = Math.sqrt((x - 4.5) * (x - 4.5) + (y - 8) * (y - 8));
-                if (dist < 2.5) p[y][x] = 5;
+                if (dist < 2.5) p[y][x] = 15;  // 钥匙头 - 棕色
             }
         }
-        for (int x = 6; x < 12; x++) p[8][x] = 5;
-        p[9][10] = 5;
+        for (int x = 6; x < 12; x++) p[8][x] = 10;  // 钥匙杆 - 灰色
+        p[9][10] = 10;  // 钥匙齿 - 灰色
         return p;
     }
 
@@ -1901,12 +1904,12 @@ public class DrawingBoardRecognizer {
     private byte[][] createDefibrillatorPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 6; y < 11; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 11;
+            for (int x = 5; x < 11; x++) p[y][x] = 15;  // 机身 - 棕色
         }
         for (int y = 7; y < 9; y++) {
-            for (int x = 6; x < 8; x++) p[y][x] = 3;
+            for (int x = 6; x < 8; x++) p[y][x] = 0;  // 屏幕 - 黑色
         }
-        for (int y = 3; y < 6; y++) p[y][9] = 10;
+        for (int y = 3; y < 6; y++) p[y][9] = 10;  // 手柄 - 灰色
         return p;
     }
 
@@ -1916,11 +1919,11 @@ public class DrawingBoardRecognizer {
         for (int y = 5; y < 12; y++) {
             for (int x = 4; x < 12; x++) {
                 double dist = Math.sqrt((x - 8) * (x - 8) + (y - 8) * (y - 8));
-                if (dist < 4.5) p[y][x] = 2;
+                if (dist < 4.5) p[y][x] = 15;  // 拳套 - 棕色
             }
         }
         for (int y = 10; y < 13; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
+            for (int x = 6; x < 10; x++) p[y][x] = 8;  // 手腕 - 橙色
         }
         return p;
     }
@@ -1929,10 +1932,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createAntidoteReagentPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 13; y++) {
-            for (int x = 7; x < 9; x++) p[y][x] = 10;
+            for (int x = 7; x < 9; x++) p[y][x] = 10;  // 试剂管 - 灰色
         }
         for (int y = 10; y < 13; y++) {
-            for (int x = 7; x < 9; x++) p[y][x] = 3;
+            for (int x = 7; x < 9; x++) p[y][x] = 7;  // 试剂 - 青色
         }
         return p;
     }
@@ -1943,10 +1946,10 @@ public class DrawingBoardRecognizer {
         for (int y = 7; y < 12; y++) {
             for (int x = 6; x < 10; x++) {
                 double dist = Math.sqrt((x - 8) * (x - 8) + (y - 9.5) * (y - 9.5));
-                if (dist < 3) p[y][x] = 10;
+                if (dist < 3) p[y][x] = 15;  // 弹体 - 棕色
             }
         }
-        p[6][8] = 5;
+        p[6][8] = 0;  // 顶盖 - 黑色
         return p;
     }
 
@@ -1955,10 +1958,10 @@ public class DrawingBoardRecognizer {
         for (int y = 7; y < 12; y++) {
             for (int x = 6; x < 10; x++) {
                 double dist = Math.sqrt((x - 8) * (x - 8) + (y - 9.5) * (y - 9.5));
-                if (dist < 3) p[y][x] = 5;
+                if (dist < 3) p[y][x] = 10;  // 弹体 - 灰色
             }
         }
-        p[6][8] = 2;
+        p[6][8] = 0;  // 顶盖 - 黑色
         return p;
     }
 
@@ -1966,10 +1969,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createRepairToolPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 8; y < 13; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 10;
+            for (int x = 4; x < 12; x++) p[y][x] = 15;  // 板身 - 棕色
         }
         for (int y = 4; y < 9; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 2;
+            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 头部 - 灰色
         }
         return p;
     }
@@ -1977,20 +1980,20 @@ public class DrawingBoardRecognizer {
     private byte[][] createScrewdriverPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 9; y < 14; y++) {
-            for (int x = 6; x < 9; x++) p[y][x] = 2;
+            for (int x = 6; x < 9; x++) p[y][x] = 15;  // 柄部 - 棕色
         }
-        for (int y = 3; y < 10; y++) p[y][7] = 10;
-        p[2][6] = 10; p[2][8] = 10;
+        for (int y = 3; y < 10; y++) p[y][7] = 10;  // 金属杆 - 灰色
+        p[2][6] = 10; p[2][8] = 10;  // 刀头 - 灰色
         return p;
     }
 
     private byte[][] createAlarmTrapPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 7; y < 12; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 10;
+            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 主体 - 黑色
         }
         for (int y = 4; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 2;
+            for (int x = 6; x < 10; x++) p[y][x] = 15;  // 警报灯 - 棕色
         }
         return p;
     }
@@ -1999,10 +2002,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createDeliveryBoxPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 12; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 5;
+            for (int x = 4; x < 12; x++) p[y][x] = 10;  // 盒子 - 灰色
         }
         for (int y = 7; y < 10; y++) {
-            for (int x = 7; x < 9; x++) p[y][x] = 2;
+            for (int x = 7; x < 9; x++) p[y][x] = 15;  // 开口 - 棕色
         }
         return p;
     }
@@ -2013,21 +2016,21 @@ public class DrawingBoardRecognizer {
         for (int y = 5; y < 12; y++) {
             for (int x = 5; x < 12; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4) p[y][x] = 10;
+                if (dist < 4) p[y][x] = 0;  // 主体 - 黑色
             }
         }
-        p[4][8] = 5; p[3][8] = 5;
+        p[4][8] = 5; p[3][8] = 5;  // 引线 - 黄色
         return p;
     }
 
     private byte[][] createHallucinationPattern3() {
         byte[][] p = new byte[16][16];
-        p[4][7] = 10; p[4][8] = 10;
+        p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
         for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
+            for (int x = 6; x < 10; x++) p[y][x] = 11;  // 瓶颈 - 淡灰色
         }
         for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 9;
+            for (int x = 5; x < 11; x++) p[y][x] = 1;  // 瓶身 - 白色
         }
         return p;
     }
@@ -2036,25 +2039,25 @@ public class DrawingBoardRecognizer {
     private byte[][] createWheelchairPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 8; y < 10; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
+            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 座位 - 灰色
         }
         for (int y = 10; y < 14; y++) {
             for (int x = 5; x < 11; x++) {
                 double d1 = Math.sqrt((x - 6) * (x - 6) + (y - 12) * (y - 12));
                 double d2 = Math.sqrt((x - 10) * (x - 10) + (y - 12) * (y - 12));
-                if (d1 < 2 || d2 < 2) p[y][x] = 0;
+                if (d1 < 2 || d2 < 2) p[y][x] = 0;  // 轮子 - 黑色
             }
         }
-        for (int y = 4; y < 9; y++) p[y][6] = 10;
+        for (int y = 4; y < 9; y++) p[y][6] = 11;  // 靠背 - 淡灰色
         return p;
     }
 
     // 枪械更多变体
     private byte[][] createShortShotgunPattern3() {
         byte[][] p = new byte[16][16];
-        for (int x = 3; x < 12; x++) p[9][x] = 10;
-        for (int x = 9; x < 13; x++) p[8][x] = 10;
-        for (int y = 10; y < 14; y++) p[y][5] = 10;
+        for (int x = 3; x < 12; x++) p[9][x] = 15;  // 枪管 - 棕色
+        for (int x = 9; x < 13; x++) p[8][x] = 15;  // 枪托 - 棕色
+        for (int y = 10; y < 14; y++) p[y][5] = 10;  // 握把 - 灰色
         return p;
     }
 
@@ -2062,10 +2065,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createBatonPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 3; y < 13; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
+            for (int x = 6; x < 10; x++) p[y][x] = 15;  // 棒身 - 棕色
         }
         for (int y = 10; y < 13; y++) {
-            for (int x = 5; x < 8; x++) p[y][x] = 2;
+            for (int x = 5; x < 8; x++) p[y][x] = 0;  // 手柄 - 黑色
         }
         return p;
     }
@@ -2074,11 +2077,11 @@ public class DrawingBoardRecognizer {
     private byte[][] createRadioPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 10;
+            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 机身 - 黑色
         }
-        for (int y = 3; y < 6; y++) p[y][9] = 10;
+        for (int y = 3; y < 6; y++) p[y][9] = 0;  // 天线 - 黑色
         for (int y = 6; y < 10; y++) {
-            for (int x = 6; x < 8; x++) p[y][x] = 3;
+            for (int x = 6; x < 8; x++) p[y][x] = 10;  // 屏幕 - 灰色
         }
         return p;
     }
@@ -2086,13 +2089,13 @@ public class DrawingBoardRecognizer {
     private byte[][] createMonitoringTerminalPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 3; y < 9; y++) {
-            for (int x = 3; x < 13; x++) p[y][x] = 10;
+            for (int x = 3; x < 13; x++) p[y][x] = 11;  // 机身 - 淡灰色
         }
         for (int y = 4; y < 8; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 3;
+            for (int x = 4; x < 12; x++) p[y][x] = 0;  // 屏幕 - 黑色
         }
         for (int y = 9; y < 13; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
+            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 支架 - 灰色
         }
         return p;
     }
@@ -2101,13 +2104,13 @@ public class DrawingBoardRecognizer {
     private byte[][] createLockPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 7; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 5;
+            for (int x = 5; x < 11; x++) p[y][x] = 10;  // 锁体 - 灰色
         }
-        p[10][8] = 0;
+        p[10][8] = 0;  // 锁孔 - 黑色
         for (int y = 4; y < 8; y++) {
             for (int x = 6; x < 10; x++) {
                 double dist = Math.sqrt((x - 8) * (x - 8) + (y - 6) * (y - 6));
-                if (dist > 1 && dist < 2) p[y][x] = 5;
+                if (dist > 1 && dist < 2) p[y][x] = 11;  // 锁扣 - 淡灰色
             }
         }
         return p;
@@ -2120,17 +2123,17 @@ public class DrawingBoardRecognizer {
         for (int y = 4; y < 13; y++) {
             for (int x = 4; x < 13; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 5;
+                if (dist < 4.5) p[y][x] = 15;  // 表壳 - 棕色
             }
         }
         for (int y = 5; y < 12; y++) {
             for (int x = 5; x < 12; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 3.5) p[y][x] = 1;
+                if (dist < 3.5) p[y][x] = 1;  // 表盘 - 白色
             }
         }
-        p[8][8] = 0; p[5][8] = 0;
-        p[3][7] = 5; p[3][8] = 5;
+        p[8][8] = 0; p[5][8] = 0;  // 表针 - 黑色
+        p[3][7] = 8; p[3][8] = 8;  // 表链 - 橙色
         return p;
     }
 
@@ -2140,27 +2143,27 @@ public class DrawingBoardRecognizer {
         for (int y = 4; y < 13; y++) {
             for (int x = 4; x < 13; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 9;
+                if (dist < 4.5) p[y][x] = 10;  // 表壳 - 灰色
             }
         }
         for (int y = 5; y < 12; y++) {
             for (int x = 5; x < 12; x++) {
                 double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 3.5) p[y][x] = 1;
+                if (dist < 3.5) p[y][x] = 11;  // 表盘 - 淡灰色
             }
         }
-        p[8][8] = 0; p[5][8] = 0;
+        p[8][8] = 0; p[5][8] = 0;  // 表针 - 黑色
         return p;
     }
 
     // 消防工具更多变体
     private byte[][] createFireAxePattern3() {
         byte[][] p = new byte[16][16];
-        for (int y = 4; y < 13; y++) p[y][7] = 5;
+        for (int y = 4; y < 13; y++) p[y][7] = 5;  // 斧柄 - 黄色
         for (int y = 4; y < 7; y++) {
-            for (int x = 5; x < 10; x++) p[y][x] = 10;
+            for (int x = 5; x < 10; x++) p[y][x] = 2;  // 斧头 - 红色
         }
-        p[5][4] = 10; p[6][4] = 10; p[5][10] = 10;
+        p[5][4] = 0; p[6][4] = 0; p[5][10] = 8;  // 装饰 - 黑色/橙色
         return p;
     }
 
@@ -2169,11 +2172,11 @@ public class DrawingBoardRecognizer {
         for (int y = 5; y < 13; y++) {
             for (int x = 5; x < 11; x++) {
                 double dist = Math.sqrt((x - 8) * (x - 8) + (y - 9) * (y - 9));
-                if (dist < 4) p[y][x] = 2;
+                if (dist < 4) p[y][x] = 12;  // 主体 - 深红色
             }
         }
-        for (int x = 10; x < 13; x++) p[7][x] = 10;
-        p[6][5] = 10;
+        for (int x = 10; x < 13; x++) p[7][x] = 10;  // 喷嘴 - 灰色
+        p[6][5] = 10;  // 把手 - 灰色
         return p;
     }
 
@@ -2182,9 +2185,9 @@ public class DrawingBoardRecognizer {
         byte[][] p = new byte[16][16];
         for (int y = 3; y < 13; y++) {
             if (y % 2 == 0) {
-                for (int x = 6; x < 9; x++) p[y][x] = 5;
+                for (int x = 6; x < 9; x++) p[y][x] = 15;  // 绳索 - 棕色
             } else {
-                for (int x = 7; x < 10; x++) p[y][x] = 5;
+                for (int x = 7; x < 10; x++) p[y][x] = 10;  // 绳索 - 灰色
             }
         }
         return p;
@@ -2194,10 +2197,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createPassbookPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 12; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 5;
+            for (int x = 5; x < 11; x++) p[y][x] = 1;  // 封面 - 白色
         }
         for (int y = 5; y < 7; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 2;
+            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 装饰 - 灰色
         }
         return p;
     }
@@ -2205,10 +2208,10 @@ public class DrawingBoardRecognizer {
     private byte[][] createProblemSetPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 4; y < 12; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 5;
+            for (int x = 4; x < 12; x++) p[y][x] = 13;  // 封面 - 深绿色
         }
         for (int y = 5; y < 11; y++) {
-            for (int x = 5; x < 11; x += 2) p[y][x] = 1;
+            for (int x = 5; x < 11; x += 2) p[y][x] = 11;  // 装饰 - 淡灰色
         }
         return p;
     }
@@ -2217,31 +2220,31 @@ public class DrawingBoardRecognizer {
     private byte[][] createChewingPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 5; y < 11; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 6;
+            for (int x = 5; x < 11; x++) p[y][x] = 8;  // 包装 - 橙色
         }
-        p[4][6] = 5; p[4][7] = 5; p[4][8] = 5; p[4][9] = 5;
+        p[4][6] = 5; p[4][7] = 5; p[4][8] = 5; p[4][9] = 5;  // 顶部装饰 - 黄色
         return p;
     }
 
     private byte[][] createMintCandiesPattern3() {
         byte[][] p = new byte[16][16];
         for (int y = 6; y < 11; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 3;
+            for (int x = 5; x < 11; x++) p[y][x] = 11;  // 包装 - 淡灰色
         }
-        p[7][6] = 1; p[7][7] = 1; p[8][6] = 1; p[8][7] = 1;
-        p[9][8] = 1; p[9][9] = 1;
+        p[7][6] = 1; p[7][7] = 1; p[8][6] = 1; p[8][7] = 1;  // 糖果 - 白色
+        p[9][8] = 1; p[9][9] = 1;  // 糖果 - 白色
         return p;
     }
 
     // 十四夜更多变体
     private byte[][] createShisiyePattern3() {
         byte[][] p = new byte[16][16];
-        p[4][7] = 10; p[4][8] = 10;
+        p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
         for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
+            for (int x = 6; x < 10; x++) p[y][x] = 11;  // 瓶颈 - 淡灰色
         }
         for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 9;
+            for (int x = 5; x < 11; x++) p[y][x] = 14;  // 瓶身 - 深蓝色
         }
         return p;
     }
@@ -2266,6 +2269,22 @@ public class DrawingBoardRecognizer {
         if (pixels == null || pixels.length != 16 || pixels[0].length != 16) {
             return UNKNOWN;
         }
+        
+        // 检查画板是否全部为默认白色(1)，如果是则不识别
+        boolean allWhite = true;
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                if ((pixels[y][x] & 0xFF) != COLOR_WHITE) {
+                    allWhite = false;
+                    break;
+                }
+            }
+            if (!allWhite) break;
+        }
+        if (allWhite) {
+            return UNKNOWN;
+        }
+        
         // 复制像素数据以避免修改原始数据
         byte[][] normalizedPixels = normalizeColors(pixels);
         double[] features = SimpleKNN.matrixToFeature(normalizedPixels);
