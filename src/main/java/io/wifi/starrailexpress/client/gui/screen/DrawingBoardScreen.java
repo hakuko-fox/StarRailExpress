@@ -1,0 +1,362 @@
+package io.wifi.starrailexpress.client.gui.screen;
+
+import io.wifi.starrailexpress.content.item.DrawingBoardItem;
+import io.wifi.starrailexpress.network.DrawingBoardPayload;
+import io.wifi.starrailexpress.utils.ai.DrawingBoardRecognizer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+
+/**
+ * 画板界面
+ * 16x16 像素画布，带 16 种颜色选择和图像识别功能
+ */
+@Environment(EnvType.CLIENT)
+public class DrawingBoardScreen extends Screen {
+
+    private static final int CANVAS_SIZE = 16;
+    private static final int PIXEL_SIZE = 16;
+    private static final int CANVAS_PIXEL_SIZE = CANVAS_SIZE * PIXEL_SIZE;
+
+    private static final int COLOR_PANEL_WIDTH = 180;
+    private static final int COLOR_BUTTON_SIZE = 20;
+    private static final int COLORS_PER_ROW = 4;
+
+    private static final int BUTTON_HEIGHT = 20;
+    private static final int BUTTON_WIDTH = 80;
+
+    private final byte[][] canvas = new byte[CANVAS_SIZE][CANVAS_SIZE];
+    private int selectedColor = 0;
+    private int selectedTool = 0;
+    private ItemStack boardStack;
+
+    private static final int[] PALETTE = {
+        0xFF000000, 0xFFFFFFFF, 0xFFFF0000, 0xFF00FF00,
+        0xFF0000FF, 0xFFFFFF00, 0xFFFF00FF, 0xFF00FFFF,
+        0xFFFF8000, 0xFF8000FF, 0xFF808080, 0xFFC0C0C0,
+        0xFF800000, 0xFF008000, 0xFF000080, 0xFF804000,
+    };
+
+    private int canvasX, canvasY;
+    private int colorPanelX, colorPanelY;
+
+    private Button btnClear;
+    private Button btnRecognize;
+    private Button btnGenerate;
+    private Button btnBrush;
+    private Button btnEraser;
+    private Button btnClose;
+
+    private boolean isDrawing = false;
+    private int lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
+    private String lastRecognizeMessage = "";
+
+    public DrawingBoardScreen() {
+        super(Component.translatable("starrailexpress.drawing_board.title"));
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                canvas[y][x] = 0;
+            }
+        }
+    }
+
+    public DrawingBoardScreen(ItemStack stack) {
+        this();
+        this.boardStack = stack;
+
+        if (stack != null && stack.getItem() instanceof DrawingBoardItem) {
+            byte[][] savedPixels = DrawingBoardItem.getPixelData(stack);
+            for (int y = 0; y < CANVAS_SIZE; y++) {
+                for (int x = 0; x < CANVAS_SIZE; x++) {
+                    canvas[y][x] = savedPixels[y][x];
+                }
+            }
+            this.selectedColor = DrawingBoardItem.getSelectedColor(stack);
+        }
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+
+        int totalWidth = CANVAS_PIXEL_SIZE + COLOR_PANEL_WIDTH + 20;
+        canvasX = (width - totalWidth) / 2;
+        canvasY = (height - CANVAS_PIXEL_SIZE) / 2;
+
+        colorPanelX = canvasX + CANVAS_PIXEL_SIZE + 20;
+        colorPanelY = canvasY;
+
+        int btnX = colorPanelX;
+        int btnY = colorPanelY + (COLORS_PER_ROW * COLOR_BUTTON_SIZE) + 20;
+
+        btnBrush = Button.builder(Component.translatable("starrailexpress.drawing_board.brush"), b -> {
+            selectedTool = 0;
+            updateToolButtons();
+        }).bounds(btnX, btnY, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        addRenderableWidget(btnBrush);
+
+        btnEraser = Button.builder(Component.translatable("starrailexpress.drawing_board.eraser"), b -> {
+            selectedTool = 1;
+            updateToolButtons();
+        }).bounds(btnX, btnY + BUTTON_HEIGHT + 5, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        addRenderableWidget(btnEraser);
+
+        btnClear = Button.builder(Component.translatable("starrailexpress.drawing_board.clear"), b -> clearCanvas())
+                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 2, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        addRenderableWidget(btnClear);
+
+        btnRecognize = Button.builder(Component.translatable("starrailexpress.drawing_board.recognize"), b -> recognizeCanvas())
+                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 3, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        addRenderableWidget(btnRecognize);
+
+        btnGenerate = Button.builder(Component.translatable("starrailexpress.drawing_board.confirm"), b -> generateItem())
+                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 4, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        addRenderableWidget(btnGenerate);
+
+        btnClose = Button.builder(Component.translatable("starrailexpress.drawing_board.close"), b -> onClose())
+                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 5, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        addRenderableWidget(btnClose);
+
+        updateToolButtons();
+    }
+
+    private void updateToolButtons() {
+        btnBrush.setMessage(Component.translatable(selectedTool == 0 ?
+                "starrailexpress.drawing_board.brush_selected" :
+                "starrailexpress.drawing_board.brush"));
+        btnEraser.setMessage(Component.translatable(selectedTool == 1 ?
+                "starrailexpress.drawing_board.eraser_selected" :
+                "starrailexpress.drawing_board.eraser"));
+    }
+
+    private void clearCanvas() {
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                canvas[y][x] = 0;
+            }
+        }
+        lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
+        lastRecognizeMessage = "";
+    }
+
+    private void recognizeCanvas() {
+        int result = DrawingBoardRecognizer.getInstance().recognize(canvas);
+        lastRecognizeResult = result;
+        if (result == DrawingBoardRecognizer.UNKNOWN) {
+            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.fail").getString();
+        } else {
+            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.success").getString();
+        }
+    }
+
+    private void generateItem() {
+        // 先识别
+        int result = DrawingBoardRecognizer.getInstance().recognize(canvas);
+        lastRecognizeResult = result;
+
+        if (result != DrawingBoardRecognizer.UNKNOWN) {
+            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.success").getString();
+        } else {
+            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.fail").getString();
+        }
+
+        // 发送识别请求到服务端（会消耗画板并给予物品）
+        ClientPlayNetworking.send(new DrawingBoardPayload.DrawBoardRecognizePayload());
+
+        // 关闭界面
+        onClose();
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
+
+        graphics.fillGradient(0, 0, width, height, 0xC0102030, 0xD0081018);
+
+        graphics.drawCenteredString(font, title, width / 2, 10, 0xEEEEFF);
+
+        graphics.fill(canvasX - 2, canvasY - 2, canvasX + CANVAS_PIXEL_SIZE + 2, canvasY + CANVAS_PIXEL_SIZE + 2, 0xFF333333);
+
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                int colorIndex = canvas[y][x] & 0xFF;
+                int color = colorIndex < PALETTE.length ? PALETTE[colorIndex] : 0xFF000000;
+                graphics.fill(
+                        canvasX + x * PIXEL_SIZE,
+                        canvasY + y * PIXEL_SIZE,
+                        canvasX + (x + 1) * PIXEL_SIZE,
+                        canvasY + (y + 1) * PIXEL_SIZE,
+                        color
+                );
+            }
+        }
+
+        for (int i = 0; i <= CANVAS_SIZE; i++) {
+            int pos = canvasX + i * PIXEL_SIZE;
+            graphics.fill(pos, canvasY, pos + 1, canvasY + CANVAS_PIXEL_SIZE, 0x44000000);
+            pos = canvasY + i * PIXEL_SIZE;
+            graphics.fill(canvasX, pos, canvasX + CANVAS_PIXEL_SIZE, pos + 1, 0x44000000);
+        }
+
+        graphics.drawString(font, Component.translatable("starrailexpress.drawing_board.color_palette").getString(), colorPanelX, colorPanelY - 15, 0xFFFFFF);
+
+        for (int i = 0; i < PALETTE.length; i++) {
+            int row = i / COLORS_PER_ROW;
+            int col = i % COLORS_PER_ROW;
+            int bx = colorPanelX + col * (COLOR_BUTTON_SIZE + 4);
+            int by = colorPanelY + row * (COLOR_BUTTON_SIZE + 4);
+
+            graphics.fill(bx - 2, by - 2, bx + COLOR_BUTTON_SIZE + 2, by + COLOR_BUTTON_SIZE + 2,
+                    i == selectedColor ? 0xFFFFFFFF : 0xFF888888);
+            graphics.fill(bx, by, bx + COLOR_BUTTON_SIZE, by + COLOR_BUTTON_SIZE, PALETTE[i]);
+        }
+
+        int hoverColor = getColorAtMouse(mouseX, mouseY);
+        if (hoverColor >= 0) {
+            String tooltip = "Pixel: (" + hoverColor + ") Color: #" + String.format("%06X", PALETTE[hoverColor] & 0xFFFFFF);
+            graphics.drawString(font, tooltip, mouseX + 10, mouseY - 10, 0xFFFFFF);
+        }
+
+        int infoY = canvasY + CANVAS_PIXEL_SIZE + 10;
+        graphics.drawString(font, Component.translatable("starrailexpress.drawing_board.tool", selectedTool == 0 ?
+                Component.translatable("starrailexpress.drawing_board.brush").getString() :
+                Component.translatable("starrailexpress.drawing_board.eraser").getString()), canvasX, infoY, 0xAAAAAA);
+
+        if (!lastRecognizeMessage.isEmpty()) {
+            int color = lastRecognizeResult != DrawingBoardRecognizer.UNKNOWN ? 0x00FF00 : 0xFF6060;
+            graphics.drawString(font, lastRecognizeMessage, canvasX, infoY + 15, color);
+        }
+
+        graphics.drawString(font, Component.translatable("starrailexpress.drawing_board.hint").getString(), canvasX, infoY + 30, 0x888888);
+    }
+
+    private int getColorAtMouse(int mouseX, int mouseY) {
+        if (mouseX >= colorPanelX && mouseX < colorPanelX + COLORS_PER_ROW * (COLOR_BUTTON_SIZE + 4)) {
+            int col = (mouseX - colorPanelX) / (COLOR_BUTTON_SIZE + 4);
+            int row = (mouseY - colorPanelY) / (COLOR_BUTTON_SIZE + 4);
+            if (row >= 0 && col >= 0 && row < 4 && col < 4) {
+                return row * COLORS_PER_ROW + col;
+            }
+        }
+        return -1;
+    }
+
+    private int getPixelAtMouse(int mouseX, int mouseY) {
+        int px = (mouseX - canvasX) / PIXEL_SIZE;
+        int py = (mouseY - canvasY) / PIXEL_SIZE;
+        if (px >= 0 && px < CANVAS_SIZE && py >= 0 && py < CANVAS_SIZE) {
+            return py * CANVAS_SIZE + px;
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int colorIndex = getColorAtMouse((int) mouseX, (int) mouseY);
+        if (colorIndex >= 0) {
+            selectedColor = colorIndex;
+            return true;
+        }
+
+        int pixelIndex = getPixelAtMouse((int) mouseX, (int) mouseY);
+        if (pixelIndex >= 0) {
+            int x = pixelIndex % CANVAS_SIZE;
+            int y = pixelIndex / CANVAS_SIZE;
+
+            if (button == 0) {
+                if (selectedTool == 0) {
+                    canvas[y][x] = (byte) selectedColor;
+                } else {
+                    canvas[y][x] = 0;
+                }
+                isDrawing = true;
+                return true;
+            } else if (button == 1) {
+                canvas[y][x] = 0;
+                isDrawing = true;
+                return true;
+            }
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (isDrawing) {
+            isDrawing = false;
+            saveCanvas();
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
+        int pixelIndex = getPixelAtMouse((int) mouseX, (int) mouseY);
+        if (pixelIndex >= 0) {
+            int x = pixelIndex % CANVAS_SIZE;
+            int y = pixelIndex / CANVAS_SIZE;
+
+            if (button == 0) {
+                if (selectedTool == 0) {
+                    canvas[y][x] = (byte) selectedColor;
+                } else {
+                    canvas[y][x] = 0;
+                }
+            } else if (button == 1) {
+                canvas[y][x] = 0;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        int delta = (int) verticalAmount;
+        if (delta > 0) {
+            selectedColor = (selectedColor + 1) % 16;
+        } else if (delta < 0) {
+            selectedColor = (selectedColor + 15) % 16;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) { // ESC
+            saveCanvas();
+            onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private void saveCanvas() {
+        // 保存到本地物品
+        if (boardStack != null && boardStack.getItem() instanceof DrawingBoardItem) {
+            DrawingBoardItem.savePixelData(boardStack, canvas);
+            DrawingBoardItem.setSelectedColor(boardStack, selectedColor);
+        }
+
+        // 同步到服务端
+        byte[] pixels = new byte[256];
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                pixels[y * 16 + x] = canvas[y][x];
+            }
+        }
+        ClientPlayNetworking.send(new DrawingBoardPayload.DrawBoardSavePayload(selectedColor, pixels));
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+}
