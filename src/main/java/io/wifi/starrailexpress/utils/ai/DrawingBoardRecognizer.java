@@ -74,8 +74,13 @@ public class DrawingBoardRecognizer {
 
     public static final int POISON_VIAL = 47;
 
+    // 回形针 - noellesroles
+    public static final int PAPERCLIP = 48;
+    // 诱饵弹 - noellesroles
+    public static final int DECOY_GRENADE = 49;
+
     // 类别数量
-    public static final int CATEGORY_COUNT = 48;
+    public static final int CATEGORY_COUNT = 50;
 
     // 物品ID到Minecraft物品的映射
     private static final Map<Integer, Item> CATEGORY_TO_ITEM = new HashMap<>();
@@ -132,6 +137,8 @@ public class DrawingBoardRecognizer {
         CATEGORY_TO_ITEM.put(TIME_STOP_CLOCK, findItem("noellesroles", "time_stop_clock"));
         CATEGORY_TO_ITEM.put(SHISYE, findItem("noellesroles", "shisiye"));
         CATEGORY_TO_ITEM.put(PROBLEM_SET, findItem("noellesroles", "problem_set"));
+        CATEGORY_TO_ITEM.put(PAPERCLIP, findItem("noellesroles", "noell_paperclip"));  // 回形针
+        CATEGORY_TO_ITEM.put(DECOY_GRENADE, findItem("noellesroles", "decoy_grenade"));  // 诱饵弹
     }
 
     private static Item findItem(String modId, String itemName) {
@@ -345,6 +352,14 @@ public class DrawingBoardRecognizer {
         // 习题集
         knn.addSample(SimpleKNN.matrixToFeature(createProblemSetPattern()), PROBLEM_SET);
         knn.addSample(SimpleKNN.matrixToFeature(createProblemSetPattern2()), PROBLEM_SET);
+
+        // 回形针
+        knn.addSample(SimpleKNN.matrixToFeature(createPaperclipPattern()), PAPERCLIP);
+        knn.addSample(SimpleKNN.matrixToFeature(createPaperclipPattern2()), PAPERCLIP);
+
+        // 诱饵弹
+        knn.addSample(SimpleKNN.matrixToFeature(createDecoyGrenadePattern()), DECOY_GRENADE);
+        knn.addSample(SimpleKNN.matrixToFeature(createDecoyGrenadePattern2()), DECOY_GRENADE);
     }
 
     /**
@@ -465,6 +480,12 @@ public class DrawingBoardRecognizer {
 
         // 十四夜 - 更多变体
         knn.addSample(SimpleKNN.matrixToFeature(createShisiyePattern3()), SHISYE);
+
+        // 回形针 - 更多变体
+        knn.addSample(SimpleKNN.matrixToFeature(createPaperclipPattern3()), PAPERCLIP);
+
+        // 诱饵弹 - 更多变体
+        knn.addSample(SimpleKNN.matrixToFeature(createDecoyGrenadePattern3()), DECOY_GRENADE);
     }
 
     // ==================== 物品图案生成方法 ====================
@@ -2244,7 +2265,7 @@ public class DrawingBoardRecognizer {
         return p;
     }
 
-    // 十四夜更多变体
+        // 十四夜更多变体
     private byte[][] createShisiyePattern3() {
         byte[][] p = new byte[16][16];
         p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
@@ -2254,6 +2275,187 @@ public class DrawingBoardRecognizer {
         for (int y = 8; y < 13; y++) {
             for (int x = 5; x < 11; x++) p[y][x] = 14;  // 瓶身 - 深蓝色
         }
+        return p;
+    }
+
+    // ==================== 回形针图案 ====================
+    // 回形针 - U形弯曲的金属线
+    private byte[][] createPaperclipPattern() {
+        byte[][] p = new byte[16][16];
+        // 回形针的U形结构 - 黑色线条
+        // 右侧垂直部分
+        for (int y = 3; y < 12; y++) p[y][8] = 0;
+        // 顶部水平部分
+        for (int x = 3; x < 9; x++) p[3][x] = 0;
+        // 左侧垂直部分
+        for (int y = 3; y < 12; y++) p[y][3] = 0;
+        // 底部水平部分
+        for (int x = 3; x < 9; x++) p[12][x] = 0;
+        // 右侧内层垂直部分
+        for (int y = 5; y < 10; y++) p[y][5] = 0;
+        // 顶部内层水平部分
+        for (int x = 5; x < 9; x++) p[5][x] = 0;
+        // 左侧内层垂直部分
+        for (int y = 5; y < 10; y++) p[y][6] = 0;
+        return p;
+    }
+
+    private byte[][] createPaperclipPattern2() {
+        byte[][] p = new byte[16][16];
+        // 回形针的U形结构 - 偏移版本
+        // 右侧垂直部分
+        for (int y = 4; y < 11; y++) p[y][9] = 0;
+        // 顶部水平部分
+        for (int x = 4; x < 10; x++) p[4][x] = 0;
+        // 左侧垂直部分
+        for (int y = 4; y < 11; y++) p[y][4] = 0;
+        // 底部水平部分
+        for (int x = 4; x < 10; x++) p[11][x] = 0;
+        // 右侧内层垂直部分
+        for (int y = 6; y < 9; y++) p[y][6] = 0;
+        // 顶部内层水平部分
+        for (int x = 6; x < 10; x++) p[6][x] = 0;
+        // 左侧内层垂直部分
+        for (int y = 6; y < 9; y++) p[y][7] = 0;
+        return p;
+    }
+
+    private byte[][] createPaperclipPattern3() {
+        byte[][] p = new byte[16][16];
+        // 回形针的简化U形结构
+        // 右侧垂直部分
+        for (int y = 5; y < 10; y++) p[y][10] = 0;
+        // 顶部水平部分
+        for (int x = 5; x < 11; x++) p[5][x] = 0;
+        // 左侧垂直部分
+        for (int y = 5; y < 10; y++) p[y][5] = 0;
+        // 底部水平部分
+        for (int x = 5; x < 11; x++) p[10][x] = 0;
+        return p;
+    }
+
+    // ==================== 诱饵弹图案 ====================
+    // 诱饵弹 - 蛋形手雷形状（棕褐色主体 + 黑色轮廓）
+    private byte[][] createDecoyGrenadePattern() {
+        byte[][] p = new byte[16][16];
+        int cx = 8;
+        int cy = 8;
+        
+        // 绘制蛋形主体
+        for (int y = 3; y < 13; y++) {
+            for (int x = 4; x < 13; x++) {
+                // 椭圆方程 (x-cx)^2/a^2 + (y-cy)^2/b^2 = 1
+                double dx = (x - cx) / 4.5;
+                double dy = (y - cy) / 5.0;
+                double dist = dx * dx + dy * dy;
+                
+                if (dist < 0.95) {
+                    // 蛋形主体 - 棕褐色用灰色近似
+                    if (dist < 0.3) {
+                        p[y][x] = 10;  // 主体中心 - 灰色
+                    } else if (dist < 0.6) {
+                        p[y][x] = 10;  // 主体中间 - 灰色
+                    } else {
+                        p[y][x] = 10;  // 主体边缘 - 灰色
+                    }
+                }
+            }
+        }
+        
+        // 顶部黑色轮廓（小圆形顶部）
+        p[3][7] = 0; p[3][8] = 0; p[3][9] = 0;
+        p[4][6] = 0; p[4][9] = 0;
+        
+        // 底部黑色轮廓（尖底）
+        p[12][7] = 0; p[12][8] = 0; p[12][9] = 0;
+        p[11][6] = 0; p[11][9] = 0;
+        
+        // 左侧黑色轮廓
+        for (int y = 5; y < 11; y++) {
+            p[y][4] = 0;  // 左边缘
+        }
+        
+        // 右侧黑色轮廓
+        for (int y = 5; y < 11; y++) {
+            p[y][11] = 0;  // 右边缘
+        }
+        
+        // 内部细节（用灰色层次表示）
+        p[5][7] = 10; p[5][8] = 10;
+        p[7][6] = 10; p[7][7] = 10; p[7][8] = 10; p[7][9] = 10;
+        p[9][6] = 10; p[9][7] = 10; p[9][8] = 10; p[9][9] = 10;
+        p[11][7] = 10; p[11][8] = 10;
+        
+        return p;
+    }
+
+    private byte[][] createDecoyGrenadePattern2() {
+        byte[][] p = new byte[16][16];
+        int cx = 8;
+        int cy = 8;
+        
+        // 绘制蛋形主体 - 稍大一些
+        for (int y = 2; y < 14; y++) {
+            for (int x = 3; x < 14; x++) {
+                double dx = (x - cx) / 5.0;
+                double dy = (y - cy) / 5.5;
+                double dist = dx * dx + dy * dy;
+                
+                if (dist < 0.95) {
+                    p[y][x] = 10;  // 主体 - 灰色
+                }
+            }
+        }
+        
+        // 黑色轮廓
+        // 顶部
+        p[2][6] = 0; p[2][7] = 0; p[2][8] = 0; p[2][9] = 0;
+        p[3][5] = 0; p[3][10] = 0;
+        p[4][4] = 0; p[4][11] = 0;
+        
+        // 底部（尖底）
+        p[12][5] = 0; p[12][10] = 0;
+        p[13][6] = 0; p[13][7] = 0; p[13][8] = 0; p[13][9] = 0;
+        
+        // 左侧
+        for (int y = 5; y < 12; y++) p[y][3] = 0;
+        // 右侧
+        for (int y = 5; y < 12; y++) p[y][12] = 0;
+        
+        return p;
+    }
+
+    private byte[][] createDecoyGrenadePattern3() {
+        byte[][] p = new byte[16][16];
+        int cx = 8;
+        int cy = 8;
+        
+        // 紧凑型蛋形
+        for (int y = 5; y < 12; y++) {
+            for (int x = 5; x < 12; x++) {
+                double dx = (x - cx) / 3.5;
+                double dy = (y - cy) / 4.0;
+                double dist = dx * dx + dy * dy;
+                
+                if (dist < 0.95) {
+                    p[y][x] = 10;  // 主体 - 灰色
+                }
+            }
+        }
+        
+        // 黑色轮廓
+        p[5][7] = 0; p[5][8] = 0;
+        p[4][6] = 0; p[4][9] = 0;
+        p[6][4] = 0; p[6][11] = 0;
+        
+        for (int y = 7; y < 10; y++) {
+            p[y][5] = 0;
+            p[y][10] = 0;
+        }
+        
+        p[11][7] = 0; p[11][8] = 0;
+        p[10][6] = 0; p[10][9] = 0;
+        
         return p;
     }
 
