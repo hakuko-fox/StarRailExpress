@@ -562,6 +562,18 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(OpenRepairRoleSelectionS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> context.client().setScreen(
+                    new org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen(
+                            payload.faction(), payload.endTick(), payload.playerNames())));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(OpenRepairStationScreenS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                context.client().setScreen(new org.agmas.noellesroles.client.screen.repair.RepairStationScreen(payload.blockPos()));
+            });
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(OpenVendingMachinesScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> {
                 BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());

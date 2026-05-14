@@ -195,6 +195,18 @@ public class ModRoles {
     public static final ResourceLocation MEATBALL_ID = Noellesroles.id("meatball");
     // 殡仪员角色 ID
     public static final ResourceLocation MORTICIAN_ID = Noellesroles.id("mortician");
+    public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
+    public static final ResourceLocation REPAIR_HUNTER_ID = Noellesroles.id("repair_hunter");
+    public static final ResourceLocation REPAIR_NEUTRAL_ID = Noellesroles.id("repair_neutral");
+    public static final ResourceLocation REPAIR_MECHANIC_ID = Noellesroles.id("repair_mechanic");
+    public static final ResourceLocation REPAIR_MEDIC_ID = Noellesroles.id("repair_medic");
+    public static final ResourceLocation REPAIR_RUNNER_ID = Noellesroles.id("repair_runner");
+    public static final ResourceLocation REPAIR_WARDEN_ID = Noellesroles.id("repair_warden");
+    public static final ResourceLocation REPAIR_BRUTE_ID = Noellesroles.id("repair_brute");
+    public static final ResourceLocation REPAIR_TRACKER_ID = Noellesroles.id("repair_tracker");
+    public static final ResourceLocation REPAIR_ARCHIVIST_ID = Noellesroles.id("repair_archivist");
+    public static final ResourceLocation REPAIR_SABOTEUR_ID = Noellesroles.id("repair_saboteur");
+    public static final ResourceLocation REPAIR_COLLECTOR_ID = Noellesroles.id("repair_collector");
 
     // 杀手阵营角色 ID
     public static ResourceLocation MORPHLING_ID = Noellesroles.id("morphling");
@@ -1773,6 +1785,60 @@ public class ModRoles {
      * - 黑白熊形态无敌+光环效果
      * - 获胜条件：游戏结束时6格内最近玩家的阵营
      */
+    public static SRERole REPAIR_SURVIVOR = TMMRoles.registerRole(new NormalRole(
+            REPAIR_SURVIVOR_ID, new Color(60, 210, 230).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_HUNTER = TMMRoles.registerRole(new NormalRole(
+            REPAIR_HUNTER_ID, new Color(140, 20, 20).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_NEUTRAL = TMMRoles.registerRole(new NormalRole(
+            REPAIR_NEUTRAL_ID, new Color(210, 180, 60).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_MECHANIC = TMMRoles.registerRole(new NormalRole(
+            REPAIR_MECHANIC_ID, new Color(65, 220, 230).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_MEDIC = TMMRoles.registerRole(new NormalRole(
+            REPAIR_MEDIC_ID, new Color(90, 245, 180).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_RUNNER = TMMRoles.registerRole(new NormalRole(
+            REPAIR_RUNNER_ID, new Color(90, 150, 255).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() + 40, false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_WARDEN = TMMRoles.registerRole(new NormalRole(
+            REPAIR_WARDEN_ID, new Color(130, 25, 25).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_BRUTE = TMMRoles.registerRole(new NormalRole(
+            REPAIR_BRUTE_ID, new Color(180, 45, 35).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_TRACKER = TMMRoles.registerRole(new NormalRole(
+            REPAIR_TRACKER_ID, new Color(115, 35, 160).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_ARCHIVIST = TMMRoles.registerRole(new NormalRole(
+            REPAIR_ARCHIVIST_ID, new Color(210, 180, 60).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_SABOTEUR = TMMRoles.registerRole(new NormalRole(
+            REPAIR_SABOTEUR_ID, new Color(195, 130, 35).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_COLLECTOR = TMMRoles.registerRole(new NormalRole(
+            REPAIR_COLLECTOR_ID, new Color(190, 190, 70).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
     public static SRERole MONOKUMA = TMMRoles.registerRole(new MonokumaRole())
             .setNeutralForKiller(false) // 杀手视角为好人
             .setCanSeeTeammateKiller(false)

@@ -128,6 +128,8 @@ public class Noellesroles implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        io.wifi.starrailexpress.game.GameUtils.CustomWinnersPredicates.add(entry -> entry.getKey().getTags()
+                .contains(org.agmas.noellesroles.game.modes.repair.RepairModeState.NEUTRAL_WIN_TAG));
         ModItems.init();
         RightClickBlockManager.init();
         ArgumentTypeRegistry.registerArgumentType(

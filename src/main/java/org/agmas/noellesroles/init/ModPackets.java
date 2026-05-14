@@ -70,6 +70,17 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(OpenKeyForgeGuiS2CPacket.ID, OpenKeyForgeGuiS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenVendingMachinesScreenS2CPacket.ID,
                 OpenVendingMachinesScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenRepairStationScreenS2CPacket.ID,
+                OpenRepairStationScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RepairStationActionC2SPacket.ID,
+                RepairStationActionC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(RepairStationActionC2SPacket.ID, RepairStationActionC2SPacket::handle);
+        PayloadTypeRegistry.playS2C().register(OpenRepairRoleSelectionS2CPacket.ID,
+                OpenRepairRoleSelectionS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RepairRoleSelectC2SPacket.ID, RepairRoleSelectC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(RepairRolePurchaseC2SPacket.ID, RepairRolePurchaseC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(RepairRoleSelectC2SPacket.ID, RepairRoleSelectC2SPacket::handle);
+        ServerPlayNetworking.registerGlobalReceiver(RepairRolePurchaseC2SPacket.ID, RepairRolePurchaseC2SPacket::handle);
 
         PayloadTypeRegistry.playS2C().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);

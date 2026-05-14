@@ -16,7 +16,15 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.block.DevilRouletteTable;
+import org.agmas.noellesroles.content.block.HunterCageBlock;
+import org.agmas.noellesroles.content.block.RepairExitGateBlock;
+import org.agmas.noellesroles.content.block.RepairPalletBlock;
+import org.agmas.noellesroles.content.block.RepairSupplyCrateBlock;
+import org.agmas.noellesroles.content.block.HunterSnareBlock;
+import org.agmas.noellesroles.content.block.RepairStationBlock;
 import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
+import org.agmas.noellesroles.content.block_entity.HunterCageBlockEntity;
+import org.agmas.noellesroles.content.block_entity.RepairStationBlockEntity;
 import org.agmas.noellesroles.content.block.VendingMachinesBlock;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 
@@ -33,6 +41,18 @@ public interface ModBlocks {
     // 创建轮盘赌桌方块
     Block DEVIL_ROULETTE_TABLE = registerBlock("devil_roulette_table",
             new DevilRouletteTable());
+    Block REPAIR_STATION = registerBlock("repair_station",
+            new RepairStationBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).lightLevel(state -> 3)));
+    Block HUNTER_CAGE = registerBlock("hunter_cage",
+            new HunterCageBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion().strength(4.0F)));
+    Block REPAIR_EXIT_GATE = registerBlock("repair_exit_gate",
+            new RepairExitGateBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion().strength(5.0F)));
+    Block REPAIR_SUPPLY_CRATE = registerBlock("repair_supply_crate",
+            new RepairSupplyCrateBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).strength(2.5F)));
+    Block REPAIR_PALLET = registerBlock("repair_pallet",
+            new RepairPalletBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).strength(1.2F).noOcclusion()));
+    Block HUNTER_SNARE = registerBlock("hunter_snare",
+            new HunterSnareBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).strength(0.6F).noOcclusion()));
 
     BlockEntityType<VendingMachinesBlockEntity> VENDING_MACHINES_BLOCK_ENTITY = blockEntityRegistrar.create(
             "vending_machines",
@@ -43,6 +63,12 @@ public interface ModBlocks {
             "devil_roulette_table",
             BlockEntityType.Builder.of(DevilRouletteTableEntity::new,
                     new Block[] { ModBlocks.DEVIL_ROULETTE_TABLE}));
+    BlockEntityType<RepairStationBlockEntity> REPAIR_STATION_BLOCK_ENTITY = blockEntityRegistrar.create(
+            "repair_station",
+            BlockEntityType.Builder.of(RepairStationBlockEntity::new, ModBlocks.REPAIR_STATION));
+    BlockEntityType<HunterCageBlockEntity> HUNTER_CAGE_BLOCK_ENTITY = blockEntityRegistrar.create(
+            "hunter_cage",
+            BlockEntityType.Builder.of(HunterCageBlockEntity::new, ModBlocks.HUNTER_CAGE));
 
     static void initialize() {
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, BLOCK_CREATIVE_GROUP, FabricItemGroup.builder()

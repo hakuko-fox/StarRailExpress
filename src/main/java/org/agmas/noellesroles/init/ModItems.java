@@ -46,6 +46,46 @@ public class ModItems {
             Noellesroles.id("misc"));
 
     public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote");
+
+    public static final Item REPAIR_TOOLBOX = register(
+            new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip", new Item.Properties().stacksTo(4)),
+            "repair_toolbox");
+    public static final Item SPARE_PARTS = register(
+            new RepairBoostItem(8, "item.noellesroles.spare_parts.tooltip", new Item.Properties().stacksTo(16)),
+            "spare_parts");
+    public static final Item RESCUE_FLARE = register(
+            new Item(new Item.Properties().stacksTo(4)) {
+                @Override
+                public void appendHoverText(ItemStack stack, TooltipContext context,
+                        List<Component> tooltip, TooltipFlag flag) {
+                    tooltip.add(Component.translatable("item.noellesroles.rescue_flare.tooltip")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            },
+            "rescue_flare");
+    public static final Item HUNTER_CHAIN = register(
+            new HunterChainItem(new Item.Properties().stacksTo(1).durability(6)),
+            "hunter_chain");
+
+    public static final Item HUNTER_PULSE = register(
+            new HunterPulseItem(new Item.Properties().stacksTo(1)),
+            "hunter_pulse");
+    public static final Item HUNTER_BLINK = register(
+            new HunterBlinkItem(new Item.Properties().stacksTo(1).durability(4)),
+            "hunter_blink");
+    public static final Item HUNTER_JAMMER = register(
+            new HunterJammerItem(new Item.Properties().stacksTo(1).durability(3)),
+            "hunter_jammer");
+
+    public static final Item SMOKE_PELLET = register(
+            new SmokePelletItem(new Item.Properties().stacksTo(8)),
+            "smoke_pellet");
+    public static final Item DECOY_BEACON = register(
+            new DecoyBeaconItem(new Item.Properties().stacksTo(4)),
+            "decoy_beacon");
+    public static final Item ESCAPE_GRAPPLE = register(
+            new EscapeGrappleItem(new Item.Properties().stacksTo(1).durability(3)),
+            "escape_grapple");
     public static final Item PILL = register(
             new PillItem((new Item.Properties()).stacksTo(16)
                     .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F)
