@@ -184,6 +184,72 @@ public class SimpleKNN {
         return sum;
     }
 
+    // ========== 算法6: 色块数量匹配 ==========
+    // 统计每种颜色的像素数量，数量较多的颜色占更高权重
+    // 数量较少的颜色（少于3个像素）如果少画了可以忽略不计
+    private double colorCountDistance(double[] a, double[] b) {
+        if (a.length != b.length) {
+            throw new IllegalArgumentException("Feature vectors must have same length");
+        }
+
+        // 将归一化的颜色值转换为颜色索引
+        Map<Integer, Integer> countA = new HashMap<>();
+        Map<Integer, Integer> countB = new HashMap<>();
+
+        for (int i = 0; i < a.length; i++) {
+            // 透明像素（背景白色）不统计
+            if (Math.abs(a[i]) > 0.01) {
+                int colorIndex = Math.min((int) (a[i] * 16), 15);
+                countA.put(colorIndex, countA.getOrDefault(colorIndex, 0) + 1);
+            }
+            if (Math.abs(b[i]) > 0.01) {
+                int colorIndex = Math.min((int) (b[i] * 16), 15);
+                countB.put(colorIndex, countB.getOrDefault(colorIndex, 0) + 1);
+            }
+        }
+
+        // 找出样本中数量最多的颜色（主色）
+        int maxCountB = countB.values().stream().mapToInt(Integer::intValue).max().orElse(0);
+
+        // 计算加权差异分数
+        double totalDiff = 0;
+        double totalWeight = 0;
+        Set<Integer> allColors = new HashSet<>();
+        allColors.addAll(countA.keySet());
+        allColors.addAll(countB.keySet());
+
+        for (int color : allColors) {
+            int cntA = countA.getOrDefault(color, 0);
+            int cntB = countB.getOrDefault(color, 0);
+
+            // 跳过样本中数量很少的颜色（小于3个像素），不参与计算
+            if (cntB < 3) {
+                continue;
+            }
+
+            // 计算权重：颜色数量越多，权重越高
+            double weight = cntB / (double) maxCountB;
+            totalWeight += weight;
+
+            // 计算差异
+            int diff = Math.abs(cntA - cntB);
+            double colorDiff = diff / (double) Math.max(cntA, cntB);
+
+            // 如果数量较多的颜色少画了很多，给予更高惩罚
+            // 差异超过30%时开始累积惩罚
+            if (cntA < cntB && colorDiff > 0.3) {
+                // 额外惩罚：少画的越多，惩罚越高
+                double extraPenalty = (colorDiff - 0.3) * 2;
+                colorDiff += extraPenalty;
+            }
+
+            totalDiff += colorDiff * weight;
+        }
+
+        // 返回加权平均差异
+        return totalWeight > 0 ? totalDiff / totalWeight : 1.0;
+    }
+
     // ========== 算法5: 重心偏移容忍匹配 ==========
     // 计算形状的加权重心，允许位置有一定偏移
     private double centroidAwareDistance(double[] a, double[] b, int width, int height) {
@@ -323,6 +389,7 @@ public class SimpleKNN {
             case "shape": return shapeAwareDistance(a, b);
             case "pureShape": return pureShapeDistance(a, b);
             case "histogram": return colorHistogramDistance(a, b, 8);
+            case "colorCount": return colorCountDistance(a, b);
             default: return euclideanDistance(a, b);
         }
     }
@@ -349,22 +416,29 @@ public class SimpleKNN {
         Map<Integer, Integer> totalVotes = new HashMap<>();
 
         // 算法严格程度排名（从高到低）:
-        // 1. euclidean    - 最严格，逐像素精确匹配
-        // 2. histogram    - 颜色直方图，统计颜色分布
-        // 3. shape        - 宽松形状匹配，允许多余像素
-        // 4. pureShape    - 忽略颜色，只看轮廓
-        // 5. centroid     - 最宽松，只看位置和数量
+        // 1. euclidean    - 最严格，逐像素精确匹配（权重6）
+        // 2. histogram    - 颜色直方图，统计颜色分布（权重5）
+        // 3. colorCount   - 色块数量统计，权重高数量多（权重4）
+        // 4. shape        - 宽松形状匹配，允许多余像素（权重3）
+        // 5. pureShape    - 忽略颜色，只看轮廓（权重2）
+        // 6. centroid     - 最宽松，只看位置和数量（权重1）
 
-        // euclidean（权重5）
+        // euclidean（权重6）
         int result1 = predictByAlgorithm(features, "euclidean");
         if (result1 != -1) {
-            totalVotes.put(result1, totalVotes.getOrDefault(result1, 0) + 5);
+            totalVotes.put(result1, totalVotes.getOrDefault(result1, 0) + 6);
         }
 
-        // histogram（权重4）
+        // histogram（权重5）
         int result2 = predictByAlgorithm(features, "histogram");
         if (result2 != -1) {
-            totalVotes.put(result2, totalVotes.getOrDefault(result2, 0) + 4);
+            totalVotes.put(result2, totalVotes.getOrDefault(result2, 0) + 5);
+        }
+
+        // colorCount（权重4）
+        int result6 = predictByAlgorithm(features, "colorCount");
+        if (result6 != -1) {
+            totalVotes.put(result6, totalVotes.getOrDefault(result6, 0) + 4);
         }
 
         // shape（权重3）

@@ -8637,6 +8637,12 @@ public class DrawingBoardRecognizer {
             votes.put(result3, votes.getOrDefault(result3, 0) + 1);
         }
 
+        // 算法4: 色块数量匹配
+        int result4 = knn.predictWithThresholdByAlgorithm(features, 0.3, "colorCount");
+        if (result4 != -1) {
+            votes.put(result4, votes.getOrDefault(result4, 0) + 3);  // 权重3
+        }
+
         // 返回得票最多的标签
         int bestLabel = UNKNOWN;
         int bestCount = 0;
