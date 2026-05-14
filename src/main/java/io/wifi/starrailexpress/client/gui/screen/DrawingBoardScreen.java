@@ -52,7 +52,6 @@ public class DrawingBoardScreen extends Screen {
     private int colorPanelX, colorPanelY;
 
     private Button btnClear;
-    private Button btnRecognize;
     private Button btnGenerate;
     private Button btnBrush;
     private Button btnEraser;
@@ -123,16 +122,12 @@ public class DrawingBoardScreen extends Screen {
                 .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 2, BUTTON_WIDTH, BUTTON_HEIGHT).build();
         addRenderableWidget(btnClear);
 
-        btnRecognize = Button.builder(Component.translatable("starrailexpress.drawing_board.recognize"), b -> recognizeCanvas())
-                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 3, BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        addRenderableWidget(btnRecognize);
-
         btnGenerate = Button.builder(Component.translatable("starrailexpress.drawing_board.confirm"), b -> generateItem())
-                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 4, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 3, BUTTON_WIDTH, BUTTON_HEIGHT).build();
         addRenderableWidget(btnGenerate);
 
         btnClose = Button.builder(Component.translatable("starrailexpress.drawing_board.close"), b -> onClose())
-                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 5, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+                .bounds(btnX, btnY + (BUTTON_HEIGHT + 5) * 4, BUTTON_WIDTH, BUTTON_HEIGHT).build();
         addRenderableWidget(btnClose);
 
         updateToolButtons();
@@ -158,9 +153,11 @@ public class DrawingBoardScreen extends Screen {
         // 重置保底计数器
         consecutiveSameCategoryCount = 0;
         lastClosestCategory = DrawingBoardRecognizer.UNKNOWN;
+        canvasModifiedSinceLastRecognize = false;
     }
 
-    private void recognizeCanvas() {
+    private void generateItem() {
+        // 识别（带保底机制）
         DrawingBoardRecognizer.RecognizeResult result = DrawingBoardRecognizer.getInstance().recognizeWithHint(canvas);
         int recognizedCategory = result.category;
 
@@ -176,10 +173,6 @@ public class DrawingBoardScreen extends Screen {
                     if (consecutiveSameCategoryCount >= FALLBACK_THRESHOLD) {
                         // 保底成功！
                         recognizedCategory = closestCategory;
-                        consecutiveSameCategoryCount = 0;
-                        lastClosestCategory = DrawingBoardRecognizer.UNKNOWN;
-                        canvasModifiedSinceLastRecognize = false;
-                        displayClosestCategory = DrawingBoardRecognizer.UNKNOWN;
                     }
                 } else if (closestCategory != lastClosestCategory) {
                     // 换了类别，重置计数器
@@ -202,43 +195,16 @@ public class DrawingBoardScreen extends Screen {
 
         lastRecognizeResult = recognizedCategory;
         if (recognizedCategory == DrawingBoardRecognizer.UNKNOWN) {
+            // 识别失败，只显示消息，不关闭界面
             lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.fail").getString();
         } else {
+            // 识别成功，显示消息并关闭界面
             lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.success").getString();
+            // 发送识别请求到服务端（会消耗画板并给予物品），携带识别结果
+            ClientPlayNetworking.send(new DrawingBoardPayload.DrawBoardRecognizePayload(recognizedCategory));
+            // 关闭界面
+            onClose();
         }
-    }
-
-    private void generateItem() {
-        // 先识别（带保底机制）
-        DrawingBoardRecognizer.RecognizeResult result = DrawingBoardRecognizer.getInstance().recognizeWithHint(canvas);
-        int recognizedCategory = result.category;
-
-        if (recognizedCategory == DrawingBoardRecognizer.UNKNOWN) {
-            // 识别失败，检查保底机制
-            int closestCategory = result.closestCategory;
-            if (closestCategory != DrawingBoardRecognizer.UNKNOWN) {
-                if (closestCategory == lastClosestCategory && canvasModifiedSinceLastRecognize) {
-                    // 只有画作被修改过，且类别相同时才增加保底计数
-                    consecutiveSameCategoryCount++;
-                    if (consecutiveSameCategoryCount >= FALLBACK_THRESHOLD) {
-                        // 保底成功！
-                        recognizedCategory = closestCategory;
-                    }
-                }
-            }
-        }
-
-        lastRecognizeResult = recognizedCategory;
-        if (recognizedCategory == DrawingBoardRecognizer.UNKNOWN) {
-            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.fail").getString();
-        } else {
-            lastRecognizeMessage = Component.translatable("starrailexpress.drawing_board.recognize.success").getString();
-            // 发送识别请求到服务端（会消耗画板并给予物品）
-            ClientPlayNetworking.send(new DrawingBoardPayload.DrawBoardRecognizePayload());
-        }
-
-        // 关闭界面
-        onClose();
     }
 
     @Override
@@ -310,7 +276,7 @@ public class DrawingBoardScreen extends Screen {
             if (lastRecognizeResult == DrawingBoardRecognizer.UNKNOWN && displayClosestCategory != DrawingBoardRecognizer.UNKNOWN) {
                 String categoryHint = Component.translatable("starrailexpress.drawing_board.hint.closest_category").getString();
                 String categoryName = Component.translatable(DrawingBoardRecognizer.getClosestCategoryTranslationKey(displayClosestCategory)).getString();
-                graphics.drawString(font, categoryHint + categoryName, canvasX, infoY + 30, 0xFFAA00);
+                graphics.drawString(font, categoryHint + categoryName, canvasX, infoY + 45, 0xFFAA00);
             }
         }
 
