@@ -460,8 +460,9 @@ public class LootScreen extends AbstractPixelScreen {
             // TODO : 需要用id查询目标文本并翻译
             String itemName = LotteryManager.getInstance().getLotteryPool(poolId)
                     .getQualityListGroupConfigs().get(trueQualityAndId.first).second.get(trueQualityAndId.second);
-            guiGraphics.drawString(this.font, Component.literal(itemName),
-                    centerX - font.width(Component.literal(itemName)) / 2,
+            String trueName = LotteryManager.LotteryPool.getTrueName(itemName);
+            guiGraphics.drawString(this.font, Component.literal(trueName),
+                    centerX - font.width(Component.literal(trueName)) / 2,
                     height / 2 + (int)(endCard.getHeight() * (deltaScale + 1f)) / 2 + cardInterval * pixelSize,
                     0xFFFFFFFF);
                 renderContinueAction(guiGraphics, mouseX, mouseY);
