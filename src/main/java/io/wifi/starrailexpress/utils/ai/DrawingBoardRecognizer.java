@@ -8804,7 +8804,7 @@ public class DrawingBoardRecognizer {
         double bestVoteRatio = totalVoteWeight > 0 ? (double) bestCount / totalVoteWeight : 0.0;
 
         // 颜色错误率校验：如果颜色错误率达到40%以上，直接降低得票数到3以下
-        if (bestCount >= 2) {
+        if (bestCount >= 3) {
             double colorMismatchRatio = calculateColorMismatchRatio(normalizedPixels, bestLabel);
             if (colorMismatchRatio > 0.40) {
                 // 颜色错误率超过40%，降低得票数
@@ -8814,7 +8814,7 @@ public class DrawingBoardRecognizer {
         }
 
         // 只有票数达到最低要求才返回结果
-        if (bestCount < 2 || bestVoteRatio < 0.2) {
+        if (bestCount < 3 || bestVoteRatio < 0.3) {
             // 所有pattern得票率都很低，返回不在识别范围的消息
             return new RecognizeResult(UNKNOWN, UNKNOWN, "starrailexpress.drawing_board.hint.out_of_range", bestCount, totalVoteWeight);
         }
@@ -8906,7 +8906,7 @@ public class DrawingBoardRecognizer {
 
                 // 判断是否为透明/背景色（索引为0或等于16）
                 boolean patternIsTransparent = patternColor == 0 || patternColor == 16;
-                boolean inputIsTransparent = inputColor == 0 || inputColor == 16;
+                boolean inputIsTransparent = inputColor == 16;
 
                 if (!patternIsTransparent && !inputIsTransparent) {
                     coloredCount++;
@@ -8994,11 +8994,11 @@ public class DrawingBoardRecognizer {
      */
     private boolean validatePixelConstraintsAtOffset(byte[][] input, byte[][] pattern, int xOffset, int yOffset) {
         // 透明阈值：pattern中透明位置被画上颜色的比例不超过此值
-        final double EXTRA_PIXEL_THRESHOLD = 0.60;  // 60%
+        final double EXTRA_PIXEL_THRESHOLD = 0.40;  
         // 遗漏阈值：pattern中有色位置被画成透明的比例不超过此值
-        final double MISSING_PIXEL_THRESHOLD = 0.60; // 60%
+        final double MISSING_PIXEL_THRESHOLD = 0.40; 
         // 颜色错误阈值：有色位置颜色错误（考虑互通）的比例不超过此值
-        final double COLOR_MISMATCH_THRESHOLD = 0.50; // 50%
+        final double COLOR_MISMATCH_THRESHOLD = 0.40; 
 
         int patternTransparentCount = 0; // pattern中透明位置总数
         int extraColorCount = 0;          // pattern中透明位置被画上颜色的数量
@@ -9017,7 +9017,7 @@ public class DrawingBoardRecognizer {
                 if (patternX < 0 || patternX >= 16 || patternY < 0 || patternY >= 16) {
                     // 超出边界的pattern位置算作透明
                     int inputColor = input[y][x] & 0xFF;
-                    boolean inputIsTransparent = inputColor == 0 || inputColor == 16;
+                    boolean inputIsTransparent = inputColor == 16;
                     patternTransparentCount++;
                     if (!inputIsTransparent) {
                         extraColorCount++;
@@ -9030,7 +9030,7 @@ public class DrawingBoardRecognizer {
 
                 // 判断是否为透明/背景色（索引为0或等于16）
                 boolean patternIsTransparent = patternColor == 0 || patternColor == 16;
-                boolean inputIsTransparent = inputColor == 0 || inputColor == 16;
+                boolean inputIsTransparent = inputColor == 16;
 
                 if (patternIsTransparent) {
                     patternTransparentCount++;

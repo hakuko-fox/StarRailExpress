@@ -487,7 +487,7 @@ public class SimpleKNN {
 
                 // 判断是否为透明/背景色（索引接近0或等于背景白色16）
                 boolean patternIsTransparent = patternColor == 0 || patternColor == 16;
-                boolean inputIsTransparent = inputColor == 0 || inputColor == 16;
+                boolean inputIsTransparent = inputColor == 16;
 
                 if (patternIsTransparent) {
                     patternTransparentCount++;
