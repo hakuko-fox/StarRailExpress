@@ -1310,13 +1310,13 @@ public class ModRoles {
      */
     public static SRERole PAINTER = TMMRoles.registerRole(new NormalRole(
             PAINTER_ID, // 角色 ID
-            new Color(255, 165, 0).getRGB(), // 橙黄色 - 代表画家的艺术气息
+            new Color(255, 182, 193).getRGB(), // 粉红色 - 代表画家的艺术气息
             true, // isInnocent = 乘客阵营
             false, // canUseKiller = 无杀手能力
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setComponentKey(PainterPlayerComponent.KEY).setCanSeeCoin(true);
+    )).setComponentKey(PainterPlayerComponent.KEY).setCanSeeCoin(true).setEnableChance(55).setOccupiedRoleCount(1);
 
     // 杀手阵营角色
     /**

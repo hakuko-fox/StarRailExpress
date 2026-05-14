@@ -43,6 +43,11 @@ public class DrawingBoardScreen extends Screen {
         0xFF800000, 0xFF008000, 0xFF000080, 0xFF804000,
     };
 
+    // 背景白色ID - 纯白色，画布默认使用，不出现在调色盘中
+    private static final int BACKGROUND_WHITE = 16;
+    // 背景白色实际颜色值
+    private static final int BACKGROUND_WHITE_COLOR = 0xFFFFFFFF;
+
     private int canvasX, canvasY;
     private int colorPanelX, colorPanelY;
 
@@ -61,7 +66,7 @@ public class DrawingBoardScreen extends Screen {
         super(Component.translatable("starrailexpress.drawing_board.title"));
         for (int y = 0; y < CANVAS_SIZE; y++) {
             for (int x = 0; x < CANVAS_SIZE; x++) {
-                canvas[y][x] = 1;
+                canvas[y][x] = (byte) BACKGROUND_WHITE;
             }
         }
     }
@@ -138,7 +143,7 @@ public class DrawingBoardScreen extends Screen {
     private void clearCanvas() {
         for (int y = 0; y < CANVAS_SIZE; y++) {
             for (int x = 0; x < CANVAS_SIZE; x++) {
-                canvas[y][x] = 1;
+                canvas[y][x] = (byte) BACKGROUND_WHITE;
             }
         }
         lastRecognizeResult = DrawingBoardRecognizer.UNKNOWN;
@@ -186,7 +191,13 @@ public class DrawingBoardScreen extends Screen {
         for (int y = 0; y < CANVAS_SIZE; y++) {
             for (int x = 0; x < CANVAS_SIZE; x++) {
                 int colorIndex = canvas[y][x] & 0xFF;
-                int color = colorIndex < PALETTE.length ? PALETTE[colorIndex] : 0xFF000000;
+                int color;
+                if (colorIndex == BACKGROUND_WHITE) {
+                    // 背景白色使用纯白
+                    color = BACKGROUND_WHITE_COLOR;
+                } else {
+                    color = colorIndex < PALETTE.length ? PALETTE[colorIndex] : 0xFF000000;
+                }
                 graphics.fill(
                         canvasX + x * PIXEL_SIZE,
                         canvasY + y * PIXEL_SIZE,
@@ -273,12 +284,12 @@ public class DrawingBoardScreen extends Screen {
                 if (selectedTool == 0) {
                     canvas[y][x] = (byte) selectedColor;
                 } else {
-                    canvas[y][x] = 1;
+                    canvas[y][x] = (byte) BACKGROUND_WHITE;
                 }
                 isDrawing = true;
                 return true;
             } else if (button == 1) {
-                canvas[y][x] = 1;
+                canvas[y][x] = (byte) BACKGROUND_WHITE;
                 isDrawing = true;
                 return true;
             }
@@ -307,10 +318,10 @@ public class DrawingBoardScreen extends Screen {
                 if (selectedTool == 0) {
                     canvas[y][x] = (byte) selectedColor;
                 } else {
-                    canvas[y][x] = 1;
+                    canvas[y][x] = (byte) BACKGROUND_WHITE;
                 }
             } else if (button == 1) {
-                canvas[y][x] = 1;
+                canvas[y][x] = (byte) BACKGROUND_WHITE;
             }
             return true;
         }

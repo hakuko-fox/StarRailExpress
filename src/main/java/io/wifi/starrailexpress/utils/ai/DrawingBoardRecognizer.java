@@ -8572,7 +8572,11 @@ public class DrawingBoardRecognizer {
     // ==================== 颜色常量定义 ====================
     // 调色板索引（与 DrawingBoardScreen.PALETTE 对应）
     private static final int COLOR_BLACK = 0;
-    private static final int COLOR_WHITE = 1;
+    // 调色盘白色（id=1）- 允许被识别
+    private static final int COLOR_PALETTE_WHITE = 1;
+    // 背景白色（id=16）- 纯白色，不被识别，视为透明
+    private static final int COLOR_BACKGROUND_WHITE = 16;
+    private static final int COLOR_WHITE = COLOR_PALETTE_WHITE; // 保持兼容性
     private static final int COLOR_RED = 2;
     private static final int COLOR_GREEN = 3;
     private static final int COLOR_BLUE = 4;
@@ -8593,11 +8597,11 @@ public class DrawingBoardRecognizer {
             return UNKNOWN;
         }
 
-        // 检查画板是否全部为默认白色(1)，如果是则不识别
+        // 检查画板是否全部为背景白色(16)，如果是则不识别
         boolean allWhite = true;
         for (int y = 0; y < 16; y++) {
             for (int x = 0; x < 16; x++) {
-                if ((pixels[y][x] & 0xFF) != COLOR_WHITE) {
+                if ((pixels[y][x] & 0xFF) != COLOR_BACKGROUND_WHITE) {
                     allWhite = false;
                     break;
                 }
@@ -8651,7 +8655,8 @@ public class DrawingBoardRecognizer {
      * - 蓝色和深蓝色互通
      * - 红色和深红色互通
      * - 绿色和深绿色互通
-     * - 白色保持不变
+     * - 背景白色(16) -> 调色盘白色(1)，确保可识别
+     * - 调色盘白色保持不变
      */
     private byte[][] normalizeColors(byte[][] pixels) {
         byte[][] result = new byte[16][16];
@@ -8661,8 +8666,12 @@ public class DrawingBoardRecognizer {
                 int color = pixels[y][x] & 0xFF;
                 int normalized = color;
                 
+                // 背景白色(16) -> 调色盘白色(1)
+                if (color == COLOR_BACKGROUND_WHITE) {
+                    normalized = COLOR_PALETTE_WHITE;
+                }
                 // 灰色 -> 淡灰色
-                if (color == COLOR_GRAY) {
+                else if (color == COLOR_GRAY) {
                     normalized = COLOR_LIGHT_GRAY;
                 }
                 // 深红色 -> 红色
