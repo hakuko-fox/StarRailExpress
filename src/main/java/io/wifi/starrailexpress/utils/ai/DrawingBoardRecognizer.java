@@ -257,8 +257,12 @@ public class DrawingBoardRecognizer {
         // 防御药剂
         byte[][] defenseVial = createDefenseVialPattern();
         knn.addSample(SimpleKNN.matrixToFeature(defenseVial), DEFENSE_VIAL);
-        knn.addSample(SimpleKNN.matrixToFeature(createDefenseVialPattern2()), DEFENSE_VIAL);
         categoryPatterns.put(DEFENSE_VIAL, defenseVial);
+
+        // 毒药瓶
+        byte[][] poisonVial = createPoisonVialPattern();
+        knn.addSample(SimpleKNN.matrixToFeature(poisonVial), POISON_VIAL);
+        categoryPatterns.put(POISON_VIAL, poisonVial);
 
         // 解药
         byte[][] antidote = createAntidotePattern();
@@ -514,118 +518,6 @@ public class DrawingBoardRecognizer {
      */
     private void initializeMoreTrainingVariants() {
         // 添加更多变体的方法 - 使用旋转、缩放偏移等
-        // 刀 - 更多角度
-        knn.addSample(SimpleKNN.matrixToFeature(createKnifePattern3()), KNIFE);
-        knn.addSample(SimpleKNN.matrixToFeature(createKnifePattern4()), KNIFE);
-
-        // 撬棍 - 更多角度
-        knn.addSample(SimpleKNN.matrixToFeature(createCrowbarPattern3()), CROWBAR);
-        knn.addSample(SimpleKNN.matrixToFeature(createCrowbarPattern4()), CROWBAR);
-
-        // 鞭炮 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createFirecrackerPattern3()), FIRECRACKER);
-        knn.addSample(SimpleKNN.matrixToFeature(createFirecrackerPattern4()), FIRECRACKER);
-
-        // 左轮手枪 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createRevolverPattern3()), REVOLVER);
-        knn.addSample(SimpleKNN.matrixToFeature(createRevolverPattern4()), REVOLVER);
-
-        // 便签 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createNotePattern3()), NOTE);
-        knn.addSample(SimpleKNN.matrixToFeature(createNotePattern4()), NOTE);
-
-        // 裹尸袋 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createBodyBagPattern3()), BODY_BAG);
-        knn.addSample(SimpleKNN.matrixToFeature(createBodyBagPattern4()), BODY_BAG);
-
-        // 各种药瓶 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createDefenseVialPattern3()), DEFENSE_VIAL);
-        knn.addSample(SimpleKNN.matrixToFeature(createAntidotePattern3()), ANTIDOTE);
-        knn.addSample(SimpleKNN.matrixToFeature(createToxinPattern3()), TOXIN);
-        knn.addSample(SimpleKNN.matrixToFeature(createCatalystPattern3()), CATALYST);
-        knn.addSample(SimpleKNN.matrixToFeature(createBottlePattern3()), BOTTLE_OF_WATER);
-        knn.addSample(SimpleKNN.matrixToFeature(createVitaminPattern3()), VITAMIN);
-        knn.addSample(SimpleKNN.matrixToFeature(createPoisonVialPattern()), POISON_VIAL);
-
-        // 苦无/飞刀 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createKunaiPattern3()), KUNAI);
-        knn.addSample(SimpleKNN.matrixToFeature(createThrowingKnifePattern3()), THROWING_KNIFE);
-
-        // 手里剑 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createShurikenPattern3()), SHURIKEN);
-
-        // 手铐 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createHandcuffsPattern3()), HANDCUFFS);
-
-        // 夜视仪 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createNightVisionPattern3()), NIGHT_VISION);
-
-        // 潜水头盔/靴 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createDivingHelmetPattern3()), DIVING_HELMET);
-        knn.addSample(SimpleKNN.matrixToFeature(createDivingBootsPattern3()), DIVING_BOOTS);
-
-        // 钥匙 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createMasterKeyPPattern3()), MASTER_KEY_P);
-
-        // 心脏起搏器 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createDefibrillatorPattern3()), DEFIBRILLATOR);
-
-        // 拳套 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createBoxingGlovePattern3()), BOXING_GLOVE);
-
-        // 试剂 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createAntidoteReagentPattern3()), ANTIDOTE_REAGENT);
-
-        // 手雷 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createSmokeGrenadePattern3()), SMOKE_GRENADE);
-        knn.addSample(SimpleKNN.matrixToFeature(createFlashGrenadePattern3()), FLASH_GRENADE);
-
-        // 工具 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createRepairToolPattern3()), REPAIR_TOOL);
-        knn.addSample(SimpleKNN.matrixToFeature(createScrewdriverPattern3()), SCREWDRIVER);
-        knn.addSample(SimpleKNN.matrixToFeature(createAlarmTrapPattern3()), ALARM_TRAP);
-
-        // 盒子 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createDeliveryBoxPattern3()), DELIVERY_BOX);
-        knn.addSample(SimpleKNN.matrixToFeature(createHallucinationPattern3()), HALLUCINATION);
-
-        // 轮椅 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createWheelchairPattern3()), WHEELCHAIR);
-
-        // 枪械 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createShortShotgunPattern3()), SHORT_SHOTGUN);
-
-        // 棍棒 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createBatonPattern3()), BATON);
-
-        // 电子设备 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createRadioPattern3()), RADIO);
-        knn.addSample(SimpleKNN.matrixToFeature(createMonitoringTerminalPattern3()), MONITORING_TERMINAL);
-
-        // 锁 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createLockPattern3()), LOCK);
-
-        // 表 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createPocketWatchPattern3()), POCKET_WATCH);
-        knn.addSample(SimpleKNN.matrixToFeature(createTimeStopClockPattern3()), TIME_STOP_CLOCK);
-
-        // 消防工具 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createFireAxePattern3()), FIRE_AXE);
-        knn.addSample(SimpleKNN.matrixToFeature(createExtinguisherPattern3()), EXTINGUISHER);
-
-        // 绳索 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createRopePattern3()), ROPE);
-
-        // 文件类 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createPassbookPattern3()), PASSBOOK);
-        knn.addSample(SimpleKNN.matrixToFeature(createProblemSetPattern3()), PROBLEM_SET);
-
-        // 零食 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createLingshiPattern3()), LINGSHI);
-        knn.addSample(SimpleKNN.matrixToFeature(createMintCandiesPattern3()), MINT_CANDIES);
-
-        // 十四夜 - 更多变体
-        knn.addSample(SimpleKNN.matrixToFeature(createShisiyePattern3()), SHISYE);
 
         // 回形针 - 更多变体
         knn.addSample(SimpleKNN.matrixToFeature(createPaperclipPattern3()), PAPERCLIP);
@@ -1555,24 +1447,20 @@ public class DrawingBoardRecognizer {
 
     private byte[][] createDefenseVialPattern() {
         byte[][] p = new byte[16][16];
-        p[3][7] = 7; p[3][8] = 7;  // 瓶塞
-        for (int y = 4; y < 7; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 7;  // 瓶颈
-        }
-        for (int y = 7; y < 14; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 7;  // 瓶身 - 青绿色
-        }
-        return p;
-    }
-
-    private byte[][] createDefenseVialPattern2() {
-        byte[][] p = new byte[16][16];
-        p[2][7] = 7; p[2][8] = 7;  // 瓶塞
+        p[2][7] = 12; p[2][8] = 12;  // 瓶塞 - 棕色
         for (int y = 3; y < 6; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 7;  // 瓶颈
+            for (int x = 6; x < 10; x++) p[y][x] = 11;  // 瓶颈 - 淡灰色
         }
-        for (int y = 6; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 7;  // 瓶身 - 青绿色
+        for (int y = 7; y < 12; y++) {
+            for (int x = 6; x < 10; x++) p[y][x] = 14;  // 瓶身内部 - 深蓝色
+        }
+        for (int x = 5; x < 11; x++) {
+            p[6][x] = 11;  // 瓶身顶部轮廓 - 灰色
+            p[12][x] = 11;  // 瓶身底部轮廓 - 灰色
+        }
+        for (int y = 7; y < 12; y++) {
+            p[y][5] = 11;  // 瓶身左侧轮廓 - 灰色
+            p[y][10] = 11;  // 瓶身右侧轮廓 - 灰色
         }
         return p;
     }
@@ -3700,6 +3588,59 @@ public class DrawingBoardRecognizer {
         p[13][6] = 10;
         p[14][8] = 10;
         p[14][7] = 10;
+        return p;
+    }
+
+            private byte[][] createPoisonVialPattern() {
+        byte[][] p = new byte[16][16];
+        p[2][6] = 10;
+        p[2][7] = 10;
+        p[2][8] = 10;
+        p[2][9] = 10;
+        p[3][5] = 10;
+        p[3][6] = 12;
+        p[3][7] = 12;
+        p[3][8] = 12;
+        p[3][9] = 12;
+        p[3][10] = 10;
+        p[4][5] = 11;
+        p[4][6] = 11;
+        p[4][7] = 11;
+        p[4][8] = 10;
+        p[4][9] = 10;
+        p[4][10] = 10;
+        p[5][6] = 10;
+        p[5][7] = 12;
+        p[5][8] = 12;
+        p[6][6] = 10;
+        p[6][9] = 10;
+        p[7][6] = 10;
+        p[7][7] = 12;
+        p[7][8] = 12;
+        p[7][9] = 10;
+        p[8][6] = 10;
+        p[8][7] = 12;
+        p[8][8] = 12;
+        p[8][9] = 11;
+        p[9][6] = 11;
+        p[9][7] = 12;
+        p[9][8] = 12;
+        p[9][9] = 11;
+        p[10][6] = 11;
+        p[10][7] = 12;
+        p[10][8] = 12;
+        p[10][9] = 11;
+        p[11][6] = 11;
+        p[11][7] = 12;
+        p[11][8] = 12;
+        p[11][9] = 10;
+        p[12][6] = 11;
+        p[12][7] = 12;
+        p[12][9] = 10;
+        p[13][6] = 10;
+        p[13][9] = 10;
+        p[14][7] = 10;
+        p[14][8] = 10;
         return p;
     }
 
@@ -7720,691 +7661,6 @@ public class DrawingBoardRecognizer {
         return p;
     }
 
-    // ==================== 更多变体样本（放宽识别用）====================
-
-    // 刀的更多变体 - 左下至右上，柄在左下
-    private byte[][] createKnifePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int i = 4; i < 12; i++) p[16 - i - 1][i] = 2;  // 刀刃 - 红色
-        p[12][4] = 15; p[13][4] = 15;  // 手柄 - 棕色 (左下)
-        return p;
-    }
-
-    private byte[][] createKnifePattern4() {
-        byte[][] p = new byte[16][16];
-        for (int i = 5; i < 14; i++) p[16 - i - 1][i - 2] = 2;  // 刀刃 - 红色
-        p[13][5] = 15; p[14][5] = 15;  // 手柄 - 棕色 (左下)
-        return p;
-    }
-
-    // 撬棍的更多变体 - J旋转180度 (├形状，柄在下)
-    private byte[][] createCrowbarPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int x = 5; x < 11; x++) p[6][x] = 10;  // 横杆在上方
-        for (int y = 6; y < 10; y++) p[y][10] = 10;  // 垂直杆在右侧
-        p[10][9] = 10;  // 钩在下方
-        return p;
-    }
-
-    private byte[][] createCrowbarPattern4() {
-        byte[][] p = new byte[16][16];
-        for (int x = 4; x < 12; x++) p[7][x] = 10;  // 横杆在上方
-        for (int y = 7; y < 10; y++) p[y][11] = 10;  // 垂直杆在右侧
-        p[10][10] = 10; p[10][11] = 10;  // 钩在下方
-        return p;
-    }
-
-    // 鞭炮的更多变体
-    private byte[][] createFirecrackerPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 6; y < 11; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 2;
-        }
-        p[5][8] = 5; p[4][7] = 5;
-        return p;
-    }
-
-    private byte[][] createFirecrackerPattern4() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 12; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 2;
-        }
-        p[4][8] = 5; p[3][8] = 5; p[2][9] = 5;
-        return p;
-    }
-
-    // 左轮的更多变体 - 右下至左上，柄在右下
-    private byte[][] createRevolverPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int x = 4; x < 12; x++) p[7][15 - x] = 10;  // 枪管 - 灰色 (从右到左)
-        for (int x = 9; x < 13; x++) p[6][15 - x] = 10;  // 枪托 - 灰色 (从右到左)
-        for (int y = 8; y < 13; y++) p[y][11] = 15;  // 握把 - 棕色 (在右下)
-        return p;
-    }
-
-    private byte[][] createRevolverPattern4() {
-        byte[][] p = new byte[16][16];
-        for (int x = 5; x < 13; x++) p[10][15 - x] = 10;  // 枪管 - 灰色 (从右到左)
-        for (int x = 8; x < 12; x++) p[9][15 - x] = 10;  // 枪托 - 灰色 (从右到左)
-        for (int y = 11; y < 14; y++) p[y][10] = 15;  // 握把 - 棕色 (在右下)
-        p[14][11] = 15;  // 握把 - 棕色 (在右下)
-        return p;
-    }
-
-    // 便签的更多变体
-    private byte[][] createNotePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 11; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 12;  // 便签 - 深红色（米黄色）
-        }
-        return p;
-    }
-
-    private byte[][] createNotePattern4() {
-        byte[][] p = new byte[16][16];
-        for (int y = 4; y < 13; y++) {
-            for (int x = 3; x < 13; x++) p[y][x] = 12;  // 便签 - 深红色（米黄色）
-        }
-        return p;
-    }
-
-    // 裹尸袋的更多变体
-    private byte[][] createBodyBagPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 12; y++) {
-            for (int x = 4; x < 12; x++) {
-                if (y < 7 || y > 9 || (x > 5 && x < 10)) p[y][x] = 12;  // 裹尸袋 - 深红色（棕色）
-            }
-        }
-        return p;
-    }
-
-    private byte[][] createBodyBagPattern4() {
-        byte[][] p = new byte[16][16];
-        for (int y = 3; y < 14; y++) {
-            for (int x = 2; x < 14; x++) {
-                if (y < 6 || y > 11 || (x > 4 && x < 12)) p[y][x] = 12;  // 裹尸袋 - 深红色（棕色）
-            }
-        }
-        return p;
-    }
-
-    // 药瓶更多变体
-    private byte[][] createDefenseVialPattern3() {
-        byte[][] p = new byte[16][16];
-        p[4][7] = 10; p[4][8] = 10;
-        for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 5;
-        }
-        return p;
-    }
-
-    private byte[][] createAntidotePattern3() {
-        byte[][] p = new byte[16][16];
-        p[4][7] = 10; p[4][8] = 10;
-        for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 3;
-        }
-        return p;
-    }
-
-    private byte[][] createToxinPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 3; y < 11; y++) p[y][8] = 10;
-        p[11][8] = 2; p[12][8] = 2;
-        for (int y = 3; y < 7; y++) {
-            for (int x = 7; x < 10; x++) p[y][x] = 11;
-        }
-        return p;
-    }
-
-    private byte[][] createCatalystPattern3() {
-        byte[][] p = new byte[16][16];
-        p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
-        for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 瓶颈 - 灰色
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 10;  // 瓶身 - 灰色
-        }
-        return p;
-    }
-
-    private byte[][] createBottlePattern3() {
-        byte[][] p = new byte[16][16];
-        p[5][7] = 10; p[5][8] = 10;  // 瓶塞 - 灰色
-        for (int y = 6; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 瓶颈 - 灰色
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 11;  // 瓶身 - 淡灰色
-        }
-        return p;
-    }
-
-    private byte[][] createVitaminPattern3() {
-        byte[][] p = new byte[16][16];
-        p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
-        for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 瓶颈 - 灰色
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 8;  // 瓶身 - 橙色
-        }
-        return p;
-    }
-
-            private byte[][] createPoisonVialPattern() {
-        byte[][] p = new byte[16][16];
-        p[2][6] = 10;
-        p[2][7] = 10;
-        p[2][8] = 10;
-        p[2][9] = 10;
-        p[3][5] = 10;
-        p[3][6] = 12;
-        p[3][7] = 12;
-        p[3][8] = 12;
-        p[3][9] = 12;
-        p[3][10] = 10;
-        p[4][5] = 11;
-        p[4][6] = 11;
-        p[4][7] = 11;
-        p[4][8] = 10;
-        p[4][9] = 10;
-        p[4][10] = 10;
-        p[5][6] = 10;
-        p[5][7] = 12;
-        p[5][8] = 12;
-        p[6][6] = 10;
-        p[6][9] = 10;
-        p[7][6] = 10;
-        p[7][7] = 12;
-        p[7][8] = 12;
-        p[7][9] = 10;
-        p[8][6] = 10;
-        p[8][7] = 12;
-        p[8][8] = 12;
-        p[8][9] = 11;
-        p[9][6] = 11;
-        p[9][7] = 12;
-        p[9][8] = 12;
-        p[9][9] = 11;
-        p[10][6] = 11;
-        p[10][7] = 12;
-        p[10][8] = 12;
-        p[10][9] = 11;
-        p[11][6] = 11;
-        p[11][7] = 12;
-        p[11][8] = 12;
-        p[11][9] = 10;
-        p[12][6] = 11;
-        p[12][7] = 12;
-        p[12][9] = 10;
-        p[13][6] = 10;
-        p[13][9] = 10;
-        p[14][7] = 10;
-        p[14][8] = 10;
-        return p;
-    }
-
-    // 苦无更多变体
-    private byte[][] createKunaiPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 4; y < 12; y++) p[y][8] = 10;  // 刀身 - 灰色
-        for (int x = 6; x < 11; x++) p[4][x] = 10;  // 刀尖 - 灰色
-        p[6][6] = 15; p[6][10] = 15;  // 手柄装饰 - 棕色
-        return p;
-    }
-
-    // 飞刀更多变体
-    private byte[][] createThrowingKnifePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 3; y < 13; y++) p[y][8] = 15;  // 刀身 - 棕色
-        p[3][8] = 10; p[4][8] = 10;  // 刀尖 - 灰色
-        for (int y = 9; y < 13; y++) p[y][7] = 11;  // 手柄 - 淡灰色
-        return p;
-    }
-
-    // 手里剑更多变体
-    private byte[][] createShurikenPattern3() {
-        byte[][] p = new byte[16][16];
-        int c = 8;
-        p[c][c] = 0;  // 中心 - 黑色
-        for (int i = 0; i < 4; i++) {
-            p[i + 3][c] = 10;  // 尖刺 - 灰色
-            p[12 - i][c] = 10;
-            p[c][i + 3] = 10;
-            p[c][12 - i] = 10;
-        }
-        return p;
-    }
-
-    // 手铐更多变体
-    private byte[][] createHandcuffsPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 8; y++) {
-            for (int x = 4; x < 7; x++) {
-                double dist = Math.sqrt((x - 5.5) * (x - 5.5) + (y - 6.5) * (y - 6.5));
-                if (dist > 1.5 && dist < 2.5) p[y][x] = 10;
-            }
-        }
-        for (int y = 8; y < 11; y++) {
-            for (int x = 9; x < 12; x++) {
-                double dist = Math.sqrt((x - 10.5) * (x - 10.5) + (y - 9.5) * (y - 9.5));
-                if (dist > 1.5 && dist < 2.5) p[y][x] = 10;
-            }
-        }
-        for (int x = 7; x < 10; x++) p[8][x] = 10;
-        return p;
-    }
-
-    // 夜视仪更多变体
-    private byte[][] createNightVisionPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int x = 3; x < 13; x++) p[8][x] = 10;
-        for (int y = 6; y < 10; y++) {
-            for (int x = 4; x < 7; x++) {
-                double dist = Math.sqrt((x - 5) * (x - 5) + (y - 8) * (y - 8));
-                if (dist < 2) p[y][x] = 3;
-            }
-        }
-        for (int y = 6; y < 10; y++) {
-            for (int x = 9; x < 12; x++) {
-                double dist = Math.sqrt((x - 10) * (x - 10) + (y - 8) * (y - 8));
-                if (dist < 2) p[y][x] = 3;
-            }
-        }
-        return p;
-    }
-
-    // 潜水头盔更多变体
-    private byte[][] createDivingHelmetPattern3() {
-        byte[][] p = new byte[16][16];
-        int c = 8;
-        for (int y = 4; y < 12; y++) {
-            for (int x = 4; x < 12; x++) {
-                double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 7;  // 头盔 - 青色
-            }
-        }
-        for (int y = 6; y < 10; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 玻璃罩 - 黑色
-        }
-        return p;
-    }
-
-    // 潜水靴更多变体
-    private byte[][] createDivingBootsPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 4; y < 9; y++) {
-            for (int x = 5; x < 9; x++) p[y][x] = 15;  // 靴身 - 棕色
-        }
-        for (int y = 9; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 靴底 - 黑色
-        }
-        return p;
-    }
-
-    // 钥匙更多变体
-    private byte[][] createMasterKeyPPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 6; y < 10; y++) {
-            for (int x = 3; x < 6; x++) {
-                double dist = Math.sqrt((x - 4.5) * (x - 4.5) + (y - 8) * (y - 8));
-                if (dist < 2.5) p[y][x] = 15;  // 钥匙头 - 棕色
-            }
-        }
-        for (int x = 6; x < 12; x++) p[8][x] = 10;  // 钥匙杆 - 灰色
-        p[9][10] = 10;  // 钥匙齿 - 灰色
-        return p;
-    }
-
-    // 心脏起搏器更多变体
-    private byte[][] createDefibrillatorPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 6; y < 11; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 15;  // 机身 - 棕色
-        }
-        for (int y = 7; y < 9; y++) {
-            for (int x = 6; x < 8; x++) p[y][x] = 0;  // 屏幕 - 黑色
-        }
-        for (int y = 3; y < 6; y++) p[y][9] = 10;  // 手柄 - 灰色
-        return p;
-    }
-
-    // 拳套更多变体
-    private byte[][] createBoxingGlovePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 12; y++) {
-            for (int x = 4; x < 12; x++) {
-                double dist = Math.sqrt((x - 8) * (x - 8) + (y - 8) * (y - 8));
-                if (dist < 4.5) p[y][x] = 15;  // 拳套 - 棕色
-            }
-        }
-        for (int y = 10; y < 13; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 8;  // 手腕 - 橙色
-        }
-        return p;
-    }
-
-    // 试剂更多变体
-    private byte[][] createAntidoteReagentPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 13; y++) {
-            for (int x = 7; x < 9; x++) p[y][x] = 10;  // 试剂管 - 灰色
-        }
-        for (int y = 10; y < 13; y++) {
-            for (int x = 7; x < 9; x++) p[y][x] = 7;  // 试剂 - 青色
-        }
-        return p;
-    }
-
-    // 手雷更多变体
-    private byte[][] createSmokeGrenadePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 7; y < 12; y++) {
-            for (int x = 6; x < 10; x++) {
-                double dist = Math.sqrt((x - 8) * (x - 8) + (y - 9.5) * (y - 9.5));
-                if (dist < 3) p[y][x] = 15;  // 弹体 - 棕色
-            }
-        }
-        p[6][8] = 0;  // 顶盖 - 黑色
-        return p;
-    }
-
-    private byte[][] createFlashGrenadePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 7; y < 12; y++) {
-            for (int x = 6; x < 10; x++) {
-                double dist = Math.sqrt((x - 8) * (x - 8) + (y - 9.5) * (y - 9.5));
-                if (dist < 3) p[y][x] = 10;  // 弹体 - 灰色
-            }
-        }
-        p[6][8] = 0;  // 顶盖 - 黑色
-        return p;
-    }
-
-    // 工具更多变体
-    private byte[][] createRepairToolPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 8; y < 13; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 15;  // 板身 - 棕色
-        }
-        for (int y = 4; y < 9; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 头部 - 灰色
-        }
-        return p;
-    }
-
-    private byte[][] createScrewdriverPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 9; y < 14; y++) {
-            for (int x = 6; x < 9; x++) p[y][x] = 15;  // 柄部 - 棕色
-        }
-        for (int y = 3; y < 10; y++) p[y][7] = 10;  // 金属杆 - 灰色
-        p[2][6] = 10; p[2][8] = 10;  // 刀头 - 灰色
-        return p;
-    }
-
-    private byte[][] createAlarmTrapPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 7; y < 12; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 主体 - 黑色
-        }
-        for (int y = 4; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 15;  // 警报灯 - 棕色
-        }
-        return p;
-    }
-
-    // 盒子更多变体
-    private byte[][] createDeliveryBoxPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 12; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 10;  // 盒子 - 灰色
-        }
-        for (int y = 7; y < 10; y++) {
-            for (int x = 7; x < 9; x++) p[y][x] = 15;  // 开口 - 棕色
-        }
-        return p;
-    }
-
-    
-
-    private byte[][] createHallucinationPattern3() {
-        byte[][] p = new byte[16][16];
-        p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
-        for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 11;  // 瓶颈 - 淡灰色
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 11;  // 瓶身 - 淡灰色
-        }
-        return p;
-    }
-
-    // 轮椅更多变体
-    private byte[][] createWheelchairPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 8; y < 10; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 座位 - 灰色
-        }
-        for (int y = 10; y < 14; y++) {
-            for (int x = 5; x < 11; x++) {
-                double d1 = Math.sqrt((x - 6) * (x - 6) + (y - 12) * (y - 12));
-                double d2 = Math.sqrt((x - 10) * (x - 10) + (y - 12) * (y - 12));
-                if (d1 < 2 || d2 < 2) p[y][x] = 0;  // 轮子 - 黑色
-            }
-        }
-        for (int y = 4; y < 9; y++) p[y][6] = 11;  // 靠背 - 淡灰色
-        return p;
-    }
-
-    // 枪械更多变体
-    private byte[][] createShortShotgunPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int x = 3; x < 12; x++) p[9][x] = 15;  // 枪管 - 棕色
-        for (int x = 9; x < 13; x++) p[8][x] = 15;  // 枪托 - 棕色
-        for (int y = 10; y < 14; y++) p[y][5] = 10;  // 握把 - 灰色
-        return p;
-    }
-
-    // 棍棒更多变体
-    private byte[][] createBatonPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 3; y < 13; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 15;  // 棒身 - 棕色
-        }
-        for (int y = 10; y < 13; y++) {
-            for (int x = 5; x < 8; x++) p[y][x] = 0;  // 手柄 - 黑色
-        }
-        return p;
-    }
-
-    // 电子设备更多变体
-    private byte[][] createRadioPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 0;  // 机身 - 黑色
-        }
-        for (int y = 3; y < 6; y++) p[y][9] = 0;  // 天线 - 黑色
-        for (int y = 6; y < 10; y++) {
-            for (int x = 6; x < 8; x++) p[y][x] = 10;  // 屏幕 - 灰色
-        }
-        return p;
-    }
-
-    private byte[][] createMonitoringTerminalPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 3; y < 9; y++) {
-            for (int x = 3; x < 13; x++) p[y][x] = 11;  // 机身 - 淡灰色
-        }
-        for (int y = 4; y < 8; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 0;  // 屏幕 - 黑色
-        }
-        for (int y = 9; y < 13; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 支架 - 灰色
-        }
-        return p;
-    }
-
-    // 锁更多变体
-    private byte[][] createLockPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 7; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 10;  // 锁体 - 灰色
-        }
-        p[10][8] = 0;  // 锁孔 - 黑色
-        for (int y = 4; y < 8; y++) {
-            for (int x = 6; x < 10; x++) {
-                double dist = Math.sqrt((x - 8) * (x - 8) + (y - 6) * (y - 6));
-                if (dist > 1 && dist < 2) p[y][x] = 11;  // 锁扣 - 淡灰色
-            }
-        }
-        return p;
-    }
-
-    // 表更多变体
-    private byte[][] createPocketWatchPattern3() {
-        byte[][] p = new byte[16][16];
-        int c = 8;
-        for (int y = 4; y < 13; y++) {
-            for (int x = 4; x < 13; x++) {
-                double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 15;  // 表壳 - 棕色
-            }
-        }
-        for (int y = 5; y < 12; y++) {
-            for (int x = 5; x < 12; x++) {
-                double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 3.5) p[y][x] = 11;  // 表盘 - 淡灰色
-            }
-        }
-        p[8][8] = 0; p[5][8] = 0;  // 表针 - 黑色
-        p[3][7] = 8; p[3][8] = 8;  // 表链 - 橙色
-        return p;
-    }
-
-    private byte[][] createTimeStopClockPattern3() {
-        byte[][] p = new byte[16][16];
-        int c = 8;
-        for (int y = 4; y < 13; y++) {
-            for (int x = 4; x < 13; x++) {
-                double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4.5) p[y][x] = 10;  // 表壳 - 灰色
-            }
-        }
-        for (int y = 5; y < 12; y++) {
-            for (int x = 5; x < 12; x++) {
-                double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 3.5) p[y][x] = 11;  // 表盘 - 淡灰色
-            }
-        }
-        p[8][8] = 0; p[5][8] = 0;  // 表针 - 黑色
-        return p;
-    }
-
-    // 消防工具更多变体
-    private byte[][] createFireAxePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 4; y < 13; y++) p[y][7] = 5;  // 斧柄 - 黄色
-        for (int y = 4; y < 7; y++) {
-            for (int x = 5; x < 10; x++) p[y][x] = 2;  // 斧头 - 红色
-        }
-        p[5][4] = 0; p[6][4] = 0; p[5][10] = 8;  // 装饰 - 黑色/橙色
-        return p;
-    }
-
-    private byte[][] createExtinguisherPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 13; y++) {
-            for (int x = 5; x < 11; x++) {
-                double dist = Math.sqrt((x - 8) * (x - 8) + (y - 9) * (y - 9));
-                if (dist < 4) p[y][x] = 12;  // 主体 - 深红色
-            }
-        }
-        for (int x = 10; x < 13; x++) p[7][x] = 10;  // 喷嘴 - 灰色
-        p[6][5] = 10;  // 把手 - 灰色
-        return p;
-    }
-
-    // 绳索更多变体
-    private byte[][] createRopePattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 3; y < 13; y++) {
-            if (y % 2 == 0) {
-                for (int x = 6; x < 9; x++) p[y][x] = 15;  // 绳索 - 棕色
-            } else {
-                for (int x = 7; x < 10; x++) p[y][x] = 10;  // 绳索 - 灰色
-            }
-        }
-        return p;
-    }
-
-    // 文件更多变体
-    private byte[][] createPassbookPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 4; y < 12; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 11;  // 封面 - 淡灰色
-        }
-        for (int y = 5; y < 7; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 10;  // 装饰 - 灰色
-        }
-        return p;
-    }
-
-    private byte[][] createProblemSetPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 4; y < 12; y++) {
-            for (int x = 4; x < 12; x++) p[y][x] = 13;  // 封面 - 深绿色
-        }
-        for (int y = 5; y < 11; y++) {
-            for (int x = 5; x < 11; x += 2) p[y][x] = 11;  // 装饰 - 淡灰色
-        }
-        return p;
-    }
-
-    // 零食更多变体
-    private byte[][] createLingshiPattern3() {
-        byte[][] p = new byte[16][16];
-        for (int y = 5; y < 11; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 8;  // 包装 - 橙色
-        }
-        p[4][6] = 5; p[4][7] = 5; p[4][8] = 5; p[4][9] = 5;  // 顶部装饰 - 黄色
-        return p;
-    }
-
-    private byte[][] createMintCandiesPattern3() {
-        byte[][] p = new byte[16][16];
-        int cx = 8, cy = 8;
-        for (int y = 5; y < 11; y++) {
-            for (int x = 5; x < 11; x++) {
-                double dist = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
-                if (dist < 3) p[y][x] = 3;  // 圆形主体 - 绿色
-            }
-        }
-        return p;
-    }
-
-        // 十四夜更多变体
-    private byte[][] createShisiyePattern3() {
-        byte[][] p = new byte[16][16];
-        p[4][7] = 11; p[4][8] = 11;  // 瓶塞 - 淡灰色
-        for (int y = 5; y < 8; y++) {
-            for (int x = 6; x < 10; x++) p[y][x] = 11;  // 瓶颈 - 淡灰色
-        }
-        for (int y = 8; y < 13; y++) {
-            for (int x = 5; x < 11; x++) p[y][x] = 14;  // 瓶身 - 深蓝色
-        }
-        return p;
-    }
-
     // ==================== 回形针图案 ====================
     // 回形针 - U形弯曲的金属线
             private byte[][] createPaperclipPattern() {
@@ -8509,13 +7765,13 @@ public class DrawingBoardRecognizer {
         byte[][] p = new byte[16][16];
         // 回形针的简化U形结构
         // 右侧垂直部分
-        for (int y = 5; y < 10; y++) p[y][10] = 0;
+        for (int y = 5; y < 10; y++) p[y][10] = 10;
         // 顶部水平部分
-        for (int x = 5; x < 11; x++) p[5][x] = 0;
+        for (int x = 5; x < 11; x++) p[5][x] = 10;
         // 左侧垂直部分
-        for (int y = 5; y < 10; y++) p[y][5] = 0;
+        for (int y = 5; y < 10; y++) p[y][5] = 10;
         // 底部水平部分
-        for (int x = 5; x < 11; x++) p[10][x] = 0;
+        for (int x = 5; x < 11; x++) p[10][x] = 10;
         return p;
     }
 
