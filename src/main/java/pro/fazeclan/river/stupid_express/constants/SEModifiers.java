@@ -144,7 +144,7 @@ public class SEModifiers {
             null,
             null,
             false,
-            true)).setMax(0);
+            true));
 
     // 新增修饰符：矫健（体力上限更多、恢复更快）
     public static SREModifier VIGOROUS = HMLModifiers.registerModifier(new SREModifier(
@@ -185,6 +185,8 @@ public class SEModifiers {
             false));
 
     public static void init() {
+        // 设置双重人格的最大分配数量（从配置读取）
+        SPLIT_PERSONALITY.setMax(SREConfig.instance().splitPersonalityMax);
         SPLIT_PERSONALITY.civilianOnly = true;
         VIGOROUS.civilianOnly = true;
         assignModifierComponents();

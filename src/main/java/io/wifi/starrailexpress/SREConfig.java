@@ -129,6 +129,11 @@ public class SREConfig implements ConfigData {
     public int monitorBrokenCooldownGlobal = 40;
     // 游戏配置 - 服务端只读
 
+    // 双重人格配置
+    @ConfigEntry.Category(value = "modifiers")
+    @Tooltip(count = 2)
+    public int splitPersonalityMax = 0;
+
     // Bartender - Glow duration in seconds
 
     @ConfigSync(shouldSync = true)
