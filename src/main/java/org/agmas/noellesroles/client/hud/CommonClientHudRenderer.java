@@ -208,6 +208,7 @@ public class CommonClientHudRenderer {
 
   public static void registerRenderersEvent() {
     registerFather();
+    RepairEscapeHud.register();
     registerSons();
     OtherRolesRegister.registerSons();
   }

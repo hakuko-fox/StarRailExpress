@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.game.modes.WTLooseEndsGameMode;
 import io.wifi.starrailexpress.game.modes.funny.*;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
+import org.agmas.noellesroles.game.modes.repair.RepairEscapeGameMode;
 import org.agmas.noellesroles.game.modes.fourthroom.game.FourthRoomGameMode;
 
 import java.util.HashMap;
@@ -38,6 +39,7 @@ public class SREGameModes {
     public static final ResourceLocation SNIPER_RIFLE_ID = SRE.xiaoheihandId("sniper_war");
     public static final ResourceLocation EVIL_WAR_MODE_ID = SRE.xiaoheihandId("evil_war");
     public static final ResourceLocation DEVIL_ROULETTE_ID = SRE.xiaoheihandId("devil_roulette");
+    public static final ResourceLocation REPAIR_ESCAPE_ID = SRE.shortId("repair_escape");
 
     // Modified from Harpymodloader
     public static final GameMode MURDER = registerGameMode(new SREMurderGameMode(MURDER_ID));
@@ -67,6 +69,7 @@ public class SREGameModes {
     public static final GameMode EVIL_WAR_MODE = registerGameMode(new SREEvilWarGameMode(EVIL_WAR_MODE_ID));
     public static final GameMode DEVIL_ROULETTE_MODE = registerGameMode(
             new SREDevilRouletteGameMode(DEVIL_ROULETTE_ID));
+    public static final GameMode REPAIR_ESCAPE_MODE = registerGameMode(new RepairEscapeGameMode(REPAIR_ESCAPE_ID));
 
     // register
     public static GameMode registerGameMode(GameMode gameMode) {

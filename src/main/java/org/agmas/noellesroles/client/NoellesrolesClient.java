@@ -69,6 +69,8 @@ import org.agmas.noellesroles.client.commands.SREClientCommand;
 import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
+import org.agmas.noellesroles.client.hud.RepairEscapeHud;
+import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
@@ -201,6 +203,9 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlocks.VENDING_MACHINES_BLOCK_ENTITY,
                 VendingMachinesBlockEntityRenderer::new);
+        BlockEntityRenderers.register(
+                ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
+                HunterCageBlockEntityRenderer::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
         MercenaryContractItem.openGuiRunner = () -> {
@@ -437,6 +442,13 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(NameTagSyncPayload.ID, (payload, context) -> {
             RoleNameRenderer.displayTags.putAll(payload.nametags());
         });
+        ClientPlayNetworking.registerGlobalReceiver(RepairCoinRewardS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> RepairEscapeHud.pushCoinToast(payload.amount(), payload.sourceKey()));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(RepairCombatFeedbackS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> RepairEscapeHud.pushCombatCue(payload.kind(), payload.entityId(),
+                    payload.x(), payload.y(), payload.z()));
+        });
         ClientPlayNetworking.registerGlobalReceiver(OpenLockGuiS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
             client.execute(() -> {
@@ -562,6 +574,18 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(OpenRepairRoleSelectionS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> context.client().setScreen(
+                    new org.agmas.noellesroles.client.screen.repair.RepairRoleSelectionScreen(
+                            payload.faction(), payload.endTick(), payload.playerNames())));
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(OpenRepairStationScreenS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                context.client().setScreen(new org.agmas.noellesroles.client.screen.repair.RepairStationScreen(payload.blockPos()));
+            });
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(OpenVendingMachinesScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> {
                 BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());

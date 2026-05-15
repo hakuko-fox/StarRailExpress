@@ -346,6 +346,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   // 殡仪员组件 - 平民阵营，透视物品和搜刮尸体
   public static final ComponentKey<MorticianPlayerComponent> MORTICIAN = MorticianPlayerComponent.KEY;
 
+  public static final ComponentKey<RepairRolePlayerComponent> REPAIR_ROLES = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "repair_roles"),
+      RepairRolePlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -691,6 +695,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, MORTICIAN)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(MorticianPlayerComponent::new);
+
+    registry.beginRegistration(Player.class, REPAIR_ROLES)
+        .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
+        .end(RepairRolePlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //
