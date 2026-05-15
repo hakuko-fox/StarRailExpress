@@ -29,7 +29,9 @@ public class RescueFlareItem extends Item {
         if (!(player instanceof ServerPlayer medic) || !(target instanceof ServerPlayer downed)) {
             return InteractionResult.PASS;
         }
-        if (!ModComponents.REPAIR_ROLES.get(downed).downed) {
+        var downedComponent = ModComponents.REPAIR_ROLES.get(downed);
+        if (!RepairModeState.canUseSurvivorUtility(medic) || !downedComponent.downed
+                || downedComponent.trialStand.present()) {
             return InteractionResult.PASS;
         }
         RepairModeState.revivePlayer(medic, downed);

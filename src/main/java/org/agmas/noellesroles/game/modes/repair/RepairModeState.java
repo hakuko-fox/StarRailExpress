@@ -7,9 +7,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Pose;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.network.chat.Component;
@@ -27,9 +24,13 @@ public final class RepairModeState {
     public static final String ESCAPED_TAG = "noellesroles_repair_escaped";
     public static final String NEUTRAL_WIN_TAG = "noellesroles_repair_neutral_win";
     public static final int REQUIRED_REPAIRED_STATIONS = 5;
-    public static final int REPAIR_STATION_MAX_PROGRESS = 100;
+    public static final int REPAIR_STATION_MAX_PROGRESS = 500;
     public static final int TRIAL_EXECUTION_TICKS = 20 * 75;
     public static final float REVIVE_HEALTH = 8.0F;
+    public static final int REPAIR_ACTION_COOLDOWN_TICKS = 8;
+    public static final int ARCHIVIST_TASK_NEEDED = 8;
+    public static final int SABOTEUR_TASK_NEEDED = 10;
+    public static final int COLLECTOR_TASK_NEEDED = 4;
 
     private static final Map<ServerLevel, Integer> COMPLETED_STATIONS = new WeakHashMap<>();
 
@@ -51,6 +52,12 @@ public final class RepairModeState {
             component.currentEventRewardKey = "";
             component.currentEventTicks = 0;
             component.currentEventDanger = 0;
+            component.lastRepairActionTick = -100L;
+            component.neutralTaskNeeded = 0;
+            player.setPose(Pose.STANDING);
+            player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            player.removeEffect(MobEffects.WEAKNESS);
+            player.removeEffect(MobEffects.DARKNESS);
             component.sync();
         });
     }
@@ -65,7 +72,6 @@ public final class RepairModeState {
         for (ServerPlayer player : level.players()) {
             if (RepairGameplayEffects.isSurvivor(player)) {
                 awardCoins(player, 35, "repair_coin_source.station");
-                SREPlayerShopComponent.KEY.get(player).addToBalance(35);
                 player.displayClientMessage(Component.translatable("message.noellesroles.repair.team_station_reward", 35)
                         .withStyle(ChatFormatting.GOLD), true);
             } else if (RepairGameplayEffects.isHunter(player)) {
@@ -89,17 +95,28 @@ public final class RepairModeState {
         if (!roleId.equals(component.activeRole) || component.neutralTaskCompleted) {
             return;
         }
-        component.neutralTaskProgress = Math.min(needed, component.neutralTaskProgress + amount);
-        if (component.neutralTaskProgress >= needed) {
+        int goal = neutralTaskGoal(roleId, needed);
+        component.neutralTaskNeeded = goal;
+        component.neutralTaskProgress = Math.min(goal, component.neutralTaskProgress + amount);
+        if (component.neutralTaskProgress >= goal) {
             component.neutralTaskCompleted = true;
             player.addTag(NEUTRAL_WIN_TAG);
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.neutral_complete")
                     .withStyle(ChatFormatting.GOLD), false);
         } else {
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.neutral_progress",
-                    component.neutralTaskProgress, needed).withStyle(ChatFormatting.YELLOW), true);
+                    component.neutralTaskProgress, goal).withStyle(ChatFormatting.YELLOW), true);
         }
         component.sync();
+    }
+
+    private static int neutralTaskGoal(String roleId, int fallback) {
+        return switch (roleId) {
+            case "archivist" -> ARCHIVIST_TASK_NEEDED;
+            case "saboteur" -> SABOTEUR_TASK_NEEDED;
+            case "collector" -> COLLECTOR_TASK_NEEDED;
+            default -> fallback;
+        };
     }
 
     public static void awardCoins(ServerPlayer player, int amount, String sourceKey) {
@@ -125,11 +142,38 @@ public final class RepairModeState {
                 .orElse(game.isRole(player, ModRoles.REPAIR_SURVIVOR) || game.isRole(player, ModRoles.REPAIR_NEUTRAL));
     }
 
+    public static boolean canRepair(ServerPlayer player) {
+        if (!isNonHunterRepairPlayer(player) || GameUtils.isPlayerEliminated(player)
+                || player.getTags().contains(ESCAPED_TAG)) {
+            return false;
+        }
+        var component = ModComponents.REPAIR_ROLES.get(player);
+        return !component.activeRole.isEmpty() && !component.downed && component.carriedBy == null && component.carrying == null
+                && !component.trialStand.present();
+    }
+
+    public static boolean canUseSurvivorUtility(ServerPlayer player) {
+        return canRepair(player);
+    }
+
+    public static boolean canUseHunterUtility(ServerPlayer player) {
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        return !ModComponents.REPAIR_ROLES.get(player).activeRole.isEmpty()
+                && game != null && game.isRunning()
+                && isHunter(player) && !GameUtils.isPlayerEliminated(player)
+                && !player.getTags().contains(ESCAPED_TAG);
+    }
+
     public static boolean downPlayer(ServerPlayer player) {
         if (!isNonHunterRepairPlayer(player) || GameUtils.isPlayerEliminated(player)) {
             return false;
         }
         var component = ModComponents.REPAIR_ROLES.get(player);
+        if (component.downed) {
+            player.setHealth(Math.max(1.0F, player.getHealth()));
+            player.setPose(Pose.SWIMMING);
+            return true;
+        }
         component.downed = true;
         component.carriedBy = null;
         component.trialStand = org.agmas.noellesroles.component.RepairRolePlayerComponent.BlockPosTag.NONE;
@@ -147,9 +191,12 @@ public final class RepairModeState {
 
     public static void revivePlayer(ServerPlayer medic, ServerPlayer target) {
         var component = ModComponents.REPAIR_ROLES.get(target);
+        releaseFromCarrier(target);
         component.downed = false;
         component.carriedBy = null;
+        component.carrying = null;
         component.trialStand = org.agmas.noellesroles.component.RepairRolePlayerComponent.BlockPosTag.NONE;
+        target.setPose(Pose.STANDING);
         target.setHealth(Math.min(target.getMaxHealth(), REVIVE_HEALTH));
         target.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
         target.removeEffect(MobEffects.WEAKNESS);
@@ -159,6 +206,37 @@ public final class RepairModeState {
         broadcastCombatFeedback((ServerLevel) target.level(), RepairCombatFeedbackS2CPacket.REVIVED, target, target.getX(),
                 target.getY() + 0.8D, target.getZ(), 24.0D);
         target.displayClientMessage(Component.translatable("message.noellesroles.repair.revived").withStyle(ChatFormatting.GREEN), false);
+    }
+
+    public static void clearRestraints(ServerPlayer player) {
+        releaseCarried(player);
+        releaseFromCarrier(player);
+        var component = ModComponents.REPAIR_ROLES.get(player);
+        component.downed = false;
+        component.carriedBy = null;
+        component.carrying = null;
+        component.carryBlockedTicks = 0;
+        component.trialStand = org.agmas.noellesroles.component.RepairRolePlayerComponent.BlockPosTag.NONE;
+        player.setPose(Pose.STANDING);
+        player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        player.removeEffect(MobEffects.WEAKNESS);
+        player.removeEffect(MobEffects.DARKNESS);
+        component.sync();
+    }
+
+    private static void releaseFromCarrier(ServerPlayer carried) {
+        var carriedComponent = ModComponents.REPAIR_ROLES.get(carried);
+        if (carriedComponent.carriedBy == null || !(carried.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (level.getPlayerByUUID(carriedComponent.carriedBy) instanceof ServerPlayer hunter) {
+            var hunterComponent = ModComponents.REPAIR_ROLES.get(hunter);
+            if (carried.getUUID().equals(hunterComponent.carrying)) {
+                hunterComponent.carrying = null;
+                hunterComponent.sync();
+            }
+        }
+        carriedComponent.carriedBy = null;
     }
 
     public static void releaseCarried(ServerPlayer hunter) {

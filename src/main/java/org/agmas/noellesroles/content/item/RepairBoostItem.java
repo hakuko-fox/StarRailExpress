@@ -1,10 +1,12 @@
 package org.agmas.noellesroles.content.item;
 
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,14 +36,20 @@ public class RepairBoostItem extends Item {
         if (!(context.getLevel().getBlockEntity(pos) instanceof RepairStationBlockEntity station)) {
             return InteractionResult.PASS;
         }
-        if (station.addProgress(boost) && context.getPlayer() instanceof ServerPlayer player) {
+        if (!(context.getPlayer() instanceof ServerPlayer player) || !RepairModeState.canUseSurvivorUtility(player)) {
+            return InteractionResult.FAIL;
+        }
+        if (station.addProgress(boost)) {
+            if (context.getLevel() instanceof ServerLevel level) {
+                level.playSound(null, pos, SoundEvents.IRON_GOLEM_REPAIR, SoundSource.PLAYERS, 0.75F, 1.1F);
+            }
             RepairModeState.awardCoins(player, 12, "repair_coin_source.boost");
-            SREPlayerShopComponent.KEY.get(player).addToBalance(12);
-            player.displayClientMessage(Component.translatable("message.noellesroles.repair.boosted", boost,
-                    station.getProgress()), true);
+            int boostPercent = Math.max(1, (int) Math.round(boost * 100.0 / RepairModeState.REPAIR_STATION_MAX_PROGRESS));
+            player.displayClientMessage(Component.translatable("message.noellesroles.repair.boosted", boostPercent,
+                    station.getProgressPercent()), true);
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", 12)
                     .withStyle(ChatFormatting.GOLD), true);
-            RepairModeState.addNeutralTaskProgress(player, "collector", 1, 3);
+            RepairModeState.addNeutralTaskProgress(player, "collector", 1, RepairModeState.COLLECTOR_TASK_NEEDED);
             if (!player.getAbilities().instabuild) {
                 context.getItemInHand().shrink(1);
             }

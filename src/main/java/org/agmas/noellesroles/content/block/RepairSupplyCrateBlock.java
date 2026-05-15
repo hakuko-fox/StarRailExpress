@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.content.block;
 
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -20,6 +19,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.agmas.noellesroles.game.modes.repair.RepairGameplayEffects;
+import org.agmas.noellesroles.game.modes.repair.RepairModeState;
 import org.agmas.noellesroles.init.ModItems;
 
 public class RepairSupplyCrateBlock extends Block {
@@ -48,6 +48,9 @@ public class RepairSupplyCrateBlock extends Block {
         if (!(level instanceof ServerLevel serverLevel) || !(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
+        if (!RepairModeState.canUseSurvivorUtility(serverPlayer)) {
+            return true;
+        }
         if (state.getValue(OPENED)) {
             serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.repair.crate_empty")
                     .withStyle(ChatFormatting.GRAY), true);
@@ -59,7 +62,8 @@ public class RepairSupplyCrateBlock extends Block {
             reward.setCount(2 + serverLevel.random.nextInt(3));
         }
         serverPlayer.addItem(reward);
-        SREPlayerShopComponent.KEY.get(serverPlayer).addToBalance(20);
+        RepairModeState.awardCoins(serverPlayer, 20, "repair_coin_source.boost");
+        RepairModeState.addNeutralTaskProgress(serverPlayer, "collector", 1, RepairModeState.COLLECTOR_TASK_NEEDED);
         level.setBlockAndUpdate(pos, state.setValue(OPENED, true));
         RepairGameplayEffects.burst(serverLevel, pos.getX() + 0.5D, pos.getY() + 0.8D, pos.getZ() + 0.5D, 0);
         serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.repair.crate_reward",

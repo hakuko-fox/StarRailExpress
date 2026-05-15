@@ -39,7 +39,7 @@ public final class RepairEventSystem {
         long now = level.getGameTime();
         if (state.active == RepairEvent.NONE) {
             if (now >= state.nextEventTick) {
-                start(level, state, chooseEvent(level.random));
+                start(level, state, chooseEvent(level, state, level.random));
             } else if (now % 20 == 0) {
                 syncHud(level, state, 0);
             }
@@ -75,6 +75,7 @@ public final class RepairEventSystem {
 
     private static void start(ServerLevel level, EventState state, RepairEvent event) {
         state.active = event;
+        state.lastEvent = event;
         state.endTick = level.getGameTime() + event.durationTicks;
         level.playSound(null, level.players().isEmpty() ? net.minecraft.core.BlockPos.ZERO : level.players().getFirst().blockPosition(),
                 event.startSound, SoundSource.HOSTILE, 1.0F, event.pitch);
@@ -254,10 +255,67 @@ public final class RepairEventSystem {
         component.sync();
     }
 
-    private static RepairEvent chooseEvent(RandomSource random) {
+    private static RepairEvent chooseEvent(ServerLevel level, EventState state, RandomSource random) {
         RepairEvent[] values = { RepairEvent.BLOOD_MOON, RepairEvent.BLACKOUT, RepairEvent.MACHINE_OVERLOAD,
                 RepairEvent.PHANTOM_CACHE, RepairEvent.JUDGMENT_BELL };
-        return values[random.nextInt(values.length)];
+        int totalWeight = 0;
+        int[] weights = new int[values.length];
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == state.lastEvent && values.length > 1) {
+                weights[i] = 0;
+            } else {
+                weights[i] = eventWeight(level, values[i]);
+                totalWeight += weights[i];
+            }
+        }
+        if (totalWeight <= 0) {
+            return values[random.nextInt(values.length)];
+        }
+        int roll = random.nextInt(totalWeight);
+        for (int i = 0; i < values.length; i++) {
+            roll -= weights[i];
+            if (roll < 0) {
+                return values[i];
+            }
+        }
+        return values[0];
+    }
+
+    private static int eventWeight(ServerLevel level, RepairEvent event) {
+        int completed = RepairModeState.getCompletedStationCount(level);
+        int nonHunters = 0;
+        int pressuredNonHunters = 0;
+        int hunters = 0;
+        for (ServerPlayer player : level.players()) {
+            if (GameUtils.isPlayerEliminated(player)) {
+                continue;
+            }
+            boolean hunter = RepairModeState.isHunter(player);
+            var component = ModComponents.REPAIR_ROLES.get(player);
+            if (hunter) {
+                hunters++;
+            } else {
+                nonHunters++;
+                if (component.downed || component.trialStand.present()) {
+                    pressuredNonHunters++;
+                }
+            }
+        }
+        boolean survivorsBehind = pressuredNonHunters >= Math.max(1, nonHunters / 3)
+                || (completed <= 1 && nonHunters > hunters + 1);
+        boolean huntersBehind = completed >= RepairModeState.REQUIRED_REPAIRED_STATIONS - 1
+                || (completed >= 3 && pressuredNonHunters == 0);
+        int weight = 1;
+        if (survivorsBehind && (event == RepairEvent.MACHINE_OVERLOAD || event == RepairEvent.PHANTOM_CACHE)) {
+            weight += 3;
+        }
+        if (huntersBehind && (event == RepairEvent.BLOOD_MOON || event == RepairEvent.JUDGMENT_BELL)) {
+            weight += 3;
+        }
+        if (event == RepairEvent.BLACKOUT && !survivorsBehind && !huntersBehind) {
+            weight += 1;
+        }
+        return weight;
     }
 
     private static int nextDelay(RandomSource random) {
@@ -266,12 +324,14 @@ public final class RepairEventSystem {
 
     private static final class EventState {
         private RepairEvent active;
+        private RepairEvent lastEvent;
         private long endTick;
         private long nextEventTick;
 
         private static EventState waiting(long nextEventTick) {
             EventState state = new EventState();
             state.active = RepairEvent.NONE;
+            state.lastEvent = RepairEvent.NONE;
             state.nextEventTick = nextEventTick;
             return state;
         }

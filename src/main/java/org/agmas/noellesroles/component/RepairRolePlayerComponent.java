@@ -39,6 +39,8 @@ public class RepairRolePlayerComponent implements RoleComponent {
     public String currentEventRewardKey = "";
     public int currentEventTicks = 0;
     public int currentEventDanger = 0;
+    public long lastRepairActionTick = -100L;
+    public int neutralTaskNeeded = 0;
     private final Player player;
 
     public RepairRolePlayerComponent(Player player) {
@@ -71,6 +73,8 @@ public class RepairRolePlayerComponent implements RoleComponent {
         currentEventRewardKey = "";
         currentEventTicks = 0;
         currentEventDanger = 0;
+        lastRepairActionTick = -100L;
+        neutralTaskNeeded = 0;
         ensureStarterRoles();
         sync();
     }
@@ -166,6 +170,8 @@ public class RepairRolePlayerComponent implements RoleComponent {
         tag.putString("CurrentEventRewardKey", currentEventRewardKey);
         tag.putInt("CurrentEventTicks", currentEventTicks);
         tag.putInt("CurrentEventDanger", currentEventDanger);
+        tag.putLong("LastRepairActionTick", lastRepairActionTick);
+        tag.putInt("NeutralTaskNeeded", neutralTaskNeeded);
     }
 
     private void readData(CompoundTag tag) {
@@ -202,6 +208,8 @@ public class RepairRolePlayerComponent implements RoleComponent {
         currentEventRewardKey = tag.getString("CurrentEventRewardKey");
         currentEventTicks = tag.getInt("CurrentEventTicks");
         currentEventDanger = tag.getInt("CurrentEventDanger");
+        lastRepairActionTick = tag.getLong("LastRepairActionTick");
+        neutralTaskNeeded = tag.getInt("NeutralTaskNeeded");
     }
 
     public record BlockPosTag(int x, int y, int z, boolean present) {

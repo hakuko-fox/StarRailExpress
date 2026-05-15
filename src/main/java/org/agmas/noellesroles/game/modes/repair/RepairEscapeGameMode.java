@@ -19,10 +19,8 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block_entity.HunterCageBlockEntity;
-import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.ModBlocks;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.OpenRepairRoleSelectionS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 
@@ -55,21 +53,27 @@ public class RepairEscapeGameMode extends GameMode {
         RepairEventSystem.reset(serverWorld);
         rolesFinalized = false;
         selectionEndTick = serverWorld.getGameTime() + 40 * 20L;
+
         ArrayList<ServerPlayer> shuffled = new ArrayList<>(players);
         Collections.shuffle(shuffled);
-        int hunterCount = Math.max(1, shuffled.size() / 5);
-        int neutralCount = Math.max(1, shuffled.size() / 6);
+        int hunterCount = hunterCount(shuffled.size());
+        int neutralCount = neutralCount(shuffled.size());
         List<String> playerNames = shuffled.stream().map(player -> player.getGameProfile().getName()).toList();
+
         for (int i = 0; i < shuffled.size(); i++) {
             ServerPlayer player = shuffled.get(i);
             RepairRoleDatabase.loadInto(player);
-            RepairRoleDefinition.Faction faction = i < hunterCount ? RepairRoleDefinition.Faction.HUNTER
-                    : i < hunterCount + neutralCount ? RepairRoleDefinition.Faction.NEUTRAL
+            RepairRoleDefinition.Faction faction = i < hunterCount
+                    ? RepairRoleDefinition.Faction.HUNTER
+                    : i < hunterCount + neutralCount
+                            ? RepairRoleDefinition.Faction.NEUTRAL
                             : RepairRoleDefinition.Faction.SURVIVOR;
+
             var component = ModComponents.REPAIR_ROLES.get(player);
             component.init();
             component.selectionEndTick = selectionEndTick;
             component.sync();
+
             gameWorldComponent.addRole(player, switch (faction) {
                 case HUNTER -> ModRoles.REPAIR_HUNTER;
                 case NEUTRAL -> ModRoles.REPAIR_NEUTRAL;
@@ -77,13 +81,26 @@ public class RepairEscapeGameMode extends GameMode {
             }, false);
             giveModeItems(player, faction, serverWorld.random);
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40 * 20, 10, false, false, true));
-            ServerPlayNetworking.send(player, new AnnounceWelcomePayload(gameWorldComponent.getRole(player).getIdentifier().toString(),
-                    hunterCount, shuffled.size() - hunterCount));
-            ServerPlayNetworking.send(player, new OpenRepairRoleSelectionS2CPacket(faction.id(), selectionEndTick, playerNames));
+            ServerPlayNetworking.send(player,
+                    new AnnounceWelcomePayload(gameWorldComponent.getRole(player).getIdentifier().toString(),
+                            hunterCount, shuffled.size() - hunterCount));
+            ServerPlayNetworking.send(player,
+                    new OpenRepairRoleSelectionS2CPacket(faction.id(), selectionEndTick, playerNames));
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.select_role", 40)
                     .withStyle(ChatFormatting.GOLD), false);
         }
         gameWorldComponent.syncRoles();
+    }
+
+    private static int hunterCount(int playerCount) {
+        return playerCount >= 11 ? 2 : 1;
+    }
+
+    private static int neutralCount(int playerCount) {
+        if (playerCount >= 11) {
+            return 2;
+        }
+        return playerCount >= 6 ? 1 : 0;
     }
 
     private static void giveModeItems(ServerPlayer player, RepairRoleDefinition.Faction faction, RandomSource random) {
@@ -105,11 +122,7 @@ public class RepairEscapeGameMode extends GameMode {
                 player.addItem(parts);
                 player.addItem(new ItemStack(ModItems.RESCUE_FLARE));
                 player.addItem(new ItemStack(ModItems.SMOKE_PELLET));
-                if (random.nextBoolean()) {
-                    player.addItem(new ItemStack(ModItems.DECOY_BEACON));
-                } else {
-                    player.addItem(new ItemStack(ModItems.ESCAPE_GRAPPLE));
-                }
+                player.addItem(new ItemStack(random.nextBoolean() ? ModItems.DECOY_BEACON : ModItems.ESCAPE_GRAPPLE));
             }
         }
     }
@@ -119,6 +132,7 @@ public class RepairEscapeGameMode extends GameMode {
         if (!rolesFinalized && serverWorld.getGameTime() >= selectionEndTick) {
             finalizeSelectedRoles(serverWorld, gameWorldComponent);
         }
+
         applyRoleTickEffects(serverWorld, gameWorldComponent);
         if (rolesFinalized) {
             RepairEventSystem.tick(serverWorld);
@@ -127,6 +141,10 @@ public class RepairEscapeGameMode extends GameMode {
         if (serverWorld.getGameTime() % 20 == 0) {
             updateRepairHudState(serverWorld, gameWorldComponent);
         }
+        if (!rolesFinalized) {
+            return;
+        }
+
         GameUtils.WinStatus winStatus = GameUtils.WinStatus.NONE;
         int activeSurvivors = 0;
         int escapedSurvivors = 0;
@@ -141,13 +159,17 @@ public class RepairEscapeGameMode extends GameMode {
                 winStatus = GameUtils.WinStatus.CUSTOM;
                 break;
             }
-            if (RepairRoleDefinition.byId(component.activeRole).map(role -> role.faction == RepairRoleDefinition.Faction.HUNTER)
-                    .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_HUNTER))) {
+
+            boolean hunter = RepairRoleDefinition.byId(component.activeRole)
+                    .map(role -> role.faction == RepairRoleDefinition.Faction.HUNTER)
+                    .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_HUNTER));
+            if (hunter) {
                 if (!GameUtils.isPlayerEliminated(player)) {
                     livingHunters++;
                 }
                 continue;
             }
+
             boolean survivor = RepairRoleDefinition.byId(component.activeRole)
                     .map(role -> role.faction == RepairRoleDefinition.Faction.SURVIVOR)
                     .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_SURVIVOR));
@@ -193,6 +215,7 @@ public class RepairEscapeGameMode extends GameMode {
             component.activeRole = role.id;
             component.neutralTaskProgress = 0;
             component.neutralTaskCompleted = false;
+            component.neutralTaskNeeded = neutralTaskGoal(role.id);
             component.sync();
             gameWorldComponent.addRole(player, role.sreRole(), false);
             giveRoleSkillItem(player, role);
@@ -201,6 +224,15 @@ public class RepairEscapeGameMode extends GameMode {
                     .withStyle(ChatFormatting.GREEN), false);
         }
         gameWorldComponent.syncRoles();
+    }
+
+    private static int neutralTaskGoal(String roleId) {
+        return switch (roleId) {
+            case "archivist" -> RepairModeState.ARCHIVIST_TASK_NEEDED;
+            case "saboteur" -> RepairModeState.SABOTEUR_TASK_NEEDED;
+            case "collector" -> RepairModeState.COLLECTOR_TASK_NEEDED;
+            default -> 0;
+        };
     }
 
     private static void giveRoleSkillItem(ServerPlayer player, RepairRoleDefinition role) {
@@ -228,24 +260,46 @@ public class RepairEscapeGameMode extends GameMode {
             if ("runner".equals(active)) {
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 0, false, false, true));
                 if (serverWorld.getGameTime() % 8 == 0) {
-                    serverWorld.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, player.getX(), player.getY() + 0.1D, player.getZ(), 3, 0.15D, 0.05D, 0.15D, 0.01D);
+                    serverWorld.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD,
+                            player.getX(), player.getY() + 0.1D, player.getZ(),
+                            3, 0.15D, 0.05D, 0.15D, 0.01D);
                 }
             } else if ("brute".equals(active)) {
                 player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 40, 0, false, false, true));
                 if (serverWorld.getGameTime() % 12 == 0) {
-                    serverWorld.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, player.getX(), player.getY() + 1.0D, player.getZ(), 4, 0.25D, 0.35D, 0.25D, 0.02D);
+                    serverWorld.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
+                            player.getX(), player.getY() + 1.0D, player.getZ(),
+                            4, 0.25D, 0.35D, 0.25D, 0.02D);
                 }
-            } else if ("tracker".equals(active) && serverWorld.getGameTime() % 100 == 0) {
-                for (ServerPlayer target : serverWorld.players()) {
-                    if (target != player && !GameUtils.isPlayerEliminated(target)
-                            && !ModComponents.REPAIR_ROLES.get(target).activeRole.isEmpty()
-                            && !gameWorldComponent.getRole(target).canUseKiller()) {
-                        target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60, 0, false, false, true));
-                        serverWorld.sendParticles(net.minecraft.core.particles.ParticleTypes.SCULK_SOUL, target.getX(), target.getY() + 1.0D, target.getZ(), 8, 0.35D, 0.45D, 0.35D, 0.02D);
-                    }
+            } else if ("tracker".equals(active) && serverWorld.getGameTime() % (20 * 12) == 0) {
+                ServerPlayer target = nearestTrackableTarget(serverWorld, gameWorldComponent, player, 28.0D);
+                if (target != null) {
+                    target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60, 0, false, false, true));
+                    serverWorld.sendParticles(net.minecraft.core.particles.ParticleTypes.SCULK_SOUL,
+                            target.getX(), target.getY() + 1.0D, target.getZ(),
+                            8, 0.35D, 0.45D, 0.35D, 0.02D);
                 }
             }
         }
+    }
+
+    private static ServerPlayer nearestTrackableTarget(ServerLevel level, SREGameWorldComponent gameWorldComponent,
+            ServerPlayer hunter, double radius) {
+        double bestDistance = radius * radius;
+        ServerPlayer best = null;
+        for (ServerPlayer target : level.players()) {
+            if (target == hunter || GameUtils.isPlayerEliminated(target)
+                    || target.getTags().contains(RepairModeState.ESCAPED_TAG)
+                    || RepairModeState.isHunter(target)) {
+                continue;
+            }
+            double distance = target.distanceToSqr(hunter);
+            if (distance <= bestDistance) {
+                bestDistance = distance;
+                best = target;
+            }
+        }
+        return best;
     }
 
     private void tickDownedAndCarriedPlayers(ServerLevel serverWorld) {
@@ -259,7 +313,9 @@ public class RepairEscapeGameMode extends GameMode {
             }
             if (component.carrying != null) {
                 if (serverWorld.getPlayerByUUID(component.carrying) instanceof ServerPlayer carried
-                        && ModComponents.REPAIR_ROLES.get(carried).downed) {
+                        && ModComponents.REPAIR_ROLES.get(carried).downed
+                        && !GameUtils.isPlayerEliminated(carried)
+                        && !carried.getTags().contains(RepairModeState.ESCAPED_TAG)) {
                     carried.teleportTo(player.getX() - Math.sin(Math.toRadians(player.getYRot())) * 0.75D,
                             player.getY(), player.getZ() + Math.cos(Math.toRadians(player.getYRot())) * 0.75D);
                     carried.setPose(Pose.SWIMMING);
@@ -267,6 +323,13 @@ public class RepairEscapeGameMode extends GameMode {
                     player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 10, 4, false, false, true));
                 } else {
                     component.carrying = null;
+                    component.sync();
+                }
+            }
+            if (component.carriedBy != null) {
+                if (!(serverWorld.getPlayerByUUID(component.carriedBy) instanceof ServerPlayer carrier)
+                        || !player.getUUID().equals(ModComponents.REPAIR_ROLES.get(carrier).carrying)) {
+                    component.carriedBy = null;
                     component.sync();
                 }
             }
@@ -327,9 +390,6 @@ public class RepairEscapeGameMode extends GameMode {
     public void stopGame(ServerLevel world) {
         RepairModeState.reset(world);
         RepairEventSystem.reset(world);
-    @Override
-    public void stopGame(ServerLevel world) {
-        RepairModeState.reset(world);
         rolesFinalized = false;
     }
 }

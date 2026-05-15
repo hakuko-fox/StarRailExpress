@@ -13,14 +13,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block_entity.HunterCageBlockEntity;
 import org.agmas.noellesroles.game.modes.repair.RepairGameplayEffects;
 import org.agmas.noellesroles.game.modes.repair.RepairModeState;
-import net.minecraft.world.level.block.state.BlockState;
-import org.agmas.noellesroles.content.block_entity.HunterCageBlockEntity;
 import org.agmas.noellesroles.init.ModBlocks;
-import org.agmas.noellesroles.game.modes.repair.RepairGameplayEffects;
 
 import java.util.List;
 
@@ -35,13 +33,14 @@ public class HunterChainItem extends Item {
         if (player.level().isClientSide()) {
             return InteractionResult.SUCCESS;
         }
-        if (!(player.level() instanceof ServerLevel level) || !(target instanceof ServerPlayer prisoner)
-                || !(player instanceof ServerPlayer hunter)) {
+        if (!(player.level() instanceof ServerLevel level) || !(player instanceof ServerPlayer hunter)
+                || !(target instanceof ServerPlayer prisoner)) {
             return InteractionResult.PASS;
         }
         var hunterComponent = ModComponents.REPAIR_ROLES.get(hunter);
         var prisonerComponent = ModComponents.REPAIR_ROLES.get(prisoner);
-        if (!RepairModeState.isHunter(hunter) || !prisonerComponent.downed) {
+        if (!RepairModeState.canUseHunterUtility(hunter) || prisoner == hunter || !prisonerComponent.downed
+                || prisonerComponent.trialStand.present() || prisoner.isSpectator()) {
             hunter.displayClientMessage(Component.translatable("message.noellesroles.repair.chain_requires_downed")
                     .withStyle(ChatFormatting.RED), true);
             return InteractionResult.FAIL;
@@ -54,6 +53,7 @@ public class HunterChainItem extends Item {
         if (hunterComponent.carrying != null) {
             RepairModeState.releaseCarried(hunter);
         }
+
         hunterComponent.carrying = prisoner.getUUID();
         prisonerComponent.carriedBy = hunter.getUUID();
         hunterComponent.sync();
@@ -70,64 +70,66 @@ public class HunterChainItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (context.getLevel().isClientSide() || !(context.getPlayer() instanceof ServerPlayer hunter)) {
+        if (context.getLevel().isClientSide() || !(context.getPlayer() instanceof ServerPlayer hunter)
+                || !(context.getLevel() instanceof ServerLevel level)) {
             return InteractionResult.SUCCESS;
         }
+        if (!RepairModeState.canUseHunterUtility(hunter)) {
+            return InteractionResult.FAIL;
+        }
+
         var hunterComponent = ModComponents.REPAIR_ROLES.get(hunter);
         if (hunterComponent.carrying == null) {
             return InteractionResult.PASS;
         }
-        if (!(context.getLevel().getBlockEntity(context.getClickedPos()) instanceof HunterCageBlockEntity cage)) {
-            return InteractionResult.PASS;
+        if (!(level.getPlayerByUUID(hunterComponent.carrying) instanceof ServerPlayer prisoner)
+                || !ModComponents.REPAIR_ROLES.get(prisoner).downed) {
+            hunterComponent.carrying = null;
+            hunterComponent.sync();
+            return InteractionResult.FAIL;
         }
-        if (!cage.addPrisoner(hunterComponent.carrying, hunter.getUUID())) {
+
+        BlockPos cagePos = context.getClickedPos();
+        HunterCageBlockEntity cage = level.getBlockEntity(cagePos) instanceof HunterCageBlockEntity existing
+                ? existing
+                : null;
+        if (cage == null) {
+            cagePos = findCagePos(level, cagePos);
+            if (cagePos == null) {
+                hunter.displayClientMessage(Component.translatable("message.noellesroles.repair.no_cage_space")
+                        .withStyle(ChatFormatting.RED), true);
+                return InteractionResult.FAIL;
+            }
+            BlockState state = ModBlocks.HUNTER_CAGE.defaultBlockState();
+            level.setBlockAndUpdate(cagePos, state);
+            if (level.getBlockEntity(cagePos) instanceof HunterCageBlockEntity created) {
+                cage = created;
+            }
+        }
+        if (cage == null || !cage.addPrisoner(prisoner.getUUID(), hunter.getUUID())) {
             hunter.displayClientMessage(Component.translatable("message.noellesroles.repair.trial_full")
                     .withStyle(ChatFormatting.RED), true);
             return InteractionResult.FAIL;
         }
-        if (context.getLevel() instanceof ServerLevel level
-                && level.getPlayerByUUID(hunterComponent.carrying) instanceof ServerPlayer prisoner) {
-            var prisonerComponent = ModComponents.REPAIR_ROLES.get(prisoner);
-            prisonerComponent.carriedBy = null;
-            prisonerComponent.trialStand = org.agmas.noellesroles.component.RepairRolePlayerComponent.BlockPosTag.of(context.getClickedPos());
-            prisoner.teleportTo(context.getClickedPos().getX() + 0.5D, context.getClickedPos().getY(),
-                    context.getClickedPos().getZ() + 0.5D);
-            prisonerComponent.sync();
-            RepairGameplayEffects.burst(level, context.getClickedPos().getX() + 0.5D,
-                    context.getClickedPos().getY() + 1.0D, context.getClickedPos().getZ() + 0.5D, 2);
-        }
-        hunter.displayClientMessage(Component.translatable("message.noellesroles.repair.trial_started"), true);
+
+        var prisonerComponent = ModComponents.REPAIR_ROLES.get(prisoner);
+        prisonerComponent.carriedBy = null;
+        prisonerComponent.trialStand = org.agmas.noellesroles.component.RepairRolePlayerComponent.BlockPosTag.of(cagePos);
+        prisoner.teleportTo(cagePos.getX() + 0.5D, cagePos.getY(), cagePos.getZ() + 0.5D);
+        prisonerComponent.sync();
         hunterComponent.carrying = null;
         hunterComponent.sync();
-        if (!(player.level() instanceof ServerLevel level) || !(target instanceof ServerPlayer prisoner)) {
-            return InteractionResult.PASS;
-        }
-        if (prisoner == player || prisoner.isSpectator()) {
-            return InteractionResult.PASS;
-        }
-        BlockPos cagePos = prisoner.blockPosition();
-        if (!level.getBlockState(cagePos).canBeReplaced()) {
-            cagePos = cagePos.above();
-        }
-        if (!level.getBlockState(cagePos).canBeReplaced()) {
-            player.displayClientMessage(Component.translatable("message.noellesroles.repair.no_cage_space")
-                    .withStyle(ChatFormatting.RED), true);
-            return InteractionResult.FAIL;
-        }
-        BlockState state = ModBlocks.HUNTER_CAGE.defaultBlockState();
-        level.setBlockAndUpdate(cagePos, state);
-        if (level.getBlockEntity(cagePos) instanceof HunterCageBlockEntity cage) {
-            cage.setPrisoner(prisoner.getUUID());
-            cage.setCaptor(player.getUUID());
-        }
-        prisoner.teleportTo(cagePos.getX() + 0.5D, cagePos.getY(), cagePos.getZ() + 0.5D);
-        RepairGameplayEffects.burst(level, cagePos.getX() + 0.5D, cagePos.getY() + 0.8D, cagePos.getZ() + 0.5D, 2);
-        player.displayClientMessage(Component.translatable("message.noellesroles.repair.caged", prisoner.getName()), true);
-        prisoner.displayClientMessage(Component.translatable("message.noellesroles.repair.you_are_caged"), false);
-        if (!player.getAbilities().instabuild) {
-            stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
-        }
+        RepairGameplayEffects.burst(level, cagePos.getX() + 0.5D, cagePos.getY() + 1.0D, cagePos.getZ() + 0.5D, 2);
+        hunter.displayClientMessage(Component.translatable("message.noellesroles.repair.trial_started"), true);
         return InteractionResult.SUCCESS;
+    }
+
+    private static BlockPos findCagePos(ServerLevel level, BlockPos clickedPos) {
+        if (level.getBlockState(clickedPos).canBeReplaced()) {
+            return clickedPos;
+        }
+        BlockPos above = clickedPos.above();
+        return level.getBlockState(above).canBeReplaced() ? above : null;
     }
 
     @Override

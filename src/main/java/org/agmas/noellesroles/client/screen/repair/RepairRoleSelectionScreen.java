@@ -49,6 +49,7 @@ public class RepairRoleSelectionScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
         renderBackground(graphics, mouseX, mouseY, delta);
         graphics.fill(width / 2 - 190, height / 2 - 105, width / 2 + 190, height / 2 + 115, 0xD0121218);
         long remaining = Math.max(0, (endTick - (minecraft != null && minecraft.level != null ? minecraft.level.getGameTime() : 0)) / 20);
@@ -60,7 +61,7 @@ public class RepairRoleSelectionScreen extends Screen {
         drawPlayerModels(graphics, mouseX, mouseY);
         drawRoleCards(graphics);
         drawPreview(graphics);
-        super.render(graphics, mouseX, mouseY, delta);
+
     }
 
     private void drawPlayerModels(GuiGraphics graphics, int mouseX, int mouseY) {

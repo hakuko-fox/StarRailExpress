@@ -1,7 +1,6 @@
 package org.agmas.noellesroles.content.block;
 
 import com.mojang.serialization.MapCodec;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,8 +39,8 @@ public class HunterCageBlock extends BaseEntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (stack.is(ModItems.RESCUE_FLARE)) {
-            rescue(level, pos, player, 100);
-            if (!player.getAbilities().instabuild) {
+            boolean rescued = rescue(level, pos, player, 100);
+            if (rescued && !player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
             return ItemInteractionResult.SUCCESS;
@@ -57,32 +56,35 @@ public class HunterCageBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    private static void rescue(Level level, BlockPos pos, Player player, int amount) {
+    private static boolean rescue(Level level, BlockPos pos, Player player, int amount) {
         if (level.isClientSide()) {
-            return;
+            return false;
+        }
+        if (!(player instanceof ServerPlayer serverPlayer) || !RepairModeState.canUseSurvivorUtility(serverPlayer)) {
+            return false;
         }
         if (level.getBlockEntity(pos) instanceof HunterCageBlockEntity cage) {
+            boolean instantRescue = amount >= 100;
             String activeRole = ModComponents.REPAIR_ROLES.get(player).activeRole;
-            if ("medic".equals(activeRole)) {
-                amount += 15;
+            if (!instantRescue && "medic".equals(activeRole)) {
+                amount = Math.max(amount, 40);
             }
-            if (cage.getCaptor().flatMap(uuid -> level.getPlayerByUUID(uuid) instanceof net.minecraft.server.level.ServerPlayer captor
+            if (!instantRescue && cage.getCaptor().flatMap(uuid -> level.getPlayerByUUID(uuid) instanceof net.minecraft.server.level.ServerPlayer captor
                     ? java.util.Optional.of(ModComponents.REPAIR_ROLES.get(captor).activeRole) : java.util.Optional.empty())
                     .filter("warden"::equals).isPresent()) {
                 amount = Math.max(5, amount - 10);
             }
             boolean released = cage.addRescueProgress(amount);
-            if (player instanceof ServerPlayer serverPlayer) {
-                int reward = released ? 55 : 6;
-                RepairModeState.awardCoins(serverPlayer, reward, released ? "repair_coin_source.rescue" : "repair_coin_source.rescuing");
-                SREPlayerShopComponent.KEY.get(serverPlayer).addToBalance(reward);
-                serverPlayer.displayClientMessage(Component.translatable(
-                        released ? "message.noellesroles.repair.rescued" : "message.noellesroles.repair.rescuing",
-                        Math.min(100, cage.getRescueProgress())), true);
-                serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", reward)
-                        .withStyle(net.minecraft.ChatFormatting.GOLD), true);
-            }
+            int reward = released ? 55 : 6;
+            RepairModeState.awardCoins(serverPlayer, reward, released ? "repair_coin_source.rescue" : "repair_coin_source.rescuing");
+            serverPlayer.displayClientMessage(Component.translatable(
+                    released ? "message.noellesroles.repair.rescued" : "message.noellesroles.repair.rescuing",
+                    Math.min(100, cage.getRescueProgress())), true);
+            serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", reward)
+                    .withStyle(net.minecraft.ChatFormatting.GOLD), true);
+            return released;
         }
+        return false;
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.agmas.noellesroles.content.item;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -23,7 +24,10 @@ public class SmokePelletItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level instanceof ServerLevel serverLevel) {
+        if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
+            if (!RepairModeState.canUseSurvivorUtility(serverPlayer)) {
+                return InteractionResultHolder.fail(stack);
+            }
             RepairGameplayEffects.burst(serverLevel, player.getX(), player.getY() + 0.8D, player.getZ(), 1);
             RepairGameplayEffects.disorientHunters(serverLevel, player.getX(), player.getY(), player.getZ(), 5.5D, 90);
             for (net.minecraft.server.level.ServerPlayer hunter : serverLevel.players()) {

@@ -68,10 +68,15 @@ public class RepairStationScreen extends Screen {
         super.render(graphics, mouseX, mouseY, delta);
     }
 
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
+
+    }
+
     private int getProgress() {
         Minecraft client = Minecraft.getInstance();
         if (client.level != null && client.level.getBlockEntity(blockPos) instanceof RepairStationBlockEntity station) {
-            return station.getProgress();
+            return station.getProgressPercent();
         }
         return 0;
     }

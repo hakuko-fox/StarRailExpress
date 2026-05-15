@@ -16,13 +16,22 @@ public final class RepairGameplayEffects {
     }
 
     public static boolean isHunter(Player player) {
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        if (game == null || !game.isRunning()) {
+            return false;
+        }
         return RepairRoleDefinition.byId(ModComponents.REPAIR_ROLES.get(player).activeRole)
                 .map(role -> role.faction == RepairRoleDefinition.Faction.HUNTER)
-                .orElseGet(() -> SREGameWorldComponent.KEY.get(player.level()).getRole(player) != null
-                        && SREGameWorldComponent.KEY.get(player.level()).getRole(player).canUseKiller());
+                .orElseGet(() -> {
+                    return game != null && game.getRole(player) != null && game.getRole(player).canUseKiller();
+                });
     }
 
     public static boolean isSurvivor(Player player) {
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        if (game == null || !game.isRunning()) {
+            return false;
+        }
         return RepairRoleDefinition.byId(ModComponents.REPAIR_ROLES.get(player).activeRole)
                 .map(role -> role.faction == RepairRoleDefinition.Faction.SURVIVOR)
                 .orElse(false);

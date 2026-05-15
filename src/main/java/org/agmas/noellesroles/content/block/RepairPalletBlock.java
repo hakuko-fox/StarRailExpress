@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.content.block;
 
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -18,6 +17,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.agmas.noellesroles.game.modes.repair.RepairGameplayEffects;
+import org.agmas.noellesroles.game.modes.repair.RepairModeState;
 
 public class RepairPalletBlock extends Block {
     public RepairPalletBlock(Properties properties) {
@@ -42,6 +42,9 @@ public class RepairPalletBlock extends Block {
         if (!(level instanceof ServerLevel serverLevel) || !(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
+        if (!RepairModeState.canUseSurvivorUtility(serverPlayer)) {
+            return true;
+        }
         RepairGameplayEffects.burst(serverLevel, pos.getX() + 0.5D, pos.getY() + 0.8D, pos.getZ() + 0.5D, 2);
         int hits = 0;
         for (ServerPlayer target : serverLevel.players()) {
@@ -53,7 +56,7 @@ public class RepairPalletBlock extends Block {
         }
         if (hits > 0) {
             int reward = 30 * hits;
-            SREPlayerShopComponent.KEY.get(serverPlayer).addToBalance(reward);
+            RepairModeState.awardCoins(serverPlayer, reward, "repair_coin_source.rescue");
             serverPlayer.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", reward)
                     .withStyle(ChatFormatting.GOLD), true);
         }

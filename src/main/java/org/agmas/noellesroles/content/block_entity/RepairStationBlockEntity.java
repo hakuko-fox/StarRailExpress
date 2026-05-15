@@ -27,6 +27,13 @@ public class RepairStationBlockEntity extends BlockEntity {
         return progress;
     }
 
+    public int getProgressPercent() {
+        if (RepairModeState.REPAIR_STATION_MAX_PROGRESS <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.min(100, (int) Math.round(progress * 100.0 / RepairModeState.REPAIR_STATION_MAX_PROGRESS)));
+    }
+
     public int getAnimationTicks() {
         return animationTicks;
     }
