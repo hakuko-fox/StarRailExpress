@@ -82,6 +82,7 @@ public final class RepairEscapeHud {
                 || kind == org.agmas.noellesroles.packet.RepairCombatFeedbackS2CPacket.DOWNED) {
             client.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_ATTACK_CRIT, 0.85F, 0.25F));
         }
+        renderMiniMap(graphics, player, width - MAP_SIZE - 18, height - MAP_SIZE - 18, tick, pulse);
     }
 
     private static boolean isRepairRole() {

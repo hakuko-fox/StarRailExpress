@@ -7,6 +7,9 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Pose;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.network.chat.Component;
@@ -62,6 +65,7 @@ public final class RepairModeState {
         for (ServerPlayer player : level.players()) {
             if (RepairGameplayEffects.isSurvivor(player)) {
                 awardCoins(player, 35, "repair_coin_source.station");
+                SREPlayerShopComponent.KEY.get(player).addToBalance(35);
                 player.displayClientMessage(Component.translatable("message.noellesroles.repair.team_station_reward", 35)
                         .withStyle(ChatFormatting.GOLD), true);
             } else if (RepairGameplayEffects.isHunter(player)) {

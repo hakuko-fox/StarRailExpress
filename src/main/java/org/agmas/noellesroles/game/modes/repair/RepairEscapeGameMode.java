@@ -19,6 +19,8 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block_entity.HunterCageBlockEntity;
+import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.packet.OpenRepairRoleSelectionS2CPacket;
@@ -325,6 +327,9 @@ public class RepairEscapeGameMode extends GameMode {
     public void stopGame(ServerLevel world) {
         RepairModeState.reset(world);
         RepairEventSystem.reset(world);
+    @Override
+    public void stopGame(ServerLevel world) {
+        RepairModeState.reset(world);
         rolesFinalized = false;
     }
 }

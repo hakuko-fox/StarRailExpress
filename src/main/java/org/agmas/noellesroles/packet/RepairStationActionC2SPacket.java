@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.packet;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -53,6 +54,12 @@ public record RepairStationActionC2SPacket(BlockPos blockPos, boolean greatHit) 
                     reward += 75;
                 }
                 RepairModeState.awardCoins(player, reward, payload.greatHit() ? "repair_coin_source.perfect" : "repair_coin_source.calibration");
+            if (station.addProgress(amount)) {
+                int reward = payload.greatHit() ? 8 : 3;
+                if (station.isCompleted()) {
+                    reward += 75;
+                }
+                SREPlayerShopComponent.KEY.get(player).addToBalance(reward);
                 player.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", reward).withStyle(ChatFormatting.GOLD), true);
                 if (station.isJammed()) {
                     player.displayClientMessage(Component.translatable("message.noellesroles.repair.station_jammed_hint").withStyle(ChatFormatting.RED), true);

@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.block;
 
 import com.mojang.serialization.MapCodec;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -74,6 +75,7 @@ public class HunterCageBlock extends BaseEntityBlock {
             if (player instanceof ServerPlayer serverPlayer) {
                 int reward = released ? 55 : 6;
                 RepairModeState.awardCoins(serverPlayer, reward, released ? "repair_coin_source.rescue" : "repair_coin_source.rescuing");
+                SREPlayerShopComponent.KEY.get(serverPlayer).addToBalance(reward);
                 serverPlayer.displayClientMessage(Component.translatable(
                         released ? "message.noellesroles.repair.rescued" : "message.noellesroles.repair.rescuing",
                         Math.min(100, cage.getRescueProgress())), true);

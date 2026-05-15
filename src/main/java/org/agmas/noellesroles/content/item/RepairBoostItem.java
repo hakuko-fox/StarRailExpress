@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,7 @@ public class RepairBoostItem extends Item {
         }
         if (station.addProgress(boost) && context.getPlayer() instanceof ServerPlayer player) {
             RepairModeState.awardCoins(player, 12, "repair_coin_source.boost");
+            SREPlayerShopComponent.KEY.get(player).addToBalance(12);
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.boosted", boost,
                     station.getProgress()), true);
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", 12)

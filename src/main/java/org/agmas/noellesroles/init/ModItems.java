@@ -55,6 +55,14 @@ public class ModItems {
             "spare_parts");
     public static final Item RESCUE_FLARE = register(
             new RescueFlareItem(new Item.Properties().stacksTo(4)),
+            new Item(new Item.Properties().stacksTo(4)) {
+                @Override
+                public void appendHoverText(ItemStack stack, TooltipContext context,
+                        List<Component> tooltip, TooltipFlag flag) {
+                    tooltip.add(Component.translatable("item.noellesroles.rescue_flare.tooltip")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            },
             "rescue_flare");
     public static final Item HUNTER_CHAIN = register(
             new HunterChainItem(new Item.Properties().stacksTo(1).durability(6)),
