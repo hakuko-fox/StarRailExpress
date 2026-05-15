@@ -109,7 +109,6 @@ public class DrawingBoardRecognizer {
     public static final int DELIVERY_BOX = 27;
     public static final int HALLUCINATION = 28;
     public static final int MINT_CANDIES = 29;
-    public static final int BOMB = 30;
     public static final int WHEELCHAIR = 31;
     public static final int SHORT_SHOTGUN = 32;
     public static final int BATON = 33;
@@ -135,7 +134,7 @@ public class DrawingBoardRecognizer {
     public static final int DECOY_GRENADE = 49;
 
     // 类别数量
-    public static final int CATEGORY_COUNT = 50;
+    public static final int CATEGORY_COUNT = 49;
 
     // 物品ID到Minecraft物品的映射
     private static final Map<Integer, Item> CATEGORY_TO_ITEM = new HashMap<>();
@@ -5051,67 +5050,7 @@ public class DrawingBoardRecognizer {
         return p;
     }
 
-            private byte[][] createBombPattern() {
-        byte[][] p = new byte[16][16];
-        p[0][13] = 10;
-        p[1][14] = 10;
-        p[2][14] = 10;
-        p[3][6] = 12;
-        p[3][7] = 12;
-        p[3][12] = 12;
-        p[4][4] = 12;
-        p[4][5] = 12;
-        p[4][11] = 12;
-        p[5][3] = 12;
-        p[5][4] = 12;
-        p[5][5] = 12;
-        p[5][6] = 12;
-        p[6][3] = 12;
-        p[6][4] = 12;
-        p[6][5] = 10;
-        p[6][6] = 10;
-        p[6][7] = 12;
-        p[7][2] = 12;
-        p[7][4] = 10;
-        p[7][5] = 10;
-        p[7][6] = 10;
-        p[7][7] = 12;
-        p[7][8] = 12;
-        p[8][2] = 12;
-        p[8][5] = 10;
-        return p;
-    }
-
-            private byte[][] createBombPattern2() {
-        byte[][] p = new byte[16][16];
-        p[0][2] = 10;
-        p[1][1] = 10;
-        p[2][1] = 10;
-        p[3][9] = 12;
-        p[3][8] = 12;
-        p[3][3] = 12;
-        p[4][11] = 12;
-        p[4][10] = 12;
-        p[4][4] = 12;
-        p[5][12] = 12;
-        p[5][11] = 12;
-        p[5][10] = 12;
-        p[5][9] = 12;
-        p[6][12] = 12;
-        p[6][11] = 12;
-        p[6][10] = 10;
-        p[6][9] = 10;
-        p[6][8] = 12;
-        p[7][13] = 12;
-        p[7][11] = 10;
-        p[7][10] = 10;
-        p[7][9] = 10;
-        p[7][8] = 12;
-        p[7][7] = 12;
-        p[8][13] = 12;
-        p[8][10] = 10;
-        return p;
-    }
+    
 
             private byte[][] createWheelchairPattern() {
         byte[][] p = new byte[16][16];
@@ -8236,18 +8175,7 @@ public class DrawingBoardRecognizer {
         return p;
     }
 
-    private byte[][] createBombPattern3() {
-        byte[][] p = new byte[16][16];
-        int c = 8;
-        for (int y = 5; y < 12; y++) {
-            for (int x = 5; x < 12; x++) {
-                double dist = Math.sqrt((x - c) * (x - c) + (y - c) * (y - c));
-                if (dist < 4) p[y][x] = 0;  // 主体 - 黑色
-            }
-        }
-        p[4][8] = 5; p[3][8] = 5;  // 引线 - 黄色
-        return p;
-    }
+    
 
     private byte[][] createHallucinationPattern3() {
         byte[][] p = new byte[16][16];
