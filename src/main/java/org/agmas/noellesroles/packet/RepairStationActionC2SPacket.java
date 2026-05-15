@@ -54,16 +54,6 @@ public record RepairStationActionC2SPacket(BlockPos blockPos, boolean greatHit) 
                     reward += 75;
                 }
                 RepairModeState.awardCoins(player, reward, payload.greatHit() ? "repair_coin_source.perfect" : "repair_coin_source.calibration");
-            if (station.addProgress(amount)) {
-                int reward = payload.greatHit() ? 8 : 3;
-                if (station.isCompleted()) {
-                    reward += 75;
-                }
-                SREPlayerShopComponent.KEY.get(player).addToBalance(reward);
-                player.displayClientMessage(Component.translatable("message.noellesroles.repair.coin_reward", reward).withStyle(ChatFormatting.GOLD), true);
-                if (station.isJammed()) {
-                    player.displayClientMessage(Component.translatable("message.noellesroles.repair.station_jammed_hint").withStyle(ChatFormatting.RED), true);
-                }
                 RepairGameplayEffects.burst((net.minecraft.server.level.ServerLevel) player.level(), payload.blockPos().getX() + 0.5D, payload.blockPos().getY() + 0.8D, payload.blockPos().getZ() + 0.5D, payload.greatHit() ? 2 : 0);
                 RepairModeState.addNeutralTaskProgress(player, "archivist", 1, 5);
                 RepairModeState.addNeutralTaskProgress(player, "saboteur", payload.greatHit() ? 2 : 1, 6);

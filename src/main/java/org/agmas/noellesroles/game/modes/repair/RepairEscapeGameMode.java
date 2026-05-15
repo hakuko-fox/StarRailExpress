@@ -327,9 +327,6 @@ public class RepairEscapeGameMode extends GameMode {
     public void stopGame(ServerLevel world) {
         RepairModeState.reset(world);
         RepairEventSystem.reset(world);
-    @Override
-    public void stopGame(ServerLevel world) {
-        RepairModeState.reset(world);
         rolesFinalized = false;
     }
 }
