@@ -677,18 +677,8 @@ public class SimpleKNN {
      * @return 归一化后的 double 数组
      */
     public static double[] matrixToFeature(byte[][] matrix) {
-        if (matrix == null || matrix.length == 0) return new double[0];
-        int rows = matrix.length;
-        int cols = matrix[0].length;
-        double[] feature = new double[rows * cols];
-        int idx = 0;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                int val = matrix[i][j] & 0xFF;   // 转为 0~255 无符号
-                feature[idx++] = val / 255.0;     // 归一化到 [0,1]
-            }
-        }
-        return feature;
+        // 默认情况下将背景白色(ID=16)视为透明，保持与识别时一致的特征表示
+        return matrixToFeature(matrix, true);
     }
 
     /**
