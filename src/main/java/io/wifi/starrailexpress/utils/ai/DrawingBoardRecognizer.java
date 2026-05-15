@@ -8231,6 +8231,10 @@ public class DrawingBoardRecognizer {
             ratioPart = Math.max(0.0, Math.min(1.0, ratioPart));
             // 综合相似度为两部分平均
             similarity = ((countPart + ratioPart) / 2.0) * 100.0;
+            // 如果像素校验未通过，降低相似度（因为最终无法识别成功）
+            if (!pixelValidationPassed && bestCount >= 2) {
+                similarity = similarity * 0.7; // 像素校验失败时相似度打7折
+            }
         }
 
         if (bestCount >= 13 && bestVoteRatio >= 0.30 && pixelValidationPassed) {
