@@ -42,6 +42,9 @@ public class SREGameModes {
     public static final ResourceLocation REPAIR_ESCAPE_ID = SRE.shortId("repair_escape");
     public static final ResourceLocation THIEF_MODE_ID = SRE.xiaoheihandId("thief_mode");
 
+    // Role Rotation Mode (haiman)
+    public static final ResourceLocation ROLE_ROTATION_MODE_ID = SRE.haimanId("role_rotation");
+
     // Modified from Harpymodloader
     public static final GameMode MURDER = registerGameMode(new SREMurderGameMode(MURDER_ID));
 
@@ -72,6 +75,9 @@ public class SREGameModes {
             new SREDevilRouletteGameMode(DEVIL_ROULETTE_ID));
     public static final GameMode REPAIR_ESCAPE_MODE = registerGameMode(new RepairEscapeGameMode(REPAIR_ESCAPE_ID));
     public static final GameMode THIEF_MODE = registerGameMode(new SREThiefWarGameMode(THIEF_MODE_ID));
+
+    // Role Rotation Mode
+    public static final GameMode ROLE_ROTATION_MODE = registerGameMode(new SRERoleRotationGameMode(ROLE_ROTATION_MODE_ID));
 
     // register
     public static GameMode registerGameMode(GameMode gameMode) {

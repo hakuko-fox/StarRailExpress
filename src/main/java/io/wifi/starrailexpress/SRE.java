@@ -461,6 +461,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(UseAssassinationItemPayload.ID,
                 new UseAssassinationItemPayload.Receiver());
 
+        // Role Rotation receivers
+        RoleRotationSelectC2SPacket.registerServerReceiver();
+
         // Mailbox receivers
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
                 new io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.Receiver());
