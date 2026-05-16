@@ -193,6 +193,7 @@
   "text.autoconfig.harpymodloader.option.roleWeights.key": "Role",
   "text.autoconfig.harpymodloader.option.roleWeights.value": "Weight",
   "text.autoconfig.harpymodloader.option.useCustomRoleWeights": "Use Custom Weights",
+  "text.autoconfig.harpymodloader.option.neutralMinPlayerCount": "Minimum Players for Neutral Roles",
   "=== Noellesroles ===": "",
   "text.autoconfig.noellesroles.title": "Star Rail Express Noellesroles Configuration",
   "text.autoconfig.noellesroles.option.insanePlayersSeeMorphs": "Does the deathrattle randomly check if a player has already transformed?",

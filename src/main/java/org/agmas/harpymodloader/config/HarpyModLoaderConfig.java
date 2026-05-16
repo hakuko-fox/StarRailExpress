@@ -36,6 +36,9 @@ public class HarpyModLoaderConfig implements ConfigData {
     // Whether to use custom role weights instead of default round-based weights")
     public boolean useCustomRoleWeights = true;
 
+    // Minimum player count required to spawn neutral roles
+    public int neutralMinPlayerCount = 10;
+
     public ArrayList<String> getDisabled() {
         if (disabled != null)
             return new ArrayList<>(disabled);

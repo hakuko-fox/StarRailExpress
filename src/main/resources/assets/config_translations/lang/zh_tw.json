@@ -193,6 +193,7 @@
   "text.autoconfig.harpymodloader.option.roleWeights.key": "角色",
   "text.autoconfig.harpymodloader.option.roleWeights.value": "權重",
   "text.autoconfig.harpymodloader.option.useCustomRoleWeights": "使用自定義權重",
+  "text.autoconfig.harpymodloader.option.neutralMinPlayerCount": "中立職業刷新的最低玩家需求",
   "=== Noellesroles ===": "",
   "text.autoconfig.noellesroles.title": "Star Rail Express Noellesroles 配置",
   "text.autoconfig.noellesroles.option.insanePlayersSeeMorphs": "亡語是否會隨機看玩家已經變形",
