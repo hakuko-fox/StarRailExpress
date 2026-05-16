@@ -65,6 +65,16 @@ public class NoellesRolesConfig implements ConfigData {
     public int minPlayerForBuilder = 12;
 
     /**
+     * 东方角色刷新最小玩家数
+     */
+    public int minPlayerForTouhouRoles = 12;
+
+    /**
+     * 红尘客刷新最小玩家数
+     */
+    public int minPlayerForWayfarer = 10;
+
+    /**
      * 布谷鸟刷新概率（%）
      */
     public int chanceOfCuckoo = 45;
@@ -110,9 +120,24 @@ public class NoellesRolesConfig implements ConfigData {
     public int chanceOfPoisoner = 55;
 
     /**
+     * 毒师刷新最小玩家数
+     */
+    public int minPlayerForPoisoner = 12;
+
+    /**
+     * DIO/东方角色刷新最小玩家数
+     */
+    public int minPlayerForEggRoles = 12;
+
+    /**
      * 魔术师刷新概率（%）
      */
     public int chanceOfMagician = 25;
+
+    /**
+     * 魔术师刷新最小玩家数
+     */
+    public int minPlayerForMagician = 16;
 
     /**
      * 监察员刷新概率（%）
@@ -123,6 +148,31 @@ public class NoellesRolesConfig implements ConfigData {
      * 年兽刷新概率（%）
      */
     public int chanceOfNianShou = 20;
+
+    /**
+     * 记录员刷新最小玩家数
+     */
+    public int minPlayerForRecorder = 10;
+
+    /**
+     * 秃鹫刷新最小玩家数
+     */
+    public int minPlayerForVulture = 8;
+
+    /**
+     * 秉烛人刷新最小玩家数
+     */
+    public int minPlayerForCandleBearer = 12;
+
+    /**
+     * 钟表匠刷新最小玩家数
+     */
+    public int minPlayerForClockmaker = 12;
+
+    /**
+     * 仇杀客刷新最小玩家数
+     */
+    public int minPlayerForBloodFeudist = 12;
 
     /**
      * 作家刷新概率（%）
@@ -202,6 +252,107 @@ public class NoellesRolesConfig implements ConfigData {
     public int chanceOfSwast = 70;
     public int chanceOfDoublePatroller = 20;
     public int chanceOfDoubleElf = 10;
+
+    /**
+     * 特殊警卫刷新最小玩家数
+     */
+    public int minPlayerForSpecialPolice1 = 12;
+    public int minPlayerForSpecialPolice2 = 18;
+    public int minPlayerForSpecialPolice3 = 24;
+    public int minPlayerForSpecialPolice4 = 30;
+    public int minPlayerForSpecialPolice5 = 36;
+
+    /**
+     * REFUGEE修饰符刷新最小玩家数
+     */
+    public int minPlayerForRefugee = 12;
+
+    /**
+     * CURSED修饰符刷新最小玩家数
+     */
+    public int minPlayerForCursed = 12;
+
+    /**
+     * SECRETIVE修饰符刷新最小玩家数
+     */
+    public int minPlayerForSecretive = 12;
+
+    /**
+     * KNIGHT修饰符刷新最小玩家数
+     */
+    public int minPlayerForKnight = 12;
+
+    /**
+     * SPLIT_PERSONALITY修饰符刷新最小玩家数
+     */
+    public int minPlayerForSplitPersonality = 12;
+
+    // ==================== 修饰符概率配置 ====================
+
+    /**
+     * MAGNATE修饰符刷新概率（%）
+     */
+    public int chanceOfMagnate = 50;
+
+    /**
+     * TASKMASTER修饰符刷新概率（%）
+     */
+    public int chanceOfTaskmaster = 30;
+
+    /**
+     * ALLERGIST修饰符刷新概率（%）
+     */
+    public int chanceOfAllergist = 20;
+
+    /**
+     * CURSED修饰符刷新概率（%）
+     */
+    public int chanceOfCursed = 30;
+
+    /**
+     * SECRETIVE修饰符刷新概率（%）
+     */
+    public int chanceOfSecretive = 20;
+
+    /**
+     * KNIGHT修饰符刷新概率（%）
+     */
+    public int chanceOfKnight = 10;
+
+    /**
+     * Jeb_修饰符刷新概率（%）
+     */
+    public int chanceOfJeb = 30;
+
+    /**
+     * VIGOROUS修饰符刷新概率（%）
+     */
+    public int chanceOfVigorous = 80;
+
+    /**
+     * UNYIELDING修饰符刷新概率（%）
+     */
+    public int chanceOfUnyielding = 80;
+
+    /**
+     * PARANOID修饰符刷新概率（%）
+     */
+    public int chanceOfParanoid = 10;
+
+    /**
+     * EXPEDITION修饰符刷新概率（%）
+     */
+    public int chanceOfExpedition = 50;
+
+    /**
+     * TAXED修饰符刷新概率（%）
+     */
+    public int chanceOfTaxed = 20;
+
+    /**
+     * INTROVERTED修饰符刷新概率（%）
+     */
+    public int chanceOfIntroverted = 50;
 
     /**
      * Modifier - The chance of Lovers
