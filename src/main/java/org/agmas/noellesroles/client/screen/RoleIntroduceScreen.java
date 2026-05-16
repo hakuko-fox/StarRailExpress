@@ -287,7 +287,7 @@ public class RoleIntroduceScreen extends Screen {
         rightW = usableWidth - leftW;
         panelX = (width - usableWidth) / 2;
         panelY = 48;
-        panelH = height - panelY - 42 - BOTTOM_BUTTON_AREA_H; // 扣除底部按钮区域
+        panelH = height - panelY - 42; 
         leftX = panelX;
         rightX = panelX + leftW;
         // 顶部行紧贴 panelY 上方
