@@ -429,12 +429,16 @@ public class RoleIntroduceScreen extends Screen {
 
     /**
      * 检查修饰符是否符合当前模式
+     * 修机模式：修饰符为空
      */
     private boolean matchesModifierMode(SREModifier mod) {
         switch (currentMode) {
             case MURDER:
                 // 谋杀模式：排除"其它模式"的修饰符
                 return !mod.isOtherModeRole();
+            case REPAIR:
+                // 修机模式：修饰符为空
+                return false;
             case OTHER:
                 // 其它模式：只显示标记为isOtherModeRole()的修饰符
                 return mod.isOtherModeRole();
