@@ -548,6 +548,8 @@
   "item.lores.noellesroles.once_revolver.line1": "This pistol can only be used once",
   "item.lores.noellesroles.once_revolver.line2": "It can be bought from vending machines",
   "item.lores.noellesroles.once_revolver.line3": "Killers and Neutrals cannot buy this from vending machines!",
+  "item.noellesroles.zero_one_five_gun": "Zero-One-Five",
+  "item.noellesroles.zero_one_five_gun.tooltip": "Right-click to shoot\nAuto-fires second shot after 2s\nHit gives 3s Slowness II\nTwo hits kill\n15s cooldown, 30 block range",
   "item.noellesroles.handcuffs": "Handcuffs",
   "item.noellesroles.handcuffs.put": "You handcuffed %s",
   "item.noellesroles.handcuffs.recieved": "You were handcuffed by %s. Press sneak to try to break free.",

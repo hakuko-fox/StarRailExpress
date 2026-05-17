@@ -669,6 +669,20 @@ public class ModItems {
             "executioner_gun");
 
     /**
+     * 零一五 - 双发手枪
+     * - 右键开枪，开枪后0.15秒自动开第二枪
+     * - 一枪命中只会给3秒缓慢2
+     * - 同一玩家被命中两次则造成击杀
+     * - 冷却15秒，射程30格
+     * - 材质沿用一次性手枪
+     * - 无限耐久，两枪后进入15秒冷却
+     */
+    public static final Item ZERO_ONE_FIVE_GUN = register(
+            new org.agmas.noellesroles.content.item.ZeroOneFiveGunItem(
+                    new Item.Properties().stacksTo(1)),
+            "zero_one_five_gun");
+
+    /**
      * 尊名纸条
      * - 愚者商店购买（50金币）
      * - 右键墙壁/地面贴附，生成不可破坏的文本实体

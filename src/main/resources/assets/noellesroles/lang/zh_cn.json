@@ -540,6 +540,8 @@
   "item.lores.noellesroles.once_revolver.line1": "这把手枪只能使用1次",
   "item.lores.noellesroles.once_revolver.line2": "它能从物品售货机里买到",
   "item.lores.noellesroles.once_revolver.line3": "杀手以及中立无法从物品售货机里购买此物品！",
+  "item.noellesroles.zero_one_five_gun": "零一五",
+  "item.noellesroles.zero_one_five_gun.tooltip": "右键开枪\n开枪后2秒自动开第二枪\n命中给予3秒缓慢II\n命中两次击杀目标\n冷却15秒，射程30格",
   "item.noellesroles.handcuffs": "手铐",
   "item.noellesroles.handcuffs.put": "你给 %s 戴上了手铐",
   "item.noellesroles.handcuffs.recieved": "你被 %s 戴上了手铐。按下潜行尝试挣脱。",

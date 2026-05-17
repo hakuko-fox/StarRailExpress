@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.network.packet.EnableTaskHighlightPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
 
@@ -124,6 +125,9 @@ public class ModPackets {
 
         // 注册短管霰弹枪装备音效网络包
         PayloadTypeRegistry.playC2S().register(ShortShotgunEquipPayload.ID, ShortShotgunEquipPayload.CODEC);
+
+        // 注册零一五枪射击网络包
+        PayloadTypeRegistry.playC2S().register(ZeroOneFiveShootPayload.ID, ZeroOneFiveShootPayload.CODEC);
 
         // 注册抽奖网络包
         PayloadTypeRegistry.playS2C().register(LootResultS2CPacket.ID, LootResultS2CPacket.CODEC);

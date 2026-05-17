@@ -193,6 +193,7 @@ public class GameConstants {
         public static ResourceLocation SNIPER_RIFLE = SRE.id("sniper_rifle");
         public static ResourceLocation SNIPER_RIFLE_BACKFIRE = SRE.id("sniper_rifle_backfire");
         public static ResourceLocation NUNCHUCK = SRE.id("nunchuck_hit");
+        public static ResourceLocation ZERO_ONE_FIVE = SRE.id("zero_one_five_shot");
     }
 
     public static int getFurandoruSafeLine() {

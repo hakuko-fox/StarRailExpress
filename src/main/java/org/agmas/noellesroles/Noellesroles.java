@@ -132,6 +132,7 @@ public class Noellesroles implements ModInitializer {
                 .contains(org.agmas.noellesroles.game.modes.repair.RepairModeState.NEUTRAL_WIN_TAG));
         ModItems.init();
         RightClickBlockManager.init();
+        org.agmas.noellesroles.content.item.ZeroOneFiveGunItem.register();
         ArgumentTypeRegistry.registerArgumentType(
                 Noellesroles.id("color"), // 唯一 ID
                 ModColorArgument.class, // 你的参数类

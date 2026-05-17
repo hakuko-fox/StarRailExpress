@@ -59,7 +59,8 @@ public class XiaoNaoHandler {
                                 || deathReason.getPath().equals("ninja_knife")
                                 || deathReason.getPath().equals("ninja_shuriken")
                                 || deathReason.getPath().equals("short_shotgun")
-                                || deathReason.getPath().equals("grenade")) {
+                                || deathReason.getPath().equals("grenade")
+                                || deathReason.getPath().equals("zero_one_five_shot")) {
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
 
                             // 仇杀客事件：误杀发生时强化仇杀客
