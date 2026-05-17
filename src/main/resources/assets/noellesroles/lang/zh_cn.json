@@ -2061,7 +2061,7 @@
   "item.noellesroles.jetpack.durability": "耐久度: %s/%s",
   "message.noellesroles.jetpack_broken": "喷气背包的燃料耗尽了！",
   "announcement.star.role.pilot": "飞行员",
-  "announcement.star.goals.pilot": "协助好人阵营生存到最后！",
+  "announcement.star.goals.pilot": "为所有人实现飞行的愿望！",
   "ability.noellesroles.pilot.remove_jetpack.name": "脱下喷气背包",
   "hud.noellesroles.pilot.jetpack_equipped": "喷气背包已装备",
   "hud.noellesroles.pilot.press_to_remove": "按 %s 脱下喷气背包",
