@@ -43,7 +43,8 @@ public class FoolRole extends NormalRole {
         // 尊名纸条：50金币
         entries.add(new ShopEntry(new ItemStack(ModItems.HONORED_NOTE), 50, ShopEntry.Type.TOOL));
         // 灵性斗篷：200金币
-        entries.add(new ShopEntry(new ItemStack(ModItems.SPIRIT_CLOAK), 200, ShopEntry.Type.TOOL));
+        entries.add(new ShopEntry(new ItemStack(ModItems.SPIRIT_CLOAK), 175, ShopEntry.Type.TOOL));
+        entries.add(new ShopEntry(new ItemStack(ModItems.ZERO_ONE_FIVE_GUN), 350, ShopEntry.Type.TOOL));
         return entries;
     }
 

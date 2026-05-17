@@ -1192,6 +1192,7 @@ public class RoleShopHandler {
     {
       List<ShopEntry> entries = new ArrayList<>();
       entries.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+      entries.add(new ShopEntry(ModItems.ZERO_ONE_FIVE_GUN.getDefaultInstance(), 300, ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(
           TMMRoles.VIGILANTE.identifier(), entries);
     }
@@ -1389,7 +1390,7 @@ public class RoleShopHandler {
             }
           });
       // 左轮手枪 - 285金币（愤怒姿态）
-      shop.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 285, ShopEntry.Type.WEAPON) {
+      shop.add(new ShopEntry(ModItems.ZERO_ONE_FIVE_GUN.getDefaultInstance(), 285, ShopEntry.Type.WEAPON) {
         @Override
         public boolean canDisplay(Player player) {
           return !WatcherPlayerComponent.KEY.get(player).isInCalmStance();

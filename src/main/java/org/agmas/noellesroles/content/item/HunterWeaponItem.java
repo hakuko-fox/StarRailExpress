@@ -30,12 +30,17 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.HunterAttackProfile;
 import org.agmas.noellesroles.game.modes.repair.RepairModeState;
+import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import org.agmas.noellesroles.packet.RepairCombatFeedbackS2CPacket;
 
 import java.util.List;
 
 public class HunterWeaponItem extends Item {
     private final String weaponId;
+    // 三把武器各自的冷却时间（tick）
+    private final int weaponCooldownTicks;
+    // 钩镰武器标志
+    private final boolean isHook;
 
     public HunterWeaponItem(Properties properties) {
         this("blade", properties);
@@ -44,30 +49,45 @@ public class HunterWeaponItem extends Item {
     public HunterWeaponItem(String weaponId, Properties properties) {
         super(properties);
         this.weaponId = weaponId;
+        this.isHook = "hook".equals(weaponId);
+        // 不同武器有不同的基础冷却
+        this.weaponCooldownTicks = switch (weaponId) {
+            case "hammer" -> 64;   // 重锤：长冷却
+            case "hook" -> 75;    // 钩镰：5秒冷却（独立）
+            default -> 20;         // 利刃：短冷却
+        };
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (player instanceof ServerPlayer serverPlayer) {
+            var hunterComponent = ModComponents.REPAIR_ROLES.get(serverPlayer);
+            // 使用共享冷却池检查
             if (!RepairModeState.canUseHunterUtility(serverPlayer)
-                    || ModComponents.REPAIR_ROLES.get(serverPlayer).carrying != null
-                    || ModComponents.REPAIR_ROLES.get(serverPlayer).hunterWeaponCooldownEndTick > level.getGameTime()) {
+                    || hunterComponent.carrying != null
+                    || hunterComponent.hunterWeaponCooldownEndTick > level.getGameTime()) {
                 return InteractionResultHolder.fail(stack);
             }
         }
+
         if (!(player instanceof ServerPlayer hunter) || !(level instanceof ServerLevel serverLevel)) {
             return InteractionResultHolder.consume(stack);
         }
+        player.getCooldowns().addCooldown(stack.getItem(), weaponCooldownTicks==75? 120 : 20);
         var hunterComponent = ModComponents.REPAIR_ROLES.get(hunter);
         HunterAttackProfile profile = HunterAttackProfile.of(hunterComponent.activeRole,
                 hunterComponent.activeAttackPlugin, weaponId);
-        hunterComponent.hunterWeaponCooldownEndTick = serverLevel.getGameTime() + profile.cooldownTicks();
+        // 写入共享冷却池，使用当前武器的冷却时间
+        hunterComponent.hunterWeaponCooldownEndTick = serverLevel.getGameTime() + weaponCooldownTicks;
         hunterComponent.sync();
-        hunter.getCooldowns().addCooldown(this, profile.cooldownTicks());
+        // 前摇期间猎人原地锁定
         hunter.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,
                 profile.windupTicks() + 4, 9, false, false, true));
+        hunter.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.JUMP,
+                profile.windupTicks() + 4, -5, false, false, true)); // 禁跳
         level.playSound(null, hunter.blockPosition(), windupSound(), SoundSource.PLAYERS, 0.8F, 0.8F);
+        // 广播攻击反馈，只让攻击者播放动画
         RepairModeState.broadcastCombatFeedback(serverLevel, RepairCombatFeedbackS2CPacket.ATTACK, hunter,
                 hunter.getX(), hunter.getY() + 1.0D, hunter.getZ(), 24.0D, weaponId);
         GameUtils.serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(profile.windupTicks(), () ->
@@ -81,10 +101,14 @@ public class HunterWeaponItem extends Item {
         }
         var hunterComponent = ModComponents.REPAIR_ROLES.get(hunter);
         if (!RepairModeState.canUseHunterUtility(hunter) || hunterComponent.carrying != null) {
+            // 取消攻击时清理减速/禁跳效果
+            hunter.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            hunter.removeEffect(MobEffects.JUMP);
             return;
         }
         hunter.swing(hunter.getUsedItemHand(), true);
         serverLevel.playSound(null, hunter.blockPosition(), releaseSound(), SoundSource.PLAYERS, 0.95F, 0.85F);
+        // 钩镰使用更窄更长的判定范围
         ServerPlayer target = findTarget(hunter, serverLevel, profile.reach());
         String plugin = hunterComponent.activeAttackPlugin;
         hunterComponent.activeAttackPlugin = "";
@@ -92,6 +116,9 @@ public class HunterWeaponItem extends Item {
         if (target == null) {
             serverLevel.playSound(null, hunter.blockPosition(), SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.PLAYERS,
                     0.8F, 0.7F);
+            // 释放后清理减速/禁跳效果
+            hunter.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+            hunter.removeEffect(MobEffects.JUMP);
             return;
         }
         boolean hit = profile.applyHit(hunter, target);
@@ -105,14 +132,19 @@ public class HunterWeaponItem extends Item {
             Vec3 pull = hunter.position().subtract(target.position()).normalize();
             target.push(pull.x * 1.05D, 0.10D, pull.z * 1.05D);
             target.hurtMarked = true;
+            // 钩镰增加链条粒子
             serverLevel.sendParticles(ParticleTypes.SCULK_SOUL, target.getX(), target.getY() + 0.9D, target.getZ(),
                     18, 0.35D, 0.35D, 0.35D, 0.02D);
+            // 拉拽反馈和标记音效
             serverLevel.playSound(null, target.blockPosition(), SoundEvents.CHAIN_PLACE, SoundSource.PLAYERS,
                     0.9F, 1.25F);
         }
         if (hit && !hunter.getAbilities().instabuild) {
             stack.hurtAndBreak(1, hunter, LivingEntity.getSlotForHand(hunter.getUsedItemHand()));
         }
+        // 释放后清理减速/禁跳效果
+        hunter.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        hunter.removeEffect(MobEffects.JUMP);
     }
 
     private net.minecraft.sounds.SoundEvent windupSound() {
@@ -135,8 +167,9 @@ public class HunterWeaponItem extends Item {
         Vec3 eye = hunter.getEyePosition();
         Vec3 look = hunter.getViewVector(1.0F);
         Vec3 end = eye.add(look.scale(reach));
-        double inflate = "hook".equals(weaponId) ? 0.42D : 0.85D;
-        AABB box = hunter.getBoundingBox().expandTowards(look.scale(reach)).inflate(inflate, 0.65D, inflate);
+        // 钩镰使用更窄的判定范围（更窄更长）
+        double inflate = isHook ? 0.32D : 0.85D;
+        AABB box = hunter.getBoundingBox().expandTowards(look.scale(reach)).inflate(inflate, 0.45D, inflate);
         EntityHitResult hit = ProjectileUtil.getEntityHitResult(hunter, eye, end, box, this::isPotentialTarget, reach * reach);
         if (hit == null || !(hit.getEntity() instanceof ServerPlayer target)) {
             return null;
@@ -176,5 +209,8 @@ public class HunterWeaponItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable(getDescriptionId() + ".tooltip").withStyle(ChatFormatting.GRAY));
+        // 显示冷却时间
+        tooltip.add(Component.translatable("item.noellesroles.hunter_weapon_cooldown", weaponCooldownTicks / 20)
+                .withStyle(ChatFormatting.YELLOW));
     }
 }

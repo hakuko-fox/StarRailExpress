@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -39,6 +40,11 @@ public final class RepairEscapeHud {
 
     private static final List<CoinToast> coinToasts = new ArrayList<>();
     private static final List<CombatCue> combatCues = new ArrayList<>();
+    // 客户端提示淡出计时
+    private static String lastLockPromptKey = "";
+    private static long lockPromptSetTick = 0L;
+    private static BlockPos lastSearchHintPos = null;
+    private static long searchHintStartTick = 0L;
 
     private RepairEscapeHud() {
     }
@@ -182,16 +188,41 @@ public final class RepairEscapeHud {
                     centerY - 43, 88, 0xFFFFE6A3);
             return;
         }
+        // 锁定提示：带4秒开始淡出、5秒完全消失
         if (component.lockPromptKey != null && !component.lockPromptKey.isEmpty()) {
-            drawFitted(graphics, font, Component.literal(component.lockPromptKey), centerX - 64, centerY + 20,
-                    128, 0xFFFF8A80);
+            if (!component.lockPromptKey.equals(lastLockPromptKey)) {
+                lastLockPromptKey = component.lockPromptKey;
+                lockPromptSetTick = tick;
+            }
+            long age = tick - lockPromptSetTick;
+            int alpha = age >= 100 ? 0 : age >= 80 ? (int) ((100 - age) / 20.0F * 255) : 255;
+            if (alpha > 0) {
+                int color = (alpha << 24) | 0xFF8A80;
+                drawFitted(graphics, font, Component.literal(component.lockPromptKey), centerX - 64, centerY + 20,
+                        128, color);
+            }
             return;
+        } else {
+            lastLockPromptKey = "";
         }
+        // 准心指向可搜索柜子提示：带4秒开始淡出、5秒完全消失
         if (client.hitResult instanceof BlockHitResult blockHit && client.hitResult.getType() == HitResult.Type.BLOCK
                 && client.level != null && client.level.getBlockState(blockHit.getBlockPos()).is(ModBlocks.HOTBAR_STORAGE)
                 && player.distanceToSqr(blockHit.getBlockPos().getCenter()) <= 4.8D * 4.8D) {
-            drawFitted(graphics, font, Component.translatable("hud.noellesroles.repair.search_hint"),
-                    centerX + 10, centerY + 8, 104, 0xFFFFE6A3);
+            BlockPos currentPos = blockHit.getBlockPos();
+            if (!currentPos.equals(lastSearchHintPos)) {
+                lastSearchHintPos = currentPos;
+                searchHintStartTick = tick;
+            }
+            long age = tick - searchHintStartTick;
+            int alpha = age >= 100 ? 0 : age >= 80 ? (int) ((100 - age) / 20.0F * 255) : 255;
+            if (alpha > 0) {
+                int color = (alpha << 24) | 0xFFE6A3;
+                drawFitted(graphics, font, Component.translatable("hud.noellesroles.repair.search_hint"),
+                        centerX + 10, centerY + 8, 104, color);
+            }
+        } else {
+            lastSearchHintPos = null;
         }
     }
 
@@ -262,12 +293,14 @@ public final class RepairEscapeHud {
 
     private static Component subSkillLine(RepairRolePlayerComponent component) {
         if (component.downed && component.carriedBy == null) {
-            return Component.translatable("hud.noellesroles.repair.downed_struggle_line",
-                    Mth.clamp(component.downedStruggleProgress, 0, 100));
+            // 倒地挣扎进度文字化显示
+            int progress = Mth.clamp(component.downedStruggleProgress, 0, 100);
+            return Component.translatable("hud.noellesroles.repair.downed_struggle_line", progress);
         }
         if (component.carriedBy != null) {
-            return Component.translatable("hud.noellesroles.repair.struggle_line",
-                    Mth.clamp(component.carryStruggleProgress, 0, 100));
+            // 搬运挣扎进度
+            int progress = Mth.clamp(component.carryStruggleProgress, 0, 100);
+            return Component.translatable("hud.noellesroles.repair.struggle_line", progress);
         }
         if (component.carrying != null) {
             return Component.translatable("hud.noellesroles.repair.drop_line");

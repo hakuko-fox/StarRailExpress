@@ -35,13 +35,13 @@ public record HunterAttackProfile(
 
     public static HunterAttackProfile of(String roleId, String pluginId, String weaponId) {
         HunterAttackProfile profile = switch (roleId) {
-            case "brute" -> new HunterAttackProfile("brute", 15, 55, 20 * 26, 2.9D, 4.0F, 65, 2, 0.9D,
+            case "brute" -> new HunterAttackProfile("brute", 10, 55, 20 * 26, 2.9D, 4.0F, 65, 2, 0.9D,
                     ParticleTypes.EXPLOSION, SoundEvents.GENERIC_EXPLODE.value());
-            case "tracker" -> new HunterAttackProfile("tracker", 15, 38, 20 * 18, 3.45D, 2.4F, 45, 0, 0.35D,
+            case "tracker" -> new HunterAttackProfile("tracker", 10, 38, 20 * 18, 3.45D, 2.4F, 45, 0, 0.35D,
                     ParticleTypes.SCULK_SOUL, SoundEvents.SCULK_CLICKING);
-            case "warden" -> new HunterAttackProfile("warden", 15, 48, 20 * 20, 3.15D, 3.0F, 55, 1, 0.5D,
+            case "warden" -> new HunterAttackProfile("warden", 10, 48, 20 * 20, 3.15D, 3.0F, 55, 1, 0.5D,
                     ParticleTypes.ENCHANTED_HIT, SoundEvents.ANVIL_LAND);
-            default -> new HunterAttackProfile("basic", 15, 45, 20 * 20, 3.2D, 3.0F, 50, 1, 0.55D,
+            default -> new HunterAttackProfile("basic", 10, 45, 20 * 20, 3.2D, 3.0F, 50, 1, 0.55D,
                     ParticleTypes.SWEEP_ATTACK, SoundEvents.PLAYER_ATTACK_STRONG);
         };
         profile = switch (pluginId) {
@@ -70,7 +70,7 @@ public record HunterAttackProfile(
                     Math.max(profile.slowAmplifier + 1, 2), profile.knockback + 0.35D,
                     ParticleTypes.EXPLOSION, SoundEvents.ANVIL_LAND);
             case "hook" -> new HunterAttackProfile(profile.id + "_hook", 15,
-                    Math.max(42, profile.cooldownTicks + 4), profile.secondHitWindowTicks,
+                    Math.max(100, profile.cooldownTicks + 4), profile.secondHitWindowTicks,
                     4.35D, Math.max(2.0F, profile.damage - 0.4F), profile.slowTicks,
                     profile.slowAmplifier, Math.max(0.25D, profile.knockback - 0.15D),
                     ParticleTypes.SCULK_SOUL, SoundEvents.CHAIN_PLACE);

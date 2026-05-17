@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.block_entity.HotbarStorageBlockEntity;
 import org.agmas.noellesroles.game.modes.repair.RepairModeState;
 import org.agmas.noellesroles.game.modes.repair.RepairSearchState;
@@ -59,6 +60,11 @@ public class HotbarStorageBlock extends BaseEntityBlock {
     private static void open(Level level, BlockPos pos, Player player) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
                 && RepairModeState.isNonHunterRepairPlayer(serverPlayer)) {
+            // 如果已经在搜索同一个箱子，不重复开始（防止进度重置）
+            var comp = ModComponents.REPAIR_ROLES.get(serverPlayer);
+            if (comp.searchTarget.present() && comp.searchTarget.toBlockPos().equals(pos)) {
+                return;
+            }
             RepairSearchState.begin(serverPlayer, pos);
             return;
         }

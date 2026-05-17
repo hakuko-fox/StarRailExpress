@@ -12,6 +12,7 @@ import net.minecraft.world.entity.MobCategory;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
 import org.agmas.noellesroles.content.entity.*;
+import org.agmas.noellesroles.content.entity.FlareEntity;
 
 public class ModEntities {
     public static final EntityType<RoleMineEntity> ROLE_MINE_ENTITY_ENTITY_TYPE = Registry.register(
@@ -194,6 +195,19 @@ public class ModEntities {
             FabricEntityTypeBuilder.<SilenceTotemEntity>create(MobCategory.MISC, SilenceTotemEntity::new)
                     .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
                     .trackRangeBlocks(32)
+                    .trackedUpdateRate(10)
+                    .build());
+
+    /**
+     * 照明弹实体 - 投掷后飞行，撞到方块时放置照明弹方块，10秒后消失
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<FlareEntity> FLARE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "flare"),
+            FabricEntityTypeBuilder.<FlareEntity>create(MobCategory.MISC, FlareEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(4)
                     .trackedUpdateRate(10)
                     .build());
 

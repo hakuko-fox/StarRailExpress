@@ -36,7 +36,7 @@ public class RepairEscapeGameMode extends GameMode {
     private boolean rolesFinalized;
 
     public RepairEscapeGameMode(ResourceLocation identifier) {
-        super(identifier, 12, 2);
+        super(identifier, 14, 2);
     }
 
     @Override
@@ -47,6 +47,59 @@ public class RepairEscapeGameMode extends GameMode {
     @Override
     public boolean hasMood() {
         return false;
+    }
+
+    @Override
+    public void beforeInitializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+            List<ServerPlayer> players) {
+        // 修机模式不调用 baseInitialize，避免加载正常 Areas 配置
+        // 改为修机专属初始化
+        gameWorldComponent.setPlayerCount(players.size());
+        serverWorld.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY)
+                .set(true, serverWorld.getServer());
+        serverWorld.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_WEATHER_CYCLE)
+                .set(false, serverWorld.getServer());
+        serverWorld.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)
+                .set(false, serverWorld.getServer());
+        serverWorld.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_DOMOBSPAWNING)
+                .set(false, serverWorld.getServer());
+        serverWorld.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_ANNOUNCE_ADVANCEMENTS)
+                .set(false, serverWorld.getServer());
+        serverWorld.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_DO_TRADER_SPAWNING)
+                .set(false, serverWorld.getServer());
+        serverWorld.setDayTime(13000);
+        serverWorld.getServer().setDifficulty(net.minecraft.world.Difficulty.PEACEFUL, true);
+
+        // 将所有玩家设为冒险模式
+        for (ServerPlayer player : players) {
+            player.removeVehicle();
+            player.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
+        }
+
+        // 将非参战玩家传送到固定庄园上方的观察者位置
+        BlockPos manorBase = RepairArenaBuilder.defaultMansionBase();
+        for (ServerPlayer player : serverWorld.getServer().getPlayerList().getPlayers()) {
+            if (players.contains(player)) continue;
+            player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+            // 传送到庄园中心上方
+            player.teleportTo(serverWorld,
+                    manorBase.getX() + 26.5D, manorBase.getY() + 20.0D, manorBase.getZ() + 32.5D,
+                    player.getYRot(), player.getXRot());
+        }
+
+        // 清除背包
+        for (ServerPlayer player : players) {
+            player.getInventory().clearContent();
+            io.wifi.starrailexpress.cca.SREPlayerMoodComponent.KEY.get(player).init();
+            io.wifi.starrailexpress.cca.SREPlayerShopComponent.KEY.get(player).init();
+            // 清除物品冷却
+            java.util.HashSet<net.minecraft.world.item.Item> copy =
+                    new java.util.HashSet<>(player.getCooldowns().cooldowns.keySet());
+            for (net.minecraft.world.item.Item item : copy)
+                player.getCooldowns().removeCooldown(item);
+        }
+        gameWorldComponent.clearRoleMap(true);
+        io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(serverWorld).reset();
     }
 
     @Override
@@ -135,8 +188,8 @@ public class RepairEscapeGameMode extends GameMode {
     private static void giveModeItems(ServerPlayer player, RepairRoleDefinition.Faction faction, RandomSource random) {
         switch (faction) {
             case HUNTER -> {
+                // 追捕者初始只获得基础利刃武器，不给钩镰
                 player.addItem(new ItemStack(ModItems.HUNTER_WEAPON));
-
             }
             case NEUTRAL -> {
                 player.addItem(new ItemStack(ModItems.SPARE_PARTS));
@@ -169,7 +222,7 @@ public class RepairEscapeGameMode extends GameMode {
                 reopenRoleSelection(serverWorld, gameWorldComponent);
             }
         }
-        if (!rolesFinalized && serverWorld.getGameTime() >= selectionEndTick) {
+        if (!rolesFinalized && serverWorld.getGameTime() >= selectionEndTick && RepairArenaBuilder.isReady(serverWorld)) {
             finalizeSelectedRoles(serverWorld, gameWorldComponent);
         }
 
@@ -224,10 +277,27 @@ public class RepairEscapeGameMode extends GameMode {
             }
         }
 
+        // 检查是否所有幸存者都倒地了
+        int totalSurvivors = 0;
+        int downedSurvivors = 0;
+        for (ServerPlayer player : serverWorld.players()) {
+            var component = ModComponents.REPAIR_ROLES.get(player);
+            boolean survivor = RepairRoleDefinition.byId(component.activeRole)
+                    .map(role -> role.faction == RepairRoleDefinition.Faction.SURVIVOR)
+                    .orElse(gameWorldComponent.isRole(player, ModRoles.REPAIR_SURVIVOR));
+            if (survivor && !player.getTags().contains(RepairModeState.ESCAPED_TAG) && !GameUtils.isPlayerEliminated(player)) {
+                totalSurvivors++;
+                if (component.downed) {
+                    downedSurvivors++;
+                }
+            }
+        }
+
         if (winStatus == GameUtils.WinStatus.NONE) {
             if (escapedSurvivors > 0 && activeSurvivors == 0) {
                 winStatus = GameUtils.WinStatus.PASSENGERS;
-            } else if (activeSurvivors == 0) {
+            } else if (activeSurvivors == 0 || downedSurvivors >= totalSurvivors) {
+                // 所有幸存者都倒地或被消除，猎人胜利
                 winStatus = GameUtils.WinStatus.KILLERS;
             } else if (livingHunters == 0) {
                 winStatus = GameUtils.WinStatus.PASSENGERS;
@@ -267,7 +337,7 @@ public class RepairEscapeGameMode extends GameMode {
     private void finalizeSelectedRoles(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         rolesFinalized = true;
         RepairArenaBuilder.finishSelection(serverWorld);
-        MapConfig.RepairConfig repairConfig = RepairMapRuntimeConfig.current(serverWorld).orElse(null);
+        MapConfig.RepairConfig repairConfig = null;
         int hunterSpawnIndex = 0;
         int survivorSpawnIndex = 0;
         for (ServerPlayer player : serverWorld.players()) {
@@ -287,9 +357,17 @@ public class RepairEscapeGameMode extends GameMode {
             gameWorldComponent.addRole(player, role.sreRole(), false);
             giveRoleSkillItem(player, role);
             if (role.faction == RepairRoleDefinition.Faction.HUNTER) {
-                teleportToConfiguredSpawn(player, repairConfig == null ? null : repairConfig.hunterSpawns, hunterSpawnIndex++);
+                if (repairConfig == null) {
+                    RepairArenaBuilder.teleportToDefaultGameplaySpawn(player, true, hunterSpawnIndex++);
+                } else {
+                    teleportToConfiguredSpawn(player, repairConfig.hunterSpawns, hunterSpawnIndex++);
+                }
             } else {
-                teleportToConfiguredSpawn(player, repairConfig == null ? null : repairConfig.survivorSpawns, survivorSpawnIndex++);
+                if (repairConfig == null) {
+                    RepairArenaBuilder.teleportToDefaultGameplaySpawn(player, false, survivorSpawnIndex++);
+                } else {
+                    teleportToConfiguredSpawn(player, repairConfig.survivorSpawns, survivorSpawnIndex++);
+                }
             }
             player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
             player.displayClientMessage(Component.translatable("message.noellesroles.repair.role_locked", role.displayName())
@@ -328,7 +406,7 @@ public class RepairEscapeGameMode extends GameMode {
             }
             case "tracker" -> {
                 player.addItem(new ItemStack(ModItems.HUNTER_PULSE));
-                player.addItem(new ItemStack(ModItems.HUNTER_HOOK));
+
             }
             case "mechanic" -> player.addItem(new ItemStack(ModItems.REPAIR_TOOLBOX));
             case "medic" -> player.addItem(new ItemStack(ModItems.RESCUE_FLARE));

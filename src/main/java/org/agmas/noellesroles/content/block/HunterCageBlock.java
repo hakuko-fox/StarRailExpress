@@ -36,6 +36,16 @@ public class HunterCageBlock extends BaseEntityBlock {
     }
 
     @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.is(newState.getBlock())) {
+            if (level.getBlockEntity(pos) instanceof HunterCageBlockEntity cage) {
+                cage.destroyCageStructure();
+            }
+        }
+        super.onRemove(state, level, pos, newState, moved);
+    }
+
+    @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (stack.is(ModItems.HUNTER_CHAIN) || player instanceof ServerPlayer serverPlayer

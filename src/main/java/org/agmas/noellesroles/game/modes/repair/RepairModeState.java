@@ -30,7 +30,7 @@ public final class RepairModeState {
     public static final String NEUTRAL_WIN_TAG = "noellesroles_repair_neutral_win";
     public static final int REQUIRED_REPAIRED_STATIONS = 3;
     public static final int REPAIR_STATION_MAX_PROGRESS = 500;
-    public static final int TRIAL_EXECUTION_TICKS = 20 * 75;
+    public static final int TRIAL_EXECUTION_TICKS = 20 * 100;
     public static final float REVIVE_HEALTH = 8.0F;
     public static final int REPAIR_ACTION_COOLDOWN_TICKS = 8;
     public static final int ARCHIVIST_TASK_NEEDED = 8;
@@ -372,17 +372,7 @@ public final class RepairModeState {
     }
 
 
-    private static BlockPos findNearbySafeRelease(ServerLevel level, BlockPos origin) {
-        for (BlockPos candidate : BlockPos.betweenClosed(origin.offset(-2, -1, -2), origin.offset(2, 1, 2))) {
-            BlockPos feet = candidate.immutable();
-            if (!level.getBlockState(feet.below()).isAir()
-                    && level.getBlockState(feet).canBeReplaced()
-                    && level.getBlockState(feet.above()).canBeReplaced()) {
-                return feet;
-            }
-        }
-        return origin;
-    }
+
 
     public static void broadcastCombatFeedback(ServerLevel level, int kind, net.minecraft.world.entity.Entity entity, double x,
             double y, double z, double radius, String weaponId) {

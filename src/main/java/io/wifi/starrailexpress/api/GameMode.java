@@ -57,6 +57,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -328,7 +329,7 @@ public abstract class GameMode {
         OnKillPlayerTriggered.EVENT.invoker().onKillPlayerTriggered(victim, spawnBody, killer, deathReason, forceDeath);
         SREPlayerPsychoComponent psychocca = SREPlayerPsychoComponent.KEY.get(victim);
         if (killer != null && killer instanceof ServerPlayer serverPlayer) {
-            final var triggerScreenEdgeEffectPayload = new TriggerScreenEdgeEffectPayload(java.awt.Color.WHITE.getRGB(),
+            final var triggerScreenEdgeEffectPayload = new TriggerScreenEdgeEffectPayload(Color.RED.getRGB(),
                     600,
                     0.6f);
             ServerPlayNetworking.send(serverPlayer, triggerScreenEdgeEffectPayload);

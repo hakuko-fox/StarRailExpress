@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.block.*;
+import org.agmas.noellesroles.content.block.FlareBlock;
 import org.agmas.noellesroles.content.block_entity.*;
 
 import static io.wifi.starrailexpress.index.TMMBlocks.DARK_STEEL;
@@ -46,6 +47,8 @@ public interface ModBlocks {
             new RepairPalletBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).strength(1.2F).noOcclusion()));
     Block HUNTER_SNARE = registerBlock("hunter_snare",
             new HunterSnareBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).strength(0.6F).noOcclusion()));
+    Block FLARE_BLOCK = registerBlock("flare_block",
+            new FlareBlock());
     Block HOTBAR_STORAGE = registerBlock("dnf_hotbar_storage",
             new HotbarStorageBlock(Block.Properties.ofFullCopy(Blocks.CHEST)
                     .strength(2.5F)

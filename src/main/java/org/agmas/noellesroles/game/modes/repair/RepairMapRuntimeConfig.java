@@ -11,18 +11,30 @@ public final class RepairMapRuntimeConfig {
     }
 
     public static Optional<MapConfig.MapEntry> currentMap(ServerLevel level) {
+        // 首先从投票缓存中查找（如果有正在进行的投票）
         for (MapConfig.MapEntry entry : ServerMapConfig.cache_maps) {
             if (entry != null && entry.repair != null) {
                 return Optional.of(entry);
             }
         }
+        // 从服务器配置中查找所有带 repair 配置的地图
         ServerMapConfig config = ServerMapConfig.getInstance(level);
-        if (config.getMaps() == null) {
-            return Optional.empty();
+        if (config.getMaps() != null) {
+            Optional<MapConfig.MapEntry> found = config.getMaps().stream()
+                    .filter(entry -> entry != null && entry.repair != null)
+                    .findFirst();
+            if (found.isPresent()) {
+                return found;
+            }
         }
-        return config.getMaps().stream()
-                .filter(entry -> entry != null && entry.repair != null)
-                .findFirst();
+        // 最后从内置配置中查找
+        MapConfig builtin = MapConfig.getInstance();
+        if (builtin != null && builtin.getMaps() != null) {
+            return builtin.getMaps().stream()
+                    .filter(entry -> entry != null && entry.repair != null)
+                    .findFirst();
+        }
+        return Optional.empty();
     }
 
     public static Optional<MapConfig.RepairConfig> current(ServerLevel level) {
