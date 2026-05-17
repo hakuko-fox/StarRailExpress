@@ -2,6 +2,7 @@ package org.agmas.noellesroles.content.entity;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,7 +22,7 @@ import org.agmas.noellesroles.init.ModItems;
 
 public class SilenceTotemEntity extends ThrowableItemProjectile {
     private static final int MAX_LIFETIME = 30 * 20;
-    private static final double RADIUS = 6.0D;
+    private static final double RADIUS = 8.0D;
     private static final int EFFECT_REFRESH_DURATION = 3 * 20;
 
     private int lifetime = 0;
@@ -83,8 +84,9 @@ public class SilenceTotemEntity extends ThrowableItemProjectile {
                 continue;
             }
 
+            target.serverLevel().sendParticles(ParticleTypes.SMOKE, target.getX(), target.getY()+1, target.getZ(),5,0.2,0.2,0.2,0.35);
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,
-                    EFFECT_REFRESH_DURATION, 0, false, false, true));
+                    EFFECT_REFRESH_DURATION, 1, false, false, true));
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS,
                     EFFECT_REFRESH_DURATION, 0, false, false, true));
         }

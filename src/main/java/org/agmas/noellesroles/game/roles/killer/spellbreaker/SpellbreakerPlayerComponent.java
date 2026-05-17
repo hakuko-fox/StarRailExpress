@@ -41,7 +41,7 @@ public class SpellbreakerPlayerComponent implements RoleComponent, ServerTicking
             SpellbreakerPlayerComponent.class);
 
     public static final int ABILITY_COOLDOWN = 130 * 20;
-    public static final int ABILITY_DURATION = 25 * 20;
+    public static final int ABILITY_DURATION = 30 * 20;
     public static final double ABILITY_RADIUS = 50.0D;
     public static final int POTION_DURATION = 15 * 20;
     public static final int HIT_SKILL_BAN_DURATION = 20 * 20;
@@ -140,7 +140,7 @@ public class SpellbreakerPlayerComponent implements RoleComponent, ServerTicking
 
 
 
-    public boolean consumePendingSkillFail(ServerPlayer serverPlayer) {
+    public static boolean consumePendingSkillFail(ServerPlayer serverPlayer) {
         if(!serverPlayer.hasEffect(ModEffects.NEXT_SKILL_BANED))return false;
 
         serverPlayer.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, HIT_SKILL_BAN_DURATION, 0, false, false, true));
@@ -150,7 +150,7 @@ public class SpellbreakerPlayerComponent implements RoleComponent, ServerTicking
                         .withStyle(ChatFormatting.RED),
                 true);
         serverPlayer.playNotifySound(SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 1.0F, 0.7F);
-        sync();
+
         return true;
     }
 

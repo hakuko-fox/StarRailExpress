@@ -29,7 +29,7 @@ public class SilenceTotemItem extends Item {
     }
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
-        return 15;
+        return 7;
     }
 
     @Override
