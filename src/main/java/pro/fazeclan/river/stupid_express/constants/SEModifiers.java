@@ -144,7 +144,7 @@ public class SEModifiers {
             null,
             null,
             false,
-            true)).setMax(0);
+            true));
 
     // 新增修饰符：矫健（体力上限更多、恢复更快）
     public static SREModifier VIGOROUS = HMLModifiers.registerModifier(new SREModifier(
@@ -170,7 +170,7 @@ public class SEModifiers {
             null,
             new HashSet<>(List.of(TMMRoles.VIGILANTE)),
             false,
-            true)).setMax(1).setEnableChance(10).setEnableNeededPlayerCount(10);
+            true)).setMax(1);
 
     // 标记不屈的一次性免疫是否已被消耗（基于 UUID 的运行时集合）
     public static Set<UUID> UNYIELDING_IMMUNITY_USED = ConcurrentHashMap.newKeySet();
@@ -185,8 +185,15 @@ public class SEModifiers {
             false));
 
     public static void init() {
+        // 设置双重人格的最大分配数量（从配置读取）
+        SPLIT_PERSONALITY.setMax(SREConfig.instance().splitPersonalityMax);
         SPLIT_PERSONALITY.civilianOnly = true;
         VIGOROUS.civilianOnly = true;
+
+        // 黑白修饰符配置（从 NoellesRolesConfig 读取）
+        org.agmas.noellesroles.config.NoellesRolesConfig config = org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance();
+        BLACK_WHITE.setEnableChance(config.chanceOfBlackWhite).setEnableNeededPlayerCount(config.minPlayerForBlackWhite);
+
         assignModifierComponents();
         pro.fazeclan.river.stupid_express.modifier.magnate.MagnatePassiveIncomeHandler.init();
         pro.fazeclan.river.stupid_express.modifier.cursed.CursedHandler.init();

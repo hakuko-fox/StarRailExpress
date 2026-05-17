@@ -128,6 +128,8 @@ public class Noellesroles implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        io.wifi.starrailexpress.game.GameUtils.CustomWinnersPredicates.add(entry -> entry.getKey().getTags()
+                .contains(org.agmas.noellesroles.game.modes.repair.RepairModeState.NEUTRAL_WIN_TAG));
         ModItems.init();
         RightClickBlockManager.init();
         ArgumentTypeRegistry.registerArgumentType(
@@ -158,6 +160,8 @@ public class Noellesroles implements ModInitializer {
         // 注册事件处理器
         ModEventsRegister.registerEvents();
         org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler.register();
+        org.agmas.noellesroles.game.modes.repair.RepairCombatEvents.register();
+        org.agmas.noellesroles.game.modes.repair.RepairWorldInteractions.register();
 
         // 注册命令
         BroadcastCommand.register();
@@ -175,6 +179,11 @@ public class Noellesroles implements ModInitializer {
         WheelchairFieldItemCommand.register();
         GamblerMiracleCommand.register();
         EggClearCommand.register();
+        RepairShopCommand.register();
+        RepairStartCommand.register();
+        RepairRoleCommand.register();
+        RepairMapCommand.register();
+        RepairPresetCommand.register();
 
         // 加载预设配置
         Preset.PresetManager.loadPresets();

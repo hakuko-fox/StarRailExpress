@@ -39,6 +39,9 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.item.GrenadeItem;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.content.vote.client.VoteClientReceiver;
+import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
+import io.wifi.starrailexpress.content.vote.client.RoleRotationClientReceiver;
+import io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleRotationScreen;
 import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.ClientHeldItemSwitchEvent;
@@ -703,6 +706,10 @@ public class SREClient implements ClientModInitializer {
         });
         // 注册实体交互方块的客户端网络接收器
         io.wifi.starrailexpress.client.network.EntityInteractionBlockClientNetwork.register();
+
+        // 注册职业轮选网络包
+        RoleRotationClientReceiver.register();
+
         // Chat Dialogue
         ClientPlayNetworking.registerGlobalReceiver(
                 net.exmo.sre.client.chat.OpenChatDialoguePayload.ID, (payload, context) -> {
@@ -801,6 +808,15 @@ public class SREClient implements ClientModInitializer {
                     client.setScreen(null);
                 } else {
                     client.setScreen(new SkinManagementScreen());
+                }
+            }
+
+            // 职业轮选GUI - 按N键打开
+            if (RoleRotationCache.canReOpen()) {
+                // 排除职业介绍页面，查看职业介绍时不应该强制跳转回轮选页面
+                boolean isViewingRoleIntro = client.screen instanceof org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
+                if (!isViewingRoleIntro && (client.screen == null || !(client.screen instanceof RoleRotationScreen))) {
+                    client.setScreen(new RoleRotationScreen());
                 }
             }
         });

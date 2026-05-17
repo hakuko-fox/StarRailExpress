@@ -46,6 +46,90 @@ public class ModItems {
             Noellesroles.id("misc"));
 
     public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote");
+
+    public static final Item REPAIR_TOOLBOX = register(
+            new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip", new Item.Properties().stacksTo(4)),
+            "repair_toolbox");
+    public static final Item SPARE_PARTS = register(
+            new RepairBoostItem(8, "item.noellesroles.spare_parts.tooltip", new Item.Properties().stacksTo(16)),
+            "spare_parts");
+    public static final Item RESCUE_FLARE = register(
+            new RescueFlareItem(new Item.Properties().stacksTo(4)),
+            "rescue_flare");
+    public static final Item HUNTER_CHAIN = register(
+            new HunterChainItem(new Item.Properties().stacksTo(1).durability(6)),
+            "hunter_chain");
+    public static final Item HUNTER_WEAPON = register(
+            new HunterWeaponItem(new Item.Properties().stacksTo(1).durability(96)),
+            "hunter_weapon");
+    public static final Item HUNTER_HAMMER = register(
+            new HunterWeaponItem("hammer", new Item.Properties().stacksTo(1).durability(84)),
+            "hunter_hammer");
+    public static final Item HUNTER_HOOK = register(
+            new HunterWeaponItem("hook", new Item.Properties().stacksTo(1).durability(88)),
+            "hunter_hook");
+    public static final Item HUNTER_PLUGIN_LACERATION = register(
+            new HunterAttackPluginItem("laceration", new Item.Properties().stacksTo(4)),
+            "hunter_plugin_laceration");
+    public static final Item HUNTER_PLUGIN_CONCUSSION = register(
+            new HunterAttackPluginItem("concussion", new Item.Properties().stacksTo(4)),
+            "hunter_plugin_concussion");
+    public static final Item HUNTER_PLUGIN_TRACKING = register(
+            new HunterAttackPluginItem("tracking", new Item.Properties().stacksTo(4)),
+            "hunter_plugin_tracking");
+    public static final Item HUNTER_PLUGIN_SUPPRESSION = register(
+            new HunterAttackPluginItem("suppression", new Item.Properties().stacksTo(4)),
+            "hunter_plugin_suppression");
+
+    public static final Item HUNTER_PULSE = register(
+            new HunterPulseItem(new Item.Properties().stacksTo(1)),
+            "hunter_pulse");
+    public static final Item HUNTER_BLINK = register(
+            new HunterBlinkItem(new Item.Properties().stacksTo(1).durability(4)),
+            "hunter_blink");
+    public static final Item HUNTER_JAMMER = register(
+            new HunterJammerItem(new Item.Properties().stacksTo(1).durability(3)),
+            "hunter_jammer");
+
+    public static final Item SMOKE_PELLET = register(
+            new SmokePelletItem(new Item.Properties().stacksTo(8)),
+            "smoke_pellet");
+    public static final Item DECOY_BEACON = register(
+            new DecoyBeaconItem(new Item.Properties().stacksTo(4)),
+            "decoy_beacon");
+    public static final Item ESCAPE_GRAPPLE = register(
+            new EscapeGrappleItem(new Item.Properties().stacksTo(1).durability(3)),
+            "escape_grapple");
+    public static final Item REPAIR_AREA_KEY = register(
+            new RepairRouteItem("area_key", new Item.Properties().stacksTo(8)),
+            "repair_area_key");
+    public static final Item REPAIR_OLD_KEY = register(
+            new RepairRouteItem("old_key", new Item.Properties().stacksTo(4)),
+            "repair_old_key");
+    public static final Item REPAIR_FUSE = register(
+            new RepairRouteItem("fuse", new Item.Properties().stacksTo(4)),
+            "repair_fuse");
+    public static final Item REPAIR_GEAR_HANDLE = register(
+            new RepairRouteItem("gear_handle", new Item.Properties().stacksTo(4)),
+            "repair_gear_handle");
+    public static final Item REPAIR_CROWBAR = register(
+            new RepairRouteItem("crowbar", new Item.Properties().stacksTo(1).durability(24)),
+            "repair_crowbar");
+    public static final Item REPAIR_LOCKPICK = register(
+            new RepairRouteItem("lockpick", new Item.Properties().stacksTo(8)),
+            "repair_lockpick");
+    public static final Item REPAIR_BATTERY = register(
+            new RepairRouteItem("battery", new Item.Properties().stacksTo(4)),
+            "repair_battery");
+    public static final Item REPAIR_VALVE_HANDLE = register(
+            new RepairRouteItem("valve_handle", new Item.Properties().stacksTo(4)),
+            "repair_valve_handle");
+    public static final Item REPAIR_BOLT_CUTTER = register(
+            new RepairRouteItem("bolt_cutter", new Item.Properties().stacksTo(1).durability(18)),
+            "repair_bolt_cutter");
+    public static final Item REPAIR_PRESET_WAND = register(
+            new RepairPresetWandItem(new Item.Properties().stacksTo(1)),
+            "repair_preset_wand");
     public static final Item PILL = register(
             new PillItem((new Item.Properties()).stacksTo(16)
                     .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F)

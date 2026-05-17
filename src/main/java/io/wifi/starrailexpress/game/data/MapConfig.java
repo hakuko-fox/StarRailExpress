@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.game.data;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.core.BlockPos;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,6 +41,13 @@ public class MapConfig {
         // 禁用的任务列表（任务名称，如 "SLEEP", "EXERCISE" 等）
         @SerializedName("disabledTasks")
         public List<String> disabledTasks = new ArrayList<>();
+        
+        // 支持的游戏模式列表（如 "repairmode", "murder" 等），为空表示支持所有模式
+        @SerializedName("gameModes")
+        public List<String> gameModes = new ArrayList<>();
+
+        @SerializedName("repair")
+        public RepairConfig repair;
         
         // 用于运行时转换颜色值
         public transient int parsedColor;
@@ -89,6 +97,97 @@ public class MapConfig {
         // Getter方法用于序列化
         public String getColorStr() {
             return color;
+        }
+    }
+
+    public static class RepairConfig {
+        @SerializedName("cloneEntries")
+        public List<CloneEntry> cloneEntries = new ArrayList<>();
+        @SerializedName("repairStations")
+        public List<Pos> repairStations = new ArrayList<>();
+        @SerializedName("lockedDoors")
+        public List<LockedDoorEntry> lockedDoors = new ArrayList<>();
+        @SerializedName("lootPoints")
+        public List<LootPointEntry> lootPoints = new ArrayList<>();
+        @SerializedName("escapeRoutes")
+        public List<EscapeRouteEntry> escapeRoutes = new ArrayList<>();
+        @SerializedName("trialStands")
+        public List<Pos> trialStands = new ArrayList<>();
+        @SerializedName("hunterSpawns")
+        public List<Pos> hunterSpawns = new ArrayList<>();
+        @SerializedName("survivorSpawns")
+        public List<Pos> survivorSpawns = new ArrayList<>();
+    }
+
+    public static class CloneEntry {
+        @SerializedName("source")
+        public Pos source = new Pos();
+        @SerializedName("target")
+        public Pos target = new Pos();
+        @SerializedName("size")
+        public Pos size = new Pos(1, 1, 1);
+    }
+
+    public static class LockedDoorEntry {
+        @SerializedName("pos")
+        public Pos pos = new Pos();
+        @SerializedName("lockId")
+        public String lockId = "";
+        @SerializedName("requiredItem")
+        public String requiredItem = "";
+        @SerializedName("consume")
+        public boolean consume = true;
+    }
+
+    public static class LootPointEntry {
+        @SerializedName("pos")
+        public Pos pos = new Pos();
+        @SerializedName("category")
+        public String category = "tool";
+        @SerializedName("guaranteed")
+        public boolean guaranteed = false;
+        @SerializedName("chance")
+        public double chance = 1.0D;
+        @SerializedName("pool")
+        public List<String> pool = new ArrayList<>();
+    }
+
+    public static class EscapeRouteEntry {
+        @SerializedName("id")
+        public String id = "";
+        @SerializedName("displayKey")
+        public String displayKey = "";
+        @SerializedName("pos")
+        public Pos pos = new Pos();
+        @SerializedName("capacity")
+        public int capacity = 1;
+        @SerializedName("requiredItems")
+        public List<String> requiredItems = new ArrayList<>();
+    }
+
+    public static class Pos {
+        @SerializedName("x")
+        public int x;
+        @SerializedName("y")
+        public int y;
+        @SerializedName("z")
+        public int z;
+
+        public Pos() {
+        }
+
+        public Pos(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public BlockPos toBlockPos() {
+            return new BlockPos(x, y, z);
+        }
+
+        public static Pos from(BlockPos pos) {
+            return new Pos(pos.getX(), pos.getY(), pos.getZ());
         }
     }
     

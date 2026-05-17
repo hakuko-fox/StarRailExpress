@@ -509,6 +509,8 @@ public class GameUtils {
 
         SRETrainWorldComponent.KEY.get(serverWorld).reset();
         SREWorldBlackoutComponent.KEY.get(serverWorld).reset();
+        // 重置画板已画出物品状态
+        gameComponent.resetDrawnCategories();
         serverWorld.setDayTime(SRETrainWorldComponent.TimeOfDay.SUNDOWN.time);
         serverWorld.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true, serverWorld.getServer());
         serverWorld.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, serverWorld.getServer());

@@ -2,10 +2,7 @@ package org.agmas.noellesroles.role;
 
 import com.mojang.serialization.Codec;
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.ExtraEffectRole;
-import io.wifi.starrailexpress.api.NormalRole;
-import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.*;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
@@ -50,9 +47,11 @@ import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent
 import org.agmas.noellesroles.game.roles.Innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.super_star.SuperStarPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.telegrapher.TelegrapherPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
@@ -168,6 +167,7 @@ public class ModRoles {
     public static final ResourceLocation SINGER_ID = Noellesroles.id("singer");
     public static final ResourceLocation PSYCHOLOGIST_ID = Noellesroles.id("psychologist");
     public static final ResourceLocation PHOTOGRAPHER_ID = Noellesroles.id("photographer");
+    public static final ResourceLocation PAINTER_ID = Noellesroles.id("painter");
     public static ResourceLocation ELF_ID = Noellesroles.id("elf");
     public static ResourceLocation WIND_YAOSE_ID = Noellesroles.id("wind_yaose");
     public static ResourceLocation CHEF_ID = Noellesroles.id("chef");
@@ -193,6 +193,20 @@ public class ModRoles {
     public static final ResourceLocation MEATBALL_ID = Noellesroles.id("meatball");
     // 殡仪员角色 ID
     public static final ResourceLocation MORTICIAN_ID = Noellesroles.id("mortician");
+    // 建筑师角色 ID
+    public static final ResourceLocation BUILDER_ID = Noellesroles.id("builder");
+    public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
+    public static final ResourceLocation REPAIR_HUNTER_ID = Noellesroles.id("repair_hunter");
+    public static final ResourceLocation REPAIR_NEUTRAL_ID = Noellesroles.id("repair_neutral");
+    public static final ResourceLocation REPAIR_MECHANIC_ID = Noellesroles.id("repair_mechanic");
+    public static final ResourceLocation REPAIR_MEDIC_ID = Noellesroles.id("repair_medic");
+    public static final ResourceLocation REPAIR_RUNNER_ID = Noellesroles.id("repair_runner");
+    public static final ResourceLocation REPAIR_WARDEN_ID = Noellesroles.id("repair_warden");
+    public static final ResourceLocation REPAIR_BRUTE_ID = Noellesroles.id("repair_brute");
+    public static final ResourceLocation REPAIR_TRACKER_ID = Noellesroles.id("repair_tracker");
+    public static final ResourceLocation REPAIR_ARCHIVIST_ID = Noellesroles.id("repair_archivist");
+    public static final ResourceLocation REPAIR_SABOTEUR_ID = Noellesroles.id("repair_saboteur");
+    public static final ResourceLocation REPAIR_COLLECTOR_ID = Noellesroles.id("repair_collector");
 
     // 杀手阵营角色 ID
     public static ResourceLocation MORPHLING_ID = Noellesroles.id("morphling");
@@ -362,6 +376,32 @@ public class ModRoles {
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setComponentKey(ModComponents.MORTICIAN).setOccupiedRoleCount(1);
 
+    /**
+     * 建筑师角色 - 平民阵营
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 技能：建造模式（默认）- 按技能键在自身位置建造一堵客户端墙
+     *   - 墙长4格高3格厚1格，沿视角朝向垂直建造
+     *   - 只替换空气方块
+     *   - 墙会在60秒后消失
+     *   - 技能冷却100秒，开局120秒冷却
+     * - 技能：拆除模式 - 按技能键拆除墙体，无冷却
+     * - 蹲下按技能键切换模式（不受冷却影响）
+     * - 游戏结束时清除所有客户端墙
+     */
+    public static SRERole BUILDER = TMMRoles.registerRole(new NormalRole(
+            BUILDER_ID, // 角色 ID
+            new Color(205, 133, 63).getRGB(), // 铜棕色 - 代表建筑师/砖块
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.BUILDER).setOccupiedRoleCount(1);
+
     public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
             GUEST_GHOST_ID, // 角色 ID
             new Color(175, 245, 130).getRGB(), // 不知道啥颜色
@@ -522,7 +562,7 @@ public class ModRoles {
             new NormalRole(CUCKOO_ID, new Color(200, 170, 60).getRGB(),
                     false, false, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, true))
-            .setCanSeeCoin(true).setComponentKey(ModComponents.CUCKOO).setCanBeRandomedByOtherRoles(false).setCanUseInstinct(true).setNeutrals(true).setOccupiedRoleCount(1).setEnableChance(45);
+            .setCanSeeCoin(true).setComponentKey(ModComponents.CUCKOO).setCanBeRandomedByOtherRoles(false).setCanUseInstinct(true).setNeutrals(true).setOccupiedRoleCount(1);
     public static SRERole JESTER = TMMRoles
             .registerRole(new NormalRole(JESTER_ID, new Color(186, 85, 211).getRGB(), false,
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
@@ -668,7 +708,7 @@ public class ModRoles {
         public int getMoodColor() {
             return PUPPETEER_COLOR.getOrRandomColor();
         }
-    }).setComponentKey(ModComponents.CREEPER).setEnableChance(20).setCanBeRandomedByOtherRoles(false);
+    }).setComponentKey(ModComponents.CREEPER).setCanBeRandomedByOtherRoles(false);
 
     /**
      * 作家角色
@@ -1292,6 +1332,30 @@ public class ModRoles {
             false // 不显示计分板
     ));
 
+    /**
+     * 画家角色
+     * - 属于乘客阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统
+     * - 标准冲刺时间
+     * - 在计分板上显示
+     * - 技能一：绘画灵感 - 触发以下场景时获得画板，每种场景只会给予一次
+     *   1. 捡起摄影师丢在地上的照片（exposure:stacked_photographs 或 exposure:photograph）
+     *   2. 从地上捡起左轮手枪/巡警手枪
+     *   3. 坐着的时间达到40秒
+     * - 技能二：求索 - 游戏时间每过4分钟获得一个画板
+     * - 技能三：挚友 - 当场上同时存在画家和作家时，同时给予作家和画家一个画板
+     */
+    public static SRERole PAINTER = TMMRoles.registerRole(new NormalRole(
+            PAINTER_ID, // 角色 ID
+            new Color(255, 182, 193).getRGB(), // 粉红色 - 代表画家的艺术气息
+            true, // isInnocent = 乘客阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setComponentKey(PainterPlayerComponent.KEY).setCanSeeCoin(true).setOccupiedRoleCount(1);
+
     // 杀手阵营角色
     /**
      * 阴谋家角色
@@ -1576,7 +1640,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
             true)).setComponentKey(MercenaryPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
-            .setCanSeeTeammateKiller(false).setCanUseInstinct(false).setEnableChance(10).setEnableNeededPlayerCount(12);
+            .setCanSeeTeammateKiller(false).setCanUseInstinct(false);
 
     /**
      * 秉烛人角色 - 中立阵营
@@ -1733,8 +1797,6 @@ public class ModRoles {
     )).setComponentKey(org.agmas.noellesroles.game.roles.Innocent.fool.FoolPlayerComponent.KEY).setCanSeeCoin(true)
             .setCanPickUpRevolver(true)
             .setMax(1)
-            .setEnableChance(30)
-            .setEnableNeededPlayerCount(12)
             .setCanBeRandomedByOtherRoles(false);
 
     /**
@@ -1747,6 +1809,60 @@ public class ModRoles {
      * - 黑白熊形态无敌+光环效果
      * - 获胜条件：游戏结束时6格内最近玩家的阵营
      */
+    public static SRERole REPAIR_SURVIVOR = TMMRoles.registerRole(new RepairRole(
+            REPAIR_SURVIVOR_ID, new Color(60, 210, 230).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_HUNTER = TMMRoles.registerRole(new RepairRole(
+            REPAIR_HUNTER_ID, new Color(140, 20, 20).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_NEUTRAL = TMMRoles.registerRole(new RepairRole(
+            REPAIR_NEUTRAL_ID, new Color(210, 180, 60).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_MECHANIC = TMMRoles.registerRole(new RepairRole(
+            REPAIR_MECHANIC_ID, new Color(65, 220, 230).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_MEDIC = TMMRoles.registerRole(new RepairRole(
+            REPAIR_MEDIC_ID, new Color(90, 245, 180).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_RUNNER = TMMRoles.registerRole(new RepairRole(
+            REPAIR_RUNNER_ID, new Color(90, 150, 255).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() + 40, false))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_WARDEN = TMMRoles.registerRole(new RepairRole(
+            REPAIR_WARDEN_ID, new Color(130, 25, 25).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_BRUTE = TMMRoles.registerRole(new RepairRole(
+            REPAIR_BRUTE_ID, new Color(180, 45, 35).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_TRACKER = TMMRoles.registerRole(new RepairRole(
+            REPAIR_TRACKER_ID, new Color(115, 35, 160).getRGB(), false, true,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
+    public static SRERole REPAIR_ARCHIVIST = TMMRoles.registerRole(new RepairRole(
+            REPAIR_ARCHIVIST_ID, new Color(210, 180, 60).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_SABOTEUR = TMMRoles.registerRole(new RepairRole(
+            REPAIR_SABOTEUR_ID, new Color(195, 130, 35).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+    public static SRERole REPAIR_COLLECTOR = TMMRoles.registerRole(new RepairRole(
+            REPAIR_COLLECTOR_ID, new Color(190, 190, 70).getRGB(), false, false,
+            SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
+            .setCanBeRandomedByOtherRoles(false).setCanSeeCoin(true);
+
     public static SRERole MONOKUMA = TMMRoles.registerRole(new MonokumaRole())
             .setNeutralForKiller(false) // 杀手视角为好人
             .setCanSeeTeammateKiller(false)
@@ -1804,7 +1920,7 @@ public class ModRoles {
             Integer.MAX_VALUE, // 标准冲刺时间
             true // 不显示计分板
     )).setCanSeeTime(true).setCanSeeCoin(true)
-            .setEnableNeededPlayerCount(12).setEnableChance(10).setMax(1);
+            .setMax(1);
 
     // ==================== 其他变量定义 ====================
     public static ArrayList<SRERole> SHOW_MONEY_ROLES = new ArrayList<>();

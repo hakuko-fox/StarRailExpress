@@ -11,6 +11,7 @@ import org.agmas.noellesroles.game.roles.Innocent.athlete.AthletePlayerComponent
 import org.agmas.noellesroles.game.roles.Innocent.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.detective.DetectivePlayerComponent;
@@ -25,6 +26,7 @@ import org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballPlayerCompone
 import org.agmas.noellesroles.game.roles.Innocent.mortician.MorticianPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.noise_maker.NoiseMakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
@@ -345,6 +347,17 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
   // 殡仪员组件 - 平民阵营，透视物品和搜刮尸体
   public static final ComponentKey<MorticianPlayerComponent> MORTICIAN = MorticianPlayerComponent.KEY;
+
+  public static final ComponentKey<RepairRolePlayerComponent> REPAIR_ROLES = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "repair_roles"),
+      RepairRolePlayerComponent.class);
+  // 画家组件 - 平民阵营，绘画灵感、求索、挚友技能
+  public static final ComponentKey<PainterPlayerComponent> PAINTER = PainterPlayerComponent.KEY;
+
+  // 建筑师组件 - 平民阵营，建造/拆除客户端墙
+  public static final ComponentKey<BuilderPlayerComponent> BUILDER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "builder"),
+      BuilderPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -691,6 +704,19 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, MORTICIAN)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(MorticianPlayerComponent::new);
+
+    registry.beginRegistration(Player.class, REPAIR_ROLES)
+        .respawnStrategy(RespawnCopyStrategy.ALWAYS_COPY)
+        .end(RepairRolePlayerComponent::new);
+    // 注册画家组件 - 存储绘画灵感、求索、挚友技能状态
+    registry.beginRegistration(Player.class, PAINTER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(PainterPlayerComponent::new);
+
+    // 注册建筑师组件 - 存储建造/拆除模式、冷却时间
+    registry.beginRegistration(Player.class, BUILDER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(BuilderPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

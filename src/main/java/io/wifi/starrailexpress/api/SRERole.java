@@ -49,6 +49,7 @@ public abstract class SRERole {
     private boolean canIgnoreBlackout = false;
     public int maxCount = -1;
     public int enableChance = -1;
+    public int enableRareChance = -1;
     public int enableNeedPlayerCount = -1;
     private int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
@@ -498,6 +499,7 @@ public abstract class SRERole {
     private int maxSprintTime;
     private ToIntFunction<Player> customSprintTimeGetter = null;
     private boolean canSeeTime;
+    private boolean isOtherModeRole = false;
 
     public Consumer<LimitedInventoryScreen> getAddChild() {
         return addChild;
@@ -648,6 +650,12 @@ public abstract class SRERole {
                 return 0;
             }
         }
+        if (this.enableRareChance >= 0) {
+            int nchance = random.nextInt(0, 10000);
+            if (nchance > enableRareChance) {
+                return 0;
+            }
+        }
         return this.maxCount;
     }
 
@@ -670,6 +678,25 @@ public abstract class SRERole {
     public SRERole setEnableChance(int chance) {
         enableChance = chance;
         return this;
+    }
+
+    /**
+     * 小概率启用（基于10000的概率）
+     * 
+     * @param chance 概率值（0-10000），例如10表示0.1%
+     * @return
+     */
+    public SRERole setEnableRareChance(int chance) {
+        enableRareChance = chance;
+        return this;
+    }
+
+    /**
+     * 获取小概率启用值
+     * @return
+     */
+    public int getEnableRareChance() {
+        return enableRareChance;
     }
 
     /**
@@ -717,4 +744,23 @@ public abstract class SRERole {
     public boolean canSeeBodyKiller() {
         return this.bodyKillerVisibility;
     };
+
+    /**
+     * 是否是"其它模式"的职业（用于U键职业介绍页面的模式筛选）
+     * 其他模式包括：游客、职业待定、超级亡命徒、土块、寻找者等
+     * @return 是否为其他模式职业
+     */
+    public boolean isOtherModeRole() {
+        return this.isOtherModeRole;
+    }
+
+    /**
+     * 设置是否为"其它模式"的职业
+     * @param isOtherModeRole 是否为其他模式职业
+     * @return this
+     */
+    public SRERole setOtherModeRole(boolean isOtherModeRole) {
+        this.isOtherModeRole = isOtherModeRole;
+        return this;
+    }
 }

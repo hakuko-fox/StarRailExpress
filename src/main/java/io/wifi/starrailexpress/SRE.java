@@ -417,6 +417,10 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.OpenUI.TYPE, EntityInteractionBlockPayload.OpenUI.CODEC);
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.SyncBlockEntity.TYPE, EntityInteractionBlockPayload.SyncBlockEntity.CODEC);
         PayloadTypeRegistry.playC2S().register(EntityInteractionBlockPayload.SaveConfig.TYPE, EntityInteractionBlockPayload.SaveConfig.CODEC);
+
+        // 职业轮选数据包
+        PayloadTypeRegistry.playC2S().register(RoleRotationSelectC2SPacket.TYPE, RoleRotationSelectC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(RoleRotationSyncS2CPacket.TYPE, RoleRotationSyncS2CPacket.CODEC);
     }
 
     private void registerGlobalReceivers() {
@@ -442,6 +446,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
         // 实体交互方块服务端网络处理
         EntityInteractionBlockServerNetwork.register();
+        // 画板服务端网络处理
+        DrawingBoardServerNetwork.register();
         ServerPlayNetworking.registerGlobalReceiver(SecurityCameraExitRequestPayload.ID,
                 new SecurityCameraExitRequestPayload.ServerReceiver());
         ServerPlayNetworking.registerGlobalReceiver(JoinSpecGroupPayload.ID, (payload, context) -> {
@@ -458,6 +464,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(EndTurnPayload.ID, new EndTurnPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(UseAssassinationItemPayload.ID,
                 new UseAssassinationItemPayload.Receiver());
+
+        // Role Rotation receivers
+        RoleRotationSelectC2SPacket.registerServerReceiver();
 
         // Mailbox receivers
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
