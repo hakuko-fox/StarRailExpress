@@ -149,6 +149,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         ArrayList<SRERole> availableRoles = new ArrayList<>(StupidExpress.getEnableRoles(true));
         availableRoles.removeIf(role ->
             role == null ||
+            role == TMMRoles.CIVILIAN ||  // 排除平民本身
             role.isOtherModeRole() ||
             !role.canBeRandomed() ||
             role == SpecialGameModeRoles.CUSTOM_PENDING ||
@@ -227,7 +228,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         List<SRERole> usedRoles = result.stream().map(RoleInstance::role).collect(Collectors.toList());
         List<SRERole> extraInnocents = new ArrayList<>();
         List<SRERole> availableExtra = new ArrayList<>(innocentRoles);
-        availableExtra.removeIf(role -> usedRoles.contains(role) || isSpecialCivilianRole(role));
+        availableExtra.removeIf(role -> role == TMMRoles.CIVILIAN || usedRoles.contains(role) || isSpecialCivilianRole(role));
         Collections.shuffle(availableExtra, random);
         for (int i = 0; i < 5 && i < availableExtra.size() && result.size() < count; i++) {
             SRERole extraRole = availableExtra.get(i);
