@@ -217,10 +217,13 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
 
         RoleAssignmentPool killerPool = RoleAssignmentPool.createUnlimited("Killer",
                 role -> role.identifier() == SpecialGameModeRoles.SEEKER.identifier());
-        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante", SRERole::isVigilanteTeam);
+        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
+                role -> role.isVigilanteTeam() && !role.isOtherModeRole() && !role.identifier().getPath().startsWith("repair_"));
         // 中立池
         RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
                 role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        !role.isOtherModeRole() &&
+                        !role.identifier().getPath().startsWith("repair_") &&
                         ((!role.canUseKiller() &&
                                 !role.isInnocent()) || role.isNeutrals())
                         &&
@@ -228,6 +231,8 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
         // 平民池（只包含真正的"平民"角色，例如医生等）
         RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        !role.isOtherModeRole() &&
+                        !role.identifier().getPath().startsWith("repair_") &&
                         !role.isVigilanteTeam() &&
                         !role.canUseKiller() &&
                         !role.isNeutrals() &&

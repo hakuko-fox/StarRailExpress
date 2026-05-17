@@ -13,7 +13,7 @@ public class RoleRotationCache {
     private static int currentIndex = 0;
     private static int totalPlayers = 0;
     private static int confirmCountdown = -1;
-    private static int finalPhaseThreshold = 3;
+    private static int finalPhaseThreshold = 7;
     private static int remainingTime = 0;
 
     // 玩家序号映射 (玩家UUID -> 序号)
@@ -27,14 +27,49 @@ public class RoleRotationCache {
 
     // 当前玩家自己的序号
     private static int myRotationIndex = -1;
+    
+    // 上次是否为轮到当前玩家（用于检测状态变化）
+    private static boolean wasMyTurn = false;
 
     public static void updateFromPacket(RoleRotationSyncS2CPacket packet) {
         isSelecting = packet.isSelecting();
         currentIndex = packet.getCurrentIndex();
-        totalPlayers = packet.getTotalPlayers();
+        // 确保totalPlayers被正确更新
+        if (packet.getTotalPlayers() > 0) {
+            totalPlayers = packet.getTotalPlayers();
+        }
         confirmCountdown = packet.getConfirmCountdown();
         finalPhaseThreshold = packet.getFinalPhaseThreshold();
         remainingTime = packet.getRemainingTime();
+        
+        // 更新rotationOrder
+        rotationOrder.clear();
+        rotationOrder.putAll(packet.getRotationOrder());
+        
+        // 更新selectedRoles
+        selectedRoles.clear();
+        selectedRoles.putAll(packet.getSelectedRoles());
+        
+        // 更新currentCandidates
+        currentCandidates.clear();
+        currentCandidates.addAll(packet.getCurrentCandidates());
+        
+        // 更新myRotationIndex
+        if (packet.getMyRotationIndex() > 0) {
+            myRotationIndex = packet.getMyRotationIndex();
+        }
+        
+        // 更新轮到状态
+        wasMyTurn = isSelecting && isMyTurnLocal();
+    }
+    
+    // 检查当前玩家（通过myRotationIndex）是否是当前轮到的玩家
+    private static boolean isMyTurnLocal() {
+        return myRotationIndex >= 0 && myRotationIndex == currentIndex;
+    }
+    
+    public static boolean getWasMyTurn() {
+        return wasMyTurn;
     }
 
     public static boolean isSelecting() {
@@ -62,6 +97,12 @@ public class RoleRotationCache {
     }
 
     public static int getRemainingSeconds() {
+        // 如果正在选择，使用remainingTime；否则使用confirmCountdown
+        if (isSelecting) {
+            return remainingTime / 20;
+        } else if (confirmCountdown > 0) {
+            return confirmCountdown / 20;
+        }
         return remainingTime / 20;
     }
 
@@ -80,7 +121,7 @@ public class RoleRotationCache {
     public static int getMyRotationIndex() {
         return myRotationIndex;
     }
-
+    
     public static void setMyRotationIndex(int index) {
         myRotationIndex = index;
     }
@@ -118,6 +159,15 @@ public class RoleRotationCache {
     }
 
     public static boolean canReOpen() {
+        // isSelecting 为 true 时可以重新打开，或者确认倒计时 > 0 时可以打开
+        // 确认倒计时 <= 0 时表示轮选已结束，不应该重新打开界面
         return isSelecting || confirmCountdown > 0;
+    }
+    
+    public static void updateBaseState(boolean selecting, int currentIdx, int total, int countdown) {
+        isSelecting = selecting;
+        currentIndex = currentIdx;
+        totalPlayers = total;
+        confirmCountdown = countdown;
     }
 }

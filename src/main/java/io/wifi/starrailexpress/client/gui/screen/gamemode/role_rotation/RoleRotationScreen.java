@@ -49,9 +49,9 @@ public class RoleRotationScreen extends Screen {
 
     // 职业选择区域
     private static final int ROLE_SELECT_Y = 100;
-    private static final int ROLE_CARD_WIDTH = 140;
-    private static final int ROLE_CARD_HEIGHT = 160;
-    private static final int ROLE_CARD_SPACING = 15;
+    private static final int ROLE_CARD_WIDTH = 50;  // 缩小卡片宽度
+    private static final int ROLE_CARD_HEIGHT = 100;  // 缩小卡片高度
+    private static final int ROLE_CARD_SPACING = 5;  // 减小间距
 
     // 计时器
     private static final int TIMER_Y = 35;
@@ -113,6 +113,7 @@ public class RoleRotationScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
         renderBackground(g, mouseX, mouseY, partialTick);
 
         // 绘制主面板
@@ -135,8 +136,6 @@ public class RoleRotationScreen extends Screen {
 
         // 绘制提示
         drawHint(g);
-
-        super.render(g, mouseX, mouseY, partialTick);
     }
 
     private void drawPanel(GuiGraphics g) {
@@ -166,18 +165,55 @@ public class RoleRotationScreen extends Screen {
     }
 
     private void drawTimer(GuiGraphics g) {
-        int remainingSeconds = RoleRotationCache.getRemainingSeconds();
-        int sec = Math.max(0, remainingSeconds);
-
-        int timerColor;
-        if (sec <= 10) {
-            timerColor = (tickCounter % 20 < 10) ? COL_TIMER_URGENT : COL_TIMER_URGENT - 0x300000;
-        } else if (sec <= 30) {
-            timerColor = COL_TIMER_WARN;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        
+        UUID myUuid = mc.player.getUUID();
+        int remainingSeconds;
+        int finalTimerColor;
+        boolean isAdjustPhase = !RoleRotationCache.isSelecting();
+        
+        // 检查是否处于职业调整阶段（所有人都选完，等待确认倒计时）
+        if (isAdjustPhase) {
+            // 职业调整阶段，显示确认倒计时
+            remainingSeconds = RoleRotationCache.getConfirmCountdown() / 20;
+            finalTimerColor = (tickCounter % 20 < 10) ? 0xFFFFAA00 : 0xFFFF8800;
+            
+            // 显示职业调整阶段提示
+            Component adjustPhase = Component.translatable("gui.sre.role_rotation.adjust_phase")
+                    .withStyle(style -> style.withColor(0xFFFFAA00).withBold(true));
+            int tw = font.width(adjustPhase) + 20;
+            int tx = width / 2 - tw / 2;
+            int ty = panelY + TIMER_Y - 20;
+            g.fill(tx, ty, tx + tw, ty + 16, 0xFF060F1C);
+            g.drawCenteredString(font, adjustPhase, width / 2, ty + 4, 0xFFFFAA00);
+        } else if (!RoleRotationCache.isMyTurn(myUuid)) {
+            // 不是自己的回合，不显示倒计时
+            return;
         } else {
-            timerColor = COL_TIMER_NORMAL;
+            // 轮到当前玩家，显示个人倒计时
+            remainingSeconds = RoleRotationCache.getRemainingSeconds();
+            int sec = Math.max(0, remainingSeconds);
+            
+            if (sec <= 10) {
+                finalTimerColor = (tickCounter % 20 < 10) ? COL_TIMER_URGENT : COL_TIMER_URGENT - 0x300000;
+            } else if (sec <= 30) {
+                finalTimerColor = COL_TIMER_WARN;
+            } else {
+                finalTimerColor = COL_TIMER_NORMAL;
+            }
+            
+            // 绘制个人倒计时
+            drawCountdownTimer(g, remainingSeconds, finalTimerColor);
+            return;
         }
-
+        
+        // 绘制职业调整阶段倒计时
+        drawCountdownTimer(g, remainingSeconds, finalTimerColor);
+    }
+    
+    private void drawCountdownTimer(GuiGraphics g, int remainingSeconds, int timerColor) {
+        int sec = Math.max(0, remainingSeconds);
         String timeStr = String.format("%d:%02d", sec / 60, sec % 60);
         Component timerComp = Component.literal("⏱ " + timeStr).withStyle(style -> style.withColor(timerColor));
 
@@ -194,7 +230,9 @@ public class RoleRotationScreen extends Screen {
     private void drawCurrentTurnIndicator(GuiGraphics g) {
         int currentIndex = RoleRotationCache.getCurrentIndex();
         int totalPlayers = RoleRotationCache.getTotalPlayers();
+        int myIndex = RoleRotationCache.getMyRotationIndex();
 
+        // 当前轮到第几个玩家
         Component indicator = Component.translatable("gui.sre.role_rotation.current_turn",
                 currentIndex, totalPlayers)
                 .withStyle(ChatFormatting.GOLD);
@@ -203,6 +241,13 @@ public class RoleRotationScreen extends Screen {
         int ty = panelY + 12;
 
         g.drawString(font, indicator, tx, ty, 0xFFFFFF);
+        
+        // 你是第几号玩家
+        if (myIndex > 0) {
+            Component yourIndex = Component.translatable("gui.sre.role_rotation.your_index", myIndex)
+                    .withStyle(ChatFormatting.AQUA);
+            g.drawString(font, yourIndex, tx, ty + 16, 0xFFFFFF);
+        }
     }
 
     private void drawPlayerList(GuiGraphics g, int mouseX, int mouseY) {
@@ -218,22 +263,24 @@ public class RoleRotationScreen extends Screen {
         int clipHeight = PANEL_HEIGHT - PLAYER_LIST_Y - 60;
         g.enableScissor(listX - 5, listY, listX + LEFT_PANEL_WIDTH - 30, listY + clipHeight);
 
+        // 获取排序后的玩家列表（按序号从小到大排序）
+        List<Map.Entry<UUID, Integer>> sortedEntries = new ArrayList<>(RoleRotationCache.getRotationOrder().entrySet());
+        sortedEntries.sort(Comparator.comparingInt(Map.Entry::getValue));
+
         // 绘制玩家条目
         int drawY = listY - playerListScroll;
-        int index = 0;
 
-        for (Map.Entry<UUID, Integer> entry : RoleRotationCache.getRotationOrder().entrySet()) {
+        for (int i = 0; i < sortedEntries.size(); i++) {
+            Map.Entry<UUID, Integer> entry = sortedEntries.get(i);
             UUID playerUuid = entry.getKey();
             int playerIndex = entry.getValue();
-            String playerName = getPlayerName(playerUuid);
-            String selectedRole = RoleRotationCache.getSelectedRoles().get(playerUuid);
+            String selectedRolePath = RoleRotationCache.getSelectedRoles().get(playerUuid);
             boolean isCurrentTurn = playerIndex == RoleRotationCache.getCurrentIndex();
 
-            int itemY = drawY + index * (PLAYER_ITEM_HEIGHT + PLAYER_ITEM_SPACING);
+            int itemY = drawY + i * (PLAYER_ITEM_HEIGHT + PLAYER_ITEM_SPACING);
 
             // 检查是否在可见区域内
             if (itemY + PLAYER_ITEM_HEIGHT < listY || itemY > listY + clipHeight) {
-                index++;
                 continue;
             }
 
@@ -250,16 +297,23 @@ public class RoleRotationScreen extends Screen {
             String indexStr = "#" + playerIndex;
             g.drawString(font, indexStr, listX + 5, itemY + 10, isCurrentTurn ? 0xFFFFFF : COL_TEXT_MUTED);
 
-            // 玩家名
-            g.drawString(font, playerName, listX + 35, itemY + 10, COL_TEXT_PRIMARY);
-
-            // 已选职业或等待中
-            String roleText = selectedRole != null ? selectedRole : "?";
-            int roleColor = selectedRole != null ? 0xFF1ABCCC : COL_TEXT_MUTED;
+            // 已选职业或等待中（使用翻译后的职业名）
+            String roleText;
+            int roleColor;
+            if (selectedRolePath != null) {
+                SRERole role = getRoleByPath(selectedRolePath);
+                if (role != null) {
+                    roleText = RoleUtils.getRoleName(role).getString();
+                } else {
+                    roleText = selectedRolePath;
+                }
+                roleColor = 0xFF1ABCCC;
+            } else {
+                roleText = "?";
+                roleColor = COL_TEXT_MUTED;
+            }
             Component roleComp = Component.literal(roleText).withStyle(style -> style.withColor(roleColor));
             g.drawString(font, roleComp, listX + LEFT_PANEL_WIDTH - 80, itemY + 10, roleColor);
-
-            index++;
         }
 
         g.disableScissor();
@@ -296,8 +350,15 @@ public class RoleRotationScreen extends Screen {
         boolean hasSelected = RoleRotationCache.getSelectedRoles().containsKey(myUuid);
 
         if (hasSelected) {
-            // 已选择职业，显示已选职业
-            String roleName = RoleRotationCache.getSelectedRoles().get(myUuid);
+            // 已选择职业，显示已选职业（使用翻译后的名字）
+            String rolePath = RoleRotationCache.getSelectedRoles().get(myUuid);
+            String roleName;
+            if (rolePath != null) {
+                SRERole role = getRoleByPath(rolePath);
+                roleName = (role != null) ? RoleUtils.getRoleName(role).getString() : rolePath;
+            } else {
+                roleName = "?";
+            }
             Component selectedComp = Component.translatable("gui.sre.role_rotation.you_selected", roleName)
                     .withStyle(ChatFormatting.GREEN);
             g.drawCenteredString(font, selectedComp, panelX + LEFT_PANEL_WIDTH + RIGHT_PANEL_WIDTH / 2, selectY + 60,
@@ -324,8 +385,9 @@ public class RoleRotationScreen extends Screen {
         List<String> candidates = RoleRotationCache.getCurrentCandidates();
         if (candidates.isEmpty()) return;
 
-        int totalWidth = 3 * ROLE_CARD_WIDTH + 2 * ROLE_CARD_SPACING;
-        int cardStartX = startX + (RIGHT_PANEL_WIDTH - totalWidth) / 2 - 20;
+        // 计算4个卡片 + 3个间距的总宽度
+        int totalWidth = 4 * ROLE_CARD_WIDTH + 3 * ROLE_CARD_SPACING;
+        int cardStartX = startX + (RIGHT_PANEL_WIDTH - totalWidth) / 2 - 10;
 
         hoveredCardIndex = -1;
 
@@ -479,8 +541,8 @@ public class RoleRotationScreen extends Screen {
                 if (rolePath != null) {
                     SRERole role = getRoleByPath(rolePath);
                     if (role != null) {
-                        // 打开职业介绍界面
-                        net.minecraft.client.gui.screens.Screen roleScreen = new org.agmas.noellesroles.client.screen.RoleIntroduceScreen(mc.screen, role);
+                        // 打开职业介绍界面，parent设置为this以便按ESC时返回轮选页面
+                        net.minecraft.client.gui.screens.Screen roleScreen = new org.agmas.noellesroles.client.screen.RoleIntroduceScreen(this, role);
                         mc.setScreen(roleScreen);
                     }
                 }

@@ -325,13 +325,18 @@ public class SREMurderGameMode extends GameMode {
 
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        !role.isOtherModeRole() &&
+                        !role.identifier().getPath().startsWith("repair_") &&
                         role.canUseKiller() &&
                         !role.isInnocent() &&
                         role != TMMRoles.CIVILIAN);
-        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante", SRERole::isVigilanteTeam);
+        RoleAssignmentPool vigilantePool = RoleAssignmentPool.create("Vigilante",
+                role -> role.isVigilanteTeam() && !role.isOtherModeRole() && !role.identifier().getPath().startsWith("repair_"));
         // 中立池
         RoleAssignmentPool neutralsPool = RoleAssignmentPool.create("Neutrals",
                 role -> (!Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        !role.isOtherModeRole() &&
+                        !role.identifier().getPath().startsWith("repair_") &&
                         ((!role.canUseKiller() &&
                                 !role.isInnocent()) || role.isNeutrals())
                         &&
@@ -340,6 +345,8 @@ public class SREMurderGameMode extends GameMode {
         // 当 enableCivilianInPool 开启时，允许 sre:civilian 进入池中
         RoleAssignmentPool civilianPool = RoleAssignmentPool.create("Civilian",
                 role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        !role.isOtherModeRole() &&
+                        !role.identifier().getPath().startsWith("repair_") &&
                         !role.isVigilanteTeam() &&
                         !role.canUseKiller() &&
                         !role.isNeutrals() &&

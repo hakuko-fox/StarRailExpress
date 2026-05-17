@@ -812,7 +812,9 @@ public class SREClient implements ClientModInitializer {
 
             // 职业轮选GUI - 按N键打开
             if (RoleRotationCache.canReOpen()) {
-                if (client.screen == null || !(client.screen instanceof RoleRotationScreen)) {
+                // 排除职业介绍页面，查看职业介绍时不应该强制跳转回轮选页面
+                boolean isViewingRoleIntro = client.screen instanceof org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
+                if (!isViewingRoleIntro && (client.screen == null || !(client.screen instanceof RoleRotationScreen))) {
                     client.setScreen(new RoleRotationScreen());
                 }
             }

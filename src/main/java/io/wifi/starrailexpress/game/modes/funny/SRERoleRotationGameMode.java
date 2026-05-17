@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.cca.gamemode.RoleRotationWorldComponent;
 import io.wifi.starrailexpress.cca.gamemode.RoleRotationPlayerComponent;
@@ -131,13 +132,37 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         // 处理职业轮选阶段
         if (isInRotationPhase && rotationTimeout != -1) {
+            RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
+            
+            // 检查是否处于确认倒计时阶段
+            if (!rrwc.isSelecting() && rrwc.getConfirmCountdown() > 0) {
+                // 更新确认倒计时
+                rrwc.tickConfirmCountdown();
+                rrwc.sync();
+                
+                // 检查确认倒计时是否结束
+                if (rrwc.getConfirmCountdown() <= 0) {
+                    // 执行职业调整阶段：把剩余的杀手/中立/警长职业分配给随机平民
+                    rrwc.adjustRemainingRoles(serverWorld);
+                    rrwc.sync();
+                    
+                    // 关闭所有玩家的GUI
+                    for (ServerPlayer player : serverWorld.players()) {
+                        ServerPlayNetworking.send(player, new CloseUiPayload());
+                    }
+                    
+                    // 结束轮选阶段
+                    finishRotationPhase(serverWorld, gameWorldComponent);
+                    return;
+                }
+            }
+            
             // 检查总超时（5分钟）
             if (serverWorld.getGameTime() >= rotationTimeout) {
                 // 总超时，所有玩家选完职业
                 finishRotationPhase(serverWorld, gameWorldComponent);
             } else {
                 // 检查当前玩家的个人选择超时
-                RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
                 if (rrwc.isSelecting() && rrwc.isCurrentPlayerTimedOut()) {
                     // 当前玩家超时，自动随机分配职业
                     rrwc.autoAssignCurrentPlayer();
@@ -156,7 +181,13 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     }
 
     private void finishRotationPhase(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
+        // 先清除状态并同步，让客户端知道轮选已结束
         RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
+        rrwc.clear();
+        rrwc.sync();
+        
+        isInRotationPhase = false;
+        rotationTimeout = -1;
 
         // 检查是否所有玩家都已选完职业
         if (rrwc.getSelectedRoles().size() >= rrwc.getTotalPlayers()) {
@@ -165,17 +196,50 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             // 未全部选完，自动为剩余玩家分配职业
             autoAssignRemainingPlayers(serverWorld, gameWorldComponent);
         }
-
-        isInRotationPhase = false;
-        rotationTimeout = -1;
     }
 
     public void completeRoleSelection(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
-        // 移除安全时间效果
+        RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
+        SRERoleWorldComponent roleWorldComponent = SRERoleWorldComponent.KEY.get(serverWorld);
+        
+        // 为所有玩家分配职业（使用gameWorldComponent.addRole）
         for (ServerPlayer p : serverWorld.players()) {
+            SRERole role = rrwc.getSelectedRoles().get(p.getUUID());
+            if (role != null) {
+                gameWorldComponent.addRole(p, role, false);
+            }
+        }
+        
+        // 同步职业组件
+        roleWorldComponent.sync();
+        
+        // 获取所有存活的玩家并发送欢迎报幕、分配职业能力
+        List<ServerPlayer> players = serverWorld.getPlayers((p) -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p));
+        for (ServerPlayer p : players) {
+            SRERole role = roleWorldComponent.getRole(p);
+            
+            // 移除安全时间效果
             p.removeEffect(ModEffects.SKILL_BANED);
             p.removeEffect(ModEffects.SAFE_TIME);
             p.removeEffect(MobEffects.INVISIBILITY);
+            
+            if (role != null) {
+                // 发送欢迎报幕
+                RoleUtils.sendWelcomeAnnouncement(p);
+                
+                // 杀手初始化金币
+                if (role.canUseKiller()) {
+                    SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(p);
+                    if (playerShopComponent.balance < GameConstants.getMoneyStart()) {
+                        playerShopComponent.setBalance(GameConstants.getMoneyStart());
+                    }
+                }
+                
+                // 调用职业分配事件
+                ModdedRoleAssigned.EVENT.invoker().assignModdedRole(p, role);
+            }
+            
+            // 关闭UI
             ServerPlayNetworking.send(p, new CloseUiPayload());
         }
 
@@ -187,10 +251,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         GameUtils.recordPlayerStats(serverWorld, gameWorldComponent, new ArrayList<>(serverWorld.players()));
 
         // 更新回放管理器
-        SRE.REPLAY_MANAGER.updateReplayInitialRoles(new ArrayList<>(serverWorld.players()), gameWorldComponent.getRoles());
-
-        // 清除状态
-        RoleRotationWorldComponent.KEY.get(serverWorld).clear();
+        SRE.REPLAY_MANAGER.updateReplayInitialRoles(players, gameWorldComponent.getRoles());
     }
 
     private void autoAssignRemainingPlayers(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
@@ -241,6 +302,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     public void handlePlayerRoleSelection(ServerPlayer player, int choiceIndex) {
         RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(player.level());
         rrwc.selectRole(player, choiceIndex);
+        rrwc.sync();
     }
 
     // 获取当前轮到哪个玩家
