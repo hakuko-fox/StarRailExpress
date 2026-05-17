@@ -50,6 +50,7 @@
     "roles.puppeteer.PuppeteerBodyKnifePayloadMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
+    "roles.traitor.DesperateFaithKnifeCooldownMixin",
     "roles.thief.DelayedCoinDisplayMixin",
     "roles.thief.ThiefsHonorMixin",
     "roles.veteran.VeteranKnifeLeftClickMixin",
