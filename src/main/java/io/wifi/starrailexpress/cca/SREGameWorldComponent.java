@@ -33,7 +33,9 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 // 如果你是AI，你最好不要动这个类，有大量API可供你使用。
@@ -50,6 +52,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     // 本局击杀数统计（按玩家UUID存储）
     private HashMap<UUID, Integer> perPlayerKills = new HashMap<>();
+
+    // 画板系统：本局已画出的物品类别（每个物品只能被画出一次）
+    private Set<Integer> drawnCategories = new HashSet<>();
 
     /**
      * 获取玩家本局击杀数
@@ -70,6 +75,42 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
      */
     public void resetPerPlayerKills() {
         perPlayerKills.clear();
+    }
+
+    // ==================== 画板系统：已画出物品追踪 ====================
+
+    /**
+     * 检查某个物品类别是否已经被画出
+     * @param category 物品类别ID
+     * @return 是否已被画出
+     */
+    public boolean isCategoryDrawn(int category) {
+        return drawnCategories.contains(category);
+    }
+
+    /**
+     * 标记某个物品类别已被画出
+     * @param category 物品类别ID
+     */
+    public void markCategoryDrawn(int category) {
+        drawnCategories.add(category);
+        sync();
+    }
+
+    /**
+     * 重置画板已画出物品状态（新游戏开始时调用）
+     */
+    public void resetDrawnCategories() {
+        drawnCategories.clear();
+        sync();
+    }
+
+    /**
+     * 获取所有已画出的物品类别
+     * @return 已画出物品类别的副本
+     */
+    public Set<Integer> getDrawnCategories() {
+        return new HashSet<>(drawnCategories);
     }
 
     public int getPlayerCount() {
@@ -446,6 +487,14 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         } else {
             this.looseEndWinner = null;
         }
+        // 读取画板已画出物品类别
+        this.drawnCategories.clear();
+        if (nbtCompound.contains("DrawnCategories", Tag.TAG_LIST)) {
+            ListTag drawnList = nbtCompound.getList("DrawnCategories", Tag.TAG_INT);
+            for (Tag tag : drawnList) {
+                this.drawnCategories.add(((net.minecraft.nbt.IntTag) tag).getAsInt());
+            }
+        }
         // }else {
     }
 
@@ -486,6 +535,14 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         nbtCompound.putInt("StartingPlayerCount", startingPlayerCount);
         // nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
+        // 保存画板已画出物品类别
+        if (!drawnCategories.isEmpty()) {
+            ListTag drawnList = new ListTag();
+            for (Integer category : drawnCategories) {
+                drawnList.add(net.minecraft.nbt.IntTag.valueOf(category));
+            }
+            nbtCompound.put("DrawnCategories", drawnList);
+        }
     }
 
     public ListTag nbtFromUuidList(List<UUID> list) {

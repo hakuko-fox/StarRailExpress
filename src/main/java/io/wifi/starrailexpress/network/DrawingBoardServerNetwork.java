@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.network;
 
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.item.DrawingBoardItem;
 import io.wifi.starrailexpress.utils.ai.DrawingBoardRecognizer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -49,12 +50,18 @@ public class DrawingBoardServerNetwork {
             ItemStack stack = findDrawingBoardInHands(player);
             if (stack.isEmpty()) return;
 
+            // 获取游戏世界组件
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+
             // 使用客户端发送的识别结果（包含保底机制）
             int category = payload.category();
             boolean recognized = category != DrawingBoardRecognizer.UNKNOWN;
 
+            // 检查该类别是否已被画出（本局游戏中每个物品只能被画出一次）
+            boolean alreadyDrawn = recognized && gameWorld != null && gameWorld.isCategoryDrawn(category);
+
             // 如果识别成功，消耗画板并给予对应物品
-            if (recognized) {
+            if (recognized && !alreadyDrawn) {
                 Item item = DrawingBoardRecognizer.getItemForCategory(category);
                 if (item != null) {
                     ItemStack itemStack = new ItemStack(item);
@@ -85,6 +92,10 @@ public class DrawingBoardServerNetwork {
                         // 创造模式直接给予物品
                         player.getInventory().add(itemStack);
                     }
+                    // 标记该类别已被画出
+                    if (gameWorld != null) {
+                        gameWorld.markCategoryDrawn(category);
+                    }
                     // actionbar 提示识别成功并给出物品
                     context.player().displayClientMessage(
                             net.minecraft.network.chat.Component.translatable(
@@ -94,6 +105,14 @@ public class DrawingBoardServerNetwork {
                             true // actionbar
                     );
                 }
+            } else if (alreadyDrawn) {
+                // 该物品已在本局中被画出，提示识别失败
+                context.player().displayClientMessage(
+                        net.minecraft.network.chat.Component.translatable(
+                                "starrailexpress.drawing_board.recognize.already_drawn"
+                        ),
+                        true // actionbar
+                );
             } else {
                 // actionbar 提示识别失败
                 context.player().displayClientMessage(

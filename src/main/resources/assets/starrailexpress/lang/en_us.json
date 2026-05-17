@@ -1971,6 +1971,7 @@
   "starrailexpress.drawing_board.recognize.unknown": "Unknown item",
   "starrailexpress.drawing_board.consumed": "Drawing board consumed",
   "starrailexpress.drawing_board.recognize.inventory_full": "Inventory is full",
+  "starrailexpress.drawing_board.recognize.already_drawn": "This item has already been drawn this round",
   "starrailexpress.drawing_board.hint.closest_category": "You might be drawing:",
   "starrailexpress.drawing_board.hint.out_of_range": "The item you drew is not recognizable",
   "starrailexpress.drawing_board.hint.category_0": "Knife",

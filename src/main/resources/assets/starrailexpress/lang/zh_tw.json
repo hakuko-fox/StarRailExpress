@@ -1973,6 +1973,7 @@
   "starrailexpress.drawing_board.recognize.unknown": "未知物品",
   "starrailexpress.drawing_board.consumed": "畫板已消耗",
   "starrailexpress.drawing_board.recognize.inventory_full": "物品欄已滿",
+  "starrailexpress.drawing_board.recognize.already_drawn": "該物品已在本局中被畫出",
   "starrailexpress.drawing_board.hint.closest_category": "你畫的可能是：",
   "starrailexpress.drawing_board.hint.out_of_range": "你畫的物品不在可識別範圍中",
   "starrailexpress.drawing_board.hint.category_0": "小刀",
