@@ -233,15 +233,19 @@ public class LotteryManager {
         return skinToCoin[idx];
     }
 
-    // TODO :
-    // 会优先读取本地数据，理论上没有人有本地配置因此不影响向服务器请求，但是如果本地真有配置，就会顶掉对应id的卡池，甚至有服务器不存在的卡池会导致未知情况
-    private void init() {
+    public void clearPools() {
+        lotteryPoolList.clear();
+    }
+
+    /** 清空配置，重新加载卡池 */
+    public void reload() {
         // 为了让单人测试也生效，暂时让客户端也能读取配置，并且未来可以加入本地数据存储，进行卡池信息hash值对比更新，也能减少数据传输量
         // // 仅运行在服务端
         // if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT)
         // {
         // return;
         // }
+        lotteryPoolList.clear();
         // 配置文件应该存放在主目录lottery_data目录下的lottery_pool.json文件中
         Path configPath = LotteryRecordStorage.getInstance().getLotteryDataDir().resolve("lottery_pool.json");
         LotteryPoolsConfig lotteryPoolsConfig = LotteryPoolsConfigParser.parse(configPath);
@@ -293,7 +297,9 @@ public class LotteryManager {
         }
         Noellesroles.LOGGER.info("[LootSys] Loaded {} pools.", lotteryPoolList.size());
     }
-
+    private void init() {
+        reload();
+    }
     private LotteryManager() {
         init();
     };
