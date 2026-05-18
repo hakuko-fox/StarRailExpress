@@ -34,6 +34,7 @@ import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayer
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorSkillRegistry;
+import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
@@ -49,6 +50,8 @@ import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 import java.util.*;
 import java.util.function.Supplier;
+
+import static org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent.playerBodyEntities;
 
 /**
  * 邪恶战局
@@ -403,6 +406,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         }
         // 复活cd事件
         if (curReviveTick++ >= REVIVE_TIME) {
+            boolean hasOtherKiller = false;
             for (ServerPlayer player : serverWorld.players()) {
                 if (GameUtils.isPlayerEliminated(player))
                     continue;
@@ -438,6 +442,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     itemCooldownManager.removeCooldown(ModItems.BOMB);
                 }
 
+                // 反向检测
                 // 每10s检测玩家身上是否有药丸，如果有则受到对应攻击，除了毒师
                 if (role != ModRoles.POISONER){
                     Inventory inventory = player.getInventory();
@@ -449,7 +454,26 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                         }
                     }
                 }
+                // 如果没有非亡语杀手角色
+                else if (role != ModRoles.INSANE_KILLER) {
+                    hasOtherKiller = true;
+                }
             }
+            // 只剩亡语杀手,则自动结束装死
+            if (!hasOtherKiller) {
+                for (ServerPlayer player : serverWorld.players()) {
+                    if (GameUtils.isPlayerEliminated(player))
+                        continue;
+                    SRERole role = gameWorldComponent.getRole(player);
+                    if (role == ModRoles.INSANE_KILLER) {
+                        InsaneKillerPlayerComponent insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(player);
+                        if (insaneKillerPlayerComponent.isActive) {
+                            insaneKillerPlayerComponent.toggleAbility();
+                        }
+                    }
+                }
+            }
+
             curReviveTick = 0;
         }
         // 经济增长cd事件
