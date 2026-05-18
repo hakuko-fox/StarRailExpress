@@ -155,7 +155,7 @@
   "info.screen.modifier.generous": "修飾符\n每90秒向最近的玩家給予25金幣。",
   "info.screen.modifier.brave": "修飾符\n停電時恢復50%%的理智。\n（僅對平民陣營玩家生效）",
   "info.screen.modifier.workaholic": "修飾符\n你的任務刷新速度比正常快50%%。",
-  "info.screen.modifier.big_eater": "修飾符\n每90秒獲得1個蘋果。\n完成進食任務恢復75%%理智並獲得25金幣。\n（僅對平民陣營玩家生效）",
+  "info.screen.modifier.big_eater": "修飾符\n每90秒獲得1個蘋果。\n完成進食任務恢復75%%理智。\n平民/中立陣營額外獲得25金幣，殺手陣營額外獲得5金幣。",
   "info.screen.modifier.manic": "修飾符\n你的任務顯示為亂碼（類似&k效果）。\n你無法完成任務。\n但是，當5格範圍內的玩家完成任務時，你恢復10%%理智並獲得10金幣。\n（僅對平民陣營玩家生效）",
   "info.screen.modifier.hemophobia": "修飾符\n當你目睹他人死亡時（30格範圍內，與巡警視野相同），獲得2秒的緩慢III和噁心I。\n（僅對平民陣營玩家生效）",
   "info.screen.modifier.vegetarian": "修飾符\n吃肉（生/熟牛肉、豬肉、雞肉、兔子肉、羊肉、鱈魚、三文魚、熱帶魚、河豚、腐肉、蜘蛛眼、兔子燉菜）會獲得2秒的黑暗和緩慢I。\n吃非肉類食物會獲得2秒的速度I和跳躍提升I。",
@@ -2598,6 +2598,7 @@
   "modifier.noellesroles.generous.received": "你收到了 %s 給予的 %d 金幣",
   "modifier.noellesroles.hemophobia.trigger": "恐血症：你目擊了一場死亡！",
   "modifier.noellesroles.manic.reward": "狂躁症：附近任務完成！+10%% 理智，+10 金幣",
+  "task.task.manic.name": "§k乱碼任務亂碼任務",
   "modifier.noellesroles.stingy.refund": "吝嗇：你收到了 %d 金幣返還！",
   "modifier.noellesroles.vegetarian.meat_effect": "素食者：吃肉導致惡心...",
   "modifier.noellesroles.vegetarian.plant_effect": "素食者：植物帶來能量！"

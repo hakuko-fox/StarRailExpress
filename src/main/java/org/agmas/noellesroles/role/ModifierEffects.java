@@ -245,6 +245,7 @@ public class ModifierEffects {
     
     /**
      * 大胃王触发 - 完成任务时恢复理智和金币
+     * 平民/中立阵营额外获得25金币，杀手阵营额外获得5金币
      */
     public static void onBigEaterTaskComplete(ServerPlayer player) {
         WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
@@ -257,8 +258,19 @@ public class ModifierEffects {
                 mood.sync();
             }
             
+            // 根据阵营判断金币奖励
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+            int coinReward;
+            if (gameWorld.isInnocent(player) || gameWorld.getRole(player).isNeutrals()) {
+                // 平民/中立阵营：25金币
+                coinReward = 25;
+            } else {
+                // 杀手阵营：5金币
+                coinReward = 5;
+            }
+            
             SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-            shop.setBalance(shop.balance + 25);
+            shop.setBalance(shop.balance + coinReward);
             shop.sync();
             
             if (player.level() instanceof ServerLevel serverLevel) {

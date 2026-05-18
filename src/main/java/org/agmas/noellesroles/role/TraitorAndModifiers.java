@@ -8,9 +8,11 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
+import io.wifi.starrailexpress.event.OnPlayerKilledPlayer;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +25,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.events.ModifierAssigned;
@@ -33,6 +36,7 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -445,6 +449,15 @@ public class TraitorAndModifiers {
                     // 标记为已触发
                     REBEL_TRIGGERED.add(player.getUUID());
                     
+                    // 确保是 ServerPlayer 和 ServerLevel
+                    if (!(player instanceof ServerPlayer sp)) return true;
+                    if (!(player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return true;
+                    
+                    // 保存触发位置，用于播放音效
+                    double triggerX = player.getX();
+                    double triggerY = player.getY();
+                    double triggerZ = player.getZ();
+                    
                     // 传送回房间
                     Vec3 pos = GameUtils.getSpawnPos(AreasWorldComponent.KEY.get(player.level()),
                             GameUtils.roomToPlayer.get(player.getUUID()));
@@ -454,39 +467,26 @@ public class TraitorAndModifiers {
                     
                     // 变为叛徒
                     RoleUtils.changeRole(player, TraitorAndModifiers.TRAITOR);
-                    RoleUtils.sendWelcomeAnnouncement((ServerPlayer) player, TraitorAndModifiers.TRAITOR);
+                    RoleUtils.sendWelcomeAnnouncement(sp, TraitorAndModifiers.TRAITOR);
                     
                     // 移除起义军修饰符
                     modifiers.removeModifier(player.getUUID(), REBEL);
                     
-                    // 广播叛徒消息（使用Title广播形式）
-                    if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                        // 向所有玩家发送Title广播
-                        player.level().players().forEach(p -> {
-                            if (p instanceof ServerPlayer sp) {
-                                // 使用Title广播
-                                sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(10, 70, 20));
-                                sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(
-                                        Component.translatable("modifier.noellesroles.rebel.trigger.title")
-                                                .withStyle(net.minecraft.ChatFormatting.DARK_RED, net.minecraft.ChatFormatting.BOLD)));
-                                sp.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(
-                                        Component.translatable("modifier.noellesroles.rebel.trigger.subtitle", player.getName())
-                                                .withStyle(net.minecraft.ChatFormatting.RED)));
-                            }
-                        });
-                        // 播放施法声音（全服MASTER）
-                        serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                SoundEvents.PILLAGER_CELEBRATE, SoundSource.MASTER, 1.0f, 1.0f);
-                        // 额外播放胜利音效
-                        serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 0.8f, 1.2f);
+                    // 向所有玩家发送广播消息
+                    for (ServerPlayer targetPlayer : serverLevel.getServer().getPlayerList().getPlayers()) {
+                        BroadcastMessageS2CPacket packet = new BroadcastMessageS2CPacket(
+                                Component.translatable("modifier.noellesroles.rebel.trigger")
+                                        .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
+                        ServerPlayNetworking.send(targetPlayer, packet);
                     }
-
+                    
+                    // 播放不祥号角：鸣响音效（使用之前的触发位置）
+                    serverLevel.playSound(null, triggerX, triggerY, triggerZ,
+                            SoundEvents.WARDEN_AGITATED, SoundSource.MASTER, 1.0f, 1.0f);
+                    
                     // 给予初始物品
-                    if (player instanceof ServerPlayer sp) {
-                        sp.addItem(new ItemStack(org.agmas.noellesroles.init.ModItems.SHORT_SHOTGUN));
-                        sp.addItem(new ItemStack(TMMItems.GRENADE));
-                    }
+                    sp.addItem(new ItemStack(org.agmas.noellesroles.init.ModItems.SHORT_SHOTGUN));
+                    sp.addItem(new ItemStack(TMMItems.GRENADE));
                     
                     return false; // 取消死亡
                 }
@@ -531,6 +531,24 @@ public class TraitorAndModifiers {
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(victim.level());
             if (modifiers.isModifier(victim.getUUID(), CORRUPTED)) {
                 CORRUPTED_BODIES.add(victim.getUUID());
+            }
+        });
+        
+        // 起义军效果 - 当平民玩家击杀起义军玩家时，平民因误杀平民而死亡
+        OnPlayerKilledPlayer.EVENT.register((victim, killer, reason) -> {
+            if (victim.level().isClientSide) return;
+            
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (gameWorld == null || !gameWorld.isRunning()) return;
+            
+            // 检查被击杀者是否是起义军玩家
+            WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(victim.level());
+            if (modifiers != null && modifiers.isModifier(victim.getUUID(), REBEL)) {
+                // 检查击杀者是否是平民阵营
+                if (gameWorld.isInnocent(killer)) {
+                    // 使用误杀平民的死亡原因
+                    GameUtils.killPlayer(killer, true, victim, Noellesroles.id("shot_innocent"));
+                }
             }
         });
     }
