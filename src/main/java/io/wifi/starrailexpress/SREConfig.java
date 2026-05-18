@@ -360,7 +360,9 @@ public class SREConfig implements ConfigData {
     // AFK设置
 
     @ConfigEntry.Category(value = "afk")
-    public boolean afkDeathEnabled = true; // 是否启用挂机死亡/踢出功能
+    public boolean afkKickEnabled = true; // 是否启用挂机踢出功能
+    @ConfigEntry.Category(value = "afk")
+    public boolean afkDeathEnabled = true; // 是否启用挂机死亡功能
     @ConfigEntry.Category(value = "afk") // 3秒到20分钟
     public int afkThresholdSeconds = (int) (4.5 * 60); // 5分钟
     @ConfigEntry.Category(value = "afk") // 3秒到10分钟
