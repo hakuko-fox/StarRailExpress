@@ -233,7 +233,7 @@ public class ModifierEffects {
             
             SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(manicPlayer);
             if (mood != null) {
-                mood.setMood(mood.getMood() + 10);
+                mood.setMood(mood.getMood() + 0.1f);
                 mood.sync();
             }
             
@@ -254,7 +254,7 @@ public class ModifierEffects {
         if (modifiers.isModifier(uuid, TraitorAndModifiers.BIG_EATER)) {
             SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
             if (mood != null) {
-                mood.setMood(mood.getMood() + 75);
+                mood.setMood(mood.getMood() + 0.75f);
                 mood.sync();
             }
             
@@ -272,12 +272,7 @@ public class ModifierEffects {
             SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
             shop.setBalance(shop.balance + coinReward);
             shop.sync();
-            
-            if (player.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, 
-                        player.getX(), player.getY() + 1.5, player.getZ(), 
-                        5, 0.3, 0.3, 0.3, 0.1);
-            }
+            // 大胃王不发送粒子效果
         }
     }
     
