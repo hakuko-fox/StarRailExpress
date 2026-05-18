@@ -11,6 +11,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.modes.funny.SREEvilWarGameMode;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -20,6 +21,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
+import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -181,7 +183,14 @@ public class RevivalSelectionHandler {
 
             // get random killer role
             var roles = new ArrayList<SRERole>();
-            roles.add(TMMRoles.KILLER);
+            if (gameWorldComponent.gameMode instanceof SREEvilWarGameMode evilWarGameMode) {
+                RoleAssignmentPool evilWarKillerPool = evilWarGameMode.createEvilWarRolePool();
+                SRERole role = evilWarKillerPool.selectRole();
+                if (role != null)
+                    roles.add(role);
+            }
+            if (roles.isEmpty())
+                roles.add(TMMRoles.KILLER);
             Collections.shuffle(roles);
 
             // revive player and give them the role

@@ -85,6 +85,17 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
 
     }
 
+    public RoleAssignmentPool createEvilWarRolePool() {
+        return RoleAssignmentPool.createUnlimited("Killer",
+                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
+                        role.canUseKiller() &&
+                        !role.isInnocent() &&
+                        role != TMMRoles.CIVILIAN &&
+                        // 禁用角色
+                        role.canBeRandomed() &&
+                        !BANED_ROLES.contains(role));
+    }
+
     @Override
     public boolean isLooseEndMode() {
         return false;
@@ -144,14 +155,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         }
 
         // 生成杀手池
-        RoleAssignmentPool killerPool = RoleAssignmentPool.createUnlimited("Killer",
-                role -> !Harpymodloader.VANNILA_ROLES.contains(role) &&
-                        role.canUseKiller() &&
-                        !role.isInnocent() &&
-                        role != TMMRoles.CIVILIAN &&
-                        // 禁用角色
-                        role.canBeRandomed() &&
-                        !BANED_ROLES.contains(role));
+        RoleAssignmentPool killerPool = createEvilWarRolePool();
         List<SRERole> assignedKillers = killerPool.selectRoles(playersWithoutForcedRoles.size() - superLooseEndCount);
         //打乱需要分配的玩家列表
         Collections.shuffle(playersWithoutForcedRoles);
@@ -318,10 +322,16 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                                 false                  // 是否显示图标
                         ));
             }
+            // 削弱设陷者的开局陷阱数量
             else if (role == ModRoles.TRAPPER) {
                 TrapperPlayerComponent trapperPlayerComponent = TrapperPlayerComponent.KEY.get(player);
                 trapperPlayerComponent.trapCharges = 0;
                 trapperPlayerComponent.sync();
+            }
+            // 强盗开局自带1层护盾
+            else if (role == ModRoles.BANDIT) {
+                SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
+                armor.giveArmor();
             }
         }
         curBalanceTick = 0;
@@ -373,8 +383,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     continue;
 
                 SRERole role = gameWorldComponent.getRole(player);
-                // 死灵可以复活cd降至10s
-                if (role == SERoles.NECROMANCER || role == ModRoles.CAT_NECROMANCER) {
+                // 猫娘可以复活cd降至10s
+                if (role == ModRoles.CAT_NECROMANCER) {
                     SREAbilityPlayerComponent abilityPlayerComponent = SREAbilityPlayerComponent.KEY.get(player);
                     abilityPlayerComponent.setCooldown(0);
                 }
@@ -448,6 +458,9 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     // 每30s获得 4 击杀数
                     stalkerPlayerComponent.phase2Kills += 4;
                     stalkerPlayerComponent.sync();
+                    // 30s获得1个盾
+                    SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
+                    armor.giveArmor();
                 }
                 // 刽子手每30秒重新锁定目标为超级亡命徒：现已能自动锁定
                 else if (role == ModRoles.EXECUTIONER) {
@@ -478,6 +491,11 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                         gun.setCount(EXECUTIONER_GUN_NUMBER - leftDerringerCount);
                         player.addItem(gun);
                     }
+                }
+                // 死灵复活cd为30s - 防止刷新过快
+                else if (role == SERoles.NECROMANCER) {
+                    SREAbilityPlayerComponent abilityPlayerComponent = SREAbilityPlayerComponent.KEY.get(player);
+                    abilityPlayerComponent.setCooldown(0);
                 }
             }
             curBalanceTick = 0;
