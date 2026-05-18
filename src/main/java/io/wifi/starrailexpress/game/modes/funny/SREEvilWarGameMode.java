@@ -22,8 +22,10 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
@@ -40,6 +42,7 @@ import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
+import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
@@ -102,6 +105,28 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     }
 
     @Override
+    public void killPlayer(Player victim, boolean spawnBody, @Nullable Player _killer,
+                           ResourceLocation deathReason, boolean forceDeath) {
+        super.killPlayer(victim, spawnBody, _killer, deathReason, forceDeath);
+        Level level = victim.level();
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(level);
+        SRERole role = gameWorldComponent.getRole(victim);
+        // 雷米莉亚死亡给予附近杀手护盾
+        if (role == RedHouseRoles.REMILIA) {
+            for (Player player : level.players()) {
+                // 排除被淘汰的、玩家自己、距离超过2格的玩家
+                if (GameUtils.isPlayerEliminated(player) || player == victim || player.distanceToSqr(victim) > 2.5 * 2.5)
+                    continue;
+                SRERole playerRole = gameWorldComponent.getRole(player);
+                // 排除超级亡命徒
+                if (playerRole == SpecialGameModeRoles.SUPER_LOOSE_END)
+                    continue;
+                SREArmorPlayerComponent armorComponent = SREArmorPlayerComponent.KEY.get(player);
+                armorComponent.addArmor();
+            }
+        }
+    }
+
     protected void initItemList() {
         super.initItemList();
         looseEndsItems.add(ModItems.PATROLLER_REVOLVER::getDefaultInstance);
