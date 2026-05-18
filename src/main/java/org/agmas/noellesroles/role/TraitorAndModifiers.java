@@ -496,7 +496,7 @@ public class TraitorAndModifiers {
         
 
         
-        // 敛财 - 死后扣除击杀者40%金币，被敛财者也会收到消息并扣除金币
+        // 敛财 - 死后扣除击杀者40%金币，给击杀拥有敛财修饰符的玩家提示
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             if (victim.level().isClientSide) return;
             
@@ -504,6 +504,7 @@ public class TraitorAndModifiers {
             if (gameWorld == null || !gameWorld.isRunning()) return;
             
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(victim.level());
+            // 只有当被害者拥有敛财修饰符时才触发效果
             if (modifiers != null && modifiers.isModifier(victim.getUUID(), MONEY_GRUBBER)) {
                 
                 if (killer != null) {
@@ -521,27 +522,6 @@ public class TraitorAndModifiers {
                                     coinsToTake), true);
                         }
                     }
-                }
-                
-                // 被敛财者也会被扣除金币（基于其当前金币的40%）
-                if (victim instanceof ServerPlayer victimSp) {
-                    SREPlayerShopComponent victimShop = SREPlayerShopComponent.KEY.get(victim);
-                    int victimCurrentCoins = victimShop.balance;
-                    int victimCoinsToTake = (int) (victimCurrentCoins * 0.4);
-                    
-                    if (victimCoinsToTake > 0) {
-                        victimShop.setBalance(victimCurrentCoins - victimCoinsToTake);
-                        victimShop.sync();
-                        
-                        victimSp.displayClientMessage(Component.translatable("modifier.noellesroles.money_grubber.lost",
-                                victimCoinsToTake), true);
-                    }
-                }
-
-                // 播放敛财音效（附近的人能听到）
-                if (victim.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                    serverLevel.playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-                            SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.PLAYERS, 1.0f, 1.0f);
                 }
             }
         });

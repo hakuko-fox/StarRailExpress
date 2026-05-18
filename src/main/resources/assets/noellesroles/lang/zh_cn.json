@@ -2176,7 +2176,7 @@
   "modifier.noellesroles.last_gasp.death": "你已安详的睡去。",
   "modifier.noellesroles.rebel.trigger": "你们当中有人变成了叛徒！",
   "modifier.noellesroles.rebel.sound": "一个不祥的转变...",
-  "modifier.noellesroles.money_grubber.taken": "敛财：%d 金币被夺走了！",
+  "modifier.noellesroles.money_grubber.taken": "%d 金币被夺走了！",
   "modifier.noellesroles.desperate_faith.activated": "自绝境中涅槃",
   "=============== 肉汁 Meatball ===============": "",
   "announcement.star.role.meatball": "肉汁",
