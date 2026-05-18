@@ -184,7 +184,7 @@ public class ModifierEffects {
                     double dist = player.distanceTo(victim);
                     if (dist <= 30) {
                         sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2, false, false, false));
-                        sp.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 40, 0, false, false, false));
+                        sp.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 2, false, false, false));
                         sp.displayClientMessage(
                                 net.minecraft.network.chat.Component.translatable("modifier.noellesroles.hemophobia.trigger"), 
                                 true);
@@ -216,16 +216,16 @@ public class ModifierEffects {
     }
     
     /**
-     * 狂躁症触发 - 附近有玩家完成任务，每5秒最多触发一次
+     * 狂躁症触发 - 附近有玩家完成任务，每1秒最多触发一次
      */
     public static void onNearbyTaskComplete(ServerPlayer manicPlayer) {
         WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(manicPlayer.level());
         UUID uuid = manicPlayer.getUUID();
         
         if (modifiers.isModifier(uuid, TraitorAndModifiers.MANIC)) {
-            // 检查是否在5秒冷却期内
+            // 检查是否在1秒冷却期内
             Long lastTime = TraitorAndModifiers.LAST_MANIC_TRIGGER_TIME.get(uuid);
-            if (lastTime != null && System.currentTimeMillis() - lastTime < 5000) {
+            if (lastTime != null && System.currentTimeMillis() - lastTime < 1000) {
                 return; // 还在冷却中
             }
             

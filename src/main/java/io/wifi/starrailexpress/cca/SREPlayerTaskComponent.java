@@ -226,12 +226,9 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             return null;
         
         // 检查玩家是否拥有狂躁症修饰符
-        if (this.player instanceof ServerPlayer sp && this.player.level().isClientSide == false) {
-            WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(this.player.level());
-            if (modifiers != null && modifiers.isModifier(sp.getUUID(), TraitorAndModifiers.MANIC)) {
-                // 狂躁症玩家直接获得乱码任务
-                return new ManicTask();
-            }
+        if (isManicPlayer()) {
+            // 狂躁症玩家直接获得乱码任务
+            return new ManicTask();
         }
         
         return generateTaskInternal();
@@ -242,7 +239,25 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
      * 不会生成与已有任务相同类型的任务
      */
     public @Nullable TrainTask generateParallelTask() {
+        // 检查玩家是否拥有狂躁症修饰符
+        if (isManicPlayer()) {
+            // 狂躁症玩家直接获得乱码任务
+            return new ManicTask();
+        }
         return generateTaskInternal();
+    }
+
+    /**
+     * 检查玩家是否拥有狂躁症修饰符
+     */
+    private boolean isManicPlayer() {
+        if (this.player instanceof ServerPlayer sp && this.player.level().isClientSide == false) {
+            WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(this.player.level());
+            if (modifiers != null && modifiers.isModifier(sp.getUUID(), TraitorAndModifiers.MANIC)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public @Nullable TrainTask generateTaskInternal() {

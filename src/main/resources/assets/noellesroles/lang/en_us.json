@@ -2538,7 +2538,7 @@
   "info.screen.modifier.manic": "Modifier\nYour tasks appear as garbled text.\nYou cannot complete any tasks.\nHowever, when a player within 5 blocks completes a task, you restore 10%% sanity and gain 10 coins.\n(Only affects Civilian roles)",
   "info.screen.modifier.last_gasp": "Modifier\nWhen killed by another player, you gain a 3-second invulnerability effect before dying.\n(Unaffected by train falls and AFK deaths)",
   "info.screen.modifier.rebel": "Modifier\nWhen killed by a teammate (Civilian or Patrol), you transform into a Traitor.\n(Once per game)",
-  "info.screen.modifier.hemophobia": "Modifier\nWhen you witness someone die (within 30 blocks, same as Patrol's vision range), you gain 2 seconds of Slowness III and Nausea I.\n(Only affects Civilian roles)",
+  "info.screen.modifier.hemophobia": "Modifier\nWhen you witness someone die (within 30 blocks, same as Patrol's vision range), you gain 2 seconds of Slowness III and Blindness II.\n(Only affects Civilian roles)",
   "info.screen.modifier.money_grubber": "Modifier\nAfter death, 40%% of your coins are deducted from your killer.",
   "info.screen.modifier.vegetarian": "Modifier\nEating meat (raw/cooked beef, pork, chicken, rabbit, mutton, cod, salmon, tropical fish, pufferfish, rotten flesh, spider eye, rabbit stew) grants 2 seconds of Darkness and Slowness I.\nEating non-meat food grants 2 seconds of Speed I and Jump Boost I.",
   "info.screen.modifier.dwarf": "Modifier\nYour size is reduced by 50%%.",
