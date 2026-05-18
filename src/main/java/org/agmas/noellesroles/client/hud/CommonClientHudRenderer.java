@@ -558,6 +558,35 @@ public class CommonClientHudRenderer {
       context.drawString(client.font, text, x, y, color);
     });
 
+    // 疫使HUD：显示感染技能冷却
+    RoleHudRenderCallback.EVENT.register(ModRoles.INFECTED_ID, (context, tickCounter) -> {
+      Minecraft client = Minecraft.getInstance();
+      if (client.player == null) {
+        return;
+      }
+      SREAbilityPlayerComponent abilityComponent = SREAbilityPlayerComponent.KEY.get(client.player);
+
+      int screenWidth = client.getWindow().getGuiScaledWidth();
+      int screenHeight = client.getWindow().getGuiScaledHeight();
+      int x = screenWidth - 10;
+      int y = screenHeight - 20;
+      Font font = client.font;
+
+      Component cooldownText;
+      int cooldownColor;
+      if (abilityComponent.cooldown > 0) {
+        int seconds = (abilityComponent.cooldown + 19) / 20; // 向上取整
+        cooldownText = Component.translatable("gui.noellesroles.infected.cooldown", seconds)
+            .withStyle(ChatFormatting.RED);
+        cooldownColor = 0xFF5555;
+      } else {
+        cooldownText = Component.translatable("gui.noellesroles.infected.ready")
+            .withStyle(ChatFormatting.GREEN);
+        cooldownColor = 0x55FF55;
+      }
+      context.drawString(font, cooldownText, x - font.width(cooldownText), y, cooldownColor);
+    });
+
     RoleHudRenderCallback.EVENT.register(ModRoles.CANDLE_BEARER_ID, (context, tickCounter) -> {
       Minecraft client = Minecraft.getInstance();
       if (client.player == null) {

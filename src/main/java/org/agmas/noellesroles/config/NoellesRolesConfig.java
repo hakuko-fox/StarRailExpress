@@ -125,6 +125,33 @@ public class NoellesRolesConfig implements ConfigData {
     public int minPlayerForPoisoner = 12;
 
     /**
+     * 疫使刷新概率（%）
+     */
+    public int chanceOfInfected = 50;
+
+    /**
+     * 疫使刷新最小玩家数
+     */
+    public int minPlayerForInfected = 12;
+
+    /**
+     * 疫使感染致死时间（秒）
+     * 玩家被感染后多久会死亡
+     */
+    public int infectedKillTime = 180;
+
+    /**
+     * 疫使病毒传播间隔（秒）
+     * 每隔多久被感染者会传播病毒给附近玩家
+     */
+    public int infectedSpreadInterval = 50;
+
+    /**
+     * 疫使技能冷却时间（秒）
+     */
+    public int infectedCooldown = 80;
+
+    /**
      * DIO/东方角色刷新最小玩家数
      */
     public int minPlayerForEggRoles = 12;
@@ -447,7 +474,7 @@ public class NoellesRolesConfig implements ConfigData {
      * 起义军修饰符刷新概率（%）
      * 被同阵营误杀时变为叛徒
      */
-    public int chanceOfRebel = 5;
+    public int chanceOfRebel = 25;
 
     /**
      * 晕血症修饰符刷新概率（%）

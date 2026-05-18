@@ -24,6 +24,10 @@ public class NRSounds {
     public static final SoundEvent SHOTGUN_FIRE = registrar.create("noellesroles.shotgun_fire");
     public static final SoundEvent SHORT_CIRCUIT = registrar.create("noellesroles.short_circuit");
     public static final SoundEvent SHOTGUNU_COCK = registrar.create("noellesroles.shotgun_cock");
+    
+    // 疫使相关音效
+    public static final SoundEvent INFECTED_COUGH = registrar.create("noellesroles.cough");
+    public static final SoundEvent INFECTED_INFECT = registrar.create("noellesroles.infect");
 
     public static void initialize() {
         registrar.registerEntries();

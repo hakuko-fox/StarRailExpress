@@ -105,6 +105,8 @@ import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayer
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerHandler;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
+import org.agmas.noellesroles.game.roles.neutral.infected.InfectedAbilityHandler;
+import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
@@ -1049,6 +1051,8 @@ public class ModEventsRegister {
         CommanderHandler.registerChatEvent();
         InsaneKillerPlayerComponent.registerEvent();
         ConspiratorKilledPlayer.registerEvents();
+        // 注册疫使胜利检测和加速检测
+        InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();
         SRE.cantSendReplay.add(player -> {
             DeathPenaltyComponent component = ModComponents.DEATH_PENALTY.get(player);

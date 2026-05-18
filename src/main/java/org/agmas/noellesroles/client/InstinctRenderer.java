@@ -23,6 +23,7 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
+import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
 import org.agmas.noellesroles.game.roles.Innocent.awesome_binglus.AwesomePlayerComponent;
@@ -297,6 +298,35 @@ public class InstinctRenderer {
                     return ModRoles.CANDLE_BEARER.color();
                 }
                 return Color.GRAY.getRGB();
+            }
+            return -1;
+        });
+
+        // 疫使：透视所有玩家，被感染者显示橙色边框
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.INFECTED))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+            if (!hasInstinct)
+                return -1;
+
+            if (target instanceof Player targetPlayer) {
+                // 检查目标玩家是否被感染（非疫使角色的玩家被感染）
+                InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(targetPlayer);
+                if (infectedComponent != null && infectedComponent.infectedTicks > 0) {
+                    // 被感染者显示橙色边框
+                    return Color.ORANGE.getRGB();
+                }
+                // 其他玩家显示疫使的颜色
+                return ModRoles.INFECTED.color();
             }
             return -1;
         });

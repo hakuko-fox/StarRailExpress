@@ -13,7 +13,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
+import org.agmas.noellesroles.component.InfectedPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
 
+/**
+ * 解毒试剂
+ * - 检测玩家是否中毒或感染
+ * - 治愈中毒和感染玩家
+ */
 public class AntidoteReagentItem extends Item {
     public AntidoteReagentItem(Properties properties) {
         super(properties);
@@ -30,16 +37,30 @@ public class AntidoteReagentItem extends Item {
     public void releaseUsing(ItemStack stack, Level level, LivingEntity user, int timeCharged) {
         if (!level.isClientSide && user instanceof Player player) {
             if (this.getUseDuration(stack, user) - timeCharged >= 10) {
-                net.minecraft.world.phys.HitResult hitResult = getTarget(player);
+                HitResult hitResult = getTarget(player);
 
                 if (hitResult instanceof net.minecraft.world.phys.EntityHitResult entityHitResult) {
                     if (entityHitResult.getEntity() instanceof Player target) {
-                        SREPlayerPoisonComponent component = SREPlayerPoisonComponent.KEY.get(target);
-                        boolean isPoisoned = component.poisonTicks > 0;
+                        SREPlayerPoisonComponent poisonComponent = SREPlayerPoisonComponent.KEY.get(target);
+                        InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(target);
+                        
+                        boolean isPoisoned = poisonComponent.poisonTicks > 0;
+                        boolean isInfected = infectedComponent.infectedTicks > 0;
 
-                        if (isPoisoned) {
+                        if (isPoisoned || isInfected) {
                             player.displayClientMessage(Component.translatable(
                                     "message.noellesroles.antidote_reagent.poisoned", target.getName()), true);
+                            
+                            // 治愈中毒
+                            if (isPoisoned) {
+                                poisonComponent.init();
+                                poisonComponent.sync();
+                            }
+                            
+                            // 治愈感染
+                            if (isInfected) {
+                                infectedComponent.cure();
+                            }
                         } else {
                             player.displayClientMessage(Component.translatable(
                                     "message.noellesroles.antidote_reagent.safe", target.getName()), true);

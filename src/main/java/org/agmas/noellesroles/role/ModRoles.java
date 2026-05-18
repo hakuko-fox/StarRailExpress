@@ -239,6 +239,7 @@ public class ModRoles {
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
 
 
+
     // 中立阵营
     public static final ResourceLocation STALKER_ID = Noellesroles.id("stalker");
     public static final ResourceLocation ADMIRER_ID = Noellesroles.id("admirer");
@@ -253,6 +254,8 @@ public class ModRoles {
     public static final ResourceLocation MERCENARY_ID = Noellesroles.id("mercenary");
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
+    // 疫使 ID - 杀手方中立
+    public static final ResourceLocation INFECTED_ID = Noellesroles.id("infected");
 
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
@@ -443,6 +446,7 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(),
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setVigilanteTeam(true).setCanBeRandomedByOtherRoles(false);
+    
     // ==================== 已注册角色定义 ====================
     // 乘客阵营角色
     // 中立偏狼：小镇做题家
@@ -1029,6 +1033,16 @@ public class ModRoles {
     public static SRERole POISONER = TMMRoles
             .registerRole(new NormalRole(POISONER_ID, (new Color(115, 0, 57)).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true));
+
+    // 疫使与毒师互斥生成
+    public static SRERole INFECTED = TMMRoles
+            .registerRole(new NormalRole(INFECTED_ID, new Color(66, 181, 0).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setNeutralForKiller(true)
+            .setCanUseInstinct(true)
+            .setOccupiedRoleCount(1)
+            .setCanSeeCoin(true)
+            .setMax(1);
 
     public static SRERole SPELLBREAKER = TMMRoles
             .registerRole(new NormalRole(SPELLBREAKER_ID, (new Color(132, 46, 170)).getRGB(), false,
@@ -1936,6 +1950,10 @@ public class ModRoles {
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
         SREArmorPlayerComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.MA_CHEN_XU_ID.getPath());
+        SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.INFECTED_ID.getPath());
+        
+        // 设置疫使与毒师互斥
+        ModRoles.INFECTED.addTwoWayOpposingJobs(ModRoles.POISONER);
         
         // 初始化叛徒职业和新修饰符
         TraitorAndModifiers.init();
