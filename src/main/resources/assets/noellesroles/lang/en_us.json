@@ -2049,6 +2049,7 @@
   "hud.noellesroles.guard.shield_ready": "Press %s to toggle Riot Shield",
   "message.noellesroles.guard.shield_taken": "Moved Riot Shield to off-hand",
   "message.noellesroles.guard.shield_putaway": "Stored Riot Shield",
+  "message.noellesroles.shield_blocking": "You are blocking",
   "item.noellesroles.camera_shears.use_failed_broken": "Camera already broken",
   "announcement.star.role.cuckoo": "Cuckoo",
   "announcement.star.role.noellesroles.cuckoo": "Cuckoo",

@@ -21,6 +21,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemCooldowns.CooldownInstance;
 import org.agmas.noellesroles.client.NoellesrolesClient;
+import org.agmas.noellesroles.content.item.RiotShieldHandler;
 import org.agmas.noellesroles.client.WayfarerHudRenderer;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 import org.agmas.noellesroles.client.event.MutableComponentResult;
@@ -112,6 +113,15 @@ public class CommonClientHudRenderer {
       }
       {
         HudMoodRenderer.renderHud(player, font, guiGraphics, deltaTracker);
+      }
+      {
+        // 举盾提示：当玩家主手/副手举防暴盾牌时显示 actionbar 提示
+        if (client.screen == null && RiotShieldHandler.isBlockingWithRiotShield(player)) {
+          Component shieldMessage = RiotShieldHandler.getShieldBlockingMessage();
+          int screenWidth = guiGraphics.guiWidth();
+          guiGraphics.drawCenteredString(font, shieldMessage, screenWidth / 2,
+              guiGraphics.guiHeight() / 2 + 30, 0xFFFFFF);
+        }
       }
       {
         if (client.screen == null) {

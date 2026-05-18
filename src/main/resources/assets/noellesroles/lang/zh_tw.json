@@ -2061,6 +2061,7 @@
   "hud.noellesroles.guard.shield_ready": "按 %s 切換防暴盾牌",
   "message.noellesroles.guard.shield_taken": "已將防暴盾牌放至副手",
   "message.noellesroles.guard.shield_putaway": "已將防暴盾牌收起",
+  "message.noellesroles.shield_blocking": "你正在舉盾",
   "item.noellesroles.camera_shears.use_failed_broken": "攝像頭已被破壞",
   "announcement.star.role.cuckoo": "布穀鳥",
   "announcement.star.role.noellesroles.cuckoo": "布穀鳥",
