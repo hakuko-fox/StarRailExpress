@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEnd;
 import org.agmas.noellesroles.game.roles.special.dirt.Dirt;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -41,6 +42,7 @@ public class SpecialGameModeRoles {
       SRERole.MoodType.NONE,
       -1,
       true))
+      .setComponentKey(ModComponents.SUPER_LOOSE_END)
       .setCanSeeCoin(true)
       .setCanUseInstinct(true)
       .setCanAutoAddMoney(true).setMax(0).setCanBeRandomedByOtherRoles(false).setOtherModeRole(true);

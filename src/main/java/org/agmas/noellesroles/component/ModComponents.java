@@ -71,6 +71,7 @@ import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
+import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import org.jetbrains.annotations.NotNull;
@@ -358,6 +359,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<BuilderPlayerComponent> BUILDER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "builder"),
       BuilderPlayerComponent.class);
+
+  // 超级亡命徒组件
+  public static final ComponentKey<SuperLooseEndPlayerComponent> SUPER_LOOSE_END = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "super_loose_end"),
+      SuperLooseEndPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -717,6 +723,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, BUILDER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BuilderPlayerComponent::new);
+
+    // 注册超级亡命徒组件
+    registry.beginRegistration(Player.class, SUPER_LOOSE_END)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(SuperLooseEndPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

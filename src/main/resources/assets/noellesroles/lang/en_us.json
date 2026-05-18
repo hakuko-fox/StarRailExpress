@@ -445,6 +445,8 @@
   "=============== Thief ===============": "",
   "announcement.star.win.thief": "Thief wins!",
   "game.win.star.thief": "The Thief escaped with the gold!",
+  "=============== super_loose_end ===============": "",
+  "message.super_loose_end.not_enough_armor": "Don't have enough armor!",
   "=============== Some Additional Translation Keys ===============": "",
   "announcement.star.win.coroner": "Passengers win!",
   "announcement.star.win.the_insane_damned_paranoid_killer": "Killers win!",

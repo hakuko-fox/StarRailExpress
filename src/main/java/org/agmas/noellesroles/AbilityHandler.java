@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -42,6 +43,7 @@ import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayer
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
+import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
@@ -549,6 +551,11 @@ public class AbilityHandler {
                         true);
             }
             return;
+        }
+        // 处理超级亡命徒技能
+        if (gameWorldComponent.isRole(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
+            SuperLooseEndPlayerComponent comp = SuperLooseEndPlayerComponent.KEY.get(player);
+            comp.useAbility(player.isShiftKeyDown());
         }
     }
 
