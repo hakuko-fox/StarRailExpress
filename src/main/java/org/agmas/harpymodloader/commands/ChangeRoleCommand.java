@@ -24,7 +24,7 @@ import java.util.ArrayList;
 public class ChangeRoleCommand {
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(Commands.literal("changeRole")
-        .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+        .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
         .then(Commands.argument("player", EntityArgument.player())
             .then(Commands.argument("role", RoleArgumentType.create())
                 .executes((ctx) -> execute(ctx, true, false))
