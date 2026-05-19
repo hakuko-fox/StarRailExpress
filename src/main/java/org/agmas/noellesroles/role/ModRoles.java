@@ -1484,8 +1484,8 @@ public class ModRoles {
             false // 隐藏计分板
     )).setOccupiedRoleCount(0)         // 不占用杀手位
             .setCanUseInstinct(false)         // 没有杀手透视
-            .setCanSeeTeammateKiller(false)
-            .setMax(1);  // 杀手本能看不到队友，对杀手的框显示如平民
+            .setCanSeeTeammateKiller(false) // 杀手本能看不到队友，对杀手的框显示如平民
+            .setMax(1); 
 
     // 中立阵营角色
     /**
