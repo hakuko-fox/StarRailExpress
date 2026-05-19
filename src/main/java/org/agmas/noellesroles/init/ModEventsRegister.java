@@ -1223,15 +1223,17 @@ public class ModEventsRegister {
             var victimRole = gameWorldComponent.getRole(victim);
             if (victimRole == null || !gameWorldComponent.isKillerTeamRole(victimRole))
                 return;
-            // 获取死亡玩家的职业名称
-            String roleName = victimRole.identifier().getPath();
-            Component deathMessage = Component.translatable("message.noellesroles.mortician.passive_death", roleName);
-            // 向所有葬仪玩家广播死亡信息
+            // 获取死亡玩家的翻译职业名
+            String rolePath = victimRole.identifier().getPath();
+            Component roleName = Component.translatable("announcement.star.role." + rolePath);
+            Component deathMessage = Component.translatable("message.noellesroles.mortician.passive_death", roleName)
+                    .withStyle(ChatFormatting.DARK_GRAY);
+            // 向所有葬仪玩家广播（使用广播形式，与广播员一致）
             for (Player player : victim.level().players()) {
                 if (!gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER))
                     continue;
                 if (player instanceof ServerPlayer sp) {
-                    player.displayClientMessage(deathMessage.copy().withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)), true);
+                    org.agmas.noellesroles.commands.BroadcastCommand.BroadcastMessage(sp, deathMessage);
                 }
             }
         });

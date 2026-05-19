@@ -73,7 +73,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
 
     /** 造尸冷却（独立于技能冷却） */
     public int bodyCreationCooldown = 0;
-    public static final int BODY_CREATION_COOLDOWN = 120 * 20; // 造尸冷却120秒
+    public static final int BODY_CREATION_COOLDOWN = 180 * 20; // 造尸冷却180秒
 
     /** 当前模式：0=曳柩, 1=丧钟, 2=清洗 */
     public int currentMode = 0;
@@ -97,7 +97,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
     @Override
     public void init() {
         this.cooldown = 0;
-        this.bodyCreationCooldown = 0;
+        this.bodyCreationCooldown = 60 * 20; // 开局60秒冷却
         this.currentMode = 0;
         this.draggedBodyUuid = null;
         this.draggedBody = null;
@@ -137,24 +137,25 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         this.currentMode = (this.currentMode + 1) % 3;
 
         if (player instanceof ServerPlayer serverPlayer) {
-            Component message;
+            Component modeName;
             switch (this.currentMode) {
                 case 0:
-                    message = Component.translatable("message.noellesroles.mortician.mode.drag")
+                    modeName = Component.translatable("message.noellesroles.mortician_bodymaker.mode.drag")
                             .withStyle(ChatFormatting.GOLD);
                     break;
                 case 1:
-                    message = Component.translatable("message.noellesroles.mortician.mode.funeral")
+                    modeName = Component.translatable("message.noellesroles.mortician_bodymaker.mode.funeral")
                             .withStyle(ChatFormatting.RED);
                     break;
                 case 2:
-                    message = Component.translatable("message.noellesroles.mortician.mode.clean")
+                    modeName = Component.translatable("message.noellesroles.mortician_bodymaker.mode.clean")
                             .withStyle(ChatFormatting.AQUA);
                     break;
                 default:
-                    message = Component.translatable("message.noellesroles.mortician.mode.drag")
+                    modeName = Component.translatable("message.noellesroles.mortician_bodymaker.mode.drag")
                             .withStyle(ChatFormatting.GOLD);
             }
+            Component message = Component.translatable("message.noellesroles.mortician_bodymaker.current_mode", modeName);
             serverPlayer.displayClientMessage(message, true);
         }
 
@@ -183,7 +184,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         // 检查冷却
         if (this.cooldown > 0) {
             serverPlayer.displayClientMessage(
-                    Component.translatable("message.noellesroles.mortician.cooldown", (this.cooldown + 19) / 20)
+                    Component.translatable("message.noellesroles.mortician_bodymaker.cooldown", (this.cooldown + 19) / 20)
                             .withStyle(ChatFormatting.RED),
                     true);
             return false;
@@ -216,7 +217,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
             this.sync();
 
             serverPlayer.displayClientMessage(
-                    Component.translatable("message.noellesroles.mortician.drag.release")
+                    Component.translatable("message.noellesroles.mortician_bodymaker.drag.release")
                             .withStyle(ChatFormatting.GOLD),
                     true);
             return true;
@@ -226,7 +227,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         PlayerBodyEntity targetBody = findLookedAtBody(serverPlayer);
         if (targetBody == null) {
             serverPlayer.displayClientMessage(
-                    Component.translatable("message.noellesroles.mortician.drag.no_body")
+                    Component.translatable("message.noellesroles.mortician_bodymaker.drag.no_body")
                             .withStyle(ChatFormatting.RED),
                     true);
             return true; // 不进入冷却
@@ -242,7 +243,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         this.sync();
 
         serverPlayer.displayClientMessage(
-                Component.translatable("message.noellesroles.mortician.drag.start")
+                Component.translatable("message.noellesroles.mortician_bodymaker.drag.start")
                         .withStyle(ChatFormatting.GOLD),
                 true);
         return true;
@@ -281,7 +282,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         this.sync();
 
         serverPlayer.displayClientMessage(
-                Component.translatable("message.noellesroles.mortician.funeral.used", affected)
+                Component.translatable("message.noellesroles.mortician_bodymaker.funeral.used", affected)
                         .withStyle(ChatFormatting.RED),
                 true);
         return true;
@@ -299,23 +300,21 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         this.sync();
 
         serverPlayer.displayClientMessage(
-                Component.translatable("message.noellesroles.mortician.clean.used")
+                Component.translatable("message.noellesroles.mortician_bodymaker.clean.used")
                         .withStyle(ChatFormatting.AQUA),
                 true);
         return true;
     }
 
     /**
-     * 检查玩家是否有无限体力
+     * 检查玩家是否有无限体力（与职业定义一致：maxSprintTime == Integer.MAX_VALUE）
      */
     private boolean hasInfiniteStamina(Player player) {
-        // 检查是否是杀手阵营（有无限体力）
         var gameWorld = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorld != null) {
             var role = gameWorld.getRole(player);
-            if (role != null) {
-                //杀手阵营通常有Integer.MAX_VALUE冲刺时间
-                return true; // 简化处理，杀手方阵营不减少体力
+            if (role != null && role.getMaxSprintTime(player) == Integer.MAX_VALUE) {
+                return true;
             }
         }
         return false;
@@ -534,6 +533,9 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
                     }
                 }
             }
+        } else {
+            this.draggedBodyUuid = null;
+            this.draggedBody = null;
         }
     }
 

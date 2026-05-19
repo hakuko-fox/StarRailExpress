@@ -963,25 +963,25 @@ public class ModPacketsReciever {
       ServerPlayer player = context.player();
       SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
 
-      if (!gameWorldComponent.isSkillAvailable) {
-        return;
-      }
-
       if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
         MorticianPlayerComponent morticianComponent = MorticianPlayerComponent.KEY.get(player);
         if (morticianComponent == null) return;
         
-        // 安全时间内也进入冷却
+        // 安全时间内直接进入造尸冷却（必须在isSkillAvailable判断之前）
         if (context.player().hasEffect(ModEffects.SAFE_TIME)) {
           morticianComponent.bodyCreationCooldown = MorticianPlayerComponent.BODY_CREATION_COOLDOWN;
           morticianComponent.sync();
+          return;
+        }
+
+        if (!gameWorldComponent.isSkillAvailable) {
           return;
         }
         
         // 检查造尸冷却
         if (!morticianComponent.canCreateBody()) {
           player.displayClientMessage(
-              Component.translatable("message.noellesroles.mortician.cooldown", (morticianComponent.bodyCreationCooldown + 19) / 20)
+              Component.translatable("message.noellesroles.mortician_bodymaker.cooldown", (morticianComponent.bodyCreationCooldown + 19) / 20)
                   .withStyle(ChatFormatting.RED),
               true);
           return;
@@ -991,7 +991,7 @@ public class ModPacketsReciever {
         Player targetPlayer = player.level().getPlayerByUUID(payload.targetUuid());
         if (targetPlayer == null || !(targetPlayer instanceof ServerPlayer)) {
           player.displayClientMessage(
-              Component.translatable("message.noellesroles.mortician.create_body.target_not_found")
+              Component.translatable("message.noellesroles.mortician_bodymaker.create_body.target_not_found")
                   .withStyle(ChatFormatting.RED),
               true);
           return;

@@ -216,56 +216,7 @@ public class CommonClientHudRenderer {
       }
     });
 
-    // 葬仪 HUD - 显示模式与冷却
-    RoleHudRenderCallback.EVENT.register(ModRoles.MORTICIAN_BODYMAKER_ID, (guiGraphics, tickCounter) -> {
-      var client = Minecraft.getInstance();
-      if (client.player == null) return;
-      if (!SREClient.isPlayerAliveAndInSurvival()) return;
 
-      var morticianComponent = ModComponents.MORTICIAN_BODYMAKER.get(client.player);
-      if (morticianComponent == null) return;
-
-      int screenWidth = guiGraphics.guiWidth();
-      int screenHeight = guiGraphics.guiHeight();
-      var font = client.font;
-      int yOffset = screenHeight - 10 - font.lineHeight;
-      int xOffset = screenWidth - 10;
-
-      // 当前模式
-      Component modeText = switch (morticianComponent.currentMode) {
-        case 0 -> Component.translatable("hud.mortician_bodymaker.mode.drag").withStyle(ChatFormatting.GOLD);
-        case 1 -> Component.translatable("hud.mortician_bodymaker.mode.funeral").withStyle(ChatFormatting.RED);
-        case 2 -> Component.translatable("hud.mortician_bodymaker.mode.clean").withStyle(ChatFormatting.AQUA);
-        default -> Component.empty();
-      };
-      guiGraphics.drawString(font, modeText, xOffset - font.width(modeText), yOffset, 0xFFFFFF);
-
-      // 技能冷却
-      if (morticianComponent.cooldown > 0) {
-        yOffset -= font.lineHeight + 4;
-        int secondsLeft = (morticianComponent.cooldown + 19) / 20;
-        var cooldownText = Component.translatable("hud.mortician_bodymaker.cooldown", secondsLeft)
-            .withStyle(ChatFormatting.RED);
-        guiGraphics.drawString(font, cooldownText, xOffset - font.width(cooldownText), yOffset, 0xFFFFFF);
-      }
-
-      // 造尸冷却
-      if (morticianComponent.bodyCreationCooldown > 0) {
-        yOffset -= font.lineHeight + 4;
-        int secondsLeft = (morticianComponent.bodyCreationCooldown + 19) / 20;
-        var createText = Component.translatable("hud.mortician_bodymaker.create_cooldown", secondsLeft)
-            .withStyle(ChatFormatting.DARK_PURPLE);
-        guiGraphics.drawString(font, createText, xOffset - font.width(createText), yOffset, 0xFFFFFF);
-      }
-
-      // 拖动状态提示
-      if (morticianComponent.draggedBodyUuid != null) {
-        yOffset -= font.lineHeight + 4;
-        var draggingText = Component.translatable("hud.mortician_bodymaker.dragging")
-            .withStyle(ChatFormatting.GRAY);
-        guiGraphics.drawString(font, draggingText, xOffset - font.width(draggingText), yOffset, 0xFFFFFF);
-      }
-    });
   }
 
   public static void registerRenderersEvent() {
@@ -1613,7 +1564,7 @@ public class CommonClientHudRenderer {
       }
     });
 
-    // 葬仪 HUD - 显示模式与冷却
+    // 葬仪 HUD - 当前模式 | 技能冷却 | 造尸冷却 | 拖动状态
     RoleHudRenderCallback.EVENT.register(ModRoles.MORTICIAN_BODYMAKER_ID, (guiGraphics, tickCounter) -> {
       var client = Minecraft.getInstance();
       if (client.player == null) return;
@@ -1622,46 +1573,38 @@ public class CommonClientHudRenderer {
       var morticianComponent = ModComponents.MORTICIAN_BODYMAKER.get(client.player);
       if (morticianComponent == null) return;
 
-      int screenWidth = guiGraphics.guiWidth();
-      int screenHeight = guiGraphics.guiHeight();
       var font = client.font;
-      int yOffset = screenHeight - 10 - font.lineHeight;
-      int xOffset = screenWidth - 10;
+      int yOffset = guiGraphics.guiHeight() - 10 - font.lineHeight;
+      int xOffset = guiGraphics.guiWidth() - 10;
 
-      // 当前模式
+      Component modeLabel = Component.translatable("message.noellesroles.mortician_bodymaker.current_mode");
       Component modeText = switch (morticianComponent.currentMode) {
-        case 0 -> Component.translatable("hud.mortician_bodymaker.mode.drag").withStyle(ChatFormatting.GOLD);
-        case 1 -> Component.translatable("hud.mortician_bodymaker.mode.funeral").withStyle(ChatFormatting.RED);
-        case 2 -> Component.translatable("hud.mortician_bodymaker.mode.clean").withStyle(ChatFormatting.AQUA);
+        case 0 -> Component.translatable("hud.noellesroles.mortician_bodymaker.mode.drag").withStyle(ChatFormatting.GOLD);
+        case 1 -> Component.translatable("hud.noellesroles.mortician_bodymaker.mode.funeral").withStyle(ChatFormatting.RED);
+        case 2 -> Component.translatable("hud.noellesroles.mortician_bodymaker.mode.clean").withStyle(ChatFormatting.AQUA);
         default -> Component.empty();
       };
-      guiGraphics.drawString(font, modeText, xOffset - font.width(modeText), yOffset, 0xFFFFFF);
+      Component fullModeText = modeLabel.copy().append(modeText);
+      guiGraphics.drawString(font, fullModeText, xOffset - font.width(fullModeText), yOffset, 0xFFFFFF);
 
-      // 技能冷却
       if (morticianComponent.cooldown > 0) {
         yOffset -= font.lineHeight + 4;
         int secondsLeft = (morticianComponent.cooldown + 19) / 20;
-        var cooldownText = Component.translatable("hud.mortician_bodymaker.cooldown", secondsLeft)
-            .withStyle(ChatFormatting.RED);
-        guiGraphics.drawString(font, cooldownText, xOffset - font.width(cooldownText), yOffset, 0xFFFFFF);
+        var ct = Component.translatable("hud.noellesroles.mortician_bodymaker.skill_cooldown", secondsLeft).withStyle(ChatFormatting.RED);
+        guiGraphics.drawString(font, ct, xOffset - font.width(ct), yOffset, 0xFFFFFF);
       }
-
-      // 造尸冷却
       if (morticianComponent.bodyCreationCooldown > 0) {
         yOffset -= font.lineHeight + 4;
         int secondsLeft = (morticianComponent.bodyCreationCooldown + 19) / 20;
-        var createText = Component.translatable("hud.mortician_bodymaker.create_cooldown", secondsLeft)
-            .withStyle(ChatFormatting.DARK_PURPLE);
-        guiGraphics.drawString(font, createText, xOffset - font.width(createText), yOffset, 0xFFFFFF);
+        var ct = Component.translatable("hud.noellesroles.mortician_bodymaker.create_cooldown", secondsLeft).withStyle(ChatFormatting.DARK_PURPLE);
+        guiGraphics.drawString(font, ct, xOffset - font.width(ct), yOffset, 0xFFFFFF);
       }
-
-      // 拖动状态提示
       if (morticianComponent.draggedBodyUuid != null) {
         yOffset -= font.lineHeight + 4;
-        var draggingText = Component.translatable("hud.mortician_bodymaker.dragging")
-            .withStyle(ChatFormatting.GRAY);
-        guiGraphics.drawString(font, draggingText, xOffset - font.width(draggingText), yOffset, 0xFFFFFF);
+        var ct = Component.translatable("hud.noellesroles.mortician_bodymaker.dragging").withStyle(ChatFormatting.GRAY);
+        guiGraphics.drawString(font, ct, xOffset - font.width(ct), yOffset, 0xFFFFFF);
       }
     });
+
   }
 }
