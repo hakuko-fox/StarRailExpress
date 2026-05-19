@@ -365,6 +365,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "super_loose_end"),
       SuperLooseEndPlayerComponent.class);
 
+  // 疫使组件 - 杀手方中立阵营，病毒感染
+  public static final ComponentKey<InfectedPlayerComponent> INFECTED = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "infected"),
+      InfectedPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -728,6 +733,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SUPER_LOOSE_END)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SuperLooseEndPlayerComponent::new);
+
+    // 注册疫使组件 - 杀手方中立阵营，病毒感染
+    registry.beginRegistration(Player.class, INFECTED)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(InfectedPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

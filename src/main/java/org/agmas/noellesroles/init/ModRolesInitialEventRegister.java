@@ -1,22 +1,31 @@
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
+
+import java.util.UUID;
 
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.noellesroles.RicesRoleRhapsody;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
+import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent;
@@ -330,6 +339,54 @@ public class ModRolesInitialEventRegister {
                 var painterComponent = PainterPlayerComponent.KEY.get(player);
                 painterComponent.init();
                 painterComponent.sync();
+            }
+        });
+    }
+
+    static {
+        // 疫使技能注册：按技能键感染目标玩家
+        RoleSkill.register(ModRoles.INFECTED, context -> {
+            ServerPlayer player = context.player();
+            UUID targetUuid = context.target();
+
+            if (targetUuid == null) {
+                // 无目标时不执行任何操作
+                return;
+            }
+
+            Player target = player.level().getPlayerByUUID(targetUuid);
+            if (target == null) {
+                return;
+            }
+
+            // 检查游戏状态
+            if (!GameUtils.isPlayerAliveAndSurvival(target)) {
+                return;
+            }
+
+            // 检查目标是否已被感染
+            InfectedPlayerComponent targetComponent = ModComponents.INFECTED.get(target);
+            if (targetComponent.infectedTicks > 0) {
+                return; // 已被感染
+            }
+
+            // 检查疫使技能冷却
+            SREAbilityPlayerComponent abilityComponent = SREAbilityPlayerComponent.KEY.get(player);
+            if (abilityComponent.cooldown > 0) {
+                return;
+            }
+
+            // 感染目标
+            targetComponent.infect(player);
+
+            // 设置疫使技能冷却为80秒
+            abilityComponent.cooldown = GameConstants.getInTicks(1, 20); // 80秒冷却
+            abilityComponent.sync();
+
+            // 播放感染音效
+            if (NRSounds.INFECTED_INFECT != null) {
+                player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    NRSounds.SYRINGE_STAB, SoundSource.MASTER, 0.5f, 0.5f);
             }
         });
     }

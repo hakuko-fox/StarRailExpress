@@ -63,6 +63,7 @@ import org.agmas.noellesroles.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
+import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
@@ -105,6 +106,8 @@ import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayer
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerHandler;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
+import org.agmas.noellesroles.game.roles.neutral.infected.InfectedAbilityHandler;
+import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
@@ -905,6 +908,15 @@ public class ModEventsRegister {
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
+            // 清除所有玩家的感染状态
+            for (ServerPlayer player : world.players()) {
+                InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED.get(player);
+                if (infectedComponent != null) {
+                    infectedComponent.cure();
+                }
+            }
+            // 清除疫使时刻状态
+            org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
             // 清除所有建筑师的客户端墙
             for (ServerPlayer player : world.players()) {
                 org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent builderComp =
@@ -1049,6 +1061,8 @@ public class ModEventsRegister {
         CommanderHandler.registerChatEvent();
         InsaneKillerPlayerComponent.registerEvent();
         ConspiratorKilledPlayer.registerEvents();
+        // 注册疫使胜利检测和加速检测
+        InfectedWinChecker.registerEvent();
         EntityClearUtils.registerResetEvent();
         SRE.cantSendReplay.add(player -> {
             DeathPenaltyComponent component = ModComponents.DEATH_PENALTY.get(player);
@@ -1575,6 +1589,15 @@ public class ModEventsRegister {
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
+            // 清除所有玩家的感染状态
+            for (ServerPlayer player : serverLevel.players()) {
+                InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED.get(player);
+                if (infectedComponent != null) {
+                    infectedComponent.cure();
+                }
+            }
+            // 重置疫使时刻状态
+            org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverLevel);
             boolean hasDio = false;

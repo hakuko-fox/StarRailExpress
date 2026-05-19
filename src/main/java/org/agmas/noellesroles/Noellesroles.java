@@ -164,6 +164,9 @@ public class Noellesroles implements ModInitializer {
         org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler.register();
         org.agmas.noellesroles.game.modes.repair.RepairCombatEvents.register();
         org.agmas.noellesroles.game.modes.repair.RepairWorldInteractions.register();
+        
+        // 注册疫使胜利检测
+        org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.registerEvent();
 
         // 注册命令
         BroadcastCommand.register();
@@ -186,6 +189,9 @@ public class Noellesroles implements ModInitializer {
         RepairRoleCommand.register();
         RepairMapCommand.register();
         RepairPresetCommand.register();
+        
+        // 注册疫使测试指令
+        org.agmas.noellesroles.commands.InfectedCommand.register();
 
         // 加载预设配置
         Preset.PresetManager.loadPresets();

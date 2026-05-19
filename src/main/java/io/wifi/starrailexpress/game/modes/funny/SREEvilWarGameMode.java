@@ -34,6 +34,7 @@ import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayer
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorSkillRegistry;
+import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
@@ -41,6 +42,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 
 import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -49,6 +51,8 @@ import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 import java.util.*;
 import java.util.function.Supplier;
+
+import static org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent.playerBodyEntities;
 
 /**
  * 邪恶战局
@@ -242,6 +246,18 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 player.addItem(timeStopClock);
                 ItemCooldowns itemCooldownManager = player.getCooldowns();
             }
+            // 强盗有狙
+            else if (role == ModRoles.BANDIT) {
+                player.addItem(new ItemStack(TMMItems.SNIPER_RIFLE));
+                player.addItem(new ItemStack(TMMItems.SCOPE));
+                ItemStack bullet = new ItemStack(TMMItems.MAGNUM_BULLET);
+                bullet.setCount(64);
+                player.addItem(bullet);
+            }
+            // 叛徒有强盗手枪
+            else if (role == TraitorAndModifiers.TRAITOR) {
+                player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
+            }
         }
     }
 
@@ -337,12 +353,13 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             }
             // 蕾米莉亚开局获得20分钟速度4
             else if (role == RedHouseRoles.REMILIA) {
-                player.removeEffect(MobEffects.MOVEMENT_SPEED);
+                if (player.hasEffect(MobEffects.MOVEMENT_SPEED))
+                    player.removeEffect(MobEffects.MOVEMENT_SPEED);
                 player.addEffect(
                         new MobEffectInstance(
                                 MobEffects.MOVEMENT_SPEED,  // 速度效果
                                 20 * 1200,                  // 持续时间（tick）
-                                3,
+                                2,
                                 false,                // 是否显示粒子效果
                                 false                  // 是否显示图标
                         ));
@@ -357,6 +374,22 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             else if (role == ModRoles.BANDIT) {
                 SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
                 armor.giveArmor();
+            }
+            // 叛徒有很厚的盾 初始速度快
+            else if (role == TraitorAndModifiers.TRAITOR) {
+                SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
+                armor.armor = 30;
+
+                if (player.hasEffect(MobEffects.MOVEMENT_SPEED))
+                    player.removeEffect(MobEffects.MOVEMENT_SPEED);
+                player.addEffect(
+                        new MobEffectInstance(
+                                MobEffects.MOVEMENT_SPEED,  // 速度效果
+                                20 * 1200,                  // 持续时间（tick）
+                                3,
+                                false,                // 是否显示粒子效果
+                                false                  // 是否显示图标
+                        ));
             }
         }
         curBalanceTick = 0;
@@ -403,6 +436,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         }
         // 复活cd事件
         if (curReviveTick++ >= REVIVE_TIME) {
+            boolean hasOtherKiller = false;
             for (ServerPlayer player : serverWorld.players()) {
                 if (GameUtils.isPlayerEliminated(player))
                     continue;
@@ -438,6 +472,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     itemCooldownManager.removeCooldown(ModItems.BOMB);
                 }
 
+                // 反向检测
                 // 每10s检测玩家身上是否有药丸，如果有则受到对应攻击，除了毒师
                 if (role != ModRoles.POISONER){
                     Inventory inventory = player.getInventory();
@@ -449,7 +484,26 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                         }
                     }
                 }
+                // 如果没有非亡语杀手角色
+                else if (role != ModRoles.INSANE_KILLER) {
+                    hasOtherKiller = true;
+                }
             }
+            // 只剩亡语杀手,则自动结束装死
+            if (!hasOtherKiller) {
+                for (ServerPlayer player : serverWorld.players()) {
+                    if (GameUtils.isPlayerEliminated(player))
+                        continue;
+                    SRERole role = gameWorldComponent.getRole(player);
+                    if (role == ModRoles.INSANE_KILLER) {
+                        InsaneKillerPlayerComponent insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(player);
+                        if (insaneKillerPlayerComponent.isActive) {
+                            insaneKillerPlayerComponent.toggleAbility();
+                        }
+                    }
+                }
+            }
+
             curReviveTick = 0;
         }
         // 经济增长cd事件

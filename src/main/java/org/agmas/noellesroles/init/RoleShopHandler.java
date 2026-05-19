@@ -45,6 +45,7 @@ import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComp
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -243,6 +244,8 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> PILOT_SHOP = new ArrayList<>();
   // ==================== 影隼商店 ====================
   public static ArrayList<ShopEntry> SHADOW_FALCON_SHOP = new ArrayList<>();
+  // ==================== 疫使商店 ====================
+  public static ArrayList<ShopEntry> INFECTED_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -1471,6 +1474,23 @@ public class RoleShopHandler {
           });
       ShopContent.customEntries.put(ModRoles.WATCHER_ID, shop);
     }
+    
+    // 叛徒商店 - 空商店，不显示默认杀手商店
+    {
+      var TRAITOR_SHOP = new ArrayList<ShopEntry>();
+      ShopContent.customEntries.put(TraitorAndModifiers.TRAITOR.identifier(), TRAITOR_SHOP);
+    }
+    
+    // 疫使商店
+    {
+      var INFECTED_SHOP_LIST = new ArrayList<ShopEntry>();
+      // 催化剂 - 450金币
+      // 使所有感染玩家和中毒玩家致死，但不会使杀手阵营/杀手方中立玩家致死
+      INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 450, ShopEntry.Type.TOOL));
+      // 乘务员钥匙 - 100金币
+      INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+      ShopContent.customEntries.put(ModRoles.INFECTED.getIdentifier(), INFECTED_SHOP_LIST);
+    }
   }
 
   /**
@@ -1508,6 +1528,7 @@ public class RoleShopHandler {
     CANDLE_BEARER_SHOP.clear();
     PILOT_SHOP.clear();
     SHADOW_FALCON_SHOP.clear();
+    INFECTED_SHOP.clear();
 
     柜子区的商店.add(new ShopEntry(
         ModItems.BANDIT_REVOLVER.getDefaultInstance(),

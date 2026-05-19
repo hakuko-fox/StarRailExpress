@@ -137,6 +137,23 @@ public final class GKeyRoleSkill {
             return true;
         });
 
+        // 疫使：瞄准玩家时按技能键感染目标
+        register(ModRoles.INFECTED, true, (client, gameWorld) -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
+                return true;
+            }
+            var hitResult = client.hitResult;
+            if (hitResult != null && hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                net.minecraft.world.phys.EntityHitResult entityHit = (net.minecraft.world.phys.EntityHitResult) hitResult;
+                if (entityHit.getEntity() instanceof Player targetPlayer) {
+                    ClientPlayNetworking.send(new AbilityWithTargetC2SPacket(targetPlayer));
+                }
+            } else {
+                client.player.displayClientMessage(Component.translatable("hud.infected.target_miss"), true);
+            }
+            return true;
+        });
+
         // Imitator: Shift+G = switch slot, G at player = copy/use, G without target = use
         register(ModRoles.IMITATOR, true, (client, gameWorld) -> {
             if (!GameUtils.isPlayerAliveAndSurvival(client.player)) return true;
