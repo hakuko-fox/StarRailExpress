@@ -68,7 +68,7 @@ public class TraitorAndModifiers {
         public List<io.wifi.starrailexpress.util.ShopEntry> getShopEntries() {
             return new ArrayList<>();
         }
-    }).setOccupiedRoleCount(0).setCanBeRandomedByOtherRoles(false);
+    }).setMax(0).setCanBeRandomedByOtherRoles(false);
 
     // ==================== 修饰符定义 ====================
     

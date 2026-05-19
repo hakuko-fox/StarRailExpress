@@ -1226,8 +1226,8 @@ public class ModEventsRegister {
             // 获取死亡玩家的翻译职业名
             String rolePath = victimRole.identifier().getPath();
             Component roleName = Component.translatable("announcement.star.role." + rolePath);
-            Component deathMessage = Component.translatable("message.noellesroles.mortician.passive_death", roleName)
-                    .withStyle(ChatFormatting.DARK_GRAY);
+            Component deathMessage = Component.translatable("message.noellesroles.mortician_bodymaker.passive_death", roleName)
+                    .withStyle(ChatFormatting.GOLD);
             // 向所有葬仪玩家广播（使用广播形式，与广播员一致）
             for (Player player : victim.level().players()) {
                 if (!gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER))

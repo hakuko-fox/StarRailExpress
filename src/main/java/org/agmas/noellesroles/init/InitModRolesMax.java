@@ -19,6 +19,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
+import org.agmas.noellesroles.role.TraitorAndModifiers;
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
@@ -268,6 +269,9 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.DIVER_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 0);
+
+        // 叛徒设置为0
+        Harpymodloader.setRoleMaximum(TraitorAndModifiers.TRAITOR_ID, 0);
 
         // 飞行员和影隼初始为0
         Harpymodloader.setRoleMaximum(ModRoles.PILOT_ID, 0);

@@ -155,8 +155,6 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
                     modeName = Component.translatable("message.noellesroles.mortician_bodymaker.mode.drag")
                             .withStyle(ChatFormatting.GOLD);
             }
-            Component message = Component.translatable("message.noellesroles.mortician_bodymaker.current_mode", modeName);
-            serverPlayer.displayClientMessage(message, true);
         }
 
         this.sync();

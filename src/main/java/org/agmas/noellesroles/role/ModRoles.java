@@ -353,7 +353,7 @@ public class ModRoles {
                     false, // showParticles（显示粒子）
                     false // showIcon（显示图标）
             )))
-            .setCanSeeCoin(true).setComponentKey(ModComponents.MEATBALL).setOccupiedRoleCount(1);
+            .setCanSeeCoin(true).setComponentKey(ModComponents.MEATBALL).setMax(1);
 
     /**
      * 殡仪员角色 - 平民阵营
@@ -380,7 +380,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setCanSeeCoin(true).setComponentKey(ModComponents.MORTICIAN).setOccupiedRoleCount(1);
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.MORTICIAN).setMax(1);
 
     /**
      * 建筑师角色 - 平民阵营
@@ -406,7 +406,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setCanSeeCoin(true).setComponentKey(ModComponents.BUILDER).setOccupiedRoleCount(1);
+    )).setCanSeeCoin(true).setComponentKey(ModComponents.BUILDER).setMax(1);
 
     public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
             GUEST_GHOST_ID, // 角色 ID
@@ -498,7 +498,7 @@ public class ModRoles {
                     true)
                     .setComponentKey(ModComponents.NINJA)
                     .setCanSeeCoin(true)
-                    .setOccupiedRoleCount(1));
+                    .setMax(1));
 
             public static SRERole DELAYER = TMMRoles.registerRole(new NormalRole(
                     DELAYER_ID,
@@ -508,7 +508,7 @@ public class ModRoles {
                     SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, // 无限冲刺 / 疲劳
                     true // 隐藏计分板
-            )).setComponentKey(ModComponents.DELAYER).setCanSeeCoin(true).setOccupiedRoleCount(1);
+            )).setComponentKey(ModComponents.DELAYER).setCanSeeCoin(true).setMax(1);
     public static SRERole ELF = TMMRoles.registerRole(
             new NormalRole(ELF_ID, new Color(106, 255, 179).getRGB(),
                     true, false, SRERole.MoodType.REAL,
@@ -535,7 +535,7 @@ public class ModRoles {
                                                 return false;
                                         };
                                 }
-                        }).setCanSeeCoin(true).setCanPickUpRevolver(true).setCanAutoAddMoney(false).setVigilanteTeam(true).setOccupiedRoleCount(1);
+                        }).setCanSeeCoin(true).setCanPickUpRevolver(true).setCanAutoAddMoney(false).setVigilanteTeam(true).setMax(1);
     public static SRERole WIND_YAOSE = TMMRoles.registerRole(
             new ExtraEffectRole(WIND_YAOSE_ID, new Color(127, 231, 255).getRGB(),
                     false, false, SRERole.MoodType.FAKE,
@@ -569,7 +569,7 @@ public class ModRoles {
             new NormalRole(CUCKOO_ID, new Color(200, 170, 60).getRGB(),
                     false, false, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, true))
-            .setCanSeeCoin(true).setComponentKey(ModComponents.CUCKOO).setCanBeRandomedByOtherRoles(false).setCanUseInstinct(true).setNeutrals(true).setOccupiedRoleCount(1);
+            .setCanSeeCoin(true).setComponentKey(ModComponents.CUCKOO).setCanBeRandomedByOtherRoles(false).setCanUseInstinct(true).setNeutrals(true).setMax(1);
     public static SRERole JESTER = TMMRoles
             .registerRole(new NormalRole(JESTER_ID, new Color(186, 85, 211).getRGB(), false,
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
@@ -1005,7 +1005,7 @@ public class ModRoles {
             true, // 有杀手功能
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
-            true)).setComponentKey(ModComponents.PARTY).setCanSeeCoin(true).setOccupiedRoleCount(1);
+            true)).setComponentKey(ModComponents.PARTY).setCanSeeCoin(true).setMax(1);
     public static SRERole MANIPULATOR = TMMRoles
             .registerRole(new ManipulatorRole(MANIPULATOR_ID, new Color(90, 20, 61).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
@@ -1043,7 +1043,7 @@ public class ModRoles {
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setNeutralForKiller(true)
             .setCanUseInstinct(true)
-            .setOccupiedRoleCount(1)
+            .setMax(1)
             .setCanSeeCoin(true)
             .setMax(1)
             .setCanBeRandomedByOtherRoles(false);
@@ -1073,7 +1073,7 @@ public class ModRoles {
             .setComponentKey(ModComponents.MORTICIAN_BODYMAKER)
             .setNeutralForKiller(true)
             .setCanUseInstinct(true)
-            .setOccupiedRoleCount(1)
+            .setMax(1)
             .setCanSeeCoin(true)
             .setMax(1);
 
@@ -1401,7 +1401,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setComponentKey(PainterPlayerComponent.KEY).setCanSeeCoin(true).setOccupiedRoleCount(1);
+    )).setComponentKey(PainterPlayerComponent.KEY).setCanSeeCoin(true).setMax(1);
 
     // 杀手阵营角色
     /**
