@@ -136,6 +136,17 @@ public abstract class CoronerHudMixin {
                 }
                 PlayerBodyEntityComponent bodyDeathReasonComponent = (PlayerBodyEntityComponent) PlayerBodyEntityComponent.KEY
                         .get(NoellesrolesClient.targetBody);
+
+                // 检查是否是葬仪伪造的尸体
+                if (bodyDeathReasonComponent.isFakeBody) {
+                    // 显示"伪造的尸体"
+                    Component fakeBodyName = Component.translatable("hud.coroner.fake_body")
+                            .withColor(ModRoles.MORTICIAN_BODYMAKER.color());
+                    context.drawString(renderer, fakeBodyName, -renderer.width(fakeBodyName) / 2, 32, CommonColors.RED);
+                    context.pose().popPose();
+                    return;
+                }
+
                 String deathReason_str = NoellesrolesClient.targetBody.getDeathReason();
                 if (deathReason_str.isBlank() || deathReason_str.isEmpty()) {
                     deathReason_str = GameConstants.DeathReasons.GENERIC.toString();

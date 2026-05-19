@@ -26,6 +26,10 @@ public class ModPackets {
     public static final CustomPacketPayload.Type<MonitorMarkC2SPacket> MONITOR_MARK_PACKET = MonitorMarkC2SPacket.ID;
     public static final CustomPacketPayload.Type<WaterGhostUseSkillC2SPacket> WATER_GHOST_SKILL_PACKET = WaterGhostUseSkillC2SPacket.TYPE;
 
+    public static final CustomPacketPayload.Type<MorticianToggleModeC2SPacket> MORTICIAN_TOGGLE_MODE_PACKET = MorticianToggleModeC2SPacket.TYPE;
+
+    public static final CustomPacketPayload.Type<MorticianCreateBodyC2SPacket> MORTICIAN_CREATE_BODY_PACKET = MorticianCreateBodyC2SPacket.TYPE;
+
     public static void registerPackets() {
         PayloadTypeRegistry.playS2C().register(ProblemScreenOpenC2SPacket.ID,
                 ProblemScreenOpenC2SPacket.CODEC);
@@ -120,6 +124,12 @@ public class ModPackets {
                 MercenaryContractSignC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(MonitorMarkC2SPacket.ID, MonitorMarkC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WaterGhostUseSkillC2SPacket.TYPE, WaterGhostUseSkillC2SPacket.CODEC);
+
+        // 葬仪模式切换网络包
+        PayloadTypeRegistry.playC2S().register(MorticianToggleModeC2SPacket.TYPE, MorticianToggleModeC2SPacket.CODEC);
+
+        // 葬仪造尸网络包
+        PayloadTypeRegistry.playC2S().register(MorticianCreateBodyC2SPacket.TYPE, MorticianCreateBodyC2SPacket.CODEC);
 
         // 派对狂网络包
         PayloadTypeRegistry.playC2S().register(PartyKillerC2SPacket.TYPE, PartyKillerC2SPacket.CODEC);

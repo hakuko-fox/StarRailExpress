@@ -370,6 +370,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "infected"),
       InfectedPlayerComponent.class);
 
+  // 葬仪组件 - 杀手方中立阵营，曳柩/丧钟/清洗技能，造尸能力
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent> MORTICIAN_BODYMAKER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
+      org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -738,6 +743,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, INFECTED)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(InfectedPlayerComponent::new);
+
+    // 注册葬仪组件 - 杀手方中立阵营，曳柩/丧钟/清洗技能，造尸能力
+    registry.beginRegistration(Player.class, MORTICIAN_BODYMAKER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

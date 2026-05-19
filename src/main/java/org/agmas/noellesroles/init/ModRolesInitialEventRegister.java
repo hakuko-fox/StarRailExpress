@@ -46,6 +46,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -340,6 +341,12 @@ public class ModRolesInitialEventRegister {
                 painterComponent.init();
                 painterComponent.sync();
             }
+            // 葬仪角色初始化
+            if (role.equals(ModRoles.MORTICIAN_BODYMAKER)) {
+                var morticianComponent = MorticianPlayerComponent.KEY.get(player);
+                morticianComponent.init();
+                morticianComponent.sync();
+            }
         });
     }
 
@@ -387,6 +394,15 @@ public class ModRolesInitialEventRegister {
             if (NRSounds.INFECTED_INFECT != null) {
                 player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     NRSounds.SYRINGE_STAB, SoundSource.MASTER, 0.5f, 0.5f);
+            }
+        });
+
+        // 葬仪技能注册：使用当前模式的技能
+        RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
+            ServerPlayer player = context.player();
+            MorticianPlayerComponent morticianComponent = MorticianPlayerComponent.KEY.get(player);
+            if (morticianComponent != null) {
+                morticianComponent.useAbility();
             }
         });
     }

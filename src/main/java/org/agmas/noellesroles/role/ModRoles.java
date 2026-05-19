@@ -79,6 +79,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.utils.RandomColorUtil;
@@ -256,6 +257,9 @@ public class ModRoles {
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
     // 疫使 ID - 杀手方中立
     public static final ResourceLocation INFECTED_ID = Noellesroles.id("infected");
+
+    // 葬仪 ID - 杀手方中立
+    public static final ResourceLocation MORTICIAN_BODYMAKER_ID = Noellesroles.id("mortician_bodymaker");
 
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
@@ -1044,6 +1048,35 @@ public class ModRoles {
             .setCanSeeCoin(true)
             .setMax(1)
             .setCanBeRandomedByOtherRoles(false);
+
+    /**
+     * 葬仪角色 - 杀手方中立阵营
+     * - 杀手方中立阵营 (isInnocent = false, canUseKiller = false, setNeutralForKiller = true)
+     * - 假心情系统
+     * - 无限冲刺时间
+     * - 在计分板上隐藏
+     *
+     * 技能（蹲下按技能键切换模式）：
+     * - 曳柩：对尸体按下技能键，可以拖动尸体，再次按下放下并进入45秒冷却
+     * - 丧钟：5格半径内玩家体力减少60%，进入60秒冷却
+     * - 清洗：消除3格半径内血液，进入45秒冷却
+     *
+     * 尸匠：拥有造尸能力（搬运KinsWathe中造尸怪bodymaker的技能）
+     * - 造出来的尸体物品栏为空
+     *
+     * 被动-引渡：杀手/杀手方中立/魔术师死亡时向所有杀手、杀手方中立和魔术师广播
+     *
+     * 商店：乘务员钥匙(100金币)、裹尸袋(150金币)、血瓶(75金币)
+     */
+    public static SRERole MORTICIAN_BODYMAKER = TMMRoles
+            .registerRole(new NormalRole(MORTICIAN_BODYMAKER_ID, new Color(50, 50, 50).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setComponentKey(ModComponents.MORTICIAN_BODYMAKER)
+            .setNeutralForKiller(true)
+            .setCanUseInstinct(true)
+            .setOccupiedRoleCount(1)
+            .setCanSeeCoin(true)
+            .setMax(1);
 
     public static SRERole SPELLBREAKER = TMMRoles
             .registerRole(new NormalRole(SPELLBREAKER_ID, (new Color(132, 46, 170)).getRGB(), false,

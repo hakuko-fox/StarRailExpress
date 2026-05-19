@@ -65,6 +65,7 @@ import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.swapper.SwapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianPlayerComponent;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -905,7 +906,7 @@ public class ModPacketsReciever {
     // 零一五枪射击包处理
     ServerPlayNetworking.registerGlobalReceiver(ZeroOneFiveShootPayload.ID, new ZeroOneFiveShootPayload.Receiver());
 
-    // 建筑师技能包处理
+        // 建筑师技能包处理
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.RicesRoleRhapsody.BUILDER_ABILITY_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))
         return;
@@ -935,6 +936,68 @@ public class ModPacketsReciever {
           builderComponent.useDemolishAbility();
         }
         ConfigWorldComponent.onPlayerUsedSkill(player);
+      }
+    });
+
+    // 葬仪模式切换包处理
+    ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORTICIAN_TOGGLE_MODE_PACKET, (payload, context) -> {
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))
+        return;
+      ServerPlayer player = context.player();
+      SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+
+      if (!gameWorldComponent.isSkillAvailable) {
+        return;
+      }
+
+      if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
+        MorticianPlayerComponent morticianComponent = MorticianPlayerComponent.KEY.get(player);
+        if (morticianComponent != null) {
+          morticianComponent.toggleMode();
+        }
+      }
+    });
+
+    // 葬仪造尸包处理
+    ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORTICIAN_CREATE_BODY_PACKET, (payload, context) -> {
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))
+        return;
+      ServerPlayer player = context.player();
+      SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+
+      if (!gameWorldComponent.isSkillAvailable) {
+        return;
+      }
+
+      if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
+        MorticianPlayerComponent morticianComponent = MorticianPlayerComponent.KEY.get(player);
+        if (morticianComponent == null) return;
+        
+        // 检查冷却
+        if (morticianComponent.cooldown > 0) {
+          player.displayClientMessage(
+              Component.translatable("message.noellesroles.mortician.cooldown", (morticianComponent.cooldown + 19) / 20)
+                  .withStyle(ChatFormatting.RED),
+              true);
+          return;
+        }
+
+        // 找到目标玩家
+        Player targetPlayer = player.level().getPlayerByUUID(payload.targetUuid());
+        if (targetPlayer == null || !(targetPlayer instanceof ServerPlayer)) {
+          player.displayClientMessage(
+              Component.translatable("message.noellesroles.mortician.create_body.target_not_found")
+                  .withStyle(ChatFormatting.RED),
+              true);
+          return;
+        }
+
+        // 创建尸体
+        if (morticianComponent.createBody((ServerPlayer) targetPlayer, payload.deathReason(), payload.roleId())) {
+          // 设置冷却为120秒
+          morticianComponent.cooldown = 120 * 20;
+          morticianComponent.sync();
+        }
       }
     });
   }

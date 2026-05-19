@@ -4,6 +4,7 @@ import de.maxhenkel.voicechat.api.VoicechatConnection;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
@@ -61,6 +62,14 @@ public class RevivalSelectionHandler {
                 return InteractionResult.PASS;
             }
             if (!(entity instanceof PlayerBodyEntity body)) {
+                return InteractionResult.PASS;
+            }
+            // 检查是否是葬仪伪造的尸体，不能复活伪造的尸体
+            if (PlayerBodyEntityComponent.KEY.get(body).isFakeBody) {
+                player.displayClientMessage(
+                        Component.translatable("message.stupid_express.necromancer.cannot_revive_fake_body")
+                                .withStyle(ChatFormatting.RED),
+                        true);
                 return InteractionResult.PASS;
             }
             if (!gameWorldComponent.isSkillAvailable) {
@@ -146,6 +155,14 @@ public class RevivalSelectionHandler {
                 return InteractionResult.PASS;
             }
             if (!(entity instanceof PlayerBodyEntity body)) {
+                return InteractionResult.PASS;
+            }
+            // 检查是否是葬仪伪造的尸体，不能复活伪造的尸体
+            if (PlayerBodyEntityComponent.KEY.get(body).isFakeBody) {
+                player.displayClientMessage(
+                        Component.translatable("message.stupid_express.necromancer.cannot_revive_fake_body")
+                                .withStyle(ChatFormatting.RED),
+                        true);
                 return InteractionResult.PASS;
             }
             if (!gameWorldComponent.isSkillAvailable) {

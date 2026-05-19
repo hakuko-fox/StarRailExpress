@@ -205,6 +205,23 @@ public final class GKeyRoleSkill {
             ClientPlayNetworking.send(new AbilityC2SPacket());
             return true;
         });
+
+        // 葬仪：蹲下按技能键切换模式，按技能键使用当前模式技能
+        register(ModRoles.MORTICIAN_BODYMAKER, true, (client, gameWorld) -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
+                return true;
+            }
+
+            // Shift+技能键 = 切换模式
+            if (client.player.isShiftKeyDown()) {
+                ClientPlayNetworking.send(new org.agmas.noellesroles.packet.MorticianToggleModeC2SPacket());
+                return true;
+            }
+
+            // 普通技能键 = 使用当前模式技能
+            ClientPlayNetworking.send(new AbilityC2SPacket());
+            return true;
+        });
     }
 
     @FunctionalInterface

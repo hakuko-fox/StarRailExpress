@@ -1,6 +1,8 @@
 {
   "or_2_argu": "%s 或 %s",
   "message.stupid_express.generic.skill_not_available":"技能暫不可用",
+  "message.stupid_express.amnesiac.cannot_interact_fake_body": "無法與偽造的屍體互動",
+  "message.stupid_express.necromancer.cannot_revive_fake_body": "無法復活偽造的屍體",
   "announcement.star.goals.amnesiac": "從屍首上汲取回憶，穿戴其過往經歷",
   "announcement.star.goals.stupid_express.amnesiac": "從屍首上汲取回憶，穿戴其過往經歷",
   "announcement.star.role.stupid_express.amnesiac": "失憶患者",

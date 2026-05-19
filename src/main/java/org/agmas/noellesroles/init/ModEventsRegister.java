@@ -1214,6 +1214,27 @@ public class ModEventsRegister {
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             ShadowFalconPlayerComponent.onDeathGiveJetpacks(victim);
         });
+        // 葬仪被动-引渡：杀手/杀手方中立/魔术师死亡时向所有葬仪广播
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
+            if (gameWorldComponent == null || !gameWorldComponent.isRunning())
+                return;
+            // 检查死亡玩家是否是杀手阵营、杀手方中立或魔术师
+            var victimRole = gameWorldComponent.getRole(victim);
+            if (victimRole == null || !gameWorldComponent.isKillerTeamRole(victimRole))
+                return;
+            // 获取死亡玩家的职业名称
+            String roleName = victimRole.identifier().getPath();
+            Component deathMessage = Component.translatable("message.noellesroles.mortician.passive_death", roleName);
+            // 向所有葬仪玩家广播死亡信息
+            for (Player player : victim.level().players()) {
+                if (!gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER))
+                    continue;
+                if (player instanceof ServerPlayer sp) {
+                    player.displayClientMessage(deathMessage.withStyle(ChatFormatting.DARK_GRAY), true);
+                }
+            }
+        });
         OnPlayerKilledPlayerIdentifier.EVENT.register((victim, killer, deathReason) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorldComponent.isRole(killer, ModRoles.MERCENARY)) {

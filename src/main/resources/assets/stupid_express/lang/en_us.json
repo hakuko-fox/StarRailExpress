@@ -1,6 +1,8 @@
 {
   "or_2_argu": "%s or %s",
   "message.stupid_express.generic.skill_not_available":"Skill temporarily unavailable",
+  "message.stupid_express.amnesiac.cannot_interact_fake_body": "Cannot interact with fake bodies",
+  "message.stupid_express.necromancer.cannot_revive_fake_body": "Cannot revive fake bodies",
   "announcement.star.goals.amnesiac": "Absorb memories from corpses, wear their past experiences",
   "announcement.star.goals.stupid_express.amnesiac": "Absorb memories from corpses, wear their past experiences",
   "announcement.star.role.stupid_express.amnesiac": "Amnesiac",

@@ -268,10 +268,19 @@ public class WayfarerPlayerComponent implements RoleComponent, ServerTickingComp
                 }
                 if (level.isClientSide)
                     return InteractionResult.SUCCESS;
-                Player targetVictim = level.getPlayerByUUID(be.getPlayerUuid());
 
+                // 检查是否是葬仪伪造的尸体，不能与伪造的尸体交互
                 PlayerBodyEntityComponent bodyDeathReasonComponent = (PlayerBodyEntityComponent) PlayerBodyEntityComponent.KEY
                         .get(be);
+                if (bodyDeathReasonComponent.isFakeBody) {
+                    player.displayClientMessage(
+                            Component.translatable("message.noellesroles.wayfarer.cannot_interact_fake_body")
+                                    .withStyle(ChatFormatting.RED),
+                            true);
+                    return InteractionResult.FAIL;
+                }
+
+                Player targetVictim = level.getPlayerByUUID(be.getPlayerUuid());
                 UUID killerUid = be.getKillerUuid();
                 Player targetKiller = null;
                 if (killerUid != null) {

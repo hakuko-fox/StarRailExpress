@@ -246,6 +246,8 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> SHADOW_FALCON_SHOP = new ArrayList<>();
   // ==================== 疫使商店 ====================
   public static ArrayList<ShopEntry> INFECTED_SHOP = new ArrayList<>();
+  // ==================== 葬仪商店 ====================
+  public static ArrayList<ShopEntry> MORTICIAN_BODYMAKER_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -1491,6 +1493,11 @@ public class RoleShopHandler {
       INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(ModRoles.INFECTED.getIdentifier(), INFECTED_SHOP_LIST);
     }
+
+    // 葬仪商店
+    {
+      ShopContent.customEntries.put(ModRoles.MORTICIAN_BODYMAKER_ID, MORTICIAN_BODYMAKER_SHOP);
+    }
   }
 
   /**
@@ -1529,6 +1536,7 @@ public class RoleShopHandler {
     PILOT_SHOP.clear();
     SHADOW_FALCON_SHOP.clear();
     INFECTED_SHOP.clear();
+    MORTICIAN_BODYMAKER_SHOP.clear();
 
     柜子区的商店.add(new ShopEntry(
         ModItems.BANDIT_REVOLVER.getDefaultInstance(),
@@ -2220,5 +2228,22 @@ public class RoleShopHandler {
         }
       });
     }
+
+    // 葬仪商店
+    // 乘务员钥匙 - 100金币
+    MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
+        ModItems.MASTER_KEY_P.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+    // 裹尸袋 - 150金币
+    MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
+        TMMItems.BODY_BAG.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+    // 血瓶 - 75金币
+    MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
+        ModItems.BLOOD_BOTTLE.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
   }
 }

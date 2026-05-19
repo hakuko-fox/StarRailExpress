@@ -44,6 +44,14 @@ public class RoleSelectionHandler {
             if (!(entity instanceof PlayerBodyEntity victim)) {
                 return InteractionResult.PASS;
             }
+            // 检查是否是葬仪伪造的尸体，不能与伪造的尸体交互
+            if (PlayerBodyEntityComponent.KEY.get(victim).isFakeBody) {
+                player.displayClientMessage(
+                        Component.translatable("message.stupid_express.amnesiac.cannot_interact_fake_body")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return InteractionResult.PASS;
+            }
             if (!gameWorldComponent.isSkillAvailable) {
                 // 技能不可用
                 player.displayClientMessage(

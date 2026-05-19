@@ -331,6 +331,36 @@ public class InstinctRenderer {
             return -1;
         });
 
+        // 葬仪：看所有人和尸体都是自己的颜色，且可以透视场上所有尸体
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (Minecraft.getInstance() == null)
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (self == null)
+                return -1;
+            if (SREClient.gameComponent == null)
+                return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.MORTICIAN_BODYMAKER))
+                return -1;
+            if (GameUtils.isPlayerSpectatingOrCreative(self))
+                return -1;
+
+            // 葬仪总是可以看到尸体（不需要开启杀手直觉）
+            if (target instanceof PlayerBodyEntity) {
+                return ModRoles.MORTICIAN_BODYMAKER.color();
+            }
+
+            // 需要开启杀手直觉才能看到玩家
+            if (!hasInstinct)
+                return -1;
+
+            // 所有玩家都显示葬仪的颜色
+            if (target instanceof Player) {
+                return ModRoles.MORTICIAN_BODYMAKER.color();
+            }
+            return -1;
+        });
+
         // 雇佣兵：仅在雇佣兵客户端将其合约目标高亮显示
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (Minecraft.getInstance() == null)
