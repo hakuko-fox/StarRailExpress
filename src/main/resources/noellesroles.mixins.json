@@ -82,6 +82,8 @@
     "client.general.ThrowItemMixin",
     "client.roles.bartender.DefenseVialViewMixin",
     "client.roles.builder.BuilderBlockUpdateMixin",
+    "client.roles.bodymaker.BodymakerDoNotCloseMixin",
+    "client.roles.bodymaker.BodymakerScreenMixin",
     "client.roles.conductor.MasterKeyInvisibilityMixin",
     "client.roles.coroner.CoronerHudMixin",
     "client.roles.coroner.CustomRolesRoleNameRendererMixin",

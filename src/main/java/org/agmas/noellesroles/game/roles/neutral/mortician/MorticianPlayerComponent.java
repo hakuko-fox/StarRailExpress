@@ -1,17 +1,16 @@
 package org.agmas.noellesroles.game.roles.neutral.mortician;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.index.TMMEntities;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -21,15 +20,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.Vec3d;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.UUID;
 
@@ -369,35 +365,15 @@ public class MorticianPlayerComponent implements RoleComponent, io.wifi.starrail
         }
 
         try {
-            // 使用反射调用 KinsWathe 的 bodymaker 逻辑
-            if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("kinswathe")) {
-                return createBodyFromKinsWathe(serverPlayer, target, deathReason, roleId);
-            }
-        } catch (Exception e) {
-            Noellesroles.LOGGER.error("Failed to create body: ", e);
-        }
-
-        return false;
-    }
-
-    /**
-     * 从 KinsWathe mod 创建尸体
-     */
-    private boolean createBodyFromKinsWathe(ServerPlayer serverPlayer, ServerPlayer target, String deathReason, String roleId) {
-        try {
-            // 获取 WatheEntities 类
-            Class<?> watheEntitiesClass = Class.forName("dev.doctor4t.wathe.index.WatheEntities");
-            Field playerBodyField = watheEntitiesClass.getField("PLAYER_BODY");
-            Object playerBodyType = playerBodyField.get(null);
-
-            // 创建实体
-            Method createMethod = playerBodyType.getClass().getMethod("create", net.minecraft.world.World.class);
-            PlayerBodyEntity playerBody = (PlayerBodyEntity) createMethod.invoke(playerBodyType, target.getWorld());
+            // 直接使用 TMMEntities 创建 PlayerBodyEntity
+            PlayerBodyEntity playerBody = TMMEntities.PLAYER_BODY.create(serverPlayer.level());
 
             if (playerBody != null) {
                 playerBody.setPlayerUuid(target.getUuid());
-                Vec3d spawnPos = serverPlayer.getPos().add(serverPlayer.getRotationVector().normalize().multiply(1));
-                playerBody.refreshPositionAndAngles(spawnPos.getX(), serverPlayer.getY(), spawnPos.getZ(),
+
+                // 计算生成位置：玩家前方1格
+                Vec3 spawnPos = serverPlayer.getPos().add(serverPlayer.getRotationVector().normalize().multiply(1));
+                playerBody.refreshPositionAndAngles(spawnPos.x, serverPlayer.getY(), spawnPos.z,
                         serverPlayer.getYaw(), 0f);
                 playerBody.setYaw(serverPlayer.getYaw());
                 playerBody.setHeadYaw(serverPlayer.getYaw());
@@ -408,40 +384,29 @@ public class MorticianPlayerComponent implements RoleComponent, io.wifi.starrail
                 playerBody.setPitch(0f);
                 playerBody.age = 0;
 
-                // 清空物品栏
-                for (int i = 0; i < playerBody.getInventory().items.size(); i++) {
-                    playerBody.getInventory().items.set(i, ItemStack.EMPTY);
-                }
-
-                target.getWorld().spawnEntity(playerBody);
-
                 // 获取 PlayerBodyEntityComponent 并设置属性
-                Class<?> playerBodyComponentClass = Class.forName("io.wifi.starrailexpress.cca.PlayerBodyEntityComponent");
-                Object playerBodyComponentKey = playerBodyComponentClass.getField("KEY").get(null);
-                Method getPlayerBodyComponentMethod = playerBodyComponentKey.getClass().getMethod("get", Object.class);
-                Object playerBodyComponentInstance = getPlayerBodyComponentMethod.invoke(playerBodyComponentKey, playerBody);
+                PlayerBodyEntityComponent bodyComponent = PlayerBodyEntityComponent.KEY.get(playerBody);
 
                 // 设置死亡原因
-                Method setDeathReasonMethod = playerBodyComponentClass.getMethod("setDeathReason", String.class, boolean.class);
                 ResourceLocation deathReasonLoc = deathReason != null && !deathReason.isEmpty()
                     ? ResourceLocation.parse(deathReason)
                     : ResourceLocation.fromNamespaceAndPath("noellesroles", "mortician_body");
-                setDeathReasonMethod.invoke(playerBodyComponentInstance, deathReasonLoc.toString(), true);
+                bodyComponent.setDeathReason(deathReasonLoc.toString(), true);
 
                 // 设置角色
-                Field playerRoleField = playerBodyComponentClass.getField("playerRole");
                 ResourceLocation roleLoc = roleId != null && !roleId.isEmpty()
                     ? ResourceLocation.parse(roleId)
                     : ModRoles.MORTICIAN_BODYMAKER.identifier();
-                playerRoleField.set(playerBodyComponentInstance, roleLoc);
+                bodyComponent.playerRole = roleLoc;
 
-                // 设置为葬仪伪造的尸体
-                Field isFakeBodyField = playerBodyComponentClass.getField("isFakeBody");
-                isFakeBodyField.set(playerBodyComponentInstance, true);
+                // 设置为葬仪伪造的尸体 - 这是关键标志！
+                bodyComponent.isFakeBody = true;
 
-                // 同步
-                Method syncMethod = playerBodyComponentClass.getMethod("sync");
-                syncMethod.invoke(playerBodyComponentInstance);
+                // 同步组件
+                bodyComponent.sync();
+
+                // 生成实体到世界
+                serverPlayer.level().addFreshEntity(playerBody);
 
                 // 播放音效
                 serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_SKELETON_CONVERTED_TO_STRAY, SoundSource.PLAYERS, 1.0f, 1.0f);
@@ -452,10 +417,13 @@ public class MorticianPlayerComponent implements RoleComponent, io.wifi.starrail
                         SoundEvents.ENTITY_SKELETON_CONVERTED_TO_STRAY, SoundSource.PLAYERS, 1.0f, 1.0f);
                 });
 
+                Noellesroles.LOGGER.info("[Mortician] Created fake body with isFakeBody=true, deathReason={}, role={}",
+                    deathReasonLoc, roleLoc);
+
                 return true;
             }
         } catch (Exception e) {
-            Noellesroles.LOGGER.error("Failed to create body from KinsWathe: ", e);
+            Noellesroles.LOGGER.error("Failed to create body: ", e);
         }
         return false;
     }
@@ -470,7 +438,7 @@ public class MorticianPlayerComponent implements RoleComponent, io.wifi.starrail
             return;
         }
 
-        if (player.hasEffect(io.wifi.starrailexpress.init.ModEffects.SAFE_TIME)) {
+        if (player.hasEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME)) {
             return;
         }
 

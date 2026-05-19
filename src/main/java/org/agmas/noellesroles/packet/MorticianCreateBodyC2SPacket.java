@@ -5,7 +5,6 @@ import net.minecraft.network.codec.ByteCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 
 import java.util.UUID;
