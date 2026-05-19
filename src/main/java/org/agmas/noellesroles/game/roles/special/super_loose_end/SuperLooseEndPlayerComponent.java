@@ -37,7 +37,7 @@ public class SuperLooseEndPlayerComponent implements RoleComponent, ServerTickin
     public Player player;
     /* =========传送技能========= */
     public static final int RECALL_COOLDOWN = 20 * 30;
-    public static final int RECALL_COST = 2;
+    public static final int RECALL_COST = 1;
     public boolean placed = false;
     public double x = 0;
     public double y = 0;
