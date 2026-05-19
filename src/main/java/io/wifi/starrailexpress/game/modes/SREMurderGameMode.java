@@ -256,7 +256,8 @@ public class SREMurderGameMode extends GameMode {
                 }
 
                 if (mod.killerOnly) {
-                    valid = valid && gameWorldComponent.isKillerTeam(player);
+                    var role = gameWorldComponent.getRole(player);
+                    valid = valid && role != null && role.canUseKiller();
                 }
                 if (mod.civilianOnly) {
                     valid = valid && gameWorldComponent.isInnocent(player);
