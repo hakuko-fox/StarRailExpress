@@ -221,6 +221,12 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
                 return false;
             if (stack.is(ModItems.CONSPIRACY_PAGE))
                 return false;
+            if (stack.is(ModItems.SIGNATURE_PAPER))
+                return false;
+            if (stack.is(ModItems.LIFE_AND_DEATH_SHAPE))
+                return false;
+            if (stack.is(ModItems.SIGNED_PAPER))
+                return false;
             return true;
         }
 
