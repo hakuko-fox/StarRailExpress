@@ -258,6 +258,11 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             else if (role == TraitorAndModifiers.TRAITOR) {
                 player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
             }
+            // 炸弹客自带2个手雷
+            else if (role == ModRoles.BOMBER) {
+                player.addItem(new ItemStack(TMMItems.GRENADE));
+                player.addItem(new ItemStack(TMMItems.GRENADE));
+            }
         }
     }
 
@@ -484,8 +489,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                         }
                     }
                 }
-                // 如果没有非亡语杀手角色
-                else if (role != ModRoles.INSANE_KILLER) {
+                // 如果没有非亡语杀手角色和超级亡命徒
+                else if (role != ModRoles.INSANE_KILLER && role != SpecialGameModeRoles.SUPER_LOOSE_END) {
                     hasOtherKiller = true;
                 }
             }
