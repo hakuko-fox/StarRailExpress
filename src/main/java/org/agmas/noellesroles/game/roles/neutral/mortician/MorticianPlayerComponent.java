@@ -65,7 +65,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
     // 技能范围
     public static final double DRAG_RANGE = 4.0;
     public static final double FUNERAL_RANGE = 5.0;
-    public static final double CLEAN_RANGE = 3.0;
+    public static final double CLEAN_RANGE = 4.0;
 
     private final Player player;
 
@@ -299,7 +299,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
     }
 
     /**
-     * 清洗技能 - 消除3格半径内血液
+     * 清洗技能 - 消除4格半径内血液
      */
     private boolean useCleanAbility(ServerPlayer serverPlayer) {
         // 清除血液效果（通过反射调用血液mod的API）
@@ -331,16 +331,17 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
     }
 
     /**
-     * 清除玩家周围的血液效果
+     * 清除玩家周围的血液效果（仅清除范围内的血粒子）
      */
     private void clearBloodNearPlayer(ServerPlayer serverPlayer, double range) {
         // 播放清除音效作为反馈
         serverPlayer.serverLevel().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
                 SoundEvents.GENERIC_SPLASH, SoundSource.PLAYERS, 0.5f, 1.5f);
 
-        // 向所有玩家发送清除血液粒子数据包
+        // 向所有玩家发送清除血液粒子数据包（附带位置和范围）
         for (ServerPlayer onlinePlayer : serverPlayer.serverLevel().players()) {
-            ServerPlayNetworking.send(onlinePlayer, new ClearBloodParticlesS2CPacket());
+            ServerPlayNetworking.send(onlinePlayer,
+                    new ClearBloodParticlesS2CPacket(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), range));
         }
     }
 

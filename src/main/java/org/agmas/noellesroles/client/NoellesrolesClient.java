@@ -456,7 +456,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     .info("Blood Particle status: " + (bloodMain.enabled ? "Enabled" : "Disabled"));
         });
         ClientPlayNetworking.registerGlobalReceiver(ClearBloodParticlesS2CPacket.ID, (payload, context) -> {
-            context.client().execute(() -> BloodParticle.clearParticles());
+            context.client().execute(() -> BloodParticle.clearParticlesInRange(payload.x(), payload.y(), payload.z(), payload.range()));
         });
         ClientPlayNetworking.registerGlobalReceiver(NameTagSyncPayload.ID, (payload, context) -> {
             RoleNameRenderer.displayTags.putAll(payload.nametags());

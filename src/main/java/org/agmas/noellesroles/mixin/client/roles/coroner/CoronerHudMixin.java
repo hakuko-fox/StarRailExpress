@@ -43,6 +43,30 @@ import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPer
 @Mixin(RoleNameRenderer.class)
 public abstract class CoronerHudMixin {
 
+    /** 迟滞状态标记：防止理智在阈值附近波动时页面闪烁 */
+    private static boolean coronerWasShowingWarning = false;
+
+    /**
+     * 使用迟滞效应检查是否应该显示理智不足警告
+     * - 理智 < 0.50：显示警告
+     * - 理智 >= 0.60：不显示警告
+     * - 理智在 0.50 ~ 0.60 之间：维持上一次状态，防止闪烁
+     */
+    private static boolean shouldShowSanityWarning(SREPlayerMoodComponent moodComponent, boolean playerAlive) {
+        if (!playerAlive) return false;
+        float mood = moodComponent.getMood();
+        if (mood < 0.50f) {
+            coronerWasShowingWarning = true;
+            return true;
+        }
+        if (mood >= 0.60f) {
+            coronerWasShowingWarning = false;
+            return false;
+        }
+        // 理智在 0.50~0.60 之间，维持上一次状态
+        return coronerWasShowingWarning;
+    }
+
     @Inject(method = "renderHud", at = @At("TAIL"))
     private static void coronerRoleNameRenderer(Font renderer, LocalPlayer player, FakeGuiGraphics context,
             DeltaTracker tickCounter, CallbackInfo ci) {
@@ -75,7 +99,7 @@ public abstract class CoronerHudMixin {
                 }
                 SREPlayerMoodComponent moodComponent = (SREPlayerMoodComponent) SREPlayerMoodComponent.KEY
                         .get(Minecraft.getInstance().player);
-                if (moodComponent.isLowerThanMid() && SREClient.isPlayerAliveAndInSurvival()) {
+                if (shouldShowSanityWarning(moodComponent, SREClient.isPlayerAliveAndInSurvival())) {
                     Component name = Component.translatable("hud.coroner.sanity_requirements");
                     context.drawString(renderer, name, -renderer.width(name) / 2, 32, CommonColors.YELLOW);
                     context.pose().popPose();
@@ -128,10 +152,10 @@ public abstract class CoronerHudMixin {
                 context.pose().scale(0.6F, 0.6F, 1.0F);
                 SREPlayerMoodComponent moodComponent = (SREPlayerMoodComponent) SREPlayerMoodComponent.KEY
                         .get(Minecraft.getInstance().player);
-                if (moodComponent.isLowerThanMid() && SREClient.isPlayerAliveAndInSurvival()) {
-                    // Text name = Text.literal("50% sanity required to use ability");
+                if (shouldShowSanityWarning(moodComponent, SREClient.isPlayerAliveAndInSurvival())) {
                     Component name = Component.translatable("hud.coroner.sanity_requirements");
                     context.drawString(renderer, name, -renderer.width(name) / 2, 32, CommonColors.YELLOW);
+                    context.pose().popPose();
                     return;
                 }
                 PlayerBodyEntityComponent bodyDeathReasonComponent = (PlayerBodyEntityComponent) PlayerBodyEntityComponent.KEY
