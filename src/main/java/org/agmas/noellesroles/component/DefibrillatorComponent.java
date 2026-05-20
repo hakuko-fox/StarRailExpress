@@ -26,6 +26,7 @@ public class DefibrillatorComponent implements RoleComponent, ServerTickingCompo
     public long resurrectionTime = 0;
     public UUID corpseEntityId = null;
     public Vec3 deathPos = null;
+    public boolean defibrillatorMark = false;
     public static ComponentKey<DefibrillatorComponent> KEY = ModComponents.DEFIBRILLATOR;
 
     public DefibrillatorComponent(Player player) {
@@ -79,6 +80,7 @@ public class DefibrillatorComponent implements RoleComponent, ServerTickingCompo
         this.resurrectionTime = 0;
         this.corpseEntityId = null;
         this.deathPos = null;
+        this.defibrillatorMark = false;
         this.player.removeEffect(ModEffects.MOVE_BANED);
         this.player.removeEffect(ModEffects.USED_BANED);
         ModComponents.DEFIBRILLATOR.sync(player);
@@ -94,6 +96,7 @@ public class DefibrillatorComponent implements RoleComponent, ServerTickingCompo
         this.protectionExpiry = tag.getLong("protectionExpiry");
         this.isDead = tag.getBoolean("isDead");
         this.resurrectionTime = tag.getLong("resurrectionTime");
+        this.defibrillatorMark = tag.getBoolean("defibrillatorMark");
         if (tag.hasUUID("corpseEntityId")) {
             this.corpseEntityId = tag.getUUID("corpseEntityId");
         }
@@ -107,6 +110,7 @@ public class DefibrillatorComponent implements RoleComponent, ServerTickingCompo
         tag.putLong("protectionExpiry", this.protectionExpiry);
         tag.putBoolean("isDead", this.isDead);
         tag.putLong("resurrectionTime", this.resurrectionTime);
+        tag.putBoolean("defibrillatorMark", this.defibrillatorMark);
         if (this.corpseEntityId != null) {
             tag.putUUID("corpseEntityId", this.corpseEntityId);
         }

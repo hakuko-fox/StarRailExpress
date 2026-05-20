@@ -53,7 +53,7 @@ public abstract class SREPlayerTaskComponentMixin {
                             // 清除开始时间记录
                             WORKAHOLIC_START_TIME.remove(uuid);
                             
-                            // 工作狂效果：任务刷新速度加快50%（缩短50%等待时间），最低为0
+                            // 工作狂效果：任务刷新速度加快50%（缩短50%等待时间），最低为1tick
                             self.nextTaskTimer = (int) (self.nextTaskTimer * 0.5);
                             self.nextTaskTimer = Math.max(self.nextTaskTimer, 1);
                         }

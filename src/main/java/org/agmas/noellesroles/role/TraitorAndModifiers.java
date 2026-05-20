@@ -331,6 +331,14 @@ public class TraitorAndModifiers {
                 player.getAttribute(Attributes.GRAVITY).addPermanentModifier(ANTI_NEWTON_GRAVITY_MODIFIER);
             }
             
+            // === 起义军 - 仅在平民阵营时生效 ===
+            if (modifier.equals(REBEL)) {
+                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+                if (gameWorld != null && gameWorld.isRunning() && !gameWorld.isInnocent(player)) {
+                    worldModifierComponent.removeModifier(player.getUUID(), REBEL);
+                }
+            }
+            
             // 初始化给予金币/苹果计时器
             LAST_GIVE_COIN_TIME.put(player.getUUID(), System.currentTimeMillis());
             LAST_APPLE_TIME.put(player.getUUID(), System.currentTimeMillis());

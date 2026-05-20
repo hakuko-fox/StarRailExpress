@@ -76,6 +76,7 @@
   "screen.sre.skins.title_selector": "Title Selection",
   "message.tip.cant_use_skill": "You cannot use skills right now",
   "message.tip.purchase_failed": "Purchase failed",
+  "message.tip.purchase_cooldown": "Item purchase on cooldown, %s seconds remaining",
   "gui.sre.map_selector.zeppelin": "Zeppelin",
   "gui.sre.map_selector.zeppelin.desc": "Aerial combat platform",
   "gui.sre.map_selector.sky_village": "Sky Village",

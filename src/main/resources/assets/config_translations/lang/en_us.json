@@ -167,6 +167,7 @@
   "text.autoconfig.starrailexpress.option.firecrackerPrice": "Firecracker",
   "text.autoconfig.starrailexpress.option.gameConfigComment": "Game Configuration",
   "text.autoconfig.starrailexpress.option.grenadeCooldown": "Grenade",
+  "text.autoconfig.starrailexpress.option.grenadePurchaseCooldown": "Grenade Shop Purchase Cooldown",
   "text.autoconfig.starrailexpress.option.grenadePrice": "Grenade",
   "text.autoconfig.starrailexpress.option.knifeCooldown": "Knife",
   "text.autoconfig.starrailexpress.option.knifePrice": "Knife",

@@ -115,6 +115,8 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "cooldowns")
     public int grenadeCooldown = 300;
     @ConfigEntry.Category(value = "cooldowns")
+    public int grenadePurchaseCooldown = 30;
+    @ConfigEntry.Category(value = "cooldowns")
     public int lockpickCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")
     public int crowbarCooldown = 45;
