@@ -27,6 +27,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import org.agmas.noellesroles.component.InfectedPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -887,7 +890,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 ActionType.GIVE_EFFECT, ActionType.SHOW_TITLE, ActionType.ITEM_COOLDOWN, ActionType.SET_MOOD,
                 ActionType.CURE_PSYCHO,
                 ActionType.CLEAR_TASKS, ActionType.COMPLETE_TASK, ActionType.ADD_CUSTOM_TASK, ActionType.ADD_EXTRA_TASK,
-                ActionType.COMPLETE_CUSTOM_TASK, ActionType.NARRATOR);
+                ActionType.COMPLETE_CUSTOM_TASK, ActionType.NARRATOR, ActionType.INFECT);
 
         // 特殊处理的动作类型（已有自己的玩家过滤逻辑）
         Set<ActionType> specialActions = Set.of(
@@ -1036,6 +1039,19 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
                 if (psycho.getPsychoTicks() > 0) {
                     psycho.stopPsychoAndSync();
+                }
+            }
+            case INFECT -> {
+                // 进入感染状态：使用 TriggerAction 的 value 字段表示感染 tick 数
+                int infectionTicks = (int) action.value;
+                if (infectionTicks <= 0) {
+                    infectionTicks = GameConstants.getInTicks(3, 0); // 默认180秒
+                }
+                InfectedPlayerComponent infectedComp = ModComponents.INFECTED.get(player);
+                if (infectedComp != null) {
+                    infectedComp.infectedTicks = infectionTicks;
+                    infectedComp.infector = null; // 没有特定的感染源
+                    infectedComp.sync();
                 }
             }
             case CLEAR_TASKS -> {
@@ -1641,7 +1657,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         ADD_CUSTOM_TASK, // 增加自定义任务（根据clearTasks决定是否清空当前任务）
         ADD_EXTRA_TASK, // 额外添加任务（不清空当前任务，支持random随机任务）
         COMPLETE_CUSTOM_TASK, // 完成自定义任务
-        NARRATOR // 语音播报
+        NARRATOR, // 语音播报
+        INFECT // 进入感染
     }
 
     // 条件数据类

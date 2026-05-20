@@ -1214,10 +1214,21 @@ public class ModEventsRegister {
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             ShadowFalconPlayerComponent.onDeathGiveJetpacks(victim);
         });
-        // 葬仪被动-引渡：杀手/杀手方中立/魔术师死亡时向所有葬仪广播
+        // 葬仪被动-引渡：杀手/杀手方中立/魔术师死亡时向所有杀手、杀手方中立和魔术师广播
+        // 葬仪死亡后被动失效（场上没有存活的葬仪时不会触发广播）
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
             if (gameWorldComponent == null || !gameWorldComponent.isRunning())
+                return;
+            // 场上没有存活的葬仪时，被动失效
+            boolean hasAliveMortician = false;
+            for (Player player : victim.level().players()) {
+                if (GameUtils.isPlayerAliveAndSurvival(player) && gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
+                    hasAliveMortician = true;
+                    break;
+                }
+            }
+            if (!hasAliveMortician)
                 return;
             // 检查死亡玩家是否是杀手阵营、杀手方中立或魔术师
             var victimRole = gameWorldComponent.getRole(victim);
@@ -1228,9 +1239,15 @@ public class ModEventsRegister {
             Component roleName = Component.translatable("announcement.star.role." + rolePath);
             Component deathMessage = Component.translatable("message.noellesroles.mortician_bodymaker.passive_death", roleName)
                     .withStyle(ChatFormatting.GOLD);
-            // 向所有葬仪玩家广播（使用广播形式，与广播员一致）
+            // 向所有杀手、杀手方中立和魔术师广播
             for (Player player : victim.level().players()) {
-                if (!gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER))
+                if (!GameUtils.isPlayerAliveAndSurvival(player))
+                    continue;
+                var targetRole = gameWorldComponent.getRole(player);
+                if (targetRole == null)
+                    continue;
+                // 杀手 (canUseKiller) 或 杀手方中立 (isNeutralForKiller) 或 魔术师
+                if (!targetRole.canUseKiller() && !targetRole.isNeutralForKiller() && !gameWorldComponent.isRole(player, ModRoles.MAGICIAN))
                     continue;
                 if (player instanceof ServerPlayer sp) {
                     org.agmas.noellesroles.commands.BroadcastCommand.BroadcastMessage(sp, deathMessage);

@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -248,7 +249,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
     }
 
     /**
-     * 丧钟技能 - 5格半径内玩家体力减少60%
+     * 丧钟技能 - 5格半径内玩家体力减少60%（基于每个玩家的最大体力值），最低减少至0
      */
     private boolean useFuneralAbility(ServerPlayer serverPlayer) {
         Vec3 playerPos = serverPlayer.position();
@@ -258,7 +259,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         serverPlayer.serverLevel().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
                 SoundEvents.BELL_BLOCK, SoundSource.PLAYERS, 2.0f, 0.8f);
 
-        // 对范围内所有玩家施加缓慢效果（相当于减少体力）
+        // 对范围内所有玩家直接减少体力的60%（基于各自最大体力值），最低减少至0
         int affected = 0;
         for (Player target : serverPlayer.level().players()) {
             if (target == serverPlayer) continue;
@@ -268,8 +269,19 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
             if (distance <= range) {
                 // 检查玩家是否有无限体力
                 if (!hasInfiniteStamina(target)) {
-                    // 给予缓慢效果 3秒 = 相当于体力减少60%
-                    target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3 * 20, 2, false, true));
+                    // 获取目标玩家的最大体力值
+                    var gameWorld = SREGameWorldComponent.KEY.get(target.level());
+                    var targetRole = gameWorld != null ? gameWorld.getRole(target) : null;
+                    float maxStamina = targetRole != null ? (float) targetRole.getMaxSprintTime(target) : 100f;
+                    
+                    if (maxStamina > 0 && maxStamina < Integer.MAX_VALUE) {
+                        if (target instanceof PlayerStaminaGetter staminaGetter) {
+                            float currentStamina = staminaGetter.starrailexpress$getStamina();
+                            float reduceAmount = maxStamina * 0.6f;
+                            float newStamina = Math.max(0f, currentStamina - reduceAmount);
+                            staminaGetter.starrailexpress$setStamina(newStamina);
+                        }
+                    }
                     affected++;
                 }
             }
@@ -482,9 +494,10 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
             this.draggedBody.setYHeadRot(player.getYRot());
             this.draggedBody.yBodyRot = player.getYRot();
         } else if (this.draggedBody != null) {
-            // 尸体已消失
+            // 尸体已消失，自动解除拖动并使技能进入冷却
             this.draggedBody = null;
             this.draggedBodyUuid = null;
+            this.cooldown = DRAG_COOLDOWN;
             this.sync();
         }
     }

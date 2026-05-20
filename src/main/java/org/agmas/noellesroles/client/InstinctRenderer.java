@@ -918,7 +918,16 @@ public class InstinctRenderer {
                         }
 
                     }
-                    // 默认fallback
+                    // 疫使：杀手本能中透视的框为深绿色
+                    if (SREClient.gameComponent.isRole(target_player, ModRoles.INFECTED)) {
+                        return new Color(0, 100, 0).getRGB(); // 深绿色
+                    }
+                    // 葬仪：杀手本能中透视的框为淡灰色
+                    if (SREClient.gameComponent.isRole(target_player, ModRoles.MORTICIAN_BODYMAKER)) {
+                        return new Color(180, 180, 180).getRGB(); // 淡灰色
+                    }
+                    
+                // 默认fallback
                     if (target_role == null)
                         return Color.WHITE.getRGB();
                     if (target_role.canUseKiller()) {

@@ -1477,9 +1477,20 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(ModRoles.WATCHER_ID, shop);
     }
     
-    // 叛徒商店 - 空商店，不显示默认杀手商店
+    // 叛徒商店 - 屏障商品，不可交互、不可购买、不可显示，阻止默认杀手商店出现
     {
       var TRAITOR_SHOP = new ArrayList<ShopEntry>();
+      // 添加一个屏障商品：不可显示、不可购买，仅用于阻止 getRoleShopEntries 回退到默认杀手商店
+      TRAITOR_SHOP.add(new ShopEntry(Items.BARRIER.getDefaultInstance(), Integer.MAX_VALUE, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean canDisplay(@NotNull Player player) {
+          return false;
+        }
+        @Override
+        public boolean canBuy(@NotNull Player player) {
+          return false;
+        }
+      });
       ShopContent.customEntries.put(TraitorAndModifiers.TRAITOR.identifier(), TRAITOR_SHOP);
     }
     

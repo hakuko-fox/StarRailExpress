@@ -11,6 +11,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket;
 import org.agmas.noellesroles.packet.BuilderWallS2CPacket;
@@ -161,6 +163,12 @@ public class BuilderPlayerComponent implements RoleComponent, ServerTickingCompo
         
         // 发送S2C包给所有玩家
         sendWallToAllPlayers(wallId, wallPositions);
+        
+        // 播放方块放置的声音
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.serverLevel().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
+                    SoundEvents.STONE_PLACE, SoundSource.PLAYERS, 1.0f, 1.0f);
+        }
         
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.displayClientMessage(

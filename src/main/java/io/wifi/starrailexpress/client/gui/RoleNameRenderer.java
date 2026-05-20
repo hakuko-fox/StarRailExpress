@@ -27,6 +27,7 @@ import net.minecraft.world.phys.EntityHitResult;
 
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -114,7 +115,10 @@ public class RoleNameRenderer {
                     if (component.isNeutralForKiller(player))
                         playerRole = TrainRole.KILLER;
                     if (targetRole2 != null) {
-                        if (component.isKillerTeamRole(targetRole2) && playerRole.equals(TrainRole.KILLER)) {
+                        // 迷失杀手：杀手本能中不显示迷失杀手和杀手同伙信息
+                        if (component.isRole(target, ModRoles.LOST_KILLER)) {
+                            // 不做任何显示
+                        } else if (component.isKillerTeamRole(targetRole2) && playerRole.equals(TrainRole.KILLER)) {
                             if (component.canSeeKillerTeammate(player)) {
                                 context.pose().translate(0, 20 + renderer.lineHeight, 0);
                                 if (target != null) {
@@ -135,7 +139,8 @@ public class RoleNameRenderer {
                             }
                         }
                     }
-                    if (playerRole == TrainRole.KILLER && targetRole == TrainRole.KILLER) {
+                    // 迷失杀手：不显示杀手同伙标签
+                    if (playerRole == TrainRole.KILLER && targetRole == TrainRole.KILLER && !component.isRole(target, ModRoles.LOST_KILLER)) {
                         context.pose().translate(0, 20 + renderer.lineHeight, 0);
                         if (component.canSeeKillerTeammate(player)) {
                             MutableComponent roleText = Component.translatable("game.tip.cohort");

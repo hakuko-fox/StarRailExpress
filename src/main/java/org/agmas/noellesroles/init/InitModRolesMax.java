@@ -225,6 +225,7 @@ public class InitModRolesMax {
 
         // 同时出现
         RoleAssignmentManager.addOccupationRole(ModRoles.POISONER, ModRoles.DOCTOR);
+        RoleAssignmentManager.addOccupationRole(ModRoles.INFECTED, ModRoles.DOCTOR);
         RoleAssignmentManager.addOccupationRole(RedHouseRoles.BAKA, ModRoles.EXAMPLER);
         RoleAssignmentManager.addOccupationRole(ModRoles.DIO, ModRoles.JOJO);
         RoleAssignmentManager.addOccupationRole(ModRoles.WATER_GHOST, ModRoles.DIVER);
