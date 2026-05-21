@@ -278,6 +278,7 @@
   "text.autoconfig.noellesroles.option.minPlayerForEggRoles": "彩蛋角色最小玩家数",
   "text.autoconfig.noellesroles.option.chanceOfMagician": "魔术师刷新概率（%）",
   "text.autoconfig.noellesroles.option.minPlayerForMagician": "魔术师最小玩家数",
+  "text.autoconfig.noellesroles.option.chanceOfLostKiller": "迷失杀手刷新概率（%）",
   "text.autoconfig.noellesroles.option.chanceOfMonitor": "监察员刷新概率（%）",
   "text.autoconfig.noellesroles.option.chanceOfNianShou": "年兽刷新概率（%）",
   "text.autoconfig.noellesroles.option.minPlayerForRecorder": "记录员最小玩家数",

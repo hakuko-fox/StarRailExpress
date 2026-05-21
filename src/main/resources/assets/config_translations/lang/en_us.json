@@ -273,6 +273,7 @@
   "text.autoconfig.noellesroles.option.minPlayerForEggRoles": "DIO/Easter Egg Roles Minimum Players",
   "text.autoconfig.noellesroles.option.chanceOfMagician": "Magician Spawn Chance (%)",
   "text.autoconfig.noellesroles.option.minPlayerForMagician": "Magician Minimum Players",
+  "text.autoconfig.noellesroles.option.chanceOfLostKiller": "Lost Killer Spawn Chance (%)",
   "text.autoconfig.noellesroles.option.chanceOfMonitor": "Monitor Spawn Chance (%)",
   "text.autoconfig.noellesroles.option.chanceOfNianShou": "Nian Beast Spawn Chance (%)",
   "text.autoconfig.noellesroles.option.minPlayerForRecorder": "Recorder Minimum Players",
