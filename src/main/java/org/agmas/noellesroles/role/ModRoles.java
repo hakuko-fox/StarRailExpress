@@ -1220,7 +1220,6 @@ public class ModRoles {
             @Override
             public List<ItemStack> getDefaultItems() {
             ArrayList<ItemStack> itemStacks = new ArrayList<>();
-            itemStacks.add(new ItemStack(Items.BUNDLE));
             return itemStacks;
         }
 
