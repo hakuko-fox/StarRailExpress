@@ -389,12 +389,36 @@ public class SREMurderGameMode extends GameMode {
 
         List<SRERole> assignedNatures = neutralsPool.selectRoles(neutralsCount);
 
+        // 处理 setOccupiedRoleCount(0) 的职业：这些职业不占用原有杀手/中立/警长名额，
+        // 而是替换一个平民位。统计各阵营中 occupied=0 的数量，额外补充同阵营职业并减少平民数。
+        // 注意：平民（非警长阵营）不应该设置 occupiedRoleCount(0)，此处做安全兜底改为1，避免平民自己"替换"平民。
+        long zeroKillers = assignedKillers.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
+        long zeroVigilantes = assignedVigilantes.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
+        long zeroNeutrals = assignedNatures.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
+
+        if (zeroKillers > 0) {
+            assignedKillers.addAll(killerPool.selectRoles((int) zeroKillers));
+        }
+        if (zeroVigilantes > 0) {
+            assignedVigilantes.addAll(vigilantePool.selectRoles((int) zeroVigilantes));
+        }
+        if (zeroNeutrals > 0) {
+            assignedNatures.addAll(neutralsPool.selectRoles((int) zeroNeutrals));
+        }
+
         // 第三步：计算平民数量（只分配基础非平民角色，不包含补充的平民角色）
         int assignedSpecialCount = assignedKillers.size() + assignedVigilantes.size() + assignedNatures.size();
         int civilianCount = playerSize - assignedSpecialCount - forcedRoleSize;
 
         civilianPool.setIgnoreRoleOccupiedCount(true);
         List<SRERole> assignedCivilians = civilianPool.selectRoles(civilianCount);
+
+        // 平民（非警长阵营）如果设置了 setOccupiedRoleCount(0)，兜底改为1，避免平民自身触发"替换平民"逻辑
+        for (SRERole civilian : assignedCivilians) {
+            if (!civilian.isVigilanteTeam() && civilian.getOccupiedRoleCount() <= 0) {
+                civilian.setOccupiedRoleCount(1);
+            }
+        }
 
         // 第四步：合并所有分配的角色（包括处理关联角色）
         List<SRERole> allRoles = new ArrayList<>();

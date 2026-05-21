@@ -181,30 +181,40 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     }
 
     private void finishRotationPhase(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
-        // 先清除状态并同步，让客户端知道轮选已结束
         RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
+        
+        // 在 clear 之前保存已选职业（adjustRemainingRoles 阶段可能已修改 selectedRoles）
+        HashMap<UUID, SRERole> finalSelectedRoles = new HashMap<>(rrwc.getSelectedRoles());
+        int finalTotalPlayers = rrwc.getTotalPlayers();
+        ArrayList<SRERole> finalRolePool = new ArrayList<>(rrwc.getRolePool());
+        
+        // 清除状态并同步，让客户端知道轮选已结束
         rrwc.clear();
         rrwc.sync();
         
         isInRotationPhase = false;
         rotationTimeout = -1;
 
-        // 检查是否所有玩家都已选完职业
-        if (rrwc.getSelectedRoles().size() >= rrwc.getTotalPlayers()) {
-            completeRoleSelection(serverWorld, gameWorldComponent);
+        // 使用保存的 map 检查是否所有玩家都已选完职业
+        if (finalSelectedRoles.size() >= finalTotalPlayers) {
+            completeRoleSelection(serverWorld, gameWorldComponent, finalSelectedRoles);
         } else {
-            // 未全部选完，自动为剩余玩家分配职业
-            autoAssignRemainingPlayers(serverWorld, gameWorldComponent);
+            autoAssignRemainingPlayers(serverWorld, gameWorldComponent, finalSelectedRoles, finalRolePool);
         }
     }
 
     public void completeRoleSelection(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
-        RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
+        completeRoleSelection(serverWorld, gameWorldComponent, 
+            RoleRotationWorldComponent.KEY.get(serverWorld).getSelectedRoles());
+    }
+
+    public void completeRoleSelection(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+            HashMap<UUID, SRERole> selectedRoles) {
         SRERoleWorldComponent roleWorldComponent = SRERoleWorldComponent.KEY.get(serverWorld);
         
-        // 为所有玩家分配职业（使用gameWorldComponent.addRole）
+        // 为所有玩家分配职业（使用传入的 selectedRoles map）
         for (ServerPlayer p : serverWorld.players()) {
-            SRERole role = rrwc.getSelectedRoles().get(p.getUUID());
+            SRERole role = selectedRoles.get(p.getUUID());
             if (role != null) {
                 gameWorldComponent.addRole(p, role, false);
             }
@@ -254,18 +264,17 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         SRE.REPLAY_MANAGER.updateReplayInitialRoles(players, gameWorldComponent.getRoles());
     }
 
-    private void autoAssignRemainingPlayers(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
-        RoleRotationWorldComponent rrwc = RoleRotationWorldComponent.KEY.get(serverWorld);
+    private void autoAssignRemainingPlayers(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
+            HashMap<UUID, SRERole> selectedRoles, ArrayList<SRERole> rolePool) {
 
         for (ServerPlayer player : serverWorld.players()) {
-            if (!rrwc.getSelectedRoles().containsKey(player.getUUID())) {
+            if (!selectedRoles.containsKey(player.getUUID())) {
                 // 自动分配职业
-                ArrayList<SRERole> pool = rrwc.getRolePool();
-                SRERole role = pool.isEmpty() ? TMMRoles.CIVILIAN : pool.get(0);
+                SRERole role = rolePool.isEmpty() ? TMMRoles.CIVILIAN : rolePool.get(0);
 
-                rrwc.getSelectedRoles().put(player.getUUID(), role);
-                if (!pool.isEmpty()) {
-                    pool.remove(0);
+                selectedRoles.put(player.getUUID(), role);
+                if (!rolePool.isEmpty()) {
+                    rolePool.remove(0);
                 }
 
                 // 应用职业
@@ -280,7 +289,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             }
         }
 
-        completeRoleSelection(serverWorld, gameWorldComponent);
+        completeRoleSelection(serverWorld, gameWorldComponent, selectedRoles);
     }
 
     @Override

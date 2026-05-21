@@ -164,7 +164,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             role.isVigilanteTeam() ||
             role.canUseKiller() ||
             role.isNeutrals() ||
-            isSpecialCivilianRole(role)  // 排除特殊平民职业
+            isSpecialCivilianRole(role) ||  // 排除特殊平民职业
+            rolePool.contains(role)  // 排除基础池中已有的职业，防止重复
         );
 
         // 创建平民职业池并抽取5个
@@ -543,7 +544,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     
     /**
      * 执行职业调整阶段：把剩余池子中的杀手/中立/警长职业和特殊平民职业分配给随机平民
-     * 会根据场上已选职业数量，只补充不足的类型
+     * 使用 SetRoleCountCommand 的目标数量，只补充不足的类型
      */
     public void adjustRemainingRoles(ServerLevel serverWorld) {
         // 获取剩余池子中的杀手/中立/警长职业和特殊平民职业
@@ -573,7 +574,6 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         int selectedVigilantes = 0;
         int selectedNeutrals = 0;
         int selectedSpecialCivilians = 0;
-        int selectedPureCivilians = 0;
 
         for (ServerPlayer player : serverWorld.players()) {
             UUID uuid = player.getUUID();
@@ -589,24 +589,25 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
                         selectedNeutrals++;
                     } else if (isSpecialCivilianRole(role)) {
                         selectedSpecialCivilians++;
-                    } else if (role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam() && !role.isNeutrals()) {
-                        selectedPureCivilians++;
                     }
                 }
             }
         }
 
-        // 计算各类型预期总量 = 已选 + 剩余池子
-        int totalKillers = selectedKillers + remainingKillers.size();
-        int totalVigilantes = selectedVigilantes + remainingVigilantes.size();
-        int totalNeutrals = selectedNeutrals + remainingNeutrals.size();
-        int totalSpecialCivilians = selectedSpecialCivilians + remainingSpecialCivilians.size();
+        // 使用 SetRoleCountCommand 计算各类型目标数量
+        int targetKillers = SetRoleCountCommand.getKillerCount(totalPlayerCount);
+        int targetVigilantes = SetRoleCountCommand.getVigilanteCount(totalPlayerCount);
+        int targetNeutrals = SetRoleCountCommand.getNatureCount(totalPlayerCount);
+        targetKillers = Math.max(1, targetKillers);
+        targetVigilantes = Math.max(0, targetVigilantes);
+        targetNeutrals = Math.max(0, targetNeutrals);
 
-        // 只补充不足的部分
-        int neededKillers = Math.max(0, totalKillers - selectedKillers);
-        int neededVigilantes = Math.max(0, totalVigilantes - selectedVigilantes);
-        int neededNeutrals = Math.max(0, totalNeutrals - selectedNeutrals);
-        int neededSpecialCivilians = Math.max(0, totalSpecialCivilians - selectedSpecialCivilians);
+        // 只补充不足的部分（已达到目标则不补充）
+        int neededKillers = Math.max(0, targetKillers - selectedKillers);
+        int neededVigilantes = Math.max(0, targetVigilantes - selectedVigilantes);
+        int neededNeutrals = Math.max(0, targetNeutrals - selectedNeutrals);
+        // 特殊平民全部分配（这些职业需要优先给到场上）
+        int neededSpecialCivilians = Math.max(0, remainingSpecialCivilians.size());
 
         int totalNeeded = neededKillers + neededVigilantes + neededNeutrals + neededSpecialCivilians;
         if (totalNeeded <= 0) {

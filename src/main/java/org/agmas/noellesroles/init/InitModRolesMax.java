@@ -711,8 +711,8 @@ public class InitModRolesMax {
         // 更好的义警 - 小概率（基于10000）
         ModRoles.BEST_VIGILANTE.setEnableRareChance(config.chanceOfBestVigilante);
 
-        // 静语者 - 从配置读取概率
-        ModRoles.SILENCER.setEnableChance(config.chanceOfSilencer);
+        // 静语者 - 从配置读取概率和最大数量
+        ModRoles.SILENCER.setEnableChance(config.chanceOfSilencer).setMax(config.silencerMax);
 
         // StupidExpress 角色配置
         // 失忆者
