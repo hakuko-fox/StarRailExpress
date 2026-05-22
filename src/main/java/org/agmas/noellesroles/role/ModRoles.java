@@ -1499,7 +1499,19 @@ public class ModRoles {
     )).setOccupiedRoleCount(0)         // 不占用杀手位
             .setCanUseInstinct(false)         // 没有杀手透视
             .setCanSeeTeammateKiller(false) // 杀手本能看不到队友，对杀手的框显示如平民
-            .setMax(1); 
+            .setMax(1);
+
+    /**
+     * 判断角色是否应该在技能页面（Widget）中显示为可见的杀手同伙。
+     * 迷失杀手虽然属于杀手阵营，但被设计为不暴露身份，因此排除。
+     */
+    public static boolean isVisibleKillerTeammate(io.wifi.starrailexpress.api.SRERole role) {
+        if (role == null) return false;
+        if (role.isKillerTeam() || role.isKiller()) {
+            return !LOST_KILLER_ID.equals(role.identifier());
+        }
+        return false;
+    }
 
     // 中立阵营角色
     /**

@@ -71,7 +71,6 @@
     "client.InstinctMixin",
     "client.LamBugFix",
     "client.LobbyCreditsHudMixin",
-    "client.ShortShotgunCockMixin",
     "client.game.ChairWheelKeyMappingMixin",
     "client.general.ImmersiveFilterShaderMixin",
     "client.ManicTaskGlitchMixin",

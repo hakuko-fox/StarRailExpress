@@ -8,6 +8,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
@@ -241,6 +243,11 @@ public class InfectedWinChecker {
                 if (!wasAccelerated) {
                     InfectedPlayerComponent.setSpreadAcceleratedForAll(level, true);
                     wasAccelerated = true;
+                    // 全场播放疫使时刻音效
+                    for (ServerPlayer p : level.players()) {
+                        level.playSound(null, p.getX(), p.getY(), p.getZ(),
+                            SoundEvents.WITCH_CELEBRATE, SoundSource.MASTER, 1.0F, 1.0F);
+                    }
                 }
                 InfectedAbilityHandler.checkAndTriggerLastInfected(level);
             } else {

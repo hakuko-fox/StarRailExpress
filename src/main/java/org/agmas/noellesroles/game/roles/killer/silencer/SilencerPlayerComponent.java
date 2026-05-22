@@ -256,9 +256,23 @@ public class SilencerPlayerComponent implements RoleComponent, ServerTickingComp
                         .count();
                 boolean useReduced = aliveInnocents <= 2;
 
-                if (useReduced) {
+                // Check if target is isKillerTeam — skip punishment phase
+                var targetRole = gameWorld.getRole(targetPlayer);
+                boolean targetIsKillerTeam = targetRole != null && (targetRole.isKillerTeam() || targetRole.isKiller());
+
+                if (useReduced && !targetIsKillerTeam) {
                     // Skip phases 2 and 3, just end
                     endSkill();
+                } else if (targetIsKillerTeam) {
+                    // isKillerTeam 目标：进入求助阶段但不进入惩罚阶段
+                    this.phase = 2;
+                    this.phaseTimer = PHASE2_DURATION;
+                    this.sync();
+                    targetPlayer.removeEffect(ModEffects.VOICE_SILENCE);
+                    targetPlayer.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN,
+                            PHASE2_DURATION, 0, false, false, false));
+                    BroadcastCommand.BroadcastMessage(targetPlayer,
+                            Component.translatable("message.noellesroles.silencer.help_phase"));
                 } else {
                     // Enter phase 2: Help phase
                     this.phase = 2;
@@ -283,8 +297,15 @@ public class SilencerPlayerComponent implements RoleComponent, ServerTickingComp
                     true);
 
             if (phaseTimer <= 0) {
-                // Time's up - enter punishment phase
-                enterPunishmentPhase(targetPlayer);
+                // Check if target is isKillerTeam — skip punishment
+                var targetRole = gameWorldComponent.getRole(targetPlayer);
+                boolean targetIsKillerTeam = targetRole != null && (targetRole.isKillerTeam() || targetRole.isKiller());
+                if (targetIsKillerTeam) {
+                    // isKillerTeam 目标不受惩罚，直接结束
+                    endSkill();
+                } else {
+                    enterPunishmentPhase(targetPlayer);
+                }
             }
         }
     }
