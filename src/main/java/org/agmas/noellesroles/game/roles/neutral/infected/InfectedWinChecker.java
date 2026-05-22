@@ -34,12 +34,13 @@ public class InfectedWinChecker {
     }
     
     /**
-     * 检查场上是否所有杀手都已阵亡
+     * 检查场上是否所有杀手都已阵亡（只检查杀手阵营，不含杀手方中立）
      */
     private static boolean allKillersDead(ServerLevel level, SREGameWorldComponent gameWorldComponent) {
         for (ServerPlayer player : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
             var role = gameWorldComponent.getRole(player);
-            if (role != null && (role.isKillerTeam() || role.isKiller())) {
+            // 只检查真正的杀手阵营（isKiller），不含杀手方中立（isKillerTeam）
+            if (role != null && role.isKiller()) {
                 return false;
             }
         }

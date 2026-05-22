@@ -630,6 +630,11 @@ public class ModEventsRegister {
                 return true;
             }
 
+            // 检查是否是病毒感染伤害（不触发独处保护）
+            if (deathReason != null && deathReason.getPath().equals("infection")) {
+                return true;
+            }
+
             // 检查击杀者是否存在且是否为非乘客阵营
             if (killer == null || gameWorld.isInnocent(killer)) {
                 return true;
