@@ -317,10 +317,10 @@ public class InitModRolesMax {
             }
 
             {
-                // 杀手中立（只处理没有单独配置概率的职业，有配置的职业由 autoRoleMaxCount 处理）
+                // 杀手中立（只处理没有配置的职业：无概率 且 无显式 setMax）
                 var neutralRoles = new ArrayList<SRERole>(TMMRoles.ROLES.values());
                 neutralRoles.removeIf((r) -> {
-                    if (r.isNeutrals() && r.isNeutralForKiller() && r.enableChance < 0)
+                    if (r.isNeutrals() && r.isNeutralForKiller() && r.enableChance < 0 && r.maxCount <= 0)
                         return false;
                     return true;
                 });
@@ -330,9 +330,9 @@ public class InitModRolesMax {
                 }
                 int neutralForKillers = 0;
                 neutralForKillers = players_count / 6;
-                // 减去已有配置的职业数（如疫使），避免超额分配
+                // 减去已有配置的职业数，避免超额分配
                 neutralForKillers -= (int) TMMRoles.ROLES.values().stream()
-                    .filter(r -> r.isNeutrals() && r.isNeutralForKiller() && r.enableChance >= 0)
+                    .filter(r -> r.isNeutrals() && r.isNeutralForKiller() && (r.enableChance >= 0 || r.maxCount > 0))
                     .count();
                 neutralForKillers = Math.max(0, neutralForKillers);
                 for (int i = 0; i < neutralForKillers && i < neutralRoles.size(); i++) {
@@ -722,6 +722,15 @@ public class InitModRolesMax {
         // StupidExpress 角色配置
         // 失忆者
         SERoles.AMNESIAC.setEnableNeededPlayerCount(config.minPlayerForAmnesiac).setEnableChance(config.chanceOfAmnesiac);
+
+        // 对没有 enableChance 的杀手方中立职业，默认 max=1、概率 75%
+        for (var entry : TMMRoles.ROLES.entrySet()) {
+            var role = entry.getValue();
+            if (role.enableChance < 0 && role.isNeutralForKiller()) {
+                role.setMax(1);
+                role.setEnableChance(75);
+            }
+        }
     }
 
     public static void initModifiersCount(int players) {
