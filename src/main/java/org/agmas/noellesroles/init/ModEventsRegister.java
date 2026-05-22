@@ -75,7 +75,6 @@ import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.content.item.BatonHandler;
 import org.agmas.noellesroles.content.item.BenevolenceSwordHandler;
-import org.agmas.noellesroles.content.item.BombItem;
 import org.agmas.noellesroles.content.item.RiotShieldHandler;
 import org.agmas.noellesroles.events.OnVendingMachinesBuyItems;
 import org.agmas.noellesroles.events.OnShopPurchase;
@@ -106,7 +105,6 @@ import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayer
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerHandler;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
-import org.agmas.noellesroles.game.roles.neutral.infected.InfectedAbilityHandler;
 import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
@@ -591,7 +589,8 @@ public class ModEventsRegister {
     public static void registerEvents() {
         // 吝啬 - 商店购买返还20%金币
         OnShopPurchase.EVENT.register((player, entry, price) -> {
-            org.agmas.noellesroles.role.ModifierEffects.onStingyPurchase((net.minecraft.server.level.ServerPlayer) player, price);
+            org.agmas.noellesroles.role.ModifierEffects
+                    .onStingyPurchase((net.minecraft.server.level.ServerPlayer) player, price);
         });
 
         OnKillPlayerTriggered.EVENT.register((victim, spawnBody, _killer, deathReasosn, forceKill) -> {
@@ -865,28 +864,33 @@ public class ModEventsRegister {
         });
         // 黄油手 - 手枪冷却随机变化
         OnRevolverUsed.EVENT.register((player, target) -> {
-            if (!(player instanceof ServerPlayer sp)) return;
+            if (!(player instanceof ServerPlayer))
+                return;
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
             ItemStack mainHandStack = player.getMainHandItem();
-            if (mainHandStack.is(TMMItemTags.GUNS) && modifiers.isModifier(player.getUUID(), TraitorAndModifiers.BUTTER_FINGERS)) {
+            if (mainHandStack.is(TMMItemTags.GUNS)
+                    && modifiers.isModifier(player.getUUID(), TraitorAndModifiers.BUTTER_FINGERS)) {
                 int roll = player.getRandom().nextInt(100);
                 int baseCooldown = (Integer) GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 400);
                 int newCooldown = baseCooldown;
                 if (roll < 33) {
                     // 33%: 冷却 +3秒
                     newCooldown = baseCooldown + 60;
-                    player.displayClientMessage(Component.translatable("modifier.noellesroles.butter_fingers.cooldown_up"), true);
+                    player.displayClientMessage(
+                            Component.translatable("modifier.noellesroles.butter_fingers.cooldown_up"), true);
                 } else if (roll < 66) {
                     // 33%: 冷却 -3秒
                     newCooldown = Math.max(0, baseCooldown - 60);
-                    player.displayClientMessage(Component.translatable("modifier.noellesroles.butter_fingers.cooldown_down"), true);
+                    player.displayClientMessage(
+                            Component.translatable("modifier.noellesroles.butter_fingers.cooldown_down"), true);
                 } else if (roll < 99) {
                     // 33%: 无事发生
                     // 不做处理
                 } else {
                     // 1%: 冷却归零
                     newCooldown = 0;
-                    player.displayClientMessage(Component.translatable("modifier.noellesroles.butter_fingers.reset"), true);
+                    player.displayClientMessage(Component.translatable("modifier.noellesroles.butter_fingers.reset"),
+                            true);
                 }
                 if (newCooldown != baseCooldown) {
                     player.getCooldowns().addCooldown(mainHandStack.getItem(), newCooldown);
@@ -931,7 +935,8 @@ public class ModEventsRegister {
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
             // 清除所有玩家的感染状态
             for (ServerPlayer player : world.players()) {
-                InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED.get(player);
+                InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED
+                        .get(player);
                 if (infectedComponent != null) {
                     infectedComponent.cure();
                 }
@@ -940,8 +945,8 @@ public class ModEventsRegister {
             org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
             // 清除所有建筑师的客户端墙
             for (ServerPlayer player : world.players()) {
-                org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent builderComp =
-                    org.agmas.noellesroles.component.ModComponents.BUILDER.get(player);
+                org.agmas.noellesroles.game.roles.Innocent.builder.BuilderPlayerComponent builderComp = org.agmas.noellesroles.component.ModComponents.BUILDER
+                        .get(player);
                 builderComp.clearAllWalls();
             }
             // 清除全局墙位置注册表
@@ -1244,7 +1249,8 @@ public class ModEventsRegister {
             // 场上没有存活的葬仪时，被动失效
             boolean hasAliveMortician = false;
             for (Player player : victim.level().players()) {
-                if (GameUtils.isPlayerAliveAndSurvival(player) && gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
+                if (GameUtils.isPlayerAliveAndSurvival(player)
+                        && gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
                     hasAliveMortician = true;
                     break;
                 }
@@ -1258,7 +1264,8 @@ public class ModEventsRegister {
             // 获取死亡玩家的翻译职业名
             String rolePath = victimRole.identifier().getPath();
             Component roleName = Component.translatable("announcement.star.role." + rolePath);
-            Component deathMessage = Component.translatable("message.noellesroles.mortician_bodymaker.passive_death", roleName)
+            Component deathMessage = Component
+                    .translatable("message.noellesroles.mortician_bodymaker.passive_death", roleName)
                     .withStyle(ChatFormatting.GOLD);
             // 向所有杀手、杀手方中立和魔术师广播
             for (Player player : victim.level().players()) {
@@ -1268,7 +1275,8 @@ public class ModEventsRegister {
                 if (targetRole == null)
                     continue;
                 // 杀手 (canUseKiller) 或 杀手方中立 (isNeutralForKiller) 或 魔术师
-                if (!targetRole.canUseKiller() && !targetRole.isNeutralForKiller() && !gameWorldComponent.isRole(player, ModRoles.MAGICIAN))
+                if (!targetRole.canUseKiller() && !targetRole.isNeutralForKiller()
+                        && !gameWorldComponent.isRole(player, ModRoles.MAGICIAN))
                     continue;
                 if (player instanceof ServerPlayer sp) {
                     org.agmas.noellesroles.commands.BroadcastCommand.BroadcastMessage(sp, deathMessage);
@@ -1659,7 +1667,8 @@ public class ModEventsRegister {
             RoleShopHandler.resetOldmanEasterEggState();
             // 清除所有玩家的感染状态
             for (ServerPlayer player : serverLevel.players()) {
-                InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED.get(player);
+                InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED
+                        .get(player);
                 if (infectedComponent != null) {
                     infectedComponent.cure();
                 }
