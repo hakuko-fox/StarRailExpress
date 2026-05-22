@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class ReplayFormatter {
@@ -21,13 +22,20 @@ public final class ReplayFormatter {
 
     public Component formatScreen(GameReplayData replayData, List<ReplayTimelineEvent> events, int maxLines) {
         MutableComponent text = Component.empty();
-        text.append(Component.translatable("sre.replay.header").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
-                .append("\n");
-        if (replayData.getWinningTeam() != null) {
-            text.append(Component.translatable("sre.replay.winning_team", replayData.getWinningTitle())
-                    .withStyle(ChatFormatting.WHITE)).append("\n");
+        for (Component line : formatScreenLines(replayData, events, maxLines)) {
+            text.append(line).append("\n");
         }
-        text.append(Component.literal("---").withStyle(ChatFormatting.GRAY)).append("\n");
+        return text;
+    }
+
+    public List<Component> formatScreenLines(GameReplayData replayData, List<ReplayTimelineEvent> events, int maxLines) {
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.translatable("sre.replay.header").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+        if (replayData.getWinningTeam() != null) {
+            lines.add(Component.translatable("sre.replay.winning_team", replayData.getWinningTitle())
+                    .withStyle(ChatFormatting.WHITE));
+        }
+        lines.add(Component.literal("---").withStyle(ChatFormatting.GRAY));
 
         int limit = maxLines <= 0 ? DEFAULT_SCREEN_MAX_LINES : maxLines;
         int shown = 0;
@@ -40,15 +48,15 @@ public final class ReplayFormatter {
                 hiddenByLimit++;
                 continue;
             }
-            text.append(Component.literal(ReplayDisplayUtils.formatTime(event.relativeTimestamp())).withStyle(ChatFormatting.GRAY))
+            lines.add(Component.literal(ReplayDisplayUtils.formatTime(event.relativeTimestamp())).withStyle(ChatFormatting.GRAY)
                     .append(" ")
-                    .append(event.text())
-                    .append("\n");
+                    .append(event.text()));
             shown++;
         }
         if (hiddenByLimit > 0) {
-            text.append(Component.literal("... +" + hiddenByLimit).withStyle(ChatFormatting.DARK_GRAY));
+            lines.add(Component.literal("... +" + hiddenByLimit).withStyle(ChatFormatting.DARK_GRAY));
         }
-        return text;
+        return lines;
     }
+
 }

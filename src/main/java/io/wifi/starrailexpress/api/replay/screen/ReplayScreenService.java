@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 import org.joml.Matrix4f;
 import com.mojang.math.Transformation;
 
@@ -25,10 +26,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class ReplayScreenService {
-    private static final int LINE_INTERVAL_TICKS = 12;
-    private static final float DISPLAY_VIEW_RANGE = 36.0F;
+    private static final int LINE_PAUSE_TICKS = 2;
+    private static final int SCROLL_TICKS = 8;
+    private static final float DISPLAY_VIEW_RANGE = 0.6F;
     private static final double TEXT_OFFSET = 0.58D;
     private static final String NAME_PREFIX = "SRE Replay Screen:";
+    private static final String LEGACY_NAME_PREFIX = "SRE Replay Screen: ";
     private static final Map<String, ScrollAnimation> ACTIVE_ANIMATIONS = new HashMap<>();
 
     private ReplayScreenService() {
@@ -74,8 +77,7 @@ public final class ReplayScreenService {
         }
         buildBackground(level, entry);
         clearTextDisplay(level, entry);
-        Component text = manager.generateScreenReplay(Math.max(6, entry.height() - 2));
-        List<Component> lines = splitLines(text);
+        List<Component> lines = manager.generateScreenReplayLines(Math.max(6, entry.height() - 2));
         ScrollAnimation animation = new ScrollAnimation(entry, lines);
         ACTIVE_ANIMATIONS.put(animationKey(level, entry.id()), animation);
         animation.tick(level);
@@ -100,7 +102,7 @@ public final class ReplayScreenService {
         for (int w = 0; w < entry.width(); w++) {
             for (int h = 0; h < entry.height(); h++) {
                 BlockPos pos = backgroundPos(origin, entry.direction(), w, h);
-                level.setBlock(pos, Blocks.BLACK_CONCRETE.defaultBlockState(), Block.UPDATE_ALL);
+                level.setBlock(pos, Blocks.BLACK_WOOL.defaultBlockState(), Block.UPDATE_ALL);
             }
         }
     }
@@ -122,10 +124,16 @@ public final class ReplayScreenService {
             }
         }
         String screenName = displayName(entry.id());
+        String legacyScreenName = legacyDisplayName(entry.id());
+        AABB screenBounds = textCleanupBounds(entry);
         List<Entity> oldDisplays = new ArrayList<>();
         level.getAllEntities().forEach(entity -> {
-            if (entity instanceof Display.TextDisplay && entity.getCustomName() != null
-                    && screenName.equals(entity.getCustomName().getString())) {
+            if (!(entity instanceof Display.TextDisplay)) {
+                return;
+            }
+            String customName = entity.getCustomName() == null ? "" : entity.getCustomName().getString();
+            if (screenName.equals(customName) || legacyScreenName.equals(customName)
+                    || screenBounds.contains(entity.position())) {
                 oldDisplays.add(entity);
             }
         });
@@ -156,21 +164,6 @@ public final class ReplayScreenService {
         return Math.max(0.35F, Math.min(1.25F, entry.width() / 8.0F));
     }
 
-    private static List<Component> splitLines(Component text) {
-        String raw = text == null ? "" : text.getString();
-        String[] parts = raw.split("\\R");
-        List<Component> lines = new ArrayList<>();
-        for (String part : parts) {
-            if (!part.isBlank()) {
-                lines.add(Component.literal(part));
-            }
-        }
-        if (lines.isEmpty()) {
-            lines.add(Component.literal(""));
-        }
-        return lines;
-    }
-
     private static String animationKey(ServerLevel level, String id) {
         return level.dimension().location() + ":" + id;
     }
@@ -179,8 +172,28 @@ public final class ReplayScreenService {
         return NAME_PREFIX + id;
     }
 
+    private static String legacyDisplayName(String id) {
+        return LEGACY_NAME_PREFIX + id;
+    }
+
+    private static AABB textCleanupBounds(ReplayScreenSavedData.ReplayScreenEntry entry) {
+        BlockPos origin = entry.origin();
+        double minX = origin.getX();
+        double minY = origin.getY();
+        double minZ = origin.getZ();
+        double maxX = origin.getX() + 1.0D;
+        double maxY = origin.getY() + entry.height();
+        double maxZ = origin.getZ() + 1.0D;
+        if (entry.direction().getAxis() == Direction.Axis.Z) {
+            maxX = origin.getX() + entry.width();
+        } else {
+            maxZ = origin.getZ() + entry.width();
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ).inflate(3.0D);
+    }
+
     private static Display.TextDisplay spawnLine(ServerLevel level, ReplayScreenSavedData.ReplayScreenEntry entry,
-            Component text, int row, int visibleRows) {
+            Component text, double row, int visibleRows) {
         Display.TextDisplay display = new ReplayTextDisplay(EntityType.TEXT_DISPLAY, level);
         display.setText(text);
         display.setNoGravity(true);
@@ -198,7 +211,7 @@ public final class ReplayScreenService {
         return display;
     }
 
-    private static void positionLine(Display.TextDisplay display, ReplayScreenSavedData.ReplayScreenEntry entry, int row,
+    private static void positionLine(Display.TextDisplay display, ReplayScreenSavedData.ReplayScreenEntry entry, double row,
             int visibleRows) {
         BlockPos origin = entry.origin();
         double x = origin.getX() + 0.5D;
@@ -216,9 +229,11 @@ public final class ReplayScreenService {
 
     private static double lineSpacing(ReplayScreenSavedData.ReplayScreenEntry entry, int visibleRows) {
         if (visibleRows <= 1) {
-            return 0.5D;
+            return 0.42D;
         }
-        return Math.max(0.28D, (entry.height() - 1.0D) / visibleRows);
+        double readableSpacing = 0.24D + textScale(entry) * 0.22D;
+        double fittingSpacing = Math.max(0.24D, (entry.height() - 0.8D) / visibleRows);
+        return Math.min(readableSpacing, fittingSpacing);
     }
 
     private static int visibleRows(ReplayScreenSavedData.ReplayScreenEntry entry) {
@@ -230,8 +245,11 @@ public final class ReplayScreenService {
         private final List<Component> lines;
         private final List<Display.TextDisplay> displays = new ArrayList<>();
         private int nextLine;
-        private int ticksUntilNextLine;
         private int idleTicks;
+        private int pauseTicks;
+        private int scrollTicks;
+        private boolean scrolling;
+        private double yOffset;
 
         private ScrollAnimation(ReplayScreenSavedData.ReplayScreenEntry screen, List<Component> lines) {
             this.screen = screen;
@@ -240,37 +258,73 @@ public final class ReplayScreenService {
 
         private void tick(ServerLevel level) {
             displays.removeIf(display -> display == null || !display.isAlive());
-            if (nextLine < lines.size()) {
-                if (ticksUntilNextLine <= 0) {
-                    addLine(level, lines.get(nextLine++));
-                    ticksUntilNextLine = LINE_INTERVAL_TICKS;
-                    idleTicks = 0;
-                } else {
-                    ticksUntilNextLine--;
+            int maxRows = visibleRows(screen);
+            if (scrolling) {
+                scrollTicks++;
+                yOffset = Math.min(1.0D, scrollTicks / (double) SCROLL_TICKS);
+                updatePositions(maxRows);
+                if (yOffset >= 1.0D) {
+                    finishScroll();
+                    pauseTicks = LINE_PAUSE_TICKS;
                 }
+                idleTicks = 0;
+                return;
+            }
+            if (nextLine < lines.size()) {
+                if (pauseTicks > 0) {
+                    pauseTicks--;
+                    return;
+                }
+                if (displays.size() < maxRows) {
+                    addLineInstant(level, lines.get(nextLine++), maxRows);
+                    pauseTicks = LINE_PAUSE_TICKS;
+                } else {
+                    startScroll(level, lines.get(nextLine++), maxRows);
+                }
+                idleTicks = 0;
             } else {
                 idleTicks++;
             }
         }
 
-        private void addLine(ServerLevel level, Component line) {
-            int maxRows = visibleRows(screen);
-            if (displays.size() >= maxRows) {
-                Display.TextDisplay oldest = displays.removeFirst();
+        private void addLineInstant(ServerLevel level, Component line, int maxRows) {
+            Display.TextDisplay display = spawnLine(level, screen, line, displays.size(), maxRows);
+            displays.add(display);
+            updatePositions(maxRows);
+            ReplayScreenSavedData.get(level).updateLastTextDisplay(screen.id(), display.getUUID());
+        }
+
+        private void startScroll(ServerLevel level, Component line, int maxRows) {
+            Display.TextDisplay display = spawnLine(level, screen, line, maxRows, maxRows);
+            displays.add(display);
+            yOffset = 0.0D;
+            scrollTicks = 0;
+            scrolling = true;
+            updatePositions(maxRows);
+            ReplayScreenSavedData.get(level).updateLastTextDisplay(screen.id(), display.getUUID());
+        }
+
+        private void finishScroll() {
+            if (displays.size() > visibleRows(screen)) {
+                Display.TextDisplay oldest = displays.remove(0);
                 if (oldest != null) {
                     oldest.discard();
                 }
             }
-            Display.TextDisplay display = spawnLine(level, screen, line, displays.size(), maxRows);
-            displays.add(display);
+            yOffset = 0.0D;
+            scrollTicks = 0;
+            scrolling = false;
+            updatePositions(visibleRows(screen));
+        }
+
+        private void updatePositions(int maxRows) {
             for (int i = 0; i < displays.size(); i++) {
-                positionLine(displays.get(i), screen, i, maxRows);
+                positionLine(displays.get(i), screen, i - yOffset, maxRows);
             }
-            ReplayScreenSavedData.get(level).updateLastTextDisplay(screen.id(), display.getUUID());
         }
 
         private boolean isDone() {
-            return nextLine >= lines.size() && idleTicks > LINE_INTERVAL_TICKS;
+            return nextLine >= lines.size() && !scrolling && idleTicks > LINE_PAUSE_TICKS;
         }
     }
 

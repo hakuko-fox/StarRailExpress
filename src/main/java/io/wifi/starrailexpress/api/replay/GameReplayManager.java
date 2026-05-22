@@ -640,6 +640,10 @@ public class GameReplayManager implements IGameReplayRecorder {
     return formatter.formatScreen(currentReplayData, getTimelineEvents(true), maxLines);
   }
 
+  public List<Component> generateScreenReplayLines(int maxLines) {
+    return formatter.formatScreenLines(currentReplayData, getTimelineEvents(true), maxLines);
+  }
+
   @Override
   public void recordEvent(ReplayEventTypes.EventType eventType, ReplayEventTypes.EventDetails details) {
     recordEvent(eventType, details, false);
