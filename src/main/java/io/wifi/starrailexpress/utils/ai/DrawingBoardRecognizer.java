@@ -162,7 +162,7 @@ public class DrawingBoardRecognizer {
         CATEGORY_TO_ITEM.put(NIGHT_VISION, findItem("noellesroles", "night_vision_glasses"));
         CATEGORY_TO_ITEM.put(DIVING_HELMET, findItem("noellesroles", "diving_helmet"));
         CATEGORY_TO_ITEM.put(DIVING_BOOTS, findItem("noellesroles", "diving_boots"));
-        CATEGORY_TO_ITEM.put(MASTER_KEY_P, findItem("trainmurdermystery", "key"));  // 乘务员钥匙
+        CATEGORY_TO_ITEM.put(MASTER_KEY_P, findItem("noellesroles", "master_key_p"));  // 乘务员钥匙
         CATEGORY_TO_ITEM.put(DEFIBRILLATOR, findItem("noellesroles", "defibrillator"));
         CATEGORY_TO_ITEM.put(BOXING_GLOVE, findItem("noellesroles", "boxing_glove"));
         CATEGORY_TO_ITEM.put(ANTIDOTE_REAGENT, findItem("noellesroles", "antidote_reagent"));
