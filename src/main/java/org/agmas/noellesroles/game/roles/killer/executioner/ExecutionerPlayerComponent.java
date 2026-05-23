@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
 
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -149,11 +150,18 @@ public class ExecutionerPlayerComponent implements RoleComponent, ServerTickingC
             return;
         List<Player> eligibleTargets = new ArrayList<>();
         List<Player> nonMeatballTargets = new ArrayList<>();
-
+        var lovercca = LoversComponent.KEY.get(player);
+        Player mylover = null;
+        if (lovercca.isLover()) {
+            mylover = lovercca.getLoverAsPlayer();
+        }
         // 获取所有存活的平民玩家，同时区分肉汁和非肉汁
         for (Player p : player.level().players()) {
             if (p.getUUID().equals(player.getUUID())) {
                 continue; // 跳过自己
+            }
+            if (mylover != null && p.getUUID() == mylover.getUUID()) {
+                continue; // 跳过恋人
             }
             if (!GameUtils.isPlayerAliveAndSurvival(p)) {
                 continue; // 只考虑存活玩家
