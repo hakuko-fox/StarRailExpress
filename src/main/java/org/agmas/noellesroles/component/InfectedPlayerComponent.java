@@ -192,25 +192,20 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             return;
         }
 
-        // 增加感染时间
+        // 客户端进度预测（咳嗽音效已移至服务端）
         this.infectedTicks++;
-        // 播放咳嗽音效（每20tick有几率触发，或快死前10秒）- 附近所有人都能听到
-        if ((this.infectedTicks % 20 == 0 && this.player.getRandom().nextInt(100) < 5) ||
-                this.infectedTicks == INFECTED_KILL_TIME - 200) {
-            this.player.level().playSound(null, this.player.getX(), this.player.getY(), this.player.getZ(),
-                    NRSounds.INFECTED_COUGH, SoundSource.PLAYERS, 1.5f,
-                    1f + (this.player.getRandom().nextInt(5) - 2) * 0.1f);
-        }
     }
 
     @Override
     public void serverTick() {
+        // 延迟初始化 gameWorldComponent（必须在所有分支前确保可用）
+        if (gameWorldComponent == null) {
+            gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+        }
+
         // 快速退出：未感染者直接返回（大多数玩家的状态，避免后续开销）
         if (this.infectedTicks <= 0) {
             // 但需要检查疫使自身（只有在游戏活跃时才需要）
-            if (gameWorldComponent == null) {
-                gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            }
             if (!gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE)) {
                 return;
             }
@@ -224,9 +219,6 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         // 以下是已感染玩家的逻辑
-        if (gameWorldComponent == null) {
-            gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        }
 
         if (!gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE)) {
             return;
@@ -260,6 +252,14 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
         // 增加感染时间
         this.infectedTicks++;
+
+        // 播放咳嗽音效（服务端确保可靠，20tick间隔/18%几率，或快死前10秒必触发）
+        if ((this.infectedTicks % 20 == 0 && this.player.getRandom().nextInt(100) < 18) ||
+                this.infectedTicks == INFECTED_KILL_TIME - 200) {
+            this.player.level().playSound(null, this.player.getX(), this.player.getY(), this.player.getZ(),
+                    NRSounds.INFECTED_COUGH, SoundSource.PLAYERS, 1.5f,
+                    1f + (this.player.getRandom().nextInt(5) - 2) * 0.1f);
+        }
 
         // 检查是否致死
         if (this.infectedTicks >= INFECTED_KILL_TIME) {
