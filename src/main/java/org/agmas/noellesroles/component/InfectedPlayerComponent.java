@@ -35,6 +35,11 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
     public UUID infector = null; // 感染源玩家
     public int lastSpreadTick = 0; // 上次传播时间
     public boolean spreadAccelerated = false; // 加速传播标志
+    
+    // 缓存的感染源玩家引用（减少每tick的UUID查找）
+    private Player cachedInfectorPlayer = null;
+    private int infectorCheckCounter = 0;
+    private static final int INFECTOR_CHECK_INTERVAL = 40; // 每2秒检查一次感染源状态（原来每tick检查）
 
     // 死亡原因标识
     public static final net.minecraft.resources.ResourceLocation INFECTION_DEATH_REASON = Noellesroles.id("infection");
@@ -44,7 +49,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
     private static final int SPREAD_INTERVAL_NORMAL = 1000; // 正常情况50秒传播一次（20fps）
     private static final int SPREAD_INTERVAL_ACCELERATED = 200; // 加速情况10秒传播一次
     private static final int SPREAD_RADIUS = 3; // 传播范围3格
-    private static final int MAX_SPREAD_COUNT = 3; // 最多传播3人
+    private static final int MAX_SPREAD_COUNT = 1; // 最多传播1人
     private static final int PROGRESS_SYNC_INTERVAL = 200; // 感染倒计时每10秒同步一次
 
     // 获取当前传播间隔（根据是否加速）
@@ -63,7 +68,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             InfectedPlayerComponent comp = ModComponents.INFECTED.get(p);
             if (comp != null && comp.infectedTicks > 0 && comp.spreadAccelerated != accelerated) {
                 comp.spreadAccelerated = accelerated;
-                comp.sync();
+                comp.sync(); // shouldSyncWith 自动处理向疫使的广播
             }
         }
     }
@@ -80,6 +85,9 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
     @Override
     public boolean shouldSyncWith(ServerPlayer player) {
+        // 同步给组件所有者（被感染者）和所有疫使
+        // 注意：常规进度同步每10秒一次（PROGRESS_SYNC_INTERVAL=200tick），
+        // 最频繁的tick处理已在 InfectedWinChecker 中节流至1次/秒
         return player == this.player ||
                 (gameWorldComponent != null && gameWorldComponent.isRole(player, ModRoles.INFECTED));
     }
@@ -98,6 +106,8 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
         this.infector = null;
         this.lastSpreadTick = 0;
         this.spreadAccelerated = false;
+        this.cachedInfectorPlayer = null;
+        this.infectorCheckCounter = 0;
     }
 
     @Override
@@ -113,7 +123,9 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             this.infectedTicks = 1;
             this.infector = infectorPlayer.getUUID();
             this.lastSpreadTick = 0;
-            this.sync_with_all();
+            this.cachedInfectorPlayer = infectorPlayer;
+            this.infectorCheckCounter = 0;
+            this.sync(); // 同步给所有者+所有疫使
         }
     }
 
@@ -128,7 +140,9 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
         this.infector = null;
         this.lastSpreadTick = 0;
         this.spreadAccelerated = false;
-        this.sync_with_all();
+        this.cachedInfectorPlayer = null;
+        this.infectorCheckCounter = 0;
+        this.sync(); // 同步给所有者+所有疫使
     }
 
     /**
@@ -159,6 +173,11 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
     @Override
     public void clientTick() {
+        // 未感染者无需处理（客户端大多数玩家的状态）
+        if (this.infectedTicks <= 0) {
+            return;
+        }
+
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         }
@@ -169,12 +188,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
         // 如果玩家是疫使自身，重置感染状态
         if (gameWorldComponent.isRole(player, ModRoles.INFECTED)) {
-            if (this.infectedTicks > 0)
-                this.infectedTicks = 0;
-            return;
-        }
-
-        if (this.infectedTicks <= 0) {
+            this.infectedTicks = 0;
             return;
         }
 
@@ -191,6 +205,25 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
     @Override
     public void serverTick() {
+        // 快速退出：未感染者直接返回（大多数玩家的状态，避免后续开销）
+        if (this.infectedTicks <= 0) {
+            // 但需要检查疫使自身（只有在游戏活跃时才需要）
+            if (gameWorldComponent == null) {
+                gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            }
+            if (!gameWorldComponent.gameStatus.equals(SREGameWorldComponent.GameStatus.ACTIVE)) {
+                return;
+            }
+            // 如果玩家是疫使自身，重置感染状态（只执行一次）
+            if (gameWorldComponent.isRole(player, ModRoles.INFECTED)) {
+                if (this.infectedTicks > 0) {
+                    this.cure();
+                }
+            }
+            return;
+        }
+
+        // 以下是已感染玩家的逻辑
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         }
@@ -201,31 +234,27 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
 
         // 如果玩家已死亡，立即清除感染状态
         if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-            if (this.infectedTicks > 0) {
-                this.cure();
-            }
+            this.cure();
             return;
         }
 
         // 如果玩家是疫使自身，重置感染状态
         if (gameWorldComponent.isRole(player, ModRoles.INFECTED)) {
-            if (this.infectedTicks > 0) {
-                this.cure();
-            }
+            this.cure();
             return;
         }
 
-        if (this.infectedTicks <= 0) {
-            return;
-        }
-
-        // 检查感染源是否还存在
+        // 检查感染源是否还存在（节流：每2秒检查一次，原来每tick检查）
         if (this.infector != null) {
-            Player infectorPlayer = player.level().getPlayerByUUID(this.infector);
-            if (infectorPlayer == null || !GameUtils.isPlayerAliveAndSurvival(infectorPlayer)) {
-                // 感染源已死亡或不存在，治愈感染
-                this.cure();
-                return;
+            infectorCheckCounter++;
+            if (infectorCheckCounter >= INFECTOR_CHECK_INTERVAL) {
+                infectorCheckCounter = 0;
+                cachedInfectorPlayer = player.level().getPlayerByUUID(this.infector);
+                if (cachedInfectorPlayer == null || !GameUtils.isPlayerAliveAndSurvival(cachedInfectorPlayer)) {
+                    // 感染源已死亡或不存在，治愈感染
+                    this.cure();
+                    return;
+                }
             }
         }
 
@@ -261,6 +290,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
                 // 杀手阵营不因感染致死，但清除感染状态
                 this.cure();
             }
+            return; // 已死亡，无需继续处理传播
         }
 
         // 病毒传播逻辑（根据是否加速，每50秒或每10秒传播给附近玩家）
@@ -268,7 +298,8 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             this.spreadVirus();
         }
 
-        if (this.infectedTicks > 0 && this.infectedTicks % PROGRESS_SYNC_INTERVAL == 0) {
+        // 定期同步（每10秒同步一次感染进度）
+        if (this.infectedTicks % PROGRESS_SYNC_INTERVAL == 0) {
             this.sync();
         }
     }

@@ -24,6 +24,8 @@ import org.agmas.noellesroles.utils.RoleUtils;
 public class InfectedWinChecker {
     
     private static boolean wasAccelerated = false;  // 记录上一个tick的加速状态
+    private static int tickCounter = 0;             // tick 计数器，用于节流
+    private static final int TICK_INTERVAL = 20;    // 每20 tick（1秒）执行一次检查（原来每tick执行，减少95%）
     
     /**
      * 检查场上是否存在医生或故障机器人（都能阻止疫使时刻并让乘客获胜）
@@ -38,20 +40,6 @@ public class InfectedWinChecker {
             }
         }
         return false;
-    }
-    
-    /**
-     * 检查场上是否所有杀手都已阵亡（只检查杀手阵营，不含杀手方中立）
-     */
-    private static boolean allKillersDead(ServerLevel level, SREGameWorldComponent gameWorldComponent) {
-        for (ServerPlayer player : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
-            var role = gameWorldComponent.getRole(player);
-            // 只检查真正的杀手阵营（isKiller），不含杀手方中立（isKillerTeam）
-            if (role != null && role.isKiller()) {
-                return false;
-            }
-        }
-        return true;
     }
     
     /**
@@ -70,18 +58,6 @@ public class InfectedWinChecker {
             }
         }
         return true;  // 没有纵火犯
-    }
-    
-    /**
-     * 检查场上是否处于亡命时刻（有LOOSE_END存活）
-     */
-    private static boolean isLooseEndActive(ServerLevel level, SREGameWorldComponent gameWorldComponent) {
-        for (ServerPlayer player : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
-            if (gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
-                return true;
-            }
-        }
-        return false;
     }
     
     /**
@@ -220,21 +196,43 @@ public class InfectedWinChecker {
             return WinStatus.NOT_MODIFY;
         });
 
-        // 服务器tick事件 - 检查疫使加速条件
+        // 服务器tick事件 - 检查疫使加速条件（节流：每20tick执行一次，从20次/秒降至1次/秒）
         // 触发条件：所有杀手全部阵亡 且 平民中没有医生
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            // 节流：每 TICK_INTERVAL 才执行一次，减少 95% 的 tick 开销
+            tickCounter++;
+            if (tickCounter < TICK_INTERVAL) {
+                return;
+            }
+            tickCounter = 0;
+
             ServerLevel level = server.overworld();
             var gameWorldComponent = SREGameWorldComponent.KEY.maybeGet(level).orElse(null);
             if (gameWorldComponent == null || !gameWorldComponent.isRunning()) {
                 return;
             }
 
-            // 检查场上是否有疫使存活
+            // 单次遍历完成所有检查（原来分4次遍历，现在合并为1次）
             boolean hasInfected = false;
+            boolean hasKiller = false;
+            boolean hasDoctor = false;
+            boolean hasLooseEnd = false;
+
             for (ServerPlayer player : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
                 if (gameWorldComponent.isRole(player, ModRoles.INFECTED)) {
                     hasInfected = true;
-                    break;
+                }
+                // 只检查真正的杀手阵营（isKiller），不含杀手方中立
+                var role = gameWorldComponent.getRole(player);
+                if (role != null && role.isKiller() && !hasKiller) {
+                    hasKiller = true;
+                }
+                if (!hasDoctor && (gameWorldComponent.isRole(player, ModRoles.DOCTOR)
+                        || gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT))) {
+                    hasDoctor = true;
+                }
+                if (!hasLooseEnd && gameWorldComponent.isRole(player, TMMRoles.LOOSE_END)) {
+                    hasLooseEnd = true;
                 }
             }
 
@@ -248,9 +246,8 @@ public class InfectedWinChecker {
             }
 
             // 检查触发条件：所有杀手已阵亡 且 没有医生 且 不处于亡命时刻
-            boolean killersAllDead = allKillersDead(level, gameWorldComponent);
-            boolean noDoctor = !hasDoctor(level, gameWorldComponent);
-            boolean shouldAccelerate = killersAllDead && noDoctor && !isLooseEndActive(level, gameWorldComponent);
+            boolean killersAllDead = !hasKiller;
+            boolean shouldAccelerate = killersAllDead && !hasDoctor && !hasLooseEnd;
 
             if (shouldAccelerate) {
                 // 设置加速传播（病毒传染时间缩短至10秒）

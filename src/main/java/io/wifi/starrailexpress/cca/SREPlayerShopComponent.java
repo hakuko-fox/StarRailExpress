@@ -197,7 +197,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             player.level().players().forEach(
                     p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN, GameConstants.getMonitorBrokenCooldownGlobal()));
 
-            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.BLACKOUT));
+            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.MONITOR_BROKEN));
             player.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
                     GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
         }

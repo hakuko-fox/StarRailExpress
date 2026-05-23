@@ -277,6 +277,11 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         int SAFE_TIME_COOLDOWN = SREConfig.instance().safeTimeCooldown * 20;
         GameUtils.addItemCooldowns(serverWorld, SAFE_TIME_COOLDOWN);
 
+        // 分配修饰符（轮抽模式之前缺少此调用，导致修饰符无法分配）
+        int modifierRoleCount = (int) ((float) players.size()
+                * org.agmas.harpymodloader.config.HarpyModLoaderConfig.HANDLER.instance().modifierMultiplier);
+        assignModifiers(modifierRoleCount, serverWorld, gameWorldComponent, players);
+
         // 记录玩家数据
         GameUtils.recordPlayerStats(serverWorld, gameWorldComponent, new ArrayList<>(serverWorld.players()));
 
