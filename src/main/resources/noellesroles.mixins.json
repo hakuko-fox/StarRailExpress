@@ -109,7 +109,6 @@
     "client.roles.panda.PandaClientMixin",
     "client.roles.party.PartyKillerScreenMixin",
     "client.roles.phantom.PhantomRattatoulieMixin",
-    "client.roles.puppeteer.PuppeteerBodyGunTargetMixin",
     "client.roles.puppeteer.PuppeteerBodyKnifeTargetMixin",
     "client.roles.swapper.KeyBindingMixin",
     "client.roles.swapper.SwapperScreenMixin",
