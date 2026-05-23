@@ -9,6 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.level.block.Blocks;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggHandler;
 
@@ -75,6 +77,26 @@ public class EggClearCommand {
                 // 在范围内，移除蛋
                 CuckooEggHandler.breakEgg(eggEntity, info, level.getServer());
                 iter.remove();
+                cleared++;
+            }
+        }
+
+        // 清理嗅探兽蛋的方块展示实体（即使没有布谷鸟蛋标记）
+        java.util.List<Entity> orphanEggsToRemove = new java.util.ArrayList<>();
+        level.getAllEntities().forEach((entity) -> {
+            if (entity instanceof Display.BlockDisplay blockDisplay
+                    && blockDisplay.getBlockState().is(Blocks.SNIFFER_EGG)) {
+                double dx = entity.getX() - origin.getX();
+                double dy = entity.getY() - origin.getY();
+                double dz = entity.getZ() - origin.getZ();
+                if (dx * dx + dy * dy + dz * dz <= rangeSq) {
+                    orphanEggsToRemove.add(entity);
+                }
+            }
+        });
+        for (Entity entity : orphanEggsToRemove) {
+            if (!entity.isRemoved() && !CuckooEggData.isCuckooEgg(entity)) {
+                entity.remove(Entity.RemovalReason.DISCARDED);
                 cleared++;
             }
         }

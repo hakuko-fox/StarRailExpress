@@ -79,6 +79,7 @@ public class AbilityHandler {
                 player.displayClientMessage(
                         Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
                         true);
+                return;
             } else if (hmpc.cooldown > 0) {
                 player.displayClientMessage(
                         Component.translatable("message.noellesroles.ability_cooldown").withStyle(ChatFormatting.RED),
@@ -92,6 +93,7 @@ public class AbilityHandler {
                 player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
                         10 * 20, 1, true, false,
                         true));
+                return;
             }
         }
         if (gameWorldComponent.isRole(player, RedHouseRoles.MAID_SAKUYA)) {

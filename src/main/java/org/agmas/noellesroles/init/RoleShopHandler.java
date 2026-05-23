@@ -624,12 +624,7 @@ public class RoleShopHandler {
           return false;
         }
       });
-      SHOP.add(new ShopEntry(ModItems.FLARE.getDefaultInstance(), 90, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(Player player) {
-          return false;
-        }
-      });
+      SHOP.add(new ShopEntry(ModItems.FLARE.getDefaultInstance(), 90, ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(ModRoles.MONITOR.getIdentifier(), SHOP);
     }
     {

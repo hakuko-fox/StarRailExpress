@@ -21,7 +21,8 @@ import java.util.List;
 @Mixin(SREPlayerShopComponent.class)
 public class StingyPurchaseMixin {
 
-    @Inject(method = "tryBuy", at = @At(value = "INVOKE", target = "Lio/wifi/starrailexpress/cca/SREPlayerShopComponent;sync()V", ordinal = 0))
+    @Inject(method = "tryBuy", at = @At(value = "INVOKE", 
+            target = "Lio/wifi/starrailexpress/api/replay/GameReplayManager;recordStoreBuy(Ljava/util/UUID;Lnet/minecraft/resources/ResourceLocation;II)V"))
     private void onPurchaseSuccess(int index, CallbackInfo ci) {
         SREPlayerShopComponent self = (SREPlayerShopComponent) (Object) this;
         Player player = self.getPlayer();

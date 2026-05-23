@@ -199,6 +199,14 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
             return;
         }
 
+        // 如果玩家已死亡，立即清除感染状态
+        if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+            if (this.infectedTicks > 0) {
+                this.cure();
+            }
+            return;
+        }
+
         // 如果玩家是疫使自身，重置感染状态
         if (gameWorldComponent.isRole(player, ModRoles.INFECTED)) {
             if (this.infectedTicks > 0) {
