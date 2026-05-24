@@ -290,10 +290,14 @@ public class InstinctRenderer {
                 }
                 return Color.GRAY.getRGB();
             }
-            // 活人：被秉烛过的显示原色
+            // 活人：无法透视的职业不显示，被秉烛过的显示原色，其余灰色
             if (target instanceof Player targetPlayer) {
                 if (targetPlayer.distanceToSqr(self) > 40 * 40)
                     return -2;
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                if (isTargetInvisibleToInstinct(targetPlayer)) {
+                    return -2;
+                }
                 if (component.isCandleLit(targetPlayer.getUUID())) {
                     return ModRoles.CANDLE_BEARER.color();
                 }
@@ -319,6 +323,10 @@ public class InstinctRenderer {
                 return -1;
 
             if (target instanceof Player targetPlayer) {
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                if (isTargetInvisibleToInstinct(targetPlayer)) {
+                    return -2;
+                }
                 // 检查目标玩家是否被感染（非疫使角色的玩家被感染）
                 InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(targetPlayer);
                 if (infectedComponent != null && infectedComponent.infectedTicks > 0) {
@@ -354,8 +362,12 @@ public class InstinctRenderer {
             if (!hasInstinct)
                 return -1;
 
-            // 所有玩家都显示葬仪的颜色
-            if (target instanceof Player) {
+            // 所有玩家都显示葬仪的颜色（无法透视的职业除外）
+            if (target instanceof Player targetPlayer) {
+                // 无法被透视的职业（小透明/秉烛人/雇佣兵/滑头鬼）
+                if (isTargetInvisibleToInstinct(targetPlayer)) {
+                    return -2;
+                }
                 return ModRoles.MORTICIAN_BODYMAKER.color();
             }
             return -1;
@@ -997,6 +1009,19 @@ public class InstinctRenderer {
         if (role.canUseInstinct() && role.isNeutralForKiller())
             return true;
         return false;
+    }
+
+    /**
+     * 检查目标玩家是否属于「无法被任何本能透视」的职业。
+     * 包含：小透明、秉烛人、雇佣兵、滑头鬼、赌徒。
+     */
+    private static boolean isTargetInvisibleToInstinct(Player target) {
+        if (SREClient.gameComponent == null || target == null) return false;
+        return SREClient.gameComponent.isRole(target, ModRoles.GHOST)
+            || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
+            || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
+            || SREClient.gameComponent.isRole(target, ModRoles.SLIPPERY_GHOST)
+            || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
     }
 
     private static final int[] GRADIENT_COLORS = {

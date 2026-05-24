@@ -955,6 +955,10 @@ public class ModEventsRegister {
             }
             // 清除全局墙位置注册表
             org.agmas.noellesroles.game.roles.Innocent.builder.BuilderWallPositions.clearAll();
+            // 清除所有肉汁的悬赏
+            for (ServerPlayer player : world.players()) {
+                org.agmas.noellesroles.component.ModComponents.MEATBALL.get(player).init();
+            }
             // 已经在resetPlayer清除部分cca
             // 重置所有玩家的锁匠灵感
             SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
