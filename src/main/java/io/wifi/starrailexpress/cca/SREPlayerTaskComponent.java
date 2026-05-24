@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
+import org.agmas.noellesroles.role.ModifierEffects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -189,6 +190,20 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
                         this.taskStreak, false);
             }
             this.taskStreak++; // 完成奖励发放后增加连击计数（并列任务也增加连击）
+            // 检查5格范围内是否有狂躁症玩家，触发其附近任务完成效果
+            if (this.player instanceof ServerPlayer sp) {
+                var worldModifiers = WorldModifierComponent.KEY.get(sp.level());
+                if (worldModifiers != null) {
+                    for (Player nearby : sp.level().players()) {
+                        if (nearby != sp && nearby.distanceTo(sp) <= 5.0
+                                && nearby instanceof ServerPlayer nearbySp
+                                && GameUtils.isPlayerAliveAndSurvival(nearbySp)
+                                && worldModifiers.isModifier(nearbySp.getUUID(), TraitorAndModifiers.MANIC)) {
+                            ModifierEffects.onNearbyTaskComplete(nearbySp);
+                        }
+                    }
+                }
+            }
         }
         // 移除被消失的并列任务（不给予奖励）
         for (TrainTask task : dismissed) {
