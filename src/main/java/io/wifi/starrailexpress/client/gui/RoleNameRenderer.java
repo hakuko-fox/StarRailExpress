@@ -139,7 +139,8 @@ public class RoleNameRenderer {
                             }
                         }
                     }
-                    if (targetRole2 == ModRoles.MEATBALL){
+                    // 肉汁：本能提示只对杀手（isKiller）生效
+                    if (targetRole2 == ModRoles.MEATBALL && component.canUseKillerFeatures(player)){
                         // 显示肉汁提示
                         context.pose().translate(0, 20 + renderer.lineHeight, 0);
                         MutableComponent meatballTip = Component.translatable("game.tip.meatball_role");

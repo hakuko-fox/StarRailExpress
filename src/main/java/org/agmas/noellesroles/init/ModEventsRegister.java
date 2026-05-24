@@ -632,6 +632,11 @@ public class ModEventsRegister {
                 return true;
             }
 
+            // 亡命徒职业：肉汁不免疫来自亡命徒角色的伤害
+            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END) || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END)) {
+                return true;
+            }
+
             // 检查击杀者是否存在且是否为非乘客阵营
             if (killer == null || gameWorld.isInnocent(killer)) {
                 return true;

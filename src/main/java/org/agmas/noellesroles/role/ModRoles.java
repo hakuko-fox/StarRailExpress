@@ -324,6 +324,8 @@ public class ModRoles {
      * - 在计分板上显示
      * - 被动技能：san值消耗较慢
      *   - 自带 mood_drain_reduction 效果等级2（减少60% san消耗）
+     * - 被动技能：无碰撞
+     *   - 自带 no_collide 效果，无需担心被玩家碰撞卡位
      * - 被动技能：独处保护
      *   - 杀手/中立只能在与你单独相处时击杀你
      *   - 条件：4格半径范围内（y轴为3格）没有其他好人
@@ -347,6 +349,15 @@ public class ModRoles {
                     ModEffects.MOOD_DRAIN_REDUCTION,
                     30 * 20, // 持续时间 30s（tick），ambient=true时自动续期
                     0, 
+                    true, // ambient（环境效果，如信标）
+                    false, // showParticles（显示粒子）
+                    false // showIcon（显示图标）
+            ))
+            .addEffect(
+            new MobEffectInstance(
+                    ModEffects.NO_COLLIDE,
+                    30 * 20, // 持续时间 30s（tick），ambient=true时自动续期
+                    0,
                     true, // ambient（环境效果，如信标）
                     false, // showParticles（显示粒子）
                     false // showIcon（显示图标）
@@ -1503,7 +1514,7 @@ public class ModRoles {
      */
     public static boolean isVisibleKillerTeammate(io.wifi.starrailexpress.api.SRERole role) {
         if (role == null) return false;
-        if (role.isKillerTeam() || role.isKiller()) {
+        if (role.isKillerTeam() || role.isKiller() || role.isNeutralForKiller()) {
             return !LOST_KILLER_ID.equals(role.identifier());
         }
         return false;
