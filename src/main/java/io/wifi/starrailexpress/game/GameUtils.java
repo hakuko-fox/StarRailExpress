@@ -51,6 +51,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import org.agmas.harpymodloader.commands.ListRolesCommand;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.events.ResetPlayerEvent;
@@ -313,8 +315,8 @@ public class GameUtils {
 
     public static void stopGame(ServerLevel world) {
         world.players().forEach(serverPlayer -> {
-            serverPlayer.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 80,0,false,false,false));
-            serverPlayer.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 80,0,false,false,false));
+            serverPlayer.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 80, 0, false, false, false));
+            serverPlayer.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 80, 0, false, false, false));
         });
         SREGameWorldComponent component = SREGameWorldComponent.KEY.get(world);
         SREWorldBlackoutComponent.KEY.get(world).reset();
@@ -332,7 +334,10 @@ public class GameUtils {
 
     public static void initializeGame(ServerLevel serverWorld) {
         isGameStarted = false;
-
+        var packet = ListRolesCommand.getRoleAndModifierEnableInfoPacket(false);
+        for (var p : serverWorld.players()) {
+            ServerPlayNetworking.send(p, packet);
+        }
         isStartingGame = false;
         HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
         RadioItem.RADIO_GROUP.clear();

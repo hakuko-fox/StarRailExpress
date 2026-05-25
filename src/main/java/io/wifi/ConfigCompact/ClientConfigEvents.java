@@ -16,11 +16,14 @@ public class ClientConfigEvents {
 
         ClientPlayNetworking.registerGlobalReceiver(RoleEnableInfoPacket.ID, (payload, context) -> {
             var packet = payload.packetInfo();
+            boolean openUI = payload.openUI();
             RoleManageConfigUI.setRoleInfo(packet.roleInfo);
             RoleManageConfigUI.setModifierInfo(packet.modifierInfo);
-            context.client().execute(() -> {
-                context.client().setScreen(RoleManageConfigUI.getScreen(context.client().screen));
-            });
+            if (openUI) {
+                context.client().execute(() -> {
+                    context.client().setScreen(RoleManageConfigUI.getScreen(context.client().screen));
+                });
+            }
         });
     }
 }

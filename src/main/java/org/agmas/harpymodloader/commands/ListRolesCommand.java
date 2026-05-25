@@ -11,6 +11,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
@@ -25,8 +27,7 @@ public class ListRolesCommand {
         dispatcher.register(Commands.literal("listRoles").executes((ListRolesCommand::execute)));
     }
 
-    private static int executeManage(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        var player = context.getSource().getPlayerOrException();
+    public static RoleEnableInfoPacket getRoleAndModifierEnableInfoPacket(boolean openUI) {
         HashMap<ResourceLocation, Boolean> roleInfos = new HashMap<>();
         HashMap<ResourceLocation, Boolean> modifierInfos = new HashMap<>();
         for (var info : TMMRoles.ROLES.keySet()) {
@@ -43,10 +44,22 @@ public class ListRolesCommand {
                 modifierInfos.put(info.identifier(), true);
             }
         }
+        return new RoleEnableInfoPacket(new RoleManageConfigUI.RoleAndModifierSyncInfo(roleInfos, modifierInfos),
+                openUI);
+    }
+
+    public static void sendRoleDisableInfoToPlayer(ServerPlayer player, boolean openUI) {
+        var packet = getRoleAndModifierEnableInfoPacket(openUI);
+        ServerPlayNetworking.send(player,
+                packet);
+    }
+
+    private static int executeManage(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        var player = context.getSource().getPlayerOrException();
+
         context.getSource().sendSuccess(
                 () -> Component.translatable("Try to open Role Manage UI for %s", player.getName()), true);
-        ServerPlayNetworking.send(player,
-                new RoleEnableInfoPacket(new RoleManageConfigUI.RoleAndModifierSyncInfo(roleInfos, modifierInfos)));
+        sendRoleDisableInfoToPlayer(player, true);
         return 1;
     }
 

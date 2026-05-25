@@ -20,8 +20,8 @@ import java.util.Map.Entry;
 
 public class RoleManageConfigUI {
 
-    private static HashMap<String, Boolean> RoleEnableStatus = new HashMap<>();
-    private static HashMap<String, Boolean> ModifierEnableStatus = new HashMap<>();
+    public static HashMap<String, Boolean> RoleEnableStatus = new HashMap<>();
+    public static HashMap<String, Boolean> ModifierEnableStatus = new HashMap<>();
 
     public static class RoleAndModifierSyncInfo {
         public HashMap<String, Boolean> roleInfo;
