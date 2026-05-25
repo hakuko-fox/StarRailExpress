@@ -1,8 +1,10 @@
 package io.wifi.ConfigCompact;
 
+import io.wifi.WatheBlocker;
 import io.wifi.ConfigCompact.network.RoleEnableInfoPacket;
 import io.wifi.ConfigCompact.network.SyncConfigPayload;
 import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
+import io.wifi.starrailexpress.SRE;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -24,6 +26,8 @@ public class ClientConfigEvents {
                     context.client().setScreen(RoleManageConfigUI.getScreen(context.client().screen));
                 });
             }
+            SRE.LOGGER.info("Recieved role and modifer disabled infomation. [Size: {}, openUI: {}]",
+                    packet.roleInfo.size() + packet.modifierInfo.size(), (openUI ? "Yes" : "No"));
         });
     }
 }

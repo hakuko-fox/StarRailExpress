@@ -144,7 +144,7 @@ public class Noellesroles implements ModInitializer {
 
     public static List<SRERole> getAllRolesSorted(boolean killerFirst) {
         ArrayList<SRERole> clone = new ArrayList<>(TMMRoles.ROLES.values());
-        sortRoles(clone, killerFirst);
+        sortRoles(clone, killerFirst, true);
         return clone;
     }
 

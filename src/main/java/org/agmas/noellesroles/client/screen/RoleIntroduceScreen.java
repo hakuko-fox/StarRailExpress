@@ -44,7 +44,7 @@ public class RoleIntroduceScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
     // 【模式切换】三种模式：谋杀、修机、其它
     // ══════════════════════════════════════════════════════════════════
-    public enum GameMode {
+    public enum IntroductionGameMode {
         MURDER("screen.roleintroduce.mode.murder", 0xFFCC2233),
         REPAIR("screen.roleintroduce.mode.repair", 0xFF44AACC),
         OTHER("screen.roleintroduce.mode.other", 0xFFAA88CC);
@@ -52,13 +52,13 @@ public class RoleIntroduceScreen extends Screen {
         public final String labelKey;
         public final int color;
 
-        GameMode(String labelKey, int color) {
+        IntroductionGameMode(String labelKey, int color) {
             this.labelKey = labelKey;
             this.color = color;
         }
     }
 
-    private GameMode currentMode = GameMode.MURDER;
+    private IntroductionGameMode currentMode = IntroductionGameMode.MURDER;
 
     // 模式按钮布局缓存
     private int modeButtonX = 0;
@@ -194,6 +194,10 @@ public class RoleIntroduceScreen extends Screen {
     private final int[] tabX = new int[64];
     private final int[] tabW = new int[64];
 
+    // 模式按钮预计算坐标与宽度（仿照分类标签）
+    private final int[] modeBtnX = new int[IntroductionGameMode.values().length + 1];
+    private final int[] modeBtnW = new int[IntroductionGameMode.values().length + 1];
+
     // 左侧列表滚动
     private int listScrollOffset = 0;
     private int maxListScroll = 0;
@@ -230,7 +234,6 @@ public class RoleIntroduceScreen extends Screen {
     // Widgets
     private EditBox searchWidget = null;
     private String searchContent = null;
-    private Button closeButton = null;
 
     // ══════════════════════════════════════════════════════════════════
     // 构造
@@ -298,13 +301,12 @@ public class RoleIntroduceScreen extends Screen {
 
         // 计算左下角模式按钮位置
         int totalModeW = 0;
-        for (GameMode mode : GameMode.values()) {
-            String label = Component.translatable(mode.labelKey).getString();
-            totalModeW += font.width(label) + 20 + MODE_GAP;
+        for (IntroductionGameMode mode : IntroductionGameMode.values()) {
+            totalModeW += font.width(Component.translatable(mode.labelKey)) + 20 + MODE_GAP;
         }
         totalModeW -= MODE_GAP;
-        modeButtonX = panelX + 10;
-        modeButtonY = height - 18;
+        modeButtonX = panelX + PANEL_PAD * 2;
+        modeButtonY = panelY + panelH - 24;
         modeButtonW = totalModeW;
     }
 
@@ -338,16 +340,16 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     private void initCloseButton() {
-        if (closeButton != null) {
-            removeWidget(closeButton);
-            closeButton = null;
-        }
-        int btnW = rightX - leftX, btnH = 18;
-        closeButton = Button.builder(
-                Component.translatable("gui.back").withStyle(ChatFormatting.WHITE),
-                btn -> onClose())
-                .bounds((width - btnW) / 2, panelY + panelH + 8, btnW, btnH)
-                .build();
+        // if (closeButton != null) {
+        // removeWidget(closeButton);
+        // closeButton = null;
+        // }
+        // int btnW = rightX - leftX, btnH = 18;
+        // closeButton = Button.builder(
+        // Component.translatable("gui.back").withStyle(ChatFormatting.WHITE),
+        // btn -> onClose())
+        // .bounds((width - btnW) / 2, panelY + panelH + 8, btnW, btnH)
+        // .build();
         // addRenderableWidget(closeButton);
     }
 
@@ -514,7 +516,7 @@ public class RoleIntroduceScreen extends Screen {
 
     /** 左侧列表可用高度（面板全高，不再扣除分类栏） */
     private int listAreaH() {
-        return panelH - PANEL_PAD * 2;
+        return panelH - PANEL_PAD * 2 - 24;
     }
 
     private void rebuildDetailLines() {
@@ -722,47 +724,101 @@ public class RoleIntroduceScreen extends Screen {
         g.drawCenteredString(font, this.title, width / 2, 8, 0xEEEEFF);
         // 底部提示上移，为模式按钮留空间
         g.drawCenteredString(font, Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY),
-                width / 2, modeButtonY - 8, 0xEEEEFF);
+                width / 2, height - 24, 0xEEEEFF);
 
         // ── 左下角模式切换按钮 ──────────────────────────────────
-        renderModeButtons(g, mouseX, mouseY);
+        renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 4);
     }
 
     /**
-     * 渲染左下角模式切换按钮
+     * 渲染左下角模式切换按钮（整体居中）
+     * 
+     * @param maxWidth 按钮区域的最大可用宽度（即 leftW）
      */
-    private void renderModeButtons(GuiGraphics g, int mouseX, int mouseY) {
-        int curX = modeButtonX;
+    private void renderModeButtons(GuiGraphics g, int mouseX, int mouseY, int maxWidth) {
+        IntroductionGameMode[] modes = IntroductionGameMode.values();
+        int n = modes.length;
+
+        if (n == 0)
+            return;
+
+        // 1. 计算每个按钮的自然宽度（文字宽度 + 左右各10px）
+        int[] naturalW = new int[n];
+        int totalNaturalWidth = 0;
+        for (int i = 0; i < n; i++) {
+            String label = Component.translatable(modes[i].labelKey).getString();
+            naturalW[i] = font.width(label) + 20; // 左右各10px内边距
+            totalNaturalWidth += naturalW[i];
+        }
+
+        int totalGap = MODE_GAP * (n - 1); // 固定间距总和
+        int totalNaturalWithGap = totalNaturalWidth + totalGap;
+
+        // 2. 计算缩放比例（只缩放按钮宽度，间距不变）
+        float scale = 1.0f;
+        if (totalNaturalWithGap > maxWidth) {
+            // 可用宽度减去固定间距后，剩余给按钮宽度的总量
+            int availableForButtons = maxWidth - totalGap;
+            if (availableForButtons > 0) {
+                scale = (float) availableForButtons / totalNaturalWidth;
+            } else {
+                scale = 0; // 极端情况：连间距都放不下，按钮宽度为0
+            }
+        }
+
+        // 3. 计算缩放后的总宽度（用于居中）
+        int totalScaledWidth = 0;
+        int[] scaledW = new int[n];
+        for (int i = 0; i < n; i++) {
+            scaledW[i] = (int) (naturalW[i] * scale);
+            totalScaledWidth += scaledW[i];
+        }
+        totalScaledWidth += totalGap;
+
+        // 4. 计算起始 X 使得按钮组水平居中
+        int startX = modeButtonX + (maxWidth - totalScaledWidth) / 2;
+
+        int curX = startX;
         int curY = modeButtonY;
+        int btnH = modeButtonH;
 
-        for (GameMode mode : GameMode.values()) {
-            String label = Component.translatable(mode.labelKey).getString();
-            int btnW = font.width(label) + 20;
-            int btnH = modeButtonH;
+        for (int i = 0; i < n; i++) {
+            int btnW = scaledW[i];
+            modeBtnX[i] = curX;
+            modeBtnW[i] = btnW;
 
-            boolean isActive = (mode == currentMode);
+            String label = Component.translatable(modes[i].labelKey).getString();
+            // 截断文本以适应按钮宽度（减去左右各4px留白）
+            String truncated = font.plainSubstrByWidth(label, Math.max(4, btnW - 8));
+
+            boolean isActive = (modes[i] == currentMode);
             boolean isHovered = !isActive && isInRect(mouseX, mouseY, curX, curY, btnW, btnH);
 
+            // 绘制背景与边框（颜色逻辑保持不变）
             if (isActive) {
                 g.fillGradient(curX, curY, curX + btnW, curY + btnH,
-                        blendColors(0xFF0D1020, mode.color, 0.55f),
-                        blendColors(0xFF0A0C18, mode.color, 0.30f));
-                g.fill(curX, curY + btnH - 2, curX + btnW, curY + btnH, mode.color);
-                g.fill(curX, curY, curX + 1, curY + btnH, (mode.color & 0x00FFFFFF) | 0xAA000000);
-                g.fill(curX + btnW - 1, curY, curX + btnW, curY + btnH, (mode.color & 0x00FFFFFF) | 0xAA000000);
+                        blendColors(0xFF0D1020, modes[i].color, 0.55f),
+                        blendColors(0xFF0A0C18, modes[i].color, 0.30f));
+                g.fill(curX, curY + btnH - 2, curX + btnW, curY + btnH, modes[i].color);
+                g.fill(curX, curY, curX + 1, curY + btnH, (modes[i].color & 0x00FFFFFF) | 0xAA000000);
+                g.fill(curX + btnW - 1, curY, curX + btnW, curY + btnH, (modes[i].color & 0x00FFFFFF) | 0xAA000000);
             } else if (isHovered) {
                 g.fillGradient(curX, curY, curX + btnW, curY + btnH,
-                        blendColors(0xFF0D1020, mode.color, 0.25f),
-                        blendColors(0xFF0A0C18, mode.color, 0.12f));
-                g.renderOutline(curX, curY, btnW, btnH, (mode.color & 0x00FFFFFF) | 0x44000000);
+                        blendColors(0xFF0D1020, modes[i].color, 0.25f),
+                        blendColors(0xFF0A0C18, modes[i].color, 0.12f));
+                g.renderOutline(curX, curY, btnW, btnH, (modes[i].color & 0x00FFFFFF) | 0x44000000);
             } else {
                 g.fill(curX, curY, curX + btnW, curY + btnH, 0x55111828);
                 g.renderOutline(curX, curY, btnW, btnH, 0x55334466);
             }
 
-            int textColor = isActive ? (mode.color | 0xFF000000)
+            // 绘制文本
+            int textColor = isActive ? (modes[i].color | 0xFF000000)
                     : isHovered ? 0xFFCCDDFF : 0xFF7788AA;
-            g.drawCenteredString(font, label, curX + btnW / 2, curY + (btnH - font.lineHeight) / 2, textColor);
+            g.drawCenteredString(font, truncated,
+                    curX + btnW / 2,
+                    curY + (btnH - font.lineHeight) / 2,
+                    textColor);
 
             curX += btnW + MODE_GAP;
         }
@@ -1003,21 +1059,27 @@ public class RoleIntroduceScreen extends Screen {
      * 检查列表中的职业/修饰符是否已被禁用
      */
     private boolean isItemDisabled(Object role) {
-        if (!minecraft.isLocalServer() && !minecraft.isSingleplayer()) {
-            if (SREClient.gameComponent == null || minecraft == null
-                    || minecraft.level == null) {
-                // 没进入游戏，也显示全部。
-                return false;
-            }
-            if (!SREClient.gameComponent.isRunning()) {
-                // 游戏没开始，默认显示全部。
-                return false;
+        if (!minecraft.isLocalServer() && !minecraft.isSingleplayer() && minecraft.level != null) {
+            {
+                if (SREClient.gameComponent == null || minecraft == null
+                        || minecraft.level == null) {
+                    // 没进入游戏，也显示全部。
+                    return false;
+                }
+                if (!SREClient.gameComponent.isRunning()) {
+                    // 游戏没开始，默认显示全部。
+                    return false;
+                }
             }
             // 非本地从RoleConfigUI读取
             if (role instanceof SRERole r) {
+                if (RoleManageConfigUI.RoleEnableStatus.isEmpty())
+                    return false;
                 return !RoleManageConfigUI.RoleEnableStatus.getOrDefault(r.identifier().toString(), false);
             }
             if (role instanceof SREModifier m) {
+                if (RoleManageConfigUI.ModifierEnableStatus.isEmpty())
+                    return false;
                 return !RoleManageConfigUI.ModifierEnableStatus.getOrDefault(m.identifier().toString(), false);
             }
             return false;
@@ -1188,28 +1250,28 @@ public class RoleIntroduceScreen extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (button == 0) {
-            // ── 左下角模式切换按钮 ─────────────────────────────────
-            int curX = modeButtonX;
-            for (GameMode mode : GameMode.values()) {
-                String label = Component.translatable(mode.labelKey).getString();
-                int btnW = font.width(label) + 20;
-                int btnH = modeButtonH;
-
-                if (isInRect((int) mx, (int) my, curX, modeButtonY, btnW, btnH)) {
-                    if (currentMode != mode) {
-                        currentMode = mode;
-                        listScrollOffset = 0;
-                        this.minecraft.getSoundManager()
-                                .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
-                        refreshFilter();
-                        if (selectedRole != null && !filteredItems.contains(selectedRole)) {
-                            selectedRole = filteredItems.isEmpty() ? null : filteredItems.get(0);
-                            rebuildDetailLines();
+            // ── 左下角模式切换按钮（仿照分类标签，使用预计算数组）─────────────────
+            if (modeBtnX != null && modeBtnW != null) {
+                for (int i = 0; i < modeBtnX.length; i++) {
+                    int btnX = modeBtnX[i];
+                    int btnW = modeBtnW[i];
+                    if (btnW > 0 && isInRect((int) mx, (int) my,
+                            btnX, modeButtonY, btnW, modeButtonH)) {
+                        IntroductionGameMode clickedMode = IntroductionGameMode.values()[i];
+                        if (currentMode != clickedMode) {
+                            currentMode = clickedMode;
+                            listScrollOffset = 0;
+                            this.minecraft.getSoundManager()
+                                    .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                            refreshFilter();
+                            if (selectedRole != null && !filteredItems.contains(selectedRole)) {
+                                selectedRole = filteredItems.isEmpty() ? null : filteredItems.get(0);
+                                rebuildDetailLines();
+                            }
                         }
+                        return true;
                     }
-                    return true;
                 }
-                curX += btnW + MODE_GAP;
             }
 
             // ── 分类标签点击（搜索框右侧）────────────────────────

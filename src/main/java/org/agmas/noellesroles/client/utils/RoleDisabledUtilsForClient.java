@@ -22,23 +22,24 @@ public class RoleDisabledUtilsForClient {
 
         if (SREClient.gameComponent == null)
             return false;
+
+        if (RoleManageConfigUI.ModifierEnableStatus.isEmpty())
+            return false;
         return !RoleManageConfigUI.ModifierEnableStatus.getOrDefault(modifier.identifier().toString(), false);
     }
 
     public static boolean isRoleDisabled(SRERole role) {
         if (role == null)
             return true;
-
         var mc = Minecraft.getInstance();
         var hpconfig = HarpyModLoaderConfig.HANDLER.instance();
-
-        if (mc.level == null)
-            return false;
-        if (mc.isLocalServer() || mc.isSingleplayer()) {
+        if (mc.level == null || mc.isLocalServer() || mc.isSingleplayer()) {
             return hpconfig.getDisabled().contains(role.identifier().toString());
         }
 
         if (SREClient.gameComponent == null)
+            return false;
+        if (RoleManageConfigUI.RoleEnableStatus.isEmpty())
             return false;
         return !RoleManageConfigUI.RoleEnableStatus.getOrDefault(role.identifier().toString(), false);
     }
