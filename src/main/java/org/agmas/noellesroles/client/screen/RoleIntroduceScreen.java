@@ -10,7 +10,6 @@ import io.wifi.starrailexpress.client.util.PinYinUtils;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -1004,16 +1003,16 @@ public class RoleIntroduceScreen extends Screen {
      * 检查列表中的职业/修饰符是否已被禁用
      */
     private boolean isItemDisabled(Object role) {
-        if (SREClient.gameComponent == null || minecraft == null
-                || minecraft.level == null) {
-            // 没进入游戏，也显示全部。
-            return false;
-        }
-        if (!SREClient.gameComponent.isRunning()) {
-            // 游戏没开始，默认显示全部。
-            return false;
-        }
-        if (!minecraft.isLocalServer()) {
+        if (!minecraft.isLocalServer() && !minecraft.isSingleplayer()) {
+            if (SREClient.gameComponent == null || minecraft == null
+                    || minecraft.level == null) {
+                // 没进入游戏，也显示全部。
+                return false;
+            }
+            if (!SREClient.gameComponent.isRunning()) {
+                // 游戏没开始，默认显示全部。
+                return false;
+            }
             // 非本地从RoleConfigUI读取
             if (role instanceof SRERole r) {
                 return !RoleManageConfigUI.RoleEnableStatus.getOrDefault(r.identifier().toString(), false);
