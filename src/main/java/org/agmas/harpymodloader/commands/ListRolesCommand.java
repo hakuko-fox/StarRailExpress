@@ -85,7 +85,8 @@ public class ListRolesCommand {
         .withStyle(ChatFormatting.GRAY);
     message.append("\n").append(Component.translatable("commands.listroles.detail.introduction",
         RoleUtils.getRoleOrModifierOrItemDescription(modifier)
-            .copy().withStyle(ChatFormatting.WHITE)).withStyle(ChatFormatting.GREEN));
+            .copy().withStyle(ChatFormatting.WHITE))
+        .withStyle(ChatFormatting.GREEN));
     message.append("\n");
     ctx.getSource().sendSystemMessage(message);
 
@@ -143,7 +144,7 @@ public class ListRolesCommand {
     // 准备修饰符列表
     List<SREModifier> modifierList = new ArrayList<>(HMLModifiers.MODIFIERS);
     // 构建消息
-    MutableComponent message = Component.literal("\n");
+    MutableComponent message = Component.literal("\n\n\n");
 
     // 准备总列表：先角色后修饰符
     List<Object> allEntries = new ArrayList<>();
@@ -162,8 +163,8 @@ public class ListRolesCommand {
               .append(Component.literal(String.valueOf(page)))
               .append(Component.literal("/"))
               .append(Component.literal(String.valueOf(totalPages)))
-              .append(Component.literal(")")))
-          .append("\n"));
+              .append(Component.literal(")")).withStyle(ChatFormatting.BOLD))
+          .append("\n\n"));
 
       // 遍历合并后的列表
       for (Object entry : subList) {
