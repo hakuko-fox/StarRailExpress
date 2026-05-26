@@ -46,5 +46,15 @@
   "option.starrailexpress.role_id_tooltip": "ID: %s",
   "option.starrailexpress.role_enable_option": "[%s] Class: %s (%s)",
   "option.starrailexpress.modifier_enable_option": "Modifier: %s (%s)",
-  "category.starrailexpress.config.other": "Other"
+  "category.starrailexpress.config.other": "Other",
+  "commands.listroles.page.outofrange": "Page exceeds total (%d)",
+  "commands.listroles.no.roles": "No roles available",
+  "commands.listroles.no.modifiers": "No modifiers available",
+  "commands.listroles.button.first_page": "First",
+  "commands.listroles.button.prev_page": "Prev",
+  "commands.listroles.button.next_page": "Next",
+  "commands.listroles.button.last_page": "Last",
+  "commands.listroles.button.hover": "Page %d",
+  "commands.listroles.all.title": "All Roles & Modifiers",
+  "commands.listroles.no.entries": "No roles or modifiers available."
 }

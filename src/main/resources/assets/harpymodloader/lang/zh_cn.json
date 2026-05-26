@@ -46,5 +46,21 @@
   "option.starrailexpress.role_id_tooltip": "ID: %s",
   "option.starrailexpress.role_enable_option": "[%s] 职业：%s (%s)",
   "option.starrailexpress.modifier_enable_option": "修饰符：%s (%s)",
-  "category.starrailexpress.config.other": "其他"
+  "category.starrailexpress.config.other": "其他",
+  "commands.listroles.page.outofrange": "总页码最多为 (%d)",
+  "commands.listroles.no.roles": "无可用职业",
+  "commands.listroles.no.modifiers": "无可用修饰符",
+  "commands.listroles.button.first_page": "首页",
+  "commands.listroles.button.prev_page": "上一页",
+  "commands.listroles.button.next_page": "下一页",
+  "commands.listroles.button.last_page": "尾页",
+  "commands.listroles.button.hover": "第 %d 页",
+  "commands.listroles.detail.goal": "目标：",
+  "commands.listroles.detail.introduction": "详细介绍：%s",
+  "commands.listroles.detail.name.role": "【角色】%s",
+  "commands.listroles.detail.name.modifier": "【修饰符】%s",
+  "commands.listroles.detail.id": "ID: %s",
+  "commands.listroles.detail.click_to_show": "点击查看详情",
+  "commands.listroles.all.title": "所有职业与修饰符",
+  "commands.listroles.no.entries": "没有可用的职业或修饰符！"
 }
