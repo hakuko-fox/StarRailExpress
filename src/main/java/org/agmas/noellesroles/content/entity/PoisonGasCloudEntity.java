@@ -127,10 +127,11 @@ public class PoisonGasCloudEntity extends Entity {
 
                 if (ticks >= EXPOSURE_THRESHOLD) {
                     SREPlayerPoisonComponent poisonComp = SREPlayerPoisonComponent.KEY.get(player);
-                    // 固定中毒时间 60秒 (1200 ticks)
+                    // 衰减机制：已中毒的玩家再吸入毒气会缩短中毒时间，但不会低于30秒
                     int baseTicks = 60 * 20;
+                    int minTicks = 30 * 20;
                     int poisonTime = poisonComp.poisonTicks > 0
-                            ? Math.max(1, poisonComp.poisonTicks - baseTicks)
+                            ? Math.max(minTicks, poisonComp.poisonTicks - baseTicks)
                             : baseTicks;
                     poisonComp.setPoisonTicks(poisonTime, ownerUuid);
                     exposureTicks.put(player.getUUID(), 0);
