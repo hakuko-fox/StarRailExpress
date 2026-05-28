@@ -11,6 +11,9 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,6 +44,13 @@ public class C4BackComponent implements AutoSyncedComponent {
 
     public boolean hasC4(UUID uuid) {
         return uuid != null && carriers.containsKey(uuid);
+    }
+
+    /** 静态便捷方法：检查实体（玩家）身上是否有C4 */
+    public static boolean hasC4(Entity entity) {
+        if (!(entity instanceof Player player)) return false;
+        C4BackComponent comp = KEY.getNullable(player.level());
+        return comp != null && comp.hasC4(player.getUUID());
     }
 
     public Map<UUID, Long> getCarriers() {

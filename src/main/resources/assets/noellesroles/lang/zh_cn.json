@@ -1146,6 +1146,7 @@
   "message.noellesroles.manipulator.body_died": "你的本体被杀死了！游戏结束。",
   "message.noellesroles.manipulator.target_died": "%s 在你操控期间被杀死了！",
   "death_reason.noellesroles.bomb_death": "炸弹",
+  "death_reason.noellesroles.c4_explosion": "C4爆炸",
   "death_reason.starrailexpress.bomb_death": "炸弹",
   "item.noellesroles.bomb": "炸弹",
   "message.hotbar.full": "物品栏空间不足",

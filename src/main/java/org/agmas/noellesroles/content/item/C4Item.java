@@ -53,11 +53,13 @@ public class C4Item extends Item {
         if (!level.isClientSide) {
             ItemStack thrownStack = stack.copyWithCount(1);
             Vec3 eye = player.getEyePosition();
-            Vec3 velocity = player.getViewVector(1.0F).normalize().scale(0.85D)
-                .add(0.0D, 0.12D, 0.0D);
-            ItemEntity entity = new ItemEntity(level, eye.x, eye.y - 0.2D, eye.z,
+            Vec3 direction = player.getViewVector(1.0F).normalize();
+            Vec3 velocity = direction.scale(0.85D).add(0.0D, 0.12D, 0.0D);
+            Vec3 spawnPos = eye.add(direction.scale(0.5D));
+            ItemEntity entity = new ItemEntity(level, spawnPos.x, spawnPos.y - 0.2D, spawnPos.z,
                 thrownStack, velocity.x, velocity.y, velocity.z);
             entity.setThrower(player);
+            entity.setPickUpDelay(32767);
             entity.setUnlimitedLifetime();
             level.addFreshEntity(entity);
             C4Detonation.registerThrownCharge(entity, player.getUUID());

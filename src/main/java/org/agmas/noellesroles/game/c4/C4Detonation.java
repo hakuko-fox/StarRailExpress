@@ -2,6 +2,8 @@ package org.agmas.noellesroles.game.c4;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -25,6 +27,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.cca.C4BackComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
@@ -48,6 +51,11 @@ public final class C4Detonation {
     public static void register() {
         ServerTickEvents.END_WORLD_TICK.register(C4Detonation::tick);
         ServerLivingEntityEvents.AFTER_DEATH.register(C4Detonation::afterDeath);
+        OnGameEnd.EVENT.register((world, gameWorldComponent) -> {
+            C4BackComponent comp = C4BackComponent.KEY.getNullable(world);
+            if (comp != null) comp.clearAll();
+            clearThrownCharges();
+        });
     }
 
     public static void registerThrownCharge(ItemEntity entity, UUID owner) {
@@ -346,6 +354,7 @@ public final class C4Detonation {
         entity.setPos(plantedPos);
         entity.setDeltaMovement(Vec3.ZERO);
         entity.setNoGravity(true);
+        entity.setPickUpDelay(32767);
         entity.hasImpulse = true;
         entity.setYRot(yawForSide(side));
         entity.setXRot(pitchForSide(side));
@@ -354,6 +363,7 @@ public final class C4Detonation {
     private static void keepStuck(ItemEntity entity) {
         entity.setDeltaMovement(Vec3.ZERO);
         entity.setNoGravity(true);
+        entity.setPickUpDelay(32767);
         entity.hasImpulse = true;
     }
 
@@ -449,7 +459,9 @@ public final class C4Detonation {
                 && hasExplosionLineOfSight(level, blastCenter, p))
             .toList();
         for (ServerPlayer victim : victims) {
-            victim.hurt(level.damageSources().explosion(null, attacker instanceof LivingEntity le ? le : null), 100.0F);
+            GameUtils.killPlayer(victim, true,
+                attacker instanceof Player p ? p : null,
+                Noellesroles.id("c4_explosion"));
         }
     }
 

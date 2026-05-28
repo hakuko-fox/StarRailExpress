@@ -1146,6 +1146,7 @@
   "message.noellesroles.manipulator.body_died": "Your body was killed! Game over.",
   "message.noellesroles.manipulator.target_died": "%s was killed while you were controlling them!",
   "death_reason.noellesroles.bomb_death": "Bomb",
+  "death_reason.noellesroles.c4_explosion": "C4 Explosion",
   "death_reason.starrailexpress.bomb_death": "Bomb",
   "item.noellesroles.bomb": "Bomb",
   "message.hotbar.full": "Insufficient inventory space",

@@ -144,6 +144,7 @@
       "noellesroles:repair_roles",
       "noellesroles:builder",
       "noellesroles:infected",
+      "noellesroles:c4_back",
 
       "stupid_express:doused",
       "stupid_express:custom_winner",
