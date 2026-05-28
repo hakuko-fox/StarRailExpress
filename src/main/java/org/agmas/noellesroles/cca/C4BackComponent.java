@@ -1,11 +1,11 @@
 package org.agmas.noellesroles.cca;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.Noellesroles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -21,11 +21,11 @@ import java.util.UUID;
  */
 public class C4BackComponent implements AutoSyncedComponent {
     public static final ComponentKey<C4BackComponent> KEY = ComponentRegistry.getOrCreate(
-        Identifier.of(Noellesroles.MOD_ID, "c4_back"),
+        ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "c4_back"),
         C4BackComponent.class
     );
 
-    private final World world;
+    private final Level level;
     /** 玩家UUID -> C4引爆时刻的世界tick */
     private final Map<UUID, Long> carriers = new LinkedHashMap<>();
     private final Map<UUID, Long> readOnlyCarriers = Collections.unmodifiableMap(carriers);
@@ -35,8 +35,8 @@ public class C4BackComponent implements AutoSyncedComponent {
     private static final int C4_FIRST_BEEP_SECONDS = 3;
     private static final int C4_FUSE_SECONDS = 15;
 
-    public C4BackComponent(World world) {
-        this.world = world;
+    public C4BackComponent(Level level) {
+        this.level = level;
     }
 
     public boolean hasC4(UUID uuid) {
@@ -58,17 +58,17 @@ public class C4BackComponent implements AutoSyncedComponent {
     public boolean addC4(UUID uuid, long fuseTicks) {
         if (uuid == null || carriers.containsKey(uuid)) return false;
         long firstBeepDelayTicks = Math.max(0L, (long) C4_FIRST_BEEP_SECONDS * 20L);
-        long detonationAt = world.getTime() + firstBeepDelayTicks + Math.max(1L, fuseTicks);
+        long detonationAt = level.getGameTime() + firstBeepDelayTicks + Math.max(1L, fuseTicks);
         carriers.put(uuid, detonationAt);
-        plantedAt.put(uuid, world.getTime());
-        KEY.sync(this.world);
+        plantedAt.put(uuid, level.getGameTime());
+        KEY.sync(this.level);
         return true;
     }
 
     public boolean removeC4(UUID uuid) {
         if (uuid == null || carriers.remove(uuid) == null) return false;
         plantedAt.remove(uuid);
-        KEY.sync(this.world);
+        KEY.sync(this.level);
         return true;
     }
 
@@ -76,7 +76,7 @@ public class C4BackComponent implements AutoSyncedComponent {
         if (carriers.isEmpty()) return false;
         carriers.clear();
         plantedAt.clear();
-        KEY.sync(this.world);
+        KEY.sync(this.level);
         return true;
     }
 
@@ -84,22 +84,22 @@ public class C4BackComponent implements AutoSyncedComponent {
     public long ticksUntilDetonation(UUID uuid) {
         Long t = carriers.get(uuid);
         if (t == null) return -1L;
-        return Math.max(0L, t - world.getTime());
+        return Math.max(0L, t - level.getGameTime());
     }
 
     public long ticksSincePlant(UUID uuid) {
         Long t = plantedAt.get(uuid);
         if (t == null) return Long.MAX_VALUE;
-        return Math.max(0L, world.getTime() - t);
+        return Math.max(0L, level.getGameTime() - t);
     }
 
     @Override
-    public void readFromNbt(NbtCompound tag, RegistryWrapper.WrapperLookup lookup) {
+    public void readFromNbt(CompoundTag tag, HolderLookup.Provider lookup) {
         carriers.clear();
         plantedAt.clear();
-        NbtList list = tag.getList("carriers", NbtElement.COMPOUND_TYPE);
+        ListTag list = tag.getList("carriers", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
-            NbtCompound entry = list.getCompound(i);
+            CompoundTag entry = list.getCompound(i);
             String uuidStr = entry.getString("uuid");
             long detonationAt = entry.getLong("detonation_tick");
             long plantedTick = entry.contains("planted_tick")
@@ -116,13 +116,13 @@ public class C4BackComponent implements AutoSyncedComponent {
     }
 
     @Override
-    public void writeToNbt(NbtCompound tag, RegistryWrapper.WrapperLookup lookup) {
-        NbtList list = new NbtList();
+    public void writeToNbt(CompoundTag tag, HolderLookup.Provider lookup) {
+        ListTag list = new ListTag();
         for (Map.Entry<UUID, Long> e : carriers.entrySet()) {
-            NbtCompound entry = new NbtCompound();
+            CompoundTag entry = new CompoundTag();
             entry.putString("uuid", e.getKey().toString());
             entry.putLong("detonation_tick", e.getValue());
-            entry.putLong("planted_tick", plantedAt.getOrDefault(e.getKey(), world.getTime()));
+            entry.putLong("planted_tick", plantedAt.getOrDefault(e.getKey(), level.getGameTime()));
             list.add(entry);
         }
         tag.put("carriers", list);

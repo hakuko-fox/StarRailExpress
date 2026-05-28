@@ -2,29 +2,29 @@ package org.agmas.noellesroles.game.c4;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sounds.SoundCategory;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.AABB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.world.World;
 import org.agmas.noellesroles.cca.C4BackComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
@@ -50,8 +50,6 @@ public final class C4Detonation {
         ServerLivingEntityEvents.AFTER_DEATH.register(C4Detonation::afterDeath);
     }
 
-    // -------------------- 投掷C4注册 --------------------
-
     public static void registerThrownCharge(ItemEntity entity, UUID owner) {
         if (entity == null || owner == null) return;
         thrownCharges.put(entity.getUUID(), new ThrownCharge(owner, -1L, -1L, entity.position(), false, entity.level().getGameTime()));
@@ -61,18 +59,18 @@ public final class C4Detonation {
         return entity != null
             && !entity.isRemoved()
             && entity.getItem().is(ModItems.C4)
-            && (entity.hasNoGravity() || thrownCharges.containsKey(entity.getUUID()));
+            && (entity.isNoGravity() || thrownCharges.containsKey(entity.getUUID()));
     }
 
-    public static ItemEntity findLookedAtCharge(ServerPlayerEntity player, double range) {
-        if (player == null || !(player.level() instanceof ServerWorld world)) return null;
+    public static ItemEntity findLookedAtCharge(ServerPlayer player, double range) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) return null;
         Vec3 start = player.getEyePosition();
         Vec3 direction = player.getViewVector(1.0F).normalize();
         Vec3 end = start.add(direction.scale(range));
         double maxDistanceSq = range * range;
 
-        BlockHitResult blockHit = world.clip(new RaycastContext(start, end,
-            RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player));
+        BlockHitResult blockHit = level.clip(new ClipContext(start, end,
+            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         if (blockHit.getType() == HitResult.Type.BLOCK) {
             maxDistanceSq = Math.min(maxDistanceSq, start.distanceToSqr(blockHit.getLocation()) + 0.08D);
         }
@@ -83,44 +81,42 @@ public final class C4Detonation {
         return hit != null && hit.getEntity() instanceof ItemEntity item ? item : null;
     }
 
-    public static boolean defuseBlockCharge(ServerPlayerEntity defuser, ItemEntity entity) {
+    public static boolean defuseBlockCharge(ServerPlayer defuser, ItemEntity entity) {
         if (defuser == null || entity == null || entity.isRemoved() || !entity.getItem().is(ModItems.C4)) return false;
         thrownCharges.remove(entity.getUUID());
-        World world = entity.level();
+        Level level = entity.level();
         Vec3 pos = entity.position();
         entity.discard();
-        world.playSound(null, pos.x, pos.y, pos.z,
-            SoundEvents.TRIPWIRE_CLICK_OFF, SoundCategory.PLAYERS, 0.9F, 1.2F);
-        world.playSound(null, pos.x, pos.y, pos.z,
-            SoundEvents.SHEEP_SHEAR, SoundCategory.PLAYERS, 1.0F, 1.2F);
+        level.playSound(null, pos.x, pos.y, pos.z,
+            SoundEvents.TRIPWIRE_CLICK_OFF, SoundSource.PLAYERS, 0.9F, 1.2F);
+        level.playSound(null, pos.x, pos.y, pos.z,
+            SoundEvents.SHEEP_SHEAR, SoundSource.PLAYERS, 1.0F, 1.2F);
         return true;
     }
 
-    public static boolean misfireBlockCharge(ServerWorld world, ItemEntity entity, PlayerEntity attacker) {
-        if (world == null || entity == null || entity.isRemoved() || !entity.getItem().is(ModItems.C4)) return false;
+    public static boolean misfireBlockCharge(ServerLevel level, ItemEntity entity, Player attacker) {
+        if (level == null || entity == null || entity.isRemoved() || !entity.getItem().is(ModItems.C4)) return false;
         thrownCharges.remove(entity.getUUID());
         Vec3 pos = entity.position();
         entity.discard();
-        detonateAt(world, pos, attacker);
+        detonateAt(level, pos, attacker);
         return true;
     }
 
-    // -------------------- 远程引爆 --------------------
-
-    private static void registerVisibleThrownCharges(ServerWorld world, ServerPlayerEntity owner) {
-        for (ItemEntity entity : world.getEntitiesOfClass(EntityType.ITEM, entity ->
-                entity.getItem().is(ModItems.C4) && isOwnedBy(entity, owner.getUUID()))) {
+    private static void registerVisibleThrownCharges(ServerLevel level, ServerPlayer owner) {
+        for (ItemEntity entity : level.getEntitiesOfClass(ItemEntity.class, owner.getBoundingBox().inflate(256.0D),
+                e -> e.getItem().is(ModItems.C4) && isOwnedBy(e, owner.getUUID()))) {
             thrownCharges.putIfAbsent(entity.getUUID(),
-                new ThrownCharge(owner.getUUID(), -1L, -1L, entity.position(), entity.hasNoGravity(), placedAt(world, entity)));
+                new ThrownCharge(owner.getUUID(), -1L, -1L, entity.position(), entity.isNoGravity(), placedAt(level, entity)));
         }
     }
 
-    private static Map.Entry<UUID, ThrownCharge> newestUnarmedCharge(ServerWorld world, ServerPlayerEntity player) {
+    private static Map.Entry<UUID, ThrownCharge> newestUnarmedCharge(ServerLevel level, ServerPlayer player) {
         Map.Entry<UUID, ThrownCharge> newest = null;
         for (Map.Entry<UUID, ThrownCharge> entry : List.copyOf(thrownCharges.entrySet())) {
             ThrownCharge charge = entry.getValue();
             if (!player.getUUID().equals(charge.owner())) continue;
-            ItemEntity entity = thrownChargeEntity(world, entry.getKey());
+            ItemEntity entity = thrownChargeEntity(level, entry.getKey());
             if (entity == null) {
                 thrownCharges.remove(entry.getKey());
                 continue;
@@ -133,36 +129,36 @@ public final class C4Detonation {
         return newest;
     }
 
-    private static long placedAt(ServerWorld world, ItemEntity entity) {
-        return Math.max(0L, world.getGameTime() - Math.max(0, entity.tickCount));
+    private static long placedAt(ServerLevel level, ItemEntity entity) {
+        return Math.max(0L, level.getGameTime() - Math.max(0, entity.tickCount));
     }
 
-    public static void triggerRemoteDetonation(ServerPlayerEntity player) {
-        if (player == null || !(player.level() instanceof ServerWorld world)) return;
-        registerVisibleThrownCharges(world, player);
-        if (hasArmedCharge(world, player)) {
-            player.sendMessage(Component.translatable("c4.already_armed"), true);
+    public static void triggerRemoteDetonation(ServerPlayer player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) return;
+        registerVisibleThrownCharges(level, player);
+        if (hasArmedCharge(level, player)) {
+            player.displayClientMessage(Component.translatable("c4.already_armed"), true);
             return;
         }
-        long now = world.getGameTime();
+        long now = level.getGameTime();
         long detonationAt = now + 3L * 20L + 15L * 20L;
-        Map.Entry<UUID, ThrownCharge> target = newestUnarmedCharge(world, player);
+        Map.Entry<UUID, ThrownCharge> target = newestUnarmedCharge(level, player);
         if (target == null) {
-            player.sendMessage(Component.translatable("c4.no_thrown_charges"), true);
+            player.displayClientMessage(Component.translatable("c4.no_thrown_charges"), true);
             return;
         }
         ThrownCharge charge = target.getValue();
         thrownCharges.put(target.getKey(), charge.armed(now, detonationAt));
-        world.playSound(null, player.blockPosition(), SoundEvents.LEVER_CLICK,
-            SoundCategory.PLAYERS, 0.8F, 1.4F);
-        player.sendMessage(Component.translatable("c4.armed_one_charge"), true);
+        level.playSound(null, player.blockPosition(), SoundEvents.LEVER_CLICK,
+            SoundSource.PLAYERS, 0.8F, 1.4F);
+        player.displayClientMessage(Component.translatable("c4.armed_one_charge"), true);
     }
 
-    private static boolean hasArmedCharge(ServerWorld world, ServerPlayerEntity player) {
+    private static boolean hasArmedCharge(ServerLevel level, ServerPlayer player) {
         for (Map.Entry<UUID, ThrownCharge> entry : List.copyOf(thrownCharges.entrySet())) {
             ThrownCharge charge = entry.getValue();
             if (!player.getUUID().equals(charge.owner())) continue;
-            ItemEntity entity = thrownChargeEntity(world, entry.getKey());
+            ItemEntity entity = thrownChargeEntity(level, entry.getKey());
             if (entity == null) {
                 thrownCharges.remove(entry.getKey());
                 continue;
@@ -172,18 +168,16 @@ public final class C4Detonation {
         return false;
     }
 
-    // -------------------- Tick 系统 --------------------
-
-    private static void tick(ServerWorld world) {
-        if (world.getRegistryKey() != World.OVERWORLD) return;
-        C4BackComponent comp = C4BackComponent.KEY.getNullable(world);
+    private static void tick(ServerLevel level) {
+        if (level.dimension() != Level.OVERWORLD) return;
+        C4BackComponent comp = C4BackComponent.KEY.getNullable(level);
         if (comp == null) return;
         Map<UUID, Long> carriers = comp.getCarriers();
         boolean hasThrown = !thrownCharges.isEmpty();
         if (carriers.isEmpty() && !hasThrown) return;
 
-        long now = world.getGameTime();
-        MinecraftServer server = world.getServer();
+        long now = level.getGameTime();
+        MinecraftServer server = level.getServer();
         List<UUID> expired = null;
         List<UUID> removeOnly = null;
 
@@ -198,7 +192,7 @@ public final class C4Detonation {
                 continue;
             }
 
-            ServerPlayerEntity carrier = server.getPlayerManager().getPlayer(id);
+            ServerPlayer carrier = server.getPlayerList().getPlayer(id);
             if (carrier == null || carrier.isRemoved()) continue;
             if (!carrier.isAlive()) {
                 if (removeOnly == null) removeOnly = new ArrayList<>();
@@ -216,31 +210,30 @@ public final class C4Detonation {
 
         if (expired != null) {
             for (UUID carrierId : expired) {
-                ServerPlayerEntity carrier = server.getPlayerManager().getPlayer(carrierId);
+                ServerPlayer carrier = server.getPlayerList().getPlayer(carrierId);
                 comp.removeC4(carrierId);
                 if (carrier == null || carrier.isRemoved()) continue;
-                if (!(carrier.level() instanceof ServerWorld currentWorld)) continue;
-                detonateAt(currentWorld, carrier.position(), carrier);
+                if (!(carrier.level() instanceof ServerLevel currentLevel)) continue;
+                detonateAt(currentLevel, carrier.position(), carrier);
             }
         }
 
-        tickThrownCharges(world, now);
+        tickThrownCharges(level, now);
     }
 
-    private static void tickThrownCharges(ServerWorld world, long now) {
+    private static void tickThrownCharges(ServerLevel level, long now) {
         for (Map.Entry<UUID, ThrownCharge> entry : List.copyOf(thrownCharges.entrySet())) {
-            ItemEntity entity = thrownChargeEntity(world, entry.getKey());
+            ItemEntity entity = thrownChargeEntity(level, entry.getKey());
             if (entity == null) {
                 thrownCharges.remove(entry.getKey());
                 continue;
             }
             ThrownCharge charge = entry.getValue();
-            // 尝试粘附到路过玩家身上
-            if (tryAttachThrownToPlayer(world, entity, charge)) {
+            if (tryAttachThrownToPlayer(level, entity, charge)) {
                 thrownCharges.remove(entry.getKey());
                 continue;
             }
-            charge = updateStickyState(world, entity, charge);
+            charge = updateStickyState(level, entity, charge);
             thrownCharges.put(entry.getKey(), charge);
             if (!charge.isArmed()) continue;
             long remaining = charge.detonationAt() - now;
@@ -248,17 +241,15 @@ public final class C4Detonation {
                 thrownCharges.remove(entry.getKey());
                 Vec3 pos = entity.position();
                 entity.discard();
-                ServerPlayerEntity owner = world.getServer().getPlayerManager().getPlayer(charge.owner());
-                detonateAt(world, pos, owner);
+                ServerPlayer owner = level.getServer().getPlayerList().getPlayer(charge.owner());
+                detonateAt(level, pos, owner);
             } else {
-                maybeBeepThrown(world, entity, charge, remaining);
+                maybeBeepThrown(level, entity, charge, remaining);
             }
         }
     }
 
-    // -------------------- 投掷C4粘附玩家 --------------------
-
-    private static boolean tryAttachThrownToPlayer(ServerWorld world, ItemEntity entity, ThrownCharge charge) {
+    private static boolean tryAttachThrownToPlayer(ServerLevel level, ItemEntity entity, ThrownCharge charge) {
         if (charge.stuck()) return false;
         Vec3 previous = charge.previousPos() != null ? charge.previousPos() : entity.position();
         Vec3 current = entity.position();
@@ -272,30 +263,28 @@ public final class C4Detonation {
             target -> canThrownC4AttachTo(charge, target),
             delta.lengthSqr() + 1.0D
         );
-        if (hit == null || !(hit.getEntity() instanceof ServerPlayerEntity target)) return false;
+        if (hit == null || !(hit.getEntity() instanceof ServerPlayer target)) return false;
 
-        C4BackComponent comp = C4BackComponent.KEY.getNullable(world);
+        C4BackComponent comp = C4BackComponent.KEY.getNullable(level);
         if (comp == null || comp.hasC4(target.getUUID())) return false;
         if (!comp.addC4(target.getUUID())) return false;
         entity.discard();
-        world.playSound(null, target.getX(), target.getY(), target.getZ(),
-            SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, SoundCategory.PLAYERS, 0.8F, 1.3F);
-        target.sendMessage(Component.translatable("c4.you_have_c4"), false);
+        level.playSound(null, target.getX(), target.getY(), target.getZ(),
+            SoundEvents.TRIPWIRE_CLICK_ON, SoundSource.PLAYERS, 0.8F, 1.3F);
+        target.displayClientMessage(Component.translatable("c4.you_have_c4"), false);
         return true;
     }
 
     private static boolean canThrownC4AttachTo(ThrownCharge charge, Entity target) {
-        return target instanceof ServerPlayerEntity player
+        return target instanceof ServerPlayer player
             && !player.getUUID().equals(charge.owner())
             && !player.isSpectator()
             && player.canBeHitByProjectile();
     }
 
-    // -------------------- 实体查找 / 所有权 --------------------
-
-    private static ItemEntity thrownChargeEntity(ServerWorld world, UUID entityId) {
-        if (world == null || entityId == null) return null;
-        Entity entity = world.getEntity(entityId);
+    private static ItemEntity thrownChargeEntity(ServerLevel level, UUID entityId) {
+        if (level == null || entityId == null) return null;
+        Entity entity = level.getEntity(entityId);
         if (!(entity instanceof ItemEntity itemEntity) || itemEntity.isRemoved()
                 || !itemEntity.getItem().is(ModItems.C4)) {
             return null;
@@ -309,18 +298,16 @@ public final class C4Detonation {
         return owner != null && ownerId.equals(owner.getUUID());
     }
 
-    // -------------------- 表面粘附 --------------------
-
-    private static ThrownCharge updateStickyState(ServerWorld world, ItemEntity entity, ThrownCharge charge) {
+    private static ThrownCharge updateStickyState(ServerLevel level, ItemEntity entity, ThrownCharge charge) {
         if (charge.stuck()) {
             keepStuck(entity);
             return charge.withPreviousPos(entity.position());
         }
         Vec3 previous = charge.previousPos() != null ? charge.previousPos() : entity.position();
         Vec3 current = entity.position();
-        BlockHitResult hit = findSurfaceHit(world, entity, previous, current);
+        BlockHitResult hit = findSurfaceHit(level, entity, previous, current);
         if (hit != null) {
-            stickToSurface(entity, hit.getLocation(), hit.getSide());
+            stickToSurface(entity, hit.getLocation(), hit.getDirection());
             return charge.stuck(entity.position());
         }
         Direction fallbackSide = fallbackCollisionSide(entity, previous, current);
@@ -331,12 +318,12 @@ public final class C4Detonation {
         return charge.withPreviousPos(current);
     }
 
-    private static BlockHitResult findSurfaceHit(ServerWorld world, ItemEntity entity, Vec3 previous, Vec3 current) {
+    private static BlockHitResult findSurfaceHit(ServerLevel level, ItemEntity entity, Vec3 previous, Vec3 current) {
         if (previous.distanceToSqr(current) <= 1.0E-7D) return null;
-        BlockHitResult hit = world.clip(new RaycastContext(previous, current,
-            RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, entity));
+        BlockHitResult hit = level.clip(new ClipContext(previous, current,
+            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
         if (hit.getType() != HitResult.Type.BLOCK) return null;
-        if (world.getBlockState(hit.getBlockPos()).isAir()) return null;
+        if (level.getBlockState(hit.getBlockPos()).isAir()) return null;
         return hit;
     }
 
@@ -354,9 +341,9 @@ public final class C4Detonation {
     }
 
     private static void stickToSurface(ItemEntity entity, Vec3 surfacePos, Direction side) {
-        Vec3 normal = Vec3.atLowerCornerOf(side.getVector());
+        Vec3 normal = Vec3.atLowerCornerOf(side.getNormal());
         Vec3 plantedPos = surfacePos.add(normal.scale(SURFACE_OFFSET));
-        entity.setPosition(plantedPos);
+        entity.setPos(plantedPos);
         entity.setDeltaMovement(Vec3.ZERO);
         entity.setNoGravity(true);
         entity.hasImpulse = true;
@@ -387,8 +374,6 @@ public final class C4Detonation {
         };
     }
 
-    // -------------------- 音效 --------------------
-
     private static long beepInterval(double progress) {
         if (progress < 0.50D) return 20;
         if (progress < 0.75D) return 10;
@@ -396,8 +381,8 @@ public final class C4Detonation {
         return 2;
     }
 
-    private static void maybeBeep(C4BackComponent comp, ServerPlayerEntity carrier, long remaining) {
-        long ticksSincePlant = comp.ticksSincePlant(carrier.getUuid());
+    private static void maybeBeep(C4BackComponent comp, ServerPlayer carrier, long remaining) {
+        long ticksSincePlant = comp.ticksSincePlant(carrier.getUUID());
         long fuseTicks = ticksSincePlant + remaining;
         long configuredDelay = 3L * 20L;
         long firstBeepDelay = Math.min(configuredDelay, Math.max(0L, fuseTicks - 1L));
@@ -408,27 +393,27 @@ public final class C4Detonation {
         double progress = Math.min(1.0D, Math.max(0.0D, ticksSinceFirstBeep / (double) audibleTicks));
         long interval = beepInterval(progress);
         if (ticksSinceFirstBeep % interval != 0L) return;
-        if (!(carrier.level() instanceof ServerWorld world)) return;
+        if (!(carrier.level() instanceof ServerLevel level)) return;
 
         float urgency = (float) progress;
         float pitch = 1.5F + urgency * 0.5F;
         float volume = 0.5F + urgency * 0.3F;
 
-        world.playSound(
+        level.playSound(
             null,
             carrier.blockPosition(),
             NRSounds.C4_BEEP,
-            SoundCategory.PLAYERS,
+            SoundSource.PLAYERS,
             volume,
             pitch
         );
     }
 
-    private static void maybeBeepThrown(ServerWorld world, ItemEntity entity, ThrownCharge charge, long remaining) {
+    private static void maybeBeepThrown(ServerLevel level, ItemEntity entity, ThrownCharge charge, long remaining) {
         long fuseTicks = Math.max(1L, charge.detonationAt() - charge.armedAt());
         long configuredDelay = 3L * 20L;
         long firstBeepDelay = Math.min(configuredDelay, Math.max(0L, fuseTicks - 1L));
-        long ticksSinceFirstBeep = world.getGameTime() - charge.armedAt() - firstBeepDelay;
+        long ticksSinceFirstBeep = level.getGameTime() - charge.armedAt() - firstBeepDelay;
         if (ticksSinceFirstBeep < 0L) return;
 
         long audibleTicks = Math.max(1L, fuseTicks - firstBeepDelay);
@@ -437,62 +422,56 @@ public final class C4Detonation {
         if (ticksSinceFirstBeep % interval != 0L) return;
 
         float urgency = (float) progress;
-        world.playSound(null, entity.blockPosition(), NRSounds.C4_BEEP,
-            SoundCategory.PLAYERS, 0.5F + urgency * 0.3F, 1.5F + urgency * 0.5F);
+        level.playSound(null, entity.blockPosition(), NRSounds.C4_BEEP,
+            SoundSource.PLAYERS, 0.5F + urgency * 0.3F, 1.5F + urgency * 0.5F);
     }
 
-    // -------------------- 爆炸逻辑 --------------------
-
-    public static void detonateAt(ServerWorld world, PlayerEntity carrier, PlayerEntity attacker) {
-        detonateAt(world, carrier.position(), attacker);
+    public static void detonateAt(ServerLevel level, Player carrier, Player attacker) {
+        detonateAt(level, carrier.position(), attacker);
     }
 
-    public static void detonateAt(ServerWorld world, Vec3 blastCenter, PlayerEntity attacker) {
+    public static void detonateAt(ServerLevel level, Vec3 blastCenter, Player attacker) {
         double x = blastCenter.x;
         double y = blastCenter.y + 0.1D;
         double z = blastCenter.z;
         BlockPos pos = BlockPos.containing(blastCenter);
 
-        world.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundCategory.BLOCKS,
-            5.0F, 1.0F + (world.getRandom().nextFloat() * 0.1F) - 0.05F);
+        level.playSound(null, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS,
+            5.0F, 1.0F + (level.getRandom().nextFloat() * 0.1F) - 0.05F);
 
-        world.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
-        world.spawnParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 100, 0.0, 0.0, 0.0, 0.2);
-        world.spawnParticles(ParticleTypes.FLAME, x, y, z, 50, 0.3D, 0.3D, 0.3D, 0.1D);
+        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
+        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 100, 0.0, 0.0, 0.0, 0.2);
+        level.sendParticles(ParticleTypes.FLAME, x, y, z, 50, 0.3D, 0.3D, 0.3D, 0.1D);
 
-        List<ServerPlayerEntity> victims = world.getPlayers(p -> {
-            if (!p.isAlive()) return false;
-            return p.distanceToSqr(blastCenter) <= BLAST_RADIUS * BLAST_RADIUS
-                && hasExplosionLineOfSight(world, blastCenter, p);
-        });
-        for (ServerPlayerEntity victim : victims) {
-            victim.damage(victim.damageSources().explosion(attacker), 100.0F);
+        List<ServerPlayer> victims = level.players().stream()
+            .filter(p -> p.isAlive()
+                && p.distanceToSqr(blastCenter) <= BLAST_RADIUS * BLAST_RADIUS
+                && hasExplosionLineOfSight(level, blastCenter, p))
+            .toList();
+        for (ServerPlayer victim : victims) {
+            victim.hurt(level.damageSources().explosion(null, attacker instanceof LivingEntity le ? le : null), 100.0F);
         }
     }
 
-    private static boolean hasExplosionLineOfSight(ServerWorld world, Vec3 blastCenter, ServerPlayerEntity victim) {
+    private static boolean hasExplosionLineOfSight(ServerLevel level, Vec3 blastCenter, ServerPlayer victim) {
         Vec3 center = blastCenter.add(0.0D, 0.35D, 0.0D);
         Vec3 eye = victim.getEyePosition();
         Vec3 body = victim.position().add(0.0D, victim.getBbHeight() * 0.5D, 0.0D);
-        return unobstructed(world, center, eye, victim) || unobstructed(world, center, body, victim);
+        return unobstructed(level, center, eye, victim) || unobstructed(level, center, body, victim);
     }
 
-    private static boolean unobstructed(ServerWorld world, Vec3 from, Vec3 to, ServerPlayerEntity victim) {
-        BlockHitResult hit = world.clip(new RaycastContext(from, to,
-            RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, victim));
+    private static boolean unobstructed(ServerLevel level, Vec3 from, Vec3 to, ServerPlayer victim) {
+        BlockHitResult hit = level.clip(new ClipContext(from, to,
+            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, victim));
         if (hit.getType() == HitResult.Type.MISS) return true;
         return hit.getLocation().distanceToSqr(from) + 0.05D >= to.distanceToSqr(from);
     }
 
-    // -------------------- 事件 --------------------
-
     private static void afterDeath(LivingEntity entity, DamageSource source) {
-        if (!(entity instanceof ServerPlayerEntity player)) return;
+        if (!(entity instanceof ServerPlayer player)) return;
         C4BackComponent comp = C4BackComponent.KEY.getNullable(player.level());
         if (comp != null) comp.removeC4(player.getUUID());
     }
-
-    // -------------------- 清理 / 存档 --------------------
 
     private static void clearThrownCharges() {
         thrownCharges.clear();
@@ -513,8 +492,6 @@ public final class C4Detonation {
             thrownCharges.put(entry.getKey(), entry.getValue().toThrownCharge());
         }
     }
-
-    // -------------------- 内部记录 --------------------
 
     private record ThrownCharge(UUID owner, long armedAt, long detonationAt, Vec3 previousPos, boolean stuck, long placedAt) {
         private boolean isArmed() {

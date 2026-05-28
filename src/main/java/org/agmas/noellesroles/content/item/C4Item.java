@@ -1,16 +1,16 @@
 package org.agmas.noellesroles.content.item;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -53,17 +53,16 @@ public class C4Item extends Item {
         if (!level.isClientSide) {
             ItemStack thrownStack = stack.copyWithCount(1);
             Vec3 eye = player.getEyePosition();
-            Vec3 velocity = player.getViewVector(1.0F).normalize().multiply(0.85D)
+            Vec3 velocity = player.getViewVector(1.0F).normalize().scale(0.85D)
                 .add(0.0D, 0.12D, 0.0D);
             ItemEntity entity = new ItemEntity(level, eye.x, eye.y - 0.2D, eye.z,
                 thrownStack, velocity.x, velocity.y, velocity.z);
-            entity.setOwner(player.getUUID());
+            entity.setThrower(player);
             entity.setUnlimitedLifetime();
             level.addFreshEntity(entity);
-            // 注册投掷的C4实体
             C4Detonation.registerThrownCharge(entity, player.getUUID());
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.EGG_THROW, SoundCategory.PLAYERS, 0.55F, 0.75F);
+                SoundEvents.EGG_THROW, SoundSource.PLAYERS, 0.55F, 0.75F);
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
@@ -73,41 +72,38 @@ public class C4Item extends Item {
     }
 
     private static InteractionResult plantOnPlayer(ItemStack stack, Player user, Player target) {
-        if (!(user instanceof ServerPlayerEntity serverUser)) return InteractionResult.PASS;
-        if (!(serverUser.level() instanceof ServerWorld world)) return InteractionResult.PASS;
+        if (!(user instanceof ServerPlayer serverUser)) return InteractionResult.PASS;
+        if (!(serverUser.level() instanceof ServerLevel level)) return InteractionResult.PASS;
         
-        C4BackComponent comp = C4BackComponent.KEY.getNullable(world);
+        C4BackComponent comp = C4BackComponent.KEY.getNullable(level);
         if (comp == null) return InteractionResult.FAIL;
 
         if (comp.hasC4(target.getUUID())) {
-            user.sendMessage(Component.translatable("c4.already_on_player"), true);
+            user.displayClientMessage(Component.translatable("c4.already_on_player"), true);
             return InteractionResult.CONSUME;
         }
 
-        // 添加C4到目标玩家
         if (!comp.addC4(target.getUUID())) return InteractionResult.FAIL;
 
-        // 消耗物品
         if (!user.getAbilities().instabuild) {
             stack.shrink(1);
         }
 
-        // 播放放置音效
-        world.playSound(null, target.getX(), target.getY(), target.getZ(),
-            SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, SoundCategory.PLAYERS, 0.8F, 1.2F);
+        level.playSound(null, target.getX(), target.getY(), target.getZ(),
+            SoundEvents.TRIPWIRE_CLICK_ON, SoundSource.PLAYERS, 0.8F, 1.2F);
         
-        user.sendMessage(Component.translatable("c4.placed_on_player", target.getName().getString()), true);
-        target.sendMessage(Component.translatable("c4.you_have_c4"), false);
+        user.displayClientMessage(Component.translatable("c4.placed_on_player", target.getName().getString()), true);
+        target.displayClientMessage(Component.translatable("c4.you_have_c4"), false);
 
         return InteractionResult.CONSUME;
     }
 
     private static Player findTargetedPlayer(Player user) {
-        double range = Math.max(3.0D, user.getEntityInteractionRange());
+        double range = Math.max(3.0D, user.entityInteractionRange());
         Vec3 start = user.getEyePosition();
         Vec3 direction = user.getViewVector(1.0F).normalize();
-        Vec3 end = start.add(direction.multiply(range));
-        AABB searchBox = user.getBoundingBox().expandTowards(direction.multiply(range)).inflate(1.0D);
+        Vec3 end = start.add(direction.scale(range));
+        AABB searchBox = user.getBoundingBox().expandTowards(direction.scale(range)).inflate(1.0D);
         
         HitResult hit = user.pick(range, 0.0F, false);
         if (hit.getType() == HitResult.Type.ENTITY) {

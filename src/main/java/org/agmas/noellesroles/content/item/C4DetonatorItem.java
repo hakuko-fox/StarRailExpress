@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.item;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -18,7 +18,7 @@ public class C4DetonatorItem extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player user, @NotNull InteractionHand hand) {
         ItemStack stack = user.getItemInHand(hand);
-        if (!level.isClientSide && user instanceof ServerPlayerEntity player) {
+        if (!level.isClientSide && user instanceof ServerPlayer player) {
             C4Detonation.triggerRemoteDetonation(player);
         }
         return InteractionResultHolder.success(stack);
