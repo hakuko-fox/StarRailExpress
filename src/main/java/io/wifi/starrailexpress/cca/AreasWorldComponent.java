@@ -158,6 +158,10 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public double sceneOffsetX = 0;
     public double sceneOffsetY = 125; // 默认向上偏移125格（场景放置在游玩区域下方100-150格）
     public double sceneOffsetZ = 0;
+    
+    // 雪花效果配置（默认关闭）
+    public boolean snowEnabled = false;
+    
     public boolean mustCopy = false;
 
     // 支持的游戏模式列表，为空表示支持所有模式
@@ -357,6 +361,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
+        this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
         this.sceneOffsetEnabled = tag.contains("sceneOffsetEnabled") ? tag.getBoolean("sceneOffsetEnabled") : false;
         this.sceneOffsetX = tag.contains("sceneOffsetX") ? tag.getDouble("sceneOffsetX") : 0;
         this.sceneOffsetY = tag.contains("sceneOffsetY") ? tag.getDouble("sceneOffsetY") : 125;
@@ -415,6 +420,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("canJump", this.canJump);
         tag.putBoolean("canSwim", this.canSwim);
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
+        tag.putBoolean("snowEnabled", this.snowEnabled);
         tag.putBoolean("sceneOffsetEnabled", this.sceneOffsetEnabled);
         tag.putDouble("sceneOffsetX", this.sceneOffsetX);
         tag.putDouble("sceneOffsetY", this.sceneOffsetY);
