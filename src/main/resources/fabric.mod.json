@@ -39,6 +39,7 @@
     ],
     "cardinal-components": [
       "org.agmas.noellesroles.component.ModComponents",
+      "org.agmas.noellesroles.cca.NRComponents",
       "pro.fazeclan.river.stupid_express.constants.SEComponents",
       "org.agmas.harpymodloader.component.HarpyModLoaderComponents",
       "io.wifi.starrailexpress.cca.SREComponents"

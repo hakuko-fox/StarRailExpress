@@ -194,6 +194,10 @@ public class Noellesroles implements ModInitializer {
         NRSounds.initialize();
         registerMaxRoleCount();
 
+        // 注册C4系统
+        org.agmas.noellesroles.game.c4.C4Detonation.register();
+        org.agmas.noellesroles.game.c4.PliersDefuseManager.register();
+
         // 注册事件处理器
         ModEventsRegister.registerEvents();
         org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler.register();

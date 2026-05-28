@@ -2690,6 +2690,22 @@
   "message.noellesroles.silencer.help_phase": "你已被解除语音禁言效果，去求助别的玩家右键你帮你解除后遗症",
   "message.noellesroles.silencer.help_success": "你已成功帮助TA解开静语诅咒",
   "game.tip.meatball_role": "你只能在与肉汁独处时击杀他",
-  "game.tip.meatball_cannot_attack_in_crowd": "你无法在人群中攻击他！"
-
+  "game.tip.meatball_cannot_attack_in_crowd": "你无法在人群中攻击他！",
+  "item.noellesroles.c4": "C4炸药",
+  "item.noellesroles.c4_detonator": "C4引爆器",
+  "item.noellesroles.pliers": "钳子",
+  "item.noellesroles.bullet": "子弹",
+  "c4.already_armed": "已经有C4被激活了！",
+  "c4.no_thrown_charges": "没有可引爆的投掷C4！",
+  "c4.armed_one_charge": "已激活1个C4！",
+  "c4.already_on_player": "该玩家身上已经有C4了！",
+  "c4.placed_on_player": "已将C4放置在 %s 身上！",
+  "c4.you_have_c4": "§c你被安装了C4！",
+  "c4.defusing": "正在拆除C4...",
+  "c4.defusing_progress": "正在拆除C4... %.1f秒",
+  "c4.defuse_cancelled": "C4拆除已取消",
+  "c4.wrong_wire_explode": "§c剪错了线！C4爆炸了！",
+  "c4.you_cut_wrong_wire": "§c你剪错了线，导致C4爆炸！",
+  "c4.defuse_success": "§aC4已成功拆除！",
+  "c4.defuse_success_self": "§aC4拆除成功！"
 }

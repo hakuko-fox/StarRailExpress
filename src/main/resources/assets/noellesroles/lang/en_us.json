@@ -2689,5 +2689,22 @@
   "message.noellesroles.silencer.help_phase": "Your voice silence has been lifted, find another player to right-click you to remove the aftereffect",
   "message.noellesroles.silencer.help_success": "You have successfully lifted their silence curse",
   "game.tip.meatball_role": "Meatball - You can only be killed when alone",
-  "game.tip.meatball_cannot_attack_in_crowd": "Cannot attack him in a crowd!"
+  "game.tip.meatball_cannot_attack_in_crowd": "Cannot attack him in a crowd!",
+  "item.noellesroles.c4": "C4 Explosive",
+  "item.noellesroles.c4_detonator": "C4 Detonator",
+  "item.noellesroles.pliers": "Pliers",
+  "item.noellesroles.bullet": "Bullet",
+  "c4.already_armed": "A C4 charge is already armed.",
+  "c4.no_thrown_charges": "No thrown C4 charges to detonate.",
+  "c4.armed_one_charge": "Armed 1 C4 charge.",
+  "c4.already_on_player": "That player already has C4 planted!",
+  "c4.placed_on_player": "Planted C4 on %s!",
+  "c4.you_have_c4": "§cYou've been planted with C4!",
+  "c4.defusing": "Defusing C4...",
+  "c4.defusing_progress": "Defusing C4... %.1fs",
+  "c4.defuse_cancelled": "C4 defuse cancelled.",
+  "c4.wrong_wire_explode": "§cWrong wire! C4 exploded!",
+  "c4.you_cut_wrong_wire": "§cYou cut the wrong wire, C4 exploded!",
+  "c4.defuse_success": "§aC4 successfully defused!",
+  "c4.defuse_success_self": "§aC4 defused successfully!"
 }
