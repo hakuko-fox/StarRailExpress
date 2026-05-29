@@ -34,7 +34,7 @@ public class DefaultPlayerSkinMixin {
     private static void onGetByUuid(UUID uuid, CallbackInfoReturnable<PlayerSkin> cir) {
         var customSkin = VTModePlayerSkin.getPlayerSkin(uuid);
         if (customSkin != null) {
-            cir.setReturnValue(customSkin.toPlayerSkin(false));
+            cir.setReturnValue(customSkin.toPlayerSkin(true));
         }
     }
 
@@ -46,7 +46,7 @@ public class DefaultPlayerSkinMixin {
     private static void onGetByProfile(GameProfile profile, CallbackInfoReturnable<PlayerSkin> cir) {
         var customSkin = VTModePlayerSkin.getPlayerSkin(profile.getId());
         if (customSkin != null) {
-            cir.setReturnValue(customSkin.toPlayerSkin(false));
+            cir.setReturnValue(customSkin.toPlayerSkin(true));
         }
     }
 }
