@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import io.sre.client.events.ClientPlayerInfoUpdatePacketEvents;
-import io.wifi.starrailexpress.SREClientConfig;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
