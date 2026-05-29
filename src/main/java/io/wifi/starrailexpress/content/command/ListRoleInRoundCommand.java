@@ -24,8 +24,8 @@ public class ListRoleInRoundCommand {
     public static Component generateRoleInRoundText(ServerLevel level) {
         var gameWorldComponent = SREGameWorldComponent.KEY.get(level);
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(level);
-        var texts = Component.literal("")
-                .append(Component.literal("Roles:").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+        boolean first = true;
+        var texts = Component.literal("");
         for (ServerPlayer player : level.players()) {
             var role = gameWorldComponent.getRole(player);
             var name = RoleUtils.getRoleOrModifierNameWithColor(role);
@@ -38,9 +38,11 @@ public class ListRoleInRoundCommand {
                         .copy();
             }
             texts = texts.append(
-                    Component.translatable("\n%s: %s%s",
+                    Component.translatable((first ? "" : "\n") + "%s: %s%s",
                             player.getName().copy().withStyle(ChatFormatting.WHITE), name, modifierTexts)
                             .withStyle(ChatFormatting.GRAY));
+            first = false;
+
         }
         return texts;
     }
@@ -50,7 +52,9 @@ public class ListRoleInRoundCommand {
         var level = source.getLevel();
         if (level == null)
             level = source.getServer().overworld();
-        final var resultTexts = generateRoleInRoundText(level);
+        final var resultTexts = Component.literal("")
+                .append(Component.literal("Roles:").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append(generateRoleInRoundText(level));
         source.sendSuccess(() -> resultTexts, false);
         return 1;
     }

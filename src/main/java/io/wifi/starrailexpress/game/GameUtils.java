@@ -748,7 +748,7 @@ public class GameUtils {
         gameComponent.getGameMode().showReplay(world, roundEnd, gameComponent);
         if (SREConfig.instance().logGameEvent) {
             SRE.LOGGER.info("-".repeat(20));
-            SRE.LOGGER.info(ListRoleInRoundCommand.generateRoleInRoundText(world).getString().replaceAll("\n", ", "));
+            SRE.LOGGER.info(ListRoleInRoundCommand.generateRoleInRoundText(world).getString().replaceAll("\n", "; "));
             SRE.LOGGER.info("-".repeat(20));
         }
 
