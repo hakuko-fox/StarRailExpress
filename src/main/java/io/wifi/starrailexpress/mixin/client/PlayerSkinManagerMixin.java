@@ -7,7 +7,6 @@ import net.minecraft.client.resources.SkinManager;
 import com.mojang.authlib.GameProfile;
 
 import io.sre.client.utils.VTModePlayerSkin;
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREClientConfig;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,7 +30,7 @@ public class PlayerSkinManagerMixin {
             PlayerSkin playerSkin = localSkin.toPlayerSkin();
 
             if (playerSkin != null) {
-                SRE.LOGGER.info("Returning skin for {}: texture = {}", gameProfile.getId(), playerSkin.texture());
+                // SRE.LOGGER.info("Returning skin for {}: texture = {}", gameProfile.getId(), playerSkin.texture());
 
                 // 返回已完成的 CompletableFuture
                 cir.setReturnValue(CompletableFuture.completedFuture(playerSkin));
