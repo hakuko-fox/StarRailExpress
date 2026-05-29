@@ -53,7 +53,7 @@ public class ListRoleInRoundCommand {
         if (level == null)
             level = source.getServer().overworld();
         final var resultTexts = Component.literal("")
-                .append(Component.literal("Roles:").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append(Component.literal("Roles:\n").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
                 .append(generateRoleInRoundText(level));
         source.sendSuccess(() -> resultTexts, false);
         return 1;
