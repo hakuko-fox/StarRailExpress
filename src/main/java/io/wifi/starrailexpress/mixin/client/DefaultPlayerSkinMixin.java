@@ -22,7 +22,10 @@ public class DefaultPlayerSkinMixin {
      */
     @Inject(method = "getDefaultTexture", at = @At("HEAD"), cancellable = true)
     private static void onGetDefaultTexture(CallbackInfoReturnable<ResourceLocation> cir) {
-        var res = ResourceLocation.tryParse(VTModePlayerSkin.getAPlayerSkin().path);
+        var c = VTModePlayerSkin.getAPlayerSkin();
+        if (c == null)
+            return;
+        var res = ResourceLocation.tryParse(c.path);
         if (res != null)
             cir.setReturnValue(res);
     }
