@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.neutral.pelican;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
@@ -276,6 +277,9 @@ public class PelicanPlayerComponent implements RoleComponent, ServerTickingCompo
                 } catch (Exception ignored) {}
             }
         }
+
+        // 清除本能透视缓存，确保 bellyPlayerIds 变化后高亮颜色即时更新
+        SREClient.cachedHighLightMap.clear();
     }
 
     @Override

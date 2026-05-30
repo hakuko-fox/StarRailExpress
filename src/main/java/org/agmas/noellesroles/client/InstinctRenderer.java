@@ -39,6 +39,7 @@ import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
+import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
@@ -740,6 +741,23 @@ public class InstinctRenderer {
                             return (Color.CYAN.getRGB());
                         }
                     }
+                }
+                // 鹈鹕：透视所有玩家，被吞噬过的显示橙色，其他显示鹈鹕颜色
+                if (SREClient.gameComponent.isRole(self, ModRoles.PELICAN)) {
+                    if (!hasInstinct)
+                        return -1;
+                    if (GameUtils.isPlayerSpectatingOrCreative(self))
+                        return -1;
+                    double distSq = target_player.distanceToSqr(self);
+                    int range = PelicanPlayerComponent.INSTINCT_RANGE;
+                    if (distSq > range * range) {
+                        return -2;
+                    }
+                    PelicanPlayerComponent pelicanComp = PelicanPlayerComponent.KEY.get(self);
+                    if (pelicanComp != null && pelicanComp.uniqueEaten.contains(target_player.getUUID())) {
+                        return Color.ORANGE.getRGB();
+                    }
+                    return ModRoles.PELICAN.color();
                 }
                 // 需要开启直觉
                 if (!hasInstinct)

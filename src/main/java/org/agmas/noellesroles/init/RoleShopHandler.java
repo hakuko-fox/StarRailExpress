@@ -2329,6 +2329,11 @@ public class RoleShopHandler {
         // 全场播放 block.smithing_table.use 音效
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
             SoundEvents.SMITHING_TABLE_USE, SoundSource.MASTER, 1.0F, 1.0F);
+        // 冷却与关灯一致
+        player.level().players().forEach(
+            p -> p.getCooldowns().addCooldown(ModItems.LIGHTUP, GameConstants.getBlackoutCooldownGlobal()));
+        player.getCooldowns().addCooldown(ModItems.LIGHTUP,
+            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.BLACKOUT, 0));
         return true;
       }
     });
@@ -2343,6 +2348,11 @@ public class RoleShopHandler {
         // 全场播放 ui.loom.take_result 音效
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
             SoundEvents.UI_LOOM_TAKE_RESULT, SoundSource.MASTER, 1.0F, 1.0F);
+        // 冷却与监控失灵一致
+        player.level().players().forEach(
+            p -> p.getCooldowns().addCooldown(ModItems.MONITOR_RECOVERY, GameConstants.getMonitorBrokenCooldownGlobal()));
+        player.getCooldowns().addCooldown(ModItems.MONITOR_RECOVERY,
+            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
         return true;
       }
     });
