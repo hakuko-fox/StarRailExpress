@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class C4Detonation {
     private C4Detonation() {}
 
-    private static final double BLAST_RADIUS = 3.0D;
+    private static final double BLAST_RADIUS = 6.0D;
     private static final double SURFACE_OFFSET = 0.001D;
     private static final Map<UUID, ThrownCharge> thrownCharges = new ConcurrentHashMap<>();
 
