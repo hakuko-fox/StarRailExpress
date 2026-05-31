@@ -741,15 +741,21 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     );
 
     /**
-     * 检查是否是特殊平民职业（基于 identifier 比较，防止 SRERole 未覆写 equals 导致的去重失效）
+     * 检查是否是特殊平民职业
+     * 以硬编码的特殊平民职业列表 + isInnocent() && !canBeRandomed() 的平民职业为准
      */
     private boolean isSpecialCivilianRole(SRERole role) {
         if (role == null) return false;
+        // 1. 硬编码的特殊平民职业
         ResourceLocation id = role.identifier();
         for (SRERole special : SPECIAL_CIVILIAN_ROLES) {
             if (id.equals(special.identifier())) {
                 return true;
             }
+        }
+        // 2. 被 setCanBeRandomedByOtherRoles(false) 标记的平民职业（canBeRandomed() == false）
+        if (role.isInnocent() && !role.canBeRandomed()) {
+            return true;
         }
         return false;
     }
