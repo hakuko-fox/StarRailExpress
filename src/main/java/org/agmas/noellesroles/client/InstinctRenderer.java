@@ -869,6 +869,18 @@ public class InstinctRenderer {
                 // return (ModRoles.EXECUTIONER.color());
                 // }
 
+                // 家族本能透视
+                if (self_role != null && self_role.isMafiaTeam() && SREClient.isPlayerAliveAndInSurvival()) {
+                    if (target_role != null && target_role.isMafiaTeam()) {
+                        // 教父显示天蓝色
+                        if (SREClient.gameComponent.isRole(target_player, ModRoles.GODFATHER)) {
+                            return new Color(135, 206, 235).getRGB(); // 天蓝色
+                        }
+                        // 其他家族成员显示棕色
+                        return new Color(139, 69, 19).getRGB(); // 棕色
+                    }
+                }
+
                 // 杀手直觉
                 if (isKillerTeam(self_role) && SREClient.isPlayerAliveAndInSurvival()) {
                     // 布袋鬼：里世界期间无杀手直觉

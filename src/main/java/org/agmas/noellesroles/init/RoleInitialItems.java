@@ -267,7 +267,11 @@ public class RoleInitialItems {
 
         // 教父初始物品 - 德林加手枪(初始无子弹)
         List<Supplier<ItemStack>> godfatherItems = new ArrayList<>();
-        godfatherItems.add(() -> TMMItems.DERRINGER.getDefaultInstance());
+        godfatherItems.add(() -> {
+            ItemStack derringer = TMMItems.DERRINGER.getDefaultInstance();
+            derringer.set(io.wifi.starrailexpress.index.SREDataComponentTypes.USED, true);
+            return derringer;
+        });
         INITIAL_ITEMS_MAP.put(ModRoles.GODFATHER, godfatherItems);
 
         // 钳工初始物品 - 拆弹钳（无限次使用，不会损坏）

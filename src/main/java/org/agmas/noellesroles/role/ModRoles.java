@@ -1158,17 +1158,17 @@ public class ModRoles {
             .registerRole(new NormalRole(GODFATHER_ID, new Color(199, 21, 133).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setOccupiedRoleCount(3).setMax(1).setCanBeRandomedByOtherRoles(false);
+            .setCanSeeCoin(true).setOccupiedRoleCount(3).setMax(1).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
     public static SRERole MAFIOSO = TMMRoles
             .registerRole(new NormalRole(MAFIOSO_ID, new Color(218, 112, 214).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false);
+            .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
     public static SRERole JANITOR = TMMRoles
             .registerRole(new NormalRole(JANITOR_ID, new Color(255, 105, 180).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false);
+            .setCanSeeCoin(true).setMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
 
     public static SRERole CORONER = TMMRoles
             .registerRole(new NormalRole(CORONER_ID, new Color(122, 122, 122).getRGB(), true,

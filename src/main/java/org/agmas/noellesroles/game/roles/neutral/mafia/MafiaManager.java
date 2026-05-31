@@ -2,8 +2,11 @@ package org.agmas.noellesroles.game.roles.neutral.mafia;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.event.OnRevolverUsed;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import io.wifi.starrailexpress.index.SREDataComponentTypes;
+import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -11,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.MafiaActionC2SPacket;
@@ -33,6 +37,11 @@ public final class MafiaManager {
         ServerPlayNetworking.registerGlobalReceiver(MafiaActionC2SPacket.ID,
             (payload, context) -> context.server().execute(() -> handleAction(context.player(), payload.action(), payload.target())));
         ServerTickEvents.END_WORLD_TICK.register(MafiaManager::tick);
+        OnRevolverUsed.EVENT.register((player, target) -> {
+            if (isGodfather(player) && player.getMainHandItem().is(TMMItems.DERRINGER)) {
+                consumeBullet(player);
+            }
+        });
     }
 
     private static void tick(ServerLevel world) {
@@ -76,8 +85,8 @@ public final class MafiaManager {
         return SREGameWorldComponent.KEY.get(p.level()).isRole(p, ModRoles.GODFATHER);
     }
     public static boolean isMafiaMember(ServerPlayer p) {
-        var gw = SREGameWorldComponent.KEY.get(p.level());
-        return gw.isRole(p, ModRoles.GODFATHER) || gw.isRole(p, ModRoles.MAFIOSO) || gw.isRole(p, ModRoles.JANITOR);
+        var role = SREGameWorldComponent.KEY.get(p.level()).getRole(p);
+        return role != null && role.isMafiaTeam();
     }
 
     public static void onGodfatherDeath(ServerPlayer godfather) {
@@ -104,11 +113,25 @@ public final class MafiaManager {
     public static void consumeBullet(ServerPlayer godfather) {
         var comp = GodfatherComponent.KEY.get(godfather);
         if (comp.loadedBullets > 0) { comp.loadedBullets--; comp.sync(); syncAmmo(godfather); }
+        syncDerringerUsed(godfather, comp.loadedBullets > 0);
     }
     public static boolean tryLoadBullet(ServerPlayer godfather) {
         var comp = GodfatherComponent.KEY.get(godfather);
         if (comp.loadedBullets >= comp.maxLoadedBullets) return false;
-        comp.loadedBullets++; comp.sync(); syncAmmo(godfather); return true;
+        comp.loadedBullets++; comp.sync(); syncAmmo(godfather);
+        syncDerringerUsed(godfather, true);
+        return true;
+    }
+
+    private static void syncDerringerUsed(ServerPlayer godfather, boolean hasBullets) {
+        for (var list : godfather.getInventory().compartments) {
+            for (var stack : list) {
+                if (stack.is(TMMItems.DERRINGER)) {
+                    stack.set(SREDataComponentTypes.USED, !hasBullets);
+                    return;
+                }
+            }
+        }
     }
 
     public static void syncFamily(ServerPlayer godfather) {
@@ -138,9 +161,14 @@ public final class MafiaManager {
             if (isMafiaMember(p)) mafiaAlive++;
         }
         if (mafiaAlive > 0 && alive == mafiaAlive) {
-            for (ServerPlayer p : level.players())
-                if (isMafiaMember(p) && GameUtils.isPlayerAliveAndSurvival(p))
-                    RoleUtils.customWinnerWin(level, WinStatus.CUSTOM, "godfather", java.util.OptionalInt.of(ModRoles.GODFATHER.color()));
+            for (ServerPlayer p : level.players()) {
+                if (isMafiaMember(p) && GameUtils.isPlayerAliveAndSurvival(p)) {
+                    var role = SREGameWorldComponent.KEY.get(level).getRole(p);
+                    String winName = role != null ? role.getIdentifier().toString() : "godfather";
+                    int color = role != null ? role.color() : ModRoles.GODFATHER.color();
+                    RoleUtils.customWinnerWin(level, WinStatus.CUSTOM, winName, java.util.OptionalInt.of(color));
+                }
+            }
             return true;
         }
         return false;
