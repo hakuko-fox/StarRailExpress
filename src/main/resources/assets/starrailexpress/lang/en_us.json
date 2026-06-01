@@ -123,6 +123,8 @@
   "hud.sre.tip.gamemode.hide_and_seek": "Hide and Seek Mode",
   "hud.sre.tip.gamemode.tnt_tag": "Hot Potato Mode",
   "hud.sre.tip.gamemode.day_night_fight": "Abandoned Prison Seven Nights",
+  "hud.sre.tip.gamemode.tradition": "Tradition Mode",
+  "hud.sre.tip.gamemode.discovery": "Discovery Mode",
   "gui.sre.gamemode.tnt_tag.bomb_time": "Hot Potato will explode in %s!",
   "gui.sre.gamemode.tnt_tag.bomb_time_having": "You are holding the Hot Potato! It will explode in %s!",
   "gui.sre.gamemode.tnt_tag.bomb": "Hot Potato exploded! Victims:\n%s",
