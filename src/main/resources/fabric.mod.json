@@ -234,7 +234,8 @@
     "sre_resource": "*"
   },
   "recommends": {
-    "sodium": "*"
+    "sodium": "*",
+    "sodium-extra": "*"
   },
   "conflicts": {
     "customskinloader": "*"
