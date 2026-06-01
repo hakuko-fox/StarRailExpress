@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.Innocent.mortician.MorticianPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.mortician.InnocentMorticianPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 
 public class MorticianHud {
@@ -21,7 +21,7 @@ public class MorticianHud {
                 return;
             }
 
-            MorticianPlayerComponent component = ModComponents.MORTICIAN.get(client.player);
+            InnocentMorticianPlayerComponent component = ModComponents.MORTICIAN.get(client.player);
             if (component == null) {
                 return;
             }

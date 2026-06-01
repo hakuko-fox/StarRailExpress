@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.game.roles.neutral.mortician;
 
-import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -12,15 +11,11 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import io.wifi.starrailexpress.util.PlayerStaminaGetter;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -28,7 +23,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.packet.ClearBloodParticlesS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -48,13 +42,13 @@ import java.util.UUID;
  *
  * 被动-引渡：杀手/杀手方中立/魔术师死亡时广播
  */
-public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
+public class KillerMorticianPlayerComponent extends SREAbilityPlayerComponent {
 
     /** 组件键 */
-    public static final org.ladysnake.cca.api.v3.component.ComponentKey<MorticianPlayerComponent> KEY =
-            org.ladysnake.cca.api.v3.component.ComponentRegistry.getOrCreate(
+    public static final org.ladysnake.cca.api.v3.component.ComponentKey<KillerMorticianPlayerComponent> KEY = org.ladysnake.cca.api.v3.component.ComponentRegistry
+            .getOrCreate(
                     ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
-                    MorticianPlayerComponent.class);
+                    KillerMorticianPlayerComponent.class);
 
     // 技能冷却时间
     public static final int ABILITY_COOLDOWN = 60 * 20; // 60秒（默认最大）
@@ -85,7 +79,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
     /** 正在拖动的尸体实体（瞬态） */
     private transient PlayerBodyEntity draggedBody = null;
 
-    public MorticianPlayerComponent(Player player) {
+    public KillerMorticianPlayerComponent(Player player) {
         super(player);
         this.player = player;
     }
@@ -184,7 +178,9 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         // 检查冷却
         if (this.cooldown > 0) {
             serverPlayer.displayClientMessage(
-                    Component.translatable("message.noellesroles.mortician_bodymaker.cooldown", (this.cooldown + 19) / 20)
+                    Component
+                            .translatable("message.noellesroles.mortician_bodymaker.cooldown",
+                                    (this.cooldown + 19) / 20)
                             .withStyle(ChatFormatting.RED),
                     true);
             return false;
@@ -266,8 +262,10 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         // 对范围内所有玩家直接减少体力的60%（基于各自最大体力值），最低减少至0
         int affected = 0;
         for (Player target : serverPlayer.level().players()) {
-            if (target == serverPlayer) continue;
-            if (GameUtils.isPlayerEliminated(target)) continue;
+            if (target == serverPlayer)
+                continue;
+            if (GameUtils.isPlayerEliminated(target))
+                continue;
 
             double distance = serverPlayer.distanceTo(target);
             if (distance <= range) {
@@ -277,7 +275,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
                     var gameWorld = SREGameWorldComponent.KEY.get(target.level());
                     var targetRole = gameWorld != null ? gameWorld.getRole(target) : null;
                     float maxStamina = targetRole != null ? (float) targetRole.getMaxSprintTime(target) : 100f;
-                    
+
                     if (maxStamina > 0 && maxStamina < Integer.MAX_VALUE) {
                         if (target instanceof PlayerStaminaGetter staminaGetter) {
                             float currentStamina = staminaGetter.starrailexpress$getStamina();
@@ -345,7 +343,8 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         // 向所有玩家发送清除血液粒子数据包（附带位置和范围）
         for (ServerPlayer onlinePlayer : serverPlayer.serverLevel().players()) {
             ServerPlayNetworking.send(onlinePlayer,
-                    new ClearBloodParticlesS2CPacket(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), range));
+                    new ClearBloodParticlesS2CPacket(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(),
+                            range));
         }
     }
 
@@ -389,7 +388,8 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
 
     /**
      * 创建尸体（尸匠能力）
-     * @param target 目标玩家
+     * 
+     * @param target      目标玩家
      * @param deathReason 死亡原因ID
      */
     public boolean createBody(ServerPlayer target, String deathReason) {
@@ -421,8 +421,8 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
                 PlayerBodyEntityComponent bodyComponent = PlayerBodyEntityComponent.KEY.get(playerBody);
 
                 ResourceLocation deathReasonLoc = deathReason != null && !deathReason.isEmpty()
-                    ? ResourceLocation.parse(deathReason)
-                    : ResourceLocation.fromNamespaceAndPath("noellesroles", "mortician_bodymaker");
+                        ? ResourceLocation.parse(deathReason)
+                        : ResourceLocation.fromNamespaceAndPath("noellesroles", "mortician_bodymaker");
                 bodyComponent.setDeathReason(deathReasonLoc.toString(), true);
 
                 bodyComponent.playerRole = ModRoles.MORTICIAN_BODYMAKER.identifier();
@@ -437,7 +437,7 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
 
                 serverPlayer.serverLevel().players().forEach(p -> {
                     serverPlayer.serverLevel().playSound(null, p.getX(), p.getY(), p.getZ(),
-                        SoundEvents.SKELETON_CONVERTED_TO_STRAY, SoundSource.PLAYERS, 1.0f, 1.0f);
+                            SoundEvents.SKELETON_CONVERTED_TO_STRAY, SoundSource.PLAYERS, 1.0f, 1.0f);
                 });
 
                 return true;
@@ -457,7 +457,8 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         if (!gwc.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
             // 不再是葬仪角色，强制解除拖动状态并恢复重力
             if (this.draggedBody != null) {
-                if (this.draggedBody.isAlive()) this.draggedBody.setNoGravity(false);
+                if (this.draggedBody.isAlive())
+                    this.draggedBody.setNoGravity(false);
                 this.draggedBody = null;
                 this.draggedBodyUuid = null;
                 this.sync();
@@ -468,7 +469,8 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         // 旁观者模式立刻解除拖动
         if (player.isSpectator()) {
             if (this.draggedBody != null) {
-                if (this.draggedBody.isAlive()) this.draggedBody.setNoGravity(false);
+                if (this.draggedBody.isAlive())
+                    this.draggedBody.setNoGravity(false);
                 this.draggedBody = null;
                 this.draggedBodyUuid = null;
                 this.sync();
@@ -479,7 +481,8 @@ public class MorticianPlayerComponent extends SREAbilityPlayerComponent {
         // 玩家死亡时立即解除拖动（必须在SAFE_TIME检查之前，否则死亡后可能被跳过）
         if (!player.isAlive()) {
             if (this.draggedBody != null) {
-                if (this.draggedBody.isAlive()) this.draggedBody.setNoGravity(false);
+                if (this.draggedBody.isAlive())
+                    this.draggedBody.setNoGravity(false);
                 this.draggedBody = null;
                 this.draggedBodyUuid = null;
                 this.sync();

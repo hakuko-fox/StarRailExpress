@@ -7,7 +7,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -39,12 +38,17 @@ import java.util.UUID;
  * - 无法再次打开已打开过的尸体
  * - CD 240秒
  */
-public class MorticianPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
+public class InnocentMorticianPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     
+    // 殡仪员已拿取物品数量（用于限制最多拿取2个）
+    public int morticianItemsTaken = 0;
+    // 殡仪员是否正在搜刮此尸体
+    public boolean morticianLooting = false;
+
     /** 组件键 */
-    public static final ComponentKey<MorticianPlayerComponent> KEY = ComponentRegistry.getOrCreate(
+    public static final ComponentKey<InnocentMorticianPlayerComponent> KEY = ComponentRegistry.getOrCreate(
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician"),
-            MorticianPlayerComponent.class);
+            InnocentMorticianPlayerComponent.class);
     
     /** 技能冷却时间（120秒 = 2400 tick） */
     public static final int ABILITY_COOLDOWN = 120 * 20;
@@ -63,7 +67,7 @@ public class MorticianPlayerComponent implements RoleComponent, ServerTickingCom
     /** 已打开过的尸体UUID集合 */
     public Set<UUID> openedCorpses = new HashSet<>();
     
-    public MorticianPlayerComponent(Player player) {
+    public InnocentMorticianPlayerComponent(Player player) {
         this.player = player;
     }
     

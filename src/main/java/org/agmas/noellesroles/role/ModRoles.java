@@ -29,6 +29,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.mixin.roles.mortician.MorticianRole;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
@@ -381,7 +382,7 @@ public class ModRoles {
      *   - 无法再次打开已打开过的尸体
      *   - CD 240秒
      */
-    public static SRERole MORTICIAN = TMMRoles.registerRole(new NormalRole(
+    public static SRERole MORTICIAN = TMMRoles.registerRole(new MorticianRole(
             MORTICIAN_ID, // 角色 ID
             new Color(105, 105, 105).getRGB(), // 深灰色 - 代表殡仪员
             true, // isInnocent = 平民阵营
