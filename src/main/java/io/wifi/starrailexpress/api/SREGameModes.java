@@ -45,6 +45,12 @@ public class SREGameModes {
     // Role Rotation Mode (haiman)
     public static final ResourceLocation ROLE_ROTATION_MODE_ID = SRE.haimanId("role_rotation");
 
+    // Tradition Mode (sre)
+    public static final ResourceLocation TRADITION_MODE_ID = SRE.shortId("tradition");
+
+    // Discovery Mode (sre)
+    public static final ResourceLocation DISCOVERY_MODE_ID = SRE.shortId("discovery");
+
     // Modified from Harpymodloader
     public static final GameMode MURDER = registerGameMode(new SREMurderGameMode(MURDER_ID));
 
@@ -78,6 +84,12 @@ public class SREGameModes {
 
     // Role Rotation Mode
     public static final GameMode ROLE_ROTATION_MODE = registerGameMode(new SRERoleRotationGameMode(ROLE_ROTATION_MODE_ID));
+
+    // Tradition Mode (sre)
+    public static final GameMode TRADITION_MODE = registerGameMode(new SRETraditionGameMode(TRADITION_MODE_ID));
+
+    // Discovery Mode (sre)
+    public static final GameMode DISCOVERY_MODE = registerGameMode(new SREDiscoveryGameMode(DISCOVERY_MODE_ID));
 
     // register
     public static GameMode registerGameMode(GameMode gameMode) {

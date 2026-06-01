@@ -123,6 +123,8 @@
   "hud.sre.tip.gamemode.hide_and_seek": "躲猫猫模式",
   "hud.sre.tip.gamemode.tnt_tag": "烫手的山芋模式",
   "hud.sre.tip.gamemode.day_night_fight": "废弃监狱七日夜",
+  "hud.sre.tip.gamemode.tradition": "传统模式",
+  "hud.sre.tip.gamemode.discovery": "游客模式",
   "gui.sre.gamemode.tnt_tag.bomb_time": "烫手的山芋将在 %s 后爆炸！",
   "gui.sre.gamemode.tnt_tag.bomb_time_having": "你当前持有烫手的山芋！烫手的山芋将在 %s 后爆炸！",
   "gui.sre.gamemode.tnt_tag.bomb": "烫手的山芋爆炸了！受害者：\n%s",
