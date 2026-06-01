@@ -144,7 +144,6 @@
       "noellesroles:repair_roles",
       "noellesroles:builder",
       "noellesroles:infected",
-
       "stupid_express:doused",
       "stupid_express:custom_winner",
       "stupid_express:cooldown",
@@ -238,8 +237,10 @@
     "sodium": "*"
   },
   "conflicts": {
-    "customskinloader": "*",
-    "sodiumoptionsapi":"*",
-    "sodiumextras":"*"
+    "customskinloader": "*"
+  },
+  "breaks": {
+    "sodiumoptionsapi": "*",
+    "sodiumextras": "*"
   }
 }
