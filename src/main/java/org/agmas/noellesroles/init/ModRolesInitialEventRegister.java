@@ -25,7 +25,6 @@ import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.Innocent.ghost.GhostPlayerComponent;
@@ -203,7 +202,6 @@ public class ModRolesInitialEventRegister {
             if (role.equals(ModRoles.EXECUTIONER)) {
                 ExecutionerPlayerComponent executionerPlayerComponent = (ExecutionerPlayerComponent) ExecutionerPlayerComponent.KEY
                         .get(player);
-                executionerPlayerComponent.won = false;
                 SREPlayerShopComponent playerShopComponent = (SREPlayerShopComponent) SREPlayerShopComponent.KEY
                         .get(player);
                 executionerPlayerComponent.init();

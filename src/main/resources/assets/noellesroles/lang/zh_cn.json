@@ -1247,6 +1247,9 @@
   "hud.executioner.target": "目标: %s",
   "hud.executioner.target_died": "目标已死亡",
   "hud.executioner.no_target": "无目标",
+  "itemstack.executioner.change_target.item_name": "切换目标",
+  "itemstack.executioner.change_target.item_lore.1": "找不到目标？",
+  "itemstack.executioner.change_target.item_lore.2": "花费金币重新绑定一个新目标！",
   "itemstack.executioner.psychoitem.item_name": "射击狂热",
   "itemstack.executioner.psychoitem.item_lore.1": "“你喜欢伤害人吗？”",
   "itemstack.executioner.psychoitem.item_lore.2": "狂暴时间内射击冷却-50%%、枪不会掉落、不会受锁定目标影响",
@@ -2691,5 +2694,4 @@
   "message.noellesroles.silencer.help_success": "你已成功帮助TA解开静语诅咒",
   "game.tip.meatball_role": "你只能在与肉汁独处时击杀他",
   "game.tip.meatball_cannot_attack_in_crowd": "你无法在人群中攻击他！"
-
 }
