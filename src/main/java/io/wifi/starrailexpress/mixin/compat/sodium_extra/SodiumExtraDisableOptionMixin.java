@@ -118,7 +118,7 @@ public class SodiumExtraDisableOptionMixin {
                         .setName(parseVanillaString("entity.minecraft.item_frame"))
                         .setTooltip(Component.translatable("sodium-extra.option.item_frames.tooltip"))
                         .setControl(TickBoxControl::new)
-                        .setBinding((opts, value) -> opts.renderSettings.itemFrame = true,
+                        .setBinding((opts, value) -> opts.renderSettings.itemFrame = value,
                                 opts -> opts.renderSettings.itemFrame)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, sodiumExtraOpts)
@@ -126,7 +126,7 @@ public class SodiumExtraDisableOptionMixin {
                         .setName(parseVanillaString("entity.minecraft.armor_stand"))
                         .setTooltip(Component.translatable("sodium-extra.option.armor_stands.tooltip"))
                         .setControl(TickBoxControl::new)
-                        .setBinding((options, value) -> options.renderSettings.armorStand = true,
+                        .setBinding((options, value) -> options.renderSettings.armorStand = value,
                                 options -> options.renderSettings.armorStand)
                         .build())
                 .add(OptionImpl.createBuilder(boolean.class, sodiumExtraOpts)
@@ -134,7 +134,7 @@ public class SodiumExtraDisableOptionMixin {
                         .setName(parseVanillaString("entity.minecraft.painting"))
                         .setTooltip(Component.translatable("sodium-extra.option.paintings.tooltip"))
                         .setControl(TickBoxControl::new)
-                        .setBinding((options, value) -> options.renderSettings.painting = true,
+                        .setBinding((options, value) -> options.renderSettings.painting = value,
                                 options -> options.renderSettings.painting)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build())
