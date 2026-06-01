@@ -22,8 +22,17 @@ public class MapConfig {
         @SerializedName("displayName")
         public String displayName;
 
+        /**
+         * 最小容纳人数要求。-1忽略
+         */
+        @SerializedName("mincount")
+        public int minCount = -1;
+
+        /**
+         * 最大可容纳人数。-1忽略
+         */
         @SerializedName("maxcount")
-        public int maxCount;
+        public int maxCount = -1;
 
         @SerializedName("canSelect")
         public boolean canSelect = true;

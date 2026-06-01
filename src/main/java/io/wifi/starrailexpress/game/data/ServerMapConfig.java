@@ -57,16 +57,25 @@ public class ServerMapConfig {
         if (SRE.SERVER == null) {
             return getRandomMaps(count, null);
         }
-        
+
         return getRandomMaps(count, MapVotingComponent.KEY.get(SRE.SERVER.overworld()).getPresetGameMode());
     }
 
     public List<MapEntry> getRandomMaps(int count, String gameMode) {
 
         ArrayList<MapEntry> a = new ArrayList<>(this.maps);
+        int pCount = -1;
+        if (SRE.SERVER != null) {
+            pCount = SRE.SERVER.getPlayerCount();
+        }
+        final int playerCount = pCount;
         a.removeIf(
                 mapEntry -> !mapEntry.canSelect
-                        || (!mapEntry.isSupportedGameMode(gameMode)));
+                        || (!mapEntry.isSupportedGameMode(gameMode))
+                        || (playerCount >= 0
+                                &&
+                                ((mapEntry.maxCount >= 0 && playerCount > mapEntry.maxCount)
+                                        || (mapEntry.minCount >= 0 && playerCount < mapEntry.minCount))));
         if (count < 0) {
             cache_maps = a;
             return a;

@@ -200,7 +200,7 @@ public class MapManager {
         sceneOffsetObj.addProperty("y", areas.sceneOffsetY);
         sceneOffsetObj.addProperty("z", areas.sceneOffsetZ);
         jsonObject.add("sceneOffset", sceneOffsetObj);
-        
+
         // 保存雪花效果配置
         jsonObject.addProperty("snowEnabled", areas.snowEnabled);
 
@@ -524,12 +524,16 @@ public class MapManager {
                 e -> {
                     final var first = MapConfig.getInstance().maps.stream().filter(mapEntry -> mapEntry.id.equals(e))
                             .findFirst();
-                    AtomicBoolean isAvailable = new AtomicBoolean(false);
+                    AtomicBoolean isNotAvailable = new AtomicBoolean(false);
                     first.ifPresent(
                             a -> {
-                                isAvailable.set(!a.canSelect || first.get().maxCount >= serverWorld.players().size());
+                                isNotAvailable.set(!a.canSelect
+                                        || (first.get().maxCount >= 0
+                                                && serverWorld.players().size() > first.get().maxCount)
+                                        || (first.get().minCount >= 0
+                                                && serverWorld.players().size() < first.get().minCount));
                             });
-                    return isAvailable.get();
+                    return isNotAvailable.get();
                 });
 
         if (availableMaps.isEmpty()) {
