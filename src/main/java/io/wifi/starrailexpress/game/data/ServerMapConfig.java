@@ -4,8 +4,7 @@ import com.google.gson.Gson;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
-import io.wifi.starrailexpress.api.GameMode;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.MapVotingComponent;
 import io.wifi.starrailexpress.game.data.MapConfig.MapEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -58,11 +57,11 @@ public class ServerMapConfig {
         if (SRE.SERVER == null) {
             return getRandomMaps(count, null);
         }
-        var cca = SREGameWorldComponent.KEY.get(SRE.SERVER.overworld());
-        return getRandomMaps(count, cca.getGameMode());
+        
+        return getRandomMaps(count, MapVotingComponent.KEY.get(SRE.SERVER.overworld()).getPresetGameMode());
     }
 
-    public List<MapEntry> getRandomMaps(int count, GameMode gameMode) {
+    public List<MapEntry> getRandomMaps(int count, String gameMode) {
 
         ArrayList<MapEntry> a = new ArrayList<>(this.maps);
         a.removeIf(

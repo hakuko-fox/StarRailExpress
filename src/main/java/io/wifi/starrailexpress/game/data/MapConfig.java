@@ -3,7 +3,6 @@ package io.wifi.starrailexpress.game.data;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
-import io.wifi.starrailexpress.api.GameMode;
 import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ public class MapConfig {
         @SerializedName("color")
         public String color;
 
-        // 支持的游戏模式列表（如 "repairmode", "murder" 等），为空表示支持所有模式
+        // 支持的游戏模式列表（如 "repairmode", "murder" 等），为空表示支持所有模式。不包含namespace，只包含path
         @SerializedName("gameModes")
         public List<String> gameModes = new ArrayList<>();
 
@@ -88,10 +87,10 @@ public class MapConfig {
             return 0xFFFFFFFF; // 默认白色
         }
 
-        public boolean isSupportedGameMode(GameMode gameMode) {
-            if (gameMode == null || gameModes == null || gameModes.isEmpty() || gameModes.getFirst().isBlank())
+        public boolean isSupportedGameMode(String gameModePath) {
+            if (gameModePath == null || gameModes == null || gameModes.isEmpty() || gameModes.getFirst().isBlank())
                 return true;
-            return gameModes.contains(gameMode.identifier.toString());
+            return gameModes.contains(gameModePath);
         }
 
         // Getter方法用于序列化
