@@ -38,7 +38,7 @@ import java.util.UUID;
  * - 无法再次打开已打开过的尸体
  * - CD 240秒
  */
-public class InnocentMorticianPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
+public class MorticianPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     
     // 殡仪员已拿取物品数量（用于限制最多拿取2个）
     public int morticianItemsTaken = 0;
@@ -46,9 +46,9 @@ public class InnocentMorticianPlayerComponent implements RoleComponent, ServerTi
     public boolean morticianLooting = false;
 
     /** 组件键 */
-    public static final ComponentKey<InnocentMorticianPlayerComponent> KEY = ComponentRegistry.getOrCreate(
+    public static final ComponentKey<MorticianPlayerComponent> KEY = ComponentRegistry.getOrCreate(
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician"),
-            InnocentMorticianPlayerComponent.class);
+            MorticianPlayerComponent.class);
     
     /** 技能冷却时间（120秒 = 2400 tick） */
     public static final int ABILITY_COOLDOWN = 120 * 20;
@@ -67,7 +67,7 @@ public class InnocentMorticianPlayerComponent implements RoleComponent, ServerTi
     /** 已打开过的尸体UUID集合 */
     public Set<UUID> openedCorpses = new HashSet<>();
     
-    public InnocentMorticianPlayerComponent(Player player) {
+    public MorticianPlayerComponent(Player player) {
         this.player = player;
     }
     

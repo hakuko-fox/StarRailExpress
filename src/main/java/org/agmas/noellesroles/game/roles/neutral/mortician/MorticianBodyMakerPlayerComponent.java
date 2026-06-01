@@ -42,13 +42,13 @@ import java.util.UUID;
  *
  * 被动-引渡：杀手/杀手方中立/魔术师死亡时广播
  */
-public class KillerMorticianPlayerComponent extends SREAbilityPlayerComponent {
+public class MorticianBodyMakerPlayerComponent extends SREAbilityPlayerComponent {
 
     /** 组件键 */
-    public static final org.ladysnake.cca.api.v3.component.ComponentKey<KillerMorticianPlayerComponent> KEY = org.ladysnake.cca.api.v3.component.ComponentRegistry
+    public static final org.ladysnake.cca.api.v3.component.ComponentKey<MorticianBodyMakerPlayerComponent> KEY = org.ladysnake.cca.api.v3.component.ComponentRegistry
             .getOrCreate(
                     ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
-                    KillerMorticianPlayerComponent.class);
+                    MorticianBodyMakerPlayerComponent.class);
 
     // 技能冷却时间
     public static final int ABILITY_COOLDOWN = 60 * 20; // 60秒（默认最大）
@@ -79,7 +79,7 @@ public class KillerMorticianPlayerComponent extends SREAbilityPlayerComponent {
     /** 正在拖动的尸体实体（瞬态） */
     private transient PlayerBodyEntity draggedBody = null;
 
-    public KillerMorticianPlayerComponent(Player player) {
+    public MorticianBodyMakerPlayerComponent(Player player) {
         super(player);
         this.player = player;
     }

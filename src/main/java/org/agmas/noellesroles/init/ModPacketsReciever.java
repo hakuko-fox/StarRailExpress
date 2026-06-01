@@ -65,7 +65,7 @@ import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.swapper.SwapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.mortician.KillerMorticianPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -994,7 +994,7 @@ public class ModPacketsReciever {
       }
 
       if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
-        KillerMorticianPlayerComponent morticianComponent = KillerMorticianPlayerComponent.KEY.get(player);
+        MorticianBodyMakerPlayerComponent morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
         if (morticianComponent != null) {
           morticianComponent.toggleMode();
         }
@@ -1007,12 +1007,12 @@ public class ModPacketsReciever {
       SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
 
       if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
-        KillerMorticianPlayerComponent morticianComponent = KillerMorticianPlayerComponent.KEY.get(player);
+        MorticianBodyMakerPlayerComponent morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
         if (morticianComponent == null) return;
         
         // 安全时间内直接进入造尸冷却（必须在isSkillAvailable判断之前）
         if (context.player().hasEffect(ModEffects.SAFE_TIME)) {
-          morticianComponent.bodyCreationCooldown = KillerMorticianPlayerComponent.BODY_CREATION_COOLDOWN;
+          morticianComponent.bodyCreationCooldown = MorticianBodyMakerPlayerComponent.BODY_CREATION_COOLDOWN;
           morticianComponent.sync();
           return;
         }

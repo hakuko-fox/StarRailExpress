@@ -45,7 +45,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.mortician.KillerMorticianPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -341,7 +341,7 @@ public class ModRolesInitialEventRegister {
             }
             // 葬仪角色初始化
             if (role.equals(ModRoles.MORTICIAN_BODYMAKER)) {
-                var morticianComponent = KillerMorticianPlayerComponent.KEY.get(player);
+                var morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
                 morticianComponent.init();
                 morticianComponent.sync();
             }
@@ -398,7 +398,7 @@ public class ModRolesInitialEventRegister {
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {
             ServerPlayer player = context.player();
-            KillerMorticianPlayerComponent morticianComponent = KillerMorticianPlayerComponent.KEY.get(player);
+            MorticianBodyMakerPlayerComponent morticianComponent = MorticianBodyMakerPlayerComponent.KEY.get(player);
             if (morticianComponent != null) {
                 morticianComponent.useAbility();
             }

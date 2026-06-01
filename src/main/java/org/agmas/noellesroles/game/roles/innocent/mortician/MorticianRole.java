@@ -73,7 +73,7 @@ public class MorticianRole extends NormalRole {
             PlayerBodyEntityContainer container) {
         if (corpseEntity != null) {
             UUID corpseUuid = corpseEntity.getUUID();
-            InnocentMorticianPlayerComponent mortician = ModComponents.MORTICIAN.get(player);
+            MorticianPlayerComponent mortician = ModComponents.MORTICIAN.get(player);
             if (mortician != null) {
                 mortician.onCorpseOpened(corpseUuid);
                 // 发送消息提示
@@ -93,7 +93,7 @@ public class MorticianRole extends NormalRole {
     @Override
     public boolean canGetBodyContent(int slotId, int button, ClickType clickType, Player player,
             PlayerBodyEntityContainer container, int rows, NonNullList<Slot> slots) {
-        InnocentMorticianPlayerComponent mortician = ModComponents.MORTICIAN.get(player);
+        MorticianPlayerComponent mortician = ModComponents.MORTICIAN.get(player);
         if (mortician == null || !mortician.isCooldownReady()) {
             // 冷却中，禁止任何操作
             if (player instanceof ServerPlayer serverPlayer) {
@@ -200,8 +200,8 @@ public class MorticianRole extends NormalRole {
     /**
      * 记录殡仪员拿取了一个物品
      */
-    public InnocentMorticianPlayerComponent MoCCA(Player player) {
-        return InnocentMorticianPlayerComponent.KEY.get(player);
+    public MorticianPlayerComponent MoCCA(Player player) {
+        return MorticianPlayerComponent.KEY.get(player);
     }
 
     public void morticianTookItem(Player player) {
