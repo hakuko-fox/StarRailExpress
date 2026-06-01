@@ -21,7 +21,7 @@ import org.agmas.noellesroles.client.animation.AnimationTimeLineManager;
 import org.agmas.noellesroles.client.animation.BezierAnimation;
 import org.agmas.noellesroles.client.animation.ConstantSpeedAnimation;
 import org.agmas.noellesroles.client.widget.TextureWidget;
-import org.agmas.noellesroles.client.widget.TickTimerWidget;
+import io.wifi.starrailexpress.util.TickTimer;
 import org.agmas.noellesroles.client.widget.TimerWidget;
 import org.agmas.noellesroles.packet.ChefCookC2SPacket;
 import org.agmas.noellesroles.utils.Pair;
@@ -299,7 +299,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
 
         // 时序控制
         // 倒计时10S
-        TickTimerWidget gameTimer = new TickTimerWidget(
+        TickTimer gameTimer = new TickTimer(
                 20,
                 false,
                 (timerWidget) -> {
@@ -308,7 +308,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
                         timeLineStringWidget.setMessage(Component.literal(curTime + ""));
                 });
         tickTimers.add(gameTimer);
-        tickTimers.add(new TickTimerWidget(
+        tickTimers.add(new TickTimer(
                 DURATION,
                 true,
                 (TickTimerWidget) -> {
@@ -324,9 +324,9 @@ public class CookingGameScreen extends AbstractPixelScreen {
                             )
                     );
                     // 停止倒计时
-                    gameTimer.setOneShoot(false);
+                    gameTimer.setOneShot(false);
                     // 设置倒计时结束后的停顿再进行下一步处理
-                    buffTimers.add(new TickTimerWidget(
+                    buffTimers.add(new TickTimer(
                             10,
                             true,
                             (timerWidget) -> {
@@ -349,7 +349,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
                                         .build());
                                 isInitScore = true;
                                 timeLineStringWidget.active = false;
-                                buffTimers.add(new TickTimerWidget(
+                                buffTimers.add(new TickTimer(
                                         aniTick,
                                         true,
                                         (tickTimer) -> {
@@ -473,8 +473,8 @@ public class CookingGameScreen extends AbstractPixelScreen {
         super.tick();
         if (!isInitialized || isPaused)
             return;
-        tickTimers.forEach(TickTimerWidget::tick);
-        tickTimers.removeIf(TickTimerWidget::isFinished);
+        tickTimers.forEach(TickTimer::tick);
+        tickTimers.removeIf(TickTimer::isFinished);
         if (!tickTimers.isEmpty()) {
             tickTimers.addAll(buffTimers);
             buffTimers.clear();
@@ -762,9 +762,9 @@ public class CookingGameScreen extends AbstractPixelScreen {
     /** 游戏中的食物对象 */
     private final Deque<FoodCard> foods = new ArrayDeque<>();
     /** tick 定时器列表 */
-    private final List<TickTimerWidget> tickTimers = new ArrayList<>();
+    private final List<TickTimer> tickTimers = new ArrayList<>();
     /** 有时需要嵌套定时器，如果直接添加会和遍历冲突，使用列表缓存，遍历后添加 */
-    private final List<TickTimerWidget> buffTimers = new ArrayList<>();
+    private final List<TickTimer> buffTimers = new ArrayList<>();
     /** 基于时间的渲染计时器列表 */
     private final List<TimerWidget> timerWidgets = new ArrayList<>();
     /** 结算信息卡列表 */

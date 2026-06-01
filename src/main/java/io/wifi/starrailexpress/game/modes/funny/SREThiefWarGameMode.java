@@ -10,6 +10,8 @@ import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -67,6 +69,16 @@ public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
 
         // 初始化启动资金：获得目标的一半
         for (Player player : players) {
+            // 所有人获得发光效果
+            player.addEffect(
+                    new MobEffectInstance(
+                            MobEffects.GLOWING,  // 发光效果
+                            Integer.MAX_VALUE,                  // 持续时间（tick）
+                            2,
+                            false,                // 是否显示粒子效果
+                            false                  // 是否显示图标
+                    ));
+
             SRERole role = gameWorldComponent.getRole(player);
             if (role == ModRoles.THIEF) {
                 SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
