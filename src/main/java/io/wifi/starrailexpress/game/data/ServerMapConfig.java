@@ -1,7 +1,11 @@
 package io.wifi.starrailexpress.game.data;
 
 import com.google.gson.Gson;
+
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.data.MapConfig.MapEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -47,16 +51,27 @@ public class ServerMapConfig {
     public List<MapEntry> getRandomMaps() {
         return getRandomMaps(SREConfig.instance().mapRandomCount);
     }
+
     public static List<MapEntry> cache_maps = new ArrayList<>();
 
     public List<MapEntry> getRandomMaps(int count) {
-        if (count < 0) {
-            return this.maps;
+        if (SRE.SERVER == null) {
+            return getRandomMaps(count, null);
         }
-        var a = new ArrayList<>(this.maps);
+        var cca = SREGameWorldComponent.KEY.get(SRE.SERVER.overworld());
+        return getRandomMaps(count, cca.getGameMode());
+    }
+
+    public List<MapEntry> getRandomMaps(int count, GameMode gameMode) {
+
+        ArrayList<MapEntry> a = new ArrayList<>(this.maps);
         a.removeIf(
                 mapEntry -> !mapEntry.canSelect
-        );
+                        || (!mapEntry.isSupportedGameMode(gameMode)));
+        if (count < 0) {
+            cache_maps = a;
+            return a;
+        }
         Collections.shuffle(a);
         List<MapEntry> mapEntries = a.subList(0, count);
         cache_maps = mapEntries;
