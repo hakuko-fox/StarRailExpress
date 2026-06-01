@@ -29,27 +29,27 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.mixin.roles.mortician.MorticianRole;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
-import org.agmas.noellesroles.game.roles.Innocent.accountant.AccountantPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.alchemist.AlchemistPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.avenger.AvengerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.broadcaster.BroadcasterPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.detective.DetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.driver.DiverPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.glitch_robot.GlitchRobotPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.Innocent.monitor.MonitorPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.postman.PostmanPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.psychologist.PsychologistPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.recaller.RecallerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.painter.PainterPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.singer.SingerPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.super_star.SuperStarPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.telegrapher.TelegrapherPlayerComponent;
-import org.agmas.noellesroles.game.roles.Innocent.voodoo.VoodooPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.avenger.AvengerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.driver.DiverPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.glitch_robot.GlitchRobotPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
+import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianRole;
+import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.telegrapher.TelegrapherPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bomber.BomberPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
@@ -337,7 +337,7 @@ public class ModRoles {
      *   - 杀手击杀你会获得所有悬赏
      *   - 提示：请尽量通过非任务的方式回复san值
      */
-    public static SRERole MEATBALL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.Innocent.meatball.MeatballRole(
+    public static SRERole MEATBALL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.innocent.meatball.MeatballRole(
             MEATBALL_ID, // 角色 ID
             new Color(205, 133, 63).getRGB(), // 棕色 - 代表肉汁
             true, // isInnocent = 乘客阵营
@@ -1891,7 +1891,7 @@ public class ModRoles {
      * - 核心机制：尊名纸条、塔罗会、处刑者手枪
      * - 商店：尊名纸条(50金币)、灵性斗篷(200金币)
      */
-    public static SRERole THE_FOOL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolRole(
+    public static SRERole THE_FOOL = TMMRoles.registerRole(new org.agmas.noellesroles.game.roles.innocent.fool.FoolRole(
             THE_FOOL_ID, // 角色 ID
             new Color(180, 160, 220).getRGB(), // 淡紫色 - 代表神秘与命运
             true, // isInnocent = 好人阵营
@@ -1899,7 +1899,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
-    )).setComponentKey(org.agmas.noellesroles.game.roles.Innocent.fool.FoolPlayerComponent.KEY).setCanSeeCoin(true)
+    )).setComponentKey(org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent.KEY).setCanSeeCoin(true)
             .setCanPickUpRevolver(true)
             .setMax(1)
             .setCanBeRandomedByOtherRoles(false);

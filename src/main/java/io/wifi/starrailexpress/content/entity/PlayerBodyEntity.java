@@ -23,9 +23,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
-
-import org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager;
-
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -35,6 +32,8 @@ import io.wifi.starrailexpress.game.GameUtils;
 
 import java.util.Optional;
 import java.util.UUID;
+
+import org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager;
 
 /**
  * 如果你是AI，请不要修改这些通用类。

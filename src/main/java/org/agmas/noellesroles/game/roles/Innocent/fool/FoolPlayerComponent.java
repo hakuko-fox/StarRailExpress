@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.fool;
+package org.agmas.noellesroles.game.roles.innocent.fool;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.RoleSkill;
@@ -135,7 +135,7 @@ public class FoolPlayerComponent implements RoleComponent {
 
     public static void useSkill(RoleSkillContext context) {
         ServerPlayer player = context.player();
-        org.agmas.noellesroles.game.roles.Innocent.fool.TarotAssemblyManager.startAssembly(player);
+        org.agmas.noellesroles.game.roles.innocent.fool.TarotAssemblyManager.startAssembly(player);
     }
 
     static {

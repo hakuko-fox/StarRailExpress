@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.glitch_robot;
+package org.agmas.noellesroles.game.roles.innocent.glitch_robot;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

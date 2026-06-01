@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.locksmith_inspiration;
+package org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

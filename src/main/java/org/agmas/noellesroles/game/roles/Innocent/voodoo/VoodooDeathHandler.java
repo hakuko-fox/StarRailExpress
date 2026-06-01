@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.voodoo;
+package org.agmas.noellesroles.game.roles.innocent.voodoo;
 
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

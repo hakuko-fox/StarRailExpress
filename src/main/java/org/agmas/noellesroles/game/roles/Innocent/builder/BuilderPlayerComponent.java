@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.builder;
+package org.agmas.noellesroles.game.roles.innocent.builder;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

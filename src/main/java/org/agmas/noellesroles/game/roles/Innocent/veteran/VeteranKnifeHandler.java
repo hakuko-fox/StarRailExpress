@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.veteran;
+package org.agmas.noellesroles.game.roles.innocent.veteran;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;

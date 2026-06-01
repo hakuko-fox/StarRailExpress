@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.attendant;
+package org.agmas.noellesroles.game.roles.innocent.attendant;
 
 import io.wifi.starrailexpress.content.block.NeonPillarBlock;
 import io.wifi.starrailexpress.content.block.NeonTubeBlock;

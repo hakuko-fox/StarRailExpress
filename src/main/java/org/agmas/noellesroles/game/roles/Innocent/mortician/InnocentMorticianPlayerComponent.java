@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.mortician;
+package org.agmas.noellesroles.game.roles.innocent.mortician;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.noise_maker;
+package org.agmas.noellesroles.game.roles.innocent.noise_maker;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

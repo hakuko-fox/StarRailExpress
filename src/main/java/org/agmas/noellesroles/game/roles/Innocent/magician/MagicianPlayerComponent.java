@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.magician;
+package org.agmas.noellesroles.game.roles.innocent.magician;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.TMMRoles;

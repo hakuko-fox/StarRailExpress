@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.clock_maker;
+package org.agmas.noellesroles.game.roles.innocent.clock_maker;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;

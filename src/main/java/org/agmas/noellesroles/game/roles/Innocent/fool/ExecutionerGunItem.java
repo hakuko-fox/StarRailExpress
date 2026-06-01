@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.fool;
+package org.agmas.noellesroles.game.roles.innocent.fool;
 
 import io.wifi.StarRailExpressID;
 import io.wifi.starrailexpress.api.SRERole;

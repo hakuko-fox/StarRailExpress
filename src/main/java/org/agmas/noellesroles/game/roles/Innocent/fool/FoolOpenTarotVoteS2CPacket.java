@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.fool;
+package org.agmas.noellesroles.game.roles.innocent.fool;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

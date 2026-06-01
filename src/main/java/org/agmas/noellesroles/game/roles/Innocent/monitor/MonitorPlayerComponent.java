@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.monitor;
+package org.agmas.noellesroles.game.roles.innocent.monitor;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.game.GameUtils;

@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.ghost;
+package org.agmas.noellesroles.game.roles.innocent.ghost;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;

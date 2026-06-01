@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.awesome_binglus;
+package org.agmas.noellesroles.game.roles.innocent.awesome_binglus;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;

@@ -1,9 +1,8 @@
-package org.agmas.noellesroles.mixin.roles.mortician;
+package org.agmas.noellesroles.game.roles.innocent.mortician;
 
 import java.util.UUID;
 
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.Innocent.mortician.InnocentMorticianPlayerComponent;
 
 import io.wifi.starrailexpress.api.NormalRole;
 import io.wifi.starrailexpress.api.SRERole;

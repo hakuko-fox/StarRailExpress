@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.awesome_binglus;
+package org.agmas.noellesroles.game.roles.innocent.awesome_binglus;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.DustParticleOptions;

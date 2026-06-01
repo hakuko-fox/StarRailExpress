@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.fool;
+package org.agmas.noellesroles.game.roles.innocent.fool;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;

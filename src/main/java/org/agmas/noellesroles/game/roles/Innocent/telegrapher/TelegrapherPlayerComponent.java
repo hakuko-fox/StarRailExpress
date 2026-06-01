@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.telegrapher;
+package org.agmas.noellesroles.game.roles.innocent.telegrapher;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
