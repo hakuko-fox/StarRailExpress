@@ -88,7 +88,7 @@ import org.agmas.noellesroles.content.item.MercenaryContractItem;
 import org.agmas.noellesroles.content.item.PanItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
 import org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotHandler;
-import org.agmas.noellesroles.game.roles.Innocent.magician.MagicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
@@ -284,7 +284,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID, (payload, context) -> {
-            ClientWallManager.createWall(payload.wallId(), payload.positions(), payload.durationTicks());
+            ClientWallManager.createWall(payload.wallId(), payload.brickPositions(), payload.cobwebPositions(), payload.durationTicks());
         });
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderRemoveWallS2CPacket.ID, (payload, context) -> {
             ClientWallManager.removeWall(payload.wallId());
@@ -332,7 +332,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.game.roles.Innocent.fool.FoolOpenTarotVoteS2CPacket.ID,
+                org.agmas.noellesroles.game.roles.innocent.fool.FoolOpenTarotVoteS2CPacket.ID,
                 (payload, context) -> {
                     final var client = context.client();
                     client.execute(() -> {
@@ -969,7 +969,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (client.player.isCreative()) {
                 if (foolPrayerBind.consumeClick()) {
                     ClientPlayNetworking
-                            .send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolPrayerC2SPacket());
+                            .send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolPrayerC2SPacket());
                 }
                 if (abilityPressed) {
                     if (SREClient.gameComponent.isRole(client.player, ModRoles.ATTENDANT)) {
@@ -987,7 +987,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             // }
 
             if (foolPrayerBind.consumeClick()) {
-                ClientPlayNetworking.send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolPrayerC2SPacket());
+                ClientPlayNetworking.send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolPrayerC2SPacket());
             }
 
             if (abilityPressed) {
@@ -997,7 +997,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (inTarotAssembly) {
                 if (client.options.keyUse.consumeClick()) {
                     ClientPlayNetworking
-                            .send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolLeaveMeetingC2SPacket());
+                            .send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolLeaveMeetingC2SPacket());
                 }
 
                 boolean pauseOpen = client.screen instanceof net.minecraft.client.gui.screens.PauseScreen;
@@ -1006,7 +1006,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                         foolMeetingPauseHandled = true;
                     } else {
                         ClientPlayNetworking
-                                .send(new org.agmas.noellesroles.game.roles.Innocent.fool.FoolLeaveMeetingC2SPacket());
+                                .send(new org.agmas.noellesroles.game.roles.innocent.fool.FoolLeaveMeetingC2SPacket());
                         client.setScreen(null);
                     }
                 }

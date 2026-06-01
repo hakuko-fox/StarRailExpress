@@ -30,6 +30,8 @@ public class PlayerSkinManagerMixin {
             PlayerSkin playerSkin = localSkin.toPlayerSkin();
 
             if (playerSkin != null) {
+                // SRE.LOGGER.info("Returning skin for {}: texture = {}", gameProfile.getId(), playerSkin.texture());
+
                 // 返回已完成的 CompletableFuture
                 cir.setReturnValue(CompletableFuture.completedFuture(playerSkin));
                 cir.cancel(); // 阻止原方法执行
