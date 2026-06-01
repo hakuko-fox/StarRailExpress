@@ -1200,7 +1200,7 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(
           ModRoles.MAFIOSO_ID, MAFIOSO_SHOP);
     }
-    // 家族门卫商店
+    // 家族侍卫商店
     {
       ShopContent.customEntries.put(
           ModRoles.JANITOR_ID, JANITOR_SHOP);
@@ -2415,7 +2415,7 @@ public class RoleShopHandler {
     // 左轮手枪 - 225金币
     MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
 
-    // ==================== 家族门卫商店 ====================
+    // ==================== 家族侍卫商店 ====================
     // 飞刀 - 130金币
     JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON));
     // 短管霰弹枪 - 250金币
