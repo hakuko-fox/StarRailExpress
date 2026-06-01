@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.util.TickTimer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,6 +19,8 @@ import java.util.function.Supplier;
 public class SREBaseCustomizationGameMode extends GameMode {
     /** 共有物品 */
     public final List<Supplier<ItemStack>> sharedItems = new ArrayList<>();
+    /** 游戏模式运行中的定时器 */
+    public final List<TickTimer> tickTimers = new ArrayList<>();
     /**
      * @param identifier       游戏的id
      */
@@ -26,12 +29,13 @@ public class SREBaseCustomizationGameMode extends GameMode {
     }
     public SREBaseCustomizationGameMode(ResourceLocation identifier, int defaultStartTime, int minPlayerCount) {
         super(identifier, defaultStartTime, minPlayerCount);
-        initItemList();
+        ConstructItemList();
     }
-    protected void initItemList() {
+    protected void ConstructItemList() {
         // 初始化模式物品列表
 //        sharedItems.add(TMMItems.CROWBAR::getDefaultInstance);
     }
+
     @Override
     public boolean shouldRecordPlayerStats() {
         return false;
@@ -92,6 +96,11 @@ public class SREBaseCustomizationGameMode extends GameMode {
         }
     }
 
+    /** 初始化游戏模式定时器：游戏每次初始化时清空并重新填入 */
+    protected void initTickTimers(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players) {
+
+    }
+
     @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
                                List<ServerPlayer> players) {
@@ -102,5 +111,14 @@ public class SREBaseCustomizationGameMode extends GameMode {
         initCoolDownItems(players, gameWorldComponent);
         initPlayerItems(players, gameWorldComponent);
         sendWelcomePackets(players, gameWorldComponent);
+
+        tickTimers.clear();
+        initTickTimers(serverWorld, gameWorldComponent, players);
+    }
+
+    @Override
+    public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
+        super.tickServerGameLoop(serverWorld, gameWorldComponent);
+        tickTimers.forEach(TickTimer::tick);
     }
 }

@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.util.TickTimer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,6 +43,8 @@ import java.util.OptionalInt;
  * </p>
  */
 public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
+    public static final int GLOWING_DURATION = 20 * 5;
+    public static final int GLOWING_INTERVAL = 20 * 20;
     /**
      * @param identifier       游戏的id
      */
@@ -50,7 +53,7 @@ public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
     }
 
     @Override
-    protected void initItemList() {
+    protected void ConstructItemList() {
         sharedItems.add(TMMItems.CROWBAR::getDefaultInstance);
     }
 
@@ -62,6 +65,30 @@ public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
     }
 
     @Override
+    protected void initTickTimers(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent, List<ServerPlayer> players) {
+        tickTimers.add(
+                // 所有人间隔获得发光效果
+                new TickTimer(GLOWING_INTERVAL, false, () -> {
+                    for (ServerPlayer player : serverWorld.players()) {
+                        if (GameUtils.isPlayerEliminated(player))
+                            return;
+                        // 刷新发光效果
+                        if (player.hasEffect(MobEffects.GLOWING))
+                            player.removeEffect(MobEffects.GLOWING);
+                        player.addEffect(
+                                new MobEffectInstance(
+                                        MobEffects.GLOWING,  // 发光效果
+                                        GLOWING_DURATION,                  // 持续时间（tick）
+                                        1,
+                                        false,                // 是否显示粒子效果
+                                        false                  // 是否显示图标
+                                ));
+                    }
+                })
+        );
+    }
+
+    @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
                                List<ServerPlayer> players) {
         super.initializeGame(serverWorld, gameWorldComponent, players);
@@ -69,16 +96,6 @@ public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
 
         // 初始化启动资金：获得目标的一半
         for (Player player : players) {
-            // 所有人获得发光效果
-            player.addEffect(
-                    new MobEffectInstance(
-                            MobEffects.GLOWING,  // 发光效果
-                            Integer.MAX_VALUE,                  // 持续时间（tick）
-                            2,
-                            false,                // 是否显示粒子效果
-                            false                  // 是否显示图标
-                    ));
-
             SRERole role = gameWorldComponent.getRole(player);
             if (role == ModRoles.THIEF) {
                 SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
@@ -89,6 +106,7 @@ public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
     }
     @Override
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
+        super.tickServerGameLoop(serverWorld, gameWorldComponent);
         GameUtils.WinStatus winStatus = GameUtils.WinStatus.NONE;
         // 统计小偷数量
         int thiefCount = 0;

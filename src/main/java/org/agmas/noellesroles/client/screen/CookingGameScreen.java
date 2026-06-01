@@ -302,7 +302,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
         TickTimer gameTimer = new TickTimer(
                 20,
                 false,
-                (timerWidget) -> {
+                () -> {
                     --curTime;
                     if (curTime >= 0)
                         timeLineStringWidget.setMessage(Component.literal(curTime + ""));
@@ -311,7 +311,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
         tickTimers.add(new TickTimer(
                 DURATION,
                 true,
-                (TickTimerWidget) -> {
+                () -> {
                     isTimeout = true;
                     timeLineStringWidget.setMessage(Component.literal("Time Out"));
                     timeLineStringWidget.setPosition(originalX,
@@ -329,7 +329,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
                     buffTimers.add(new TickTimer(
                             10,
                             true,
-                            (timerWidget) -> {
+                            () -> {
                                 int textHeight = 20;
                                 int scoreCardSize = BASE_FOOD_SIZE * pixelSize * 2;
                                 int rowNum = (infoCards.size() + ROW_BUFF_NUM - 1) / ROW_BUFF_NUM;
@@ -352,7 +352,7 @@ public class CookingGameScreen extends AbstractPixelScreen {
                                 buffTimers.add(new TickTimer(
                                         aniTick,
                                         true,
-                                        (tickTimer) -> {
+                                        () -> {
                                             // 添加信息卡
                                             int curX = INFO_BOUND + centerX - scoreBarWidth / 2;
                                             int curY = INFO_BOUND + centerY - maxScoreBarHeight / 2;
@@ -382,7 +382,8 @@ public class CookingGameScreen extends AbstractPixelScreen {
                                                     }).bounds(this.centerX - 50, this.centerY + 60, 100, 20)
                                                     .build();
                                             addRenderableWidget(closeBtn);
-                                        }));
+                                        })
+                                );
                             }));
                 }));
 
