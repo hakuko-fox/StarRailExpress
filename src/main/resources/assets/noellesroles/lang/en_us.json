@@ -2653,7 +2653,6 @@
   "death_reason.noellesroles.catalyst_poison": "Catalyst Poison",
   "config.noellesroles.chanceOfInfected": "Infected Spawn Chance",
   "config.noellesroles.minPlayerForInfected": "Min Players for Infected",
-  "config.noellesroles.infectedKillTime": "Infection Kill Time (seconds)",
   "config.noellesroles.infectedSpreadInterval": "Virus Spread Interval (seconds)",
   "config.noellesroles.infectedCooldown": "Infected Ability Cooldown (seconds)",
   "config.noellesroles.chanceOfLostKiller": "Lost Killer Spawn Chance",
