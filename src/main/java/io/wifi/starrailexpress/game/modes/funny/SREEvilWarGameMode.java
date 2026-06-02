@@ -144,14 +144,16 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         }
     }
 
+    protected int getSuperLooseEndCount(List<ServerPlayer> players) {
+        return Math.max(players.size() / (SREConfig.instance().evilWarKillGroupNumber + 1), 1);
+    }
     @Override
     protected void initRoles(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
         // 处理强制角色
         Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
         List<ServerPlayer> playersWithoutForcedRoles = new ArrayList<>();
         // 每有一组狼人产生一个超级亡命徒：8人局对应 7 狼 1 亡命徒
-        int superLooseEndCount = players.size() / (SREConfig.instance().evilWarKillGroupNumber + 1);
-        superLooseEndCount = Math.max(superLooseEndCount, 1);
+        int superLooseEndCount = getSuperLooseEndCount(players);
         for (ServerPlayer player : players) {
             if (!forcedRoles.containsKey(player.getUUID())) {
                 playersWithoutForcedRoles.add(player);
@@ -206,6 +208,9 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     /** 初始化物品 */
     @Override
     protected void initPlayerItems(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+        int superLooseEndCount = getSuperLooseEndCount(players);
+        int beyondKillerCount = players.size() - superLooseEndCount * (SREConfig.instance().evilWarKillGroupNumber + 1);
+
         for (ServerPlayer player : players) {
             player.getInventory().clearContent();
             SRERole role = gameWorldComponent.getRole(player);
@@ -217,6 +222,10 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     if (itemStack != null && !itemStack.isEmpty()) {
                         player.addItem(itemStack);
                     }
+                }
+                // 如果超出要面临敌人的 1 / 3 则额外获得一个护盾
+                if (beyondKillerCount > SREConfig.instance().evilWarKillGroupNumber / 3) {
+                    player.addItem(new ItemStack(TMMItems.DEFENSE_VIAL));
                 }
             }
             // 刽子手自带6把手枪
@@ -305,6 +314,9 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         initModifier(players, gameWorldComponent, serverWorld);
         assignModdedRole(players, gameWorldComponent);
 
+        int superLooseEndCount = getSuperLooseEndCount(players);
+        int beyondKillerCount = players.size() - superLooseEndCount * (SREConfig.instance().evilWarKillGroupNumber + 1);
+
         // 初始化后处理 component
         for (ServerPlayer player : players) {
             SRERole role = gameWorldComponent.getRole(player);
@@ -319,9 +331,9 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             else if (role == ModRoles.DIO) {
                 playerShopComponent.setBalance(0);
             }
-            // 超级亡命徒开局 0 块
+            // 超级亡命徒开局 0 块，根据溢出的杀手数，每个给予 50（不足也会扣钱）
             else if (role == SpecialGameModeRoles.SUPER_LOOSE_END) {
-                playerShopComponent.setBalance(0);
+                playerShopComponent.setBalance(beyondKillerCount * 50);
                 // 清道夫开局700块
             } else if (role == ModRoles.CLEANER) {
                 playerShopComponent.setBalance(700);

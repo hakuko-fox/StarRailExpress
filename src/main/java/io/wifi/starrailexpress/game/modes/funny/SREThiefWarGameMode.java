@@ -41,6 +41,10 @@ import java.util.OptionalInt;
  *  - 盗窃违法事件：当在摄像头前方一定范围内一定时间触发
  *  - 保安返厂：死亡的部分玩家复活为保安（根据在场人数），当玩家在60s内进行过偷窃行为则可被击杀，否则会导致小脑
  * </p>
+ * <p>
+ * 特殊职业：
+ *  - 随机卧底，当资金小于100被偷时化身保安
+ * </p>
  */
 public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
     public static final int GLOWING_DURATION = 20 * 5;
