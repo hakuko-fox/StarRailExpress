@@ -13,7 +13,8 @@
   "environment": "*",
   "entrypoints": {
     "mixinsquared": [
-      "io.wifi.WatheMixinBlocker"
+      "io.wifi.WatheMixinBlocker",
+      "io.wifi.SodiumExtraLightOptionMixinBlocker"
     ],
     "preLaunch": [
       "io.wifi.WatheBlocker"
@@ -242,9 +243,14 @@
     "sre_resource": "*"
   },
   "recommends": {
-    "sodium": "*"
+    "sodium": "*",
+    "sodium-extra": "*"
   },
   "conflicts": {
     "customskinloader": "*"
+  },
+  "breaks": {
+    "sodiumoptionsapi": "*",
+    "sodiumextras": "*"
   }
 }

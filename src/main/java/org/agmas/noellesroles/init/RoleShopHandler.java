@@ -495,12 +495,7 @@ public class RoleShopHandler {
       SHOP.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(), 400, ShopEntry.Type.WEAPON) {
         @Override
         public boolean onBuy(@NotNull Player player) {
-          var psycc = io.wifi.starrailexpress.cca.SREPlayerPsychoComponent.KEY.get(player);
-          boolean success = psycc.startPsycho();
-          if (success) {
-            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 20 * 60);
-          }
-          return success;
+          return SREPlayerShopComponent.usePsychoMode(player);
         }
       });
       SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 40, ShopEntry.Type.TOOL) {
