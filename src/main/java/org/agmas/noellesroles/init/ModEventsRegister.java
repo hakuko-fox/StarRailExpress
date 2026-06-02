@@ -113,6 +113,7 @@ import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponen
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.packet.BloodConfigS2CPacket;
+import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.RedHouseRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -142,27 +143,6 @@ public class ModEventsRegister {
     // Noellesroles.id("wind_yaose"), -0.2f, AttributeModifier.Operation.ADD_VALUE);
 
 
-    /**
-     * 处理嬉命人死亡免疫 - 变装期间被刀/枪击杀时取消变装并免疫死亡
-     */
-    private static boolean handleEmbalmerDeath(Player victim, ResourceLocation deathReason) {
-        if (victim == null || victim.level().isClientSide()) return false;
-        if (!(victim instanceof ServerPlayer sp)) return false;
-        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
-        if (!gameWorld.isRole(victim, ModRoles.EMBALMER)) return false;
-        if (!GameConstants.DeathReasons.KNIFE.equals(deathReason) && !GameConstants.DeathReasons.REVOLVER.equals(deathReason))
-            return false;
-        var comp = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.KEY.get(sp);
-        if (comp == null || !comp.masqueradeActive) return false;
-        // 取消变装，免疫死亡
-        comp.masqueradeActive = false;
-        comp.masqueradeTicksLeft = 0;
-        comp.skinSwaps.clear();
-        comp.voicePitches.clear();
-        comp.sync();
-        sp.displayClientMessage(Component.translatable("message.noellesroles.embalmer.death_negated").withStyle(ChatFormatting.LIGHT_PURPLE), true);
-        return true;
-    }
 
     /**
      * 处理窃皮者死亡免疫 - 有偷来皮肤时被枪击中进入眩晕
@@ -958,6 +938,10 @@ public class ModEventsRegister {
                 if (deathPenalty.chatEnabled == false)
                     return true;
             }
+            // 被鹈鹕吞噬的玩家无法看到聊天栏
+            if (deathPenalty.pelicanStashed) {
+                return true;
+            }
             return false;
         });
         // 观者掉枪
@@ -1097,6 +1081,7 @@ public class ModEventsRegister {
             // 清除全局墙位置注册表
             org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions.clearAll();
             // 清除鹈鹕状态 - 释放所有被吞噬的玩家
+            org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.releaseAllInWorld(world);
             org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.clearAll();
             // 清除窃皮者皮肤 - 恢复所有玩家原皮肤
             for (ServerPlayer p : world.players()) {
@@ -1104,7 +1089,7 @@ public class ModEventsRegister {
             }
             // 清除嬉命人变装 - 恢复所有玩家皮肤和语音
             for (ServerPlayer p : world.players()) {
-                ServerPlayNetworking.send(p, org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket.clear());
+                ServerPlayNetworking.send(p, EmbalmerSkinSwapS2CPacket.clear());
             }
             // 清除所有肉汁的悬赏
             for (ServerPlayer player : world.players()) {
@@ -1988,8 +1973,6 @@ public class ModEventsRegister {
         });
         // 监听玩家死亡事件 - 用于激活复仇者能力、拳击手反制、跟踪者免疫和操纵师死亡判定
         AllowPlayerDeath.EVENT.register((victim, deathReason) -> {
-            // 检查嬉命人变装死亡免疫
-            if (handleEmbalmerDeath(victim, deathReason)) return false;
             // 检查窃皮者皮肤死亡免疫
             if (handleSkincrawlerDeath(victim, deathReason)) return false;
             // 检查拳击手无敌反制

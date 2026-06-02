@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.killer.embalmer;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -61,6 +62,12 @@ public class EmbalmerPlayerComponent implements RoleComponent, ServerTickingComp
                 masqueradeActive = false;
                 skinSwaps.clear();
                 voicePitches.clear();
+                // 发送清除数据包到所有客户端，重置皮肤和音调
+                if (player instanceof ServerPlayer sp) {
+                    for (ServerPlayer p : sp.serverLevel().getPlayers(p2 -> true)) {
+                        ServerPlayNetworking.send(p, org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket.clear());
+                    }
+                }
             }
             sync();
         }

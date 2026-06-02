@@ -1152,8 +1152,8 @@ public class ModPacketsReciever {
       player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
           SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.PLAYERS, 1.0F, 1.0F);
       // 广播皮肤交换数据给所有玩家
-      org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket swapPacket =
-          new org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket(swaps, pitches,
+      EmbalmerSkinSwapS2CPacket swapPacket =
+          new EmbalmerSkinSwapS2CPacket(swaps, pitches,
               org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION);
       for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
         ServerPlayNetworking.send(p, swapPacket);

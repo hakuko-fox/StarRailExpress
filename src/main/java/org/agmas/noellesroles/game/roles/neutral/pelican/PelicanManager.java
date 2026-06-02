@@ -11,6 +11,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.voice.NoellesrolesVoiceChatPlugin;
 
@@ -82,6 +84,11 @@ public final class PelicanManager {
                 pelican.getYRot(), pelican.getXRot());
         target.connection.send(new ClientboundSetCameraPacket(pelican));
 
+        // 禁用被吞噬玩家的聊天
+        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
+        dpc.pelicanStashed = true;
+        dpc.sync();
+
         NoellesrolesVoiceChatPlugin.onPelicanStash(targetId, pelicanId);
     }
 
@@ -98,6 +105,11 @@ public final class PelicanManager {
 
         GameType restoreMode = stashedPreviousGameMode.getOrDefault(targetId, GameType.ADVENTURE);
         stashedPreviousGameMode.remove(targetId);
+
+        // 恢复聊天
+        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
+        dpc.pelicanStashed = false;
+        dpc.sync();
 
         target.setGameMode(restoreMode == GameType.SPECTATOR ? GameType.ADVENTURE : restoreMode);
         target.setInvisible(false);
@@ -119,6 +131,12 @@ public final class PelicanManager {
             }
         }
         stashedPreviousGameMode.remove(targetId);
+
+        // 恢复聊天
+        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
+        dpc.pelicanStashed = false;
+        dpc.sync();
+
         if (target.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
             target.setGameMode(GameType.ADVENTURE);
         }
@@ -212,6 +230,11 @@ public final class PelicanManager {
         }
         stashedPreviousGameMode.remove(targetId);
 
+        // 恢复聊天
+        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
+        dpc.pelicanStashed = false;
+        dpc.sync();
+
         // 恢复游戏模式，确保玩家以正常状态进入死亡
         if (target.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
             target.setGameMode(GameType.ADVENTURE);
@@ -231,6 +254,12 @@ public final class PelicanManager {
             if (target != null) {
                 pelicanByStashed.remove(targetId);
                 stashedPreviousGameMode.remove(targetId);
+
+                // 恢复聊天
+                DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
+                dpc.pelicanStashed = false;
+                dpc.sync();
+
                 target.setGameMode(GameType.ADVENTURE);
                 target.setInvisible(false);
                 target.teleportTo(pelican.serverLevel(), pelican.getX(), pelican.getY(), pelican.getZ(),
