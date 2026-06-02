@@ -1,7 +1,6 @@
 package io.wifi.starrailexpress.util;
 
 import io.wifi.starrailexpress.SRE;
-import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -105,29 +104,29 @@ public class CantRightClickBlocks {
         if (keys.getPath().contains("shulker_box")) {
             return false;
         }
-        if(keys.getNamespace().equals("handcrafted")){
-            if(keys.getPath().contains("counter")){
+        if (keys.getNamespace().equals("handcrafted")) {
+            if (keys.getPath().contains("counter")) {
                 return false;
             }
-            if(keys.getPath().contains("cupboard")){
+            if (keys.getPath().contains("cupboard")) {
                 return false;
             }
-            if(keys.getPath().contains("drawer")){
+            if (keys.getPath().contains("drawer")) {
                 return false;
             }
-            if(keys.getPath().contains("side_table")){
+            if (keys.getPath().contains("side_table")) {
                 return false;
             }
-            if(keys.getPath().contains("nightstand")){
+            if (keys.getPath().contains("nightstand")) {
                 return false;
             }
-            if(keys.getPath().contains("desk")){
+            if (keys.getPath().contains("desk")) {
                 return false;
             }
-            if(keys.getPath().contains("shelf")){
+            if (keys.getPath().contains("shelf")) {
                 return false;
             }
-            if(keys.getPath().contains("fancy_bed")){
+            if (keys.getPath().contains("fancy_bed")) {
                 return false;
             }
         }
