@@ -32,6 +32,7 @@ public class NRSounds {
     public static final SoundEvent SYRINGE_STAB = registrar.create("noellesroles.syringe_stab");
     public static final SoundEvent C4_BEEP = registrar.create("noellesroles.c4_beep");
     public static final SoundEvent MAFIA = registrar.create("noellesroles.mafia");
+    public static final SoundEvent BAKA_BAKA = registrar.create("plush.baka");
 
     public static void initialize() {
         registrar.registerEntries();

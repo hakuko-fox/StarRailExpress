@@ -75,6 +75,7 @@ import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
 import org.agmas.noellesroles.client.hud.RepairEscapeHud;
 import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
+import org.agmas.noellesroles.client.renderer.SREPlushBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
@@ -215,6 +216,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
                 HunterCageBlockEntityRenderer::new);
+                
+        BlockEntityRenderers.register(ModBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
 
