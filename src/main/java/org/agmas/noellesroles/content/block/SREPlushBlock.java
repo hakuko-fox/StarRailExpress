@@ -12,7 +12,6 @@ import dev.doctor4t.ratatouille.block.PlushBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -58,7 +57,7 @@ public class SREPlushBlock extends PlushBlock {
    }
 
    public static SoundEvent getSound(BlockState state) {
-      SoundEvent ret = SoundEvents.WOOL_HIT;
+      SoundEvent ret = NRSounds.BAKA_BAKA;
       if (state.getBlock() == ModBlocks.BAKA_PLUSH) {
          ret = NRSounds.BAKA_BAKA;
       }
