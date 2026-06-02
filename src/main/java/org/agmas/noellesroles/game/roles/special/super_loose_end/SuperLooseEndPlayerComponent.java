@@ -44,7 +44,7 @@ public class SuperLooseEndPlayerComponent implements RoleComponent, ServerTickin
 
     public static final ComponentKey<SuperLooseEndPlayerComponent> KEY = ModComponents.SUPER_LOOSE_END;
     /** 技能列表:冷却-技能 */
-    private final List<Pair<Cooldown, SuperLooseEndAbility>> superLooseEndAbilities = new ArrayList<>();
+    public final List<Pair<Cooldown, SuperLooseEndAbility>> superLooseEndAbilities = new ArrayList<>();
     public Player player;
 
     /** 技能默认cd */
@@ -204,6 +204,12 @@ public class SuperLooseEndPlayerComponent implements RoleComponent, ServerTickin
     public void clear() {
         init();
         sync();
+    }
+
+    public Pair<Cooldown, SuperLooseEndAbility> getCurAbility() {
+        if (curAbilityIdx < 0 || curAbilityIdx >= superLooseEndAbilities.size())
+            return null;
+        return superLooseEndAbilities.get(curAbilityIdx);
     }
 
     public void setPosition() {
