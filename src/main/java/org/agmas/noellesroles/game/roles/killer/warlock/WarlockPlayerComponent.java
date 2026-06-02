@@ -28,6 +28,8 @@ public class WarlockPlayerComponent implements RoleComponent, ServerTickingCompo
     public static final int KILL_COOLDOWN = 90 * 20;
     public static final double MARK_RANGE = 4.0D;
     public static final double KILL_RANGE = 3.0D;
+    /** 蹲下技能可发动的最大距离（与标记目标的距离） */
+    public static final double HEX_KILL_RANGE = 20.0D;
 
     private final Player player;
     public UUID markedTarget;
@@ -88,6 +90,11 @@ public class WarlockPlayerComponent implements RoleComponent, ServerTickingCompo
         if (marked == null || !GameUtils.isPlayerAliveAndSurvival(marked)) {
             markedTarget = null;
             sync();
+            return null;
+        }
+
+        // 距离检查：咒法师必须在标记目标20格范围内才能发动咒杀
+        if (player.distanceTo(marked) > HEX_KILL_RANGE) {
             return null;
         }
 

@@ -2767,6 +2767,7 @@
   "message.noellesroles.warlock.mark_fail": "Mark failed",
   "message.noellesroles.warlock.hex_killed": "Hex killed %s",
   "message.noellesroles.warlock.hex_fail": "No valid target to kill",
+  "message.noellesroles.warlock.hex_too_far": "Too far from the target to cast hex kill",
   "message.noellesroles.embalmer.activated": "Masquerade activated!",
   "message.noellesroles.embalmer.cooldown": "Masquerade ready in %ss",
   "message.noellesroles.skincrawler.stolen": "Skin stolen!",

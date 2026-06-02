@@ -1098,7 +1098,19 @@ public class ModPacketsReciever {
         GameUtils.killPlayer(victim, true, player, GameConstants.DeathReasons.REVOLVER);
         player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_killed", victim.getName().getString()).withStyle(ChatFormatting.DARK_PURPLE), true);
       } else {
-        player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+        // 检查是否因为距离太远而失败
+        if (comp.markedTarget != null) {
+          ServerPlayer marked = player.server.getPlayerList().getPlayer(comp.markedTarget);
+          if (marked != null && GameUtils.isPlayerAliveAndSurvival(marked)
+              && player.distanceTo(marked) > org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.HEX_KILL_RANGE) {
+            player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_too_far")
+                .withStyle(ChatFormatting.RED), true);
+          } else {
+            player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+          }
+        } else {
+          player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+        }
       }
     });
 
@@ -1136,6 +1148,9 @@ public class ModPacketsReciever {
       comp.masqueradeTicksLeft = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION;
       comp.masqueradeCooldown = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_COOLDOWN;
       comp.sync();
+      // 全场播放音效
+      player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+          SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.PLAYERS, 1.0F, 1.0F);
       // 广播皮肤交换数据给所有玩家
       org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket swapPacket =
           new org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket(swaps, pitches,

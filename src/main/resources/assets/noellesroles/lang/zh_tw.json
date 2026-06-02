@@ -2768,6 +2768,7 @@
   "message.noellesroles.warlock.mark_fail": "標記失敗",
   "message.noellesroles.warlock.hex_killed": "咒殺擊殺了 %s",
   "message.noellesroles.warlock.hex_fail": "沒有可擊殺的目標",
+  "message.noellesroles.warlock.hex_too_far": "距離目標太遠，無法發動咒殺",
   "message.noellesroles.embalmer.activated": "變裝發動！",
   "message.noellesroles.embalmer.cooldown": "變裝冷卻中，還需 %s 秒",
   "message.noellesroles.skincrawler.stolen": "皮膚偷取成功！",

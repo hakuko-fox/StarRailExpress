@@ -2460,16 +2460,11 @@ public class RoleShopHandler {
     WARLOCK_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
     // 开锁器 - 80金币
     WARLOCK_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
-    // 疯狂模式 - 400金币
+    // 疯狂模式 - 400金币（冷却与通用杀手商店一致）
     WARLOCK_SHOP.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(), 400, ShopEntry.Type.WEAPON) {
       @Override
       public boolean onBuy(@NotNull Player player) {
-        var psycc = io.wifi.starrailexpress.cca.SREPlayerPsychoComponent.KEY.get(player);
-        boolean success = psycc.startPsycho();
-        if (success) {
-          player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 20 * 60);
-        }
-        return success;
+        return SREPlayerShopComponent.usePsychoMode(player);
       }
     });
     // 关灯 - 100金币
