@@ -945,4 +945,9 @@ public class NoellesRolesConfig implements ConfigData {
 
     @Category("magic")
     public String credit = "";
+
+    
+    public static NoellesRolesConfig instance() {
+        return HANDLER.instance();
+    }
 }
