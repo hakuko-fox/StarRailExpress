@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.content.entity;
 
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
-import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoHeavyWaterInfluencedThrowableItemProjectile;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -24,12 +24,12 @@ import java.util.List;
  * - 取消半径3格内玩家的中毒状态
  * - 粒子效果为dripping_water（水滴）
  */
-public class PurifyBombEntity extends NoWaterInfluencedThrowableItemProjectile {
+public class PurifyBombEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
 
     // 净化半径：3格
     private static final double PURIFY_RADIUS = 3.0;
 
-    public PurifyBombEntity(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, Level world) {
+    public PurifyBombEntity(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 

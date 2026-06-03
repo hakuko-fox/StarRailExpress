@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.content.entity;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoHeavyWaterInfluencedThrowableItemProjectile;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 
-public class SilenceTotemEntity extends NoWaterInfluencedThrowableItemProjectile {
+public class SilenceTotemEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
     private static final int MAX_LIFETIME = 30 * 20;
     private static final double RADIUS = 8.0D;
     private static final int EFFECT_REFRESH_DURATION = 3 * 20;
@@ -28,7 +28,7 @@ public class SilenceTotemEntity extends NoWaterInfluencedThrowableItemProjectile
     private int lifetime = 0;
     private boolean landed = false;
 
-    public SilenceTotemEntity(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, Level level) {
+    public SilenceTotemEntity(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, Level level) {
         super(entityType, level);
         this.setInvisible(true);
     }

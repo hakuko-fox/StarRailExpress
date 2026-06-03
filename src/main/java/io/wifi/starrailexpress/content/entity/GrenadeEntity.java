@@ -1,6 +1,6 @@
 package io.wifi.starrailexpress.content.entity;
 
-import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoHeavyWaterInfluencedThrowableItemProjectile;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class GrenadeEntity extends NoWaterInfluencedThrowableItemProjectile {
+public class GrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
     private static final float EXPLOSION_RADIUS = 4f;
     private static final int MAX_KILL_PLAYER_COUNT = 8;
 

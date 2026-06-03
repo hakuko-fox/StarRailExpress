@@ -14,15 +14,15 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.init.ModItems;
 
-import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoHeavyWaterInfluencedThrowableItemProjectile;
 
 /**
  * 照明弹实体 - 投掷后飞行，撞到方块时放置照明弹方块，10秒后自动消失
  */
-public class FlareEntity extends NoWaterInfluencedThrowableItemProjectile {
+public class FlareEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
     private static final int MAX_LIFETIME = 200; // 10秒
 
-    public FlareEntity(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, Level world) {
+    public FlareEntity(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 

@@ -11,15 +11,15 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 
-import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoHeavyWaterInfluencedThrowableItemProjectile;
 
 /**
  * 毒气瓶投掷实体
  * - 落地后生成毒气云实体
  */
-public class PoisonGasTankEntity extends NoWaterInfluencedThrowableItemProjectile {
+public class PoisonGasTankEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
 
-    public PoisonGasTankEntity(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, Level world) {
+    public PoisonGasTankEntity(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 

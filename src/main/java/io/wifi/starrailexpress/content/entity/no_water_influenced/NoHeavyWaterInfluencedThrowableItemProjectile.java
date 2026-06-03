@@ -12,18 +12,18 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public abstract class NoWaterInfluencedThrowableItemProjectile extends NoWaterInfluencedThrowableProjectile implements ItemSupplier {
+public abstract class NoHeavyWaterInfluencedThrowableItemProjectile extends NoHeavyWaterInfluencedThrowableProjectile implements ItemSupplier {
    private static final EntityDataAccessor<ItemStack> DATA_ITEM_STACK;
 
-   public NoWaterInfluencedThrowableItemProjectile(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, Level level) {
+   public NoHeavyWaterInfluencedThrowableItemProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, Level level) {
       super(entityType, level);
    }
 
-   public NoWaterInfluencedThrowableItemProjectile(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, double d, double e, double f, Level level) {
+   public NoHeavyWaterInfluencedThrowableItemProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, double d, double e, double f, Level level) {
       super(entityType, d, e, f, level);
    }
 
-   public NoWaterInfluencedThrowableItemProjectile(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, LivingEntity livingEntity, Level level) {
+   public NoHeavyWaterInfluencedThrowableItemProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, LivingEntity livingEntity, Level level) {
       super(entityType, livingEntity, level);
    }
 
@@ -57,6 +57,6 @@ public abstract class NoWaterInfluencedThrowableItemProjectile extends NoWaterIn
    }
 
    static {
-      DATA_ITEM_STACK = SynchedEntityData.defineId(NoWaterInfluencedThrowableItemProjectile.class, EntityDataSerializers.ITEM_STACK);
+      DATA_ITEM_STACK = SynchedEntityData.defineId(NoHeavyWaterInfluencedThrowableItemProjectile.class, EntityDataSerializers.ITEM_STACK);
    }
 }

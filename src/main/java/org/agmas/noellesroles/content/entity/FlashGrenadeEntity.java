@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.content.entity;
 
-import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoHeavyWaterInfluencedThrowableItemProjectile;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -25,14 +25,14 @@ import java.util.List;
  * - 视野判定参考巡警实现：距离检查 + 视野角度检查 + 射线检测
  * - 视野角度：70度扇形（半角35度）
  */
-public class FlashGrenadeEntity extends NoWaterInfluencedThrowableItemProjectile {
+public class FlashGrenadeEntity extends NoHeavyWaterInfluencedThrowableItemProjectile {
 
     // 闪光半径：8格
     private static final double FLASH_RADIUS = 8.0;
     // 效果持续时间：3秒（60 ticks）
     private static final int EFFECT_DURATION = 60;
 
-    public FlashGrenadeEntity(EntityType<? extends NoWaterInfluencedThrowableItemProjectile> entityType, Level world) {
+    public FlashGrenadeEntity(EntityType<? extends NoHeavyWaterInfluencedThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 

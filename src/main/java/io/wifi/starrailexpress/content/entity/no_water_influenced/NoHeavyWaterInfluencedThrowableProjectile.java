@@ -11,19 +11,19 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
 
-public abstract class NoWaterInfluencedThrowableProjectile extends Projectile {
-   protected NoWaterInfluencedThrowableProjectile(EntityType<? extends NoWaterInfluencedThrowableProjectile> entityType,
+public abstract class NoHeavyWaterInfluencedThrowableProjectile extends Projectile {
+   protected NoHeavyWaterInfluencedThrowableProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableProjectile> entityType,
          Level level) {
       super(entityType, level);
    }
 
-   protected NoWaterInfluencedThrowableProjectile(EntityType<? extends NoWaterInfluencedThrowableProjectile> entityType,
+   protected NoHeavyWaterInfluencedThrowableProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableProjectile> entityType,
          double d, double e, double f, Level level) {
       this(entityType, level);
       this.setPos(d, e, f);
    }
 
-   protected NoWaterInfluencedThrowableProjectile(EntityType<? extends NoWaterInfluencedThrowableProjectile> entityType,
+   protected NoHeavyWaterInfluencedThrowableProjectile(EntityType<? extends NoHeavyWaterInfluencedThrowableProjectile> entityType,
          LivingEntity livingEntity, Level level) {
       this(entityType, livingEntity.getX(), livingEntity.getEyeY() - (double) 0.1F, livingEntity.getZ(), level);
       this.setOwner(livingEntity);
