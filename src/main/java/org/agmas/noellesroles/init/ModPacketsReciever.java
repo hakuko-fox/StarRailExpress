@@ -904,6 +904,42 @@ public class ModPacketsReciever {
           }
         });
 
+    // ==================== 鹈鹕技能网络包处理 ====================
+    ServerPlayNetworking.registerGlobalReceiver(PelicanEatC2SPacket.ID,
+        (payload, context) -> {
+            ServerPlayer player = context.player();
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (!gameWorldComponent.isSkillAvailable) {
+                player.displayClientMessage(
+                    Component.translatable("message.tip.skill_disabled").withStyle(ChatFormatting.RED), true);
+                return;
+            }
+            if (!gameWorldComponent.isRole(player, ModRoles.PELICAN)) return;
+            org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent comp =
+                org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent.KEY.get(player);
+            // 蹲下释放，否则对鼠标准星目标吞噬
+            if (player.isShiftKeyDown()) {
+                comp.releaseLast();
+            } else {
+                // 寻找3.15格内有视线的最近存活玩家
+                ServerPlayer target = null;
+                double closest = 3.15D * 3.15D;
+                for (ServerPlayer p : player.serverLevel().getPlayers(p -> p != player && GameUtils.isPlayerAliveAndSurvival(p))) {
+                    double dist = player.distanceToSqr(p);
+                    if (dist < closest && player.hasLineOfSight(p)) {
+                        closest = dist;
+                        target = p;
+                    }
+                }
+                if (target != null) {
+                    comp.tryEat(target);
+                } else {
+                    player.displayClientMessage(
+                        Component.translatable("message.noellesroles.pelican.no_target").withStyle(ChatFormatting.RED), true);
+                }
+            }
+        });
+
     // ==================== 愚者网络包处理 ====================
 
     // V键祷告/加入会议
@@ -1042,6 +1078,118 @@ public class ModPacketsReciever {
 
         // 创建尸体（冷却在createBody内部设置）
         morticianComponent.createBody((ServerPlayer) targetPlayer, payload.deathReason());
+      }
+    });
+
+    // ==================== 咒法师网络包 ====================
+
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WarlockKillC2SPacket.ID, (payload, context) -> {
+      ServerPlayer player = context.player();
+      SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+      if (!gameWorld.isSkillAvailable) return;
+      if (player.hasEffect(ModEffects.SAFE_TIME)) return;
+      if (!gameWorld.isRole(player, ModRoles.WARLOCK)) return;
+      if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
+      var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+      ServerPlayer victim = comp.tryHexKill();
+      if (victim != null) {
+        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+            io.wifi.starrailexpress.index.TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5.0F, 1.0F);
+        GameUtils.killPlayer(victim, true, player, GameConstants.DeathReasons.REVOLVER);
+        player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_killed", victim.getName().getString()).withStyle(ChatFormatting.DARK_PURPLE), true);
+      } else {
+        // 检查是否因为距离太远而失败
+        if (comp.markedTarget != null) {
+          ServerPlayer marked = player.server.getPlayerList().getPlayer(comp.markedTarget);
+          if (marked != null && GameUtils.isPlayerAliveAndSurvival(marked)
+              && player.distanceTo(marked) > org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.HEX_KILL_RANGE) {
+            player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_too_far")
+                .withStyle(ChatFormatting.RED), true);
+          } else {
+            player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+          }
+        } else {
+          player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
+        }
+      }
+    });
+
+    // ==================== 嬉命人网络包 ====================
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.EmbalmerC2SPacket.ID, (payload, context) -> {
+      ServerPlayer player = context.player();
+      SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+      if (!gameWorld.isSkillAvailable) return;
+      if (player.hasEffect(ModEffects.SAFE_TIME)) return;
+      if (!gameWorld.isRole(player, ModRoles.EMBALMER)) return;
+      if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
+      var comp = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.KEY.get(player);
+      if (comp.masqueradeCooldown > 0) {
+        player.displayClientMessage(Component.translatable("message.noellesroles.embalmer.cooldown", (comp.masqueradeCooldown + 19) / 20).withStyle(ChatFormatting.RED), true);
+        return;
+      }
+      // Trigger masquerade
+      java.util.List<ServerPlayer> players = player.serverLevel().getPlayers(p2 -> !p2.isSpectator());
+      if (players.size() < 2) { player.displayClientMessage(Component.literal("Need at least 2 players."), true); return; }
+      java.util.Map<UUID, UUID> swaps = new java.util.LinkedHashMap<>();
+      java.util.Map<UUID, Float> pitches = new java.util.HashMap<>();
+      java.util.List<UUID> uuids = new java.util.ArrayList<>();
+      for (var p : players) uuids.add(p.getUUID());
+      java.util.Collections.shuffle(uuids, new java.util.Random());
+      for (int i = 0; i < uuids.size(); i++) {
+        UUID from = players.get(i).getUUID();
+        UUID to = uuids.get(i);
+        if (from.equals(to)) to = uuids.get((i + 1) % uuids.size());
+        swaps.put(from, to);
+        pitches.put(from, 0.7F + (new java.util.Random().nextFloat() * 0.6F));
+      }
+      comp.skinSwaps = swaps;
+      comp.voicePitches = pitches;
+      comp.masqueradeActive = true;
+      comp.masqueradeTicksLeft = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION;
+      comp.masqueradeCooldown = org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_COOLDOWN;
+      comp.sync();
+      // 全场播放音效
+      player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+          SoundEvents.ILLUSIONER_PREPARE_MIRROR, SoundSource.MASTER, 1.0F, 1.0F);
+      // 广播皮肤交换数据给所有玩家
+      EmbalmerSkinSwapS2CPacket swapPacket =
+          new EmbalmerSkinSwapS2CPacket(swaps, pitches,
+              org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.MASQUERADE_DURATION);
+      for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
+        ServerPlayNetworking.send(p, swapPacket);
+      }
+      player.displayClientMessage(Component.translatable("message.noellesroles.embalmer.activated").withStyle(ChatFormatting.DARK_PURPLE), true);
+    });
+
+    // ==================== 窃皮者网络包 ====================
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.SkincrawlerC2SPacket.ID, (payload, context) -> {
+      ServerPlayer player = context.player();
+      SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+      if (!gameWorld.isSkillAvailable) return;
+      if (player.hasEffect(ModEffects.SAFE_TIME)) return;
+      if (!gameWorld.isRole(player, ModRoles.SKINCRAWLER)) return;
+      if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
+      var comp = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY.get(player);
+      if (comp.stealCooldown > 0) { player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.cooldown", (comp.stealCooldown + 19) / 20).withStyle(ChatFormatting.RED), true); return; }
+      io.wifi.starrailexpress.content.entity.PlayerBodyEntity body = null;
+      for (io.wifi.starrailexpress.content.entity.PlayerBodyEntity b : player.serverLevel().getEntitiesOfClass(io.wifi.starrailexpress.content.entity.PlayerBodyEntity.class, player.getBoundingBox().inflate(3.0D))) {
+        if (b.getPlayerUuid() != null && !b.getPlayerUuid().equals(player.getUUID())) { body = b; break; }
+      }
+      if (body != null) {
+        UUID prev = comp.stolenSkin != null ? comp.stolenSkin : player.getUUID();
+        comp.stolenSkin = body.getPlayerUuid();
+        body.setPlayerUuid(prev);
+        comp.stealCooldown = org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.STEAL_COOLDOWN;
+        // 广播皮肤给所有玩家
+        for (ServerPlayer p : player.serverLevel().getPlayers(p2 -> true)) {
+            ServerPlayNetworking.send(p, new org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket(player.getUUID(), comp.stolenSkin));
+        }
+        comp.sync();
+        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+            net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_LEATHER, net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.0f);
+        player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.stolen").withStyle(ChatFormatting.GOLD), true);
+      } else {
+        player.displayClientMessage(Component.translatable("message.noellesroles.skincrawler.no_body").withStyle(ChatFormatting.RED), true);
       }
     });
   }

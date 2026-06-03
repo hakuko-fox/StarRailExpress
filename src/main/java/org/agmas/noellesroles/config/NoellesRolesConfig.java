@@ -52,6 +52,12 @@ public class NoellesRolesConfig implements ConfigData {
     public ArrayList<String> cuckooMaps = new ArrayList<>();
 
     /**
+     * Areas that will spawn Ghost (小透明). If empty, Ghost spawns on all maps.
+     * Adding maps here restricts Ghost to only spawn on those maps.
+     */
+    public ArrayList<String> ghostMaps = new ArrayList<>();
+
+    /**
      * Role - The chance of egg roles
      */
 
@@ -173,7 +179,8 @@ public class NoellesRolesConfig implements ConfigData {
      * 疫使感染致死时间（秒）
      * 玩家被感染后多久会死亡
      */
-    public int infectedKillTime = 180;
+
+
 
     /**
      * 疫使病毒传播间隔（秒）
@@ -209,6 +216,12 @@ public class NoellesRolesConfig implements ConfigData {
      */
     @ConfigEntry.Category(value = "detail")
     public int chanceOfLostKiller = 20;
+
+    /**
+     * 迷失杀手最小玩家数
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int minPlayerForLostKiller = 12;
 
     /**
      * 监察员刷新概率（%）
@@ -905,9 +918,47 @@ public class NoellesRolesConfig implements ConfigData {
     public int skillEchoRandomIntervalSeconds = 90;
 
     /**
+     * Pelican - minimum players required for Pelican to appear
+     */
+    public int minPlayerForPelican = 16;
+
+    /**
+     * Pelican - percentage chance (0-100) for Pelican to spawn
+     */
+    public int chanceOfPelican = 25;
+
+    /**
+     * Pelican - percentage of starting players needed to swallow for victory
+     */
+    public double pelicanEatPercentage = 70.0D;
+
+    /**
+     * 悍匪最小玩家数
+     */
+    public int minPlayerForGangsters = 12;
+
+    /**
+     * 悍匪刷新概率（%）
+     */
+    public int chanceOfGangsters = 75;
+
+    // ==================== Mafia 配置 ====================
+    public int mafiaMinimumPlayers = 18;
+    public int chanceOfGodfather = 20;
+    public int godfatherRecruitCooldownSeconds = 55;
+    public int godfatherStartingBullets = 1;
+    public int godfatherMaxLoadedBullets = 3;
+    public int mafiaRecruitRange = 16;
+
+    /**
      * (Client Side) Welcome Voice - Play welcome voice
      */
 
     @Category("magic")
     public String credit = "";
+
+    
+    public static NoellesRolesConfig instance() {
+        return HANDLER.instance();
+    }
 }

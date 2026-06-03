@@ -53,6 +53,7 @@ public abstract class SRERole {
     private boolean canSeeBodyRoleInfo = false;
     private boolean canUseInstinct = false;
     private boolean canIgnoreBlackout = false;
+    private boolean mafiaTeam = false;
     public int maxCount = -1;
     public int enableChance = -1;
     public int enableRareChance = -1;
@@ -101,6 +102,15 @@ public abstract class SRERole {
 
     public boolean isKiller() {
         return !this.isInnocent && !this.isNeutrals && !this.isNeutralForKiller && this.canUseKiller;
+    }
+
+    public boolean isMafiaTeam() {
+        return mafiaTeam;
+    }
+
+    public SRERole setMafiaTeam(boolean flag) {
+        this.mafiaTeam = flag;
+        return this;
     }
 
     public boolean canIgnoreBlackout(Player player) {
@@ -871,5 +881,15 @@ public abstract class SRERole {
      */
     public boolean canTakePlayerBodyItem(Player player, Container container, int slot, ItemStack stack) {
         return canGetBodyItems(player);
+    }
+
+    /**
+     * 玩家在打开玩家尸体的时候quickMoveStack时触发。
+     * @param player
+     * @param index
+     * @return
+     */
+    public boolean playerBodyQuickMoveStack(Player player, int index) {
+        return true;
     }
 }

@@ -36,6 +36,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
@@ -74,6 +75,7 @@ import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
 import org.agmas.noellesroles.client.hud.RepairEscapeHud;
 import org.agmas.noellesroles.client.renderer.HunterCageBlockEntityRenderer;
+import org.agmas.noellesroles.client.renderer.SREPlushBlockEntityRenderer;
 import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer;
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
@@ -86,7 +88,6 @@ import org.agmas.noellesroles.content.entity.WheelchairFieldItemRenderer;
 import org.agmas.noellesroles.content.item.MercenaryContractItem;
 import org.agmas.noellesroles.content.item.PanItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
-import org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotHandler;
 import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.init.*;
@@ -215,8 +216,20 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockEntityRenderers.register(
                 ModBlocks.HUNTER_CAGE_BLOCK_ENTITY,
                 HunterCageBlockEntityRenderer::new);
+                
+        BlockEntityRenderers.register(ModBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
+
+        // 注册C4背部渲染
+        LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
+            (entityType, entityRenderer, registrationHelper, context) -> {
+                if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
+                    registrationHelper.register(new C4BackFeatureRenderer(pr));
+                }
+            }
+        );
+
         MercenaryContractItem.openGuiRunner = () -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null)
@@ -259,6 +272,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             return true;
         });
+        ClientEmbalmerState.register();
+        ClientSkincrawlerState.register();
         CommonClientHudRenderer.registerRenderersEvent();
         MenuScreens.register(ModMenus.HOTBAR_STORAGE, HotbarStorageScreen::new);
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
