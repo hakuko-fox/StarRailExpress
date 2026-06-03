@@ -13,6 +13,8 @@ import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ItemComponentUtils;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,6 +30,7 @@ import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
+import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.content.item.TimeStopClock;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
@@ -55,13 +58,39 @@ import java.util.function.Supplier;
  * </p>
  */
 public class SREEvilWarGameMode extends WTLooseEndsGameMode {
-    public final List<SRERole> BANED_ROLES = new ArrayList<>();
-    protected static AttributeModifier tinyModifier = new AttributeModifier(
-            StupidExpress.id("tiny_modifier"), -0.15, AttributeModifier.Operation.ADD_VALUE);
+    /** 有特殊改动的职业 */
+    public static final Set<SRERole> EX_ABILITY_ROLE = new HashSet<>();
+    static {
+        EX_ABILITY_ROLE.add(SpecialGameModeRoles.SUPER_LOOSE_END);
+        EX_ABILITY_ROLE.add(RedHouseRoles.REMILIA);
+        EX_ABILITY_ROLE.add(ModRoles.IMITATOR);
+        EX_ABILITY_ROLE.add(ModRoles.TRAPPER);
+        EX_ABILITY_ROLE.add(ModRoles.BANDIT);
+        EX_ABILITY_ROLE.add(TraitorAndModifiers.TRAITOR);
+        EX_ABILITY_ROLE.add(ModRoles.CONSPIRATOR);
+        EX_ABILITY_ROLE.add(ModRoles.DIO);
+        EX_ABILITY_ROLE.add(ModRoles.CLEANER);
+        EX_ABILITY_ROLE.add(ModRoles.DELAYER);
+        EX_ABILITY_ROLE.add(ModRoles.EXECUTIONER);
+        EX_ABILITY_ROLE.add(ModRoles.BOMBER);
+        EX_ABILITY_ROLE.add(SERoles.NECROMANCER);
+        EX_ABILITY_ROLE.add(ModRoles.CAT_NECROMANCER);
+        EX_ABILITY_ROLE.add(ModRoles.BLOOD_FEUDIST);
+        EX_ABILITY_ROLE.add(SERoles.AVARICIOUS);
+        EX_ABILITY_ROLE.add(ModRoles.PARTY_KILLER);
+        EX_ABILITY_ROLE.add(ModRoles.NINJA);
+        EX_ABILITY_ROLE.add(ModRoles.POISONER);
+        EX_ABILITY_ROLE.add(ModRoles.CREEPER);
+        EX_ABILITY_ROLE.add(ModRoles.STALKER);
+        EX_ABILITY_ROLE.add(ModRoles.INSANE_KILLER);
+    }
     public static final int ADD_BALANCE_TIME = 600;
     public static final int REVIVE_TIME = 200;
     public static final int ONE_SECOND_TICK = 20;
     public static final int EXECUTIONER_GUN_NUMBER = 6;
+    protected static AttributeModifier tinyModifier = new AttributeModifier(
+            StupidExpress.id("tiny_modifier"), -0.15, AttributeModifier.Operation.ADD_VALUE);
+    public final List<SRERole> BANED_ROLES = new ArrayList<>();
     int curBalanceTick = 0;
     int curReviveTick = 0;
     int curOneSecondTick = 0;
@@ -240,10 +269,10 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
             bullet.setCount(64);
             player.addItem(bullet);
         }
-        // 叛徒有强盗手枪
-        else if (role == TraitorAndModifiers.TRAITOR) {
-            player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
-        }
+//        // 叛徒有强盗手枪
+//        else if (role == TraitorAndModifiers.TRAITOR) {
+//            player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
+//        }
         // 炸弹客自带2次时停1s的机会
         else if (role == ModRoles.BOMBER) {
             ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
@@ -319,12 +348,23 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         worldModifierComponent.sync();
     }
 
+    protected void broadcastRolesAbility(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
+        for (ServerPlayer player : players) {
+            SRERole role = gameWorldComponent.getRole(player);
+            if (!EX_ABILITY_ROLE.contains(role))
+                continue;
+            BroadcastCommand.BroadcastMessage(player, Component.translatable(
+                    "message.gamemode.evil_war.tip.role." + role.identifier().getPath()
+            ).withStyle(ChatFormatting.GOLD));
+        }
+    }
     @Override
     public void initializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         super.initializeGame(serverWorld, gameWorldComponent, players);
         initModifier(players, gameWorldComponent, serverWorld);
         assignModdedRole(players, gameWorldComponent);
+        broadcastRolesAbility(players, gameWorldComponent);
 
         int superLooseEndCount = getSuperLooseEndCount(players);
         int beyondKillerCount = players.size() - superLooseEndCount * (SREConfig.instance().evilWarKillGroupNumber + 1);
@@ -377,7 +417,7 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                 }
                 imitatorPlayerComponent.sync();
             }
-            // 蕾米莉亚开局获得20分钟速度4
+            // 蕾米莉亚开局获得20分钟速度2
             else if (role == RedHouseRoles.REMILIA) {
                 if (player.hasEffect(MobEffects.MOVEMENT_SPEED))
                     player.removeEffect(MobEffects.MOVEMENT_SPEED);
