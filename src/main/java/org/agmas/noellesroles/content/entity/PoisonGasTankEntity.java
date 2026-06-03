@@ -11,7 +11,7 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 
-import io.wifi.starrailexpress.content.entity.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
 
 /**
  * 毒气瓶投掷实体

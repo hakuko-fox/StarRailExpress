@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.content.entity;
 
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;

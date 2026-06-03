@@ -2,7 +2,7 @@ package org.agmas.noellesroles.content.entity;
 
 
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
-import io.wifi.starrailexpress.content.entity.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;

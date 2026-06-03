@@ -14,7 +14,7 @@ import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.init.ModItems;
 
-import io.wifi.starrailexpress.content.entity.NoWaterInfluencedThrowableItemProjectile;
+import io.wifi.starrailexpress.content.entity.no_water_influenced.NoWaterInfluencedThrowableItemProjectile;
 
 /**
  * 照明弹实体 - 投掷后飞行，撞到方块时放置照明弹方块，10秒后自动消失
