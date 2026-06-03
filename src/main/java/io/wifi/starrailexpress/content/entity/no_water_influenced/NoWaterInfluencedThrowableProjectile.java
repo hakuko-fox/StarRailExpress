@@ -82,7 +82,16 @@ public abstract class NoWaterInfluencedThrowableProjectile extends Projectile {
     * 禁用气泡柱对其的影响
     */
    @Override
-   public void onInsideBubbleColumn(boolean _bl) {
+    public void onInsideBubbleColumn(boolean bl) {
+      Vec3 vec3 = this.getDeltaMovement();
+      double d;
+      if (bl) {
+         d = Math.max(-0.3, vec3.y - 0.03);
+      } else {
+         d = Math.min(-0.1, vec3.y + 0.03);
+      }
+
+      this.setDeltaMovement(vec3.x, d, vec3.z);
       this.resetFallDistance();
    }
 
@@ -90,7 +99,16 @@ public abstract class NoWaterInfluencedThrowableProjectile extends Projectile {
     * 禁用气泡柱对其的影响 2
     */
    @Override
-   public void onAboveBubbleCol(boolean _bl) {
+   public void onAboveBubbleCol(boolean bl) {
+      Vec3 vec3 = this.getDeltaMovement();
+      double d;
+      if (bl) {
+         d = Math.max(-0.9, vec3.y - 0.03);
+      } else {
+         d = Math.min(-0.1, vec3.y + 0.05);
+      }
+
+      this.setDeltaMovement(vec3.x, d, vec3.z);
    }
 
    /**
