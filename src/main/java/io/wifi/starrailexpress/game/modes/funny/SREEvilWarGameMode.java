@@ -205,6 +205,59 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
         Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
     }
 
+    /** 为邪恶战争特定职业添加特有物品 */
+    public static void addEvilWarItemsByRole(Player player, SRERole role) {
+        if (player == null)
+            return;
+        // 刽子手自带6把手枪
+        if (role == ModRoles.EXECUTIONER) {
+            ItemStack gun = new ItemStack(TMMItems.DERRINGER);
+            gun.setCount(EXECUTIONER_GUN_NUMBER);
+            player.addItem(gun);
+        }
+        // 清道夫拥有各种枪和几把飞刀
+        else if (role == ModRoles.CLEANER) {
+            player.addItem(new ItemStack(TMMItems.DERRINGER));
+            player.addItem(new ItemStack(ModItems.PATROLLER_REVOLVER));
+            player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
+            ItemStack throwingKnife = new ItemStack(ModItems.THROWING_KNIFE);
+            throwingKnife.setCount(4);
+            player.addItem(throwingKnife);
+        }
+        // 滞时鬼20s可以停1s
+        else if (role == ModRoles.DELAYER) {
+            ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
+            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, 20);
+            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, 400);
+            // timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY);
+            player.addItem(timeStopClock);
+        }
+        // 强盗有狙
+        else if (role == ModRoles.BANDIT) {
+            player.addItem(new ItemStack(TMMItems.SNIPER_RIFLE));
+            player.addItem(new ItemStack(TMMItems.SCOPE));
+            ItemStack bullet = new ItemStack(TMMItems.MAGNUM_BULLET);
+            bullet.setCount(64);
+            player.addItem(bullet);
+        }
+        // 叛徒有强盗手枪
+        else if (role == TraitorAndModifiers.TRAITOR) {
+            player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
+        }
+        // 炸弹客自带2次时停1s的机会
+        else if (role == ModRoles.BOMBER) {
+            ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
+            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, 20);
+            ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, 400);
+            timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 2);
+            player.addItem(timeStopClock);
+        }
+        // 死灵法师有轮椅
+        else if (role == SERoles.NECROMANCER || role == ModRoles.CAT_NECROMANCER) {
+            player.addItem(new ItemStack(ModItems.WHEELCHAIR));
+            player.addItem(new ItemStack(ModItems.WHEELCHAIR));
+        }
+    }
     /** 初始化物品 */
     @Override
     protected void initPlayerItems(List<ServerPlayer> players, SREGameWorldComponent gameWorldComponent) {
@@ -228,49 +281,8 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
                     player.addItem(new ItemStack(TMMItems.DEFENSE_VIAL));
                 }
             }
-            // 刽子手自带6把手枪
-            else if (role == ModRoles.EXECUTIONER) {
-                ItemStack gun = new ItemStack(TMMItems.DERRINGER);
-                gun.setCount(EXECUTIONER_GUN_NUMBER);
-                player.addItem(gun);
-            }
-            // 清道夫拥有各种枪和几把飞刀
-            else if (role == ModRoles.CLEANER) {
-                player.addItem(new ItemStack(TMMItems.DERRINGER));
-                player.addItem(new ItemStack(ModItems.PATROLLER_REVOLVER));
-                player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
-                ItemStack throwingKnife = new ItemStack(ModItems.THROWING_KNIFE);
-                throwingKnife.setCount(4);
-                player.addItem(throwingKnife);
-            }
-            // 滞时鬼20s可以停1s
-            else if (role == ModRoles.DELAYER) {
-                ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
-                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, 20);
-                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, 400);
-                // timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY);
-                player.addItem(timeStopClock);
-            }
-            // 强盗有狙
-            else if (role == ModRoles.BANDIT) {
-                player.addItem(new ItemStack(TMMItems.SNIPER_RIFLE));
-                player.addItem(new ItemStack(TMMItems.SCOPE));
-                ItemStack bullet = new ItemStack(TMMItems.MAGNUM_BULLET);
-                bullet.setCount(64);
-                player.addItem(bullet);
-            }
-            // 叛徒有强盗手枪
-            else if (role == TraitorAndModifiers.TRAITOR) {
-                player.addItem(new ItemStack(ModItems.BANDIT_REVOLVER));
-            }
-            // 炸弹客自带2次时停1s的机会
-            else if (role == ModRoles.BOMBER) {
-                ItemStack timeStopClock = new ItemStack(ModItems.TIME_STOP_CLOCK);
-                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_STOP_TIME, 20);
-                ItemComponentUtils.setCustomDataTagIntValue(timeStopClock, TimeStopClock.TAG_COOLDOWN, 400);
-                timeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 2);
-                player.addItem(timeStopClock);
-            }
+            else
+                addEvilWarItemsByRole(player, role);
         }
     }
 
