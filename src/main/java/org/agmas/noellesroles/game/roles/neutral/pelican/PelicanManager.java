@@ -52,7 +52,7 @@ public final class PelicanManager {
             if (target == null)
                 continue;
             if (pelican == null || !GameUtils.isPlayerAliveAndSurvival(pelican)) {
-                releasePlayerFromTick(target);
+                releasePlayer(target);
                 continue;
             }
             if (target.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) {
@@ -122,30 +122,9 @@ public final class PelicanManager {
     }
 
     private static void releasePlayerFromTick(ServerPlayer target) {
-        UUID targetId = target.getUUID();
-        UUID pelicanId = pelicanByStashed.remove(targetId);
-        if (pelicanId != null) {
-            Deque<UUID> belly = stashedByPelican.get(pelicanId);
-            if (belly != null) {
-                belly.remove(targetId);
-                if (belly.isEmpty())
-                    stashedByPelican.remove(pelicanId);
-            }
-        }
-        stashedPreviousGameMode.remove(targetId);
-
-        // 恢复聊天并清除 DeathPenalty/起搏器
-        DeathPenaltyComponent.KEY.get(target).init();
-        DefibrillatorComponent.KEY.get(target).init();
-
-        if (target.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
-            target.setGameMode(GameType.ADVENTURE);
-        }
-        target.setInvisible(false);
-        target.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(),
-                target.getYRot(), target.getXRot());
-        target.connection.send(new ClientboundSetCameraPacket(target));
-        NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
+        // Deprecated: tick now calls releasePlayer directly. Keep method as shim to
+        // preserve compatibility but delegate to releasePlayer.
+        releasePlayer(target);
     }
 
     public static void releaseAllForPelican(UUID pelicanId, MinecraftServer server) {
@@ -242,10 +221,7 @@ public final class PelicanManager {
         DeathPenaltyComponent.KEY.get(target).init();
         DefibrillatorComponent.KEY.get(target).init();
 
-        // 恢复游戏模式，确保玩家以正常状态进入死亡
-        if (target.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
-            target.setGameMode(GameType.ADVENTURE);
-        }
+        // 不要在死亡处理期间强制改变玩家为冒险模式，允许死亡流程将玩家置为旁观者
         target.setInvisible(false);
         target.connection.send(new ClientboundSetCameraPacket(target));
 

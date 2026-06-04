@@ -917,6 +917,7 @@ public class ModPacketsReciever {
                 return;
             }
             if (!gameWorldComponent.isRole(player, ModRoles.PELICAN)) return;
+            if (player.isSpectator()) return;
             org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent comp =
                 org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent.KEY.get(player);
             // 蹲下释放，否则对鼠标准星目标吞噬
