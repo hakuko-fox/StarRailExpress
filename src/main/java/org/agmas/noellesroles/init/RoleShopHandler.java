@@ -46,6 +46,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
+import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -266,6 +267,7 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> WARLOCK_SHOP = new ArrayList<>();
   // ==================== 嬉命人商店 ====================
   public static ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
+  public static ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
@@ -1230,6 +1232,11 @@ public class RoleShopHandler {
     {
       ShopContent.customEntries.put(
           ModRoles.EMBALMER_ID, EMBALMER_SHOP);
+    }
+    // 幻音师商店
+    {
+      ShopContent.customEntries.put(
+          ModRoles.PHANTOM_MUSICIAN_ID, PHANTOM_MUSICIAN_SHOP);
     }
     // 小偷商店
     {
@@ -2575,5 +2582,159 @@ public class RoleShopHandler {
     // ==================== 嬉命人商店 ====================
     // 开锁器 - 100金币
       EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
+    // ==================== 幻音师商店 ====================
+    // 出刀的声音 - 50金币, 冷却30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.knife_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.knifeSoundCooldown > 0) return false;
+          c.knifeSoundCooldown = c.KNIFE_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_KNIFE_STAB, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 左轮手枪开火的声音 - 75金币, 冷却30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.revolver_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.revolverSoundCooldown > 0) return false;
+          c.revolverSoundCooldown = c.REVOLVER_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 潜行者觉醒的声音 - 100金币, 冷却120秒, MASTER全场
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.stalker_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.stalkerSoundCooldown > 0) return false;
+          c.stalkerSoundCooldown = c.STALKER_SOUND_COOLDOWN; c.sync();
+          if (p instanceof ServerPlayer sp) for (var pp : sp.serverLevel().players())
+            if (pp != null) pp.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1F, 1.5F);
+          return true;
+        }
+      });
+    }
+    // 疯狂模式的声音 - 450金币, 冷却5分钟
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.psycho_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 450, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.psychoSoundCooldown > 0) return false;
+          c.psychoSoundCooldown = c.PSYCHO_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.AMBIENT_PSYCHO_DRONE, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 撬棍撬门的声音 - 75金币, 冷却1分钟
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.crowbar_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.crowbarSoundCooldown > 0) return false;
+          c.crowbarSoundCooldown = c.CROWBAR_SOUND_COOLDOWN; c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_CROWBAR_PRY, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 随机播放音效 - 100金币, 冷却40秒, 图标为音乐唱片
+    {
+      ItemStack s = new ItemStack(Items.MUSIC_DISC_RELIC);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.random_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
+        private final java.util.List<Object> allSounds = java.util.List.of(
+            // === TMMSounds (starrailexpress) ===
+            TMMSounds.ITEM_KNIFE_STAB, TMMSounds.ITEM_KNIFE_PREPARE,
+            TMMSounds.ITEM_REVOLVER_SHOOT, TMMSounds.ITEM_REVOLVER_CLICK,
+            TMMSounds.ITEM_CROWBAR_PRY, TMMSounds.ITEM_SNIPER_RIFLE_SHOOT,
+            TMMSounds.ITEM_SNIPER_RIFLE_RELOAD, TMMSounds.ITEM_DERRINGER_RELOAD,
+            TMMSounds.ITEM_GRENADE_THROW, TMMSounds.ITEM_GRENADE_EXPLODE,
+            TMMSounds.ITEM_BAT_HIT, TMMSounds.ITEM_PSYCHO_ARMOUR,
+            TMMSounds.ITEM_SCOPE_ATTACH, TMMSounds.ITEM_SCOPE_DETACH,
+            TMMSounds.ITEM_LOCKPICK_DOOR, TMMSounds.ITEM_KEY_DOOR,
+            TMMSounds.BLOCK_DOOR_LOCKED, TMMSounds.BLOCK_DOOR_TOGGLE,
+            TMMSounds.BLOCK_CARGO_BOX_OPEN, TMMSounds.BLOCK_CARGO_BOX_CLOSE,
+            TMMSounds.BLOCK_LIGHT_TOGGLE, TMMSounds.BLOCK_SPRINKLER_RUN,
+            TMMSounds.BLOCK_PRIVACY_PANEL_TOGGLE, TMMSounds.BLOCK_SPACE_BUTTON_TOGGLE,
+            TMMSounds.BLOCK_BUTTON_TOGGLE_NO_POWER,
+            TMMSounds.UI_SHOP_BUY, TMMSounds.UI_SHOP_BUY_FAIL,
+            TMMSounds.UI_PIANO, TMMSounds.UI_PIANO_WIN,
+            TMMSounds.UI_PIANO_LOSE, TMMSounds.UI_PIANO_STINGER,
+            TMMSounds.UI_RISER,
+            TMMSounds.AMBIENT_TRAIN_HORN, TMMSounds.AMBIENT_TRAIN_INSIDE,
+            TMMSounds.AMBIENT_TRAIN_OUTSIDE, TMMSounds.AMBIENT_PSYCHO_DRONE,
+            TMMSounds.AMBIENT_BLACKOUT,
+            // === NRSounds (noellesroles) ===
+            NRSounds.SHOTGUN_FIRE, NRSounds.SHOTGUNU_COCK,
+            NRSounds.SHORT_CIRCUIT, NRSounds.BEEP, NRSounds.C4_BEEP,
+            NRSounds.SYRINGE_STAB, NRSounds.INFECTED_COUGH, NRSounds.INFECTED_INFECT,
+            NRSounds.MAFIA, NRSounds.PARTY_SKILL,
+            NRSounds.TIME_STOP, NRSounds.TIME_START, NRSounds.DIO_SPAWN,
+            NRSounds.WIND, NRSounds.GAMBER_DEATH, NRSounds.MUSIC_CLOCK,
+            NRSounds.GONGXI_FACAI, NRSounds.TO_BE_CONTINUED,
+            NRSounds.HARPY_WELCOME, NRSounds.JESTER_AMBIENT,
+            NRSounds.NYAN_CAT, NRSounds.THMUSIC_UN_OWEN, NRSounds.BAKA_BAKA,
+            // === Vanilla SoundEvents ===
+            SoundEvents.WITHER_SPAWN, SoundEvents.WITHER_DEATH,
+            SoundEvents.LIGHTNING_BOLT_THUNDER, SoundEvents.ENDER_DRAGON_GROWL,
+            SoundEvents.ENDER_DRAGON_DEATH, SoundEvents.EVOKER_PREPARE_SUMMON,
+            SoundEvents.EVOKER_CAST_SPELL, SoundEvents.GENERIC_EXPLODE,
+            SoundEvents.FIREWORK_ROCKET_LARGE_BLAST,
+            SoundEvents.WARDEN_ROAR, SoundEvents.WARDEN_HEARTBEAT,
+            SoundEvents.WARDEN_AGITATED, SoundEvents.GHAST_SCREAM,
+            SoundEvents.RAVAGER_ROAR, SoundEvents.ANVIL_DESTROY,
+            SoundEvents.ANVIL_PLACE, SoundEvents.ANVIL_USE,
+            SoundEvents.BEACON_POWER_SELECT, SoundEvents.CONDUIT_ATTACK_TARGET,
+            SoundEvents.TRIDENT_THROW, SoundEvents.TRIDENT_RETURN,
+            SoundEvents.SHIELD_BLOCK, SoundEvents.CHAIN_HIT,
+            SoundEvents.END_PORTAL_SPAWN, SoundEvents.IRON_GOLEM_REPAIR,
+            SoundEvents.SMITHING_TABLE_USE, SoundEvents.BELL_BLOCK,
+            SoundEvents.TOTEM_USE, SoundEvents.EXPERIENCE_ORB_PICKUP,
+            SoundEvents.PLAYER_BURP, SoundEvents.ITEM_BREAK,
+            SoundEvents.FLINTANDSTEEL_USE, SoundEvents.EGG_THROW,
+            SoundEvents.VILLAGER_YES, SoundEvents.TOTEM_USE,
+            SoundEvents.UI_BUTTON_CLICK, SoundEvents.UI_LOOM_TAKE_RESULT,
+            SoundEvents.NOTE_BLOCK_BELL, SoundEvents.NOTE_BLOCK_HARP,
+            SoundEvents.NOTE_BLOCK_BASEDRUM, SoundEvents.NOTE_BLOCK_PLING,
+            SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundEvents.GENERIC_DRINK,
+            SoundEvents.IRON_DOOR_OPEN, SoundEvents.PANDA_SNEEZE
+        );
+
+        @Override public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.randomSoundCooldown > 0) return false;
+          c.randomSoundCooldown = c.RANDOM_SOUND_COOLDOWN; c.sync();
+          Object obj = allSounds.get(new java.util.Random().nextInt(allSounds.size()));
+          net.minecraft.sounds.SoundEvent sound;
+          if (obj instanceof net.minecraft.sounds.SoundEvent se) {
+            sound = se;
+          } else if (obj instanceof net.minecraft.core.Holder<?> h && h.value() instanceof net.minecraft.sounds.SoundEvent se2) {
+            sound = se2;
+          } else {
+            return false;
+          }
+          p.level().playSound(null, p.blockPosition(), sound, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
   }
 }

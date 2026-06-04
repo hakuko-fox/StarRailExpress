@@ -271,6 +271,9 @@ public class ModRoles {
     // 葬仪 ID - 杀手方中立
     public static final ResourceLocation MORTICIAN_BODYMAKER_ID = Noellesroles.id("mortician_bodymaker");
 
+    // 幻音师 ID - 杀手方中立
+    public static final ResourceLocation PHANTOM_MUSICIAN_ID = Noellesroles.id("phantom_musician");
+
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
     public static final ResourceLocation JOJO_ID = Noellesroles.id("jojo");
@@ -2193,5 +2196,34 @@ public class ModRoles {
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.KEY))
             .setCanUseKiller(true).setCanSeeTeammateKiller(true)
             .setCanUseInstinct(true).setCanSeeCoin(true);
+
+    /**
+     * 幻音师角色 (Phantom Musician)
+     * - 杀手方中立阵营 (isInnocent = false, canUseKiller = false)
+     * - 假心情系统
+     * - 无限冲刺时间
+     * - 在计分板上隐藏
+     *
+     * 被动：每30秒获得50金币
+     *
+     * 商店音效（图标为音符盒，购买时播放音效）：
+     * - 出刀的声音 (50金币, 冷却30秒)
+     * - 左轮手枪开火的声音 (75金币, 冷却30秒)
+     * - 潜行者觉醒的声音 (100金币, 冷却120秒, MASTER类型全场播放)
+     * - 疯狂模式的声音 (450金币, 冷却5分钟)
+     * - 撬棍撬门的声音 (75金币, 冷却1分钟)
+     * - 随机播放音效 (100金币, 冷却40秒, 图标为音乐唱片)
+     *
+     * 技能：花费100金币传送到30格外随机一人的身边，冷却120秒
+     */
+    public static SRERole PHANTOM_MUSICIAN = TMMRoles
+            .registerRole(new NormalRole(PHANTOM_MUSICIAN_ID, new java.awt.Color(180, 120, 220).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
+                    .setComponentKey(org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY))
+            .setNeutralForKiller(true)
+            .setNeutrals(true)
+            .setCanUseInstinct(true)
+            .setCanSeeCoin(true)
+            .setMax(1);
 
 }

@@ -442,6 +442,26 @@ public class InstinctRenderer {
             return -1;
         });
         // 初学者
+        // 幻音师：本能看所有玩家显示与自身一致的颜色（无法透视不可透职业）
+        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
+            if (!hasInstinct)
+                return -1;
+            if (!(target instanceof Player targetPlayer))
+                return -1;
+            if (Minecraft.getInstance() == null || Minecraft.getInstance().player == null)
+                return -1;
+            if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return -1;
+            if (!SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit())
+                return -1;
+            var self = Minecraft.getInstance().player;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.PHANTOM_MUSICIAN))
+                return -1;
+            if (isTargetInvisibleToInstinct(targetPlayer))
+                return -1;
+            return ModRoles.PHANTOM_MUSICIAN.color();
+        });
+
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (SREClient.gameComponent == null) {
                 return -1;
@@ -1027,6 +1047,7 @@ public class InstinctRenderer {
             }
             return -1;
         });
+
     }
 
     private static int getRoleColor(SRERole target_role) {
