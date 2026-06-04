@@ -124,7 +124,7 @@ public class RemoteRedstoneBlock extends RedstoneTorchBlock implements EntityBlo
             if (targetPos != null) {
                 BlockState targetState = world.getBlockState(targetPos);
                 if (targetState.getBlock() instanceof RemoteRedstoneBlock rrb) {
-                    rrb.onTriggered(targetState, world, pos, isPowered);
+                    rrb.onTriggered(targetState, world, targetPos, isPowered);
                 }
             }
         }
