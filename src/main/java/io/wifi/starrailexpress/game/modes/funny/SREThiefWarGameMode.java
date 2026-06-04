@@ -166,13 +166,14 @@ public class SREThiefWarGameMode extends SREBaseCustomizationGameMode {
         super.initializeGame(serverWorld, gameWorldComponent, players);
         assignModdedRole(players, gameWorldComponent);
 
-        // 初始化启动资金：获得目标的一半
+        // 初始化启动资金：当目标资金大于800时，补偿资金的1/4
         for (Player player : players) {
             SRERole role = gameWorldComponent.getRole(player);
             if (role == ModRoles.THIEF) {
                 SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
                 ThiefPlayerComponent thief = ThiefPlayerComponent.KEY.get(player);
-                shop.setBalance(thief.honorCost / 2);
+                if (thief.honorCost > 800)
+                    shop.setBalance(Math.min(thief.honorCost / 4, thief.honorCost - 800));
             }
         }
     }
