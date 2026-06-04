@@ -23,15 +23,18 @@ public final class PelicanManager {
     private static int stashedStateSyncTicker = 0;
     private static final int STASHED_STATE_SYNC_INTERVAL_TICKS = 10;
 
-    private PelicanManager() {}
+    private PelicanManager() {
+    }
 
     public static void register() {
         ServerTickEvents.END_WORLD_TICK.register(PelicanManager::tick);
     }
 
     private static void tick(ServerLevel world) {
-        if (world.dimension() != Level.OVERWORLD) return;
-        if (pelicanByStashed.isEmpty()) return;
+        if (world.dimension() != Level.OVERWORLD)
+            return;
+        if (pelicanByStashed.isEmpty())
+            return;
 
         boolean syncCamera = false;
         if (stashedStateSyncTicker-- <= 0) {
@@ -45,7 +48,8 @@ public final class PelicanManager {
             UUID pelicanId = entry.getValue();
             ServerPlayer target = server.getPlayerList().getPlayer(targetId);
             ServerPlayer pelican = server.getPlayerList().getPlayer(pelicanId);
-            if (target == null) continue;
+            if (target == null)
+                continue;
             if (pelican == null || !GameUtils.isPlayerAliveAndSurvival(pelican)) {
                 releasePlayerFromTick(target);
                 continue;
@@ -94,7 +98,8 @@ public final class PelicanManager {
             Deque<UUID> belly = stashedByPelican.get(pelicanId);
             if (belly != null) {
                 belly.remove(targetId);
-                if (belly.isEmpty()) stashedByPelican.remove(pelicanId);
+                if (belly.isEmpty())
+                    stashedByPelican.remove(pelicanId);
             }
         }
 
@@ -120,7 +125,8 @@ public final class PelicanManager {
             Deque<UUID> belly = stashedByPelican.get(pelicanId);
             if (belly != null) {
                 belly.remove(targetId);
-                if (belly.isEmpty()) stashedByPelican.remove(pelicanId);
+                if (belly.isEmpty())
+                    stashedByPelican.remove(pelicanId);
             }
         }
         stashedPreviousGameMode.remove(targetId);
@@ -140,7 +146,8 @@ public final class PelicanManager {
 
     public static void releaseAllForPelican(UUID pelicanId, MinecraftServer server) {
         Deque<UUID> belly = stashedByPelican.get(pelicanId);
-        if (belly == null || belly.isEmpty()) return;
+        if (belly == null || belly.isEmpty())
+            return;
         for (UUID targetId : new ArrayList<>(belly)) {
             ServerPlayer target = server.getPlayerList().getPlayer(targetId);
             if (target != null) {
@@ -150,7 +157,8 @@ public final class PelicanManager {
                 belly.remove(targetId);
             }
         }
-        if (belly.isEmpty()) stashedByPelican.remove(pelicanId);
+        if (belly.isEmpty())
+            stashedByPelican.remove(pelicanId);
     }
 
     public static void releaseAllInWorld(ServerLevel world) {
@@ -172,23 +180,27 @@ public final class PelicanManager {
     }
 
     public static Set<UUID> getBellyReceivers(UUID senderId) {
-        if (senderId == null) return Set.of();
+        if (senderId == null)
+            return Set.of();
         UUID pelicanId = pelicanByStashed.get(senderId);
         if (pelicanId != null) {
             Set<UUID> receivers = ConcurrentHashMap.newKeySet();
             receivers.add(pelicanId);
             Deque<UUID> belly = stashedByPelican.get(pelicanId);
-            if (belly != null) receivers.addAll(belly);
+            if (belly != null)
+                receivers.addAll(belly);
             receivers.remove(senderId);
             return receivers;
         }
         Deque<UUID> belly = stashedByPelican.get(senderId);
-        if (belly == null || belly.isEmpty()) return Set.of();
+        if (belly == null || belly.isEmpty())
+            return Set.of();
         return Set.copyOf(belly);
     }
 
     public static boolean shouldCancelVoice(UUID senderId, UUID receiverId) {
-        if (senderId == null || receiverId == null || senderId.equals(receiverId)) return false;
+        if (senderId == null || receiverId == null || senderId.equals(receiverId))
+            return false;
         UUID senderPelican = pelicanByStashed.get(senderId);
         if (senderPelican != null) {
             return !receiverId.equals(senderPelican) && !senderPelican.equals(pelicanByStashed.get(receiverId));
@@ -216,7 +228,8 @@ public final class PelicanManager {
             Deque<UUID> belly = stashedByPelican.get(pelicanId);
             if (belly != null) {
                 belly.remove(targetId);
-                if (belly.isEmpty()) stashedByPelican.remove(pelicanId);
+                if (belly.isEmpty())
+                    stashedByPelican.remove(pelicanId);
             }
         }
         stashedPreviousGameMode.remove(targetId);
@@ -237,7 +250,8 @@ public final class PelicanManager {
     public static void onPelicanDeath(ServerPlayer pelican) {
         UUID pelicanId = pelican.getUUID();
         Deque<UUID> belly = stashedByPelican.get(pelicanId);
-        if (belly == null || belly.isEmpty()) return;
+        if (belly == null || belly.isEmpty())
+            return;
         for (UUID targetId : new ArrayList<>(belly)) {
             ServerPlayer target = pelican.getServer().getPlayerList().getPlayer(targetId);
             if (target != null) {
