@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.mojang.serialization.MapCodec;
 import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity;
 import io.wifi.starrailexpress.index.TMMBlockEntities;
-import io.wifi.starrailexpress.util.BarrierViewer;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -55,8 +54,8 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
                 shapes.put(Direction.EAST, EAST_SHAPE);
                 shapes.put(Direction.SOUTH, SOUTH_SHAPE);
                 shapes.put(Direction.WEST, WEST_SHAPE);
-                shapes.put(Direction.UP, UP_SHAPE);
-                shapes.put(Direction.DOWN, DOWN_SHAPE);
+                shapes.put(Direction.UP, DOWN_SHAPE);
+                shapes.put(Direction.DOWN, UP_SHAPE);
             });
 
     public EntityInteractionPanelBlock(Properties settings) {
@@ -94,8 +93,6 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        if (BarrierViewer.isBarrierVisible())
-            return RenderShape.MODEL;
         return RenderShape.INVISIBLE;
     }
 

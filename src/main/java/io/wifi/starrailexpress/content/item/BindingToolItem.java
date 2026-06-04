@@ -89,9 +89,10 @@ public class BindingToolItem extends Item {
                 lastCameraPos = null;
                 re.setTargetBlockPos(null);
                 player.displayClientMessage(
-                        Component.translatable("message.item.starrailexpress.binding_tool.clear")
+                        Component.translatable("message.item.starrailexpress.binding_tool.cleared")
                                 .withStyle(ChatFormatting.GREEN),
                         true);
+                return InteractionResult.SUCCESS;
             }
             if (lastCameraPos == null) {
                 lastCameraPos = pos;
