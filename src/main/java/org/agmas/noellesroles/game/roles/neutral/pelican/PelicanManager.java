@@ -84,7 +84,8 @@ public final class PelicanManager {
                 pelican.getYRot(), pelican.getXRot());
         target.connection.send(new ClientboundSetCameraPacket(pelican));
 
-        // 禁用被吞噬玩家的聊天
+        // 被吞噬玩家进入 DeathPenalty，视角锁定在鹈鹕身上
+        DeathPenaltyComponent.KEY.get(target).setPenaltyWithCameraLimit(-1, pelican, true);
         DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
         dpc.pelicanStashed = true;
         dpc.sync();
@@ -106,10 +107,8 @@ public final class PelicanManager {
         GameType restoreMode = stashedPreviousGameMode.getOrDefault(targetId, GameType.ADVENTURE);
         stashedPreviousGameMode.remove(targetId);
 
-        // 恢复聊天
-        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
-        dpc.pelicanStashed = false;
-        dpc.sync();
+        // 恢复聊天并清除 DeathPenalty
+        DeathPenaltyComponent.KEY.get(target).init();
 
         target.setGameMode(restoreMode == GameType.SPECTATOR ? GameType.ADVENTURE : restoreMode);
         target.setInvisible(false);
@@ -132,10 +131,8 @@ public final class PelicanManager {
         }
         stashedPreviousGameMode.remove(targetId);
 
-        // 恢复聊天
-        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
-        dpc.pelicanStashed = false;
-        dpc.sync();
+        // 恢复聊天并清除 DeathPenalty
+        DeathPenaltyComponent.KEY.get(target).init();
 
         if (target.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
             target.setGameMode(GameType.ADVENTURE);
@@ -230,10 +227,8 @@ public final class PelicanManager {
         }
         stashedPreviousGameMode.remove(targetId);
 
-        // 恢复聊天
-        DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
-        dpc.pelicanStashed = false;
-        dpc.sync();
+        // 恢复聊天并清除 DeathPenalty
+        DeathPenaltyComponent.KEY.get(target).init();
 
         // 恢复游戏模式，确保玩家以正常状态进入死亡
         if (target.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) {
@@ -255,10 +250,8 @@ public final class PelicanManager {
                 pelicanByStashed.remove(targetId);
                 stashedPreviousGameMode.remove(targetId);
 
-                // 恢复聊天
-                DeathPenaltyComponent dpc = ModComponents.DEATH_PENALTY.get(target);
-                dpc.pelicanStashed = false;
-                dpc.sync();
+                // 恢复聊天并清除 DeathPenalty
+                DeathPenaltyComponent.KEY.get(target).init();
 
                 target.setGameMode(GameType.ADVENTURE);
                 target.setInvisible(false);
