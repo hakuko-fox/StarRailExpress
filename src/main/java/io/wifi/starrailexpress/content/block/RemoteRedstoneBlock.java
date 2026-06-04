@@ -82,12 +82,13 @@ public class RemoteRedstoneBlock extends RedstoneTorchBlock implements EntityBlo
                 double e = (double) blockPos.getY() + 0.7 + (randomSource.nextDouble() - (double) 0.5F) * 0.2;
                 double f = (double) blockPos.getZ() + (double) 0.5F + (randomSource.nextDouble() - (double) 0.5F) * 0.2;
                 level.addParticle(DustParticleOptions.REDSTONE, d, e, f, (double) 0.0F, (double) 0.0F, (double) 0.0F);
-            } else {
-                BlockParticleOption particleEffect = new BlockParticleOption(ParticleTypes.BLOCK, blockState);
-                level.addAlwaysVisibleParticle(particleEffect, blockPos.getX(), blockPos.getY(), blockPos.getZ(),
-                        (double) 0.0F,
-                        (double) 0.0F, (double) 0.0F);
             }
+            BlockParticleOption particleEffect = new BlockParticleOption(ParticleTypes.BLOCK_MARKER, blockState);
+            level.addAlwaysVisibleParticle(particleEffect, blockPos.getX() + 0.5, blockPos.getY() + 0.5,
+                    blockPos.getZ() + 0.5,
+                    (double) 0.0F,
+                    (double) 0.0F, (double) 0.0F);
+
         }
     }
 
