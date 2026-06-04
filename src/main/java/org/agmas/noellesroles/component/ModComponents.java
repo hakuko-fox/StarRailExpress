@@ -60,6 +60,7 @@ import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayer
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
@@ -388,6 +389,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent> MORTICIAN_BODYMAKER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "mortician_bodymaker"),
       org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent.class);
+
+  // 幻音师组件 - 杀手方中立阵营，音效商店+传送技能
+  public static final ComponentKey<PhantomMusicianPlayerComponent> PHANTOM_MUSICIAN = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_musician"),
+      PhantomMusicianPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -768,6 +774,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, MORTICIAN_BODYMAKER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent::new);
+
+    // 注册幻音师组件 - 杀手方中立阵营，音效商店+传送技能
+    registry.beginRegistration(Player.class, PHANTOM_MUSICIAN)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(PhantomMusicianPlayerComponent::new);
 
     // 注册咒法师组件
     registry.beginRegistration(Player.class, WARLOCK)
