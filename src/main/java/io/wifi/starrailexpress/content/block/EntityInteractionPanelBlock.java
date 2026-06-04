@@ -55,8 +55,8 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
                 shapes.put(Direction.EAST, EAST_SHAPE);
                 shapes.put(Direction.SOUTH, SOUTH_SHAPE);
                 shapes.put(Direction.WEST, WEST_SHAPE);
-                shapes.put(Direction.UP, UP_SHAPE);
-                shapes.put(Direction.DOWN, DOWN_SHAPE);
+                shapes.put(Direction.UP, DOWN_SHAPE);
+                shapes.put(Direction.DOWN, UP_SHAPE);
             });
 
     public EntityInteractionPanelBlock(Properties settings) {
