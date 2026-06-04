@@ -47,8 +47,10 @@ public class BindingToolItem extends Item {
             return InteractionResult.PASS;
         BlockPos pos = context.getClickedPos();
         Player player = context.getPlayer();
-
         if (player == null) {
+            return InteractionResult.PASS;
+        }
+        if (!player.isCreative()) {
             return InteractionResult.PASS;
         }
 
