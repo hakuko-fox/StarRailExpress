@@ -101,13 +101,17 @@ public class BindingToolItem extends Item {
                                 .withStyle(ChatFormatting.GREEN),
                         true);
             } else {
-                re.setTargetBlockPos(lastCameraPos);
-                player.displayClientMessage(
-                        Component
-                                .translatable("message.item.starrailexpress.binding_tool.bind_remote_redstone",
-                                        lastCameraPos.toShortString(), pos.toShortString())
-                                .withStyle(ChatFormatting.GREEN),
-                        true);
+                var blockEntity2 = world.getBlockEntity(lastCameraPos);
+                if (blockEntity2 instanceof RemoteRedstoneBlockEntity re2) {
+                    re2.setTargetBlockPos(pos);
+                    player.displayClientMessage(
+                            Component
+                                    .translatable("message.item.starrailexpress.binding_tool.bind_remote_redstone",
+                                            lastCameraPos.toShortString(), pos.toShortString())
+                                    .withStyle(ChatFormatting.GREEN),
+                            true);
+                }
+
                 lastCameraPos = null;
             }
             return InteractionResult.SUCCESS;
