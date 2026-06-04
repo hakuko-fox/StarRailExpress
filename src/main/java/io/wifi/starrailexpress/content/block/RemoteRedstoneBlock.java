@@ -2,12 +2,16 @@ package io.wifi.starrailexpress.content.block;
 
 import com.mojang.serialization.MapCodec;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.block.entity.RemoteRedstoneBlockEntity;
 import io.wifi.starrailexpress.index.DevItems;
 import io.wifi.starrailexpress.index.TMMBlocks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -71,6 +75,24 @@ public class RemoteRedstoneBlock extends RedstoneTorchBlock implements EntityBlo
     }
 
     @Override
+    public void animateTick(BlockState blockState, Level level, BlockPos blockPos, RandomSource randomSource) {
+        if (level.isClientSide && SRE.canSeeBarrier()) {
+            if ((blockState.getValue(LIT) || blockState.getValue(TRIGGERED))) {
+                double d = (double) blockPos.getX() + (double) 0.5F + (randomSource.nextDouble() - (double) 0.5F) * 0.2;
+                double e = (double) blockPos.getY() + 0.7 + (randomSource.nextDouble() - (double) 0.5F) * 0.2;
+                double f = (double) blockPos.getZ() + (double) 0.5F + (randomSource.nextDouble() - (double) 0.5F) * 0.2;
+                level.addParticle(DustParticleOptions.REDSTONE, d, e, f, (double) 0.0F, (double) 0.0F, (double) 0.0F);
+            }
+            BlockParticleOption particleEffect = new BlockParticleOption(ParticleTypes.BLOCK_MARKER, blockState);
+            level.addAlwaysVisibleParticle(particleEffect, blockPos.getX() + 0.5, blockPos.getY() + 0.5,
+                    blockPos.getZ() + 0.5,
+                    (double) 0.0F,
+                    (double) 0.0F, (double) 0.0F);
+
+        }
+    }
+
+    @Override
     protected boolean hasNeighborSignal(Level level, BlockPos blockPos, BlockState blockState) {
         return level.hasNeighborSignal(blockPos.below());
     }
@@ -102,7 +124,7 @@ public class RemoteRedstoneBlock extends RedstoneTorchBlock implements EntityBlo
             if (targetPos != null) {
                 BlockState targetState = world.getBlockState(targetPos);
                 if (targetState.getBlock() instanceof RemoteRedstoneBlock rrb) {
-                    rrb.onTriggered(state, world, pos, isPowered);
+                    rrb.onTriggered(targetState, world, targetPos, isPowered);
                 }
             }
         }
@@ -112,7 +134,7 @@ public class RemoteRedstoneBlock extends RedstoneTorchBlock implements EntityBlo
         if (isPowered && state.getValue(LIT)) {
             return;
         }
-        world.setBlock(pos, state.setValue(TRIGGERED, isPowered), Block.UPDATE_ALL);
+        world.setBlock(pos, state.setValue(TRIGGERED, isPowered), 2);
         world.updateNeighborsAt(pos, this); // 更新周围方块（红石粉、机器等）
         // 对于比较器侧面检测，可以额外更新比较器
         world.updateNeighbourForOutputSignal(pos, this);
@@ -145,6 +167,9 @@ public class RemoteRedstoneBlock extends RedstoneTorchBlock implements EntityBlo
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
             BlockHitResult hit) {
+        if (player.getMainHandItem().is(DevItems.BINDING_TOOL)) {
+            return InteractionResult.PASS;
+        }
         if (player.isCreative()) {
             if (!world.isClientSide) {
                 sendTip(player, world, pos);

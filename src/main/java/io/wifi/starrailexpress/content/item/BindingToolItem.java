@@ -47,8 +47,10 @@ public class BindingToolItem extends Item {
             return InteractionResult.PASS;
         BlockPos pos = context.getClickedPos();
         Player player = context.getPlayer();
-
         if (player == null) {
+            return InteractionResult.PASS;
+        }
+        if (!player.isCreative()) {
             return InteractionResult.PASS;
         }
 
@@ -98,16 +100,20 @@ public class BindingToolItem extends Item {
                 lastCameraPos = pos;
                 player.displayClientMessage(
                         Component.translatable("message.item.starrailexpress.binding_tool.bind_pos_remote_redstone")
-                                .withStyle(ChatFormatting.GREEN),
+                                .withStyle(ChatFormatting.AQUA),
                         true);
             } else {
-                re.setTargetBlockPos(lastCameraPos);
-                player.displayClientMessage(
-                        Component
-                                .translatable("message.item.starrailexpress.binding_tool.bind_remote_redstone",
-                                        lastCameraPos.toShortString(), pos.toShortString())
-                                .withStyle(ChatFormatting.GREEN),
-                        true);
+                var blockEntity2 = world.getBlockEntity(lastCameraPos);
+                if (blockEntity2 instanceof RemoteRedstoneBlockEntity re2) {
+                    re2.setTargetBlockPos(pos);
+                    player.displayClientMessage(
+                            Component
+                                    .translatable("message.item.starrailexpress.binding_tool.bind_remote_redstone",
+                                            lastCameraPos.toShortString(), pos.toShortString())
+                                    .withStyle(ChatFormatting.GREEN),
+                            true);
+                }
+
                 lastCameraPos = null;
             }
             return InteractionResult.SUCCESS;
