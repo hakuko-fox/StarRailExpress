@@ -207,6 +207,8 @@ public class DrawingBoardRecognizer {
         this.knn = new SimpleKNN(3);  // K=3，每个算法最多3票
         initializeTrainingData();
         initializeMoreTrainingVariants();
+        // 将所有 pattern 中未设置的像素(0)填充为背景白色(16)，确保与画布画出的图案一致
+        normalizePatterns();
     }
 
     public static DrawingBoardRecognizer getInstance() {
@@ -8681,6 +8683,23 @@ public class DrawingBoardRecognizer {
      */
     public int[] getAvailableCategories() {
         return categoryPatterns.keySet().stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    /**
+     * 将所有存储的 pattern 中未设置像素(0)填充为背景白色(16)
+     * 确保识别时 pattern 的背景色与画布背景色一致
+     */
+    private void normalizePatterns() {
+        for (Map.Entry<Integer, byte[][]> entry : categoryPatterns.entrySet()) {
+            byte[][] pattern = entry.getValue();
+            for (int y = 0; y < 16; y++) {
+                for (int x = 0; x < 16; x++) {
+                    if ((pattern[y][x] & 0xFF) == 0) {
+                        pattern[y][x] = (byte) COLOR_BACKGROUND_WHITE;
+                    }
+                }
+            }
+        }
     }
 
     /**
