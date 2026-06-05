@@ -53,6 +53,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     private final Map<UUID, Long> lastTriggerTime = new HashMap<>();
     // 定时器计数（用于自动定时条件）
     private int timerTick = 0;
+    // 红石信号相关
+    private boolean receivedRedstoneSignal = false; // 是否接收到红石信号
+    private boolean isOutputtingRedstone = false; // 是否正在输出红石信号
+    private int redstoneOutputStrength = 15; // 输出的红石信号强度（0-15）
     // 是否启用碰撞箱
     private boolean collisionEnabled = false;
     private int collisionRemainingTicks = 0;
@@ -357,6 +361,28 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    // 红石信号相关 getter/setter
+    public void setReceivedRedstoneSignal(boolean received) {
+        this.receivedRedstoneSignal = received;
+    }
+
+    public boolean isReceivedRedstoneSignal() {
+        return receivedRedstoneSignal;
+    }
+
+    public boolean isOutputtingRedstone() {
+        return isOutputtingRedstone;
+    }
+
+    public int getRedstoneOutputStrength() {
+        return redstoneOutputStrength;
+    }
+
+    public void setRedstoneOutput(boolean outputting, int strength) {
+        this.isOutputtingRedstone = outputting;
+        this.redstoneOutputStrength = Math.max(0, Math.min(15, strength));
+    }
+
     // 从服务端接收更新
     public void updateFromServer(List<TriggerCondition> newConditions, List<TriggerAction> newActions,
             int newCooldown) {
@@ -418,6 +444,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             }
         }
 
+        // 每tick重置红石输出状态
+        entity.isOutputtingRedstone = false;
+
         // 检查方块冷却（使用经过的时间计算）
         if (entity.isInCooldown(elapsedGameTime)) {
             return; // 冷却期间不处理任何触发
@@ -429,12 +458,14 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         AABB rangeBox = new AABB(pos).inflate(MAX_RANGE);
         List<ServerPlayer> playersInRange = serverWorld.getEntitiesOfClass(ServerPlayer.class, rangeBox);
 
+        boolean anyPlayerTriggered = false;
         for (ServerPlayer player : playersInRange) {
             // 检查所有条件是否满足（传入剩余时间用于TIME_ANCHOR条件检查）
             if (entity.checkConditions(player, serverWorld, pos, elapsedGameTime, remainingTime, entity.timerTick)) {
                 // 检查玩家冷却
                 long lastTrigger = entity.lastTriggerTime.getOrDefault(player.getUUID(), 0L);
                 if (elapsedGameTime - lastTrigger >= entity.cooldownTicks) {
+                    anyPlayerTriggered = true;
                     // 检查是否有 CLICK_BLOCK 条件需要特殊处理
                     boolean hasClickBlockCondition = entity.conditions.stream()
                             .anyMatch(c -> c.type == ConditionType.CLICK_BLOCK && c.triggerOnce);
@@ -447,6 +478,13 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     entity.lastTriggerTime.put(player.getUUID(), elapsedGameTime);
                 }
             }
+        }
+
+        // 如果有玩家触发了条件，且存在 OUTPUT_REDSTONE 动作，则更新红石输出并刷新邻居
+        if (anyPlayerTriggered && entity.isOutputtingRedstone) {
+            // 刷新方块状态，使红石信号更新
+            serverWorld.updateNeighborsAt(pos, state.getBlock());
+            serverWorld.updateNeighbourForOutputSignal(pos, state.getBlock());
         }
     }
 
@@ -850,6 +888,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 // 检查是否在时间窗口内受到非玩家伤害
                 yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, elapsedGameTime);
             }
+            case REDSTONE_SIGNAL -> {
+                // 实体交互方块接收到红石信号
+                yield receivedRedstoneSignal;
+            }
         };
     }
 
@@ -1227,6 +1269,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 SREMonitorWorldComponent monitor = SREMonitorWorldComponent.KEY.get(world);
                 monitor.reset();
             }
+            case OUTPUT_REDSTONE -> {
+                // 输出红石信号
+                int strength = (int) action.value;
+                strength = Math.max(0, Math.min(15, strength));
+                this.setRedstoneOutput(true, strength);
+            }
             case TELEPORT -> {
                 int targetId = (int) action.value;
                 BlockPos targetPos = findTeleportPoint(world, pos, targetId);
@@ -1587,7 +1635,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         NEED_CUSTOM_TASK, // 需要完成自定义任务
         PLAYER_DAMAGED_BY_PLAYER, // 玩家受到来自玩家的原版伤害
         PLAYER_DAMAGED_BY_NON_PLAYER, // 玩家受到非玩家来源的原版伤害
-        ELAPSED_TIME // 游戏经过的时间
+        ELAPSED_TIME, // 游戏经过的时间
+        REDSTONE_SIGNAL // 接收到红石信号
     }
 
     // 世界时间类型枚举
@@ -1665,7 +1714,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         ADD_EXTRA_TASK, // 额外添加任务（不清空当前任务，支持random随机任务）
         COMPLETE_CUSTOM_TASK, // 完成自定义任务
         NARRATOR, // 语音播报
-        INFECT // 进入感染
+        INFECT, // 进入感染
+        OUTPUT_REDSTONE // 输出红石信号
     }
 
     // 条件数据类

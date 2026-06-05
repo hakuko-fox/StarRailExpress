@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -58,14 +59,16 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
                 shapes.put(Direction.DOWN, UP_SHAPE);
             });
 
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+
     public EntityInteractionPanelBlock(Properties settings) {
         super(settings.noOcclusion().noCollission());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(POWERED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, POWERED);
     }
 
     @Nullable
@@ -156,5 +159,39 @@ public class EntityInteractionPanelBlock extends BaseEntityBlock {
             return Blocks.AIR.defaultBlockState();
         }
         return state;
+    }
+
+    // ===== 红石信号输入（类似 TrainLightBlock） =====
+    @Override
+    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos,
+            boolean notify) {
+        if (!world.isClientSide) {
+            boolean isPowered = world.hasNeighborSignal(pos);
+            if (isPowered != state.getValue(POWERED)) {
+                world.setBlock(pos, state.setValue(POWERED, isPowered), 2);
+                // 同步到 BlockEntity
+                BlockEntity blockEntity = world.getBlockEntity(pos);
+                if (blockEntity instanceof EntityInteractionBlockEntity entity) {
+                    entity.setReceivedRedstoneSignal(isPowered);
+                }
+            }
+        }
+    }
+
+    // ===== 红石信号输出（类似 RemoteRedstoneBlock 的 getSignal） =====
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity instanceof EntityInteractionBlockEntity entity) {
+            if (entity.isOutputtingRedstone()) {
+                return entity.getRedstoneOutputStrength();
+            }
+        }
+        return 0;
     }
 }
