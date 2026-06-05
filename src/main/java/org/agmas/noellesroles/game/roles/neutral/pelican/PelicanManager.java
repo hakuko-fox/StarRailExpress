@@ -353,7 +353,7 @@ public final class PelicanManager {
         stashedByPelican.remove(pelicanId);
 
         // 如果被释放的玩家中有疫使，重新检查疫使时刻触发条件
-        ServerLevel overworld = server.overworld();
+        ServerLevel overworld = pelican.serverLevel();
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(overworld);
         if (gameWorld != null) {
             InfectedWinChecker.onInfectedReleasedFromPelican(overworld);
