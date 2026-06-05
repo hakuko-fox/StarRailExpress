@@ -258,6 +258,34 @@ public class DrawingBoardScreen extends Screen {
             }
         }
 
+        // 为调色盘白色(1)像素添加荧光描边，方便与背景白色(16)区分
+        int outlineColor = 0xAAFFFF44;  // 亮黄色荧光描边
+        for (int y = 0; y < CANVAS_SIZE; y++) {
+            for (int x = 0; x < CANVAS_SIZE; x++) {
+                if ((canvas[y][x] & 0xFF) != 1) continue;  // 只处理调色盘白色
+
+                int px = canvasX + x * PIXEL_SIZE;
+                int py = canvasY + y * PIXEL_SIZE;
+
+                // 上：上方是背景白色时描边
+                if (y > 0 && (canvas[y - 1][x] & 0xFF) == BACKGROUND_WHITE) {
+                    graphics.fill(px, py, px + PIXEL_SIZE, py + 1, outlineColor);
+                }
+                // 下
+                if (y < CANVAS_SIZE - 1 && (canvas[y + 1][x] & 0xFF) == BACKGROUND_WHITE) {
+                    graphics.fill(px, py + PIXEL_SIZE - 1, px + PIXEL_SIZE, py + PIXEL_SIZE, outlineColor);
+                }
+                // 左
+                if (x > 0 && (canvas[y][x - 1] & 0xFF) == BACKGROUND_WHITE) {
+                    graphics.fill(px, py, px + 1, py + PIXEL_SIZE, outlineColor);
+                }
+                // 右
+                if (x < CANVAS_SIZE - 1 && (canvas[y][x + 1] & 0xFF) == BACKGROUND_WHITE) {
+                    graphics.fill(px + PIXEL_SIZE - 1, py, px + PIXEL_SIZE, py + PIXEL_SIZE, outlineColor);
+                }
+            }
+        }
+
         for (int i = 0; i <= CANVAS_SIZE; i++) {
             int pos = canvasX + i * PIXEL_SIZE;
             graphics.fill(pos, canvasY, pos + 1, canvasY + CANVAS_PIXEL_SIZE, 0x44000000);
