@@ -1988,6 +1988,7 @@
   "starrailexpress.drawing_board.opened": "畫板已打開",
   "starrailexpress.drawing_board.recognize.success": "識別成功！",
   "starrailexpress.drawing_board.recognize.fail": "無法識別該圖案",
+  "starrailexpress.drawing_board.recognize.too_few": "上色格子不足，至少需要塗7格才能識別",
   "starrailexpress.drawing_board.recognize.success_with": "識別成功！",
   "starrailexpress.drawing_board.recognize.unknown": "未知物品",
   "starrailexpress.drawing_board.consumed": "畫板已消耗",
