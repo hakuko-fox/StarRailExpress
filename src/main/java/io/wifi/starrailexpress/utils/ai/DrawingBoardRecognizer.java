@@ -9,7 +9,9 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 画板图像识别器
@@ -21,6 +23,8 @@ public class DrawingBoardRecognizer {
     private final SimpleKNN knn;
     // 存储每个类别的代表pattern，用于像素级校验
     private final Map<Integer, byte[][]> categoryPatterns = new HashMap<>();
+    // 存储每个类别pattern的有效颜色数量（归一化后，排除背景白色）
+    private final Map<Integer, Integer> categoryEffectiveColorCount = new HashMap<>();
 
     // 物品类别定义（与翻译键对应）
     public static final int UNKNOWN = -1;
@@ -207,6 +211,7 @@ public class DrawingBoardRecognizer {
         this.knn = new SimpleKNN(3);  // K=3，每个算法最多3票
         initializeTrainingData();
         initializeMoreTrainingVariants();
+        computeCategoryColorCounts();
     }
 
     public static DrawingBoardRecognizer getInstance() {
@@ -8944,12 +8949,24 @@ public class DrawingBoardRecognizer {
         // 计算最高得票率
         double bestVoteRatio = totalVoteWeight > 0 ? (double) bestCount / totalVoteWeight : 0.0;
 
+        // 颜色数量校验：pattern有2+种有效颜色时，用户画布必须至少有2种对应颜色
+        if (bestCount >= 2 && bestLabel != UNKNOWN) {
+            int requiredColors = categoryEffectiveColorCount.getOrDefault(bestLabel, 1);
+            if (requiredColors >= 2) {
+                int userColors = countEffectiveColors(normalizedPixels);
+                if (userColors < 2) {
+                    bestCount = 1;
+                    bestLabel = UNKNOWN;
+                    bestVoteRatio = totalVoteWeight > 0 ? (double) bestCount / totalVoteWeight : 0.0;
+                }
+            }
+        }
 
-        // 颜色错误率校验：如果颜色错误率达到40%以上，直接降低得票数到2以下
+        // 颜色错误率校验：如果颜色错误率达到35%以上，直接降低得票数到2以下
         if (bestCount >= 2) {
             double colorMismatchRatio = calculateColorMismatchRatio(normalizedPixels, bestLabel);
-            if (colorMismatchRatio > 0.40) {
-                // 颜色错误率超过40%，降低得票数
+            if (colorMismatchRatio > 0.35) {
+                // 颜色错误率超过35%，降低得票数
                 bestCount = 1;
                 bestVoteRatio = totalVoteWeight > 0 ? (double) bestCount / totalVoteWeight : 0.0;
             }
@@ -8974,12 +8991,12 @@ public class DrawingBoardRecognizer {
             double missing = validationResult.missingPixelRatio;
             double major = Math.max(extra, missing);
 
-            // 更温和的缩减系数：透明 10x，遗漏 5x
+            // 缩减系数：透明 12x，遗漏 6x
             int reduction;
             if (extra >= missing) {
-                reduction = (int) Math.ceil(extra * 10.0);
+                reduction = (int) Math.ceil(extra * 12.0);
             } else {
-                reduction = (int) Math.ceil(missing * 5.0);
+                reduction = (int) Math.ceil(missing * 6.0);
             }
 
             if (reduction <= 0 && major > 0) reduction = 1; // 有超标时至少减少1票
@@ -8999,18 +9016,18 @@ public class DrawingBoardRecognizer {
         }
 
         // 识别结果三级标准：
-        // 1. 直接成功：bestCount >= 13 && bestVoteRatio >= 0.30
-        // 2. 预测（提示可能画的）：2 <= bestCount < 13
+        // 1. 直接成功：bestCount >= 15 && bestVoteRatio >= 0.33
+        // 2. 预测（提示可能画的）：2 <= bestCount < 15
         // 3. 识别失败（out_of_range）：bestCount < 2
 
         // 计算相似度：直接成功为100%，识别失败为0%，中间按得票数与投票比例综合归一化
         double similarity = 0.0;
         if (totalVoteWeight > 0) {
-            // 归一化得票数部分（将 2 映射为 0，13 映射为 1）
-            double countPart = (double) (bestCount - 2) / (13 - 2);
+            // 归一化得票数部分（将 2 映射为 0，15 映射为 1）
+            double countPart = (double) (bestCount - 2) / (15 - 2);
             countPart = Math.max(0.0, Math.min(1.0, countPart));
-            // 归一化投票比例部分（将 0 映射为 0，0.30 映射为 1）
-            double ratioPart = bestVoteRatio / 0.30;
+            // 归一化投票比例部分（将 0 映射为 0，0.33 映射为 1）
+            double ratioPart = bestVoteRatio / 0.33;
             ratioPart = Math.max(0.0, Math.min(1.0, ratioPart));
             // 综合相似度为两部分平均
             similarity = ((countPart + ratioPart) / 2.0) * 100.0;
@@ -9020,7 +9037,7 @@ public class DrawingBoardRecognizer {
             }
         }
 
-        if (bestCount >= 13 && bestVoteRatio >= 0.30 && pixelValidationPassed) {
+        if (bestCount >= 15 && bestVoteRatio >= 0.33 && pixelValidationPassed) {
             // 直接成功
             return new RecognizeResult(bestLabel, bestLabel, "", bestCount, totalVoteWeight, 100.0);
         } else if (bestCount >= 2) {
@@ -9084,7 +9101,18 @@ public class DrawingBoardRecognizer {
         double[] features = SimpleKNN.matrixToFeature(normalizedPixels, true);
 
         // 直接返回最近类别
-        return knn.getClosestCategory(features);
+        int closestId = knn.getClosestCategory(features);
+        // 颜色数量校验：pattern有2+种有效颜色时，用户画布必须至少有2种对应颜色
+        if (closestId != UNKNOWN) {
+            int requiredColors = categoryEffectiveColorCount.getOrDefault(closestId, 1);
+            if (requiredColors >= 2) {
+                int userColors = countEffectiveColors(normalizedPixels);
+                if (userColors < 2) {
+                    return UNKNOWN;
+                }
+            }
+        }
+        return closestId;
     }
 
     /**
@@ -9361,6 +9389,45 @@ public class DrawingBoardRecognizer {
         }
         
         return result;
+    }
+
+    /**
+     * 归一化单个颜色值（颜色互通规则）
+     */
+    private static int normalizeColor(int color) {
+        if (color == COLOR_GRAY) return COLOR_LIGHT_GRAY;
+        if (color == COLOR_DARK_RED) return COLOR_BROWN;
+        if (color == COLOR_DARK_BLUE) return COLOR_BLUE;
+        if (color == COLOR_DARK_GREEN) return COLOR_GREEN;
+        return color;
+    }
+
+    /**
+     * 统计画布中有效颜色数量（归一化后，排除背景白色16）
+     */
+    private static int countEffectiveColors(byte[][] canvas) {
+        Set<Integer> colors = new HashSet<>();
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                int color = canvas[y][x] & 0xFF;
+                if (color != COLOR_BACKGROUND_WHITE) {
+                    colors.add(normalizeColor(color));
+                }
+            }
+        }
+        return colors.size();
+    }
+
+    /**
+     * 预计算每个类别pattern的有效颜色数量
+     */
+    private void computeCategoryColorCounts() {
+        for (Map.Entry<Integer, byte[][]> entry : categoryPatterns.entrySet()) {
+            int category = entry.getKey();
+            byte[][] pattern = entry.getValue();
+            int count = countEffectiveColors(pattern);
+            categoryEffectiveColorCount.put(category, count);
+        }
     }
 
     /**
