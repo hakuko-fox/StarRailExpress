@@ -2065,6 +2065,7 @@
   "message.noellesroles.fool.not_fool": "You are not The Fool, cannot use this item",
   "message.noellesroles.fool.note_placed": "Honored Note placed",
   "message.noellesroles.fool.no_note_nearby": "No Honored Note nearby",
+  "message.noellesroles.fool.pelican_cannot_join": "Pelican cannot join the Tarot Club via Honored Note",
   "message.noellesroles.fool.already_member": "You are already a member of the Tarot Club",
   "message.noellesroles.fool.prayer_complete": "Prayer complete, you are now a member of the Tarot Club",
   "message.noellesroles.fool.player_prayed": "%s prayed for your blessing",

@@ -2379,6 +2379,12 @@ public class RoleShopHandler {
         ShopEntry.Type.TOOL));
 
     // ==================== 悍匪商店 ====================
+    // 刀 - 160金币
+    GANGSTERS_SHOP.add(new ShopEntry(
+        TMMItems.KNIFE.getDefaultInstance(),
+        160,
+        ShopEntry.Type.WEAPON));
+
     // 短管霰弹枪 - 185金币
     GANGSTERS_SHOP.add(new ShopEntry(
         ModItems.SHORT_SHOTGUN.getDefaultInstance(),

@@ -1,5 +1,8 @@
 package org.agmas.noellesroles.game.roles.neutral.pelican;
 
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
@@ -7,11 +10,17 @@ import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
+import org.agmas.noellesroles.component.InfectedPlayerComponent;
+import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
+import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.voice.NoellesrolesVoiceChatPlugin;
 
 import java.util.*;
@@ -92,6 +101,39 @@ public final class PelicanManager {
         DeathPenaltyComponent.KEY.get(target).setPenaltyWithCameraLimit(-1, pelican, true);
         DefibrillatorComponent.KEY.get(target).init();
 
+        // 添加很长时间的禁用技能和禁用聊天栏药水效果
+        target.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, Integer.MAX_VALUE, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, Integer.MAX_VALUE, 0, false, false, false));
+
+        // 如果目标处于疯狂模式（psycho），立刻结束
+        SREPlayerPsychoComponent psychoComp = SREPlayerPsychoComponent.KEY.get(target);
+        if (psychoComp.getPsychoTicks() > 0) {
+            psychoComp.stopPsychoAndSync();
+        }
+
+        // 如果目标中毒，立刻治愈
+        SREPlayerPoisonComponent poisonComp = SREPlayerPoisonComponent.KEY.get(target);
+        if (poisonComp.poisonTicks > 0) {
+            poisonComp.init();
+        }
+
+        // 如果目标被感染，立刻治愈
+        InfectedPlayerComponent infectedComp = ModComponents.INFECTED.get(target);
+        if (infectedComp.infectedTicks > 0) {
+            infectedComp.cure();
+        }
+
+        // 如果疫使被鹈鹕吃了，治愈场上所有玩家的感染状态
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(target.level());
+        if (gameWorld != null && gameWorld.isRole(target, ModRoles.INFECTED)) {
+            for (ServerPlayer p : target.serverLevel().players()) {
+                InfectedPlayerComponent otherInfected = ModComponents.INFECTED.get(p);
+                if (otherInfected.infectedTicks > 0) {
+                    otherInfected.cure();
+                }
+            }
+        }
+
         NoellesrolesVoiceChatPlugin.onPelicanStash(targetId, pelicanId);
     }
 
@@ -113,6 +155,10 @@ public final class PelicanManager {
         DeathPenaltyComponent.KEY.get(target).init();
         DefibrillatorComponent.KEY.get(target).init();
 
+        // 清除被吞噬时添加的禁用技能和禁用聊天栏效果
+        target.removeEffect(ModEffects.SKILL_BANED);
+        target.removeEffect(ModEffects.CHAT_BAN);
+
         // 如果该玩家在被释放前已经在肚内死亡，则不尝试复活/改变其游戏模式或传送，
         // 以免后续释放（例如鹈鹕死亡）将其复活。仅清理跟踪状态并触发语音释放。
         if (stashedDead.contains(targetId)) {
@@ -128,6 +174,12 @@ public final class PelicanManager {
         target.teleportTo(target.serverLevel(), target.getX(), target.getY(), target.getZ(),
                 target.getYRot(), target.getXRot());
         target.connection.send(new ClientboundSetCameraPacket(target));
+
+        // 如果被释放的是疫使，重新检查疫使时刻的触发条件
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(target.level());
+        if (gameWorld != null && gameWorld.isRole(target, ModRoles.INFECTED)) {
+            InfectedWinChecker.onInfectedReleasedFromPelican((ServerLevel) target.level());
+        }
 
         NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
     }
@@ -153,6 +205,12 @@ public final class PelicanManager {
         }
         if (belly.isEmpty())
             stashedByPelican.remove(pelicanId);
+
+        // 如果被释放的玩家中有疫使，重新检查疫使时刻触发条件
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(pelican.level());
+        if (gameWorld != null) {
+            InfectedWinChecker.onInfectedReleasedFromPelican((ServerLevel) pelican.level());
+        }
     }
 
     public static void releaseAllInWorld(ServerLevel world) {
@@ -235,6 +293,10 @@ public final class PelicanManager {
         DeathPenaltyComponent.KEY.get(target).init();
         DefibrillatorComponent.KEY.get(target).init();
 
+        // 清除被吞噬时添加的禁用技能和禁用聊天栏效果
+        target.removeEffect(ModEffects.SKILL_BANED);
+        target.removeEffect(ModEffects.CHAT_BAN);
+
         // 不要在死亡处理期间强制改变玩家为冒险模式，允许死亡流程将玩家置为旁观者
         target.setInvisible(false);
         target.connection.send(new ClientboundSetCameraPacket(target));
@@ -257,6 +319,9 @@ public final class PelicanManager {
                 // 恢复聊天并清除 DeathPenalty/起搏器
                 DeathPenaltyComponent.KEY.get(target).init();
                 DefibrillatorComponent.KEY.get(target).init();
+                // 清除被吞噬时添加的禁用技能和禁用聊天栏效果
+                target.removeEffect(ModEffects.SKILL_BANED);
+                target.removeEffect(ModEffects.CHAT_BAN);
             // 如果该玩家在肚内已死亡，跳过复活/改模式/传送。
             if (stashedDead.contains(targetId)) {
                 stashedDead.remove(targetId);
@@ -281,6 +346,12 @@ public final class PelicanManager {
             belly.remove(targetId);
         }
         stashedByPelican.remove(pelicanId);
+
+        // 如果被释放的玩家中有疫使，重新检查疫使时刻触发条件
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(pelican.level());
+        if (gameWorld != null) {
+            InfectedWinChecker.onInfectedReleasedFromPelican((ServerLevel) pelican.level());
+        }
     }
 
     public static void onLastStand(ServerLevel world) {

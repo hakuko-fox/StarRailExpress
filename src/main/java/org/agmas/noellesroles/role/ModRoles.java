@@ -2174,9 +2174,7 @@ public class ModRoles {
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.EXECUTIONER);
         // 设置鹈鹕与傀儡师互斥
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
-        // 设置鹈鹕与愚者互斥
-        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.THE_FOOL);
-        
+
         // 初始化叛徒职业和新修饰符
         TraitorAndModifiers.init();
         ModifierEffects.init();
