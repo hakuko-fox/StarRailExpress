@@ -87,7 +87,7 @@ public class AdminDrawingBoardScreen extends DrawingBoardScreen {
         byte[][] pixels = getCurrentPixels();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("byte[][] p = new byte[16][16];\n");
+        sb.append("byte[][] p = createEmptyCanvas();\n");
 
         // 仅输出非背景(非16)的像素
         for (int y = 0; y < 16; y++) {
