@@ -307,8 +307,14 @@ public class CustomRoleScreen extends Screen {
             toggle.accept(!cur); if (rebuild) init(minecraft, width, height);
         }).bounds(fieldX()+170, rowY(r), 150, 18).accentBar(cur ? AccentSide.LEFT : AccentSide.RIGHT).build());
     }
-    private static int safeColor(Boolean b) { return b == null ? 0x778899 : (b ? 0x55FF55 : 0xFF5555); }
-    private static Boolean safeNext(Boolean cur) { return cur == null ? true : (cur ? false : null); }
+    private static int safeColor(Boolean b) {
+        if (b == null) return 0x778899;
+        return b.booleanValue() ? 0x55FF55 : 0xFF5555;
+    }
+    private static Boolean safeNext(Boolean cur) {
+        if (cur == null) return Boolean.TRUE;
+        return cur.booleanValue() ? Boolean.FALSE : null;
+    }
 
     private void addTriBtn(List<AbstractWidget> l, int r, String key, Boolean cur, java.util.function.Consumer<Boolean> toggle, boolean rebuild) {
         String ss; AccentSide as;

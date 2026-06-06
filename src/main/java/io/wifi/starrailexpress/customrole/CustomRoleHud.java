@@ -27,18 +27,20 @@ public class CustomRoleHud {
             int cooldownTicks = ability.cooldown;
             var font = client.font;
 
-            // 渲染在屏幕中央偏下位置，确保可见
+            // 渲染在屏幕右下角
             int screenWidth = guiGraphics.guiWidth();
-            int textY = guiGraphics.guiHeight() / 2 + 40;
+            int screenHeight = guiGraphics.guiHeight();
+            int x = screenWidth - 10;
+            int y = screenHeight - 30;
 
             if (cooldownTicks <= 0) {
                 Component readyText = Component.translatable("hud.sre.custom_role.skill_ready");
-                guiGraphics.drawString(font, readyText, (screenWidth - font.width(readyText)) / 2, textY, 0x55FF55);
+                guiGraphics.drawString(font, readyText, x - font.width(readyText), y, 0x55FF55);
             } else {
                 double seconds = cooldownTicks / 20.0;
                 Component cooldownText = Component.translatable("hud.sre.custom_role.skill_cooldown",
                     String.format("%.1f", seconds));
-                guiGraphics.drawString(font, cooldownText, (screenWidth - font.width(cooldownText)) / 2, textY, 0xFF5555);
+                guiGraphics.drawString(font, cooldownText, x - font.width(cooldownText), y, 0xFF5555);
             }
         });
     }
