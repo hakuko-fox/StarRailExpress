@@ -33,6 +33,7 @@ import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
@@ -198,6 +199,14 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
         // 亡命徒复活倒计时归零时，释放鹈鹕肚子里的所有玩家
         org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.onLastStand(serverLevel);
+
+        // 给所有鹈鹕玩家施加技能禁用效果，持续时间与亡命徒时刻一致（3000 ticks = 150秒）
+        var gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
+        for (var p : serverLevel.players()) {
+            if (GameUtils.isPlayerAliveAndSurvival(p) && gameWorldComponent.isRole(p, ModRoles.PELICAN)) {
+                p.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 3000, 0, false, false, false));
+            }
+        }
 
         TrainVoicePlugin.resetPlayer(player.getUUID());
         SREGameTimeComponent gameTimeComponent = SREGameTimeComponent.KEY.get(serverLevel);
