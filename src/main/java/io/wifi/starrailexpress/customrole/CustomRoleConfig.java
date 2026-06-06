@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.storage.LevelResource;
 
 /**
  * 自定义职业配置文件包装类
@@ -96,6 +98,18 @@ public class CustomRoleConfig {
         return loadFromPath(configPath);
     }
 
+    /** 优先从 world 存档路径加载配置，失败则从默认 config 加载 */
+    public static CustomRoleConfig loadPreferWorldPath(MinecraftServer server) {
+        if (server != null) {
+            try {
+                java.nio.file.Path worldPath = server.getWorldPath(LevelResource.ROOT);
+                CustomRoleConfig cfg = loadFromFile(worldPath);
+                if (cfg != null && cfg.roles != null && !cfg.roles.isEmpty()) return cfg;
+            } catch (Exception ignored) {}
+        }
+        return loadFromDefaultPath();
+    }
+
     public void addRole(CustomRoleData role) {
         roles.add(role);
     }
@@ -106,5 +120,19 @@ public class CustomRoleConfig {
 
     public CustomRoleData findRole(String englishId) {
         return roles.stream().filter(r -> r.englishId.equals(englishId)).findFirst().orElse(null);
+    }
+
+    /**
+     * 优先尝试将配置保存到指定世界存档目录；若 server 为 null 或保存失败则回退到默认 config 目录
+     */
+    public void savePreferWorldPath(MinecraftServer server) {
+        try {
+            if (server != null) {
+                java.nio.file.Path worldPath = server.getWorldPath(LevelResource.ROOT);
+                saveToFile(worldPath);
+                return;
+            }
+        } catch (Exception ignored) {}
+        saveToDefaultPath();
     }
 }

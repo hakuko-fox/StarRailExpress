@@ -33,7 +33,7 @@ public class CustomRoleManageScreen extends Screen {
         panelLeftX = (width - PANEL_WIDTH) / 2;
         panelTopY = (height - PANEL_HEIGHT) / 2;
 
-        CustomRoleConfig config = CustomRoleConfig.loadFromDefaultPath();
+        CustomRoleConfig config = CustomRoleConfig.loadPreferWorldPath(minecraft.getSingleplayerServer());
         roles = config.roles;
 
         int yOffset = panelTopY + 34;
@@ -52,7 +52,11 @@ public class CustomRoleManageScreen extends Screen {
 
             ModernButton delBtn = ModernButton.builder(Component.literal("X"), b -> {
                 config.roles.remove(idx);
-                config.saveToDefaultPath();
+                config.savePreferWorldPath(minecraft.getSingleplayerServer());
+                var server = minecraft.getSingleplayerServer();
+                if (server != null) {
+                    server.execute(() -> { try { io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server); } catch (Exception ignored) {} });
+                }
                 init(minecraft, width, height);
             }).bounds(panelLeftX + 220, y, 30, 20).accentBar(AccentSide.RIGHT).build();
             addRenderableWidget(delBtn);

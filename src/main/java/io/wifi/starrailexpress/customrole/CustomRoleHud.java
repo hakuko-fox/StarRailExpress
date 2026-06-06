@@ -47,7 +47,9 @@ public class CustomRoleHud {
 
     /** 从配置中注册所有自定义角色的HUD */
     public static void registerAllFromConfig() {
-        CustomRoleConfig config = CustomRoleConfig.loadFromDefaultPath();
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        net.minecraft.server.MinecraftServer server = client.getSingleplayerServer();
+        CustomRoleConfig config = CustomRoleConfig.loadPreferWorldPath(server);
         for (CustomRoleData data : config.roles) {
             if (data.enableAbility) {
                 net.minecraft.resources.ResourceLocation roleId =

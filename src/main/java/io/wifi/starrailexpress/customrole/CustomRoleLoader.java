@@ -57,6 +57,16 @@ public class CustomRoleLoader {
         var worldPath = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
         CustomRoleConfig config = CustomRoleConfig.loadFromFile(worldPath);
 
+        // 如果 world 存档目录没有配置，则尝试回退读取默认的 config 目录（方便服务端/单机保存位置不一致时使用）
+        if (config == null || config.roles == null || config.roles.isEmpty()) {
+            try {
+                CustomRoleConfig defaultConfig = CustomRoleConfig.loadFromDefaultPath();
+                if (defaultConfig != null && defaultConfig.roles != null && !defaultConfig.roles.isEmpty()) {
+                    config = defaultConfig;
+                }
+            } catch (Exception ignored) {}
+        }
+
         for (CustomRoleData data : config.roles) {
             try {
                 SRERole role = createRole(data);
@@ -75,10 +85,15 @@ public class CustomRoleLoader {
     public static CustomRoleData getCustomRoleData(String englishId) {
         var result = loadedRoles.get(englishId);
         if (result != null) return result;
-        // 客户端回退：从配置文件读取
+        // 回退：尝试从 world 存档或默认 config 加载
         try {
-            var config = CustomRoleConfig.loadFromDefaultPath();
-            return config.findRole(englishId);
+            if (io.wifi.starrailexpress.SRE.SERVER != null) {
+                var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
+                return cfg.findRole(englishId);
+            } else {
+                var cfg = CustomRoleConfig.loadFromDefaultPath();
+                return cfg.findRole(englishId);
+            }
         } catch (Exception e) {
             return null;
         }

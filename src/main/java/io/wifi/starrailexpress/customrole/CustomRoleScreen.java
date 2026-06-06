@@ -10,6 +10,8 @@ import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
 import org.agmas.noellesroles.client.widget.custom_button.ModernButton.AccentSide;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.world.level.storage.LevelResource;
+import java.nio.file.Path;
 
 public class CustomRoleScreen extends Screen {
     private static final int PANEL_WIDTH = 380, PANEL_HEIGHT = 460;
@@ -17,6 +19,7 @@ public class CustomRoleScreen extends Screen {
     private static final String[] TAB_NAMES = {"basic","advanced","ability","generation","shop"};
     private static final int FIELD_LEFT = 140, FIELD_W = 200;
     private CustomRoleData data = new CustomRoleData();
+    private String originalEnglishId = "";
 
     private final List<AbstractWidget> tabWidgets0 = new ArrayList<>();
     private final List<AbstractWidget> tabWidgets1 = new ArrayList<>();
@@ -34,7 +37,7 @@ public class CustomRoleScreen extends Screen {
     private int moodIndex; // 0=REAL, 1=FAKE
 
     public CustomRoleScreen() { super(Component.translatable("sre.custom_role.title")); syncToggles(); }
-    public CustomRoleScreen(CustomRoleData d) { super(Component.translatable("sre.custom_role.title")); this.data = d; syncToggles(); }
+    public CustomRoleScreen(CustomRoleData d) { super(Component.translatable("sre.custom_role.title")); this.data = d; this.originalEnglishId = d.englishId == null ? "" : d.englishId; syncToggles(); }
 
     private void syncToggles() {
         moodIndex = "FAKE".equalsIgnoreCase(data.moodType) ? 1 : 0;
@@ -97,21 +100,23 @@ public class CustomRoleScreen extends Screen {
         // 药水效果 - 重要: responder 直接更新 data.initialEffects
         StringBuilder efSb = new StringBuilder();
         for (EffectEntry e : data.initialEffects) {
-            if (!efSb.isEmpty()) efSb.append(",");
-            efSb.append(e.effectId).append(":").append(e.amplifier);
+            if (!efSb.isEmpty()) efSb.append(";");
+            efSb.append(e.effectId).append(",").append(e.amplifier);
         }
         addLabel(tabLabels0, "sre.custom_role.label.effects", r);
         EditBox effectsBox = makeBox(fieldX(), rowY(r), FIELD_W, 18, efSb.toString(), v -> {
             data.initialEffects.clear();
-            for (String s : v.split(",")) {
-                String t = s.trim(); if (t.isEmpty()) continue;
-                String[] parts = t.split(":");
-                String id = parts[0].trim(); int lvl = 0;
-                if (parts.length > 1) try { lvl = Integer.parseInt(parts[1].trim()); } catch(Exception ignored) {}
+            if (v == null || v.isBlank()) return;
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile("([a-z0-9_\\-.:]+)[,:](\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+            java.util.regex.Matcher m = p.matcher(v);
+            while (m.find()) {
+                String id = m.group(1).trim();
+                int lvl = 0;
+                try { lvl = Integer.parseInt(m.group(2)); } catch (Exception ignored) {}
                 data.initialEffects.add(new EffectEntry(id, lvl));
             }
         });
-        effectsBox.setHint(Component.literal("water_breathing:0, speed:1"));
+        effectsBox.setHint(Component.literal("minecraft:conduit_power,1; minecraft:speed,2"));
         tabWidgets0.add(effectsBox);
         r++;
 
@@ -279,7 +284,9 @@ public class CustomRoleScreen extends Screen {
         int sx = panelLeftX + (PANEL_WIDTH - (bw * 3 + gap * 2)) / 2;
         addRenderableWidget(ModernButton.builder(Component.translatable("sre.custom_role.save"), b -> saveRole()).bounds(sx, by, bw, 20).accentBar(AccentSide.BOTTOM).build());
         addRenderableWidget(ModernButton.builder(Component.translatable("sre.custom_role.manage"), b -> {
-            CustomRoleConfig.getInstance().saveToDefaultPath(); minecraft.setScreen(new CustomRoleManageScreen(new CustomRoleScreen()));
+            CustomRoleConfig config = CustomRoleConfig.getInstance();
+            config.savePreferWorldPath(minecraft.getSingleplayerServer());
+            minecraft.setScreen(new CustomRoleManageScreen(new CustomRoleScreen()));
         }).bounds(sx + bw + gap, by, bw, 20).accentBar(AccentSide.BOTTOM).build());
         addRenderableWidget(ModernButton.builder(Component.translatable("sre.custom_role.cancel"), b -> onClose()).bounds(sx + (bw + gap) * 2, by, bw, 20).accentBar(AccentSide.BOTTOM).build());
     }
@@ -287,9 +294,17 @@ public class CustomRoleScreen extends Screen {
     private void saveRole() {
         // Already saved via responders. Just persist to file.
         CustomRoleConfig config = CustomRoleConfig.getInstance();
+        // remove previous entry if editing englishId
+        if (originalEnglishId != null && !originalEnglishId.isBlank()) config.removeRole(originalEnglishId);
         config.removeRole(data.englishId);
         config.addRole(data);
-        config.saveToDefaultPath();
+        config.savePreferWorldPath(minecraft.getSingleplayerServer());
+        var server = minecraft.getSingleplayerServer();
+        if (server != null) {
+            server.execute(() -> {
+                try { io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server); } catch (Exception ignored) {}
+            });
+        }
         if (minecraft.player != null) minecraft.player.displayClientMessage(Component.translatable("sre.custom_role.saved", data.englishId), false);
         onClose();
     }
