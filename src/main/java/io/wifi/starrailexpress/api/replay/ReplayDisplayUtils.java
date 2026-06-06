@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -43,9 +44,9 @@ public class ReplayDisplayUtils {
         if (id == null) {
             return Component.literal(roleId);
         }
-        String translationKey = "announcement.star.role." + id.getPath();
-        var translated = Component.translatable(translationKey);
-        return translated;
+        var roleName = RoleUtils.getRoleName(id);
+        if (roleName != null) return roleName;
+        return Component.translatable("announcement.star.role." + id.getPath());
     }
 
     public static MutableComponent buildTeamPlayerRoles(GameReplayManager replayManager, List<UUID> teamPlayers,

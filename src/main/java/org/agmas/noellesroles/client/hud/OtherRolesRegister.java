@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.client.hud;
 
+import io.wifi.starrailexpress.customrole.CustomRoleHud;
 import org.agmas.noellesroles.client.hud.modifiers.LoversHud;
 import org.agmas.noellesroles.client.hud.modifiers.RefugeeHud;
 import org.agmas.noellesroles.client.hud.roles.*;
@@ -56,5 +57,7 @@ public class OtherRolesRegister {
         EmbalmerHud.register();
         SkincrawlerHud.register();
         PhantomMusicianHud.register();
+        // 自定义职业HUD
+        CustomRoleHud.registerAllFromConfig();
     }
 }

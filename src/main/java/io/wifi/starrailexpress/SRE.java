@@ -193,6 +193,12 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             net.exmo.sre.client.chat.ChatDialogueManager.getInstance(server);
             REPLAY_MANAGER = new GameReplayManager(server);
             SyncMapConfigPayload.sendToAllPlayers();
+            // 加载自定义职业
+            try {
+                io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server);
+            } catch (Exception e) {
+                LOGGER.error("[CustomRole] Failed to load custom roles on server start", e);
+            }
         });
         ServerTickEvents.START_SERVER_TICK.register(serv -> {
             io.wifi.starrailexpress.game.voting.MapVotingManager.getInstance().tick();
@@ -283,6 +289,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             SkinsCommand.register(dispatcher);
             PlayerInventoryCommand.register(dispatcher);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
+            io.wifi.starrailexpress.customrole.CustomRoleReloadCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             // io.wifi.starrailexpress.contents.command.UnlockAllRolesCommand.register(dispatcher);
