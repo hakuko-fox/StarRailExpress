@@ -272,6 +272,14 @@ public class CustomRoleLoader {
                     role.addOpposingJobs(oppRole);
                 }
             }
+
+            // 绑定生成
+            for (String bindId : data.bindWithRoles) {
+                SRERole bindRole = findRole(bindId);
+                if (bindRole != null) {
+                    org.agmas.harpymodloader.modded_murder.RoleAssignmentManager.addOccupationRole(role, bindRole);
+                }
+            }
         }
 
         // 注册地图限制事件处理
