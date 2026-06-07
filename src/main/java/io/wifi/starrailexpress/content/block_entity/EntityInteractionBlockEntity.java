@@ -29,6 +29,10 @@ import net.minecraft.world.phys.Vec3;
 
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.harpymodloader.events.ModifierAssigned;
+import org.agmas.harpymodloader.events.ModifierRemoved;
+import org.agmas.harpymodloader.modifiers.SREModifier;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -892,6 +896,23 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 // 实体交互方块接收到红石信号
                 yield receivedRedstoneSignal;
             }
+            case HAS_MODIFIER -> {
+                // 玩家拥有某个修饰符
+                String modifierId = condition.stringValue;
+                if (modifierId == null || modifierId.isEmpty()) {
+                    yield false;
+                }
+                WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(world);
+                ResourceLocation modifierRl = ResourceLocation.parse(modifierId);
+                // 在全局修饰符列表中找到对应的修饰符
+                SREModifier targetModifier = org.agmas.harpymodloader.modifiers.HMLModifiers.MODIFIERS.stream()
+                        .filter(m -> m.identifier().equals(modifierRl))
+                        .findFirst().orElse(null);
+                if (targetModifier == null) {
+                    yield false;
+                }
+                yield modifierComponent.isModifier(player.getUUID(), targetModifier);
+            }
         };
     }
 
@@ -937,7 +958,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 ActionType.GIVE_EFFECT, ActionType.SHOW_TITLE, ActionType.ITEM_COOLDOWN, ActionType.SET_MOOD,
                 ActionType.CURE_PSYCHO,
                 ActionType.CLEAR_TASKS, ActionType.COMPLETE_TASK, ActionType.ADD_CUSTOM_TASK, ActionType.ADD_EXTRA_TASK,
-                ActionType.COMPLETE_CUSTOM_TASK, ActionType.NARRATOR, ActionType.INFECT);
+                ActionType.COMPLETE_CUSTOM_TASK, ActionType.NARRATOR, ActionType.INFECT,
+                ActionType.ADD_MODIFIER, ActionType.REMOVE_MODIFIER);
 
         // 特殊处理的动作类型（已有自己的玩家过滤逻辑）
         Set<ActionType> specialActions = Set.of(
@@ -1210,6 +1232,36 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     boolean shouldInterrupt = action.narratorInterrupt;
                     Component textComponent = Component.literal(narratorText);
                     ServerPlayNetworking.send(player, new CustomNarratorPacket(textComponent, shouldInterrupt));
+                }
+            }
+            case ADD_MODIFIER -> {
+                String modifierId = action.stringValue;
+                if (modifierId == null || modifierId.isEmpty()) {
+                    return;
+                }
+                ResourceLocation modifierRl = ResourceLocation.parse(modifierId);
+                SREModifier targetModifier = org.agmas.harpymodloader.modifiers.HMLModifiers.MODIFIERS.stream()
+                        .filter(m -> m.identifier().equals(modifierRl))
+                        .findFirst().orElse(null);
+                if (targetModifier != null) {
+                    WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(world);
+                    modifierComponent.addModifier(player.getUUID(), targetModifier);
+                    ModifierAssigned.EVENT.invoker().assignModifier(player, targetModifier);
+                }
+            }
+            case REMOVE_MODIFIER -> {
+                String modifierId = action.stringValue;
+                if (modifierId == null || modifierId.isEmpty()) {
+                    return;
+                }
+                ResourceLocation modifierRl = ResourceLocation.parse(modifierId);
+                SREModifier targetModifier = org.agmas.harpymodloader.modifiers.HMLModifiers.MODIFIERS.stream()
+                        .filter(m -> m.identifier().equals(modifierRl))
+                        .findFirst().orElse(null);
+                if (targetModifier != null) {
+                    WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(world);
+                    ModifierRemoved.EVENT.invoker().removeModifier(player, targetModifier);
+                    modifierComponent.removeModifier(player.getUUID(), targetModifier);
                 }
             }
         }
@@ -1636,7 +1688,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         PLAYER_DAMAGED_BY_PLAYER, // 玩家受到来自玩家的原版伤害
         PLAYER_DAMAGED_BY_NON_PLAYER, // 玩家受到非玩家来源的原版伤害
         ELAPSED_TIME, // 游戏经过的时间
-        REDSTONE_SIGNAL // 接收到红石信号
+        REDSTONE_SIGNAL, // 接收到红石信号
+        HAS_MODIFIER // 玩家拥有某个修饰符
     }
 
     // 世界时间类型枚举
@@ -1715,7 +1768,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         COMPLETE_CUSTOM_TASK, // 完成自定义任务
         NARRATOR, // 语音播报
         INFECT, // 进入感染
-        OUTPUT_REDSTONE // 输出红石信号
+        OUTPUT_REDSTONE, // 输出红石信号
+        ADD_MODIFIER, // 为玩家添加修饰符
+        REMOVE_MODIFIER // 为玩家移除修饰符
     }
 
     // 条件数据类
