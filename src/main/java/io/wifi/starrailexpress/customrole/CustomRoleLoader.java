@@ -273,6 +273,53 @@ public class CustomRoleLoader {
                 }
             }
         }
+
+        // 注册地图限制事件处理
+        registerMapRestrictionHandler();
+    }
+
+    /**
+     * 注册限定地图刷新的事件处理器
+     * 在游戏初始化时，检查自定义职业的地图限制列表，
+     * 如果列表非空且当前地图不在列表中，则将该职业最大数量设为0
+     */
+    private static void registerMapRestrictionHandler() {
+        org.agmas.harpymodloader.events.GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
+            CustomRoleConfig config = CustomRoleConfig.getInstance();
+
+            // 获取当前地图ID
+            final String currentMap = getCurrentMapName(serverLevel);
+
+            for (CustomRoleData data : config.roles) {
+                if (data.mapRestrictedTo == null || data.mapRestrictedTo.isEmpty()) {
+                    continue; // 没有地图限制，所有地图都可以刷新
+                }
+
+                SRERole role = registeredRoles.get(data.englishId);
+                if (role == null) continue;
+
+                final String mapName = currentMap;
+                boolean allowed = data.mapRestrictedTo.stream()
+                        .anyMatch(mapId -> mapId.trim().equalsIgnoreCase(mapName));
+
+                if (!allowed) {
+                    // 当前地图不在允许列表中，禁用该职业
+                    org.agmas.harpymodloader.Harpymodloader.setRoleMaximum(role.identifier(), 0);
+                    SRE.LOGGER.info("[CustomRole] Map restriction: disabled '{}' (map: {})",
+                            data.englishId, mapName);
+                }
+            }
+        });
+    }
+
+    private static String getCurrentMapName(net.minecraft.server.level.ServerLevel serverLevel) {
+        if (serverLevel.getServer() != null) {
+            var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverLevel);
+            if (areas != null && areas.mapName != null) {
+                return areas.mapName;
+            }
+        }
+        return "unknown";
     }
 
     private static SRERole findRole(String roleId) {
