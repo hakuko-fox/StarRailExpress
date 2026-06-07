@@ -199,14 +199,21 @@ public class CustomRoleLoader {
         // === 职业能力选项 ===
         // 初始物品
         if (!data.initialItems.isEmpty()) {
-            role.serverTickEvent = (role.serverTickEvent == null) ? null : role.serverTickEvent;
-            // Override getDefaultItems via onInit
-            final SRERole finalRole = role;
-            final List<CustomRoleData.InitialItemEntry> items = new ArrayList<>(data.initialItems);
-            role.serverTickEvent = (player, gameWorld) -> {
-                // Initial items are handled via HarpyModLoader's onInit mechanism
-                // We add items on first tick if the player hasn't received them yet
-            };
+            List<ItemStack> stacks = new ArrayList<>();
+            for (CustomRoleData.InitialItemEntry entry : data.initialItems) {
+                if (entry.itemId == null || entry.itemId.isEmpty()) continue;
+                try {
+                    ResourceLocation itemId = ResourceLocation.parse(entry.itemId);
+                    Optional<Item> itemOpt = BuiltInRegistries.ITEM.getOptional(itemId);
+                    if (itemOpt.isPresent()) {
+                        int count = Math.max(1, entry.count);
+                        stacks.add(new ItemStack(itemOpt.get(), count));
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (role instanceof CustomNormalRole customRole) {
+                customRole.setDefaultItems(stacks);
+            }
         }
 
         // 技能
