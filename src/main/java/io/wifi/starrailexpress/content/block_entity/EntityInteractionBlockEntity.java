@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.content.block_entity;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -963,7 +964,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
         // 特殊处理的动作类型（已有自己的玩家过滤逻辑）
         Set<ActionType> specialActions = Set.of(
-                ActionType.TELEPORT, ActionType.RESURRECT, ActionType.BROADCAST_MESSAGE, ActionType.CLEAR_ENTITIES);
+                ActionType.TELEPORT, ActionType.RESURRECT, ActionType.BROADCAST_MESSAGE, ActionType.CLEAR_ENTITIES,
+                ActionType.ROLE_CUSTOM_WIN);
 
         // 需要玩家过滤的动作类型
         if (playerActions.contains(action.type)) {
@@ -1307,6 +1309,54 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
                 roundEnd.CustomWinnerID = winnerMessage;
                 roundEnd.setRoundEndData(world.players(), GameUtils.WinStatus.CUSTOM);
+                GameUtils.stopGame(world);
+            }
+            case ROLE_CUSTOM_WIN -> {
+                String roleId = action.roleWinId != null ? action.roleWinId : "";
+                String description = action.roleWinDescription != null ? action.roleWinDescription : "";
+                String subtitle = action.roleWinSubtitle != null ? action.roleWinSubtitle : "";
+                SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
+
+                // 解析职业ID，查找角色以获得颜色
+                ResourceLocation roleRl = ResourceLocation.tryParse(roleId);
+                if (roleRl != null) {
+                    SRERole role = TMMRoles.ROLES.get(roleRl);
+                    if (role != null) {
+                        roundEnd.CustomWinnerID = roleId;
+                        roundEnd.CustomWinnerColor = role.color();
+                    } else {
+                        // 未找到角色，使用默认颜色并报错
+                        roundEnd.CustomWinnerID = roleId.isEmpty() ? "custom" : roleId;
+                        roundEnd.CustomWinnerColor = 0xFFFFFF;
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                                "§c警告: 未找到职业 '" + roleId + "', 使用默认颜色"));
+                    }
+                } else {
+                    // 无法解析，回退到普通自定义胜利
+                    roundEnd.CustomWinnerID = roleId.isEmpty() ? "custom" : roleId;
+                    roundEnd.CustomWinnerColor = 0xFFFFFF;
+                }
+
+                // 设置自定义描述（标题）
+                if (!description.isEmpty()) {
+                    roundEnd.CustomWinnerTitle = net.minecraft.network.chat.Component.literal(description);
+                } else {
+                    roundEnd.CustomWinnerTitle = null;
+                }
+                // 设置自定义子标题
+                if (!subtitle.isEmpty()) {
+                    roundEnd.CustomWinnerSubtitle = net.minecraft.network.chat.Component.literal(subtitle);
+                } else {
+                    roundEnd.CustomWinnerSubtitle = null;
+                }
+
+                // 如果有标题/子标题，使用 CUSTOM_COMPONENT 状态显示自定义文字
+                GameUtils.WinStatus winStatus = (!description.isEmpty() || !subtitle.isEmpty())
+                        ? GameUtils.WinStatus.CUSTOM_COMPONENT
+                        : GameUtils.WinStatus.CUSTOM;
+
+                roundEnd.setRoundEndData(world.players(), winStatus);
+                roundEnd.sync();
                 GameUtils.stopGame(world);
             }
             case BLOCK_COOLDOWN -> {
@@ -1770,7 +1820,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         INFECT, // 进入感染
         OUTPUT_REDSTONE, // 输出红石信号
         ADD_MODIFIER, // 为玩家添加修饰符
-        REMOVE_MODIFIER // 为玩家移除修饰符
+        REMOVE_MODIFIER, // 为玩家移除修饰符
+        ROLE_CUSTOM_WIN // 带绑定职业的自定义获胜
     }
 
     // 条件数据类
@@ -1853,6 +1904,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         public TeamType targetTeamType = TeamType.ALL;
         // 传送目标类型（用于TELEPORT动作，0=触发玩家，1=随机玩家，2=所有玩家）
         public int teleportTarget = 0;
+        // 带绑定职业的自定义获胜字段（用于ROLE_CUSTOM_WIN）
+        public String roleWinId = ""; // 职业ID
+        public String roleWinDescription = ""; // 获胜描述（标题）
+        public String roleWinSubtitle = ""; // 获胜子标题
 
         public CompoundTag toNbt() {
             CompoundTag tag = new CompoundTag();
@@ -1869,6 +1924,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             tag.putBoolean("ClearTasks", clearTasks);
             tag.putString("TargetTeamType", targetTeamType != null ? targetTeamType.name() : TeamType.ALL.name());
             tag.putInt("TeleportTarget", teleportTarget);
+            tag.putString("RoleWinId", roleWinId != null ? roleWinId : "");
+            tag.putString("RoleWinDescription", roleWinDescription != null ? roleWinDescription : "");
+            tag.putString("RoleWinSubtitle", roleWinSubtitle != null ? roleWinSubtitle : "");
             return tag;
         }
 
@@ -1901,6 +1959,12 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 action.targetTeamType = TeamType.ALL;
             }
             action.teleportTarget = tag.contains("TeleportTarget") ? tag.getInt("TeleportTarget") : 0;
+            action.roleWinId = tag.getString("RoleWinId");
+            if (action.roleWinId.isEmpty()) action.roleWinId = "";
+            action.roleWinDescription = tag.getString("RoleWinDescription");
+            if (action.roleWinDescription.isEmpty()) action.roleWinDescription = "";
+            action.roleWinSubtitle = tag.getString("RoleWinSubtitle");
+            if (action.roleWinSubtitle.isEmpty()) action.roleWinSubtitle = "";
             return action;
         }
     }
