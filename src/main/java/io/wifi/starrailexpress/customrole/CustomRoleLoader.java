@@ -47,8 +47,10 @@ public class CustomRoleLoader {
         // 先清除旧的自定义职业
         List<String> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
-            if (entry.getKey().getPath().startsWith("customrole:")) {
+            if ("customrole".equals(entry.getKey().getNamespace())) {
                 toRemove.add(entry.getKey().toString());
+                // 同时清除已注册的技能，避免 re-register 时报 "already registered"
+                RoleSkill.unregister(entry.getKey());
             }
         }
         for (String key : toRemove) {
