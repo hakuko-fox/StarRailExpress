@@ -64,14 +64,10 @@ public class CustomRoleLoader {
         var worldPath = level.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
         CustomRoleConfig config = CustomRoleConfig.loadFromFile(worldPath);
 
-        // 如果 world 存档目录没有配置，则尝试回退读取默认的 config 目录（方便服务端/单机保存位置不一致时使用）
+        // world 存档目录没有配置时，使用空配置（不从 config 目录回退）
         if (config == null || config.roles == null || config.roles.isEmpty()) {
-            try {
-                CustomRoleConfig defaultConfig = CustomRoleConfig.loadFromDefaultPath();
-                if (defaultConfig != null && defaultConfig.roles != null && !defaultConfig.roles.isEmpty()) {
-                    config = defaultConfig;
-                }
-            } catch (Exception ignored) {}
+            config = new CustomRoleConfig();
+            config.roles = new java.util.ArrayList<>();
         }
 
         for (CustomRoleData data : config.roles) {
@@ -112,15 +108,10 @@ public class CustomRoleLoader {
     public static CustomRoleData getCustomRoleData(String englishId) {
         var result = loadedRoles.get(englishId);
         if (result != null) return result;
-        // 回退：尝试从 world 存档或默认 config 加载
+        // 回退：尝试从 world 存档加载
         try {
-            if (io.wifi.starrailexpress.SRE.SERVER != null) {
-                var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
-                return cfg.findRole(englishId);
-            } else {
-                var cfg = CustomRoleConfig.loadFromDefaultPath();
-                return cfg.findRole(englishId);
-            }
+            var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
+            return cfg.findRole(englishId);
         } catch (Exception e) {
             return null;
         }
@@ -134,6 +125,7 @@ public class CustomRoleLoader {
      * 根据配置创建 SRERole 实例
      */
     private static SRERole createRole(CustomRoleData data) {
+        data.englishId = data.englishId.toLowerCase(); // 兜底：确保英文id全小写
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("customrole", data.englishId);
 
         // 解析颜色

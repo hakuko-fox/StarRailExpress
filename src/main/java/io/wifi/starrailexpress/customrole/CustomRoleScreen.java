@@ -230,7 +230,7 @@ public class CustomRoleScreen extends Screen {
     // ---- TAB 0: Basic ----
     private void buildBasicTab() {
         int r = 0;
-        makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.english_id", data.englishId, "my_custom_role", v -> data.englishId = v).setMaxLength(64);
+        makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.english_id", data.englishId, "my_custom_role", v -> data.englishId = v.toLowerCase()).setMaxLength(64);
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.display_name", data.displayName, "职业显示的名字", v -> data.displayName = v);
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.goals", data.goals, "职业的胜利目标", v -> data.goals = v);
         makeLabeledHintBox(tabWidgets0, tabLabels0, r++, FIELD_W, "sre.custom_role.label.description", data.description, "职业描述", v -> data.description = v);
