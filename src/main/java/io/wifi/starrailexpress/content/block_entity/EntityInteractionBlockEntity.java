@@ -1318,24 +1318,34 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(world);
 
                 // 解析职业ID，查找角色以获得颜色
+                // 支持三种格式：noellesroles:candlebearer（完整ID）、candlebearer（简写路径）、customrole:xxx（自定义职业）
                 ResourceLocation roleRl = ResourceLocation.tryParse(roleId);
+                String winnerIdPath; // 用于 CustomWinnerID，必须是纯路径（与 playerRole.identifier().getPath() 匹配）
+                int winnerColor = 0xFFFFFF;
+
                 if (roleRl != null) {
                     SRERole role = TMMRoles.ROLES.get(roleRl);
                     if (role != null) {
-                        roundEnd.CustomWinnerID = roleId;
-                        roundEnd.CustomWinnerColor = role.color();
-                    } else {
-                        // 未找到角色，使用默认颜色并报错
-                        roundEnd.CustomWinnerID = roleId.isEmpty() ? "custom" : roleId;
-                        roundEnd.CustomWinnerColor = 0xFFFFFF;
+                        // 找到角色 → 用角色自身的路径和颜色
+                        winnerIdPath = role.identifier().getPath();
+                        winnerColor = role.color();
+                    } else if (!roleRl.getNamespace().equals("minecraft")) {
+                        // 完整ID但查不到角色（如 customrole:xxx）→ 用解析出的路径 + 默认颜色
+                        winnerIdPath = roleRl.getPath();
                         player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                                "§c警告: 未找到职业 '" + roleId + "', 使用默认颜色"));
+                                "§6提示: 未找到职业 '" + roleId + "', 使用默认颜色，路径为 '" + winnerIdPath + "'"));
+                    } else {
+                        // tryParse 自动补了 minecraft: 前缀，说明用户输入的是纯路径
+                        // → 直接用原始输入作为路径
+                        winnerIdPath = roleId;
                     }
                 } else {
-                    // 无法解析，回退到普通自定义胜利
-                    roundEnd.CustomWinnerID = roleId.isEmpty() ? "custom" : roleId;
-                    roundEnd.CustomWinnerColor = 0xFFFFFF;
+                    // 无法解析 → 直接用原始输入
+                    winnerIdPath = roleId.isEmpty() ? "custom" : roleId;
                 }
+
+                roundEnd.CustomWinnerID = winnerIdPath;
+                roundEnd.CustomWinnerColor = winnerColor;
 
                 // 设置自定义描述（标题）
                 if (!description.isEmpty()) {
