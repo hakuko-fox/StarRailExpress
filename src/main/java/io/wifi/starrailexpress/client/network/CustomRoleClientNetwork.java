@@ -114,7 +114,7 @@ public class CustomRoleClientNetwork {
         return hasSyncedData;
     }
 
-    /** 清理缓存（离开服务器时），同时从 TMMRoles.ROLES 移除旧角色并删除本地文件 */
+    /** 清理缓存（离开服务器时），同时从 TMMRoles.ROLES 和 INITIAL_ITEMS_MAP 移除旧角色并删除本地文件 */
     public static void clearCache() {
         lastReceivedHash = 0;
         syncedJson = null;
@@ -130,6 +130,16 @@ public class CustomRoleClientNetwork {
             }
         }
         toRemove.forEach(roles::remove);
+
+        // 从 INITIAL_ITEMS_MAP 中移除旧的自定义角色条目
+        var itemsMap = org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP;
+        var toRemoveItems = new ArrayList<io.wifi.starrailexpress.api.SRERole>();
+        for (var entry : itemsMap.entrySet()) {
+            if ("customrole".equals(entry.getKey().identifier().getNamespace())) {
+                toRemoveItems.add(entry.getKey());
+            }
+        }
+        toRemoveItems.forEach(itemsMap::remove);
 
         // 删除本地缓存文件，确保换服后不会读到旧数据
         deleteLocalConfig();

@@ -43,6 +43,8 @@ public class RoleInitialItems {
 
     /**
      * 为玩家添加指定角色的初始物品
+     * 优先从 INITIAL_ITEMS_MAP 获取，若没有则回退到 role.getDefaultItems()
+     * （自定义职业的初始物品通过 getDefaultItems() 返回）
      * 
      * @param player 玩家
      * @param role   角色
@@ -54,6 +56,16 @@ public class RoleInitialItems {
                 ItemStack itemStack = itemSupplier.get();
                 if (itemStack != null && !itemStack.isEmpty()) {
                     player.addItem(itemStack.copy());
+                }
+            }
+        } else {
+            // 静态 Map 中没有此角色 → 回退到 getDefaultItems()（自定义职业走这条路）
+            List<ItemStack> defaultItems = role.getDefaultItems();
+            if (defaultItems != null) {
+                for (ItemStack stack : defaultItems) {
+                    if (stack != null && !stack.isEmpty()) {
+                        player.addItem(stack.copy());
+                    }
                 }
             }
         }

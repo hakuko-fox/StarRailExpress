@@ -56,6 +56,8 @@ public class CustomRoleLoader {
                 toRemove.add(entry.getKey().toString());
                 // 同时清除已注册的技能，避免 re-register 时报 "already registered"
                 RoleSkill.unregister(entry.getKey());
+                // 清除 INITIAL_ITEMS_MAP 中的条目
+                org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
             }
         }
         for (String key : toRemove) {
@@ -123,6 +125,7 @@ public class CustomRoleLoader {
             if ("customrole".equals(entry.getKey().getNamespace())) {
                 toRemove.add(entry.getKey().toString());
                 RoleSkill.unregister(entry.getKey());
+                org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
             }
         }
         toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
@@ -263,6 +266,13 @@ public class CustomRoleLoader {
             }
             if (role instanceof CustomNormalRole customRole) {
                 customRole.setDefaultItems(stacks);
+                // 注册到 RoleInitialItems.INITIAL_ITEMS_MAP，确保所有发放路径都能获取
+                List<java.util.function.Supplier<ItemStack>> suppliers = new ArrayList<>();
+                for (ItemStack stack : stacks) {
+                    final ItemStack snapshot = stack.copy(); // 捕获当前快照
+                    suppliers.add(() -> snapshot.copy());
+                }
+                org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.put(role, suppliers);
             }
         }
 
