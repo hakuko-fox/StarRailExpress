@@ -112,6 +112,37 @@ public class CustomRoleLoader {
         SRE.LOGGER.info("[CustomRole] Loaded {} custom roles", config.roles.size());
     }
 
+    /**
+     * 客户端重载自定义职业（从本地 config 目录读取）
+     * 在收到服务端同步包并写入本地文件后调用
+     */
+    public static void reloadClient() {
+        // 清除旧的客户端注册的自定义职业
+        List<String> toRemove = new ArrayList<>();
+        for (var entry : TMMRoles.ROLES.entrySet()) {
+            if ("customrole".equals(entry.getKey().getNamespace())) {
+                toRemove.add(entry.getKey().toString());
+                RoleSkill.unregister(entry.getKey());
+            }
+        }
+        toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
+
+        // 从客户端本地 config 目录加载（网络同步写入的）
+        CustomRoleConfig config = CustomRoleConfig.loadFromDefaultPath();
+        for (CustomRoleData data : config.roles) {
+            try {
+                SRERole role = createRole(data);
+                TMMRoles.registerRole(role);
+                loadedRoles.put(data.englishId, data);
+                registeredRoles.put(data.englishId, role);
+            } catch (Exception e) {
+                SRE.LOGGER.error("[CustomRole-Client] Failed to register: {}", data.englishId, e);
+            }
+        }
+        postInit();
+        SRE.LOGGER.info("[CustomRole-Client] Reloaded {} custom roles from local config", config.roles.size());
+    }
+
     public static CustomRoleData getCustomRoleData(String englishId) {
         var result = loadedRoles.get(englishId);
         if (result != null) return result;

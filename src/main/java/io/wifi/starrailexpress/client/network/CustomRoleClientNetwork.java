@@ -60,8 +60,9 @@ public class CustomRoleClientNetwork {
                                 }
                             }
                         }
-                        // 写入客户端本地 config 目录，确保 CustomRoleLoader.getCustomRoleData() 可读取
+                        // 写入客户端本地 config 目录，并触发客户端重载角色到 TMMRoles.ROLES
                         writeToLocalConfig(json);
+                        io.wifi.starrailexpress.customrole.CustomRoleLoader.reloadClient();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
