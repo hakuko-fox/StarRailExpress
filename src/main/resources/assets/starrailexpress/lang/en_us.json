@@ -737,6 +737,8 @@
   "item.trainmurdermystery.psycho_mode.tooltip": "\"Do you like hurting people?\"\nHide your identity, allowing you to go on a bat-swinging rampage for 30 seconds\nA full swing of the bat can kill, and cannot be cancelled during the duration\nActivates immediately upon purchase, has a 5-minute cooldown",
   "item.trainmurdermystery.revolver": "Revolver",
   "item.trainmurdermystery.revolver.tooltip": "Aim, right-click and shoot\nKilling a civilian causes you to drop it",
+  "item.trainmurdermystery.standard_revolver": "Standard Revolver",
+  "item.trainmurdermystery.standard_revolver.tooltip": "Aim, right-click and shoot\nNever drops when hitting a player",
   "item.trainmurdermystery.magnum_bullet": "Magnum Bullet",
   "item.trainmurdermystery.magnum_bullet.tooltip": "Ammunition for the Sniper Rifle\nHold the Sniper Rifle and left-click the item in your inventory to load.",
   "item.trainmurdermystery.scope": "Scope",

@@ -26,6 +26,7 @@ import io.wifi.starrailexpress.content.vote.command.SREVoteCommand;
 import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
 import io.wifi.starrailexpress.event.AFKEventHandler;
+import io.wifi.starrailexpress.event.AllowShootRevolverDrop;
 import io.wifi.starrailexpress.event.EntityInteractionHandler;
 import io.wifi.starrailexpress.event.PlayerInteractionHandler;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -169,6 +170,14 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PlayerInteractionHandler.register();
         EntityInteractionHandler.register();
         AFKEventHandler.register();
+
+        // 制式左轮永不掉落：无论谁持有，命中玩家后枪都不会掉落
+        AllowShootRevolverDrop.EVENT.register((player, target) -> {
+            if (player.getMainHandItem().is(TMMItems.STANDARD_REVOLVER)) {
+                return AllowShootRevolverDrop.ShouldDropResult.FALSE;
+            }
+            return AllowShootRevolverDrop.ShouldDropResult.PASS;
+        });
     }
 
     private void registerServerLifecycleEvents() {
@@ -316,6 +325,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             SREPlayerStatsComponent.KEY.get(handler.player).flushDatabaseAsync();
+            CustomRoleServerNetwork.onPlayerDisconnect(handler.player.getUUID());
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(handler.player.level());
             var psychocca = SREPlayerPsychoComponent.KEY.get(handler.player);
             if (psychocca.psychoTicks > 0) {

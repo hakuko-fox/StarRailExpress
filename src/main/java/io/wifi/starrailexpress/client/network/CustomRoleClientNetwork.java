@@ -11,11 +11,14 @@ import java.util.List;
 
 /**
  * 自定义职业客户端网络处理
- * 接收服务端发来的自定义职业 JSON 配置，解析后存储在内存中
+ * 接收服务端发来的自定义职业 JSON 配置，通过 hash 对比跳过重复解析
  */
 public class CustomRoleClientNetwork {
 
     private static final Gson GSON = new GsonBuilder().create();
+
+    /** 客户端上次收到的 hash，用于跳过重复解析 */
+    private static int lastReceivedHash = 0;
 
     /** 客户端内存中缓存的原始 JSON 字符串 */
     private static String syncedJson = null;
@@ -23,18 +26,26 @@ public class CustomRoleClientNetwork {
     /** 客户端内存中缓存的已解析角色数据列表 */
     private static final List<CustomRoleData> syncedRoles = new ArrayList<>();
 
+    /** 是否已收到过有效的自定义职业数据 */
+    private static boolean hasSyncedData = false;
+
     /**
      * 注册客户端接收器
      */
     public static void register() {
         ClientPlayNetworking.registerGlobalReceiver(CustomRoleSyncPayload.TYPE, (payload, context) -> {
+            int hash = payload.hash();
+            // hash 相同则跳过解析（内容未变化）
+            if (hasSyncedData && hash == lastReceivedHash) {
+                return;
+            }
+            lastReceivedHash = hash;
             context.client().execute(() -> {
                 String json = payload.jsonContent();
                 if (json != null && !json.isEmpty()) {
                     syncedJson = json;
                     syncedRoles.clear();
                     try {
-                        // 解析 JSON 并存入内存
                         com.google.gson.JsonObject root = GSON.fromJson(json, com.google.gson.JsonObject.class);
                         if (root.has("roles")) {
                             for (var element : root.getAsJsonArray("roles")) {
@@ -47,6 +58,7 @@ public class CustomRoleClientNetwork {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    hasSyncedData = true;
                 }
             });
         });
@@ -72,9 +84,16 @@ public class CustomRoleClientNetwork {
         return null;
     }
 
+    /** 是否已有同步数据 */
+    public static boolean hasSyncedData() {
+        return hasSyncedData;
+    }
+
     /** 清理缓存（离开服务器时） */
     public static void clearCache() {
+        lastReceivedHash = 0;
         syncedJson = null;
         syncedRoles.clear();
+        hasSyncedData = false;
     }
 }

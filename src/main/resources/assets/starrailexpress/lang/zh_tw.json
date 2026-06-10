@@ -737,6 +737,8 @@
   "item.trainmurdermystery.psycho_mode.tooltip": "“你喜歡傷害別人嗎？”\n隱藏你的身份，讓你用球棒瘋狂亂打30秒\n全力揮擊球棒可造成擊殺，且在能力持續期間無法取消選擇\n購買後立即啟動，有5分鐘冷卻時間",
   "item.trainmurdermystery.revolver": "左輪手槍",
   "item.trainmurdermystery.revolver.tooltip": "瞄準，右鍵並射擊\n如果你擊殺平民會直接掉落",
+  "item.trainmurdermystery.standard_revolver": "制式左輪",
+  "item.trainmurdermystery.standard_revolver.tooltip": "瞄準，右鍵並射擊\n命中玩家後永不掉落",
   "item.trainmurdermystery.magnum_bullet": "馬格南子彈",
   "item.trainmurdermystery.magnum_bullet.tooltip": "狙擊槍的彈藥\n手上拿著狙擊槍，打開物品欄左鍵物品即可裝填。",
   "item.trainmurdermystery.scope": "倍鏡",
