@@ -122,7 +122,7 @@ public class CustomRoleLoader {
      * 在收到服务端同步包并写入本地文件后调用
      */
     public static void reloadClient() {
-        // 清除旧的客户端注册的自定义职业
+        // 清除旧的客户端注册的自定义职业（包括技能注册，避免 re-register 抛异常）
         List<String> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
             if ("customrole".equals(entry.getKey().getNamespace())) {
@@ -131,7 +131,14 @@ public class CustomRoleLoader {
                 org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
             }
         }
+        // 同时清除 registeredRoles 中的旧角色技能（TMMRoles.ROLES 可能已被 clearCache 清空）
+        for (var entry : registeredRoles.entrySet()) {
+            ResourceLocation roleId = ResourceLocation.fromNamespaceAndPath("customrole", entry.getKey());
+            RoleSkill.unregister(roleId);
+        }
         toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
+        registeredRoles.clear();
+        loadedRoles.clear();
         instinctMaxRanges.clear();
         instinctSameColor.clear();
 
