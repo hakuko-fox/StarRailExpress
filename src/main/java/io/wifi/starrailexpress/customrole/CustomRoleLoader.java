@@ -129,6 +129,8 @@ public class CustomRoleLoader {
             }
         }
         toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
+        instinctMaxRanges.clear();
+        instinctSameColor.clear();
 
         // 从客户端本地 config 目录加载（网络同步写入的）
         CustomRoleConfig config = CustomRoleConfig.loadFromDefaultPath();
