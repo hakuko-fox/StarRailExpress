@@ -42,6 +42,7 @@ public class CustomRoleLoader {
     private static final Map<ResourceLocation, Integer> initialCooldownMap = new HashMap<>();
     private static boolean mapRestrictionHandlerRegistered = false;
     private static boolean initialCooldownHandlerRegistered = false;
+    private static boolean instinctHandlerRegistered = false;
 
     /**
      * 重新加载所有自定义职业
@@ -103,9 +104,11 @@ public class CustomRoleLoader {
             }
         }
 
-        // 注册本能透视事件处理器（仅客户端，通过内部类避免服务端加载客户端类）
-        if (FabricLoader.getInstance().getEnvironmentType() == net.fabricmc.api.EnvType.CLIENT) {
+        // 注册本能透视事件处理器（仅客户端，通过内部类避免服务端加载客户端类，仅首次注册）
+        if (!instinctHandlerRegistered
+                && FabricLoader.getInstance().getEnvironmentType() == net.fabricmc.api.EnvType.CLIENT) {
             ClientInstinctHandler.register();
+            instinctHandlerRegistered = true;
         }
 
         // 处理互斥、绑定生成、地图限制等（postInit 需要所有角色已注册）
@@ -144,6 +147,13 @@ public class CustomRoleLoader {
                 SRE.LOGGER.error("[CustomRole-Client] Failed to register: {}", data.englishId, e);
             }
         }
+
+        // 注册本能透视事件处理器（客户端，仅首次）
+        if (!instinctHandlerRegistered) {
+            ClientInstinctHandler.register();
+            instinctHandlerRegistered = true;
+        }
+
         postInit();
         SRE.LOGGER.info("[CustomRole-Client] Reloaded {} custom roles from local config", config.roles.size());
     }
