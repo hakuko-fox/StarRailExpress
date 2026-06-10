@@ -115,13 +115,26 @@ public class CustomRoleLoader {
     public static CustomRoleData getCustomRoleData(String englishId) {
         var result = loadedRoles.get(englishId);
         if (result != null) return result;
-        // 回退：尝试从 world 存档加载
+        // 回退：尝试从 world 存档加载（服务端）
         try {
-            var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
-            return cfg.findRole(englishId);
-        } catch (Exception e) {
-            return null;
-        }
+            if (io.wifi.starrailexpress.SRE.SERVER != null) {
+                var cfg = CustomRoleConfig.loadPreferWorldPath(io.wifi.starrailexpress.SRE.SERVER);
+                var found = cfg.findRole(englishId);
+                if (found != null) return found;
+            }
+        } catch (Exception ignored) {}
+        // 客户端回退：尝试从本地 config 目录（网络同步写入的）
+        try {
+            var cfg = CustomRoleConfig.loadFromDefaultPath();
+            var found = cfg.findRole(englishId);
+            if (found != null) return found;
+        } catch (Exception ignored) {}
+        // 最终回退：尝试从客户端内存中的网络同步数据
+        try {
+            var cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(englishId);
+            if (cd != null) return cd;
+        } catch (Throwable ignored) {}
+        return null;
     }
 
     public static SRERole getRegisteredRole(String englishId) {

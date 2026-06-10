@@ -5,13 +5,18 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.customrole.CustomRoleData;
 import io.wifi.starrailexpress.network.CustomRoleSyncPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 
+import java.io.BufferedWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 自定义职业客户端网络处理
- * 接收服务端发来的自定义职业 JSON 配置，通过 hash 对比跳过重复解析
+ * 接收服务端发来的自定义职业 JSON 配置，解析后存入内存，同时写入本地 config 目录
  */
 public class CustomRoleClientNetwork {
 
@@ -55,6 +60,8 @@ public class CustomRoleClientNetwork {
                                 }
                             }
                         }
+                        // 写入客户端本地 config 目录，确保 CustomRoleLoader.getCustomRoleData() 可读取
+                        writeToLocalConfig(json);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -62,6 +69,23 @@ public class CustomRoleClientNetwork {
                 }
             });
         });
+    }
+
+    /**
+     * 将同步的 JSON 写入客户端本地 config 目录
+     * 这样 CustomRoleLoader.getCustomRoleData() 在客户端也能通过文件读取到数据
+     */
+    private static void writeToLocalConfig(String json) {
+        try {
+            Path configDir = FabricLoader.getInstance().getConfigDir();
+            Path configPath = configDir.resolve("sre_custom_roles.json");
+            Files.createDirectories(configDir);
+            try (BufferedWriter writer = Files.newBufferedWriter(configPath, StandardCharsets.UTF_8)) {
+                writer.write(json);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /** 获取同步过来的原始 JSON 字符串 */
