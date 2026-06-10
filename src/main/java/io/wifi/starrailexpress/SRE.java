@@ -196,6 +196,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             // 加载自定义职业
             try {
                 io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server);
+                // 同步自定义职业配置到所有客户端
+                CustomRoleServerNetwork.clearCache();
+                CustomRoleServerNetwork.syncToAllPlayers(server);
             } catch (Throwable e) {
                 LOGGER.error("[CustomRole] Failed to load custom roles on server start", e);
             }
@@ -308,6 +311,8 @@ public class SRE extends StarRailExpressID implements ModInitializer {
                             handler.player.getScoreboardName());
                 }
             }
+            // 同步自定义职业配置给新加入的玩家
+            CustomRoleServerNetwork.syncToPlayer(server, handler.player);
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             SREPlayerStatsComponent.KEY.get(handler.player).flushDatabaseAsync();
@@ -445,6 +450,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.OpenUI.TYPE, EntityInteractionBlockPayload.OpenUI.CODEC);
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.SyncBlockEntity.TYPE, EntityInteractionBlockPayload.SyncBlockEntity.CODEC);
         PayloadTypeRegistry.playC2S().register(EntityInteractionBlockPayload.SaveConfig.TYPE, EntityInteractionBlockPayload.SaveConfig.CODEC);
+
+        // 自定义职业同步数据包（服务端 → 客户端）
+        PayloadTypeRegistry.playS2C().register(CustomRoleSyncPayload.TYPE, CustomRoleSyncPayload.CODEC);
 
         // 职业轮选数据包
         PayloadTypeRegistry.playC2S().register(RoleRotationSelectC2SPacket.TYPE, RoleRotationSelectC2SPacket.CODEC);
