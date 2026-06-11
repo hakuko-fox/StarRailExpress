@@ -24,7 +24,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
 
-public class RoleRotationTestCommand {
+public class ClassChangeTestCommand {
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
     dispatcher.register(Commands.literal("tmm:game")
         .then(Commands.literal("role").then(Commands.literal("role_change_mode")
@@ -50,8 +50,8 @@ public class RoleRotationTestCommand {
 
       // 获取游戏世界组件
       SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(targetPlayer.level());
-      if (!gameWorldComponent.getGameMode().identifier.equals(SREGameModes.ROLE_ROTATION_MODE.identifier) && !gameWorldComponent.getGameMode().identifier.equals(SREGameModes.CLASS_CHANGE_MODE.identifier)) {
-        throw new Exception("This command can only be executed in 'Role Rotation Mode' or 'Class Change Mode'!");
+      if (!gameWorldComponent.getGameMode().identifier.equals(SREGameModes.CLASS_CHANGE_MODE.identifier)) {
+        throw new Exception("This command can only be executed in 'Class Change Mode'!");
       }
       SREPlayerTaskComponent srePlayerTaskComponent = SREPlayerTaskComponent.KEY.get(targetPlayer);
       srePlayerTaskComponent.clear();
