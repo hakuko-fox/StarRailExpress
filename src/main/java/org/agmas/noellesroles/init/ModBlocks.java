@@ -33,12 +33,12 @@ public interface ModBlocks {
     public static final BlockEntityTypeRegistrar blockEntityRegistrar = new BlockEntityTypeRegistrar(
             Noellesroles.MOD_ID);
 
+    Block VENDING_MACHINES_BLOCK = registerBlock("vending_machines",
+            new VendingMachinesBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion()));
     BlockEntityType<VendingMachinesBlockEntity> VENDING_MACHINES_BLOCK_ENTITY = blockEntityRegistrar.create(
             "vending_machines",
             BlockEntityType.Builder.of(VendingMachinesBlockEntity::new,
                     ModBlocks.VENDING_MACHINES_BLOCK));
-    Block VENDING_MACHINES_BLOCK = registerBlock("vending_machines",
-            new VendingMachinesBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion()));
     // 创建轮盘赌桌方块
     Block DEVIL_ROULETTE_TABLE = registerBlock("devil_roulette_table",
             new DevilRouletteTable());
