@@ -19,6 +19,7 @@
     "client.GuiRenderMixin",
     "client.IHateWatheModelLayers",
     "client.PanoramaMixin",
-    "client.SignRendererMixin"
+    "client.SignRendererMixin",
+    "client.vc.BetterVoiceChatVolumeManageMixin"
   ]
 }
