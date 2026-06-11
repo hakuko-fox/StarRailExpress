@@ -217,6 +217,7 @@
   "gui.sre.gamemode.custom.title": "陽光自選角色選擇",
   "gui.sre.gamemode.custom.subtitle": "剩餘選擇時間：%ss",
   "hud.sre.tip.gamemode.role_rotation": "職業輪選模式",
+  "hud.sre.tip.gamemode.class_change": "職業變換模式",
   "gui.sre.role_rotation.title": "職業輪選",
   "gui.sre.role_rotation.current_turn": "當前: 第 %s/%s 號玩家",
   "gui.sre.role_rotation.your_index": "你是第 %s 號玩家",
