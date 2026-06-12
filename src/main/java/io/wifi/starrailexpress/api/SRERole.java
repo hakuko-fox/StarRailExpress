@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -920,5 +921,24 @@ public abstract class SRERole {
      */
     public boolean playerBodyQuickMoveStack(Player player, int index) {
         return true;
+    }
+
+    /**
+     * 当玩家尝试丢弃物品时触发。该回调在物品真正被移除前执行，可用于拦截或自定义丢弃行为。
+     * <p>
+     * 根据返回值决定后续处理：
+     * <ul>
+     * <li><b>{@link InteractionResult#PASS}</b> — 使用默认逻辑，正常执行物品丢弃。</li>
+     * <li><b>{@link InteractionResult#CONSUME}</b> — 取消本次丢弃行为</li>
+     * <li><b>{@link InteractionResult#SUCCESS}</b> — 取消本次丢弃行为</li>
+     * <li><b>{@link InteractionResult#FAIL}</b> — 取消本次丢弃行为</li>
+     * </ul>
+     *
+     * @param player 尝试丢弃物品的玩家，不可为 {@code null}
+     * @param item   准备丢弃的物品堆
+     * @return 控制丢弃行为的交互结果，默认可返回 {@link InteractionResult#PASS}
+     */
+    public InteractionResult onDropItem(LocalPlayer player, ItemStack item) {
+        return InteractionResult.PASS;
     }
 }
