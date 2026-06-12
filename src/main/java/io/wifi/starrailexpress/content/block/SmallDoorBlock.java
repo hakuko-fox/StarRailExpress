@@ -418,10 +418,12 @@ public class SmallDoorBlock extends DoorPartBlock {
             int ticks) {
         entity.toggle(false, ticks);
         Direction facing = state.getValue(FACING);
+        boolean open = state.getValue(OPEN);
         BlockPos neighborPos = lowerPos.relative(facing.getCounterClockWise());
         BlockState neighborState = world.getBlockState(neighborPos);
         if (neighborState.is(state.getBlock())
                 && neighborState.getValue(FACING).getOpposite() == facing
+                && neighborState.getValue(OPEN) == open
                 && world.getBlockEntity(neighborPos) instanceof SmallDoorBlockEntity neighborEntity) {
             neighborEntity.toggle(true, ticks);
         }

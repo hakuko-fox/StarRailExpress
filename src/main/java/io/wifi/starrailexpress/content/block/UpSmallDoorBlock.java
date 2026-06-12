@@ -129,8 +129,10 @@ public class UpSmallDoorBlock extends SmallDoorBlock {
         toggledPositions.add(lowerPos);
 
         // 向两个侧面方向递归探索
-        collectConnectedDoors(world, lowerPos, sideDir1, facing.getAxis(), toggledPositions,EXPAND_MAX);
-        collectConnectedDoors(world, lowerPos, sideDir2, facing.getAxis(), toggledPositions,EXPAND_MAX);
+        collectConnectedDoors(world, lowerPos, sideDir1, facing.getAxis(), toggledPositions, state.getValue(OPEN),
+                EXPAND_MAX);
+        collectConnectedDoors(world, lowerPos, sideDir2, facing.getAxis(), toggledPositions, state.getValue(OPEN),
+                EXPAND_MAX);
 
         // 对除主门以外的所有门执行联动开关（传入 true 表示从属联动）
         for (BlockPos pos : toggledPositions) {
@@ -152,17 +154,19 @@ public class UpSmallDoorBlock extends SmallDoorBlock {
      * @param direction    侧面探索方向（向左或向右）
      * @param requiredAxis 门朝向需要满足的轴（与主门轴相同，允许相反）
      * @param collected    收集结果集合
+     * @param open         开门状态
      * @param max          最大连锁
      */
     private void collectConnectedDoors(Level world, BlockPos startPos, Direction direction, Direction.Axis requiredAxis,
-            Set<BlockPos> collected, int max) {
+            Set<BlockPos> collected, boolean open, int max) {
         BlockPos currentPos = startPos.relative(direction);
         int count = 0;
         while (count <= max) {
             BlockState state = world.getBlockState(currentPos);
-            // 必须是 SmallDoorBlock 的下半部分，且 FACING 的轴与 requiredAxis 相同
+            // 必须是 SmallDoorBlock 的下半部分，且 FACING 的轴与 requiredAxis 相同，且必须开门状态相同
             if (!(state.getBlock() instanceof SmallDoorBlock)
                     || state.getValue(HALF) != DoubleBlockHalf.LOWER
+                    || state.getValue(OPEN) != open
                     || state.getValue(FACING).getAxis() != requiredAxis) {
                 break;
             }
