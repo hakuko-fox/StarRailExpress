@@ -48,7 +48,8 @@ public abstract class WorldRendererMixin {
             original.call(camera, fogType, viewDistance, thickFog, tickDelta);
             return;
         }
-        if (SREClient.trainComponent != null && SREClient.trainComponent.isFoggy()) {
+        if (SREClient.trainComponent != null && SREClient.trainComponent.isFoggy()
+                && SREClient.areaComponent != null && SREClient.areaComponent.fogEnabled) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player.hasEffect(ModEffects.OTHERWORLD_AURA)){
                 if (SREClient.gameComponent== null|| !SREClient.gameComponent.canUseKillerFeatures(player)){
@@ -70,6 +71,8 @@ public abstract class WorldRendererMixin {
             } else {
                 tmm$doFog(0, 200);
             }
+        } else {
+            original.call(camera, fogType, viewDistance, thickFog, tickDelta);
         }
     }
 

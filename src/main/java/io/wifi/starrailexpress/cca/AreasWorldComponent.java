@@ -163,6 +163,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     
     // 雪花效果配置（默认关闭）
     public boolean snowEnabled = false;
+
+    // 雾气效果配置（默认关闭）
+    public boolean fogEnabled = false;
     
     // 天气配置（默认晴天）
     public String weather = "clear"; // clear, rain, thunder
@@ -382,6 +385,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
         this.snowEnabled = tag.contains("snowEnabled") ? tag.getBoolean("snowEnabled") : false;
+        this.fogEnabled = tag.contains("fogEnabled") ? tag.getBoolean("fogEnabled") : false;
         this.sceneOffsetEnabled = tag.contains("sceneOffsetEnabled") ? tag.getBoolean("sceneOffsetEnabled") : false;
         this.sceneOffsetX = tag.contains("sceneOffsetX") ? tag.getDouble("sceneOffsetX") : 0;
         this.sceneOffsetY = tag.contains("sceneOffsetY") ? tag.getDouble("sceneOffsetY") : 125;
@@ -453,6 +457,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("canSwim", this.canSwim);
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
         tag.putBoolean("snowEnabled", this.snowEnabled);
+        tag.putBoolean("fogEnabled", this.fogEnabled);
         tag.putBoolean("sceneOffsetEnabled", this.sceneOffsetEnabled);
         tag.putDouble("sceneOffsetX", this.sceneOffsetX);
         tag.putDouble("sceneOffsetY", this.sceneOffsetY);

@@ -60,6 +60,7 @@
   "sre.field.haveOutsideSound": "Train Sound Effects",
   "sre.field.sceneOffsetEnabled": "Scene Offset (Deprecated)",
   "sre.field.snowEnabled": "Enable Snowflake",
+  "sre.field.fogEnabled": "Enable Fog",
   "sre.field.daylightCycle": "Enable Daylight Cycle",
   "sre.field.weatherCycle": "Enable Weather Cycle",
   "sre.field.mustCopy": "Force Full Copy Area",

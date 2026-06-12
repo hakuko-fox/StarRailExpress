@@ -203,6 +203,7 @@ public class MapManager {
 
         // 保存雪花效果配置
         jsonObject.addProperty("snowEnabled", areas.snowEnabled);
+        jsonObject.addProperty("fogEnabled", areas.fogEnabled);
 
         // 保存天气配置
         jsonObject.addProperty("weather", areas.weather);
@@ -303,6 +304,11 @@ public class MapManager {
                 areas.snowEnabled = jsonObject.get("snowEnabled").getAsBoolean();
             } else {
                 areas.snowEnabled = false;
+            }
+            if (jsonObject.has("fogEnabled")) {
+                areas.fogEnabled = jsonObject.get("fogEnabled").getAsBoolean();
+            } else {
+                areas.fogEnabled = true;
             }
 
             // 加载场景偏移配置（默认关闭）

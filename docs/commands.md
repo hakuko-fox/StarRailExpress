@@ -529,55 +529,95 @@
 
 ---
 
-### `tmm:game role role_change_mode` — 职业变换模式专用 (ClassChangeTestCommand)
+### `tmm:game role role_change_mode` — 改变职业并欢迎 (ClassChangeTestCommand)
 - **权限**: `3`
 - **结构**: `role role_change_mode <player> <role> [record_replay] [add_stats]`
-- **用途**: 仅在职业变换模式下使用，改变玩家职业并发送欢迎报幕
 
 ---
 
-### `tmm:game visual` — 视觉效果管理 (SetVisualCommand)
+### `tmm:game role silent_change` — 静默改变职业 (GameUtilsCommand)
 - **权限**: `2`
-- **结构**:
-  - `visual snow <enabled>` (bool) — 启用/禁用下雪效果
-  - `visual fog <enabled>` (bool) — 启用/禁用雾气效果
-  - `visual hud <enabled>` (bool) — 启用/禁用 HUD 显示
-  - `visual trainSpeed <speed>` (int ≥0) — 设置列车行驶速度
-  - `visual time <timeOfDay>` (枚举) — 设置环境时间（日/夜/黄昏）
-  - `visual reset` — 重置所有视觉效果
+- **结构**: `role silent_change <role> [no_sync]`
+
+---
+
+### `tmm:game role send_welcome` — 发送欢迎报幕 (GameUtilsCommand)
+- **结构**: `send_welcome [killer_count] [role]`（`-1`=自动杀手数）
+
+---
+
+### `tmm:game role` — 其他角色管理 (GameUtilsCommand)
+- **结构**: `sync_roles` | `assign_event` | `remove_event`
+
+---
+
+### `tmm:game tests` — 测试工具 (GameUtilsCommand + GamblerMiracleCommand)
+- **结构**: `vote_players` | `prayer` | `gambler_draw` | `gambler_miracle [player]` | `math [forced]`
+
+---
+
+### `tmm:game tasks` — 任务队列管理 (GameUtilsCommand)
+- **结构**: `tasks list` | `tasks clear task_queue/task_list` | `tasks cancel task_queue/task_list <tid>/all`
+
+---
+
+### `tmm:game win` — 触发胜利 (GameUtilsCommand)
+- **结构**: `win <id>` | `win CUSTOM <color> <id>` | `win CUSTOM_COMPONENT <color> <title> <subtitle>`
+
+---
+
+### `tmm:game reset` — 重置地图/实体 (GameUtilsCommand)
+- **结构**: `reset blocks copy/simple` | `reset entity clear`
+
+---
+
+### `tmm:game scan` — 扫描地图数据 (GameUtilsCommand)
+- **结构**: `scan` | `scan reset_points` | `scan task_points`
+
+---
+
+### `tmm:game blackout / monitor_broken / psycho` — 游戏状态控制 (GameUtilsCommand)
+- **结构**: `blackout [duration|stop]` | `monitor_broken [duration|stop]` | `psycho stop`
+
+---
+
+### `tmm:game body` — 尸体操作 (GameUtilsCommand)
+- **结构**: `body teleport` | `body kill` | `body as_run <command>`
+
+---
+
+### `tmm:game revive` — 复活 (GameUtilsCommand)
+- **结构**: `revive <player> [to_body [remove_body]|pos]`
+
+---
+
+### `tmm:game kill` — 击杀玩家 (GameUtilsCommand)
+- **结构**: `kill <victim> <death_reason> [killer] [spawn_body] [force]`
+
+---
+
+### `tmm:game timestop` — 时停 (GameUtilsCommand)
+- **结构**: `timestop <duration> <message>` | `timestop stop`
+
+---
+
+### `tmm:game visual` — 视觉效果 (SetVisualCommand)
+- **结构**: `visual snow/fog/hud <enabled>` | `visual trainSpeed <speed>` | `visual time <tod>` | `visual reset`
 
 ---
 
 ### `tmm:game bounds` — 边界限制 (SetBoundCommand)
-- **权限**: `2`
 - **结构**: `bounds <enabled>` (bool)
-- **用途**: 启用/禁用游戏边界限制（玩家不能出界）
 
 ---
 
-### `tmm:game time` — 游戏倒计时 (SetTimerCommand)
-- **权限**: `2`
-- **结构**:
-  - `time [get]` — 查看当前剩余时间
-  - `time set <minutes> <seconds>` — 设置游戏倒计时（分:秒）
+### `tmm:game time` — 倒计时 (SetTimerCommand)
+- **结构**: `time [get]` | `time set <minutes> <seconds>`
 
 ---
 
-### `tmm:game penalty` — 死亡惩罚管理 (SetDeathPenaltyCommand)
-- **权限**: `2`
-- **结构**:
-  - `penalty stop` — 停止当前死亡惩罚
-  - `penalty start <time> <after_detection>` — 启动死亡惩罚
-    - `<time>` (int) — 惩罚时间（-1 = 无限）
-    - `<after_detection>` (bool) — 是否在检测尸体后开始
-    - 需要旁观者模式执行
-
----
-
-### `tmm:game tests gambler_miracle` — 测试赌徒奇迹 (GamblerMiracleCommand)
-- **权限**: `2`
-- **结构**: `tests gambler_miracle [player]`
-- **用途**: 触发赌徒的 1% 奇迹效果（不指定玩家则对自己生效）
+### `tmm:game penalty` — 死亡惩罚 (SetDeathPenaltyCommand)
+- **结构**: `penalty stop` | `penalty start <time> <after_detection>`
 
 ---
 

@@ -60,6 +60,7 @@
   "sre.field.haveOutsideSound": "列车音效",
   "sre.field.sceneOffsetEnabled": "场景偏移（弃用）",
   "sre.field.snowEnabled": "启用雪花",
+  "sre.field.fogEnabled": "启用雾气",
   "sre.field.daylightCycle": "启用昼夜循环",
   "sre.field.weatherCycle": "启用天气循环",
   "sre.field.mustCopy": "强制全复制区域",
