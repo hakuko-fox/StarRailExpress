@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.block.RemoteRedstoneBlock;
 import io.wifi.starrailexpress.content.block.TrainLightBlock;
 import io.wifi.starrailexpress.content.block.UpSmallDoorBlock;
+import io.wifi.starrailexpress.content.block.UpTrainDoorBlock;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -52,7 +53,7 @@ public interface SREBlocks {
             BlockBehaviour.Properties.ofFullCopy(UP_GLASS_DOOR).sound(SoundType.COPPER)),
             new Item.Properties().rarity(Rarity.EPIC));
     Block UP_STEEL_DOOR = registerBlock("up_steel_door",
-            new UpSmallDoorBlock(() -> TMMBlockEntities.UP_STEEL_DOOR,
+            new UpTrainDoorBlock(() -> TMMBlockEntities.UP_STEEL_DOOR,
                     BlockBehaviour.Properties.ofFullCopy(UP_GLASS_DOOR).sound(SoundType.COPPER)),
             new Item.Properties().rarity(Rarity.EPIC));
 
