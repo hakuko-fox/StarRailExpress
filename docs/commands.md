@@ -552,10 +552,11 @@
   - `role remove_event` — 移除分配事件
 - **用途**: 游戏内职业管理
 
-### `tmm:game role role_change_mode` — 改变职业并欢迎 (ClassChangeTestCommand)
+### `tmm:game role role_change_mode` — 改变职业清理手持物并欢迎 (ClassChangeTestCommand)
+
 - **权限**: `3` (本身 2，但调用 changeRole 需 3)
 - **结构**: `role role_change_mode <player> <role> [record_replay] [add_stats]`
-- **用途**: 改变玩家职业并广播，不受当前游戏模式限制
+- **用途**: 改变玩家职业，清理玩家背包中除了信件和钥匙的其他物品，并欢迎
 
 ### `tmm:game tests` — 测试工具 (GameUtilsCommand + GamblerMiracleCommand)
 - **权限**: `2`
@@ -563,8 +564,7 @@
   - `tests prayer` — 测试祈雨
   - `tests gambler_draw` — 测试赌徒抽牌
   - `tests gambler_miracle [player]` — 测试赌徒奇迹
-  - `tests math` — 测试数学
-  - `tests forced` — 强制测试
+  - `tests math <forced>` — 测试数学(可强制测试)
 - **用途**: 测试各种职业机制
 
 ### `tmm:game tasks` — 任务队列管理 (GameUtilsCommand)
