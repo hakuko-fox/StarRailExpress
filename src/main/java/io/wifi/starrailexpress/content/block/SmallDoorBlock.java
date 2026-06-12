@@ -142,7 +142,7 @@ public class SmallDoorBlock extends DoorPartBlock {
         }
     }
 
-    private boolean tryOpenDoors(Level world, BlockPos pos, int ticks) {
+    protected boolean tryOpenDoors(Level world, BlockPos pos, int ticks) {
         if (world.getBlockEntity(pos) instanceof SmallDoorBlockEntity entity) {
             if (entity.isJammed()) {
                 if (!world.isClientSide)
@@ -385,7 +385,7 @@ public class SmallDoorBlock extends DoorPartBlock {
         return InteractionResult.SUCCESS;
     }
 
-    static @NotNull InteractionResult open(BlockState state, Level world, SmallDoorBlockEntity entity,
+    public @NotNull InteractionResult open(BlockState state, Level world, SmallDoorBlockEntity entity,
             BlockPos lowerPos) {
         if (world.isClientSide)
             return InteractionResult.SUCCESS;
@@ -393,11 +393,28 @@ public class SmallDoorBlock extends DoorPartBlock {
         return InteractionResult.CONSUME;
     }
 
-    public static void toggleDoor(BlockState state, Level world, SmallDoorBlockEntity entity, BlockPos lowerPos) {
+    static @NotNull InteractionResult openStatic(BlockState state, Level world, SmallDoorBlockEntity entity,
+            BlockPos lowerPos) {
+        if (world.isClientSide)
+            return InteractionResult.SUCCESS;
+        toggleDoorStatic(state, world, entity, lowerPos);
+        return InteractionResult.CONSUME;
+    }
+
+    public void toggleDoor(BlockState state, Level world, SmallDoorBlockEntity entity, BlockPos lowerPos) {
         toggleDoor(state, world, entity, lowerPos, -2);
     }
 
-    public static void toggleDoor(BlockState state, Level world, SmallDoorBlockEntity entity, BlockPos lowerPos,
+    public void toggleDoor(BlockState state, Level world, SmallDoorBlockEntity entity, BlockPos lowerPos,
+            int ticks) {
+        toggleDoorStatic(state, world, entity, lowerPos, ticks);
+    }
+
+    public static void toggleDoorStatic(BlockState state, Level world, SmallDoorBlockEntity entity, BlockPos lowerPos) {
+        toggleDoorStatic(state, world, entity, lowerPos, -2);
+    }
+
+    public static void toggleDoorStatic(BlockState state, Level world, SmallDoorBlockEntity entity, BlockPos lowerPos,
             int ticks) {
         entity.toggle(false, ticks);
         Direction facing = state.getValue(FACING);

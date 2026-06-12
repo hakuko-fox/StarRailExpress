@@ -32,8 +32,15 @@ public class TrainDoorBlock extends SmallDoorBlock {
         InteractionResult apply(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit);
     }
 
+    @FunctionalInterface
+    public interface DoorOpenSuperFunction {
+        InteractionResult apply(BlockState state, Level world, SmallDoorBlockEntity entity,
+                BlockPos lowerPos);
+    }
+
     public static InteractionResult useWithoutItemGeneric(
-            DoorUseSuperFunction superFunction, // 父类方法的回调
+            DoorUseSuperFunction superUseFunction, // 父类方法的回调
+            DoorOpenSuperFunction superOpenFunction,
             BlockState state, Level world, BlockPos pos, Player player,
             BlockHitResult hit) {
 
@@ -45,18 +52,19 @@ public class TrainDoorBlock extends SmallDoorBlock {
             boolean requiresKey = !entity.getKeyName().isEmpty();
             if (requiresKey) {
                 // 需要钥匙时，调用传入的父类逻辑，并把当前方法的参数传递进去
-                return superFunction.apply(state, world, pos, player, hit);
+                return superUseFunction.apply(state, world, pos, player, hit);
             }
             if (player.isCreative()
                     || AllowPlayerOpenLockedDoor.EVENT.invoker().allowOpen(player)) {
-                return open(state, world, entity, lowerPos);
+                return superOpenFunction.apply(state, world, entity, lowerPos);
             } else {
                 ItemStack mainHandItem = player.getMainHandItem();
-                boolean hasLockpick = mainHandItem.is(TMMItems.LOCKPICK) || mainHandItem.is(ModItems.MASTER_KEY) || mainHandItem.is(FunnyItems.BOWEN_BADGE);
+                boolean hasLockpick = mainHandItem.is(TMMItems.LOCKPICK) || mainHandItem.is(ModItems.MASTER_KEY)
+                        || mainHandItem.is(FunnyItems.BOWEN_BADGE);
                 boolean hasIronDoorKey = mainHandItem.getItem() instanceof IronDoorKeyItem;
 
                 if (entity.isOpen()) {
-                    return open(state, world, entity, lowerPos);
+                    return superOpenFunction.apply(state, world, entity, lowerPos);
                 } else {
                     if (entity.isJammed()) {
                         if (!world.isClientSide) {
@@ -69,14 +77,14 @@ public class TrainDoorBlock extends SmallDoorBlock {
                     if (hasLockpick) {
                         world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
                                 TMMSounds.ITEM_LOCKPICK_DOOR, SoundSource.BLOCKS, 1f, 1f);
-                        return open(state, world, entity, lowerPos);
+                        return superOpenFunction.apply(state, world, entity, lowerPos);
                     } else if (hasIronDoorKey) {
                         if (!player.isCreative()) {
                             mainHandItem.hurtAndBreak(1, player, player.getEquipmentSlotForItem(mainHandItem));
                         }
                         world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
                                 TMMSounds.ITEM_KEY_DOOR, SoundSource.BLOCKS, 1f, 1f);
-                        return open(state, world, entity, lowerPos);
+                        return superOpenFunction.apply(state, world, entity, lowerPos);
                     } else {
                         if (!world.isClientSide) {
                             world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
@@ -96,6 +104,7 @@ public class TrainDoorBlock extends SmallDoorBlock {
             BlockHitResult hit) {
         return useWithoutItemGeneric(
                 (s, w, p, pl, h) -> super.useWithoutItem(s, w, p, pl, h), // lambda 调用父类并传递参数
+                (a, b, c, d) -> super.open(a, b, c, d), // lambda 调用父类并传递参数
                 state, world, pos, player, hit);
     }
 }

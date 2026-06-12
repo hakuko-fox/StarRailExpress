@@ -19,7 +19,7 @@ public class UpSmallDoorBlockEntityRenderer extends AnimatableBlockEntityRendere
 
     public UpSmallDoorBlockEntityRenderer(ResourceLocation texture, BlockEntityRendererProvider.Context ctx) {
         this.texture = texture;
-        this.part = ctx.bakeLayer(TMMModelLayers.SMALL_DOOR);
+        this.part = ctx.bakeLayer(TMMModelLayers.UP_SMALL_DOOR);
     }
 
     public static LayerDefinition getTexturedModelData() {

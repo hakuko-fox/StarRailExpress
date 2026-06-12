@@ -21,6 +21,7 @@ public class UpTrainDoorBlock extends UpSmallDoorBlock {
             BlockHitResult hit) {
         return TrainDoorBlock.useWithoutItemGeneric(
                 (s, w, p, pl, h) -> super.useWithoutItem(s, w, p, pl, h), // lambda 调用父类并传递参数
+                (a, b, c, d) -> super.open(a, b, c, d), // lambda 调用父类并传递参数
                 state, world, pos, player, hit);
     }
 }
