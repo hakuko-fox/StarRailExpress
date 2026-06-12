@@ -321,7 +321,7 @@ public class SREClient implements ClientModInitializer {
                 ctx -> new UpSmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/small_wood_door.png"), ctx));
         BlockEntityRenderers.register(
                 TMMBlockEntities.UP_STEEL_DOOR,
-                ctx -> new UpSmallDoorBlockEntityRenderer(SRE.watheId("textures/entity/navy_steel_door.png"), ctx));
+                ctx -> new UpSmallDoorBlockEntityRenderer(SRE.id("textures/item/doors/up_steel_door.png"), ctx));
         // OTHERS
         BlockEntityRenderers.register(TMMBlockEntities.HORN, HornBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
