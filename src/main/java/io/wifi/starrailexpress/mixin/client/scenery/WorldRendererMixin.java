@@ -66,10 +66,12 @@ public abstract class WorldRendererMixin {
                 return;
             }
             if (SREClient.isTrainMoving()) {
-
-                tmm$doFog(0, 100);
+                // 如果地图未自定义 fogEnd（仍是默认200），则列车移动时使用100
+                tmm$doFog(0, SREClient.areaComponent.fogEnd != 200.0f ? SREClient.areaComponent.fogEnd : 100,
+                        SREClient.areaComponent.fogShape);
             } else {
-                tmm$doFog(0, 200);
+                tmm$doFog(0, SREClient.areaComponent.fogEnd,
+                        SREClient.areaComponent.fogShape);
             }
         } else {
             original.call(camera, fogType, viewDistance, thickFog, tickDelta);
@@ -78,12 +80,21 @@ public abstract class WorldRendererMixin {
 
     @Unique
     private static void tmm$doFog(float fogStart, float fogEnd) {
+        tmm$doFog(fogStart, fogEnd, "SPHERE");
+    }
+
+    @Unique
+    private static void tmm$doFog(float fogStart, float fogEnd, String fogShapeStr) {
         FogRenderer.FogData fogData = new FogRenderer.FogData(FogRenderer.FogMode.FOG_SKY);
 
         fogData.start = fogStart;
         fogData.end = fogEnd;
 
-        fogData.shape = FogShape.SPHERE;
+        FogShape shape = FogShape.SPHERE;
+        if ("CYLINDER".equalsIgnoreCase(fogShapeStr)) {
+            shape = FogShape.CYLINDER;
+        }
+        fogData.shape = shape;
 
         RenderSystem.setShaderFogStart(fogData.start);
         RenderSystem.setShaderFogEnd(fogData.end);
