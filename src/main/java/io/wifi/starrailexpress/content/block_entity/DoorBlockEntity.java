@@ -110,6 +110,10 @@ public abstract class DoorBlockEntity extends SyncingBlockEntity {
         return 180 - this.getFacing().toYRot();
     }
 
+    public boolean getOpen() {
+        return this.getBlockState().getValue(BlockStateProperties.OPEN);
+    }
+
     public Direction getFacing() {
         return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
