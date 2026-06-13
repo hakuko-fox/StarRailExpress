@@ -80,8 +80,8 @@ public class MaChenXuPlayerComponent implements RoleComponent, ServerTickingComp
     // ==================== 恐惧侵蚀常量 ====================
 
     public static final double[] STAGE_RANGE = { 0, 30.0, 40.0, 50.0, 50.0 };
-    /** 各阶段点对点（prox=1）基础侵蚀（mood/tick）：约 1.6/2.6/3.6/4.6 SAN/s */
-    public static final double[] STAGE_EROSION = { 0, 0.0008, 0.0013, 0.0018, 0.0023 };
+    /** 各阶段点对点（prox=1）基础侵蚀（mood/tick）：约 0.64/1.04/1.44/1.84 SAN/s（-60%） */
+    public static final double[] STAGE_EROSION = { 0, 0.00032, 0.00052, 0.00072, 0.00092 };
     public static final double GAZE_MULT = 1.8;
     public static final float LOW_SAN_THRESHOLD = 0.3f;
     public static final double LOW_SAN_MAX_BONUS = 0.5;

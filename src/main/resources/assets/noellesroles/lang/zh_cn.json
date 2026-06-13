@@ -2022,7 +2022,7 @@
   "message.noellesroles.ma_chen_xu.echo.expired": "回响窗口已关闭，未能及时返回。",
   "tip.noellesroles.ma_chen_xu.minor_trick_usage": "小诡术：主技能冷却时按G自动释放一个小诡术",
   "tip.noellesroles.ma_chen_xu.minor_trick_cast": "小诡术·%s 已释放！",
-  "message.noellesroles.ma_chen_xu.minor_trick_acquired": "小诡术·%s 已解锁！"
+  "message.noellesroles.ma_chen_xu.minor_trick_acquired": "小诡术·%s 已解锁！",
   "message.noellesroles.ma_chen_xu.echo.ready": "回响录制完毕！可以传送回录制点。",
   "message.noellesroles.ma_chen_xu.echo.teleported": "回响传送！",
   "message.noellesroles.ma_chen_xu.echo.can_teleport": "回响就绪，按 %s 传送回录制点。",
