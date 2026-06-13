@@ -98,13 +98,13 @@ public class PlaneSmallDoorBlock extends SmallDoorBlock {
         // 打开时，计算最终偏移量（与动画定义中的终点一致）
         // 向外偏移：门的正面方向 (facing) 偏移 7 格
         // 向右偏移：门的右侧方向 (facing 顺时针旋转 90°) 偏移 14 格
-        float outX = facing.getStepX() * 7f;
-        float outZ = facing.getStepZ() * 7f;
+        float outX = facing.getOpposite().getStepX() * 7f;
+        float outZ = facing.getOpposite().getStepZ() * 7f;
         float rightX = facing.getClockWise().getStepX() * 14f;
         float rightZ = facing.getClockWise().getStepZ() * 14f;
         float dx = outX + rightX;
         float dz = outZ + rightZ;
-        var finalShape = baseShape.move(-dx / 16f, 0, dz / 16f);
+        var finalShape = baseShape.move(dx / 16f, 0, dz / 16f);
         VoxelShape bounds = Block.box(0, 0, 0, 16, 32, 16);
         // 取交集，裁剪掉超出部分
         finalShape = Shapes.join(finalShape, bounds, BooleanOp.AND);
