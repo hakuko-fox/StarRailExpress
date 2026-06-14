@@ -2019,7 +2019,7 @@
   "message.noellesroles.ma_chen_xu.echo.expired": "Echo window closed - too late to return.",
   "tip.noellesroles.ma_chen_xu.minor_trick_usage": "Minor Trick: press G when main skill is on cooldown to auto-cast a Minor Trick",
   "tip.noellesroles.ma_chen_xu.minor_trick_cast": "Minor Trick · %s cast!",
-  "message.noellesroles.ma_chen_xu.minor_trick_acquired": "Minor Trick · %s unlocked!"
+  "message.noellesroles.ma_chen_xu.minor_trick_acquired": "Minor Trick · %s unlocked!",
   "message.noellesroles.ma_chen_xu.trap.triggered": "You stepped on a trap!",
   "message.noellesroles.ma_chen_xu.now_sel_skill": "Currently selected Ghost Art: %s",
   "message.noellesroles.ma_chen_xu.tip_for_skill": "Sneak + press %s to switch Ghost Arts",
