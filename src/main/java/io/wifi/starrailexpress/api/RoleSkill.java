@@ -87,10 +87,10 @@ public final class RoleSkill {
         private int maxCharges = -1;
         private boolean continuous;
         private int holdIntervalTicks = 1;
-        private boolean announceToSelf = true;
+        private boolean announceToSelf = false;
         private boolean toggleable;
         private boolean shifted;
-        private boolean showOnHud = true;
+        private boolean showOnHud = false;
 
         private Builder(ResourceLocation id, String nameKey, Handler handler) {
             this.id = id;
@@ -135,7 +135,7 @@ public final class RoleSkill {
             return this;
         }
 
-        /** Whether this skill should appear on the HUD. Defaults to true. Set false for passive/internal skills. */
+        /** Whether this skill should appear on the HUD. Defaults to false. Set true for skills that need HUD display. */
         public Builder showOnHud(boolean showOnHud) {
             this.showOnHud = showOnHud;
             return this;

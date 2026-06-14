@@ -706,7 +706,7 @@ public class ModRolesInitialEventRegister {
                         context -> {
                             ThiefPlayerComponent.KEY.get(context.player()).toggleMode();
                             return true;
-                        }).shifted(true).build());
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
 
         // 会计技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式
         RoleSkill.register(ModRoles.ACCOUNTANT,
@@ -714,13 +714,13 @@ public class ModRolesInitialEventRegister {
                         "skill.noellesroles.accountant.ability",
                         context -> {
                             return AccountantPlayerComponent.KEY.get(context.player()).useAbility();
-                        }).build(),
+                        }).announceToSelf(false).showOnHud(false).build(),
                 RoleSkill.skill(SRE.id("accountant_toggle_mode"),
                         "skill.noellesroles.accountant.toggle_mode",
                         context -> {
                             AccountantPlayerComponent.KEY.get(context.player()).toggleMode();
                             return true;
-                        }).shifted(true).build());
+                        }).shifted(true).announceToSelf(false).build());
 
         // 炼金术师技能注册：普通按 G 调制药剂，蹲下+ G 切换药剂
         RoleSkill.register(ModRoles.ALCHEMIST,
@@ -735,7 +735,77 @@ public class ModRolesInitialEventRegister {
                         context -> {
                             AlchemistPlayerComponent.KEY.get(context.player()).switchPotion();
                             return true;
-                        }).shifted(true).build());
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 建筑师技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式 ====================
+        RoleSkill.register(ModRoles.BUILDER,
+                RoleSkill.skill(SRE.id("builder_ability"),
+                        "skill.noellesroles.builder.ability",
+                        context -> {
+                            var comp = org.agmas.noellesroles.component.ModComponents.BUILDER.get(context.player());
+                            if (comp.isBuildMode()) {
+                                comp.useBuildAbility();
+                            } else {
+                                comp.useDemolishAbility();
+                            }
+                            return true;
+                        }).build(),
+                RoleSkill.skill(SRE.id("builder_toggle_mode"),
+                        "skill.noellesroles.builder.toggle_mode",
+                        context -> {
+                            org.agmas.noellesroles.component.ModComponents.BUILDER.get(context.player()).switchMode();
+                            return true;
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 葬仪技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式 ====================
+        RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER,
+                RoleSkill.skill(SRE.id("mortician_bodymaker_ability"),
+                        "skill.noellesroles.mortician_bodymaker.ability",
+                        context -> {
+                            MorticianBodyMakerPlayerComponent.KEY.get(context.player()).useAbility();
+                            return true;
+                        }).build(),
+                RoleSkill.skill(SRE.id("mortician_bodymaker_toggle_mode"),
+                        "skill.noellesroles.mortician_bodymaker.toggle_mode",
+                        context -> {
+                            MorticianBodyMakerPlayerComponent.KEY.get(context.player()).toggleMode();
+                            return true;
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 设陷者技能注册：普通按 G 使用技能，按技能切换键(Y) 切换陷阱类型 ====================
+        RoleSkill.register(ModRoles.TRAPPER,
+                RoleSkill.skill(SRE.id("trapper_ability"),
+                        "skill.noellesroles.trapper.ability",
+                        context -> {
+                            TrapperPlayerComponent.KEY.get(context.player()).tryPlaceTrap();
+                            return true;
+                        }).build(),
+                RoleSkill.skill(SRE.id("trapper_toggle_mode"),
+                        "skill.noellesroles.trapper.toggle_mode",
+                        context -> {
+                            TrapperPlayerComponent.KEY.get(context.player()).switchTrapType();
+                            return true;
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
+
+        // ==================== 模仿者技能注册：普通按 G 使用技能，按技能切换键(Y) 切换槽位 ====================
+        RoleSkill.register(ModRoles.IMITATOR,
+                RoleSkill.skill(SRE.id("imitator_ability"),
+                        "skill.noellesroles.imitator.ability",
+                        context -> {
+                            var comp = org.agmas.noellesroles.component.ModComponents.IMITATOR.get(context.player());
+                            if (context.target() != null) {
+                                comp.tryCopyAbility(context.player(), context.target());
+                            } else {
+                                comp.useActiveAbility(context.player(), null);
+                            }
+                            return true;
+                        }).build(),
+                RoleSkill.skill(SRE.id("imitator_toggle_slot"),
+                        "skill.noellesroles.imitator.toggle_slot",
+                        context -> {
+                            org.agmas.noellesroles.component.ModComponents.IMITATOR.get(context.player()).switchSlot();
+                            return true;
+                        }).shifted(true).announceToSelf(false).showOnHud(false).build());
 
         // 幽灵技能注册：可切换隐身效果
         RoleSkill.register(ModRoles.PHANTOM, RoleSkill.skill(
