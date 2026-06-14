@@ -25,7 +25,7 @@ public class SodiumShaderMixin implements SodiumShaderInterface {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void wathe$addUniform(IrisRenderingPipeline pipeline, SodiumPrograms.Pass pass, ShaderBindingContext context, int handle, BlendModeOverride blendModeOverride, List bufferBlendOverrides, CustomUniforms customUniforms, Supplier flipState, float alphaTest, boolean containsTessellation, CallbackInfo ci) {
-        uniformOffsets = context.bindUniformBlock("ubo_SectionOffsets", 1);
+        uniformOffsets = context.bindUniformBlockOptional("ubo_SectionOffsets", 1);
     }
 
     @Override

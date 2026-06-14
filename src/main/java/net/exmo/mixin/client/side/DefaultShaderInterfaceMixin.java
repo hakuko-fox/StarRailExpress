@@ -26,7 +26,7 @@ public class DefaultShaderInterfaceMixin implements SodiumShaderInterface {
             return;
         }
 
-        uniformOffsets = context.bindUniformBlock("ubo_SectionOffsets", 1);
+        uniformOffsets = context.bindUniformBlockOptional("ubo_SectionOffsets", 1);
     }
 
     @Override
