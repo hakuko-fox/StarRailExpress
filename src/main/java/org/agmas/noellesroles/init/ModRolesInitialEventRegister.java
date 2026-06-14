@@ -694,13 +694,12 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).cooldownSeconds(60).toggleable(true).build());
 
-        // 窃贼技能注册：普通按 G 使用技能，蹲下+ G 切换模式
+        // 窃贼技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式
         RoleSkill.register(ModRoles.THIEF,
                 RoleSkill.skill(SRE.id("thief_ability"),
                         "skill.noellesroles.thief.ability",
                         context -> {
-                            ThiefPlayerComponent.KEY.get(context.player()).useAbility();
-                            return true;
+                            return ThiefPlayerComponent.KEY.get(context.player()).useAbility();
                         }).build(),
                 RoleSkill.skill(SRE.id("thief_toggle_mode"),
                         "skill.noellesroles.thief.toggle_mode",
@@ -709,13 +708,12 @@ public class ModRolesInitialEventRegister {
                             return true;
                         }).shifted(true).build());
 
-        // 会计技能注册：普通按 G 使用技能，蹲下+ G 切换模式
+        // 会计技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式
         RoleSkill.register(ModRoles.ACCOUNTANT,
                 RoleSkill.skill(SRE.id("accountant_ability"),
                         "skill.noellesroles.accountant.ability",
                         context -> {
-                            AccountantPlayerComponent.KEY.get(context.player()).useAbility();
-                            return true;
+                            return AccountantPlayerComponent.KEY.get(context.player()).useAbility();
                         }).build(),
                 RoleSkill.skill(SRE.id("accountant_toggle_mode"),
                         "skill.noellesroles.accountant.toggle_mode",

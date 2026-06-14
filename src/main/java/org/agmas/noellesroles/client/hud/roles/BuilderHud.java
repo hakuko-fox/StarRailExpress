@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.CommonColors;
+import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
@@ -46,6 +47,11 @@ public class BuilderHud {
                 Component readyText = Component.translatable("hud.noellesroles.builder.ready");
                 context.drawString(textRenderer, readyText, x, y + 12, CommonColors.GREEN);
             }
+
+            // 显示切换模式提示
+            Component toggleText = Component.translatable("hud.builder.toggle_mode",
+                NoellesrolesClient.nextAbilityBind.getTranslatedKeyMessage());
+            context.drawString(textRenderer, toggleText, x, y + 24, 0xAAAAAA);
         });
     }
 }

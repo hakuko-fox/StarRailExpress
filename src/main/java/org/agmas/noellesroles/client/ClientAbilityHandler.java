@@ -11,8 +11,13 @@ import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.modes.repair.RepairRoleDefinition;
 import org.agmas.noellesroles.packet.AbilityC2SPacket;
+import org.agmas.noellesroles.packet.BuilderAbilityC2SPacket;
+import org.agmas.noellesroles.packet.ImitatorSwitchSlotC2SPacket;
+import org.agmas.noellesroles.packet.MorticianToggleModeC2SPacket;
 import org.agmas.noellesroles.packet.RepairPrimarySkillC2SPacket;
+import org.agmas.noellesroles.packet.TrapperSwitchC2SPacket;
 import org.agmas.noellesroles.packet.UnifiedSkillInputC2SPacket;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.UUID;
 
@@ -103,12 +108,52 @@ public class ClientAbilityHandler {
         }
         var gameWorld = SREGameWorldComponent.KEY.get(client.level);
         var role = gameWorld.getRole(client.player);
+
+        // 处理 GKeyRoleSkill / RicesRoleRhapsodyClient 体系中的模式切换角色
+        if (role != null && gameWorld.isRole(client.player, ModRoles.BUILDER)) {
+            // 建筑师：Y 键切换建造/拆除模式
+            ClientPlayNetworking.send(new BuilderAbilityC2SPacket(true));
+            return;
+        }
+        if (role != null && gameWorld.isRole(client.player, ModRoles.MORTICIAN_BODYMAKER)) {
+            // 葬仪：Y 键切换曳柩/丧钟/清洗模式
+            ClientPlayNetworking.send(new MorticianToggleModeC2SPacket());
+            return;
+        }
+        if (role != null && gameWorld.isRole(client.player, ModRoles.TRAPPER)) {
+            // 设陷者：Y 键切换灾厄/绊索陷阱类型
+            ClientPlayNetworking.send(new TrapperSwitchC2SPacket());
+            return;
+        }
+        if (role != null && gameWorld.isRole(client.player, ModRoles.IMITATOR)) {
+            // 模仿者：Y 键切换技能槽位
+            ClientPlayNetworking.send(new ImitatorSwitchSlotC2SPacket());
+            return;
+        }
+
+        // 处理统一技能体系中的模式切换角色（会计、小偷、药剂师等）
         var definitions = RoleSkill.getDefinitions(role);
+        if (!definitions.isEmpty()) {
+            var shiftedDefs = definitions.stream().filter(RoleSkill.Definition::shifted).toList();
+            if (!shiftedDefs.isEmpty()) {
+                // 存在模式切换技能，Y 键触发模式切换
+                ClientPlayNetworking.send(new UnifiedSkillInputC2SPacket(
+                        definitions.indexOf(shiftedDefs.getFirst()),
+                        RoleSkill.Phase.PRESS,
+                        findTarget(client),
+                        true));
+                return;
+            }
+        }
         if (definitions.size() < 2) {
             return;
         }
+        var selectableDefs = RoleSkill.getSelectableDefinitions(role);
+        if (selectableDefs.size() < 2) {
+            return;
+        }
         var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(client.player);
-        int next = (ability.getSelectedSkill() + 1) % definitions.size();
+        int next = (ability.getSelectedSkill() + 1) % selectableDefs.size();
         ClientPlayNetworking.send(new org.agmas.noellesroles.packet.UnifiedSkillSelectC2SPacket(next));
     }
 
