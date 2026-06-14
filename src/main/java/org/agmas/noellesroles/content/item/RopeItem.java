@@ -18,6 +18,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -31,11 +32,11 @@ import java.util.List;
  */
 public class RopeItem extends Item implements AdventureUsable {
     private static final int MAX_DURABILITY = 2;
-     private static final int COOLDOWN = 3 * 20; // 每次右键3秒
-     private static final int SUCCESS_COOLDOWN = 5 * 20; // 成功拉取且非创造模式5秒
+    private static final int COOLDOWN = 3 * 20; // 每次右键3秒
+    private static final int SUCCESS_COOLDOWN = 5 * 20; // 成功拉取且非创造模式5秒
     private static final int MAX_DISTANCE = 12; // 最大距离12格
     private static final int TARGET_IMMUNITY_DURATION = 10 * 20; // 被拉取后10秒免疫
-    
+
     // 存储玩家被拉取的时间（UUID -> 时间戳）
     private static final java.util.Map<java.util.UUID, Long> ropeImmunityMap = new java.util.HashMap<>();
 
@@ -101,7 +102,7 @@ public class RopeItem extends Item implements AdventureUsable {
 
             // 将目标玩家拉到玩家身前
             pullPlayer(player, target);
-            
+
             // 标记目标玩家，10秒内无法被再次拉取
             ropeImmunityMap.put(target.getUUID(), System.currentTimeMillis());
 
@@ -134,13 +135,16 @@ public class RopeItem extends Item implements AdventureUsable {
 
         for (Player target : world.players()) {
             // 跳过自己
-            if (target == player) continue;
+            if (target == player)
+                continue;
 
             // 跳过死亡的玩家
-            if (!target.isAlive()) continue;
+            if (!target.isAlive())
+                continue;
 
             // 跳过观察者模式
-            if (target.isSpectator()) continue;
+            if (target.isSpectator())
+                continue;
 
             // 跳过正在免疫冷却中的玩家
             Long lastPulledTime = ropeImmunityMap.get(target.getUUID());
@@ -153,7 +157,8 @@ public class RopeItem extends Item implements AdventureUsable {
 
             // 计算距离
             double distance = player.distanceTo(target);
-            if (distance > MAX_DISTANCE) continue;
+            if (distance > MAX_DISTANCE)
+                continue;
 
             // 获取目标实体的碰撞箱（稍微扩大一点以提高命中率）
             var targetBB = target.getBoundingBox().inflate(0.5);
@@ -163,7 +168,7 @@ public class RopeItem extends Item implements AdventureUsable {
                 // 计算目标到视线的垂直距离
                 var toTarget = target.position().subtract(player.position());
                 var toEyePos = target.position().subtract(eyePos);
-                
+
                 // 计算视线方向上的投影距离
                 double projection = toEyePos.dot(viewVector);
                 var closestPointOnRay = eyePos.add(viewVector.scale(projection));
@@ -184,9 +189,9 @@ public class RopeItem extends Item implements AdventureUsable {
      * 检查射线是否与方块相交（简化版）
      */
     private boolean isLineIntersectsBox(net.minecraft.world.phys.Vec3 rayOrigin,
-                                        net.minecraft.world.phys.Vec3 rayDirection,
-                                        net.minecraft.world.phys.AABB box,
-                                        double maxDistance) {
+            net.minecraft.world.phys.Vec3 rayDirection,
+            net.minecraft.world.phys.AABB box,
+            double maxDistance) {
         // 使用方块裁剪算法的简化版本
         double tMin = Double.NEGATIVE_INFINITY;
         double tMax = Double.POSITIVE_INFINITY;
@@ -232,49 +237,90 @@ public class RopeItem extends Item implements AdventureUsable {
     }
 
     /**
-     * 将目标玩家拉到玩家身前
+     * 将目标玩家拉到玩家身前，并避免卡入方块。
+     *
+     * @param player 执行拉取操作的玩家
+     * @param target 被拉取的目标玩家
      */
     private void pullPlayer(Player player, Player target) {
-        // 计算拉到的位置（玩家前方 1.5 格处）
+        // 计算原始拉取方向（玩家视线水平方向）
         var viewVector = player.getViewVector(1.0f);
         double pullDistance = 1.5;
-    
-        var targetPos = player.position().add(
-                viewVector.x * pullDistance,
-                0,
-                viewVector.z * pullDistance
-        );
-    
-        // 传送目标玩家
+        double step = 0.2; // 每次回退的步长（格）
+        int maxAttempts = (int) Math.ceil(pullDistance / step) + 1; // 最多尝试次数
+
+        Level level = player.level(); // 获取世界
+
+        // 从原始距离开始，逐步减小距离（向玩家方向回退）
+        for (int i = 0; i <= maxAttempts; i++) {
+            double currentDistance = pullDistance - i * step;
+            if (currentDistance < 0)
+                currentDistance = 0;
+
+            // 计算当前尝试的目标位置（Y 坐标使用玩家的 Y）
+            var targetPos = player.position().add(
+                    viewVector.x * currentDistance,
+                    0,
+                    viewVector.z * currentDistance);
+
+            // 获取目标玩家在当前姿态下的碰撞箱，并移动到候选位置
+            var pose = target.getPose();
+            var dimensions = target.getDimensions(pose);
+            double width = dimensions.width();
+            double height = dimensions.height();
+            var candidateBox = new AABB(
+                    targetPos.x - width / 2, targetPos.y,
+                    targetPos.z - width / 2,
+                    targetPos.x + width / 2, targetPos.y + height,
+                    targetPos.z + width / 2);
+
+            // 检测该碰撞箱是否与世界中除 target 外的任何方块或实体碰撞
+            if (level.noCollision(target, candidateBox)) {
+                // 找到有效位置，执行传送
+                teleportPlayer(target, targetPos.x, targetPos.y, targetPos.z);
+                return;
+            }
+        }
+
+        // 若所有尝试均失败，回退到玩家所在位置
+        var fallbackPos = player.position();
+        teleportPlayer(target, fallbackPos.x, fallbackPos.y, fallbackPos.z);
+    }
+
+    /**
+     * 通用的玩家传送方法，兼容服务端与客户端。
+     */
+    private void teleportPlayer(Player target, double x, double y, double z) {
         if (target instanceof ServerPlayer serverTarget) {
-            serverTarget.teleportTo(targetPos.x, targetPos.y, targetPos.z);
+            serverTarget.teleportTo(x, y, z);
         } else {
-            target.moveTo(targetPos.x, targetPos.y, targetPos.z);
+            target.moveTo(x, y, z);
         }
     }
-    
+
     /**
      * 生成绳子拉拽的粒子效果
      */
     private void spawnRopeParticles(Level world, Player player, Player target) {
-        if (!(world instanceof ServerLevel serverLevel)) return;
-    
+        if (!(world instanceof ServerLevel serverLevel))
+            return;
+
         // 在玩家和目标之间生成绳索粒子
         int particleCount = 20; // 粒子数量
         double distance = player.distanceTo(target);
-    
+
         for (int i = 0; i < particleCount; i++) {
             // 计算从玩家到目标的插值位置
             double ratio = i / (double) particleCount;
             var particlePos = player.position().lerp(target.position(), ratio);
-    
+
             // 添加一些随机偏移，让粒子更自然
             double offsetX = (world.random.nextDouble() - 0.5) * 0.3;
             double offsetY = (world.random.nextDouble() - 0.5) * 0.3 + 0.5; // 稍微向上
             double offsetZ = (world.random.nextDouble() - 0.5) * 0.3;
-    
+
             particlePos = particlePos.add(offsetX, offsetY, offsetZ);
-    
+
             serverLevel.sendParticles(
                     ParticleTypes.CRIT,
                     particlePos.x,
@@ -285,7 +331,7 @@ public class RopeItem extends Item implements AdventureUsable {
                     0.0 // 无额外参数
             );
         }
-    
+
         // 在玩家位置生成烟雾粒子
         serverLevel.sendParticles(
                 ParticleTypes.SMOKE,
@@ -296,7 +342,7 @@ public class RopeItem extends Item implements AdventureUsable {
                 0.3, 0.3, 0.3, // 扩散范围
                 0.02 // 粒子速度
         );
-    
+
         // 在目标位置生成烟雾粒子
         serverLevel.sendParticles(
                 ParticleTypes.SMOKE,
@@ -307,7 +353,7 @@ public class RopeItem extends Item implements AdventureUsable {
                 0.3, 0.3, 0.3, // 扩散范围
                 0.02 // 粒子速度
         );
-    
+
         // 生成拉力线粒子（云团，表示力量）
         for (int i = 0; i < 5; i++) {
             var midPos = player.position().lerp(target.position(), 0.5);
@@ -320,8 +366,7 @@ public class RopeItem extends Item implements AdventureUsable {
                     (world.random.nextDouble() - 0.5) * 0.5,
                     (world.random.nextDouble() - 0.5) * 0.5,
                     (world.random.nextDouble() - 0.5) * 0.5,
-                    0.0
-            );
+                    0.0);
         }
     }
 
