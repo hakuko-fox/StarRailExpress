@@ -3,7 +3,6 @@ package io.wifi.starrailexpress.content.block;
 import io.wifi.starrailexpress.content.block.api.LightBlockInterface;
 import io.wifi.starrailexpress.content.block_entity.LockableButtonBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
-import io.wifi.starrailexpress.index.TMMProperties;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
