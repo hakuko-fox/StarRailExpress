@@ -46,7 +46,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
-import org.agmas.noellesroles.init.NRSounds;
+import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.RedHouseRoles;
@@ -2605,7 +2605,7 @@ public class RoleShopHandler {
         @Override public boolean onBuy(@NotNull Player p) {
           var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
           if (c.knifeSoundCooldown > 0) return false;
-          c.knifeSoundCooldown = c.KNIFE_SOUND_COOLDOWN; c.sync();
+          c.knifeSoundCooldown = PhantomMusicianPlayerComponent.KNIFE_SOUND_COOLDOWN; c.sync();
           p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_KNIFE_STAB, SoundSource.PLAYERS, 1F, 1F);
           return true;
         }
@@ -2619,7 +2619,7 @@ public class RoleShopHandler {
         @Override public boolean onBuy(@NotNull Player p) {
           var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
           if (c.revolverSoundCooldown > 0) return false;
-          c.revolverSoundCooldown = c.REVOLVER_SOUND_COOLDOWN; c.sync();
+          c.revolverSoundCooldown = PhantomMusicianPlayerComponent.REVOLVER_SOUND_COOLDOWN; c.sync();
           p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 1F, 1F);
           return true;
         }
@@ -2633,7 +2633,7 @@ public class RoleShopHandler {
         @Override public boolean onBuy(@NotNull Player p) {
           var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
           if (c.stalkerSoundCooldown > 0) return false;
-          c.stalkerSoundCooldown = c.STALKER_SOUND_COOLDOWN; c.sync();
+          c.stalkerSoundCooldown = PhantomMusicianPlayerComponent.STALKER_SOUND_COOLDOWN; c.sync();
           if (p instanceof ServerPlayer sp) for (var pp : sp.serverLevel().players())
             if (pp != null) pp.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1F, 1.5F);
           return true;
@@ -2648,7 +2648,7 @@ public class RoleShopHandler {
         @Override public boolean onBuy(@NotNull Player p) {
           var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
           if (c.psychoSoundCooldown > 0) return false;
-          c.psychoSoundCooldown = c.PSYCHO_SOUND_COOLDOWN; c.sync();
+          c.psychoSoundCooldown = PhantomMusicianPlayerComponent.PSYCHO_SOUND_COOLDOWN; c.sync();
           p.level().playSound(null, p.blockPosition(), TMMSounds.AMBIENT_PSYCHO_DRONE, SoundSource.PLAYERS, 1F, 1F);
           return true;
         }
@@ -2662,7 +2662,7 @@ public class RoleShopHandler {
         @Override public boolean onBuy(@NotNull Player p) {
           var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
           if (c.crowbarSoundCooldown > 0) return false;
-          c.crowbarSoundCooldown = c.CROWBAR_SOUND_COOLDOWN; c.sync();
+          c.crowbarSoundCooldown = PhantomMusicianPlayerComponent.CROWBAR_SOUND_COOLDOWN; c.sync();
           p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_CROWBAR_PRY, SoundSource.PLAYERS, 1F, 1F);
           return true;
         }
@@ -2734,7 +2734,7 @@ public class RoleShopHandler {
         @Override public boolean onBuy(@NotNull Player p) {
           var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
           if (c.randomSoundCooldown > 0) return false;
-          c.randomSoundCooldown = c.RANDOM_SOUND_COOLDOWN; c.sync();
+          c.randomSoundCooldown = PhantomMusicianPlayerComponent.RANDOM_SOUND_COOLDOWN; c.sync();
           Object obj = allSounds.get(new java.util.Random().nextInt(allSounds.size()));
           net.minecraft.sounds.SoundEvent sound;
           if (obj instanceof net.minecraft.sounds.SoundEvent se) {

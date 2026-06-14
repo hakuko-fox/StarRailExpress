@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.content.block.LockableButtonBlock;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import io.wifi.starrailexpress.content.block.TrainDoorBlock;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
@@ -48,11 +49,16 @@ public class AlarmTrapItem extends Item implements AdventureUsable {
         if (player == null)
             return InteractionResult.PASS;
 
+        boolean isLockable = false;
+        BlockPos lowerPos = pos;
         // 检查是否为门方块
         if (state.getBlock() instanceof SmallDoorBlock) {
-
-            BlockPos lowerPos = state.getValue(SmallDoorBlock.HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
-
+            lowerPos = state.getValue(SmallDoorBlock.HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
+            isLockable = true;
+        } else if (state.getBlock() instanceof LockableButtonBlock) {
+            isLockable = true;
+        }
+        if (isLockable) {
             if (world.getBlockEntity(lowerPos) instanceof SmallDoorBlockEntity doorEntity) {
                 // 检查门是否支持
                 if (!(state.getBlock() instanceof TrainDoorBlock)) {

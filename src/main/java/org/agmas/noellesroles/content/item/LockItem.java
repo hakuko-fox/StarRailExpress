@@ -33,7 +33,6 @@ import java.util.List;
  * - 可以被钥匙和万能钥匙打开，对撬棍无效
  * - 锁的强度由长度决定
  * </p>
- * TODO: 一扇门是否可以放置多个锁（暂时允许多个锁）
  */
 public class LockItem extends Item implements AdventureUsable {
     public LockItem(int length, float strength, Properties properties) {
