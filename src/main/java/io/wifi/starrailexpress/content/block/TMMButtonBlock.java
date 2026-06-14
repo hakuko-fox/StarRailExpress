@@ -81,8 +81,10 @@ public abstract class TMMButtonBlock extends ButtonBlock {
                     world.playSound(null, entity.getBlockPos().getX() + .5f, entity.getBlockPos().getY() + 1, entity.getBlockPos().getZ() + .5f, TMMSounds.BLOCK_DOOR_LOCKED, SoundSource.BLOCKS, 1f, 1f);
                 return false;
             }
-
-            entity.toggle(false);
+            var state = world.getBlockState(pos);
+            if(state.getBlock() instanceof SmallDoorBlock sb){
+                sb.toggleDoor(state, world, entity, pos);
+            }
             return true;
         }
         return false;
