@@ -31,6 +31,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.function.Supplier;
 
@@ -67,8 +68,7 @@ public abstract class LockableButtonBlock extends ButtonBlock
 
     public boolean canOpen(Level world, BlockPos blockPos) {
         var state = world.getBlockState(blockPos);
-        var entity = getBlockEntity(world, blockPos);
-        if (state.getValue(ACTIVE) && !entity.isBlasted() && !entity.isJammed())
+        if (state.getValue(ACTIVE))
             return true;
         return false;
     }
@@ -100,25 +100,33 @@ public abstract class LockableButtonBlock extends ButtonBlock
     }
 
     @Override
-    public void press(BlockState state, Level world, BlockPos pos, @Nullable Player player) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+            BlockHitResult blockHitResult) {
+        if (state.getValue(POWERED)) {
+            return InteractionResult.CONSUME;
+        }
         if (!canOpen(world, pos)) {
             world.playSound(player, pos, TMMSounds.BLOCK_DOOR_LOCKED, SoundSource.BLOCKS, 0.1f, 1f);
-            return;
+            return InteractionResult.FAIL;
         }
         var result = SmallDoorBlock.canOpenDoor((s, w, e, l) -> {
             return InteractionResult.SUCCESS;
         }, state, world, pos, player, null);
+        if (result.equals(InteractionResult.PASS)) {
+            return InteractionResult.PASS;
+        }
         if (result.equals(InteractionResult.SUCCESS) || result.equals(InteractionResult.CONSUME)
-                || result.equals(InteractionResult.CONSUME_PARTIAL) || result.equals(InteractionResult.PASS)) {
+                || result.equals(InteractionResult.CONSUME_PARTIAL)) {
             // 成功打开
         } else {
             // 失败
-            return;
+            return InteractionResult.FAIL;
         }
         if (!state.getValue(ACTIVE)) {
             world.playSound(player, pos, TMMSounds.BLOCK_BUTTON_TOGGLE_NO_POWER, SoundSource.BLOCKS, 0.1f, 1f);
         }
-        super.press(state, world, pos, player);
+        this.press(state, world, pos, player);
+        return InteractionResult.sidedSuccess(world.isClientSide);
     }
 
     // ======================= 辅助方法 =======================
