@@ -47,6 +47,7 @@ import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
