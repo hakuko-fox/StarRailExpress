@@ -18,13 +18,14 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
 public class InputHandler {
+    private static boolean wasRightDown = false;
+
     public static KeyMapping openVotingScreenKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.starrailexpress.open_voting_screen",
             GLFW.GLFW_KEY_M,
@@ -44,16 +45,6 @@ public class InputHandler {
     public static KeyMapping openClueArchiveKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.starrailexpress.open_clue_archive",
             GLFW.GLFW_KEY_UNKNOWN,
-            "category.starrailexpress.general"));
-    public static KeyMapping toggleSniperScopeKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-            "key.starrailexpress.toggle_sniper_scope",
-            InputConstants.Type.MOUSE,
-            GLFW.GLFW_MOUSE_BUTTON_RIGHT,
-            "category.starrailexpress.general"));
-    public static KeyMapping sniperShootKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-            "key.starrailexpress.sniper_shoot",
-            InputConstants.Type.MOUSE,
-            GLFW.GLFW_MOUSE_BUTTON_LEFT,
             "category.starrailexpress.general"));
     public static KeyMapping sniperReloadKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.starrailexpress.sniper_reload",
@@ -92,20 +83,23 @@ public class InputHandler {
             }
         }
 
-        // 狙击枪操作（全部走按键绑定）
+        // 狙击枪操作
         if (client.player != null && client.player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
-            if (toggleSniperScopeKeybind.consumeClick()) {
-                ItemStack mainHandItem = client.player.getMainHandItem();
-                if (SniperRifleItem.hasScopeAttached(mainHandItem)) {
+            ItemStack mainHandItem = client.player.getMainHandItem();
+            // 右键开镜/关镜（兜底检测，防止 use() 未触发）
+            if (SniperRifleItem.hasScopeAttached(mainHandItem)) {
+                boolean rightDown = org.lwjgl.glfw.GLFW.glfwGetMouseButton(
+                        client.getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
+                if (rightDown && !wasRightDown) {
                     ScopeOverlayRenderer.setInScopeView(!ScopeOverlayRenderer.isInScopeView());
                 }
-            }
-            if (sniperShootKeybind.consumeClick()) {
-                SniperRifleItem.tryShootFromKeybind(client.player);
+                wasRightDown = rightDown;
             }
             if (sniperReloadKeybind.consumeClick()) {
                 SniperRifleItem.tryReloadFromKeybind(client.player);
             }
+        } else {
+            wasRightDown = false;
         }
 
         if (openVotingScreenKeybind.consumeClick()) {

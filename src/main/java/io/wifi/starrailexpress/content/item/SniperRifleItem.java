@@ -39,7 +39,6 @@ public class SniperRifleItem extends Item implements HeldLikeRevolver {
 
     @Override
     public InteractionResultHolder<ItemStack> use(@NotNull Level world, @NotNull Player user, InteractionHand hand) {
-        // 狙击枪所有操作走按键绑定，use()不处理任何逻辑
         return InteractionResultHolder.consume(user.getItemInHand(hand));
     }
 
