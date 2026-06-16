@@ -17,6 +17,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import io.wifi.starrailexpress.SRE;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import java.util.Optional;
 import java.util.function.Function;
@@ -30,6 +32,8 @@ public class WindChargeMixin {
 
     @Inject(method = "explode", at = @At("HEAD"), cancellable = true)
     protected void explode(Vec3 vec3, CallbackInfo ci) {
+        if (SRE.isLobby)
+            return;
         WindCharge windCharge = (WindCharge) (Object) this;
         Entity owner = windCharge.getOwner();
         DamageSource damageSource = null;
