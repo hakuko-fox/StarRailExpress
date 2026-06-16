@@ -9,10 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Fireball;
-import net.minecraft.world.entity.projectile.windcharge.WindCharge;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -31,27 +28,23 @@ public class EntityMixin {
 
     @Inject(method = "onExplosionHit", at = @At("HEAD"), cancellable = true)
     public void addHurtTagToPlayerWithExplosion(Entity direct, CallbackInfo ci) {
-        if (SRE.isLobby)
-            return;
-        Entity e = (Entity) (Object) this;
-        if (!(e instanceof Player self)) {
-            return;
-        }
-        if (direct instanceof PrimedTnt tnt) {
-            if (tnt.getOwner() instanceof Player player) {
-                self.setLastHurtByPlayer(player);
-            }
-        }else
-        if (direct instanceof WindCharge projectile) {
-            if (projectile.getOwner() instanceof Player player) {
-                self.setLastHurtByPlayer(player);
-            }
-        }else
-        if (direct instanceof Fireball fb) {
-            if (fb.getOwner() instanceof Player player) {
-                self.setLastHurtByPlayer(player);
-            }
-        }
+        // if (SRE.isLobby)
+        //     return;
+        // Entity e = (Entity) (Object) this;
+
+        // if (!(e instanceof Player self)) {
+        //     return;
+        // }
+        // if (direct instanceof PrimedTnt tnt) {
+        //     if (tnt.getOwner() instanceof Player player) {
+        //         self.setLastHurtByPlayer(player);
+        //     }
+        // } else if (direct instanceof Projectile projectile) {
+        //     if (projectile.getOwner() instanceof Player player) {
+        //         self.setLastHurtByPlayer(player);
+        //         self.hurtMarked = true;
+        //     }
+        // }
     }
 
     @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;vibrationAndSoundEffectsFromBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;ZZLnet/minecraft/world/phys/Vec3;)Z", ordinal = 0))

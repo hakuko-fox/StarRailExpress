@@ -34,7 +34,9 @@ public class LoadingScreenMixin {
 
     @ModifyVariable(method = "setOverlay", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     private Overlay setOverlay(Overlay overlay) {
-
+        if (SREClientConfig.instance().disableCustomLoadingScreen) {
+            return overlay;
+        }
         if (overlay instanceof LoadingOverlay loadingOverlay) {
             StarRailLoadingOverlay.registerTextures(loadingOverlay.minecraft);
             return new StarRailLoadingOverlay(loadingOverlay.minecraft, loadingOverlay.reload, loadingOverlay.onFinish,

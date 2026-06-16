@@ -26,8 +26,8 @@ import java.util.function.Function;
 @Mixin(WindCharge.class)
 public class WindChargeMixin {
     @Unique
-    private static ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new SimpleExplosionDamageCalculator(true,
-            false, Optional.of(1.22F),
+    private static ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new SimpleExplosionDamageCalculator(false,
+            true, Optional.of(1.22F),
             BuiltInRegistries.BLOCK.getTag(BlockTags.BLOCKS_WIND_CHARGE_EXPLOSIONS).map(Function.identity()));
 
     @Inject(method = "explode", at = @At("HEAD"), cancellable = true)
