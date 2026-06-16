@@ -30,6 +30,8 @@
   "text.autoconfig.starrailexpress-client.option.disableTitleScreenSound": "禁音主页烦人的列车声音",
   "text.autoconfig.starrailexpress-client.option.welcome_voice": "是否播放列车欢迎语音",
   "text.autoconfig.starrailexpress-client.option.disableTitleScreenVideoBackground": "禁音主页的列车背景",
+  "text.autoconfig.starrailexpress-client.option.disableCustomTitleScreen": "禁用自定义列车主页（即使用原版菜单）",
+  "text.autoconfig.starrailexpress-client.option.disableCustomLoadingScreen": "禁用自定义游戏加载界面（即使用原版加载界面）",
   "=== SRE ===": "",
   "text.autoconfig.starrailexpress.title": "Star Rail Express 通用设置",
   "text.autoconfig.starrailexpress.option.logGameEvent": "在控制台输出游戏事件",

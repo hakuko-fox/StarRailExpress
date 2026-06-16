@@ -22,6 +22,8 @@ public class SREClientConfig implements ConfigData {
     public int broadcasterMessageDuration = 10;
     public boolean disableTitleScreenSound = false;
     public boolean disableTitleScreenVideoBackground = false;
+    public boolean disableCustomTitleScreen = false;
+    public boolean disableCustomLoadingScreen = false;
 
     public boolean disableScreenShake = false;
     @ConfigEntry.Gui.Tooltip
