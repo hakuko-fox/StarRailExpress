@@ -1,6 +1,6 @@
 package org.agmas.harpymodloader.modifiers;
 
-import io.wifi.starrailexpress.api.SREAbstacrtInfoClass;
+import io.wifi.starrailexpress.api.SREAbstractInfoClass;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.locale.Language;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
-public class SREModifier extends SREAbstacrtInfoClass {
+public class SREModifier extends SREAbstractInfoClass {
     private final Random random = new Random();
     public ResourceLocation identifier;
     public int color;

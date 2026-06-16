@@ -56,26 +56,52 @@ public class NoellesRolesConfig implements ConfigData {
     @JsonAdapter(RoleSpawnInfoEntriesAdapter.class)
     public static class RoleSpawnInfoEntries {
         public HashMap<ResourceLocation, SpawnInfo> maps = new HashMap<>();
-        public int type = 0;
+        public int type; // 自动根据 T 设置
 
+        // 无参构造（供 Gson 反序列化使用）
+        public RoleSpawnInfoEntries() {
+            this.type = 0; // 默认未知
+        }
+
+        // 内部构造，用于工厂方法
+        private RoleSpawnInfoEntries(int type) {
+            this.type = type;
+        }
+
+        // 根据类型获取对应的 type 值
+        private static int getTypeForClass(Class<?> clazz) {
+            if (SRERole.class.isAssignableFrom(clazz)) {
+                return 1;
+            } else if (SREModifier.class.isAssignableFrom(clazz)) {
+                return 2;
+            }
+            return 0;
+        }
+
+        // 工厂方法：创建角色默认配置
         public static RoleSpawnInfoEntries createDefaultRoleInfo() {
-            RoleSpawnInfoEntries obj = new RoleSpawnInfoEntries();
+            RoleSpawnInfoEntries obj = new RoleSpawnInfoEntries(getTypeForClass(SRERole.class));
             for (var entry : TMMRoles.ROLES.entrySet()) {
                 SRERole role = entry.getValue();
-                obj.maps.put(entry.getKey(), new SpawnInfo(role.defaultEnableNeedPlayerCount,
-                        role.defaultEnableMaxPlayerCount, role.defaultEnableRareChance, role.defaultSpawnMaps));
+                obj.maps.put(entry.getKey(), new SpawnInfo(
+                        role.defaultEnableNeedPlayerCount,
+                        role.defaultEnableMaxPlayerCount,
+                        role.defaultEnableRareChance,
+                        role.defaultSpawnMaps));
             }
-            obj.type = 1;
             return obj;
         }
 
+        // 工厂方法：创建修饰符默认配置
         public static RoleSpawnInfoEntries createDefaultModifierInfo() {
-            RoleSpawnInfoEntries obj = new RoleSpawnInfoEntries();
+            RoleSpawnInfoEntries obj = new RoleSpawnInfoEntries(getTypeForClass(SREModifier.class));
             for (SREModifier entry : HMLModifiers.MODIFIERS) {
-                obj.maps.put(entry.identifier(), new SpawnInfo(entry.defaultNeedPlayerCount,
-                        entry.defaultMaxPlayerCount, entry.defaultEnableChance, entry.defaultSpawnMaps));
+                obj.maps.put(entry.identifier(), new SpawnInfo(
+                        entry.defaultNeedPlayerCount,
+                        entry.defaultMaxPlayerCount,
+                        entry.defaultEnableChance,
+                        entry.defaultSpawnMaps));
             }
-            obj.type = 2;
             return obj;
         }
     }

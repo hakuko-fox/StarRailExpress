@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
-public abstract class SRERole extends SREAbstacrtInfoClass {
+public abstract class SRERole extends SREAbstractInfoClass {
     protected final Random random = new Random();
     private ResourceLocation identifier;
     private boolean canSeeCoin = true;

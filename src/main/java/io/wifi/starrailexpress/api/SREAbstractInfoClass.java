@@ -5,7 +5,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-public abstract class SREAbstacrtInfoClass {
+public abstract class SREAbstractInfoClass {
     public abstract ResourceLocation getIdentifier();
 
     public Component getDisplayName() {

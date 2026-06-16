@@ -1,5 +1,19 @@
 package io.wifi.ConfigCompact.config_gui_provider;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.agmas.noellesroles.config.NoellesRolesConfig.RoleSpawnInfoEntries;
+import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.utils.RoleUtils;
+
 import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
 import me.shedaniel.autoconfig.gui.registry.api.GuiRegistryAccess;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
@@ -11,36 +25,34 @@ import net.fabricmc.api.Environment;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import org.agmas.noellesroles.config.NoellesRolesConfig.RoleSpawnInfoEntries;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
-
 @Environment(EnvType.CLIENT)
 public class SpawnInfoGuiProvider {
 
     private static class EditableEntry {
         String key;
+        Component name;
         SpawnInfo spawnInfo;
 
         EditableEntry(String key, SpawnInfo info) {
             this.key = key;
             this.spawnInfo = info;
+            this.name = Component.literal(key != null ? key : "(empty)");
+        }
+
+        EditableEntry(String key, SpawnInfo info, Component name) {
+            this.key = key;
+            this.spawnInfo = info;
+            this.name = name != null ? name : Component.literal(key != null ? key : "(empty)");
         }
     }
 
     public static void register(GuiRegistry registry) {
         registry.registerPredicateProvider(
                 SpawnInfoGuiProvider::provide,
-                field -> field.getType() == RoleSpawnInfoEntries.class
-        );
+                field -> field.getType() == RoleSpawnInfoEntries.class);
     }
 
-    @SuppressWarnings({"rawtypes"})
+    @SuppressWarnings({ "rawtypes" })
     private static List<AbstractConfigListEntry> provide(
             String i18n,
             Field field,
@@ -56,55 +68,60 @@ public class SpawnInfoGuiProvider {
             setFieldValue(field, config, currentObj);
         }
         if (defaultObj == null) {
-            defaultObj = new RoleSpawnInfoEntries();
+            if (currentObj.type == 1) {
+                defaultObj = RoleSpawnInfoEntries.createDefaultRoleInfo();
+            } else if (currentObj.type == 2) {
+                defaultObj = RoleSpawnInfoEntries.createDefaultModifierInfo();
+            } else {
+                defaultObj = new RoleSpawnInfoEntries();
+            }
             setFieldValue(field, defaults, defaultObj);
         }
 
-        List<EditableEntry> entries = toEditableList(currentObj.maps);
-        List<EditableEntry> defaultEntries = toEditableList(defaultObj.maps);
+        // ✅ 关键修正：使用 defaultObj.type 确保名称正确
+        List<EditableEntry> entries = toEditableList(currentObj.maps, currentObj.type);
+        List<EditableEntry> defaultEntries = toEditableList(defaultObj.maps, defaultObj.type);
 
         int pageSize = 20;
         List<AbstractConfigListEntry<?>> pageEntries = new ArrayList<>();
 
         // 构建分页
         if (entries.isEmpty()) {
-            NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>> emptyPage =
-                    new NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>>(
-                            Component.literal("0-0"),
-                            Collections.emptyList(),
-                            false,
-                            () -> Optional.empty(),
-                            updated -> saveAllEntries(field, config, collectAllEntries(pageEntries)),
-                            () -> Collections.emptyList(),
-                            Component.translatable("text.cloth-config.reset_value"),
-                            false,
-                            false,
-                            (entry, self) -> buildRow(new EditableEntry("", new SpawnInfo(0, 0, 0)), i18n)
-                    );
+            NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>> emptyPage = new NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>>(
+                    Component.literal("0-0"),
+                    Collections.emptyList(),
+                    false,
+                    () -> Optional.empty(),
+                    updated -> saveAllEntries(field, config, collectAllEntries(pageEntries)),
+                    () -> Collections.emptyList(),
+                    Component.translatable("text.cloth-config.reset_value"),
+                    false,
+                    false,
+                    (entry, self) -> buildRow(new EditableEntry("", new SpawnInfo(0, 0, 0)), i18n));
             pageEntries.add(emptyPage);
         } else {
             for (int i = 0; i < entries.size(); i += pageSize) {
                 int start = i;
                 int end = Math.min(i + pageSize, entries.size());
                 List<EditableEntry> subEntries = entries.subList(start, end);
-                List<EditableEntry> subDefaults = defaultEntries.size() > start ?
-                        defaultEntries.subList(start, Math.min(end, defaultEntries.size())) : Collections.emptyList();
+                List<EditableEntry> subDefaults = defaultEntries.size() > start
+                        ? defaultEntries.subList(start, Math.min(end, defaultEntries.size()))
+                        : Collections.emptyList();
 
                 Component pageTitle = Component.literal((start + 1) + "-" + end);
 
-                NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>> pageList =
-                        new NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>>(
-                                pageTitle,
-                                subEntries,
-                                false,
-                                () -> Optional.empty(),
-                                updatedSubList -> saveAllEntries(field, config, collectAllEntries(pageEntries)),
-                                () -> subDefaults,
-                                Component.translatable("text.cloth-config.reset_value"),
-                                false,
-                                false,
-                                (entry, self) -> buildRow(entry != null ? entry : new EditableEntry("", new SpawnInfo(0, 0, 0)), i18n)
-                        );
+                NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>> pageList = new NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>>(
+                        pageTitle,
+                        subEntries,
+                        false,
+                        () -> Optional.empty(),
+                        updatedSubList -> saveAllEntries(field, config, collectAllEntries(pageEntries)),
+                        () -> subDefaults,
+                        Component.translatable("text.cloth-config.reset_value"),
+                        false,
+                        false,
+                        (entry, self) -> buildRow(entry != null ? entry : new EditableEntry("", new SpawnInfo(0, 0, 0)),
+                                i18n));
                 pageEntries.add(pageList);
             }
         }
@@ -114,8 +131,7 @@ public class SpawnInfoGuiProvider {
                 Component.translatable(i18n),
                 null,
                 pageEntries,
-                false
-        );
+                false);
 
         return Collections.singletonList(parentEntry);
     }
@@ -125,8 +141,7 @@ public class SpawnInfoGuiProvider {
         for (AbstractConfigListEntry<?> entry : pageEntries) {
             if (entry instanceof NestedListListEntry) {
                 @SuppressWarnings("unchecked")
-                NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>> page =
-                        (NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>>) entry;
+                NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>> page = (NestedListListEntry<EditableEntry, MultiElementListEntry<EditableEntry>>) entry;
                 all.addAll(page.getValue());
             }
         }
@@ -143,15 +158,15 @@ public class SpawnInfoGuiProvider {
 
         List<AbstractConfigListEntry<?>> controls = buildSpawnInfoControls(entry.spawnInfo, i18n);
 
-        Component title = Component.translatable(i18n + ".title",
-                entry.key != null && !entry.key.isEmpty() ? entry.key : "(empty)");
+        // ✅ 使用 entry.name 作为显示标题，如果 name 为空则 fallback 到 key
+        Component title = entry.name != null ? entry.name
+                : Component.literal(entry.key != null ? entry.key : "(empty)");
 
         return new MultiElementListEntry<EditableEntry>(
                 title,
                 entry,
                 controls,
-                false
-        );
+                false);
     }
 
     // 反射生成 SpawnInfo 字段控件
@@ -168,8 +183,7 @@ public class SpawnInfoGuiProvider {
                 Class<?> type = field.getType();
                 Object currentValue = field.get(info);
                 AbstractConfigListEntry<?> control = createControlForField(
-                        eb, translationKey, type, currentValue, field, info
-                );
+                        eb, translationKey, type, currentValue, field, info);
                 if (control != null) {
                     list.add(control);
                 }
@@ -197,7 +211,10 @@ public class SpawnInfoGuiProvider {
             return eb.startIntField(label, val)
                     .setDefaultValue(0)
                     .setSaveConsumer(v -> {
-                        try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                        try {
+                            field.set(info, v);
+                        } catch (IllegalAccessException ignored) {
+                        }
                     })
                     .build();
         }
@@ -206,7 +223,10 @@ public class SpawnInfoGuiProvider {
             return eb.startLongField(label, val)
                     .setDefaultValue(0L)
                     .setSaveConsumer(v -> {
-                        try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                        try {
+                            field.set(info, v);
+                        } catch (IllegalAccessException ignored) {
+                        }
                     })
                     .build();
         }
@@ -215,7 +235,10 @@ public class SpawnInfoGuiProvider {
             return eb.startFloatField(label, val)
                     .setDefaultValue(0f)
                     .setSaveConsumer(v -> {
-                        try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                        try {
+                            field.set(info, v);
+                        } catch (IllegalAccessException ignored) {
+                        }
                     })
                     .build();
         }
@@ -224,7 +247,10 @@ public class SpawnInfoGuiProvider {
             return eb.startDoubleField(label, val)
                     .setDefaultValue(0.0)
                     .setSaveConsumer(v -> {
-                        try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                        try {
+                            field.set(info, v);
+                        } catch (IllegalAccessException ignored) {
+                        }
                     })
                     .build();
         }
@@ -233,7 +259,10 @@ public class SpawnInfoGuiProvider {
             return eb.startBooleanToggle(label, val)
                     .setDefaultValue(false)
                     .setSaveConsumer(v -> {
-                        try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                        try {
+                            field.set(info, v);
+                        } catch (IllegalAccessException ignored) {
+                        }
                     })
                     .build();
         }
@@ -242,7 +271,10 @@ public class SpawnInfoGuiProvider {
             return eb.startStrField(label, val)
                     .setDefaultValue("")
                     .setSaveConsumer(v -> {
-                        try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                        try {
+                            field.set(info, v);
+                        } catch (IllegalAccessException ignored) {
+                        }
                     })
                     .build();
         }
@@ -264,14 +296,14 @@ public class SpawnInfoGuiProvider {
                             newList -> {
                                 try {
                                     field.set(info, newList);
-                                } catch (IllegalAccessException ignored) {}
+                                } catch (IllegalAccessException ignored) {
+                                }
                             },
                             ArrayList::new,
                             Component.translatable("text.cloth-config.reset_value"),
                             false,
                             true,
-                            false
-                    );
+                            false);
                 }
             }
         }
@@ -280,7 +312,10 @@ public class SpawnInfoGuiProvider {
         return eb.startStrField(label, val)
                 .setDefaultValue("")
                 .setSaveConsumer(v -> {
-                    try { field.set(info, v); } catch (IllegalAccessException ignored) {}
+                    try {
+                        field.set(info, v);
+                    } catch (IllegalAccessException ignored) {
+                    }
                 })
                 .build();
     }
@@ -299,43 +334,64 @@ public class SpawnInfoGuiProvider {
         try {
             field.setAccessible(true);
             field.set(obj, value);
-        } catch (IllegalAccessException ignored) {}
+        } catch (IllegalAccessException ignored) {
+        }
     }
 
-    private static List<EditableEntry> toEditableList(HashMap<ResourceLocation, SpawnInfo> map) {
-        if (map == null) return new ArrayList<>();
+    private static List<EditableEntry> toEditableList(HashMap<ResourceLocation, SpawnInfo> map, int type) {
+        if (map == null)
+            return new ArrayList<>();
         return map.entrySet().stream()
-                .map(e -> new EditableEntry(e.getKey().toString(), cloneSpawnInfo(e.getValue())))
+                .map(e -> new EditableEntry(e.getKey().toString(), cloneSpawnInfo(e.getValue()),
+                        getKeyName(e.getKey(), type)))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    // ✅ 根据 type 返回正确的友好名称
+    private static Component getKeyName(ResourceLocation key, int type) {
+        if (type == 1) {
+            // 角色类型：假设 RoleUtils.getRoleName 存在
+            return RoleUtils.getRoleName(key).append(Component.translatable(" (%s)", key.toString()));
+        } else if (type == 2) {
+            // 修饰符类型
+            return RoleUtils.getModifierName(key).append(Component.translatable(" (%s)", key.toString()));
+        }
+        // 未知类型则返回 key 本身的字符串
+        return Component.literal(key.toString());
+    }
+
     private static SpawnInfo cloneSpawnInfo(SpawnInfo original) {
-        if (original == null) return new SpawnInfo(0, 0, 0);
+        if (original == null)
+            return new SpawnInfo(0, 0, 0);
         SpawnInfo copy = new SpawnInfo(
                 original.minEnabledPlayer,
                 original.maxEnabledPlayer,
-                original.enableChance
-        );
+                original.enableChance);
         if (original.map != null) {
             copy.map = new ArrayList<>(original.map);
         }
         return copy;
     }
 
+    // ✅ 保存时保留原有的 type
     private static void saveBack(Field field, Object config, List<EditableEntry> updated) {
         RoleSpawnInfoEntries obj = (RoleSpawnInfoEntries) getFieldValue(field, config);
         if (obj == null) {
             obj = new RoleSpawnInfoEntries();
             setFieldValue(field, config, obj);
         }
+        int originalType = obj.type; // 保留 type
 
         HashMap<ResourceLocation, SpawnInfo> newMap = new HashMap<>();
         for (EditableEntry e : updated) {
-            if (e.key == null || e.key.isBlank()) continue;
+            if (e.key == null || e.key.isBlank())
+                continue;
             ResourceLocation rl = ResourceLocation.tryParse(e.key);
-            if (rl == null) continue;
+            if (rl == null)
+                continue;
             newMap.put(rl, e.spawnInfo);
         }
         obj.maps = newMap;
+        obj.type = originalType; // 确保 type 不被意外修改
     }
 }
