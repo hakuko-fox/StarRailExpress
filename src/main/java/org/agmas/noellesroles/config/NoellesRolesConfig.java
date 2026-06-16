@@ -359,7 +359,7 @@ public class NoellesRolesConfig implements ConfigData {
     /**
      * Skill Echo Event - random unannounced role broadcast switch
      */
-    public boolean skillEchoRandomBroadcastEnabled = true;
+    public boolean skillEchoRandomBroadcastEnabled = false;
 
     /**
      * Skill Echo Event - random broadcast interval in seconds

@@ -1,14 +1,22 @@
 package io.wifi.ConfigCompact.config_gui_provider;
 
+import com.google.common.collect.Iterators;
+import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
+import me.shedaniel.autoconfig.gui.registry.api.GuiRegistryAccess;
+import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
+import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.gui.entries.MultiElementListEntry;
+import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,22 +24,10 @@ import org.agmas.noellesroles.config.NoellesRolesConfig.RoleSpawnInfoEntries;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 
-import com.google.common.collect.Iterators;
-
-import me.shedaniel.autoconfig.gui.registry.GuiRegistry;
-import me.shedaniel.autoconfig.gui.registry.api.GuiRegistryAccess;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.gui.entries.MultiElementListEntry;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-
 @Environment(EnvType.CLIENT)
+@SuppressWarnings("deprecation")
 public class SpawnInfoGuiProvider {
 
-    // ---------- 内部可编辑条目 ----------
     private static class EditableEntry {
         String key;
         Component name;
@@ -50,16 +46,14 @@ public class SpawnInfoGuiProvider {
         }
     }
 
-    // ---------- 可保存且支持搜索的 MultiElementListEntry 分页 ----------
-    private static class SavablePageEntry extends MultiElementListEntry<Object> {
+    // ---------- 可保存的分页（SubCategoryListEntry） ----------
+    private static class SavableSubCategoryEntry extends SubCategoryListEntry {
         private final Runnable saveCallback;
-        private final String pageLabel;
 
-        public SavablePageEntry(Component pageTitle, List<AbstractConfigListEntry<?>> entries,
-                boolean defaultExpanded, Runnable saveCallback) {
-            super(pageTitle, null, entries, defaultExpanded);
+        public SavableSubCategoryEntry(Component fieldName, List<AbstractConfigListEntry> children,
+                                       boolean expanded, Runnable saveCallback) {
+            super(fieldName, children, expanded);
             this.saveCallback = saveCallback;
-            this.pageLabel = pageTitle.getString();
         }
 
         @Override
@@ -69,44 +63,52 @@ public class SpawnInfoGuiProvider {
                 saveCallback.run();
             }
         }
-
-        @Override
-        public Iterator<String> getSearchTags() {
-            // 添加分页标题作为搜索标签
-            return Iterators.concat(
-                    super.getSearchTags(),
-                    Stream.of(pageLabel).iterator()
-            );
-        }
     }
 
-    // ---------- 支持搜索的行条目 ----------
+    // ---------- 行容器：MultiElementListEntry，重写 isExpanded 以在搜索时自动展开 ----------
     private static class SearchableRowEntry extends MultiElementListEntry<EditableEntry> {
         private final EditableEntry entry;
 
         public SearchableRowEntry(Component title, EditableEntry entry,
-                List<AbstractConfigListEntry<?>> entries, boolean defaultExpanded) {
-            super(title, entry, entries, defaultExpanded);
+                                  List<AbstractConfigListEntry<?>> children,
+                                  boolean defaultExpanded) {
+            super(title, entry, children, defaultExpanded);
             this.entry = entry;
+        }
+
+        public EditableEntry getEntry() {
+            return entry;
         }
 
         @Override
         public Iterator<String> getSearchTags() {
-            // 添加 key 和 name 的文本作为搜索标签
-            Iterator<String> baseTags = super.getSearchTags();
+            Iterator<String> base = super.getSearchTags();
             if (entry == null) {
-                return baseTags;
+                return base;
             }
             String keyTag = entry.key != null ? entry.key : "";
             String nameTag = entry.name != null ? entry.name.getString() : "";
             return Iterators.concat(
-                    baseTags,
+                    base,
                     Stream.of(keyTag, nameTag).filter(s -> !s.isEmpty()).iterator()
             );
         }
+
+        // 当行匹配搜索时强制展开，确保字段可见
+        @Override
+        public boolean isExpanded() {
+            var screen = getConfigScreen();
+            if (screen != null && screen.matchesSearch(getSearchTags())) {
+                return true;
+            }
+            return super.isExpanded();
+        }
+
+        // 不重写 children 或 updateSelected，保留 MultiElementListEntry 的默认行为，
+        // 默认行为不会过滤子控件，因此焦点和编辑完全正常。
     }
 
-    // ---------- 注册到 AutoConfig ----------
+    // ---------- 注册 ----------
     public static void register(GuiRegistry registry) {
         registry.registerPredicateProvider(
                 SpawnInfoGuiProvider::provide,
@@ -142,29 +144,27 @@ public class SpawnInfoGuiProvider {
             setFieldValue(field, defaults, defaultObj);
         }
 
-        // 构建当前条目列表和默认条目列表
         List<EditableEntry> entries = toEditableList(currentObj.maps, currentObj.type);
         List<EditableEntry> defaultEntries = toEditableList(defaultObj.maps, defaultObj.type);
 
         int pageSize = 20;
-        List<SavablePageEntry> pageContainers = new ArrayList<>();
+        List<SavableSubCategoryEntry> pageContainers = new ArrayList<>();
         List<SearchableRowEntry> allRowContainers = new ArrayList<>();
 
-        // 如果没有条目，显示一个空分页
+        Runnable saveAllRowsRunnable = () -> saveAllRows(field, config, allRowContainers);
+
         if (entries.isEmpty()) {
-            List<AbstractConfigListEntry<?>> emptyRowList = new ArrayList<>();
             SearchableRowEntry emptyRow = buildRow(
                     new EditableEntry("", new SpawnInfo()),
                     new EditableEntry("", new SpawnInfo()),
                     i18n);
-            emptyRowList.add(emptyRow);
             allRowContainers.add(emptyRow);
-
-            SavablePageEntry emptyPage = new SavablePageEntry(
+            List<AbstractConfigListEntry> rowList = Collections.singletonList(emptyRow);
+            SavableSubCategoryEntry emptyPage = new SavableSubCategoryEntry(
                     Component.literal("0-0"),
-                    emptyRowList,
+                    rowList,
                     false,
-                    () -> saveAllRows(field, config, allRowContainers));
+                    saveAllRowsRunnable);
             pageContainers.add(emptyPage);
         } else {
             for (int i = 0; i < entries.size(); i += pageSize) {
@@ -176,9 +176,8 @@ public class SpawnInfoGuiProvider {
                         : Collections.emptyList();
 
                 Component pageTitle = Component.literal((start + 1) + "-" + end);
-                List<AbstractConfigListEntry<?>> pageChildren = new ArrayList<>();
+                List<AbstractConfigListEntry> pageChildren = new ArrayList<>();
 
-                // 构建该分页下的每一行
                 for (int j = 0; j < subEntries.size(); j++) {
                     EditableEntry current = subEntries.get(j);
                     EditableEntry def = (j < subDefaults.size()) ? subDefaults.get(j) : null;
@@ -190,47 +189,42 @@ public class SpawnInfoGuiProvider {
                     allRowContainers.add(row);
                 }
 
-                SavablePageEntry page = new SavablePageEntry(
+                SavableSubCategoryEntry page = new SavableSubCategoryEntry(
                         pageTitle,
                         pageChildren,
                         false,
-                        () -> saveAllRows(field, config, allRowContainers));
+                        saveAllRowsRunnable);
                 pageContainers.add(page);
             }
         }
 
-        // 父级容器
-        List<AbstractConfigListEntry<?>> parentChildren = new ArrayList<>(pageContainers);
-        MultiElementListEntry<Object> parentEntry = new MultiElementListEntry<>(
+        List<AbstractConfigListEntry> parentChildren = new ArrayList<>(pageContainers);
+        SubCategoryListEntry parentEntry = new SubCategoryListEntry(
                 Component.translatable(i18n),
-                null,
                 parentChildren,
                 false);
 
         return Collections.singletonList(parentEntry);
     }
 
-    // ---------- 保存所有行数据到配置 ----------
     private static void saveAllRows(Field field, Object config,
-            List<SearchableRowEntry> allRowContainers) {
+                                    List<SearchableRowEntry> allRowContainers) {
         List<EditableEntry> allEntries = new ArrayList<>();
         for (SearchableRowEntry row : allRowContainers) {
-            EditableEntry value = row.getValue();
-            if (value != null) {
-                allEntries.add(value);
+            EditableEntry entry = row.getEntry();
+            if (entry != null) {
+                allEntries.add(entry);
             }
         }
         saveBack(field, config, allEntries);
     }
 
-    // ---------- 构建每一行（返回 SearchableRowEntry） ----------
     private static SearchableRowEntry buildRow(
             EditableEntry currentEntry,
             EditableEntry defaultEntry,
             String i18n) {
 
         ConfigEntryBuilder eb = ConfigEntryBuilder.create();
-
         List<AbstractConfigListEntry<?>> controls = buildSpawnInfoControls(
                 currentEntry.spawnInfo,
                 defaultEntry.spawnInfo,
@@ -246,7 +240,6 @@ public class SpawnInfoGuiProvider {
                 false);
     }
 
-    // ---------- 通过反射生成 SpawnInfo 字段控件，并使用默认值 ----------
     private static List<AbstractConfigListEntry<?>> buildSpawnInfoControls(
             SpawnInfo info,
             SpawnInfo defaultInfo,
@@ -276,7 +269,6 @@ public class SpawnInfoGuiProvider {
         return list;
     }
 
-    // ---------- 根据字段类型创建控件，使用默认值 ----------
     @SuppressWarnings("unchecked")
     private static AbstractConfigListEntry<?> createControlForField(
             ConfigEntryBuilder eb,
@@ -415,7 +407,7 @@ public class SpawnInfoGuiProvider {
                 .build();
     }
 
-    // ---------- 工具方法 ----------
+    // ---------- 工具 ----------
     private static Object getFieldValue(Field field, Object obj) {
         try {
             field.setAccessible(true);
