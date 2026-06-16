@@ -106,6 +106,7 @@ public class NoellesRolesConfig implements ConfigData {
         public RoleSpawnInfoEntries() {
             this.type = 0; // 默认未知
         }
+
         public SpawnInfo getSpawnInfo(SREModifier modifier) {
             return maps.getOrDefault(modifier.identifier(), null);
         }
@@ -370,7 +371,6 @@ public class NoellesRolesConfig implements ConfigData {
      */
     public double pelicanEatPercentage = 70.0D;
 
-
     // ==================== Mafia 配置 ====================
     public int godfatherStartingBullets = 1;
     public int godfatherMaxLoadedBullets = 3;
@@ -382,15 +382,15 @@ public class NoellesRolesConfig implements ConfigData {
 
     @Category("magic")
     public String credit = "";
-
+    @Category("detail")
     public int chanceOfTaskmaster = 30;
-
+    @Category("detail")
     public int minPlayerForSecretive = 12;
-
+    @Category("detail")
     public int chanceOfSecretive = 20;
-
+    @Category("detail")
     public int minPlayerForLovers = 12;
-
+    @Category("detail")
     public int chanceOfModifierLovers = 10;
 
     public static NoellesRolesConfig instance() {
