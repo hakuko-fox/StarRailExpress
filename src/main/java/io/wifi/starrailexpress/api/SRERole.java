@@ -747,21 +747,25 @@ public abstract class SRERole extends SREAbstractInfoClass {
             List<ServerPlayer> players, String mapName) {
         if (defaultMaxCount == -1)
             return -1;
-        if (this.spawnInfo.minEnabledPlayer >= 0) {
+        // 优先使用 spawnInfo（来自用户配置），若未设置则回退到 default 值（来自角色定义 / CustomRoleLoader）
+        int minPlayer = this.spawnInfo.minEnabledPlayer >= 0 ? this.spawnInfo.minEnabledPlayer : this.defaultEnableNeedPlayerCount;
+        if (minPlayer >= 0) {
             int playerCount = players.size();
-            if (playerCount < this.spawnInfo.minEnabledPlayer) {
+            if (playerCount < minPlayer) {
                 return 0;
             }
         }
-        if (this.spawnInfo.maxEnabledPlayer >= 0) {
+        int maxPlayer = this.spawnInfo.maxEnabledPlayer >= 0 ? this.spawnInfo.maxEnabledPlayer : this.defaultEnableMaxPlayerCount;
+        if (maxPlayer >= 0) {
             int playerCount = players.size();
-            if (playerCount > this.spawnInfo.maxEnabledPlayer) {
+            if (playerCount > maxPlayer) {
                 return 0;
             }
         }
-        if (this.spawnInfo.enableChance >= 0) {
+        int chance = this.spawnInfo.enableChance >= 0 ? this.spawnInfo.enableChance : this.defaultEnableChance;
+        if (chance >= 0) {
             int nchance = random.nextInt(0, 10000);
-            if (nchance > this.spawnInfo.enableChance) {
+            if (nchance > chance) {
                 return 0;
             }
         }
