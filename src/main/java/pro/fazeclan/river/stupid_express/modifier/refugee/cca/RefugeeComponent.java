@@ -505,7 +505,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
     public static void register() {
         ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, bound) -> {
-            if (RoleUtils.isPlayerTheJob(sender, TMMRoles.LOOSE_END))
+            if (RoleUtils.isPlayerTheJob(sender, TMMRoles.LOOSE_END) && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(sender))
                 return false;
             return true;
         });
