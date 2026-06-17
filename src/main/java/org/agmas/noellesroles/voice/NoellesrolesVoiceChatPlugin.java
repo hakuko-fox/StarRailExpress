@@ -58,10 +58,12 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     }
     // 亡命徒期间活人玩家不可听话
     if (RefugeeComponent.KEY.get(senderPlayer.level()).isAnyRevivals) {
-      if(RoleUtils.isPlayerTheJob(senderPlayer, TMMRoles.LOOSE_END)) {
+      if (RoleUtils.isPlayerTheJob(senderPlayer, TMMRoles.LOOSE_END)
+          && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(senderPlayer)) {
         return false;
       }
-      if(RoleUtils.isPlayerTheJob(receiverPlayer, TMMRoles.LOOSE_END)) {
+      if (RoleUtils.isPlayerTheJob(receiverPlayer, TMMRoles.LOOSE_END)
+          && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(receiverPlayer)) {
         return false;
       }
     }

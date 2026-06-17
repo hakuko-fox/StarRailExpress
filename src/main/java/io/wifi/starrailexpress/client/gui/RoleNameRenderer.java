@@ -66,7 +66,7 @@ public class RoleNameRenderer {
         if (DeathPenaltyComponent.hasPenalty(player))
             return;
         // 亡命徒也是
-        if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)) {
+        if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END) && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
             return;
         }
         // 鹈鹕肚内玩家不能通过准星查看玩家身份
