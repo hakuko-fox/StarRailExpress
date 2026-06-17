@@ -212,22 +212,22 @@ public class SREModifier extends SREAbstractInfoClass {
             List<ServerPlayer> players, String mapName) {
         if (defaultMaxCount == -1)
             return -1;
-        // 优先使用 spawnInfo（来自用户配置），若未设置则回退到 default 值（来自修饰符定义）
-        int chance = this.spawnInfo.enableChance >= 0 ? this.spawnInfo.enableChance : this.defaultEnableChance;
+        // 优先使用 spawnInfo（来自用户配置），若未设置则不回退。如果要设置默认的请设置canSetSpawnInfoInConfig为false
+        int chance = this.spawnInfo.enableChance;
         if (chance >= 0) {
             int nchance = random.nextInt(0, 10000);
             if (nchance > chance) {
                 return 0;
             }
         }
-        int minPlayer = this.spawnInfo.minEnabledPlayer >= 0 ? this.spawnInfo.minEnabledPlayer : this.defaultNeedPlayerCount;
+        int minPlayer = this.spawnInfo.minEnabledPlayer;
         if (minPlayer >= 0) {
             int playerCount = players.size();
             if (playerCount < minPlayer) {
                 return 0;
             }
         }
-        int maxPlayer = this.spawnInfo.maxEnabledPlayer >= 0 ? this.spawnInfo.maxEnabledPlayer : this.defaultMaxPlayerCount;
+        int maxPlayer = this.spawnInfo.maxEnabledPlayer;
         if (maxPlayer >= 0) {
             int playerCount = players.size();
             if (playerCount > maxPlayer) {
