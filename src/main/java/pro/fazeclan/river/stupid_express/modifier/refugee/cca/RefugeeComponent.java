@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class RefugeeComponent implements AutoSyncedComponent, ServerTickingComponent {
-
     public static final ComponentKey<RefugeeComponent> KEY = ComponentRegistry.getOrCreate(
             StupidExpress.id("refugee"),
             RefugeeComponent.class);
@@ -499,5 +498,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         this.isPendingRestore = false;
         this.pendingWho = null;
         this.sync();
+    }
+    public static void register(){
+        
     }
 }

@@ -54,12 +54,6 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     if (PelicanManager.shouldCancelVoice(senderPlayer.getUUID(), receiverPlayer.getUUID())) {
       return true;
     }
-    // 亡命徒期间活人玩家不可听话
-    if (RefugeeComponent.KEY.get(senderPlayer.level()).isAnyRevivals) {
-      if (isAlive(receiverPlayer)) {
-        return false;
-      }
-    }
     if (senderPlayer.getEffect(ModEffects.TIME_STOP) != null) {
       if (!TimeStopEffect.canMovePlayers.contains(senderPlayer.getUUID())) {
         return true;
