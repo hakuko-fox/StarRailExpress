@@ -60,11 +60,11 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     if (RefugeeComponent.KEY.get(senderPlayer.level()).isAnyRevivals) {
       if (RoleUtils.isPlayerTheJob(senderPlayer, TMMRoles.LOOSE_END)
           && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(senderPlayer)) {
-        return false;
+        return true;
       }
       if (RoleUtils.isPlayerTheJob(receiverPlayer, TMMRoles.LOOSE_END)
           && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(receiverPlayer)) {
-        return false;
+        return true;
       }
     }
     if (senderPlayer.getEffect(ModEffects.TIME_STOP) != null) {
