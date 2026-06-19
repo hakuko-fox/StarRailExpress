@@ -1836,6 +1836,7 @@
   "screen.noellesroles.lottery_machine": "抽奖机",
   "screen.noellesroles.lottery.prize_pool": "奖池预览",
   "screen.noellesroles.lottery.empty_pool": "暂无奖品",
+  "screen.noellesroles.lottery.weight": "权重: %s / 概率: %s",
   "screen.noellesroles.lottery.cost": "单抽费用: %s",
   "screen.noellesroles.lottery.balance": "当前余额: %s",
   "screen.noellesroles.lottery.draw": "抽取",

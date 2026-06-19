@@ -88,6 +88,7 @@ public class VendingMachinesBlockEntity extends BlockEntity implements GoodsCont
          ShopEntry shopEntry = this.items.get(i);
          entryTag.putInt("price", shopEntry.price());
          entryTag.putString("currency", shopEntry.currency().serializedName());
+         entryTag.putInt("weight", shopEntry.weight());
          ItemStack itemStack = shopEntry.stack();
 
          // 仿照BeveragePlateBlockEntity的序列化方式
@@ -130,6 +131,7 @@ public class VendingMachinesBlockEntity extends BlockEntity implements GoodsCont
                if (entry.contains("currency", Tag.TAG_STRING)) {
                   currency = ShopEntry.Currency.fromSerializedName(entry.getString("currency"));
                }
+               int weight = entry.contains("weight") ? Math.max(1, entry.getInt("weight")) : 1;
                if (entry.contains("item")) {
                   try {
                      CompoundTag itemTag = entry.getCompound("item");
@@ -156,7 +158,7 @@ public class VendingMachinesBlockEntity extends BlockEntity implements GoodsCont
 
                   }
                }
-               items.add(new ShopEntry(item, price, ShopEntry.Type.TOOL, currency));
+               items.add(new ShopEntry(item, price, ShopEntry.Type.TOOL, currency, weight));
             }
          }
       }

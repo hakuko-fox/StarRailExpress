@@ -13,18 +13,29 @@ import java.util.List;
 
 public class ShopEntry extends dev.doctor4t.wathe.util.ShopEntry {
     private final Currency currency;
+    private final int weight;
 
     public ShopEntry(ItemStack stack, int price, dev.doctor4t.wathe.util.ShopEntry.Type type) {
         this(stack, price, type, Currency.MONEY);
     }
 
     public ShopEntry(ItemStack stack, int price, dev.doctor4t.wathe.util.ShopEntry.Type type, Currency currency) {
+        this(stack, price, type, currency, 1);
+    }
+
+    public ShopEntry(ItemStack stack, int price, dev.doctor4t.wathe.util.ShopEntry.Type type, Currency currency,
+            int weight) {
         super(stack, price, type);
         this.currency = currency == null ? Currency.MONEY : currency;
+        this.weight = Math.max(1, weight);
     }
 
     public Currency currency() {
         return this.currency;
+    }
+
+    public int weight() {
+        return this.weight;
     }
 
     public boolean hasEnoughCurrency(@NotNull Player player) {

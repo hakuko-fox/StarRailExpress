@@ -8,13 +8,16 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import org.agmas.noellesroles.packet.LotteryMachineDrawC2SPacket;
 import org.agmas.noellesroles.packet.LotteryMachineResultS2CPacket;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class LotteryMachineGui extends AbstractPixelScreen {
     private static final int PANEL_W = 314;
@@ -23,7 +26,8 @@ public class LotteryMachineGui extends AbstractPixelScreen {
     private static final int REVEAL_TICKS = 34;
     private static final int GRID_COLUMNS = 5;
 
-    private final List<ItemStack> prizes = new ArrayList<>();
+    private final List<PrizeEntry> prizes = new ArrayList<>();
+    private final int totalWeight;
     private final int drawCost;
     private final ShopEntry.Currency drawCurrency;
     private final BlockPos blockPos;
@@ -49,13 +53,17 @@ public class LotteryMachineGui extends AbstractPixelScreen {
         this.blockPos = blockPos;
         this.drawCost = Math.max(0, drawCost);
         this.drawCurrency = drawCurrency == null ? ShopEntry.Currency.MONEY : drawCurrency;
+        int weightSum = 0;
         if (entries != null) {
             for (ShopEntry entry : entries) {
                 if (entry != null && !entry.stack().isEmpty()) {
-                    this.prizes.add(entry.stack().copy());
+                    int weight = Math.max(1, entry.weight());
+                    this.prizes.add(new PrizeEntry(entry.stack().copy(), weight));
+                    weightSum += weight;
                 }
             }
         }
+        this.totalWeight = Math.max(0, weightSum);
     }
 
     @Override
@@ -126,11 +134,25 @@ public class LotteryMachineGui extends AbstractPixelScreen {
             int x = gridX + (i % GRID_COLUMNS) * (slot + gap);
             int y = gridY + (i / GRID_COLUMNS) * (slot + gap);
             boolean hover = mouseX >= x && mouseX <= x + slot && mouseY >= y && mouseY <= y + slot;
+            PrizeEntry prize = this.prizes.get(i);
             g.fill(x, y, x + slot, y + slot, hover ? 0xFF62718A : 0xFF465264);
             g.fill(x + 1, y + 1, x + slot - 1, y + slot - 1, 0xFF1C222B);
-            g.renderItem(this.prizes.get(i), x + 4, y + 4);
+            g.renderItem(prize.stack(), x + 4, y + 3);
+            Component chanceText = Component.literal(formatChance(prize.weight()));
+            float scale = 0.5f;
+            g.pose().pushPose();
+            g.pose().scale(scale, scale, 1.0f);
+            g.drawString(this.font, chanceText,
+                    (int) ((x + slot / 2) / scale) - this.font.width(chanceText) / 2,
+                    (int) ((y + slot + 1) / scale),
+                    0xFFF0D078,
+                    false);
+            g.pose().popPose();
             if (hover) {
-                g.renderTooltip(this.font, this.prizes.get(i), mouseX, mouseY);
+                List<Component> tooltip = new ArrayList<>(prize.stack().getTooltipLines(
+                        Item.TooltipContext.EMPTY, Minecraft.getInstance().player, TooltipFlag.NORMAL));
+                tooltip.add(Component.translatable("screen.noellesroles.lottery.weight", prize.weight(), formatChance(prize.weight())));
+                g.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
             }
         }
         if (this.prizes.isEmpty()) {
@@ -217,7 +239,14 @@ public class LotteryMachineGui extends AbstractPixelScreen {
             return this.pendingResult;
         }
         int index = Math.floorMod(this.spinTicks + (this.spinTicks * this.spinTicks / 9), this.prizes.size());
-        return this.prizes.get(index);
+        return this.prizes.get(index).stack();
+    }
+
+    private String formatChance(int weight) {
+        if (this.totalWeight <= 0) {
+            return "0.00%";
+        }
+        return String.format(Locale.ROOT, "%.2f%%", (double) weight * 100.0 / this.totalWeight);
     }
 
     @Override
@@ -303,5 +332,8 @@ public class LotteryMachineGui extends AbstractPixelScreen {
         WAITING,
         SPINNING,
         REVEAL
+    }
+
+    private record PrizeEntry(ItemStack stack, int weight) {
     }
 }

@@ -81,6 +81,22 @@ public class GoodsManagerCommand {
                           .suggests(CURRENCY_SUGGESTIONS)
                           .executes(GoodsManagerCommand::executeSetCost)))));
         });
+    CommandRegistrationCallback.EVENT.register(
+        (dispatcher, registryAccess, environment) -> {
+          dispatcher.register(Commands.literal("goods:lottery")
+              .requires(source -> source.hasPermission(2))
+              .then(Commands.literal("add")
+                  .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                      .then(Commands.literal("player")
+                          .then(Commands.argument("player", EntityArgument.player())
+                              .then(Commands.argument("weight", IntegerArgumentType.integer(1))
+                                  .executes(GoodsManagerCommand::executeLotteryAddPlayer))))
+                      .then(Commands.literal("item")
+                          .then(Commands.argument("item", ItemArgument.item(registryAccess))
+                              .then(Commands.argument("count", IntegerArgumentType.integer(1))
+                                  .then(Commands.argument("weight", IntegerArgumentType.integer(1))
+                                      .executes(GoodsManagerCommand::executeLotteryAddItem))))))));
+        });
 
   }
 
@@ -250,17 +266,27 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
         result.append(Component.literal("\n抽奖费用: " + lotteryMachine.getDrawCost() + " "
             + lotteryMachine.getDrawCurrency().serializedName()).withStyle(ChatFormatting.YELLOW));
       }
+      int totalWeight = blockEntity instanceof LotteryMachineBlockEntity
+          ? items.stream().mapToInt(ShopEntry::weight).sum()
+          : 0;
       for (var it : items) {
         Style itemHoverStyle = Style.EMPTY
             .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new ItemStackInfo(it.stack())))
             .withColor(ChatFormatting.GREEN);
+        Component detail = Component.literal(it.price() + " " + it.currency().serializedName())
+            .withStyle(ChatFormatting.YELLOW);
+        if (blockEntity instanceof LotteryMachineBlockEntity) {
+          double chance = totalWeight <= 0 ? 0.0 : (double) it.weight() * 100.0 / totalWeight;
+          detail = Component.literal(String.format(java.util.Locale.ROOT, "权重 %d / %.2f%%", it.weight(), chance))
+              .withStyle(ChatFormatting.YELLOW);
+        }
         result.append(
             Component
                 .translatable("\n%s(%s): %s",
                     Component.literal("").append(it.stack().getDisplayName())
                         .withStyle(itemHoverStyle),
                     it.stack().getCount(),
-                    Component.literal(it.price() + " " + it.currency().serializedName()).withStyle(ChatFormatting.YELLOW))
+                    detail)
                 .withStyle(ChatFormatting.AQUA));
       }
       // 发送成功消息
@@ -317,6 +343,67 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       context.getSource().sendFailure(Component.literal("删除商品时发生错误: " + e.getMessage()));
       return 0;
     }
+  }
+
+  private static int executeLotteryAddPlayer(CommandContext<CommandSourceStack> context) {
+    try {
+      BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
+      ServerPlayer player = EntityArgument.getPlayer(context, "player");
+      int weight = IntegerArgumentType.getInteger(context, "weight");
+      BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
+      if (!(blockEntity instanceof LotteryMachineBlockEntity lotteryMachine)) {
+        context.getSource().sendFailure(Component.literal("指定位置不是抽奖机方块"));
+        return 0;
+      }
+      ItemStack itemStack = player.getMainHandItem();
+      if (itemStack.isEmpty()) {
+        context.getSource().sendFailure(Component.literal("玩家主手没有物品"));
+        return 0;
+      }
+      addLotteryPrize(context, lotteryMachine, pos, itemStack.copy(), weight);
+      return 1;
+    } catch (Exception e) {
+      e.printStackTrace();
+      context.getSource().sendFailure(Component.literal("添加抽奖奖品时发生错误: " + e.getMessage()));
+      return 0;
+    }
+  }
+
+  private static int executeLotteryAddItem(CommandContext<CommandSourceStack> context) {
+    try {
+      BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
+      int itemCount = IntegerArgumentType.getInteger(context, "count");
+      int weight = IntegerArgumentType.getInteger(context, "weight");
+      ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(itemCount, true);
+      BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
+      if (!(blockEntity instanceof LotteryMachineBlockEntity lotteryMachine)) {
+        context.getSource().sendFailure(Component.literal("指定位置不是抽奖机方块"));
+        return 0;
+      }
+      if (itemStack.isEmpty()) {
+        context.getSource().sendFailure(Component.literal("无效的物品"));
+        return 0;
+      }
+      addLotteryPrize(context, lotteryMachine, pos, itemStack.copy(), weight);
+      return 1;
+    } catch (Exception e) {
+      e.printStackTrace();
+      context.getSource().sendFailure(Component.literal("添加抽奖奖品时发生错误: " + e.getMessage()));
+      return 0;
+    }
+  }
+
+  private static void addLotteryPrize(CommandContext<CommandSourceStack> context,
+      LotteryMachineBlockEntity lotteryMachine, BlockPos pos, ItemStack itemStack, int weight) {
+    ShopEntry shopEntry = new ShopEntry(itemStack.copy(), 0, ShopEntry.Type.TOOL, ShopEntry.Currency.MONEY, weight);
+    lotteryMachine.addItem(shopEntry);
+    int totalWeight = lotteryMachine.getShops().stream().mapToInt(ShopEntry::weight).sum();
+    double chance = totalWeight <= 0 ? 0.0 : (double) shopEntry.weight() * 100.0 / totalWeight;
+    context.getSource().sendSuccess(() -> Component.literal("成功添加抽奖奖品: ")
+        .append(itemStack.getDisplayName())
+        .append(Component.literal(" 权重: " + shopEntry.weight()))
+        .append(Component.literal(String.format(java.util.Locale.ROOT, " 当前概率: %.2f%%", chance)))
+        .append(Component.literal(" 到位置: " + pos.toShortString())), true);
   }
 
   private static ShopEntry.Currency getCurrency(CommandContext<CommandSourceStack> context) {

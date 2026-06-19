@@ -1828,6 +1828,7 @@
   "screen.noellesroles.lottery_machine": "Lottery Machine",
   "screen.noellesroles.lottery.prize_pool": "Prize Pool",
   "screen.noellesroles.lottery.empty_pool": "No prizes configured",
+  "screen.noellesroles.lottery.weight": "Weight: %s / Chance: %s",
   "screen.noellesroles.lottery.cost": "Draw cost: %s",
   "screen.noellesroles.lottery.balance": "Balance: %s",
   "screen.noellesroles.lottery.draw": "Draw",

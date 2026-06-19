@@ -58,7 +58,18 @@ public class LotteryMachineBlockEntity extends BlockEntity implements GoodsConta
       if (this.items.isEmpty()) {
          return Optional.empty();
       }
-      return Optional.of(this.items.get(random.nextInt(this.items.size())));
+      int totalWeight = this.items.stream().mapToInt(ShopEntry::weight).sum();
+      if (totalWeight <= 0) {
+         return Optional.of(this.items.get(random.nextInt(this.items.size())));
+      }
+      int roll = random.nextInt(totalWeight);
+      for (ShopEntry item : this.items) {
+         roll -= item.weight();
+         if (roll < 0) {
+            return Optional.of(item);
+         }
+      }
+      return Optional.of(this.items.getLast());
    }
 
    public boolean canAfford(net.minecraft.world.entity.player.Player player) {
@@ -113,6 +124,7 @@ public class LotteryMachineBlockEntity extends BlockEntity implements GoodsConta
          CompoundTag entryTag = new CompoundTag();
          entryTag.putInt("price", shopEntry.price());
          entryTag.putString("currency", shopEntry.currency().serializedName());
+         entryTag.putInt("weight", shopEntry.weight());
          ItemStack itemStack = shopEntry.stack();
          if (itemStack == null || itemStack.isEmpty()) {
             continue;
@@ -150,6 +162,7 @@ public class LotteryMachineBlockEntity extends BlockEntity implements GoodsConta
             }
             CompoundTag entry = (CompoundTag) s;
             int price = entry.contains("price") ? entry.getInt("price") : 0;
+            int weight = entry.contains("weight") ? Math.max(1, entry.getInt("weight")) : 1;
             ShopEntry.Currency currency = entry.contains("currency", Tag.TAG_STRING)
                   ? ShopEntry.Currency.fromSerializedName(entry.getString("currency"))
                   : ShopEntry.Currency.MONEY;
@@ -159,7 +172,7 @@ public class LotteryMachineBlockEntity extends BlockEntity implements GoodsConta
             try {
                ItemStack item = ItemStack.parse(provider, entry.get("item")).orElse(ItemStack.EMPTY);
                if (!item.isEmpty()) {
-                  this.items.add(new ShopEntry(item, price, ShopEntry.Type.TOOL, currency));
+                  this.items.add(new ShopEntry(item, price, ShopEntry.Type.TOOL, currency, weight));
                }
             } catch (Exception e) {
                Noellesroles.LOGGER.error("[LotteryMachine] 奖品反序列化异常: " + e.getMessage());
