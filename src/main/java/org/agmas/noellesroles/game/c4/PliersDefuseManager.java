@@ -120,7 +120,7 @@ public final class PliersDefuseManager {
     private static void showProgress(ServerLevel level, ServerPlayer defuser, DefuseTarget target, long elapsed) {
         int remainingTicks = Math.max(0, DEFUSE_TICKS - (int) elapsed);
         double seconds = remainingTicks / 20.0D;
-        defuser.displayClientMessage(Component.translatable("c4.defusing_progress", seconds), true);
+        defuser.displayClientMessage(Component.translatable("c4.defusing_progress", String.format("%.1f",seconds)), true);
         Vec3 pos = target.pos();
         level.sendParticles(ParticleTypes.CRIT, pos.x, pos.y + 0.1D, pos.z,
             4, 0.12D, 0.12D, 0.12D, 0.02D);
