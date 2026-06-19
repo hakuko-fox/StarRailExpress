@@ -50,6 +50,7 @@ public class SREPlushBlockEntity extends BlockEntity {
     public ResourceLocation getCustomTexture() {
         return this.customTexture;
     }
+
     @Nullable
     public Component getCustomName() {
         return this.customName;
@@ -99,6 +100,9 @@ public class SREPlushBlockEntity extends BlockEntity {
             nbt.putString("custom_name", Serializer.toJson(this.customName, provider));
         }
 
+        if (this.customTexture != null) {
+            nbt.putString(TAG_CUSTOM_TEXTURE, this.customTexture.toString());
+        }
     }
 
     @Override
