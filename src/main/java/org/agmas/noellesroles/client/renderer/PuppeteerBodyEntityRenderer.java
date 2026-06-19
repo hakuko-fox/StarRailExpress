@@ -11,16 +11,17 @@ import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
@@ -35,7 +36,6 @@ import java.awt.Color;
  */
 public class PuppeteerBodyEntityRenderer<T extends LivingEntity, M extends EntityModel<T>>
         extends LivingEntityRenderer<PuppeteerBodyEntity, PlayerModel<PuppeteerBodyEntity>> {
-    public ResourceLocation defaultTexture = DefaultPlayerSkin.getDefaultTexture();
     static final int MAX_DISTANCE = 36 * 36;
 
     public PuppeteerBodyEntityRenderer(EntityRendererProvider.Context ctx, boolean slim) {
@@ -165,15 +165,24 @@ public class PuppeteerBodyEntityRenderer<T extends LivingEntity, M extends Entit
     public ResourceLocation getTextureLocation(PuppeteerBodyEntity entity) {
         // 首先尝试通过 ownerUuid 从玩家列表获取皮肤
         UUID ownerUuid = entity.getOwnerUuid().orElse(null);
-        PlayerInfo playerListEntry = ClientSkinCache.getCachedPlayerInfo(ownerUuid);
+        if (ownerUuid == null) {
+            return entity.defaultTexture;
+        }
         if (SREClient.getLooseEndPenalty()) {
-            return defaultTexture;
+            return entity.defaultTexture;
         }
-        if (playerListEntry != null) {
-            return playerListEntry.getSkin().texture();
+        Player owner = entity.getOwner();
+        if (owner != null) {
+            if(owner instanceof AbstractClientPlayer abp)
+            return abp.getSkin().texture();
+        } else {
+            PlayerInfo playerListEntry = ClientSkinCache.getCachedPlayerInfo(ownerUuid);
+            if (playerListEntry != null) {
+                return playerListEntry.getSkin().texture();
+            }
         }
-        // 最后的回退：使用固定的默认皮肤（Steve）
-        return defaultTexture;
+
+        return entity.defaultTexture;
     }
 
     @Override
