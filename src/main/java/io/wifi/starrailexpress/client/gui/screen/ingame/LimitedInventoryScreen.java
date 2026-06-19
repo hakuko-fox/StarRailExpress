@@ -100,7 +100,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     // 右上角：参与 / 不参与本局游戏切换按钮
     private Button participationButton = null;
-    private static final int PARTICIPATION_BTN_W = 96;
+    private static final int PARTICIPATION_BTN_W = 60;
     private static final int PARTICIPATION_BTN_H = 20;
 
     private static int scaled(int value) {
