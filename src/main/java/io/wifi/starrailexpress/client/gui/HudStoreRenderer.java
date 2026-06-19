@@ -49,7 +49,7 @@ public class HudStoreRenderer {
                 Component tokenText = Component.translatable("hud.sre.game_token", minigameTask.getTokens());
                 int spacing = 8;
                 int coinWidth = view.getWidth(renderer);
-                int tokenX = coinX - coinWidth - spacing - renderer.width(tokenText);
+                int tokenX = coinX - coinWidth - spacing - renderer.width(tokenText)+8;
                 int tokenY = coinY;
                 context.drawString(renderer, tokenText, tokenX, tokenY, 0xFFFFD700, false);
             }
