@@ -11,7 +11,7 @@
     },
     {
       "type": "bitmap",
-      "file": "starrailexpress:textures/item/minigame_coin.png",
+      "file": "starrailexpress:item/minigame_coin.png",
       "ascent": 8,
       "height": 8,
       "chars": [
