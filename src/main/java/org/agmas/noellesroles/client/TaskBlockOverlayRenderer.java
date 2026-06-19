@@ -375,7 +375,18 @@ public class TaskBlockOverlayRenderer {
                 default:
                     BlockState block = renderContext.world().getBlockState(pos);
                     if (block.getBlock() instanceof TaskInstinctShowableInterface it) {
-                        if (it.shouldRenderTaskInstinct(block, pos, player)) {
+                        // 小游戏任务点(14/15)：仅在玩家有待办小游戏任务且该点本局未被使用时金色透视，
+                        // 否则不显示——即只有刷新到对应任务时才能透视看到小游戏点位。
+                        boolean isMinigamePoint = type == 14 || type == 15;
+                        if (isMinigamePoint) {
+                            var mgComp = io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(player);
+                            if (mgComp != null && mgComp.hasPendingTask() && !mgComp.isBlockUsed(pos)) {
+                                TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                        new Color(255, 215, 0), 1f,
+                                        true, 0f,
+                                        Component.translatable("hud.sre.minigame_task"));
+                            }
+                        } else if (it.shouldRenderTaskInstinct(block, pos, player)) {
                             java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
                             float alpha = c.getAlpha() / 255f;
                             TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,

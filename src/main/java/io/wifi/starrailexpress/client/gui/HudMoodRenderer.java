@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.client.SREClient;
@@ -117,7 +118,18 @@ public class HudMoodRenderer {
             moodOffset = Mth.lerp(delta / 8, moodOffset, maxRenderer.offset);
             moodTextWidth = Mth.lerp(delta / 8, moodTextWidth, textRenderer.width(maxRenderer.text));
         }
-        
+
+        // 小游戏任务计数（金色），渲染在普通任务列表下方。
+        // 代币（货币）改到金币显示旁边渲染，见 HudStoreRenderer / StoreRenderer。
+        SREPlayerMinigameTaskComponent minigameTask = SREPlayerMinigameTaskComponent.KEY.get(player);
+        if (minigameTask != null && minigameTask.hasPendingTask()) {
+            final int gold = 0xFFFFD700;
+            int lineY = 6 + 10 * renderers.size() + 4;
+            context.drawString(textRenderer,
+                    Component.translatable("hud.sre.minigame_task_count", minigameTask.getPendingMinigameTasks()),
+                    22, lineY, gold, false);
+        }
+
         SRERole role = gameWorldComponent.getRole(player);
         if (role != null) {
             if (role.getMoodType() == SRERole.MoodType.FAKE) {

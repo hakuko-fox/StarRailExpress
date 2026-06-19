@@ -46,9 +46,15 @@ public class ModPackets {
 
         PayloadTypeRegistry.playC2S().register(VendingMachinesBuyC2SPacket.TYPE,
                 VendingMachinesBuyC2SPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(LotteryMachineDrawC2SPacket.TYPE,
+                LotteryMachineDrawC2SPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(VendingBuyMessageCallBackS2CPacket.ID,
                 VendingBuyMessageCallBackS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenLotteryMachineScreenS2CPacket.ID,
+                OpenLotteryMachineScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(LotteryMachineResultS2CPacket.ID,
+                LotteryMachineResultS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(WheelchairMoveC2SPacket.ID, WheelchairMoveC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(BroadcastMessageS2CPacket.ID, BroadcastMessageS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(CanMoveInTimeStopS2CPacket.ID, CanMoveInTimeStopS2CPacket.CODEC);

@@ -342,6 +342,9 @@ public class SRE extends StarRailExpressID implements ModInitializer {
             ShieldCommand.register(dispatcher);
             StaminaCommand.register(dispatcher);
             SceneCommand.register(dispatcher);
+            SceneEventCommand.register(dispatcher);
+            SceneTaskCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.MinigameTaskCommand.register(dispatcher);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
             io.wifi.starrailexpress.customrole.CustomRoleReloadCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);

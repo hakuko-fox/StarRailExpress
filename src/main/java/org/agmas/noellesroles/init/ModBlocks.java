@@ -39,6 +39,12 @@ public interface ModBlocks {
             "vending_machines",
             BlockEntityType.Builder.of(VendingMachinesBlockEntity::new,
                     ModBlocks.VENDING_MACHINES_BLOCK));
+    Block LOTTERY_MACHINE_BLOCK = registerBlock("lottery_machine",
+            new LotteryMachineBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion()));
+    BlockEntityType<LotteryMachineBlockEntity> LOTTERY_MACHINE_BLOCK_ENTITY = blockEntityRegistrar.create(
+            "lottery_machine",
+            BlockEntityType.Builder.of(LotteryMachineBlockEntity::new,
+                    ModBlocks.LOTTERY_MACHINE_BLOCK));
     // 创建轮盘赌桌方块
     Block DEVIL_ROULETTE_TABLE = registerBlock("devil_roulette_table",
             new DevilRouletteTable());

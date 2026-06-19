@@ -303,7 +303,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
         // 参与切换按钮：放在右上角信息格内（原参与状态文字所在位置）
         if (participationButton != null) {
-            int bw = scaled(PANEL_W - INFO_X - 6);
+            int bw = scaled(PANEL_W - INFO_X - 20);
             int bh = scaled(16);
             participationButton.setWidth(bw);
             participationButton.setHeight(bh);

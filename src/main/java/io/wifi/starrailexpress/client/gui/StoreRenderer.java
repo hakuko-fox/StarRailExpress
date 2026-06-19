@@ -2,10 +2,12 @@ package io.wifi.starrailexpress.client.gui;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +40,15 @@ public class StoreRenderer {
             view.render(renderer, context, 0, 0, colour, delta);
             context.pose().popPose();
             offsetDelta = Mth.lerp(delta / 16, offsetDelta, 0f);
+        }
+
+        // 小游戏代币（货币）：显示在金币旁（下方），==0 时不显示
+        SREPlayerMinigameTaskComponent minigameTask = SREPlayerMinigameTaskComponent.KEY.get(player);
+        if (minigameTask != null && minigameTask.getTokens() > 0) {
+            Component tokenText = Component.translatable("hud.sre.game_token", minigameTask.getTokens());
+            int tokenX = context.guiWidth() - 4 - renderer.width(tokenText);
+            int tokenY = 6 + renderer.lineHeight + 2;
+            context.drawString(renderer, tokenText, tokenX, tokenY, 0xFFFFD700, false);
         }
     }
 

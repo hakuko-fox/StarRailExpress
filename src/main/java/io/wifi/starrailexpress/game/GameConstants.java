@@ -74,6 +74,8 @@ public class GameConstants {
 
     // Task Variables
     public static float MOOD_GAIN = 0.5f;
+    // 完成一个小游戏任务（指定方块）发放的游戏代币数量
+    public static int MINIGAME_TASK_TOKEN_REWARD = 1;
     public static float MOOD_DRAIN = 1f / getInTicks(4, 0);
     public static int TIME_TO_FIRST_TASK = getInTicks(0, 30);
     public static int MIN_TASK_COOLDOWN = getInTicks(0, 30);

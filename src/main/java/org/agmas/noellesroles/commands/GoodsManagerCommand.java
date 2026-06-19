@@ -1,12 +1,15 @@
 package org.agmas.noellesroles.commands;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
@@ -19,9 +22,14 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import org.agmas.noellesroles.content.block_entity.GoodsContainer;
+import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 
 public class GoodsManagerCommand {
+  private static final SuggestionProvider<CommandSourceStack> CURRENCY_SUGGESTIONS =
+      (context, builder) -> SharedSuggestionProvider.suggest(ShopEntry.Currency.serializedNames(), builder);
+
   public static void register() {
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
@@ -31,11 +39,17 @@ public class GoodsManagerCommand {
                   .then(Commands.literal("player")
                       .then(Commands.argument("player", EntityArgument.player())
                           .then(Commands.argument("price", IntegerArgumentType.integer(0))
-                              .executes(GoodsManagerCommand::execute))))
+                              .executes(GoodsManagerCommand::execute)
+                              .then(Commands.argument("currency", StringArgumentType.word())
+                                  .suggests(CURRENCY_SUGGESTIONS)
+                                  .executes(GoodsManagerCommand::execute)))))
                   .then(Commands.literal("item")
                       .then(Commands.argument("item", ItemArgument.item(registryAccess)).then(Commands.argument("count", IntegerArgumentType.integer(0))
                           .then(Commands.argument("price", IntegerArgumentType.integer(0))
-                              .executes(GoodsManagerCommand::executesAddItem)))))));
+                              .executes(GoodsManagerCommand::executesAddItem)
+                              .then(Commands.argument("currency", StringArgumentType.word())
+                                  .suggests(CURRENCY_SUGGESTIONS)
+                                  .executes(GoodsManagerCommand::executesAddItem))))))));
         });
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> {
@@ -56,6 +70,17 @@ public class GoodsManagerCommand {
               .then(Commands.argument("pos", BlockPosArgument.blockPos())
                   .executes(GoodsManagerCommand::executeList)));
         });
+    CommandRegistrationCallback.EVENT.register(
+        (dispatcher, registryAccess, environment) -> {
+          dispatcher.register(Commands.literal("goods:cost")
+              .requires(source -> source.hasPermission(2))
+              .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                  .then(Commands.argument("price", IntegerArgumentType.integer(0))
+                      .executes(GoodsManagerCommand::executeSetCost)
+                      .then(Commands.argument("currency", StringArgumentType.word())
+                          .suggests(CURRENCY_SUGGESTIONS)
+                          .executes(GoodsManagerCommand::executeSetCost)))));
+        });
 
   }
 
@@ -65,12 +90,14 @@ public class GoodsManagerCommand {
       BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
       ServerPlayer player = EntityArgument.getPlayer(context, "player");
       int price = IntegerArgumentType.getInteger(context, "price");
+      ShopEntry.Currency currency = getCurrency(context);
 
       // 获取方块实体
       BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
 
-      if (!(blockEntity instanceof VendingMachinesBlockEntity vendingEntity)) {
-        context.getSource().sendFailure(Component.literal("指定位置不是自动售货机方块"));
+      GoodsContainer goodsContainer = asGoodsContainer(blockEntity);
+      if (goodsContainer == null) {
+        context.getSource().sendFailure(Component.literal("指定位置不是售货机或抽奖机方块"));
         return 0;
       }
 
@@ -88,15 +115,15 @@ public class GoodsManagerCommand {
       }
 
       // 创建商店条目
-      ShopEntry shopEntry = new ShopEntry(itemStack.copy(), price, ShopEntry.Type.TOOL);
+      ShopEntry shopEntry = new ShopEntry(itemStack.copy(), price, ShopEntry.Type.TOOL, currency);
 
       // 添加到自动售货机
-      vendingEntity.addItem(shopEntry);
+      goodsContainer.addItem(shopEntry);
 
       // 发送成功消息
       context.getSource().sendSuccess(() -> Component.literal("成功添加商品: ")
           .append(itemStack.getDisplayName())
-          .append(Component.literal(" 价格: $" + price))
+          .append(Component.literal(" 价格: " + price + " " + currency.serializedName()))
           .append(Component.literal(" 到位置: " + pos.toShortString())),
           true);
 
@@ -114,12 +141,14 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       int itemCount = IntegerArgumentType.getInteger(context, "count");
       ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(itemCount, true);
       int price = IntegerArgumentType.getInteger(context, "price");
+      ShopEntry.Currency currency = getCurrency(context);
 
       // 获取方块实体
       BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
 
-      if (!(blockEntity instanceof VendingMachinesBlockEntity vendingEntity)) {
-        context.getSource().sendFailure(Component.literal("指定位置不是自动售货机方块"));
+      GoodsContainer goodsContainer = asGoodsContainer(blockEntity);
+      if (goodsContainer == null) {
+        context.getSource().sendFailure(Component.literal("指定位置不是售货机或抽奖机方块"));
         return 0;
       }
 
@@ -136,15 +165,15 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       }
 
       // 创建商店条目
-      ShopEntry shopEntry = new ShopEntry(itemStack.copy(), price, ShopEntry.Type.TOOL);
+      ShopEntry shopEntry = new ShopEntry(itemStack.copy(), price, ShopEntry.Type.TOOL, currency);
 
       // 添加到自动售货机
-      vendingEntity.addItem(shopEntry);
+      goodsContainer.addItem(shopEntry);
 
       // 发送成功消息
       context.getSource().sendSuccess(() -> Component.literal("成功添加商品: ")
           .append(itemStack.getDisplayName())
-          .append(Component.literal(" 价格: $" + price))
+          .append(Component.literal(" 价格: " + price + " " + currency.serializedName()))
           .append(Component.literal(" 到位置: " + pos.toShortString())),
           true);
       return 1;
@@ -163,8 +192,9 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       // 获取方块实体
       BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
 
-      if (!(blockEntity instanceof VendingMachinesBlockEntity vendingEntity)) {
-        context.getSource().sendFailure(Component.literal("指定位置不是自动售货机方块"));
+      GoodsContainer goodsContainer = asGoodsContainer(blockEntity);
+      if (goodsContainer == null) {
+        context.getSource().sendFailure(Component.literal("指定位置不是售货机或抽奖机方块"));
         return 0;
       }
 
@@ -184,7 +214,7 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       // 创建商店条目
 
       // 添加到自动售货机
-      vendingEntity.removeItem(itemStack);
+      goodsContainer.removeItem(itemStack);
 
       // 发送成功消息
       context.getSource().sendSuccess(() -> Component.literal("成功删除商品: ")
@@ -208,13 +238,18 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       // 获取方块实体
       BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
 
-      if (!(blockEntity instanceof VendingMachinesBlockEntity vendingEntity)) {
-        context.getSource().sendFailure(Component.literal("指定位置不是自动售货机方块"));
+      GoodsContainer goodsContainer = asGoodsContainer(blockEntity);
+      if (goodsContainer == null) {
+        context.getSource().sendFailure(Component.literal("指定位置不是售货机或抽奖机方块"));
         return 0;
       }
-      var items = vendingEntity.getShops();
+      var items = goodsContainer.getShops();
       MutableComponent result = Component.translatable("The Shop List of [%s]", pos.toShortString())
           .withStyle(ChatFormatting.GOLD);
+      if (blockEntity instanceof LotteryMachineBlockEntity lotteryMachine) {
+        result.append(Component.literal("\n抽奖费用: " + lotteryMachine.getDrawCost() + " "
+            + lotteryMachine.getDrawCurrency().serializedName()).withStyle(ChatFormatting.YELLOW));
+      }
       for (var it : items) {
         Style itemHoverStyle = Style.EMPTY
             .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new ItemStackInfo(it.stack())))
@@ -225,7 +260,7 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
                     Component.literal("").append(it.stack().getDisplayName())
                         .withStyle(itemHoverStyle),
                     it.stack().getCount(),
-                    Component.literal(it.price() + "\uE781").withStyle(ChatFormatting.YELLOW))
+                    Component.literal(it.price() + " " + it.currency().serializedName()).withStyle(ChatFormatting.YELLOW))
                 .withStyle(ChatFormatting.AQUA));
       }
       // 发送成功消息
@@ -249,11 +284,12 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       // 获取方块实体
       BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
 
-      if (!(blockEntity instanceof VendingMachinesBlockEntity vendingEntity)) {
-        context.getSource().sendFailure(Component.literal("指定位置不是自动售货机方块"));
+      GoodsContainer goodsContainer = asGoodsContainer(blockEntity);
+      if (goodsContainer == null) {
+        context.getSource().sendFailure(Component.literal("指定位置不是售货机或抽奖机方块"));
         return 0;
       }
-      var items = vendingEntity.getShops();
+      var items = goodsContainer.getShops();
       if (stack < 0) {
         context.getSource().sendFailure(Component.literal("Value too small."));
         return 0;
@@ -264,7 +300,7 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       }
 
       // 添加到自动售货机
-      boolean result = vendingEntity.removeItemStack(stack);
+      boolean result = goodsContainer.removeItemStack(stack);
 
       // 发送成功消息
       if (result) {
@@ -281,5 +317,42 @@ private static int executesAddItem(CommandContext<CommandSourceStack> context) {
       context.getSource().sendFailure(Component.literal("删除商品时发生错误: " + e.getMessage()));
       return 0;
     }
+  }
+
+  private static ShopEntry.Currency getCurrency(CommandContext<CommandSourceStack> context) {
+    try {
+      return ShopEntry.Currency.fromSerializedName(StringArgumentType.getString(context, "currency"));
+    } catch (IllegalArgumentException ignored) {
+      return ShopEntry.Currency.MONEY;
+    }
+  }
+
+  private static int executeSetCost(CommandContext<CommandSourceStack> context) {
+    try {
+      BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
+      int price = IntegerArgumentType.getInteger(context, "price");
+      ShopEntry.Currency currency = getCurrency(context);
+      BlockEntity blockEntity = context.getSource().getLevel().getBlockEntity(pos);
+      if (!(blockEntity instanceof LotteryMachineBlockEntity lotteryMachine)) {
+        context.getSource().sendFailure(Component.literal("指定位置不是抽奖机方块"));
+        return 0;
+      }
+      lotteryMachine.setDrawCost(price, currency);
+      context.getSource().sendSuccess(() -> Component.literal("成功设置抽奖费用: ")
+          .append(Component.literal(price + " " + currency.serializedName()))
+          .append(Component.literal(" 到位置: " + pos.toShortString())), true);
+      return 1;
+    } catch (Exception e) {
+      e.printStackTrace();
+      context.getSource().sendFailure(Component.literal("设置抽奖费用时发生错误: " + e.getMessage()));
+      return 0;
+    }
+  }
+
+  private static GoodsContainer asGoodsContainer(BlockEntity blockEntity) {
+    if (blockEntity instanceof GoodsContainer goodsContainer) {
+      return goodsContainer;
+    }
+    return null;
   }
 }
