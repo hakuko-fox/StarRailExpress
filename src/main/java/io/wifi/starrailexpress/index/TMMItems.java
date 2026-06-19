@@ -18,6 +18,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
@@ -213,7 +214,7 @@ public interface TMMItems {
 
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, FUNNY_ITEMS_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.funny_items"))
-                .icon(() -> new ItemStack(BLACKOUT))
+                .icon(() -> new ItemStack(FunnyItems.PROBLEM_SET))
                 .build());
         // 注册特殊分类/汇总标签页
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, REPAIR_MODE_GROUP, FabricItemGroup.builder()
