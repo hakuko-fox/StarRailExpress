@@ -39,7 +39,7 @@ public class FunnyItems {
 
   @SuppressWarnings("unchecked")
   public static Item register(Item item, String id) {
-    var registeredItem = registrar.create(id, item, new ResourceKey[] { MISC_ITEMS_GROUP, NOELLESROLES_ALL_GROUP });
+    var registeredItem = registrar.create(id, item, new ResourceKey[] { FUNNY_ITEMS_GROUP, NOELLESROLES_ALL_GROUP });
     TMMDescItems.introItems.add(registeredItem);
     return registeredItem;
   }

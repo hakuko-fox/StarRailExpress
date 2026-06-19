@@ -52,6 +52,9 @@ public interface TMMItems {
             SRE.id("sanity"));
     ResourceKey<CreativeModeTab> ROLE_ITEMS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             SRE.id("role_items"));
+            
+    ResourceKey<CreativeModeTab> FUNNY_ITEMS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+            SRE.id("funny_item"));
     ResourceKey<CreativeModeTab> MISC_ITEMS_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             SRE.id("misc_items"));
 
@@ -208,6 +211,10 @@ public interface TMMItems {
                 .icon(() -> new ItemStack(BLACKOUT))
                 .build());
 
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, FUNNY_ITEMS_GROUP, FabricItemGroup.builder()
+                .title(Component.translatable("itemGroup.starrailexpress.funny_items"))
+                .icon(() -> new ItemStack(BLACKOUT))
+                .build());
         // 注册特殊分类/汇总标签页
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, REPAIR_MODE_GROUP, FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup.starrailexpress.repair_mode"))
