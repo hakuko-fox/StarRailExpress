@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.client.gui.screen.ingame;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.StoreRenderer;
 import io.wifi.starrailexpress.game.ShopContent;
@@ -97,6 +98,11 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     private int waitingMenuPage = 0;
     private int waitingMenuPages = 1;
 
+    // 右上角：参与 / 不参与本局游戏切换按钮
+    private Button participationButton = null;
+    private static final int PARTICIPATION_BTN_W = 96;
+    private static final int PARTICIPATION_BTN_H = 20;
+
     private static int scaled(int value) {
         return Math.round(value * PANEL_SCALE);
     }
@@ -114,6 +120,21 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
      */
     private boolean isGameActive() {
         return SREClient.gameComponent != null && SREClient.gameComponent.isRunning();
+    }
+
+    /** 当前玩家是否参与下一局游戏（默认参与）。 */
+    private boolean isParticipating() {
+        if (this.player == null) {
+            return true;
+        }
+        return ParticipationComponent.KEY.get(this.player.level()).isParticipating(this.player);
+    }
+
+    /** 切换按钮文案：参与中 -> 显示“不参与”，未参与 -> 显示“参与”。 */
+    private Component participationButtonLabel() {
+        return Component.translatable(isParticipating()
+                ? "screen.limited_inventory.button.participate.leave"
+                : "screen.limited_inventory.button.participate.join");
     }
 
     public void toggleViewMenu(boolean flag) {
@@ -217,6 +238,13 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
         refreshShopLayout();
         initWaitingMenu();
+
+        participationButton = this.addRenderableWidget(
+                Button.builder(participationButtonLabel(), b -> {
+                    if (minecraft != null && minecraft.player != null) {
+                        minecraft.player.connection.sendCommand("tmm:participate");
+                    }
+                }).bounds(this.width - PARTICIPATION_BTN_W - 6, 6, PARTICIPATION_BTN_W, PARTICIPATION_BTN_H).build());
     }
 
     /** 创建等待面板中的便捷菜单格子按钮与翻页按钮（复用 GameMenuEntries 的同一组动作）。 */
@@ -229,11 +257,9 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             this.addRenderableWidget(btn);
         }
         waitingPrevPageButton = this.addRenderableWidget(
-                Button.builder(Component.literal("<"), (b) -> changeWaitingMenuPage(-1))
-                        .bounds(0, -20, scaled(14), scaled(12)).build());
+                new WaitingNavButton(Component.literal("<"), (b) -> changeWaitingMenuPage(-1)));
         waitingNextPageButton = this.addRenderableWidget(
-                Button.builder(Component.literal(">"), (b) -> changeWaitingMenuPage(1))
-                        .bounds(0, -20, scaled(14), scaled(12)).build());
+                new WaitingNavButton(Component.literal(">"), (b) -> changeWaitingMenuPage(1)));
         layoutWaitingMenu();
     }
 
@@ -263,8 +289,15 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             }
         }
         if (waitingPrevPageButton != null && waitingNextPageButton != null) {
-            waitingPrevPageButton.setPosition(px + scaled(60), py + scaled(NAV_Y));
-            waitingNextPageButton.setPosition(px + scaled(PANEL_W - 60 - 14), py + scaled(NAV_Y));
+            // 让“<  页码  >”整体在导航栏上居中、垂直对齐，与面板背景协调
+            int navCenterX = px + scaled(PANEL_W) / 2;
+            int navY = py + scaled(NAV_Y);
+            int btnW = scaled(12);
+            int gap = scaled(4);
+            Component pageText = Component.literal((waitingMenuPage + 1) + " / " + waitingMenuPages);
+            int textW = Math.round(this.font.width(pageText) * PANEL_SCALE);
+            waitingPrevPageButton.setPosition(navCenterX - textW / 2 - gap - btnW, navY);
+            waitingNextPageButton.setPosition(navCenterX + textW / 2 + gap, navY);
         }
         updateWaitingMenuVisibility();
     }
@@ -418,16 +451,21 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                     px + scaled(HEAD_CX - HEAD_SIZE / 2), py + scaled(HEAD_CY - HEAD_SIZE / 2), scaled(HEAD_SIZE));
         }
 
-        // 顶部右格：玩家名 + 等待状态
+        // 顶部右格：玩家名 + 当前参与状态
         drawPanelString(context, player.getName(), px + scaled(INFO_X), py + scaled(INFO_NAME_Y), 0xFFFFFFFF);
-        drawPanelString(context, Component.translatable("screen.limited_inventory.waiting.status"),
-                px + scaled(INFO_X), py + scaled(INFO_STATUS_Y), 0xFFB0B0B0);
+        boolean participating = isParticipating();
+        Component participationText = Component.translatable(participating
+                ? "screen.limited_inventory.participation.joined"
+                : "screen.limited_inventory.participation.left");
+        int participationColor = participating ? 0xFF00BC16 : 0xFFFFB000;
+        drawPanelString(context, participationText,
+                px + scaled(INFO_X), py + scaled(INFO_STATUS_Y), participationColor);
 
-        // 翻页页码
+        // 翻页页码：与左右箭头按钮在导航栏上居中、垂直对齐
         if (waitingMenuPages > 1) {
             Component pageText = Component.literal((waitingMenuPage + 1) + " / " + waitingMenuPages);
-            int textX = px + scaled(PANEL_W / 2) - Math.round(this.font.width(pageText) * PANEL_SCALE / 2);
-            int textY = py + scaled(NAV_Y + (12 - this.font.lineHeight) / 2);
+            int textX = px + scaled(PANEL_W) / 2 - Math.round(this.font.width(pageText) * PANEL_SCALE / 2);
+            int textY = py + scaled(NAV_Y) + (scaled(12) - Math.round(this.font.lineHeight * PANEL_SCALE)) / 2;
             drawPanelString(context, pageText, textX, textY, 0xFFFFFFFF);
         }
     }
@@ -493,6 +531,13 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         // 未开始时：等待面板内的便捷菜单接管交互
         updateWaitingMenuVisibility();
 
+        // 右上角参与切换按钮：仅在等待（游戏未开始）时显示，文案随状态刷新
+        if (participationButton != null) {
+            participationButton.visible = !gameActive;
+            participationButton.active = !gameActive;
+            participationButton.setMessage(participationButtonLabel());
+        }
+
         super.render(context, mouseX, mouseY, delta);
 
         if (shopTotalPages > 1) {
@@ -506,6 +551,38 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
         this.drawMouseoverTooltip(context, mouseX, mouseY);
         StoreRenderer.renderHud(this.font, this.player, context, delta);
+    }
+
+    /** 等待面板翻页箭头：无原版按钮底，仅绘制居中箭头，悬停高亮，与面板背景风格统一。 */
+    public class WaitingNavButton extends Button {
+        public WaitingNavButton(@NotNull Component label, @NotNull OnPress onPress) {
+            super(0, -scaled(12), scaled(12), scaled(12), label, onPress, DEFAULT_NARRATION);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+            if (!this.visible)
+                return;
+            Font font = LimitedInventoryScreen.this.font;
+            boolean usable = this.active && this.isHovered();
+            if (usable) {
+                context.fill(getX(), getY(), getX() + this.width, getY() + this.height, 0x40FFFFFF);
+            }
+            int color = !this.active ? 0xFF707070 : (this.isHovered() ? 0xFFFFFFFF : 0xFFE0E0E0);
+            int lineWidth = Math.round(font.width(this.getMessage()) * PANEL_SCALE);
+            int lineHeight = Math.round(font.lineHeight * PANEL_SCALE);
+            int textX = getX() + (this.width - lineWidth) / 2;
+            int textY = getY() + (this.height - lineHeight) / 2;
+            context.pose().pushPose();
+            context.pose().translate(textX, textY, 0);
+            context.pose().scale(PANEL_SCALE, PANEL_SCALE, 1.0F);
+            context.drawString(font, this.getMessage(), 0, 0, color, false);
+            context.pose().popPose();
+        }
+
+        @Override
+        public void renderString(GuiGraphics context, Font textRenderer, int color) {
+        }
     }
 
     /** 等待面板中部格子按钮：无默认按钮底，悬停高亮，长标题按四个中文字的宽度折行。 */

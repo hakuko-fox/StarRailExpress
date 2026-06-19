@@ -28,24 +28,27 @@ public class CustomPlayerPlushModel {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition root = mesh.getRoot();
 
+        // 像素坐标约定：脚在 y=24，向上为 -y（实体模型约定）；整体占满方块高度 y 8..24（16px）。
+        // 大头 + 矮身 + 明显的短手短脚 = fumo/玩偶轮廓，全身可见。
+
         // 头（8×8×8，皮肤头部 UV 0,0），y 8..16；带帽子覆盖层（UV 32,0）
         PartDefinition head = root.addOrReplaceChild("head",
                 CubeListBuilder.create()
                         .texOffs(0, 0).addBox(-4.0F, 0.0F, -4.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.0F))
-                        .texOffs(32, 0).addBox(-4.0F, 0.0F, -4.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.5F)),
+                        .texOffs(32, 0).addBox(-4.0F, 0.0F, -4.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.35F)),
                 PartPose.offset(0.0F, 8.0F, 0.0F));
 
-        // 小耳朵（映射到头顶皮肤像素），点缀 plush 感
+        // 小耳朵（映射到头顶皮肤像素），点缀玩偶感，置于头顶不超出方块
         head.addOrReplaceChild("ear_left",
-                CubeListBuilder.create().texOffs(0, 0).addBox(-1.0F, -2.0F, -1.0F, 2.0F, 2.0F, 2.0F),
-                PartPose.offset(-3.0F, 1.0F, 0.0F));
+                CubeListBuilder.create().texOffs(24, 0).addBox(-1.5F, 0.0F, -1.0F, 3.0F, 2.0F, 2.0F),
+                PartPose.offset(-3.0F, 0.0F, 0.0F));
         head.addOrReplaceChild("ear_right",
-                CubeListBuilder.create().texOffs(0, 0).addBox(-1.0F, -2.0F, -1.0F, 2.0F, 2.0F, 2.0F),
-                PartPose.offset(3.0F, 1.0F, 0.0F));
+                CubeListBuilder.create().texOffs(24, 0).addBox(-1.5F, 0.0F, -1.0F, 3.0F, 2.0F, 2.0F),
+                PartPose.offset(3.0F, 0.0F, 0.0F));
 
-        // 身体（矮，皮肤身体 UV 16,16），y 16..22
+        // 身体（皮肤身体 UV 16,16），y 16..20
         root.addOrReplaceChild("body",
-                CubeListBuilder.create().texOffs(16, 16).addBox(-4.0F, 0.0F, -2.0F, 8.0F, 6.0F, 4.0F),
+                CubeListBuilder.create().texOffs(16, 16).addBox(-4.0F, 0.0F, -2.0F, 8.0F, 4.0F, 4.0F),
                 PartPose.offset(0.0F, 16.0F, 0.0F));
 
         // 手臂（短粗，皮肤手臂 UV），位于身体两侧 y 16..20
@@ -56,13 +59,14 @@ public class CustomPlayerPlushModel {
                 CubeListBuilder.create().texOffs(32, 48).addBox(0.0F, 0.0F, -2.0F, 3.0F, 4.0F, 4.0F),
                 PartPose.offset(4.0F, 16.0F, 0.0F));
 
-        // 腿（短，皮肤腿部 UV），y 22..24
+        // 腿（参考原版 plush：贴地、向前伸出的短脚，略微外八），坐姿玩偶轮廓，皮肤腿部 UV
+        float splay = (float) Math.toRadians(20.0);
         root.addOrReplaceChild("leg_right",
-                CubeListBuilder.create().texOffs(0, 16).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 2.0F, 4.0F),
-                PartPose.offset(-2.0F, 22.0F, 0.0F));
+                CubeListBuilder.create().texOffs(0, 16).addBox(-1.5F, 0.0F, 0.0F, 3.0F, 3.0F, 5.0F),
+                PartPose.offsetAndRotation(-2.0F, 21.0F, -1.0F, 0.0F, -splay, 0.0F));
         root.addOrReplaceChild("leg_left",
-                CubeListBuilder.create().texOffs(16, 48).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 2.0F, 4.0F),
-                PartPose.offset(2.0F, 22.0F, 0.0F));
+                CubeListBuilder.create().texOffs(16, 48).addBox(-1.5F, 0.0F, 0.0F, 3.0F, 3.0F, 5.0F),
+                PartPose.offsetAndRotation(2.0F, 21.0F, -1.0F, 0.0F, splay, 0.0F));
 
         return LayerDefinition.create(mesh, 64, 64);
     }

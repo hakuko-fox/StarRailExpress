@@ -369,6 +369,9 @@ public class ModEffects {
         // 把说话者侧的语音效果（重金属/回响）同步给所有客户端，
         // 否则听者客户端查不到说话者的效果，OpenAL 语音处理无法生效。
         org.agmas.noellesroles.voice.VoiceEffectSync.init();
+        // 把伪装效果同步给所有客户端，否则观察者客户端查不到其他玩家的伪装，
+        // 导致“伪装只有自己能看到”。
+        io.wifi.starrailexpress.content.item.DisguiseEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {
                 pierceDeath = false;

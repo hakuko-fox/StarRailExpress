@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import io.wifi.syncrequests.SyncRequests;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -30,6 +31,9 @@ public final class PlayerPlushSkinCache {
     /** 解析结果：皮肤贴图 + 是否纤细（Alex）模型。 */
     public record Resolved(ResourceLocation texture, boolean slim) {
     }
+
+    /** 皮肤未就绪 / 解析失败时使用的默认皮肤（Steve）。 */
+    public static final ResourceLocation DEFAULT_SKIN = OnGettingPlayerSkin.PlayerSkinResult.steveWide().texture;
 
     private static final long RETRY_COOLDOWN_MS = 30_000L;
 
@@ -58,6 +62,17 @@ public final class PlayerPlushSkinCache {
         }
         startLoad(key, name.trim());
         return null;
+    }
+
+    /**
+     * 取该用户名对应的皮肤贴图；未就绪/失败时返回 {@link #DEFAULT_SKIN}。供方块与物品渲染共用。
+     */
+    public static ResourceLocation getTexture(String name) {
+        if (name == null || name.isBlank()) {
+            return DEFAULT_SKIN;
+        }
+        Resolved resolved = get(name);
+        return (resolved != null && resolved.texture() != null) ? resolved.texture() : DEFAULT_SKIN;
     }
 
     /** 清除某个名字的缓存，使其下次重新拉取（热加载）。 */

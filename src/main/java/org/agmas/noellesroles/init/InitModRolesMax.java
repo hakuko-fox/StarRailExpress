@@ -375,6 +375,10 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA, 0);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.FURANDORU, 0);
             }
+            // 茴铭玲依赖可跳跃地图，非跳跃地图属于地图限制，名单接管时也不应带入。
+            if (!canJumpMap) {
+                io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(RedHouseRoles.HOAN_MEIRIN.identifier());
+            }
 
             // machenxu
             {
@@ -387,6 +391,8 @@ public class InitModRolesMax {
                     Harpymodloader.setRoleMaximum(ModRoles.MA_CHEN_XU, 1);
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.MA_CHEN_XU, 0);
+                    // 马陈旭仅在专属地图刷新，其余地图属于地图限制。
+                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(ModRoles.MA_CHEN_XU.identifier());
                 }
             }
             // 特殊警卫刷新逻辑 - 从配置读取最小玩家数
@@ -457,6 +463,10 @@ public class InitModRolesMax {
                 var swastMaps = new ArrayList<>(NoellesRolesConfig.HANDLER.instance().swastMaps);
                 if (swastMaps != null && swastMaps.size() > 0) {
                     isSwastMap = swastMaps.contains(currentMap);
+                }
+                // 特警仅在专属地图刷新，其余地图属于地图限制。
+                if (!isSwastMap) {
+                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(ModRoles.SWAST_ID);
                 }
 
                 // 如果是特警可用地图且有可用警卫位置，从配置读取概率随机替换一个为特警
@@ -533,6 +543,9 @@ public class InitModRolesMax {
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.SEA_KING_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.WATER_GHOST_ID, 0);
+                    // 水下角色仅在水下地图刷新，其余地图属于地图限制。
+                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(ModRoles.SEA_KING_ID);
+                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(ModRoles.WATER_GHOST_ID);
                 }
             }
 
@@ -549,6 +562,9 @@ public class InitModRolesMax {
                 } else {
                     Harpymodloader.setRoleMaximum(ModRoles.PILOT_ID, 0);
                     Harpymodloader.setRoleMaximum(ModRoles.SHADOW_FALCON_ID, 0);
+                    // 空港角色仅在空港地图刷新，其余地图属于地图限制。
+                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(ModRoles.PILOT_ID);
+                    io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(ModRoles.SHADOW_FALCON_ID);
                 }
             }
         });
@@ -565,6 +581,11 @@ public class InitModRolesMax {
             if (count >= 0) {
                 Harpymodloader.setRoleMaximum(name, count);
             }
+            // 登记地图限制：仅依据声明的专属地图列表（与人数/概率门槛无关），
+            // 供职业轮换名单接管时排除地图特定职业。
+            if (!role.spawnInfo.map.isEmpty() && !role.spawnInfo.map.contains(mapName)) {
+                io.wifi.starrailexpress.roster.MapRestrictionGate.markRole(name);
+            }
         }
     }
 
@@ -577,6 +598,10 @@ public class InitModRolesMax {
             int count = modifier.getRoundMaxCount(serverLevel, gameWorldComponent, players, mapName);
             if (count >= 0) {
                 Harpymodloader.MODIFIER_MAX.put(modifier.identifier(), count);
+            }
+            // 登记地图限制：地图特定修饰符不应被名单接管时带到非专属地图。
+            if (!modifier.spawnInfo.map.isEmpty() && !modifier.spawnInfo.map.contains(mapName)) {
+                io.wifi.starrailexpress.roster.MapRestrictionGate.markModifier(modifier.identifier());
             }
         }
     }

@@ -10,7 +10,6 @@ import com.mojang.math.Axis;
 import io.wifi.starrailexpress.client.data.PlayerPlushSkinCache;
 import io.wifi.starrailexpress.client.model.TMMModelLayers;
 import io.wifi.starrailexpress.client.model.entity.CustomPlayerPlushModel;
-import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -25,8 +24,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class SREPlushBlockEntityRenderer<T extends BlockEntity> implements BlockEntityRenderer<T> {
-    private static final ResourceLocation FALLBACK_SKIN = OnGettingPlayerSkin.PlayerSkinResult.steveWide().texture;
-
     private final BlockRenderDispatcher renderer;
     private final CustomPlayerPlushModel customModel;
 
@@ -66,13 +63,7 @@ public class SREPlushBlockEntityRenderer<T extends BlockEntity> implements Block
     private void renderCustomPlayerPlush(T blockEntity, BlockState state, float squash, PoseStack poseStack,
             MultiBufferSource consumer, int light, int overlay) {
         String name = blockEntity instanceof SREPlushBlockEntity plush ? plush.getCustomPlayerName() : null;
-        ResourceLocation texture = FALLBACK_SKIN;
-        if (name != null && !name.isBlank()) {
-            PlayerPlushSkinCache.Resolved resolved = PlayerPlushSkinCache.get(name);
-            if (resolved != null && resolved.texture() != null) {
-                texture = resolved.texture();
-            }
-        }
+        ResourceLocation texture = PlayerPlushSkinCache.getTexture(name);
 
         Direction facing = state.hasProperty(SREPlushBlock.FACING) ? state.getValue(SREPlushBlock.FACING)
                 : Direction.NORTH;
