@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
@@ -29,10 +30,12 @@ public class SREPlushBlockEntity extends BlockEntity {
     private static final String TAG_PROFILE = "profile";
     private static final String TAG_CLICK_SOUND = "click_sound";
     private static final String TAG_CUSTOM_NAME = "custom_name";
+    private static final String TAG_CUSTOM_TEXTURE = "custom_texture";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public double squash;
     private Component customName;
+    private ResourceLocation customTexture;
     @Nullable
     private ResourceLocation clickSound;
 
@@ -43,6 +46,10 @@ public class SREPlushBlockEntity extends BlockEntity {
         super(SREFumoBlocks.PLUSH_BLOCK_ENTITY, pos, state);
     }
 
+    @Nullable
+    public ResourceLocation getCustomTexture() {
+        return this.customTexture;
+    }
     @Nullable
     public Component getCustomName() {
         return this.customName;
@@ -112,6 +119,9 @@ public class SREPlushBlockEntity extends BlockEntity {
         } else {
             this.customName = null;
         }
+        if (nbt.contains(TAG_CUSTOM_TEXTURE, 8)) {
+            this.customTexture = ResourceLocation.tryParse(nbt.getString(TAG_CUSTOM_TEXTURE));
+        }
     }
 
     public void setOwner(@Nullable ResolvableProfile resolvableProfile) {
@@ -158,6 +168,7 @@ public class SREPlushBlockEntity extends BlockEntity {
         this.setOwner((ResolvableProfile) dataComponentInput.get(DataComponents.PROFILE));
         this.clickSound = (ResourceLocation) dataComponentInput.get(DataComponents.NOTE_BLOCK_SOUND);
         this.customName = (Component) dataComponentInput.get(DataComponents.CUSTOM_NAME);
+        this.customTexture = dataComponentInput.get(SREDataComponentTypes.TEXTURE);
     }
 
     protected void collectImplicitComponents(DataComponentMap.Builder builder) {
@@ -165,6 +176,7 @@ public class SREPlushBlockEntity extends BlockEntity {
         builder.set(DataComponents.PROFILE, this.owner);
         builder.set(DataComponents.NOTE_BLOCK_SOUND, this.clickSound);
         builder.set(DataComponents.CUSTOM_NAME, this.customName);
+        builder.set(SREDataComponentTypes.TEXTURE, this.customTexture);
     }
 
 }

@@ -5,11 +5,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import io.wifi.starrailexpress.client.model.entity.CustomPlayerPlushModel;
+import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ResolvableProfile;
@@ -26,10 +28,13 @@ public class CustomPlayerPlushItemRenderer implements BuiltinItemRendererRegistr
     @Override
     public void render(ItemStack stack, ItemDisplayContext mode, PoseStack poseStack, MultiBufferSource buffers,
             int light, int overlay) {
-        ResolvableProfile resolvableProfile = stack.get(DataComponents.PROFILE);
-        
-        RenderType renderType = SREPlushBlockEntityRenderer.getRenderType(resolvableProfile);
-        
+
+        ResourceLocation texture = stack.getOrDefault(SREDataComponentTypes.TEXTURE, null);
+        RenderType renderType = SREPlushBlockEntityRenderer.getRenderType(texture);
+        if (renderType == null || texture == null) {
+            ResolvableProfile resolvableProfile = stack.get(DataComponents.PROFILE);
+            renderType = SREPlushBlockEntityRenderer.getRenderType(resolvableProfile);
+        }
 
         poseStack.pushPose();
         // 与方块实体渲染器相同：把模型放进 [0,1]^3（脚在 y=0、头顶 y=1，居中），ModelPart 内部已 ÷16

@@ -6,6 +6,8 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.ResourceLocation;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.UnaryOperator;
@@ -16,6 +18,7 @@ public interface SREDataComponentTypes {
     DataComponentType<Boolean> USED = register("used", stringBuilder -> stringBuilder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     DataComponentType<String> OWNER = register("owner", stringBuilder -> stringBuilder.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8));
     DataComponentType<String> SKIN = register("skin", stringBuilder -> stringBuilder.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8));
+    DataComponentType<ResourceLocation> TEXTURE = register("texture", (builder) -> builder.persistent(ResourceLocation.CODEC).networkSynchronized(ResourceLocation.STREAM_CODEC));
     DataComponentType<Boolean> SCOPE_ATTACHED = register("scope_attached", stringBuilder -> stringBuilder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     DataComponentType<Integer> AMMO_COUNT = register("ammo_count", stringBuilder -> stringBuilder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
     DataComponentType<Integer> WEAPON_USED_TIME = register("weapon_used_time", stringBuilder -> stringBuilder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));

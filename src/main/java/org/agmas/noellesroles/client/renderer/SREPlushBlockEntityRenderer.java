@@ -40,7 +40,6 @@ public class SREPlushBlockEntityRenderer<T extends BlockEntity> implements Block
 
         float squash = computeSquash(blockEntity, delta);
         if (state.getBlock() instanceof CustomPlayerPlushBlock) {
-
             renderCustomPlayerPlush(blockEntity, state, squash, poseStack, consumer, light, overlay);
             return;
         }
@@ -65,13 +64,19 @@ public class SREPlushBlockEntityRenderer<T extends BlockEntity> implements Block
     /** 自定义玩家 plush：用绑定玩家的皮肤渲染 plush 形状模型。 */
     private void renderCustomPlayerPlush(T blockEntity, BlockState state, float squash, PoseStack poseStack,
             MultiBufferSource consumer, int light, int overlay) {
+        RenderType renderType = null;
+        if (blockEntity instanceof SREPlushBlockEntity plush) {
+            if (plush.getCustomTexture() != null) {
+                renderType = getRenderType(plush.getCustomTexture());
+            } else {
+                ResolvableProfile profile = plush.getOwnerProfile();
+                renderType = getRenderType(profile);
+            }
+        }
 
-        ResolvableProfile profile = blockEntity instanceof SREPlushBlockEntity plush ? plush.getOwnerProfile() : null;
-        RenderType renderType = getRenderType(profile);
-
-         Direction facing = state.hasProperty(SREPlushBlock.FACING) ? state.getValue(SREPlushBlock.FACING)
+        Direction facing = state.hasProperty(SREPlushBlock.FACING) ? state.getValue(SREPlushBlock.FACING)
                 : Direction.NORTH;
-                facing = facing.getOpposite();
+        facing = facing.getOpposite();
 
         poseStack.pushPose();
         // 挤压动画（绕方块底面，水平鼓起、竖直压扁）
@@ -94,6 +99,12 @@ public class SREPlushBlockEntityRenderer<T extends BlockEntity> implements Block
         double squish = blockEntity instanceof SREPlushBlockEntity plushie ? plushie.squash : 0;
         double lastSquish = squish * 3;
         return (float) Math.pow(1.0 - 1.0 / (1.0 + Mth.lerp((double) delta, lastSquish, squish)), 2.0);
+    }
+
+    public static RenderType getRenderType(@Nullable ResourceLocation res) {
+        if (res == null)
+            return null;
+        return RenderType.entityTranslucent(res);
     }
 
     public static RenderType getRenderType(@Nullable ResolvableProfile resolvableProfile) {
