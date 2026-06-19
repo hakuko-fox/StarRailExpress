@@ -10,12 +10,8 @@ import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.index.TMMItems;
 import static io.wifi.starrailexpress.index.TMMItems.*;
 import io.wifi.starrailexpress.util.ShopEntry;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -42,6 +38,8 @@ import java.util.function.UnaryOperator;
 
 import static io.wifi.starrailexpress.game.GameConstants.getInTicks;
 
+@SuppressWarnings("unchecked")
+
 public class ModItems {
     public static final ItemRegistrar registrar = new ItemRegistrar(Noellesroles.MOD_ID);
 
@@ -49,10 +47,12 @@ public class ModItems {
             CONSUMABLES_GROUP);
 
     public static final Item REPAIR_TOOLBOX = register(
-            new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip", new Item.Properties().stacksTo(4)),
+            new RepairBoostItem(15, "item.noellesroles.repair_toolbox.tooltip",
+                    new Item.Properties().stacksTo(4)),
             "repair_toolbox", REPAIR_MODE_GROUP);
     public static final Item SPARE_PARTS = register(
-            new RepairBoostItem(8, "item.noellesroles.spare_parts.tooltip", new Item.Properties().stacksTo(16)),
+            new RepairBoostItem(8, "item.noellesroles.spare_parts.tooltip",
+                    new Item.Properties().stacksTo(16)),
             "spare_parts", REPAIR_MODE_GROUP);
     public static final Item RESCUE_FLARE = register(
             new RescueFlareItem(new Item.Properties().stacksTo(4)),
@@ -323,7 +323,7 @@ public class ModItems {
 
     public static final Item ANTIDOTE_REAGENT = register(
             new AntidoteReagentItem(new Item.Properties().stacksTo(16).durability(5)),
-            "antidote_reagent",CONSUMABLES_GROUP);
+            "antidote_reagent", CONSUMABLES_GROUP);
 
     /**
      * 阴谋之书页
@@ -563,19 +563,23 @@ public class ModItems {
             "wheelchair", ROLE_ITEMS_GROUP);
     // 新增物品：短管霰弹枪 / 防暴盾 / 警棍 / 对讲机
     public static final Item SHORT_SHOTGUN = register(
-            new org.agmas.noellesroles.content.item.ShortShotgunItem(new Item.Properties().stacksTo(1).durability(1)),
+            new org.agmas.noellesroles.content.item.ShortShotgunItem(
+                    new Item.Properties().stacksTo(1).durability(1)),
             "short_shotgun", WEAPONS_GROUP);
     public static final Item RIOT_SHIELD = register(
-            new org.agmas.noellesroles.content.item.RiotShieldItem(new Item.Properties().stacksTo(1).durability(1)),
+            new org.agmas.noellesroles.content.item.RiotShieldItem(
+                    new Item.Properties().stacksTo(1).durability(1)),
             "riot_shield", WEAPONS_GROUP);
     public static final Item BATON = register(
-            new org.agmas.noellesroles.content.item.BatonItem(new Item.Properties().stacksTo(1).durability(4)),
+            new org.agmas.noellesroles.content.item.BatonItem(
+                    new Item.Properties().stacksTo(1).durability(4)),
             "baton", WEAPONS_GROUP);
     public static final Item RADIO = register(
             new org.agmas.noellesroles.content.item.RadioItem(new Item.Properties().stacksTo(1)),
             "radio", TOOLS_GROUP);
     public static final Item MONITORING_TERMINAL = register(
-            new org.agmas.noellesroles.content.item.MonitoringTerminalItem(new Item.Properties().stacksTo(1)),
+            new org.agmas.noellesroles.content.item.MonitoringTerminalItem(
+                    new Item.Properties().stacksTo(1)),
             "monitoring_terminal", TOOLS_GROUP);
     /**
      * 锁
@@ -921,7 +925,8 @@ public class ModItems {
      * - 右键空气：拆除地面的C4实体
      */
     public static final Item PLIERS = register(
-            new org.agmas.noellesroles.content.item.PliersItem(new Item.Properties().stacksTo(1).durability(3)),
+            new org.agmas.noellesroles.content.item.PliersItem(
+                    new Item.Properties().stacksTo(1).durability(3)),
             "pliers", TOOLS_GROUP);
 
     /**
@@ -980,7 +985,6 @@ public class ModItems {
     // "sheriff_gun_maintenance"
     // );
 
-    @SuppressWarnings("unchecked")
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);
         allGroups[extraGroups.length] = NOELLESROLES_ALL_GROUP;
@@ -1103,9 +1107,11 @@ public class ModItems {
                 });
         // 监控失灵/100
         ModItems.POISONER_SHOP_ENTRIES
-                .add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+                .add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 100,
+                        ShopEntry.Type.TOOL) {
                     public boolean onBuy(@NotNull Player player) {
-                        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+                        return SREPlayerShopComponent.useMonitorBroken(player,
+                                SREConfig.instance().monitorBrokenDuration * 20);
                     }
                 });
 
