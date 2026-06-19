@@ -57,14 +57,20 @@ public class SREPlushBlock extends PlushBlock {
       return CODEC;
    }
 
-   public static SoundEvent getSound(BlockState state) {
+   public static SoundEvent getSound(Level world, BlockPos pos, BlockState state) {
       SoundEvent ret = NRSounds.BAKA_BAKA;
       if (state.getBlock() == SREFumoBlocks.BAKA_PLUSH) {
          ret = NRSounds.BAKA_BAKA;
       }
-      
+
       if (state.getBlock() == SREFumoBlocks.MILK_DRAGON_PLUSH) {
          ret = NRSounds.WO_SHI_NAI_LONG;
+      }
+      if (state.getBlock() instanceof CustomPlayerPlushBlock cppb) {
+         var res = cppb.getCustomSound(world, pos, state);
+         if (res != null) {
+            ret = SoundEvent.createVariableRangeEvent(res);
+         }
       }
       return ret;
    }
@@ -88,14 +94,6 @@ public class SREPlushBlock extends PlushBlock {
    @Override
    public void attack(BlockState state, Level world, BlockPos pos, Player player) {
       if (!world.isClientSide) {
-         Vec3 mid = Vec3.atCenterOf(pos);
-         float pitch = 1.2F + world.random.nextFloat() * 0.4F;
-         BlockState note = world.getBlockState(pos.below());
-         if (note.hasProperty(BlockStateProperties.NOTE)) {
-            pitch = (float) Math.pow((double) 2.0F,
-                  (double) ((Integer) note.getValue(BlockStateProperties.NOTE) - 12) / (double) 12.0F);
-         }
-
          BlockEntity blockEntity = world.getBlockEntity(pos);
          if (blockEntity instanceof SREPlushBlockEntity) {
             SREPlushBlockEntity plushie = (SREPlushBlockEntity) blockEntity;
@@ -134,7 +132,8 @@ public class SREPlushBlock extends PlushBlock {
                (double) ((Integer) note.getValue(BlockStateProperties.NOTE) - 12) / (double) 12.0F);
       }
 
-      world.playSound((Player) null, mid.x(), mid.y(), mid.z(), getSound(state), SoundSource.BLOCKS, 1.0F, 1.0F);
+      world.playSound((Player) null, mid.x(), mid.y(), mid.z(), getSound(world, pos, state), SoundSource.BLOCKS, 1.0F,
+            pitch);
       BlockEntity var10 = world.getBlockEntity(pos);
       if (var10 instanceof SREPlushBlockEntity) {
          SREPlushBlockEntity plushie = (SREPlushBlockEntity) var10;

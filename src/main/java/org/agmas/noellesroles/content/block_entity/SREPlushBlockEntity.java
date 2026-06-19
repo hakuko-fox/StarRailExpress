@@ -1,36 +1,55 @@
 package org.agmas.noellesroles.content.block_entity;
 
-import org.agmas.noellesroles.init.ModBlocks;
 import org.agmas.noellesroles.init.SREFumoBlocks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Component.Serializer;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class SREPlushBlockEntity extends BlockEntity {
+    private static final String TAG_PROFILE = "profile";
+    private static final String TAG_CLICK_SOUND = "click_sound";
+    private static final String TAG_CUSTOM_NAME = "custom_name";
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     public double squash;
-    /** 自定义玩家 plush 绑定的玩家名；仅 {@code custom_player_plush} 使用，其余 plush 为 null。 */
-    private String customPlayerName;
+    private Component customName;
+    @Nullable
+    private ResourceLocation clickSound;
+
+    @Nullable
+    private ResolvableProfile owner;
 
     public SREPlushBlockEntity(BlockPos pos, BlockState state) {
         super(SREFumoBlocks.PLUSH_BLOCK_ENTITY, pos, state);
     }
 
     @Nullable
-    public String getCustomPlayerName() {
-        return this.customPlayerName;
+    public Component getCustomName() {
+        return this.customName;
     }
 
-    public void setCustomPlayerName(@Nullable String name) {
-        this.customPlayerName = (name == null || name.isBlank()) ? null : name;
+    public void setCustomName(@Nullable Component name) {
+        this.customName = (name == null) ? null : name;
         this.setChanged();
         if (this.level != null && !this.level.isClientSide) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 2);
@@ -59,17 +78,58 @@ public class SREPlushBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
         nbt.putDouble("squash", this.squash);
-        if (this.customPlayerName != null) {
-            nbt.putString("customPlayerName", this.customPlayerName);
+        if (this.owner != null) {
+            nbt.put(TAG_PROFILE, ResolvableProfile.CODEC.encodeStart(NbtOps.INSTANCE, this.owner).getOrThrow());
         }
+
+        if (this.clickSound != null) {
+            nbt.putString(TAG_CLICK_SOUND, this.clickSound.toString());
+        }
+
+        if (this.customName != null) {
+            nbt.putString("custom_name", Serializer.toJson(this.customName, provider));
+        }
+
     }
 
     @Override
-    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
         this.squash = nbt.getDouble("squash");
-        this.customPlayerName = nbt.contains("customPlayerName") ? nbt.getString("customPlayerName") : null;
+        if (nbt.contains(TAG_PROFILE)) {
+            ResolvableProfile.CODEC.parse(NbtOps.INSTANCE, nbt.get(TAG_PROFILE))
+                    .resultOrPartial((string) -> LOGGER.error("Failed to load profile from player head: {}", string))
+                    .ifPresent(this::setOwner);
+        }
+
+        if (nbt.contains(TAG_CLICK_SOUND, 8)) {
+            this.clickSound = ResourceLocation.tryParse(nbt.getString(TAG_CLICK_SOUND));
+        }
+
+        if (nbt.contains(TAG_CUSTOM_NAME, 8)) {
+            this.customName = parseCustomNameSafe(nbt.getString(TAG_CUSTOM_NAME), provider);
+        } else {
+            this.customName = null;
+        }
+    }
+
+    public void setOwner(@Nullable ResolvableProfile resolvableProfile) {
+        synchronized (this) {
+            this.owner = resolvableProfile;
+        }
+
+        this.updateOwnerProfile();
+    }
+
+    @Nullable
+    public ResolvableProfile getOwnerProfile() {
+        return this.owner;
+    }
+
+    @Nullable
+    public ResourceLocation getClickSound() {
+        return this.clickSound;
     }
 
     @Override
@@ -79,6 +139,32 @@ public class SREPlushBlockEntity extends BlockEntity {
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return this.saveWithoutMetadata(registries);
+        return this.saveCustomOnly(registries);
     }
+
+    private void updateOwnerProfile() {
+        if (this.owner != null && !this.owner.isResolved()) {
+            this.owner.resolve().thenAcceptAsync((resolvableProfile) -> {
+                this.owner = resolvableProfile;
+                this.setChanged();
+            }, SkullBlockEntity.CHECKED_MAIN_THREAD_EXECUTOR);
+        } else {
+            this.setChanged();
+        }
+    }
+
+    protected void applyImplicitComponents(BlockEntity.DataComponentInput dataComponentInput) {
+        super.applyImplicitComponents(dataComponentInput);
+        this.setOwner((ResolvableProfile) dataComponentInput.get(DataComponents.PROFILE));
+        this.clickSound = (ResourceLocation) dataComponentInput.get(DataComponents.NOTE_BLOCK_SOUND);
+        this.customName = (Component) dataComponentInput.get(DataComponents.CUSTOM_NAME);
+    }
+
+    protected void collectImplicitComponents(DataComponentMap.Builder builder) {
+        super.collectImplicitComponents(builder);
+        builder.set(DataComponents.PROFILE, this.owner);
+        builder.set(DataComponents.NOTE_BLOCK_SOUND, this.clickSound);
+        builder.set(DataComponents.CUSTOM_NAME, this.customName);
+    }
+
 }

@@ -16,7 +16,7 @@ import java.util.Locale;
 /**
  * 皮肤管理工具类，用于处理物品皮肤相关的操作
  */
-public class SkinManager {
+public class ItemSkinManager {
     public static class Skin {
         public final int color;
         public final String tooltipName;

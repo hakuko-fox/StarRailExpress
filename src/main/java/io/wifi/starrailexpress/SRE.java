@@ -72,7 +72,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
-
 import org.agmas.noellesroles.game.modes.fourthroom.network.*;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.jetbrains.annotations.NotNull;

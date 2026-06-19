@@ -221,10 +221,6 @@ public class NoellesrolesClient implements ClientModInitializer {
                 HunterCageBlockEntityRenderer::new);
                 
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
-        // 自定义玩家 plush：手持/背包/掉落物也用绑定玩家的皮肤渲染
-        net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry.INSTANCE.register(
-                SREFumoBlocks.CUSTOM_PLAYER_PLUSH.asItem(),
-                new io.wifi.starrailexpress.client.render.item.CustomPlayerPlushItemRenderer());
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
 

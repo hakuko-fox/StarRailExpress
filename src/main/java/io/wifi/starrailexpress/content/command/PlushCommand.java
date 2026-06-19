@@ -6,15 +6,17 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wifi.starrailexpress.api.PlushApi;
-import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
+
 import org.agmas.noellesroles.init.SREFumoBlocks;
 
 import java.util.Collection;
@@ -29,6 +31,7 @@ import java.util.Optional;
  * </ul>
  * 映射逻辑见 {@link PlushApi}：皮肤名 {@code X} → 物品 {@code noellesroles:X_plush}。
  * 不新建任何模型/贴图，仅复用仓库中现成的 plush。
+ * 残月的小乔四
  */
 public final class PlushCommand {
     private PlushCommand() {
@@ -82,7 +85,7 @@ public final class PlushCommand {
         Item plushItem = SREFumoBlocks.CUSTOM_PLAYER_PLUSH.asItem();
         for (ServerPlayer target : targets) {
             ItemStack stack = new ItemStack(plushItem);
-            stack.set(SREDataComponentTypes.PLUSH_PLAYER, username);
+            stack.set(DataComponents.PROFILE, new ResolvableProfile(target.getGameProfile()));
             if (!target.addItem(stack) && !stack.isEmpty()) {
                 target.drop(stack, false);
             }
