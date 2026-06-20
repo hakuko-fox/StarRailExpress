@@ -24,7 +24,7 @@
   "commands.sre.plush.given_multiple": "已發放玩偶 %s 給 %s 名玩家。",
   "commands.sre.plush.list": "可用玩偶皮膚（共 %s 個）：%s",
   "commands.sre.plush.player_given": "已發放 %s 的自訂玩家玩偶給 %s。",
-  "commands.sre.plush.player_given_multiple": "已發放 %s 的自訂玩家玩偶給 %s 名玩家。",
+  "commands.sre.plush.player_given_multiple": "已發放自身的自訂玩家玩偶給 %s 名玩家。",
   "sre.shutdown.waring": "伺服器將在 %s 秒後自動關閉...",
   "============ 重置 ===========": "",
   "message.sre.reseting": "重置地圖中 %s%%",

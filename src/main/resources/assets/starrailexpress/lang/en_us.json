@@ -24,7 +24,7 @@
   "commands.sre.plush.given_multiple": "Gave plush %s to %s player(s).",
   "commands.sre.plush.list": "Available plush skins (%s): %s",
   "commands.sre.plush.player_given": "Gave %s's custom player plush to %s.",
-  "commands.sre.plush.player_given_multiple": "Gave %s's custom player plush to %s player(s).",
+  "commands.sre.plush.player_given_multiple": "Gave self custom player plush to %s player(s).",
   "sre.shutdown.waring": "Server will automatically shut down in %s seconds...",
   "============ 重置 ===========": "",
   "message.sre.reseting": "Resetting map %s%%",

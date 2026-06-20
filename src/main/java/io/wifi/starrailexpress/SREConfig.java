@@ -68,6 +68,11 @@ public class SREConfig implements ConfigData {
     @Tooltip(count = 3)
     public boolean isLobby = false;
 
+    @ConfigEntry.Category(value = "map")
+    @Tooltip(count = 2)
+    @ConfigSync(shouldSync = true)
+    public boolean shouldOpenDoorHaveCollision = false;
+
     @ConfigEntry.Category(value = "shop")
     @ConfigSync(shouldSync = true)
     public int knifePrice = 130;
