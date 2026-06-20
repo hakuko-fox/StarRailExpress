@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
@@ -33,6 +34,7 @@ import org.agmas.harpymodloader.events.ResetPlayerEvent;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -406,6 +408,14 @@ public class TraitorAndModifiers {
             if (modifiers.isModifier(player.getUUID(), LAST_GASP) && !LAST_GASP_TRIGGERED.contains(player.getUUID())) {
                 LAST_GASP_TRIGGERED.add(player.getUUID());
 
+                var body = GameUtils.findPlayerBodyEntity(sp);
+                if (body != null) {
+                    body.discard();
+                }
+                sp.setGameMode(GameType.ADVENTURE);
+                TrainVoicePlugin.resetPlayer(sp.getUUID());
+                DeathPenaltyComponent.KEY.get(sp).init();
+                
                 // 记录触发时的游戏时间（用于3秒游戏时间计时器）
                 long gameTime = player.level().getGameTime();
                 LAST_GASP_TRIGGER_GAME_TIME.put(player.getUUID(), gameTime);
@@ -417,14 +427,15 @@ public class TraitorAndModifiers {
                 LAST_GASP_DEATH_REASON.put(player.getUUID(), deathReasonId);
 
                 // 使用模组已有的效果：禁止移动、无敌、禁止技能、禁止转向、禁止物品、禁止背包、黑暗
-                sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 100, 0, false, false, false)); // 禁止移动
-                sp.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, 100, 0, false, false, false)); // 无敌（安全时间）
-                sp.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 100, 0, false, false, false)); // 禁止使用技能
-                sp.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 100, 0, false, false, false)); // 禁止转向
-                sp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 100, 0, false, false, false)); // 禁止使用物品
-                sp.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 100, 0, false, false, false)); // 禁止打开背包
-                sp.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 100, 0, false, false, false)); // 黑暗
-                sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 100, 0, false, false, false)); // 黑暗
+                final boolean testFlag = false;
+                sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 100, 0, false, false, testFlag)); // 禁止移动
+                sp.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, 100, 0, false, false, testFlag)); // 安全时间
+                sp.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 100, 0, false, false, testFlag)); // 禁止使用技能
+                sp.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 100, 0, false, false, testFlag)); // 禁止转向
+                sp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 100, 0, false, false, testFlag)); // 禁止使用物品
+                sp.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 100, 0, false, false, testFlag)); // 禁止打开背包
+                sp.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 100, 0, false, false, testFlag)); // 黑暗
+                sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 100, 0, false, false, testFlag)); // 无敌
 
                 // 只发送给玩家自己
                 sp.displayClientMessage(Component.translatable("modifier.noellesroles.last_gasp.trigger"), true);
@@ -438,11 +449,6 @@ public class TraitorAndModifiers {
                             player.getX(), player.getY() + 1.0, player.getZ(),
                             30, 0.8, 1.0, 0.8, 0.05);
                 }
-                var body = GameUtils.findPlayerBodyEntity(sp);
-                if (body != null) {
-                    body.discard();
-                }
-                sp.setGameMode(GameType.ADVENTURE);
                 return;
             }
         });
