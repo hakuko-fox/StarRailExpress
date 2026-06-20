@@ -100,6 +100,14 @@ public class QuestMinigames {
     public static final QuestMinigame MOUSE_WHACK = register(
             QuestMinigame.of("mouse_whack", "minigame.starrailexpress.mouse_whack"));
 
+    /** 打砖块 */
+    public static final QuestMinigame BRICK_BREAKER = register(
+            QuestMinigame.of("brick_breaker", "minigame.starrailexpress.brick_breaker"));
+
+    /** 找零钱 */
+    public static final QuestMinigame MAKE_CHANGE = register(
+            QuestMinigame.of("make_change", "minigame.starrailexpress.make_change"));
+
     // ══════════════════════════════════════════════
     // 注册方法
     // ══════════════════════════════════════════════

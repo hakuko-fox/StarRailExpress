@@ -83,6 +83,10 @@ public class MinigameScreenFactory {
                 SimpleQuestMinigameScreen.Mode.FRUIT_NINJA));
         FACTORY.put("mouse_whack", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
                 SimpleQuestMinigameScreen.Mode.MOUSE_WHACK));
+        FACTORY.put("brick_breaker", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
+                SimpleQuestMinigameScreen.Mode.BRICK_BREAKER));
+        FACTORY.put("make_change", (pos, onSuccess) -> new SimpleQuestMinigameScreen(pos, onSuccess,
+                SimpleQuestMinigameScreen.Mode.MAKE_CHANGE));
     }
 
     public static Screen create(String minigameId, BlockPos pos, Runnable onSuccess) {

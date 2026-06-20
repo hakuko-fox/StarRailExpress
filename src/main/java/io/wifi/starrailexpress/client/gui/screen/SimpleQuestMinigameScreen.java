@@ -30,6 +30,8 @@ public class SimpleQuestMinigameScreen extends Screen {
         PIPE_BIRD("pipe_bird"),
         FRUIT_NINJA("fruit_ninja"),
         MOUSE_WHACK("mouse_whack"),
+        BRICK_BREAKER("brick_breaker"),
+        MAKE_CHANGE("make_change"),
         REACTOR_TEMPERATURE("reactor_temperature"),
         BOX_SORT("box_sort"),
         WIRE_CONNECT("wire_connect"),
@@ -231,6 +233,28 @@ public class SimpleQuestMinigameScreen extends Screen {
     /** 打老鼠：目标抓到数 */
     private static final int MICE_TARGET = 5;
 
+    /** 打砖块：砖块列表 */
+    private final List<Brick> bricks = new ArrayList<>();
+    /** 打砖块：球位置/速度 */
+    private float ballX, ballY, ballVX, ballVY;
+    /** 打砖块：球是否已发射 */
+    private boolean ballLaunched;
+    /** 打砖块：炮台X */
+    private float paddleX;
+    /** 打砖块：剩余砖块数 */
+    private int bricksRemaining;
+
+    /** 找零钱：目标金额 */
+    private int changeTarget;
+    /** 找零钱：贪心最优解 */
+    private int[] greedyCounts;
+    /** 找零钱：玩家已放入的纸币数 */
+    private int[] playerCounts;
+    /** 找零钱：纸币面额 */
+    private static final int[] BILL_VALUES = {1, 2, 5, 10};
+    /** 找零钱：纸币颜色 */
+    private static final int[] BILL_COLORS = {0xFF88AA66, 0xFF6688CC, 0xFFCC8844, 0xFFCC6644};
+
     /** 成功动画：>=0 表示已完成，正在播放成功反馈，到达时长后关闭。 */
     private int successTicks = -1;
     private static final int SUCCESS_ANIM_TICKS = 16;
@@ -301,6 +325,9 @@ public class SimpleQuestMinigameScreen extends Screen {
         mice.clear();
         miceCaught = 0;
         mouseSpawnTimer = 30;
+        bricks.clear();
+        ballLaunched = false;
+        paddleX = width / 2f;
         prevMouseX = 0;
         prevMouseY = 0;
         typingInput.setLength(0);
@@ -463,6 +490,40 @@ public class SimpleQuestMinigameScreen extends Screen {
                 pipesPassed = 0;
                 birdAlive = true;
             }
+            case MAKE_CHANGE -> {
+                pieces.clear();
+                changeTarget = 9 + rng.nextInt(32); // 9~40
+                greedyCounts = new int[4];
+                playerCounts = new int[4];
+                int remaining = changeTarget;
+                for (int i = 3; i >= 0; i--) {
+                    greedyCounts[i] = remaining / BILL_VALUES[i];
+                    remaining %= BILL_VALUES[i];
+                }
+                // 4张纸币可拖动，位于面板中央
+                for (int i = 0; i < 4; i++) {
+                    Component label = Component.literal("¥" + BILL_VALUES[i]);
+                    pieces.add(new Piece(label, 1, BILL_COLORS[i],
+                            left + 60 + i * 82, top + 160, i));
+                }
+            }
+            case BRICK_BREAKER -> {
+                bricks.clear();
+                int count = 12 + rng.nextInt(14); // 12~25
+                bricksRemaining = count;
+                int[] colors = {RED, 0xFF4ACB73, BLUE, YELLOW, 0xFFFF8C42, 0xFFAA66FF};
+                for (int i = 0; i < count; i++) {
+                    int bx = left + 20 + rng.nextInt(PANEL_W - 80);
+                    int by = top + HEADER_H + 15 + rng.nextInt(70);
+                    bricks.add(new Brick(bx, by, 42 + rng.nextInt(16), 14, colors[rng.nextInt(colors.length)]));
+                }
+                ballX = width / 2f;
+                ballY = top + PANEL_H - 30;
+                ballVX = 0;
+                ballVY = 0;
+                ballLaunched = false;
+                paddleX = width / 2f;
+            }
             case MOUSE_WHACK -> {
                 mice.clear();
                 miceCaught = 0;
@@ -567,6 +628,7 @@ public class SimpleQuestMinigameScreen extends Screen {
             case PIPE_BIRD -> tickPipeBird();
             case FRUIT_NINJA -> tickFruitNinja();
             case MOUSE_WHACK -> tickMouseWhack();
+            case BRICK_BREAKER -> tickBrickBreaker();
             default -> {
             }
         }
@@ -697,6 +759,8 @@ public class SimpleQuestMinigameScreen extends Screen {
             case PIPE_BIRD -> renderPipeBird(g, left, top);
             case FRUIT_NINJA -> renderFruitNinja(g, left, top);
             case MOUSE_WHACK -> renderMouseWhack(g, left, top);
+            case BRICK_BREAKER -> renderBrickBreaker(g, left, top);
+            case MAKE_CHANGE -> renderMakeChange(g, left, top);
         }
         g.pose().popPose();
 
@@ -1219,6 +1283,14 @@ public class SimpleQuestMinigameScreen extends Screen {
             case TYPING -> clickTyping(mouseX, mouseY);
             case PIPE_BIRD -> flapBird();
             case MOUSE_WHACK -> clickMouseWhack(mouseX, mouseY);
+            case BRICK_BREAKER -> {
+                if (!ballLaunched) {
+                    ballLaunched = true;
+                    ballVX = (rng.nextFloat() - 0.5f) * 2f;
+                    ballVY = -4.5f;
+                }
+            }
+            case MAKE_CHANGE -> beginDrag(mouseX, mouseY);
             default -> {
             }
         }
@@ -1469,6 +1541,12 @@ public class SimpleQuestMinigameScreen extends Screen {
                     falling = true;
                     fallingY = 0;
                 }
+            }
+            case MAKE_CHANGE -> {
+                dropChangeBill(p, mouseX, mouseY);
+                // 纸币回到原位
+                p.x = panelLeft() + 60 + p.target * 82;
+                p.y = top + 160;
             }
             default -> {
             }
@@ -1967,6 +2045,153 @@ public class SimpleQuestMinigameScreen extends Screen {
     }
 
     // ══════════════════════════════════════════════
+    // 打砖块
+    // ══════════════════════════════════════════════
+
+    private void tickBrickBreaker() {
+        int left = panelLeft();
+        int top = panelTop();
+        float speed = 4.5f;
+        // 炮台跟随鼠标
+        paddleX = Mth.clamp((float) lastMouseX - 30, left + 5, left + PANEL_W - 65);
+
+        if (!ballLaunched) {
+            ballX = paddleX + 30;
+            ballY = top + PANEL_H - 30;
+            return;
+        }
+        // 移动球
+        ballX += ballVX;
+        ballY += ballVY;
+
+        // 墙壁反弹
+        if (ballX < left + 4 || ballX > left + PANEL_W - 4) ballVX = -ballVX;
+        if (ballY < top + HEADER_H) ballVY = -ballVY;
+
+        // 球掉落 → 重置到炮台
+        if (ballY > top + PANEL_H) {
+            ballLaunched = false;
+            ballVX = 0;
+            ballVY = 0;
+            return;
+        }
+
+        // 炮台反弹
+        float paddleY = top + PANEL_H - 22;
+        if (ballVY > 0 && ballY + 8 > paddleY && ballY - 8 < paddleY + 12
+                && ballX > paddleX - 4 && ballX < paddleX + 64) {
+            ballVY = -Math.abs(ballVY);
+            ballVX += (ballX - (paddleX + 30)) * 0.12f;
+            ballX = paddleY - 9;
+        }
+
+        // 砖块碰撞
+        for (Brick b : bricks) {
+            if (!b.alive) continue;
+            if (ballX + 8 > b.x && ballX - 8 < b.x + b.w && ballY + 8 > b.y && ballY - 8 < b.y + b.h) {
+                b.alive = false;
+                bricksRemaining--;
+                // 反弹方向
+                float cx = b.x + b.w / 2f;
+                float cy = b.y + b.h / 2f;
+                if (Math.abs(ballX - cx) * b.h > Math.abs(ballY - cy) * b.w) {
+                    ballVX = -ballVX;
+                } else {
+                    ballVY = -ballVY;
+                }
+                ballX += ballVX * 0.1f;
+                ballY += ballVY * 0.1f;
+                if (bricksRemaining <= 0) complete();
+                break;
+            }
+        }
+
+        // 速度钳制
+        float v = (float) Math.sqrt(ballVX * ballVX + ballVY * ballVY);
+        if (v > 0) { ballVX = ballVX / v * speed; ballVY = ballVY / v * speed; }
+    }
+
+    private void renderBrickBreaker(GuiGraphics g, int left, int top) {
+        g.drawCenteredString(font, tr("common.hits", Math.max(0, bricksRemaining), bricks.size()),
+                width / 2, top + 4, WHITE);
+        for (Brick b : bricks) {
+            if (!b.alive) continue;
+            MinigameUI.roundRect(g, b.x, b.y, b.x + b.w, b.y + b.h, 3, b.color);
+            MinigameUI.roundBorder(g, b.x, b.y, b.x + b.w, b.y + b.h, 3, 1, 0x44FFFFFF);
+        }
+        // 炮台
+        float py = top + PANEL_H - 22;
+        MinigameUI.roundRect(g, (int) paddleX, (int) py, (int) paddleX + 60, (int) py + 12, 4, 0xFF8899AA);
+        // 球
+        drawCircle(g, Math.round(ballX), Math.round(ballY), 8, WHITE);
+        if (!ballLaunched) {
+            g.drawCenteredString(font, modeText("hint"), width / 2, (int) py + 16, MUTED);
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    // 找零钱
+    // ══════════════════════════════════════════════
+
+    private void renderMakeChange(GuiGraphics g, int left, int top) {
+        g.drawCenteredString(font, modeText("target", changeTarget), width / 2, top + 14, YELLOW);
+        int currentSum = 0;
+        for (int i = 0; i < 4; i++) currentSum += playerCounts[i] * BILL_VALUES[i];
+        g.drawCenteredString(font, modeText("current", currentSum), width / 2, top + 32, currentSum == changeTarget ? GREEN : WHITE);
+
+        // 收银台区域
+        int regY = top + 195;
+        MinigameUI.roundRect(g, left + 40, regY, left + PANEL_W - 40, regY + 40, 6, 0xFF2A3545);
+        MinigameUI.roundBorder(g, left + 40, regY, left + PANEL_W - 40, regY + 40, 6, 1, 0xFF445566);
+        g.drawCenteredString(font, modeText("register"), width / 2, regY + 12, MUTED);
+
+        // 已放入的纸币
+        int xOff = 0;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < playerCounts[i]; j++) {
+                int bx = left + 50 + xOff * 18;
+                if (bx > left + PANEL_W - 70) break;
+                MinigameUI.roundRect(g, bx, regY + 4, bx + 16, regY + 36, 3, BILL_COLORS[i]);
+                g.drawString(font, String.valueOf(BILL_VALUES[i]), bx + 4, regY + 14, WHITE);
+                xOff++;
+            }
+        }
+
+        // 可拖动纸币
+        for (Piece p : pieces) {
+            if (p == draggedPiece) continue;
+            MinigameUI.roundRect(g, (int) p.x, (int) p.y, (int) p.x + 42, (int) p.y + 32, 5, p.color);
+            g.drawCenteredString(font, p.label, (int) p.x + 21, (int) p.y + 12, WHITE);
+        }
+        // 拖拽中纸币
+        if (draggedPiece != null) {
+            Piece p = draggedPiece;
+            MinigameUI.roundRect(g, (int) p.x + 2, (int) p.y + 2, (int) p.x + 44, (int) p.y + 34, 5, 0x40000000);
+            MinigameUI.roundRect(g, (int) p.x, (int) p.y, (int) p.x + 42, (int) p.y + 32, 5, p.color);
+            g.drawCenteredString(font, p.label, (int) p.x + 21, (int) p.y + 12, WHITE);
+        }
+    }
+
+    private void dropChangeBill(Piece p, double mouseX, double mouseY) {
+        int top = panelTop();
+        int regY = top + 195;
+        if (mouseY >= regY && mouseY <= regY + 40) {
+            int idx = p.target; // bill index 0=¥1,1=¥2,2=¥5,3=¥10
+            playerCounts[idx]++;
+            int currentSum = 0;
+            for (int i = 0; i < 4; i++) currentSum += playerCounts[i] * BILL_VALUES[i];
+            if (currentSum == changeTarget) {
+                // 检查是否是最优解（贪心）
+                boolean optimal = true;
+                for (int i = 0; i < 4; i++) {
+                    if (playerCounts[i] != greedyCounts[i]) { optimal = false; break; }
+                }
+                if (optimal) complete();
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════
     // 水果忍者
     // ══════════════════════════════════════════════
 
@@ -2194,6 +2419,14 @@ public class SimpleQuestMinigameScreen extends Screen {
         float dx = ax - bx;
         float dy = ay - by;
         return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    private static class Brick {
+        int x, y, w, h, color;
+        boolean alive = true;
+        Brick(int x, int y, int w, int h, int color) {
+            this.x = x; this.y = y; this.w = w; this.h = h; this.color = color;
+        }
     }
 
     private static class RunningMouse {
