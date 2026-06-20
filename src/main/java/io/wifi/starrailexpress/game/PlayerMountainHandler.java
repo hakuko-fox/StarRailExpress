@@ -23,12 +23,34 @@ public class PlayerMountainHandler {
         return false;
     }
 
+    /**
+     * 将两个玩家水平推开（仅 XZ 平面）
+     * 
+     * @param a 玩家 A（通常为上方玩家）
+     * @param b 玩家 B（通常为下方玩家）
+     */
+    public static void pushApart(Player a, Player b, double force) {
+        double dx = a.getX() - b.getX();
+        double dz = a.getZ() - b.getZ();
+        double dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < 0.001) {
+            dx = 1.0;
+            dz = 0.0; // 防止零向量
+        } else {
+            dx /= dist;
+            dz /= dist;
+        }
+        a.push(dx * force, 0.0, dz * force);
+        b.push(-dx * force, 0.0, -dz * force);
+    }
+
     public static void register() {
         CanCollideWith.PLAYER.register((player, entity) -> {
             if (GameUtils.isGameRunning(player)) {
                 if (SREConfig.instance().disablePlayerMountain) {
                     if (entity instanceof Player other) {
                         if (isOnOneHead(player, other) || isOnOneHead(other, player)) {
+                            pushApart(player, other, 0.25);
                             return TrueFalseResult.FALSE;
                         }
                     }
