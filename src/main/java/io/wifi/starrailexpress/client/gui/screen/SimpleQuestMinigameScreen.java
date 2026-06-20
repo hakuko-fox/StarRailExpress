@@ -147,6 +147,9 @@ public class SimpleQuestMinigameScreen extends Screen {
     private int selectedTopWire = -1;
     private float valueA;
     private float valueB;
+    /** 拨电线：随机目标位置 */
+    private float wireTargetA;
+    private float wireTargetB;
     private float velocity;
     private float bulletX;
     private float bulletY;
@@ -337,6 +340,8 @@ public class SimpleQuestMinigameScreen extends Screen {
             case WIRE_TUNING -> {
                 valueA = rng.nextFloat();
                 valueB = rng.nextFloat();
+                wireTargetA = rng.nextFloat();
+                wireTargetB = rng.nextFloat();
             }
             case SIGNAL_CALIBRATION -> {
                 valueA = 0.15f;
@@ -406,12 +411,15 @@ public class SimpleQuestMinigameScreen extends Screen {
             }
             case WHACK_MOLE -> spawnMole();
             case PUZZLE -> {
+                // 随机打乱图案映射
+                List<Integer> targets = new ArrayList<>();
+                for (int i = 0; i < 9; i++) targets.add(i);
+                Collections.shuffle(targets, rng);
                 // 拼图板在右侧，散落拼图在左侧
                 for (int i = 0; i < 9; i++) {
-                    // 散落拼图：左侧 3x3，带间隙
                     float sx = left + 30 + (i % 3) * 58 + rng.nextInt(8);
                     float sy = top + 80 + (i / 3) * 58 + rng.nextInt(8);
-                    pieces.add(new Piece(Component.literal(""), 1, 0xFF6AA6FF, sx, sy, i));
+                    pieces.add(new Piece(Component.literal(""), 1, 0xFF6AA6FF, sx, sy, targets.get(i)));
                 }
                 Collections.shuffle(pieces, rng);
             }
@@ -499,7 +507,7 @@ public class SimpleQuestMinigameScreen extends Screen {
             }
             case SHOOTING -> tickShooting();
             case WIRE_TUNING -> {
-                float clarity = 1f - (Math.abs(valueA - 0.5f) + Math.abs(valueB - 0.5f));
+                float clarity = 1f - (Math.abs(valueA - wireTargetA) + Math.abs(valueB - wireTargetB));
                 if (clarity > 0.94f) complete();
             }
             case SIGNAL_CALIBRATION -> {
@@ -634,7 +642,7 @@ public class SimpleQuestMinigameScreen extends Screen {
                 spawned++;
             }
         }
-        spawnTimer = 50 + rng.nextInt(40);
+        spawnTimer = 40;
     }
 
     @Override
@@ -797,34 +805,34 @@ public class SimpleQuestMinigameScreen extends Screen {
     }
 
     private void renderWireTuning(GuiGraphics g, int left, int top) {
-        float clarity = Mth.clamp(1f - (Math.abs(valueA - 0.5f) + Math.abs(valueB - 0.5f)), 0f, 1f);
-        int tvTop = top + 80;
+        float clarity = Mth.clamp(1f - (Math.abs(valueA - wireTargetA) + Math.abs(valueB - wireTargetB)), 0f, 1f);
+        int tvTop = top + 135;
         // 电视机壳
-        MinigameUI.roundRect(g, left + 120, tvTop, left + 310, tvTop + 105, 6, 0xFF04070C);
+        MinigameUI.roundRect(g, left + 120, tvTop, left + 310, tvTop + 90, 6, 0xFF04070C);
         // 电视画面：background.png，清晰度控制透明度
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1f, 1f, 1f, clarity);
-        g.blit(BG_TEXTURE, left + 130, tvTop + 10, 0, 0, 170, 85, 170, 85);
+        g.blit(BG_TEXTURE, left + 130, tvTop + 8, 0, 0, 170, 74, 170, 74);
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         RenderSystem.disableBlend();
-        g.drawCenteredString(font, modeText("hint"), width / 2, top + 58, MUTED);
-        // 两个电线枢轴点（电视下方）
-        int[] pivotX = {left + 190, left + 240};
-        int pivotY = top + 215;
+        g.drawCenteredString(font, modeText("hint"), width / 2, top + 55, MUTED);
+        // 两个电线枢轴点（电视机上边）
+        int[] pivotX = {left + 180, left + 250};
+        int pivotY = tvTop;
         for (int i = 0; i < 2; i++) {
             drawCircle(g, pivotX[i], pivotY, 10, i == 0 ? 0xFF553333 : 0xFF333355);
             drawCircle(g, pivotX[i], pivotY, 5, i == 0 ? RED : BLUE);
         }
-        int wireLen = 100;
+        int wireLen = 90;
         for (int i = 0; i < 2; i++) {
             float value = i == 0 ? valueA : valueB;
-            // 弧度：value 0→1 映射到角度 左偏→右偏
-            double angle = (value - 0.5) * Math.PI * 0.7;
+            // value 0→1 映射到角度 PI→0（顺时针从左到右，范围0°~180°）
+            double angle = Math.PI * (1 - value);
             int px = pivotX[i];
             int py = pivotY;
             int ex = px - (int) (Math.cos(angle) * wireLen);
             int ey = py - (int) (Math.sin(angle) * wireLen);
-            // 直线电线：沿路径步进绘制
+            // 直线电线
             int c = i == 0 ? RED : BLUE;
             int steps = Math.max(1, (int) Math.sqrt((ex - px) * (ex - px) + (ey - py) * (ey - py)));
             for (int s = 0; s <= steps; s++) {
@@ -832,6 +840,17 @@ public class SimpleQuestMinigameScreen extends Screen {
                 int lx = px + (int) ((ex - px) * t);
                 int ly = py + (int) ((ey - py) * t);
                 g.fill(lx - 1, ly - 1, lx + 2, ly + 2, c);
+            }
+            // 目标线（灰色虚线提示）
+            double targetAngle = Math.PI * (1 - (i == 0 ? wireTargetA : wireTargetB));
+            int tx = px - (int) (Math.cos(targetAngle) * wireLen);
+            int ty = py - (int) (Math.sin(targetAngle) * wireLen);
+            int tsteps = Math.max(1, (int) Math.sqrt((tx - px) * (tx - px) + (ty - py) * (ty - py)));
+            for (int s = 0; s <= tsteps; s += 4) {
+                float t = (float) s / tsteps;
+                int lx = px + (int) ((tx - px) * t);
+                int ly = py + (int) ((ty - py) * t);
+                g.fill(lx - 1, ly - 1, lx + 1, ly + 1, 0x66FFFFFF);
             }
             // 端点旋钮
             drawCircle(g, ex, ey, 8, i == 0 ? RED : BLUE);
@@ -1095,7 +1114,7 @@ public class SimpleQuestMinigameScreen extends Screen {
         g.pose().pushPose();
         g.pose().translate(cx, cy, 0);
         g.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(60f));
-        g.pose().scale(3f, 3f, 1f);
+        g.pose().scale(10f, 10f, 1f);
         g.renderItem(CARROT, -8, -8);
         g.pose().popPose();
         for (int i = 1; i <= 4; i++) {
@@ -1359,11 +1378,11 @@ public class SimpleQuestMinigameScreen extends Screen {
         }
         if (mode == Mode.WIRE_TUNING && selectedWire >= 0) {
             int top = panelTop();
-            int[] pivotX = {panelLeft() + 190, panelLeft() + 240};
-            int pivotY = top + 215;
+            int[] pivotX = {panelLeft() + 180, panelLeft() + 250};
+            int pivotY = top + 135;
             int px = pivotX[selectedWire];
-            double angle = Math.atan2(px - mouseX, pivotY - mouseY);
-            float v = Mth.clamp((float) ((angle / (Math.PI * 0.7)) + 0.5), 0f, 1f);
+            double angle = Math.atan2(pivotY - mouseY, px - mouseX);
+            float v = Mth.clamp((float) (angle / Math.PI), 0f, 1f);
             if (selectedWire == 0) valueA = v;
             else valueB = v;
             return true;
@@ -1563,13 +1582,13 @@ public class SimpleQuestMinigameScreen extends Screen {
 
     private int nearestWire(double mouseX, double mouseY) {
         int top = panelTop();
-        int[] pivotX = {panelLeft() + 190, panelLeft() + 240};
-        int pivotY = top + 215;
+        int[] pivotX = {panelLeft() + 180, panelLeft() + 250};
+        int pivotY = top + 135;
         for (int i = 0; i < 2; i++) {
             float value = i == 0 ? valueA : valueB;
-            double angle = (value - 0.5) * Math.PI * 0.7;
-            int ex = pivotX[i] - (int) (Math.cos(angle) * 100);
-            int ey = pivotY - (int) (Math.sin(angle) * 100);
+            double angle = Math.PI * (1 - value);
+            int ex = pivotX[i] - (int) (Math.cos(angle) * 90);
+            int ey = pivotY - (int) (Math.sin(angle) * 90);
             if (inCircle(mouseX, mouseY, ex, ey, 16)) return i;
             if (inCircle(mouseX, mouseY, pivotX[i], pivotY, 14)) return i;
         }
@@ -1890,10 +1909,11 @@ public class SimpleQuestMinigameScreen extends Screen {
                     fromY = top + PANEL_H - 15; toY = top + HEADER_H + 5;
                     break;
             }
-            mice.add(new RunningMouse(fromX, fromY, toX, toY));
+            float speed = 0.02f + rng.nextFloat() * 0.025f;
+            mice.add(new RunningMouse(fromX, fromY, toX, toY, speed));
         }
-        // 更新老鼠位置
-        for (RunningMouse m : mice) m.progress += 0.012f;
+        // 更新老鼠位置（每只老鼠速度不同）
+        for (RunningMouse m : mice) m.progress += m.speed;
         mice.removeIf(m -> m.caught || m.progress >= 1f);
     }
 
@@ -1922,7 +1942,7 @@ public class SimpleQuestMinigameScreen extends Screen {
                 if (m.toX < m.fromX) g.pose().scale(-1f, 1f, 1f);
             }
             g.pose().scale(1.5f, 1.5f, 1f);
-            g.renderItem(new ItemStack(Items.RABBIT_HIDE), -8, -8);
+            g.renderItem(new ItemStack(Items.BLACK_DYE), -8, -8);
             g.pose().popPose();
         }
     }
@@ -1946,23 +1966,27 @@ public class SimpleQuestMinigameScreen extends Screen {
     // ══════════════════════════════════════════════
 
     private void tickFruitNinja() {
+        int left = panelLeft();
+        int top = panelTop();
         // 生成水果
         if (--fruitSpawnTimer <= 0) {
             fruitSpawnTimer = 18 + rng.nextInt(22);
             boolean isBomb = rng.nextInt(8) == 0;
-            float spawnX = width * 0.2f + rng.nextFloat() * width * 0.6f;
-            float vx = (rng.nextFloat() - 0.5f) * 5f;
-            float vy = -(8f + rng.nextFloat() * 6f);
-            fruitList.add(new Fruit(spawnX, height - 20, vx, vy, isBomb ? -1 : rng.nextInt(FRUITS.length), isBomb));
+            float spawnX = left + PANEL_W * 0.15f + rng.nextFloat() * PANEL_W * 0.7f;
+            float vx = (rng.nextFloat() - 0.5f) * 3.5f;
+            float vy = -(7f + rng.nextFloat() * 5f);
+            fruitList.add(new Fruit(spawnX, top + PANEL_H - 10, vx, vy, isBomb ? -1 : rng.nextInt(FRUITS.length), isBomb));
         }
         // 物理更新
         for (Fruit f : fruitList) {
-            f.vy += 0.28f;
+            f.vy += 0.26f;
             f.x += f.vx;
             f.y += f.vy;
             f.rotation += f.vx * 2f;
         }
-        fruitList.removeIf(f -> f.y > height + 40 || f.x < -40 || f.x > width + 40);
+        // 超出面板区域则移除
+        fruitList.removeIf(f -> f.y > top + PANEL_H + 20 || f.x < left - 20 || f.x > left + PANEL_W + 20
+                || f.y < top + HEADER_H - 30);
     }
 
     private void checkFruitSlice() {
@@ -2168,10 +2192,10 @@ public class SimpleQuestMinigameScreen extends Screen {
     }
 
     private static class RunningMouse {
-        float fromX, fromY, toX, toY, progress;
+        float fromX, fromY, toX, toY, progress, speed;
         boolean caught;
-        RunningMouse(float fromX, float fromY, float toX, float toY) {
-            this.fromX = fromX; this.fromY = fromY; this.toX = toX; this.toY = toY;
+        RunningMouse(float fromX, float fromY, float toX, float toY, float speed) {
+            this.fromX = fromX; this.fromY = fromY; this.toX = toX; this.toY = toY; this.speed = speed;
         }
     }
 
