@@ -1630,6 +1630,8 @@
   "message.noellesroles.manhole.denied": "你无法进入井盖",
   "message.noellesroles.manhole.no_exit": "视线方向没有其它井盖",
   "message.noellesroles.fog.denied": "迷雾笼罩，你无法进入此区域",
+  "message.noellesroles.fog.warning_15s": "你即将迷失方向，需尽快离开迷雾区域",
+  "message.noellesroles.fog.warning_25s": "你已迷失方向，必须立即离开迷雾区域",
   "block.noellesroles.scene_gate": "场景大门",
   "block.noellesroles.flamethrower": "喷火装置",
   "block.noellesroles.reactor": "反应堆装置",
