@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.game;
 
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.event.CanCollideWith;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.world.entity.player.Player;
@@ -24,11 +25,13 @@ public class PlayerMountainHandler {
 
     public static void register() {
         CanCollideWith.PLAYER.register((player, entity) -> {
-            if (entity instanceof Player other) {
-                if (isOnOneHead(player, other)) {
-                    return TrueFalseResult.TRUE;
-                } else if (isOnOneHead(other, player)) {
-                    return TrueFalseResult.TRUE;
+            if (GameUtils.isGameRunning(player)) {
+                if (SREConfig.instance().disablePlayerMountain) {
+                    if (entity instanceof Player other) {
+                        if (isOnOneHead(player, other) || isOnOneHead(other, player)) {
+                            return TrueFalseResult.FALSE;
+                        }
+                    }
                 }
             }
             return TrueFalseResult.PASS;

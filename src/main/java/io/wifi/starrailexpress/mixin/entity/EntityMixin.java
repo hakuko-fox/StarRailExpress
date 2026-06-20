@@ -30,23 +30,6 @@ public class EntityMixin {
 
     @Inject(method = "onExplosionHit", at = @At("HEAD"), cancellable = true)
     public void addHurtTagToPlayerWithExplosion(Entity direct, CallbackInfo ci) {
-        // if (SRE.isLobby)
-        // return;
-        // Entity e = (Entity) (Object) this;
-
-        // if (!(e instanceof Player self)) {
-        // return;
-        // }
-        // if (direct instanceof PrimedTnt tnt) {
-        // if (tnt.getOwner() instanceof Player player) {
-        // self.setLastHurtByPlayer(player);
-        // }
-        // } else if (direct instanceof Projectile projectile) {
-        // if (projectile.getOwner() instanceof Player player) {
-        // self.setLastHurtByPlayer(player);
-        // self.hurtMarked = true;
-        // }
-        // }
     }
 
     @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;vibrationAndSoundEffectsFromBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;ZZLnet/minecraft/world/phys/Vec3;)Z", ordinal = 0))
