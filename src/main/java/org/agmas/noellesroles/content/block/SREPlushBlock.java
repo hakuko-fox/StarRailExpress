@@ -11,6 +11,7 @@ import com.mojang.serialization.MapCodec;
 import dev.doctor4t.ratatouille.block.PlushBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
@@ -66,7 +67,7 @@ public class SREPlushBlock extends PlushBlock {
       if (state.getBlock() == SREFumoBlocks.MILK_DRAGON_PLUSH) {
          ret = NRSounds.WO_SHI_NAI_LONG;
       }
-      if (state.getBlock() instanceof CustomPlayerPlushBlock cppb) {
+      if (state.getBlock() instanceof SREPlushBlock cppb) {
          var res = cppb.getCustomSound(world, pos, state);
          if (res != null) {
             ret = SoundEvent.createVariableRangeEvent(res);
@@ -75,6 +76,12 @@ public class SREPlushBlock extends PlushBlock {
       return ret;
    }
 
+    public ResourceLocation getCustomSound(Level world, BlockPos pos, BlockState state) {
+        if (world.getBlockEntity(pos) instanceof SREPlushBlockEntity sp) {
+            return sp.getClickSound();
+        }
+        return null;
+    }
    @Override
    public RenderShape getRenderShape(BlockState state) {
       return super.getRenderShape(state);
