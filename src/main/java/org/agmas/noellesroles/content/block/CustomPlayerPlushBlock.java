@@ -10,7 +10,6 @@ import com.mojang.serialization.MapCodec;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -81,12 +80,5 @@ public class CustomPlayerPlushBlock extends SREPlushBlock {
                         .withStyle(ChatFormatting.GRAY));
             }
         }
-    }
-
-    public ResourceLocation getCustomSound(Level world, BlockPos pos, BlockState state) {
-        if (world.getBlockEntity(pos) instanceof SREPlushBlockEntity sp) {
-            return sp.getClickSound();
-        }
-        return null;
     }
 }
