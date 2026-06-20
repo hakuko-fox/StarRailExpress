@@ -1626,6 +1626,8 @@
   "message.noellesroles.manhole.denied": "You cannot enter the manhole",
   "message.noellesroles.manhole.no_exit": "No other manhole in your line of sight",
   "message.noellesroles.fog.denied": "The fog blocks you from entering this area",
+  "message.noellesroles.fog.warning_15s": "You are about to lose your sense of direction, leave the fog area immediately",
+  "message.noellesroles.fog.warning_25s": "You have lost your sense of direction, you must leave the fog area now!",
   "block.noellesroles.scene_gate": "Scene Gate",
   "block.noellesroles.flamethrower": "Flamethrower",
   "block.noellesroles.reactor": "Reactor",
