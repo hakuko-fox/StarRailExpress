@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.content.block;
 
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.DoorCustomOpenItem;
@@ -60,10 +61,11 @@ public class SmallDoorBlock extends DoorPartBlock {
     private final Supplier<BlockEntityType<SmallDoorBlockEntity>> typeSupplier;
 
     @Override
-    public boolean shouldHaveCollisionShapeWhenOpen(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context){
-        return true;
+    public boolean shouldHaveCollisionShapeWhenOpen(BlockState state, BlockGetter world, BlockPos pos,
+            CollisionContext context) {
+        return SREConfig.instance().shouldOpenDoorHaveCollision;
     }
-    
+
     public SmallDoorBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(
