@@ -49,6 +49,7 @@ import io.wifi.starrailexpress.scenery.server.SceneAssetServer;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import io.wifi.starrailexpress.util.Scheduler;
+import net.exmo.sre.mod_whitelist.server.command.ModWhitelistCommand;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -298,7 +299,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     private void registerCommands() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-
+			ModWhitelistCommand.registerGlobal(dispatcher);
             SREHelpCommand.register(dispatcher);
             SREVoteCommand.register(dispatcher, registryAccess);
             NarratorCommand.register(dispatcher, registryAccess);

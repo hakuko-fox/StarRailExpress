@@ -26,7 +26,8 @@ public class ParticipationCommand {
                 .then(Commands.literal("join").executes(context -> setParticipating(context, true)))
                 .then(Commands.literal("leave").executes(context -> setParticipating(context, false)))
                 .then(Commands.literal("status").executes(ParticipationCommand::status))
-                .then(Commands.literal("list").executes(ParticipationCommand::list))
+                .then(Commands.literal("list")
+                        .executes(ParticipationCommand::list))
                 .then(Commands.literal("set")
                         // 仅 OP（权限等级 2）可修改他人参与状态
                         .requires(src -> src.hasPermission(2))
