@@ -134,7 +134,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     /** 切换按钮文案：参与中 -> 显示“不参与”，未参与 -> 显示“参与”。 */
     private Component participationButtonLabel() {
         return Component.translatable("screen.limited_inventory.button.participate.status",
-                Component.translatable(isParticipating()
+                Component.translatable(!isParticipating()
                         ? "screen.limited_inventory.button.participate.leave"
                         : "screen.limited_inventory.button.participate.join"));
     }
