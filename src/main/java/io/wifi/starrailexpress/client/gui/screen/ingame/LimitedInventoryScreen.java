@@ -17,6 +17,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderType;
@@ -132,9 +133,10 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     /** 切换按钮文案：参与中 -> 显示“不参与”，未参与 -> 显示“参与”。 */
     private Component participationButtonLabel() {
-        return Component.translatable(isParticipating()
-                ? "screen.limited_inventory.button.participate.leave"
-                : "screen.limited_inventory.button.participate.join");
+        return Component.translatable("screen.limited_inventory.button.participate.status",
+                Component.translatable(isParticipating()
+                        ? "screen.limited_inventory.button.participate.leave"
+                        : "screen.limited_inventory.button.participate.join"));
     }
 
     public void toggleViewMenu(boolean flag) {
@@ -242,8 +244,9 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                     if (minecraft != null && minecraft.player != null) {
                         minecraft.player.connection.sendCommand("tmm:participate");
                     }
-                }).bounds(0, 0, PARTICIPATION_BTN_W, PARTICIPATION_BTN_H).build());
-
+                }).tooltip(Tooltip
+                        .create(Component.translatable("screen.limited_inventory.button.participate.hover_text")))
+                        .bounds(0, 0, PARTICIPATION_BTN_W, PARTICIPATION_BTN_H).build());
         refreshShopLayout();
         initWaitingMenu();
     }
@@ -290,7 +293,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             }
         }
         if (waitingPrevPageButton != null && waitingNextPageButton != null) {
-            // 让“<  页码  >”整体在导航栏上居中、垂直对齐，与面板背景协调
+            // 让“< 页码 >”整体在导航栏上居中、垂直对齐，与面板背景协调
             int navCenterX = px + scaled(PANEL_W) / 2;
             int navY = py + scaled(NAV_Y);
             int btnW = scaled(12);
