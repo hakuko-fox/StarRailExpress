@@ -695,6 +695,9 @@ public abstract class GameMode {
                 if (bartenderPlayerComponent != null) {
                     bartenderPlayerComponent.clear();
                 }
+                OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
+                OnPlayerDeathWithKiller.EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
+                
                 var cantSend = SRE.cantSendReplay.stream().anyMatch((pre) -> {
                     return pre.test(serverPlayerEntity);
                 });
@@ -705,8 +708,6 @@ public abstract class GameMode {
                                     .append(deathMessageComponent))
                                     .withStyle(ChatFormatting.DARK_RED));
                 }
-                OnPlayerDeath.EVENT.invoker().onPlayerDeath(victim, deathReason);
-                OnPlayerDeathWithKiller.EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
             } else {
                 return;
             }
