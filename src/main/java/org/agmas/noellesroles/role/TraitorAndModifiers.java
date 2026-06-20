@@ -407,15 +407,10 @@ public class TraitorAndModifiers {
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
             if (modifiers.isModifier(player.getUUID(), LAST_GASP) && !LAST_GASP_TRIGGERED.contains(player.getUUID())) {
                 LAST_GASP_TRIGGERED.add(player.getUUID());
-
-                var body = GameUtils.findPlayerBodyEntity(sp);
-                if (body != null) {
-                    body.discard();
-                }
                 sp.setGameMode(GameType.ADVENTURE);
                 TrainVoicePlugin.resetPlayer(sp.getUUID());
                 DeathPenaltyComponent.KEY.get(sp).init();
-                
+
                 // 记录触发时的游戏时间（用于3秒游戏时间计时器）
                 long gameTime = player.level().getGameTime();
                 LAST_GASP_TRIGGER_GAME_TIME.put(player.getUUID(), gameTime);
@@ -429,7 +424,7 @@ public class TraitorAndModifiers {
                 // 使用模组已有的效果：禁止移动、无敌、禁止技能、禁止转向、禁止物品、禁止背包、黑暗
                 final boolean testFlag = false;
                 sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 100, 0, false, false, testFlag)); // 禁止移动
-                sp.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, 100, 0, false, false, testFlag)); // 安全时间
+                sp.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, 3 * 20, 0, false, false, testFlag)); // 安全时间
                 sp.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 100, 0, false, false, testFlag)); // 禁止使用技能
                 sp.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 100, 0, false, false, testFlag)); // 禁止转向
                 sp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 100, 0, false, false, testFlag)); // 禁止使用物品
@@ -448,6 +443,11 @@ public class TraitorAndModifiers {
                     serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.WITCH,
                             player.getX(), player.getY() + 1.0, player.getZ(),
                             30, 0.8, 1.0, 0.8, 0.05);
+                }
+                
+                var body = GameUtils.findPlayerBodyEntity(sp);
+                if (body != null) {
+                    body.discard();
                 }
                 return;
             }
