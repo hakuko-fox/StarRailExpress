@@ -1,6 +1,7 @@
 package org.agmas.noellesroles;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -825,6 +826,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理拳击手技能包
         ServerPlayNetworking.registerGlobalReceiver(BOXER_ABILITY_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家是拳击手
@@ -845,6 +848,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理跟踪者窥视包
         ServerPlayNetworking.registerGlobalReceiver(STALKER_GAZE_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             // 获取跟踪者组件
             StalkerPlayerComponent stalkerComp = ModComponents.STALKER.get(context.player());
 
@@ -870,6 +875,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理跟踪者突进包
         ServerPlayNetworking.registerGlobalReceiver(STALKER_DASH_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             // 获取跟踪者组件
             StalkerPlayerComponent stalkerComp = ModComponents.STALKER.get(context.player());
 
@@ -895,6 +902,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理运动员技能包
         ServerPlayNetworking.registerGlobalReceiver(ATHLETE_ABILITY_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家是运动员
@@ -915,6 +924,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理慕恋者窥视包
         ServerPlayNetworking.registerGlobalReceiver(ADMIRER_GAZE_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             // 获取慕恋者组件
             AdmirerPlayerComponent admirerComp = ModComponents.ADMIRER.get(context.player());
 
@@ -935,6 +946,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理设陷者技能包
         ServerPlayNetworking.registerGlobalReceiver(TRAPPER_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家是设陷者
@@ -953,6 +966,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理设陷者切换陷阱类型包
         ServerPlayNetworking.registerGlobalReceiver(TRAPPER_SWITCH_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家是设陷者
@@ -971,6 +986,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理明星技能包
         ServerPlayNetworking.registerGlobalReceiver(STAR_ABILITY_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家是明星
@@ -989,6 +1006,8 @@ public class RicesRoleRhapsody implements ModInitializer {
 
         // 处理歌手技能包
         ServerPlayNetworking.registerGlobalReceiver(SINGER_ABILITY_PACKET, (payload, context) -> {
+            if (RoleSkill.blockForSpectator(context.player()))
+                return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
             // 验证玩家是歌手

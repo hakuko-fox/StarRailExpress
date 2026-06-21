@@ -2071,6 +2071,7 @@ public class ModRoles {
             )).setComponentKey(org.agmas.noellesroles.game.roles.innocent.fool.FoolPlayerComponent.KEY)
             .setCanSeeCoin(true)
             .setCanPickUpRevolver(true)
+            .setCanUseSkillWhileSpectator(true)
             .setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
             .setDefaultEnableChance(3000).setDefaultEnableNeededPlayerCount(12);
