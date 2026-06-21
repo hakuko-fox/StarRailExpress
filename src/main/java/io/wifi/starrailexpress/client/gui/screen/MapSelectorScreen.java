@@ -60,7 +60,8 @@ public class MapSelectorScreen extends Screen {
     private float scrollPosition;
     private long openedAt;
 
-    // Computed by recalculateLayout(), read by getMaxScroll / ensureMapVisible / render
+    // Computed by recalculateLayout(), read by getMaxScroll / ensureMapVisible /
+    // render
     private int layoutRows = 1;
     private int layoutCols;
     private int layoutCW = CARD_WIDTH;
@@ -142,10 +143,14 @@ public class MapSelectorScreen extends Screen {
             layoutRows = 2;
             layoutCols = (cardCount + 1) / 2;
             layoutCW = SMALL_CARD_WIDTH;
-            // Cap card height so both rows fit between the header (84px top) and the bottom panel
+            // Cap card height so both rows fit between the header (84px top) and the bottom
+            // panel
             int availableHeight = height - 84 - BOTTOM_PANEL_HEIGHT - 12 - ROW_SPACING;
             layoutCH = Math.min(SMALL_CARD_HEIGHT, Math.max(80, availableHeight / 2));
             layoutCS = SMALL_CARD_SPACING;
+        }
+        if (height < 600) {
+            layoutRows = 1;
         }
     }
 
@@ -319,7 +324,8 @@ public class MapSelectorScreen extends Screen {
 
         float time = (System.currentTimeMillis() - openedAt) / 1000.0f;
         for (Particle particle : particles) {
-            float size = particle.size * (0.8f + 0.2f * (float) Math.sin(time * particle.twinkleSpeed + particle.phase));
+            float size = particle.size
+                    * (0.8f + 0.2f * (float) Math.sin(time * particle.twinkleSpeed + particle.phase));
             int alpha = (int) (255.0f * particle.getAlpha(time));
             int color = withAlpha(0xC7E4FF, alpha);
 
@@ -385,7 +391,8 @@ public class MapSelectorScreen extends Screen {
         if (totalWidth > availableWidth) {
             int arrowY = startY + totalHeight / 2 - 4;
             guiGraphics.fill(0, startY - 10, SIDE_PADDING, startY + totalHeight + 10, withAlpha(0x02050E, 115));
-            guiGraphics.fill(width - SIDE_PADDING, startY - 10, width, startY + totalHeight + 10, withAlpha(0x02050E, 115));
+            guiGraphics.fill(width - SIDE_PADDING, startY - 10, width, startY + totalHeight + 10,
+                    withAlpha(0x02050E, 115));
 
             int pulseAlpha = (int) (140.0f + Math.sin(backgroundTick * 4.0f) * 55.0f);
             if (scrollTarget > 1.0f) {
@@ -405,7 +412,8 @@ public class MapSelectorScreen extends Screen {
             float entrance = easeOutCubic(Mth.clamp((introProgress - map.introDelay) * 1.8f, 0.0f, 1.0f));
             float cardX = startX + col * (layoutCW + layoutCS) - scrollPosition + (1.0f - entrance) * 10.0f;
             float baseY = startY + row * (layoutCH + ROW_SPACING);
-            float cardY = baseY + (1.0f - entrance) * (22.0f + col * 1.2f) - map.hoverTime * 8.0f - map.selectionTime * 4.0f;
+            float cardY = baseY + (1.0f - entrance) * (22.0f + col * 1.2f) - map.hoverTime * 8.0f
+                    - map.selectionTime * 4.0f;
 
             if (cardX + layoutCW < -24 || cardX > width + 24) {
                 continue;
@@ -502,7 +510,8 @@ public class MapSelectorScreen extends Screen {
                 previewY + previewHeight,
                 withAlpha(0x1A2647, (int) (alpha * 0.90f)),
                 withAlpha(0x0B1226, (int) (alpha * 0.90f)));
-        drawRectBorder(guiGraphics, previewX, previewY, previewWidth, previewHeight, 1, withAlpha(mapAccent, (int) (alpha * 0.62f)));
+        drawRectBorder(guiGraphics, previewX, previewY, previewWidth, previewHeight, 1,
+                withAlpha(mapAccent, (int) (alpha * 0.62f)));
 
         drawMapPreviewImage(guiGraphics, map.id, previewX + 1, previewY + 1, previewWidth - 2, previewHeight - 2);
 
@@ -545,7 +554,8 @@ public class MapSelectorScreen extends Screen {
                     badgeX + badgeWidth,
                     badgeY + 13,
                     withAlpha(badgeColor, (int) (alpha * 0.30f)));
-            drawRectBorder(guiGraphics, badgeX, badgeY, badgeWidth, 13, 1, withAlpha(badgeColor, (int) (alpha * 0.75f)));
+            drawRectBorder(guiGraphics, badgeX, badgeY, badgeWidth, 13, 1,
+                    withAlpha(badgeColor, (int) (alpha * 0.75f)));
             guiGraphics.drawCenteredString(
                     font,
                     voteText,
@@ -572,7 +582,8 @@ public class MapSelectorScreen extends Screen {
 
     private void drawMapPreviewImage(GuiGraphics guiGraphics, String id, int x, int y, int width, int height) {
         try {
-            ResourceLocation textureLocation = ResourceLocation.tryBuild(SRE.MOD_ID, "textures/gui/maps/" + id + ".png");
+            ResourceLocation textureLocation = ResourceLocation.tryBuild(SRE.MOD_ID,
+                    "textures/gui/maps/" + id + ".png");
             if (textureLocation != null && textureExists(textureLocation)) {
                 guiGraphics.blit(textureLocation, x, y, 0, 0, width, height, width, height);
                 return;
@@ -654,7 +665,8 @@ public class MapSelectorScreen extends Screen {
         int tagY = y + 10;
         int tagTextColor = withAlpha(0x081126, (int) (255.0f * selectionAmount));
 
-        guiGraphics.fill(tagX, tagY, tagX + tagWidth, tagY + 12, withAlpha(glowColor, (int) (205.0f * selectionAmount)));
+        guiGraphics.fill(tagX, tagY, tagX + tagWidth, tagY + 12,
+                withAlpha(glowColor, (int) (205.0f * selectionAmount)));
         guiGraphics.drawString(font, tagText, tagX + 5, tagY + 2, tagTextColor, false);
     }
 
@@ -682,7 +694,8 @@ public class MapSelectorScreen extends Screen {
 
         guiGraphics.drawCenteredString(
                 font,
-                Component.translatable("gui.sre.map_selector.selected", selectedMap.displayName).withStyle(ChatFormatting.BOLD),
+                Component.translatable("gui.sre.map_selector.selected", selectedMap.displayName)
+                        .withStyle(ChatFormatting.BOLD),
                 width / 2,
                 panelTop + 14,
                 withAlpha(COLOR_TEXT, alpha));
@@ -720,8 +733,10 @@ public class MapSelectorScreen extends Screen {
         float urgencyPulse = timeLeft <= 10 ? (0.65f + 0.35f * (float) Math.sin(backgroundTick * 8.0f)) : 1.0f;
         int frameColor = timeLeft <= 10 ? COLOR_WARNING : COLOR_ACCENT;
 
-        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + 18, withAlpha(COLOR_PANEL_DARK, (int) (190.0f * urgencyPulse)));
-        drawRectBorder(guiGraphics, panelX, panelY, panelWidth, 18, 1, withAlpha(frameColor, (int) (220.0f * urgencyPulse)));
+        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + 18,
+                withAlpha(COLOR_PANEL_DARK, (int) (190.0f * urgencyPulse)));
+        drawRectBorder(guiGraphics, panelX, panelY, panelWidth, 18, 1,
+                withAlpha(frameColor, (int) (220.0f * urgencyPulse)));
         guiGraphics.drawString(font, timerText, panelX + 12, panelY + 5, withAlpha(COLOR_TEXT, 245), false);
 
         int progressY = panelY + 18;
@@ -789,13 +804,15 @@ public class MapSelectorScreen extends Screen {
 
     private void submitVote(MapOption map) {
         MapVotingComponent votingComponent = getVotingComponent();
-        if (votingComponent == null || !votingComponent.isVotingActive() || minecraft == null || minecraft.player == null) {
+        if (votingComponent == null || !votingComponent.isVotingActive() || minecraft == null
+                || minecraft.player == null) {
             return;
         }
 
         ClientPlayNetworking.send(new io.wifi.starrailexpress.network.VoteForMapPayload(map.id));
         minecraft.player.displayClientMessage(
-                Component.translatable("gui.sre.map_selector.selected", map.displayName).withStyle(ChatFormatting.GREEN),
+                Component.translatable("gui.sre.map_selector.selected", map.displayName)
+                        .withStyle(ChatFormatting.GREEN),
                 false);
     }
 
@@ -897,7 +914,8 @@ public class MapSelectorScreen extends Screen {
         }
 
         MapVotingComponent votingComponent = getVotingComponent();
-        if (minecraft != null && minecraft.player != null && votingComponent != null && votingComponent.isVotingActive()) {
+        if (minecraft != null && minecraft.player != null && votingComponent != null
+                && votingComponent.isVotingActive()) {
             ClientPlayNetworking.send(new io.wifi.starrailexpress.network.VoteForMapPayload(selectedMap.id));
             minecraft.player.displayClientMessage(
                     Component.translatable("gui.sre.map_selector.voted_for", selectedMap.displayName)
@@ -934,7 +952,8 @@ public class MapSelectorScreen extends Screen {
         super.onClose();
     }
 
-    private void drawRectBorder(GuiGraphics guiGraphics, int x, int y, int width, int height, int thickness, int color) {
+    private void drawRectBorder(GuiGraphics guiGraphics, int x, int y, int width, int height, int thickness,
+            int color) {
         for (int i = 0; i < thickness; i++) {
             guiGraphics.fill(x + i, y + i, x + width - i, y + i + 1, color);
             guiGraphics.fill(x + i, y + height - i - 1, x + width - i, y + height - i, color);
