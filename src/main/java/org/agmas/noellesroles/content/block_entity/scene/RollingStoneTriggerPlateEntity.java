@@ -24,7 +24,7 @@ public class RollingStoneTriggerPlateEntity extends BlockEntity {
     /** 破坏任务期间召唤间隔。 */
     public static final int SABOTAGE_INTERVAL = 100;
 
-    private long lastTrigger = Long.MIN_VALUE;
+    private long lastTrigger = 0L;
 
     public RollingStoneTriggerPlateEntity(BlockPos pos, BlockState state) {
         super(ModSceneBlocks.ROLLING_STONE_TRIGGER_ENTITY, pos, state);
@@ -45,10 +45,10 @@ public class RollingStoneTriggerPlateEntity extends BlockEntity {
             return;
         }
         long now = serverLevel.getGameTime();
-        // 仅在冷却可能已结束时才检测玩家，每20tick检测一次
-        if (now - be.lastTrigger >= STEP_COOLDOWN && now % 20 == 0) {
+        if (now - be.lastTrigger >= STEP_COOLDOWN && now % 10 == 0) {
+            // expandTowards(0, 1, 0) 向上扩展 1 格以检测站在板上的玩家
             List<Player> playersOnPlate = serverLevel.getEntitiesOfClass(Player.class,
-                    new AABB(pos).inflate(0.2),
+                    new AABB(pos).expandTowards(0, 1, 0).inflate(0.2),
                     p -> p.isAlive() && !p.isSpectator());
             if (!playersOnPlate.isEmpty() && be.tryTrigger(serverLevel)) {
                 RollingStoneTriggerPlate.spawnStone(serverLevel, pos, state.getValue(RollingStoneTriggerPlate.FACING));

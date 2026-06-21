@@ -93,9 +93,13 @@ public class RollingStoneTriggerPlate extends BaseEntityBlock {
         }
     }
 
-    /** 在触发板上方朝指定方向召唤一颗滚石。 */
+    /** 从触发板 FACING 反方向 5 格处召唤一颗滚石，朝 FACING 方向滚动。 */
     public static void spawnStone(ServerLevel level, BlockPos pos, Direction dir) {
-        Vec3 origin = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+        Direction opposite = dir.getOpposite();
+        Vec3 origin = new Vec3(
+                pos.getX() + 0.5 + opposite.getStepX() * 5,
+                pos.getY() + 1.0,
+                pos.getZ() + 0.5 + opposite.getStepZ() * 5);
         RollingStoneEntity.spawn(level, origin, dir);
     }
 
