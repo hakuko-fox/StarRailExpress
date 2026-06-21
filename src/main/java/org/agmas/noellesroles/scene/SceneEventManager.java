@@ -3,8 +3,11 @@ package org.agmas.noellesroles.scene;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.agmas.noellesroles.init.NRSounds;
+
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
@@ -79,6 +82,11 @@ public final class SceneEventManager {
 
     private static final Map<ResourceKey<Level>, Long> SABOTAGE_UNTIL = new HashMap<>();
 
+    /** 警报音效防重复：记录每个维度上次播放的 tick */
+    private static final Map<ResourceKey<Level>, Long> ALARM_LAST_TICK = new HashMap<>();
+    /** 警报间隔（tick），约 2 秒播放一次 */
+    private static final long ALARM_INTERVAL = 40;
+
     /** 开启破坏任务状态。durationTicks < 0 表示持续到手动停止。 */
     public static void startSabotage(ServerLevel level, int durationTicks) {
         long until = durationTicks < 0 ? Long.MAX_VALUE : level.getGameTime() + durationTicks;
@@ -87,6 +95,7 @@ public final class SceneEventManager {
 
     public static void stopSabotage(ServerLevel level) {
         SABOTAGE_UNTIL.remove(level.dimension());
+        ALARM_LAST_TICK.remove(level.dimension());
     }
 
     public static boolean isSabotageActive(ServerLevel level) {
@@ -103,9 +112,29 @@ public final class SceneEventManager {
         return Math.max(0, until - level.getGameTime());
     }
 
+    /**
+     * 破坏任务激活时循环播放 BROKEN_ALARM 警报音效（约每 2 秒一次）。
+     * 应在任意一个破坏任务相关 BlockEntity 的 serverTick 中调用。
+     */
+    public static void tickSabotageAlarm(ServerLevel level) {
+        if (!isSabotageActive(level)) return;
+
+        long now = level.getGameTime();
+        Long last = ALARM_LAST_TICK.get(level.dimension());
+        if (last != null && now - last < ALARM_INTERVAL) return;
+
+        ALARM_LAST_TICK.put(level.dimension(), now);
+        if (!level.players().isEmpty()) {
+            var player = level.players().get(0);
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    NRSounds.BROKEN_ALARM, SoundSource.MASTER, 0.8F, 1.0F);
+        }
+    }
+
     /** 清空指定维度的所有瞬态状态（回合重置时可调用）。 */
     public static void clear(ServerLevel level) {
         DWELL.remove(level.dimension());
         SABOTAGE_UNTIL.remove(level.dimension());
+        ALARM_LAST_TICK.remove(level.dimension());
     }
 }

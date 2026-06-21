@@ -37,6 +37,7 @@ public class NRSounds {
     public static final SoundEvent LEVEL = registrar.create("noellesroles.level");
     public static final SoundEvent SNOW_STORM = registrar.create("noellesroles.winter_storm");
     public static final SoundEvent SAND_STORM = registrar.create("noellesroles.dust_storm");
+    public static final SoundEvent BROKEN_ALARM = registrar.create("noellesroles.broken_alarm");
 
     public static void initialize() {
         registrar.registerEntries();

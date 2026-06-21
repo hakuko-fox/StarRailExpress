@@ -84,6 +84,8 @@ public class MovingPlatformConfigScreen extends Screen {
     @Override
     public void render(@NotNull GuiGraphics g, int mouseX, int mouseY, float delta) {
         this.renderBackground(g, mouseX, mouseY, delta);
+        super.render(g, mouseX, mouseY, delta);
+
         int centerX = width / 2;
         int startY = height / 2 - 60;
 
@@ -92,8 +94,6 @@ public class MovingPlatformConfigScreen extends Screen {
         g.drawString(font, "格", centerX - 14, startY + 6, 0x888888);
         g.drawString(font, "移动速度 (0.01-1.0):", centerX - 80, startY + 18, 0xAAAAAA);
         g.drawString(font, "碰撞箱 (0.5-3.0):", centerX - 80, startY + 48, 0xAAAAAA);
-
-        super.render(g, mouseX, mouseY, delta);
     }
 
     @Override

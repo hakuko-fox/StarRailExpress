@@ -91,6 +91,11 @@ public class ReactorBlockEntity extends BlockEntity {
         ReactorRegistry.add(serverLevel, pos);
         boolean sabotage = SceneEventManager.isSabotageActive(serverLevel);
 
+        // 破坏任务激活时循环播放警报音效
+        if (sabotage) {
+            SceneEventManager.tickSabotageAlarm(serverLevel);
+        }
+
         if (sabotage) {
             if (!state.getValue(ReactorBlock.CLOSED) && !state.getValue(ReactorBlock.ACTIVE)) {
                 serverLevel.setBlock(pos, state.setValue(ReactorBlock.ACTIVE, true), Block.UPDATE_ALL);

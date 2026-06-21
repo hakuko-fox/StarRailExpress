@@ -38,6 +38,9 @@ public record MovingPlatformConfigC2SPacket(BlockPos pos, int distance, double s
             mbe.setDistance(payload.distance());
             mbe.setSpeed(payload.speed());
             mbe.setCollisionSize(payload.collisionSize());
+            // 同步到客户端，确保客户端 BlockEntity 数据更新
+            var state = player.serverLevel().getBlockState(payload.pos());
+            player.serverLevel().sendBlockUpdated(payload.pos(), state, state, net.minecraft.world.level.block.Block.UPDATE_ALL);
         }
     }
 }

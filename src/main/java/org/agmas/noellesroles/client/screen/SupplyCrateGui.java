@@ -140,13 +140,23 @@ public class SupplyCrateGui extends Screen {
         maxScroll = Math.max(0, totalRows - ITEM_ROWS_VISIBLE);
     }
 
+    @SuppressWarnings("unchecked")
+    private <T extends net.minecraft.client.gui.components.Renderable & net.minecraft.client.gui.components.events.GuiEventListener & net.minecraft.client.gui.narration.NarratableEntry>
+    void safeRemoveWidget(Object widget) {
+        removeWidget((T) widget);
+    }
+
     private void rebuildItemRowWidgets() {
         // 清除左侧列表中的旧控件，保留右侧持久控件和按钮
-        children().removeIf(w -> {
-            if (w instanceof EditBox && w != intervalInput) return true;
-            if (w instanceof Button && w != addRowButton && w != saveButton) return true;
-            return false;
-        });
+        // 必须同时从 children 和 renderables 中移除，否则 super.render 仍会渲染旧控件
+        var toRemove = new ArrayList<>();
+        for (var w : new ArrayList<>(children())) {
+            if (w instanceof EditBox && w != intervalInput) toRemove.add(w);
+            if (w instanceof Button && w != addRowButton && w != saveButton) toRemove.add(w);
+        }
+        for (var w : toRemove) {
+            safeRemoveWidget(w);
+        }
 
         int startIdx = scrollOffset;
         int endIdx = Math.min(startIdx + ITEM_ROWS_VISIBLE, itemRows.size());
