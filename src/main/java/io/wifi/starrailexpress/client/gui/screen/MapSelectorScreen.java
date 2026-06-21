@@ -573,14 +573,17 @@ public class MapSelectorScreen extends Screen {
 
         drawMapPreviewImage(guiGraphics, map.id, previewX + 1, previewY + 1, previewWidth - 2, previewHeight - 2);
 
-        // float scanY = (backgroundTick * 68.0f + index * 17.0f) % (previewHeight + 18.0f) - 8.0f;
-        // int scanAlpha = (int) (alpha * (0.08f + map.hoverTime * 0.10f + map.selectionTime * 0.12f));
-        // guiGraphics.fill(
-        //         previewX + 2,
-        //         (int) (previewY + scanY),
-        //         previewX + previewWidth - 2,
-        //         (int) (previewY + scanY + 5),
-        //         withAlpha(0xFFFFFF, scanAlpha));
+        float scanY = (backgroundTick * 68.0f + index * 17.0f) % (previewHeight * 2);
+        if (scanY > previewHeight) {
+            scanY = previewHeight - scanY;
+        }
+        int scanAlpha = (int) (alpha * (0.08f + map.hoverTime * 0.10f + map.selectionTime * 0.12f));
+        guiGraphics.fill(
+                previewX + 2,
+                (int) (previewY + scanY),
+                previewX + previewWidth - 2,
+                (int) (previewY + scanY + 5),
+                withAlpha(0xFFFFFF, scanAlpha));
 
         int descOffsetFromBottom = Math.max(30, (int) (46.0f * ch / CARD_HEIGHT));
         int descriptionY = cardY + ch - descOffsetFromBottom;
