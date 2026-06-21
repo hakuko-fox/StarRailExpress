@@ -40,6 +40,7 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -90,7 +91,7 @@ public class SREMurderGameMode extends GameMode {
         executeFunction(serverWorld.getServer().createCommandSourceStack(), "harpymodloader:start_game");
         MurderTimeEventComponent.KEY.get(serverWorld).initializeDefaults();
 
-        Harpymodloader.setRoleMaximum(TMMRoles.VIGILANTE.getIdentifier(), 100);
+        Harpymodloader.setRoleMaximum(ModRoles.SHERIFF_ID, 100);
         assignRole(serverWorld, gameWorldComponent, players);
     }
 
@@ -426,7 +427,7 @@ public class SREMurderGameMode extends GameMode {
         List<SRERole> assignedKillers = killerPool.selectRoles(killerCount);
 
         // 警卫池 - 使用无限重复模式，因为警卫职业数量有限
-        Harpymodloader.setRoleMaximum(TMMRoles.VIGILANTE.getIdentifier(), 100);
+        Harpymodloader.setRoleMaximum(ModRoles.SHERIFF_ID, 100);
 
         List<SRERole> assignedVigilantes = vigilantePool.selectRoles(vigilanteCount);
 
