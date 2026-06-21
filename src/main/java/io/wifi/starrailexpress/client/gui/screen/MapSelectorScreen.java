@@ -758,10 +758,17 @@ public class MapSelectorScreen extends Screen {
         int perlineOffsetY = font.lineHeight / 2;
         int idx = 0;
         {
+            idx++;
             if (isSmall) {
                 guiGraphics.drawCenteredString(
                         font,
-                        Component.translatable("gui.sre.map_selector.selected_with_id", selectedMap.displayName,selectedMap.id)
+                        Component
+                                .translatable("gui.sre.map_selector.selected_with_id", selectedMap.displayName,
+                                        Component
+                                                .translatable("gui.sre.map_selector.selected_with_id_warp",
+                                                        selectedMap.id)
+                                                .withStyle(
+                                                        style -> style.withBold(false).withColor(ChatFormatting.GRAY)))
                                 .withStyle(ChatFormatting.BOLD),
                         width / 2,
                         panelTop + 4 + perlineHeight / 2 - perlineOffsetY,
