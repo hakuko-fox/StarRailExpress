@@ -3061,5 +3061,17 @@
   "item.noellesroles.calming_tea": "Calming Tea",
   "item.noellesroles.talisman": "Talisman",
   "item.noellesroles.energizing_coffee": "Energizing Coffee",
-  "item_group.noellesroles.san": "Star Rail Express: SAN Items"
+  "item_group.noellesroles.san": "Star Rail Express: SAN Items",
+  "============ Supply Crate ============": "",
+  "block.noellesroles.supply_crate": "Supply Crate",
+  "gui.noellesroles.supply_crate.title": "Supply Crate Configuration",
+  "gui.noellesroles.supply_crate.item_id": "Item ID",
+  "gui.noellesroles.supply_crate.count": "Count",
+  "gui.noellesroles.supply_crate.probability": "Probability",
+  "gui.noellesroles.supply_crate.interval": "Refresh Interval",
+  "gui.noellesroles.supply_crate.seconds": "seconds",
+  "gui.noellesroles.supply_crate.refresh_all": "Refresh All Simultaneously",
+  "gui.noellesroles.supply_crate.shared": "Share Supplies",
+  "gui.noellesroles.supply_crate.save": "Save Config",
+  "hud.noellesroles.task_instinct.render.supply_crate": "Supply Crate"
 }

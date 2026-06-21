@@ -3000,5 +3000,17 @@
   "skill.noellesroles.exampler.problem_all": "全面出題",
   "skill.noellesroles.ma_chen_xu.active": "鬼技",
   "skill.noellesroles.super_loose_end.ability": "亡命徒技能",
-  "skill.noellesroles.super_loose_end.shift": "亡命徒特殊模式"
+  "skill.noellesroles.super_loose_end.shift": "亡命徒特殊模式",
+  "============ 物資箱 Supply Crate ============": "",
+  "block.noellesroles.supply_crate": "物資箱",
+  "gui.noellesroles.supply_crate.title": "物資箱配置",
+  "gui.noellesroles.supply_crate.item_id": "物品ID",
+  "gui.noellesroles.supply_crate.count": "數量",
+  "gui.noellesroles.supply_crate.probability": "機率",
+  "gui.noellesroles.supply_crate.interval": "刷新間隔",
+  "gui.noellesroles.supply_crate.seconds": "秒",
+  "gui.noellesroles.supply_crate.refresh_all": "是否同時刷新",
+  "gui.noellesroles.supply_crate.shared": "是否共享物資",
+  "gui.noellesroles.supply_crate.save": "保存配置",
+  "hud.noellesroles.task_instinct.render.supply_crate": "物資箱"
 }

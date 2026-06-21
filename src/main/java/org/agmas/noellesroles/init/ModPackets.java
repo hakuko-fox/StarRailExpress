@@ -88,6 +88,8 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(OpenKeyForgeGuiS2CPacket.ID, OpenKeyForgeGuiS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenVendingMachinesScreenS2CPacket.ID,
                 OpenVendingMachinesScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenSupplyCrateScreenS2CPacket.ID,
+                OpenSupplyCrateScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(OpenRepairStationScreenS2CPacket.ID,
                 OpenRepairStationScreenS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(RepairCoinRewardS2CPacket.ID,
@@ -217,5 +219,9 @@ public class ModPackets {
         // 注册窃皮者网络包
         PayloadTypeRegistry.playC2S().register(SkincrawlerC2SPacket.ID, SkincrawlerC2SPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SkincrawlerSkinS2CPacket.ID, SkincrawlerSkinS2CPacket.CODEC);
+
+        // 注册物资箱网络包
+        PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
     }
 }

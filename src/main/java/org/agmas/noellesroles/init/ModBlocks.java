@@ -71,6 +71,12 @@ public interface ModBlocks {
             new HotbarStorageBlock(Block.Properties.ofFullCopy(Blocks.CHEST)
                     .strength(2.5F)
                     .sound(SoundType.WOOD)));
+    Block SUPPLY_CRATE_BLOCK = registerBlock("supply_crate",
+            new SupplyCrateBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion()));
+    BlockEntityType<SupplyCrateBlockEntity> SUPPLY_CRATE_BLOCK_ENTITY = blockEntityRegistrar.create(
+            "supply_crate",
+            BlockEntityType.Builder.of(SupplyCrateBlockEntity::new,
+                    ModBlocks.SUPPLY_CRATE_BLOCK));
 
     // 创建轮盘赌桌方块实体类型
     BlockEntityType<DevilRouletteTableEntity> DEVIL_ROULETTE_TABLE_ENTITY = blockEntityRegistrar.create(

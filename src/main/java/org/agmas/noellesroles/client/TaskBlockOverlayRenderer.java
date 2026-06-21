@@ -243,6 +243,7 @@ public class TaskBlockOverlayRenderer {
             }
             {
                 shouldDisplay[11] = true;
+                shouldDisplay[12] = true; // 物资箱：生存玩家始终可见
             }
 
             // 拿着钥匙
@@ -260,6 +261,7 @@ public class TaskBlockOverlayRenderer {
          * 9: 椅子（包括马桶）
          * 10: 音符盒
          * 11: 售货机
+         * 12: 物资箱
          */
         var playerMood = SREPlayerMoodComponent.KEY.get(client.player);
         if (playerMood != null) {
@@ -370,6 +372,14 @@ public class TaskBlockOverlayRenderer {
                                 new Color(255, 174, 201), 1f,
                                 true, 0f,
                                 Component.translatable("hud.noellesroles.task_instinct.render.vending_machine"));
+                    }
+                    break;
+                case 12:
+                    if (shouldDisplay[type]) {
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(186, 85, 211), 1f,
+                                true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.supply_crate"));
                     }
                     break;
                 default:

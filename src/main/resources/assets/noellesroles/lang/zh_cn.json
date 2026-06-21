@@ -3068,5 +3068,17 @@
   "item.noellesroles.calming_tea": "安神茶",
   "item.noellesroles.talisman": "护身符",
   "item.noellesroles.energizing_coffee": "提神咖啡",
-  "item_group.noellesroles.san": "星穹列车：San值物品"
+  "item_group.noellesroles.san": "星穹列车：San值物品",
+  "============ 物资箱 Supply Crate ============": "",
+  "block.noellesroles.supply_crate": "物资箱",
+  "gui.noellesroles.supply_crate.title": "物资箱配置",
+  "gui.noellesroles.supply_crate.item_id": "物品ID",
+  "gui.noellesroles.supply_crate.count": "数量",
+  "gui.noellesroles.supply_crate.probability": "概率",
+  "gui.noellesroles.supply_crate.interval": "刷新间隔",
+  "gui.noellesroles.supply_crate.seconds": "秒",
+  "gui.noellesroles.supply_crate.refresh_all": "是否同时刷新",
+  "gui.noellesroles.supply_crate.shared": "是否共享物资",
+  "gui.noellesroles.supply_crate.save": "保存配置",
+  "hud.noellesroles.task_instinct.render.supply_crate": "物资箱"
 }

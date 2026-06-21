@@ -80,6 +80,7 @@ import org.agmas.noellesroles.client.renderer.VendingMachinesBlockEntityRenderer
 import org.agmas.noellesroles.client.screen.*;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
+import org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.LockEntity;
@@ -668,6 +669,15 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             });
 
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(OpenSupplyCrateScreenS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                BlockEntity blockEntity = context.client().level.getBlockEntity(payload.blockPos());
+                if (blockEntity instanceof SupplyCrateBlockEntity crate) {
+                    context.client().setScreen(new SupplyCrateGui(payload.blockPos(), crate));
+                }
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(OpenLotteryMachineScreenS2CPacket.ID, (payload, context) -> {
