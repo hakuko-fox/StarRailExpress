@@ -95,19 +95,31 @@ public class MovingPlatformBlockEntity extends BlockEntity {
         super.setRemoved();
     }
 
+    /** 立刻用当前 NBT 配置重建移动平台实体（销毁旧的 + 生成新的）。 */
+    public void recreatePlatform() {
+        if (!(this.level instanceof ServerLevel serverLevel)) return;
+        // 销毁旧实体
+        if (childUuid != null) {
+            Entity old = serverLevel.getEntity(childUuid);
+            if (old != null) old.discard();
+        }
+        // 生成新实体
+        Direction dir = getBlockState().getValue(MovingPlatformBlock.FACING);
+        MovingPlatformEntity platform = new MovingPlatformEntity(ModEntities.MOVING_PLATFORM, serverLevel);
+        Vec3 home = new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5);
+        platform.setup(home, dir, getDistance(), getSpeed(), getCollisionSize());
+        serverLevel.addFreshEntity(platform);
+        this.childUuid = platform.getUUID();
+        setChanged();
+    }
+
     public static void serverTick(Level level, BlockPos pos, BlockState state, MovingPlatformBlockEntity be) {
         if (!(level instanceof ServerLevel serverLevel) || serverLevel.getGameTime() % 20 != 0) {
             return;
         }
         Entity child = be.childUuid == null ? null : serverLevel.getEntity(be.childUuid);
         if (child == null || !child.isAlive()) {
-            Direction dir = state.getValue(MovingPlatformBlock.FACING);
-            MovingPlatformEntity platform = new MovingPlatformEntity(ModEntities.MOVING_PLATFORM, serverLevel);
-            Vec3 home = new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
-            platform.setup(home, dir, be.getDistance(), be.getSpeed(), be.getCollisionSize());
-            serverLevel.addFreshEntity(platform);
-            be.childUuid = platform.getUUID();
-            be.setChanged();
+            be.recreatePlatform();
         }
     }
 }
