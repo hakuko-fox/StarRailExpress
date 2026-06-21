@@ -1,6 +1,7 @@
 package org.agmas.noellesroles;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
