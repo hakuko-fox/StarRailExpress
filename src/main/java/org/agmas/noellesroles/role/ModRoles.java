@@ -1871,7 +1871,7 @@ public class ModRoles {
             Integer.MAX_VALUE,
             true)).setComponentKey(MercenaryPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(false).setDefaultMax(1)
-            .setDefaultEnableChance(250).setDefaultEnableNeededPlayerCount(12);
+            .setDefaultEnableChance(1000).setDefaultEnableNeededPlayerCount(12);
 
     /**
      * 秉烛人角色 - 中立阵营
