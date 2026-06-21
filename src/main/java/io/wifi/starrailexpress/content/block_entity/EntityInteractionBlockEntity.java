@@ -1336,7 +1336,7 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             }
             case TRIGGER_SABOTAGE -> {
                 int duration = action.sabotageDuration > 0 ? action.sabotageDuration : 60;
-                org.agmas.noellesroles.scene.SceneEventManager.startSabotage(world, duration * 20L);
+                org.agmas.noellesroles.scene.SceneEventManager.startSabotage(world, duration * 20);
             }
         }
     }

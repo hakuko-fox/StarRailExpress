@@ -26,14 +26,18 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -51,6 +55,9 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
     private static final long MANHOLE_COOLDOWN_TICKS = 60 * 20;
     private static final Map<UUID, Long> manholeCooldownUntil = new HashMap<>();
 
+    /** 活板门碰撞箱：厚度 3 像素，大小与原版活板门一致 */
+    private static final VoxelShape TRAPDOOR_SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 3.0, 16.0);
+
     public ManholeBlock(Properties settings) {
         super(settings);
     }
@@ -63,6 +70,16 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return TRAPDOOR_SHAPE;
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return TRAPDOOR_SHAPE;
     }
 
     @Override

@@ -68,13 +68,13 @@ public class ReactorBlock extends BaseEntityBlock implements TaskInstinctShowabl
             // 客户端：打开温度调节小游戏
             if (state.getValue(ACTIVE) && !state.getValue(CLOSED)) {
                 Minecraft.getInstance().setScreen(
-                        new SimpleQuestMinigameScreen(
-                                io.wifi.starrailexpress.content.minigame.QuestMinigames.REACTOR_TEMPERATURE,
+                        new SimpleQuestMinigameScreen(pos,
                                 () -> {
                                     // 小游戏完成回调：发送完成包
                                     net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                                             new org.agmas.noellesroles.packet.ReactorMinigameCompleteC2SPacket(pos));
-                                }));
+                                },
+                                SimpleQuestMinigameScreen.Mode.REACTOR_TEMPERATURE));
             }
             return InteractionResult.SUCCESS;
         }
