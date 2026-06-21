@@ -37,9 +37,8 @@ public class MapSelectorScreen extends Screen {
     private static final int SCREEN_PADDING_DEFAULT_TOP = 18;
     private static final int SCREEN_PADDING_TIMER_TOP = 48;
     // private static final int SMALL_CARD_WIDTH = 120;
-    private static final int SMALL_SCREEN_PADDING = 32;
-
-    private static final int SCREEN_MAP_RENDER_SMALL_TOP = 40;
+    private static final int SMALL_SCREEN_PADDING = 16;
+    private static final int SCREEN_MAP_RENDER_SMALL_TOP = 52;
     private static final int SCREEN_MAP_RENDER_DEFAULT_TOP = 84;
     private static final int SMALL_CARD_HEIGHT = 120;
     private static final int SMALL_CARD_SPACING = 10;
@@ -146,9 +145,9 @@ public class MapSelectorScreen extends Screen {
             layoutCS = CARD_SPACING;
             return;
         }
-        boolean isSmall = false;
+        boolean isSmall = height <= 300;
         if (isSmall) {
-            screenPaddingTop = 4;
+            screenPaddingTop = 12;
             screenMapRenderTop = SCREEN_MAP_RENDER_SMALL_TOP;
         } else {
             screenPaddingTop = SCREEN_PADDING_DEFAULT_TOP;
@@ -159,8 +158,15 @@ public class MapSelectorScreen extends Screen {
         boolean smallLayout = cardCount <= perRowFull;
         int availableHeight = height - screenMapRenderTop - BOTTOM_PANEL_DEFAULT_HEIGHT - ROW_SPACING * 2;
         smallLayout = smallLayout || (availableHeight <= (SMALL_CARD_HEIGHT) * 2);
-
-        if (smallLayout) {
+        if (isSmall) {
+            layoutRows = 1;
+            layoutCols = cardCount;
+            layoutCH = Math.min(CARD_HEIGHT,
+                    Math.max(100, availableHeight + BOTTOM_PANEL_DEFAULT_HEIGHT - BOTTOM_PANEL_MIN_HEIGHT));
+            layoutCW = Math.min(Math.max(80, (int) ((double) layoutCH * HW_RATE)), CARD_WIDTH);
+            layoutCS = CARD_SPACING;
+            bottomPanelHeight = BOTTOM_PANEL_MIN_HEIGHT;
+        } else if (smallLayout) {
             layoutRows = 1;
             layoutCols = cardCount;
             layoutCH = Math.min(CARD_HEIGHT, Math.max(100, availableHeight));
@@ -567,14 +573,14 @@ public class MapSelectorScreen extends Screen {
 
         drawMapPreviewImage(guiGraphics, map.id, previewX + 1, previewY + 1, previewWidth - 2, previewHeight - 2);
 
-        float scanY = (backgroundTick * 68.0f + index * 17.0f) % (previewHeight + 18.0f) - 8.0f;
-        int scanAlpha = (int) (alpha * (0.08f + map.hoverTime * 0.10f + map.selectionTime * 0.12f));
-        guiGraphics.fill(
-                previewX + 2,
-                (int) (previewY + scanY),
-                previewX + previewWidth - 2,
-                (int) (previewY + scanY + 5),
-                withAlpha(0xFFFFFF, scanAlpha));
+        // float scanY = (backgroundTick * 68.0f + index * 17.0f) % (previewHeight + 18.0f) - 8.0f;
+        // int scanAlpha = (int) (alpha * (0.08f + map.hoverTime * 0.10f + map.selectionTime * 0.12f));
+        // guiGraphics.fill(
+        //         previewX + 2,
+        //         (int) (previewY + scanY),
+        //         previewX + previewWidth - 2,
+        //         (int) (previewY + scanY + 5),
+        //         withAlpha(0xFFFFFF, scanAlpha));
 
         int descOffsetFromBottom = Math.max(30, (int) (46.0f * ch / CARD_HEIGHT));
         int descriptionY = cardY + ch - descOffsetFromBottom;
@@ -790,9 +796,9 @@ public class MapSelectorScreen extends Screen {
         int panelHeight;
         if (isSmall) {
             panelWidth = font.width(timerText) + 28;
-            panelX = (width - panelWidth);
+            panelX = (width - panelWidth - SMALL_SCREEN_PADDING);
             panelY = screenPaddingTop - 2 - yOffset;
-            panelHeight = 14 + font.lineHeight + 4;
+            panelHeight = 14 + font.lineHeight + 2;
         } else {
             panelWidth = font.width(timerText) + 28;
             panelX = (width - panelWidth) / 2;
