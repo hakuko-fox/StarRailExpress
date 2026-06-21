@@ -220,7 +220,7 @@
   "gui.sre.map_selector.map_id": "地图ID: %s",
   "gui.sre.map_selector.confirm_prompt": "按 ESC 取消 | 按 Enter 确认",
   "gui.sre.map_selector.vote_count": "投票:%s",
-  "gui.sre.map_selector.voting_active": "投票正在进行中，请投票选择地图！",
+  "gui.sre.map_selector.voting_active": "投票正在进行中，请投票选择地图。",
   "gui.sre.map_selector.voting_timer": "投票将在 %s 秒后结束",
   "gui.sre.map_selector.preset_mode": "预设游戏模式: %s",
   "hud.sre.tip.gamemode.murder": "谋杀模式",
