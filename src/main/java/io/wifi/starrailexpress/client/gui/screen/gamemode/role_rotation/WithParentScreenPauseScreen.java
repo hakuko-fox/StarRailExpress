@@ -12,6 +12,7 @@ import net.exmo.sre.loading.StarRailExpressTitleScreen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.SharedConstants;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.FrameLayout;
@@ -45,6 +46,10 @@ public class WithParentScreenPauseScreen extends PauseScreen {
     public WithParentScreenPauseScreen(Screen screen) {
         this(true);
         this.parent = screen;
+    }
+
+    public void render(GuiGraphics guiGraphics, int i, int j, float f) {
+        super.render(guiGraphics, i, j, f);
     }
 
     protected void init() {
