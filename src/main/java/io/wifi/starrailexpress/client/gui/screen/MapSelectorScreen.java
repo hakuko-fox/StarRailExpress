@@ -1,7 +1,19 @@
 package io.wifi.starrailexpress.client.gui.screen;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.joml.Matrix4f;
+
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.MapVotingComponent;
 import io.wifi.starrailexpress.client.InputHandler;
@@ -17,24 +29,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import org.joml.Matrix4f;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class MapSelectorScreen extends Screen {
     private static final int CARD_WIDTH = 164;
     private static final int CARD_HEIGHT = 224;
     private static final int CARD_SPACING = 18;
-    private static final int SMALL_CARD_WIDTH = 120;
-    private static final int SMALL_CARD_HEIGHT = 160;
+    private static final int SCREEN_PADDING_TOP = 18;
+    private static final int SCREEN_PADDING_TIMER_TOP = 48;
+    // private static final int SMALL_CARD_WIDTH = 120;
+    private static final int SCREEN_MAP_RENDER_TOP = 84;
+    private static final int SMALL_CARD_HEIGHT = 120;
     private static final int SMALL_CARD_SPACING = 10;
     private static final int ROW_SPACING = 12;
     private static final int SIDE_PADDING = 56;
-    private static final int BOTTOM_PANEL_HEIGHT = 86;
-    private static final int TWO_COLUMN_CARD_MIN_HEIGHT = 180;
+    private static final int BOTTOM_PANEL_DEFAULT_HEIGHT = 72;
+    private static final int BOTTOM_PANEL_MEDIUM_HEIGHT = 64;
+    private static final int BOTTOM_PANEL_MIN_HEIGHT = 52;
     private static final int PARTICLE_COUNT = 68;
 
     private static final int COLOR_BG_TOP = 0xFF060B18;
@@ -47,6 +57,7 @@ public class MapSelectorScreen extends Screen {
     private static final int COLOR_TEXT_DIM = 0xFF97A6CC;
     private static final int COLOR_ACCENT = 0xFF51D2FF;
     private static final int COLOR_WARNING = 0xFFFF6D6D;
+    private static final double HW_RATE = (double) CARD_WIDTH / (double) CARD_HEIGHT;
 
     private final List<MapOption> mapOptions = new ArrayList<>();
     private final List<Particle> particles = new ArrayList<>();
@@ -54,7 +65,7 @@ public class MapSelectorScreen extends Screen {
 
     private MapOption hoveredMap;
     private MapOption selectedMap;
-
+    private int bottomPanelHeight = 86;
     private float introProgress;
     private float backgroundTick;
     private float scrollTarget;
@@ -134,22 +145,31 @@ public class MapSelectorScreen extends Screen {
         int availableWidth = width - SIDE_PADDING * 2;
         int perRowFull = Math.max(1, (availableWidth + CARD_SPACING) / (CARD_WIDTH + CARD_SPACING));
         boolean smallLayout = cardCount <= perRowFull;
-        int availableHeight = height - 84 - BOTTOM_PANEL_HEIGHT - 12 - ROW_SPACING;
-        smallLayout = smallLayout || (availableHeight <= (TWO_COLUMN_CARD_MIN_HEIGHT) * 2);
+        int availableHeight = height - SCREEN_MAP_RENDER_TOP - BOTTOM_PANEL_DEFAULT_HEIGHT - ROW_SPACING * 2;
+        smallLayout = smallLayout || (availableHeight <= (SMALL_CARD_HEIGHT) * 2);
 
         if (smallLayout) {
             layoutRows = 1;
             layoutCols = cardCount;
-            layoutCW = CARD_WIDTH;
             layoutCH = Math.min(CARD_HEIGHT, Math.max(80, availableHeight));
+            layoutCW = Math.min(Math.max(80, (int) ((double) layoutCH * HW_RATE)), CARD_WIDTH);
             layoutCS = CARD_SPACING;
+            bottomPanelHeight = Math.max(BOTTOM_PANEL_MIN_HEIGHT,
+                    Math.min(availableHeight + BOTTOM_PANEL_DEFAULT_HEIGHT - layoutCH, BOTTOM_PANEL_DEFAULT_HEIGHT));
         } else {
             layoutRows = 2;
             layoutCols = (cardCount + 1) / 2;
-            layoutCW = SMALL_CARD_WIDTH;
             // Cap card height so both rows fit between the header (84px top) and the bottom
             // panel
-            layoutCH = Math.min(SMALL_CARD_HEIGHT, Math.max(80, availableHeight / 2));
+            bottomPanelHeight = Math.max(BOTTOM_PANEL_MEDIUM_HEIGHT,
+                    Math.min(availableHeight + BOTTOM_PANEL_DEFAULT_HEIGHT - layoutCH * 2,
+                            BOTTOM_PANEL_DEFAULT_HEIGHT));
+            layoutCH = Math.min(CARD_HEIGHT, Math.max(SMALL_CARD_HEIGHT, availableHeight / 2));
+            if (layoutCH >= CARD_HEIGHT) {
+                bottomPanelHeight = BOTTOM_PANEL_DEFAULT_HEIGHT;
+            }
+            layoutCW = (int) ((double) layoutCH * HW_RATE);
+
             layoutCS = SMALL_CARD_SPACING;
         }
     }
@@ -345,7 +365,7 @@ public class MapSelectorScreen extends Screen {
         int alpha = (int) (show * 255.0f);
         int yOffset = (int) ((1.0f - show) * 12.0f);
 
-        int titleY = 28 - yOffset;
+        int titleY = SCREEN_PADDING_TOP - yOffset;
         guiGraphics.drawCenteredString(
                 font,
                 Component.translatable("gui.sre.map_selector.title").withStyle(ChatFormatting.BOLD),
@@ -356,12 +376,12 @@ public class MapSelectorScreen extends Screen {
         Component keyHint = InputHandler.getOpenVotingScreenKeybind() != null
                 ? InputHandler.getOpenVotingScreenKeybind().getTranslatedKeyMessage()
                 : Component.literal("M");
-        Component subtitle = Component.translatable("gui.sre.map_selector.subtitle", keyHint);
+        Component subtitle = Component.translatable("gui.sre.map_selector.voting_active", keyHint);
         guiGraphics.drawCenteredString(
                 font,
                 subtitle,
                 width / 2,
-                titleY + 16,
+                titleY + 14,
                 withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.92f)));
     }
 
@@ -381,10 +401,11 @@ public class MapSelectorScreen extends Screen {
         int startX = totalWidth > availableWidth ? SIDE_PADDING : (width - totalWidth) / 2;
         int startY;
         if (layoutRows == 1) {
-            startY = Mth.clamp((height - layoutCH) / 2, 84, Math.max(84, height - layoutCH - 12));
+            startY = Mth.clamp((height - layoutCH) / 2, SCREEN_MAP_RENDER_TOP,
+                    Math.max(SCREEN_MAP_RENDER_TOP, height - layoutCH - 12));
         } else {
-            int topBound = 84;
-            int bottomBound = height - BOTTOM_PANEL_HEIGHT - 12;
+            int topBound = SCREEN_MAP_RENDER_TOP;
+            int bottomBound = height - bottomPanelHeight - 12;
             startY = Mth.clamp((height - totalHeight) / 2, topBound, Math.max(topBound, bottomBound - totalHeight));
         }
 
@@ -680,7 +701,7 @@ public class MapSelectorScreen extends Screen {
             return;
         }
 
-        int panelTop = height - BOTTOM_PANEL_HEIGHT + (int) ((1.0f - reveal) * 18.0f);
+        int panelTop = height - bottomPanelHeight + (int) ((1.0f - reveal) * 18.0f);
         int alpha = (int) (220.0f * reveal);
 
         guiGraphics.fillGradient(
@@ -692,26 +713,28 @@ public class MapSelectorScreen extends Screen {
                 withAlpha(COLOR_PANEL_DARK, Math.min(255, alpha + 18)));
         guiGraphics.fill(0, panelTop, width, panelTop + 1, withAlpha(COLOR_ACCENT, (int) (alpha * 0.85f)));
 
+        int perlineHeight = bottomPanelHeight / 3;
+        int perlineOffsetY = font.lineHeight / 2;
         guiGraphics.drawCenteredString(
                 font,
                 Component.translatable("gui.sre.map_selector.selected", selectedMap.displayName)
                         .withStyle(ChatFormatting.BOLD),
                 width / 2,
-                panelTop + 14,
+                panelTop + perlineHeight / 2 - perlineOffsetY,
                 withAlpha(COLOR_TEXT, alpha));
 
         guiGraphics.drawCenteredString(
                 font,
                 Component.translatable("gui.sre.map_selector.map_id", selectedMap.id),
                 width / 2,
-                panelTop + 32,
+                panelTop + perlineHeight * 2 - perlineHeight / 2 - perlineOffsetY,
                 withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.95f)));
 
         guiGraphics.drawCenteredString(
                 font,
                 Component.translatable("gui.sre.map_selector.confirm_prompt"),
                 width / 2,
-                panelTop + 51,
+                panelTop + perlineHeight * 3 - perlineHeight / 2 - perlineOffsetY,
                 withAlpha(COLOR_TEXT_DIM, (int) (alpha * 0.82f)));
     }
 
@@ -725,10 +748,10 @@ public class MapSelectorScreen extends Screen {
         int totalTime = Math.max(1, votingComponent.getTotalVotingTime() / 20);
         float progress = Mth.clamp(timeLeft / (float) totalTime, 0.0f, 1.0f);
 
-        String timerText = Component.translatable("gui.sre.map_selector.voting_timer", timeLeft).getString();
+        Component timerText = Component.translatable("gui.sre.map_selector.voting_timer", timeLeft);
         int panelWidth = font.width(timerText) + 28;
         int panelX = (width - panelWidth) / 2;
-        int panelY = 56;
+        int panelY = SCREEN_PADDING_TIMER_TOP;
 
         float urgencyPulse = timeLeft <= 10 ? (0.65f + 0.35f * (float) Math.sin(backgroundTick * 8.0f)) : 1.0f;
         int frameColor = timeLeft <= 10 ? COLOR_WARNING : COLOR_ACCENT;
@@ -743,13 +766,6 @@ public class MapSelectorScreen extends Screen {
         guiGraphics.fill(panelX, progressY, panelX + panelWidth, progressY + 3, withAlpha(0x23304F, 230));
         guiGraphics.fill(panelX, progressY, panelX + Math.max(1, (int) (panelWidth * progress)), progressY + 3,
                 withAlpha(frameColor, 245));
-
-        guiGraphics.drawCenteredString(
-                font,
-                Component.translatable("gui.sre.map_selector.voting_active"),
-                width / 2,
-                panelY + 27,
-                withAlpha(COLOR_TEXT_DIM, 220));
     }
 
     private int getVoteCount(String mapId) {
