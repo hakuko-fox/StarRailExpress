@@ -1,6 +1,9 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import java.awt.Color;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import com.mojang.serialization.MapCodec;
 
@@ -36,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 井盖：仅中立/杀手（或特定职业）可使用。右键沿视线方向传送到另一个井盖处出来。
  * 中立/杀手的任务透视可看到全图井盖。在井盖上停留超过 10 秒会窒息死亡。
+ * 离开井盖后1分钟内无法再次进入。
  * 使用原版铁块贴图作为井盖外观。
  */
 public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowableInterface {
@@ -43,6 +47,9 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
     public static final int TASK_INSTINCT_ID = 15;
     /** 传送的最大水平距离。 */
     public static final double TRAVEL_RANGE = 48.0;
+    /** 离开井盖后的冷却时间（1分钟） */
+    private static final long MANHOLE_COOLDOWN_TICKS = 60 * 20;
+    private static final Map<UUID, Long> manholeCooldownUntil = new HashMap<>();
 
     public ManholeBlock(Properties settings) {
         super(settings);
@@ -72,11 +79,24 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
             serverLevel.playSound(null, pos, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.6F, 0.7F);
             return InteractionResult.CONSUME;
         }
+        // 检查离开井盖后的冷却时间
+        Long cooldownUntil = manholeCooldownUntil.get(player.getUUID());
+        if (cooldownUntil != null && serverLevel.getGameTime() < cooldownUntil) {
+            long remainingSec = (cooldownUntil - serverLevel.getGameTime()) / 20;
+            sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.cooldown", remainingSec), true);
+            return InteractionResult.CONSUME;
+        }
+        if (cooldownUntil != null) {
+            manholeCooldownUntil.remove(player.getUUID());
+        }
         BlockPos target = ManholeRegistry.findInLookDirection(serverLevel, player, pos, TRAVEL_RANGE);
         if (target == null) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.no_exit"), true);
             return InteractionResult.CONSUME;
         }
+
+        // 设置冷却时间（离开井盖后1分钟无法再次进入）
+        manholeCooldownUntil.put(player.getUUID(), serverLevel.getGameTime() + MANHOLE_COOLDOWN_TICKS);
 
         // 起点特效
         serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,

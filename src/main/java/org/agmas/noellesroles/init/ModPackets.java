@@ -223,5 +223,13 @@ public class ModPackets {
         // 注册物资箱网络包
         PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
+
+        // 注册移动平台配置网络包
+        PayloadTypeRegistry.playC2S().register(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MovingPlatformConfigC2SPacket.TYPE, MovingPlatformConfigC2SPacket::handle);
+
+        // 注册反应堆小游戏完成网络包
+        PayloadTypeRegistry.playC2S().register(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket.STREAM_CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ReactorMinigameCompleteC2SPacket.TYPE, ReactorMinigameCompleteC2SPacket::handle);
     }
 }
