@@ -81,10 +81,16 @@ public class SettingMenuScreen extends Screen {
         GridLayout.RowHelper rowHelper = gridLayout.createRowHelper(2);
         // 客户端设置
         // rowHelper.addChild()
+        
+        // 角色介绍
+        rowHelper.addChild(
+                Button.builder(Component.translatable("screen.starrailexpress.settings.introduction"), (button) -> {
+                    this.minecraft.setScreen(new RoleIntroduceScreen(this));
+                }).width(204).build(), 2, gridLayout.newCellSettings().paddingTop(50));
+                
         rowHelper.addChild(
                 this.openScreenButton(Component.translatable("screen.starrailexpress.settings.client"),
-                        () -> (SREClientConfig.HANDLER.generateGui().generateScreen(this))),
-                1, gridLayout.newCellSettings().paddingTop(50));
+                        () -> (SREClientConfig.HANDLER.generateGui().generateScreen(this))));
 
         // 列车设置
         {
@@ -167,11 +173,6 @@ public class SettingMenuScreen extends Screen {
             }
             rowHelper.addChild(btn);
         }
-        // 角色介绍
-        rowHelper.addChild(
-                Button.builder(Component.translatable("screen.starrailexpress.settings.introduction"), (button) -> {
-                    this.minecraft.setScreen(new RoleIntroduceScreen(this));
-                }).width(204).build(), 2);
 
         // 返回
         rowHelper.addChild(Button.builder(Component.translatable("gui.back"), (button) -> {
