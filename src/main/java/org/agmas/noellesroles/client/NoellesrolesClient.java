@@ -89,7 +89,11 @@ import org.agmas.noellesroles.content.entity.WheelchairEntityModel;
 import org.agmas.noellesroles.content.entity.WheelchairEntityRenderer;
 import org.agmas.noellesroles.content.entity.WheelchairFieldItemRenderer;
 import org.agmas.noellesroles.content.item.MercenaryContractItem;
+import org.agmas.noellesroles.client.screen.CourierScreen;
+import org.agmas.noellesroles.client.screen.CourierMailReceiveScreen;
+import org.agmas.noellesroles.content.item.CourierMailItem;
 import org.agmas.noellesroles.content.item.NewspaperItem;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.content.item.PanItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
 import org.agmas.noellesroles.game.roles.innocent.magician.MagicianPlayerComponent;
@@ -217,6 +221,22 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return true;
             };
         }
+        // 信使信封 GUI 回调
+        {
+            CourierMailItem.openSendScreen = (player, hand) -> {
+                Minecraft minecraft = Minecraft.getInstance();
+                // 只有信使可以打开送信页面
+                if (SREClient.gameComponent != null && minecraft.level != null
+                        && !SREClient.gameComponent.isRole(player, ModRoles.COURIER)) {
+                    return;
+                }
+                minecraft.setScreen(new CourierScreen(hand));
+            };
+            CourierMailItem.openReceiveScreen = (player, hand) -> {
+                Minecraft minecraft = Minecraft.getInstance();
+                minecraft.setScreen(new CourierMailReceiveScreen(hand));
+            };
+        }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
         });
@@ -277,6 +297,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
                 org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
+        EntityRendererRegistry.register(ModEntities.PIGEON,
+                org.agmas.noellesroles.client.render.PigeonRenderer::new);
         EntityRendererRegistry.register(ModEntities.MOVING_PLATFORM,
                 org.agmas.noellesroles.client.render.MovingPlatformRenderer::new);
 

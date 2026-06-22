@@ -741,6 +741,16 @@ public class ModItems {
             new MercenaryContractItem(new Item.Properties().stacksTo(1)),
             "mercenary_contract", ROLE_ITEMS_GROUP);
 
+    /** 信使信封（发送用） */
+    public static final Item COURIER_MAIL = register(
+            new org.agmas.noellesroles.content.item.CourierMailItem(new Item.Properties().stacksTo(1)),
+            "courier_mail", ROLE_ITEMS_GROUP);
+
+    /** 信使信封（接收用） */
+    public static final Item RECEIVED_MAIL = register(
+            new org.agmas.noellesroles.content.item.CourierMailItem(new Item.Properties().stacksTo(1)),
+            "received_mail", ROLE_ITEMS_GROUP);
+
     /**
      * 时停钟
      */
@@ -1027,6 +1037,8 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.LETTER_ITEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEFIBRILLATOR);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BOMB);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.COURIER_MAIL);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.RECEIVED_MAIL);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.WRITTEN_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.FLASH_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DECOY_GRENADE);

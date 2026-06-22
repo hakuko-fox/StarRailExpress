@@ -92,7 +92,8 @@ public class RevolverItem extends SkinableItem implements HeldLikeRevolver {
         return ProjectileUtil.getHitResultOnViewVector(user,
                 entity -> {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
-                            || entity instanceof PuppeteerBodyEntity;
+                            || entity instanceof PuppeteerBodyEntity
+                            || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity;
                 }, 20f);
     }
 

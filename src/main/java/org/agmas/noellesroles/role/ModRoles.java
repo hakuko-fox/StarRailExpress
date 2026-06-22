@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.resources.ResourceLocation;
@@ -23,6 +24,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.init.ModItems;
 import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.Noellesroles;
 
@@ -2188,6 +2190,18 @@ public class ModRoles {
             return SRE.id("textures/entity/custom_psycho/cat_killer.png");
         }
     }).setCanSeeTime(true).setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false);
+
+    // ─────────────────────── 信使 Courier ───────────────────────
+    public static final ResourceLocation COURIER_ID = Noellesroles.id("courier");
+    public static SRERole COURIER = TMMRoles.registerRole(new NormalRole(
+            COURIER_ID,
+            new Color(210, 180, 140).getRGB(),  // 淡棕色 — 信封色
+            true,                                 // isInnocent = 平民
+            false,                                // 不能使用杀手能力
+            SRERole.MoodType.REAL,                // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),                                  // 冲刺时间
+            false                                 // 不能看时间
+    )).setDefaultMax(1).setCanSeeCoin(true);
 
     static {
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {

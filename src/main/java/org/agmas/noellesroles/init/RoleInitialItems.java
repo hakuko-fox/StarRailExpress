@@ -310,6 +310,11 @@ public class RoleInitialItems {
             return pliers;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.FITTER, fitterItems);
+
+        // 信使初始物品 - 信封
+        List<Supplier<ItemStack>> courierItems = new ArrayList<>();
+        courierItems.add(() -> ModItems.COURIER_MAIL.getDefaultInstance());
+        INITIAL_ITEMS_MAP.put(ModRoles.COURIER, courierItems);
     }
 
 }
