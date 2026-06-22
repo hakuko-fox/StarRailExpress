@@ -3,6 +3,7 @@ package org.agmas.noellesroles.init;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.SREConfig.AutoPresetInfo;
+import io.wifi.starrailexpress.api.EggRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
@@ -326,9 +327,23 @@ public class InitModRolesMax {
                     && random.nextInt(0, 100) <= EGGS_CHANCE) {
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 1);
+                 for (var a : TMMRoles.ROLES.values()) {
+                    if (a instanceof EggRole && a.canSetSpawnInfoInConfig()) {
+                        int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
+                        if (max >= 0) {
+                            Harpymodloader.setRoleMaximum(a, max);
+                        }
+                    }
+                }
             } else {
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
+                
+                for (var a : TMMRoles.ROLES.values()) {
+                    if (a instanceof EggRole) {
+                        Harpymodloader.setRoleMaximum(a, 0);
+                    }
+                }
             }
 
             // 获取地图是否可跳跃

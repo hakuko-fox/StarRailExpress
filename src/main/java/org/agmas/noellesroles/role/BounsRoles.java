@@ -6,7 +6,10 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import net.minecraft.resources.ResourceLocation;
 import java.awt.Color;
 
-public class EggRoles {
+/**
+ * 彩蛋角色类，受到彩蛋刷新概率影响
+ */
+public class BounsRoles {
     public static final String NAMESPACE = "egg";
     public static final ResourceLocation LENGXIAO_ID = id("lengxiao");
 
@@ -21,7 +24,8 @@ public class EggRoles {
     public static SRERole REMILIA = TMMRoles.registerRole(
             new NormalRole(LENGXIAO_ID, new Color(230, 178, 130).getRGB(),
                     false, true, SRERole.MoodType.FAKE,
-                    Integer.MAX_VALUE, true)).setDefaultEnableChance(10);
+                    Integer.MAX_VALUE, true))
+            .setDefaultEnableChance(10);
 
     public static void init() {
     }

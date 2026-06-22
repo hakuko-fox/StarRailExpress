@@ -2221,7 +2221,7 @@ public class ModRoles {
      */
     public static void init() {
         RedHouseRoles.init();
-        EggRoles.init();
+        BounsRoles.init();
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.POISONER_ID.getPath());
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
         SREArmorPlayerComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());

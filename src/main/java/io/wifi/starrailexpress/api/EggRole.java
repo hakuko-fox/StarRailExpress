@@ -2,7 +2,7 @@ package io.wifi.starrailexpress.api;
 
 import net.minecraft.resources.ResourceLocation;
 
-public class EggsRole extends NormalRole {
+public class EggRole extends NormalRole {
     /**
      * @param identifier    the mod id and name of the role
      * @param color         the role announcement color
@@ -13,7 +13,7 @@ public class EggsRole extends NormalRole {
      * @param maxSprintTime the maximum sprint time in ticks
      * @param canSeeTime    if the role can see the game timer
      */
-    public EggsRole(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller,
+    public EggRole(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller,
             MoodType moodType, int maxSprintTime, boolean canSeeTime) {
         super(identifier, color, isInnocent, canUseKiller, moodType, maxSprintTime, canSeeTime);
     }

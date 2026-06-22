@@ -456,7 +456,7 @@ public class ModItems {
             "alarm_trap", ROLE_ITEMS_GROUP);
 
     /**
-     * 传递盒
+     * 快递包裹盒子
      * - 射命丸文专属物品
      * - 在商店以150金币购买
      * - 指针对准玩家并右键使用，打开传递界面

@@ -630,7 +630,7 @@
   "item.noellesroles.stalker_knife": "潜行者的主手刀",
   "item.noellesroles.stalker_knife_offhand": "潜行者的副手刀",
   "item.noellesroles.lock.tooltip": "右键锁门，可以阻挡撬锁器",
-  "item.noellesroles.delivery_box": "邮件",
+  "item.noellesroles.delivery_box": "快递包裹",
   "item.noellesroles.delivery_box.tooltip": "指针对准玩家并右键使用，打开隐秘传递界面",
   "item.noellesroles.defibrillator": "心脏起搏器",
   "item.noellesroles.defibrillator.tooltip": "右键对存活的玩家使用，若该玩家在120秒内死亡，将在30秒后复活",
