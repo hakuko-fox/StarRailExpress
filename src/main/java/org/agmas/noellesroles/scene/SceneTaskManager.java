@@ -1,7 +1,9 @@
 package org.agmas.noellesroles.scene;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +25,32 @@ import net.minecraft.world.phys.HitResult;
  */
 public final class SceneTaskManager {
     private SceneTaskManager() {
+    }
+
+    /**
+     * 场景任务完成回调接口。
+     * 当任意场景任务完成时触发，用于 SREPlayerTaskComponent 等外部系统监听任务完成事件。
+     */
+    @FunctionalInterface
+    public interface SceneTaskCompletionCallback {
+        /**
+         * @param player 完成任务的玩家
+         * @param type   完成的任务类型
+         */
+        void onSceneTaskCompleted(ServerPlayer player, Type type);
+    }
+
+    /** 已注册的任务完成回调列表。 */
+    private static final List<SceneTaskCompletionCallback> COMPLETION_CALLBACKS = new ArrayList<>();
+
+    /** 注册场景任务完成回调。 */
+    public static void registerCompletionCallback(SceneTaskCompletionCallback callback) {
+        COMPLETION_CALLBACKS.add(callback);
+    }
+
+    /** 取消注册场景任务完成回调。 */
+    public static void unregisterCompletionCallback(SceneTaskCompletionCallback callback) {
+        COMPLETION_CALLBACKS.remove(callback);
     }
 
     public enum Type {
@@ -116,7 +144,15 @@ public final class SceneTaskManager {
     }
 
     public static void reportBushPruned(ServerPlayer player) {
-        if (has(player, Type.PRUNE_BUSH)) {
+        State s = ACTIVE.get(player.getUUID());
+        if (s != null && s.type == Type.PRUNE_BUSH) {
+            // 清理快捷栏中的剪刀
+            net.minecraft.world.entity.player.Inventory inv = player.getInventory();
+            for (int i = 0; i < inv.getContainerSize(); i++) {
+                if (inv.getItem(i).is(net.minecraft.world.item.Items.SHEARS)) {
+                    inv.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+                }
+            }
             complete(player);
         }
     }
@@ -168,7 +204,7 @@ public final class SceneTaskManager {
                 s.anchor.getZ() + 0.5) <= STOVE_RADIUS * STOVE_RADIUS) {
             if (++s.timer >= STOVE_TICKS) {
                 it.remove();
-                completeNoRemove(player);
+                completeNoRemove(player, s.type);
             }
         } else {
             s.timer = 0;
@@ -183,7 +219,7 @@ public final class SceneTaskManager {
         if (looking) {
             if (++s.timer >= PRAY_TICKS) {
                 it.remove();
-                completeNoRemove(player);
+                completeNoRemove(player, s.type);
             }
         } else {
             s.timer = 0;
@@ -198,7 +234,7 @@ public final class SceneTaskManager {
         if (!someoneNear) {
             if (++s.timer >= ALONE_TICKS) {
                 it.remove();
-                completeNoRemove(player);
+                completeNoRemove(player, s.type);
             }
         } else {
             s.timer = 0;
@@ -208,12 +244,22 @@ public final class SceneTaskManager {
     // ───────────── 完成 ─────────────
 
     public static void complete(ServerPlayer player) {
-        ACTIVE.remove(player.getUUID());
-        completeNoRemove(player);
+        State s = ACTIVE.get(player.getUUID());
+        if (s != null) {
+            Type completedType = s.type;
+            ACTIVE.remove(player.getUUID());
+            completeNoRemove(player, completedType);
+        }
     }
 
-    private static void completeNoRemove(ServerPlayer player) {
+    private static void completeNoRemove(ServerPlayer player, Type completedType) {
         RoleMethodDispatcher.callOnFinishQuest(player, "scene_task", 0, false);
+        // 触发所有已注册的场景任务完成回调
+        if (!COMPLETION_CALLBACKS.isEmpty()) {
+            for (SceneTaskCompletionCallback callback : COMPLETION_CALLBACKS) {
+                callback.onSceneTaskCompleted(player, completedType);
+            }
+        }
         if (player.level() instanceof ServerLevel level) {
             level.sendParticles(ParticleTypes.HAPPY_VILLAGER,
                     player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.4, 0.6, 0.4, 0.0);
