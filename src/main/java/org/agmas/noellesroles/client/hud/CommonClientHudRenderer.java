@@ -1113,8 +1113,9 @@ public class CommonClientHudRenderer {
         }
 
       }
+      // 换了，以前那个和baka残月的冲突了
       var chargeText = Component
-          .translatable("hud.exampler.charges", abpc.charges)
+          .translatable("hud.exampler.charges", abpc.status)
           .withStyle(ChatFormatting.GOLD);
       guiGraphics.drawString(font, chargeText, xOffset - font.width(chargeText),
           yOffset - font.lineHeight * 2 - 8,
