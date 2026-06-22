@@ -3,6 +3,8 @@ package org.agmas.noellesroles.packet;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -20,6 +22,7 @@ import org.agmas.noellesroles.content.item.CourierMailItem;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -75,10 +78,24 @@ public record CourierMailSendC2SPacket(boolean mainHand, UUID targetUuid, byte[]
         // MC 原版冷却 120 秒
         player.getCooldowns().addCooldown(ModItems.COURIER_MAIL, 120 * 20);
 
+        // 附件物品：发送时立刻消耗并序列化到信鸽身上
+        @Nullable CompoundTag attachmentTag = null;
+        if (p.itemSlot >= 0) {
+            ItemStack slotStack = player.getInventory().getItem(p.itemSlot);
+            if (!slotStack.isEmpty()) {
+                ItemStack copy = slotStack.copyWithCount(1);
+                Tag saved = copy.save(level.registryAccess());
+                if (saved instanceof CompoundTag ct) {
+                    attachmentTag = ct;
+                }
+                slotStack.shrink(1);
+            }
+        }
+
         // 生成信鸽
         PigeonEntity pigeon = new PigeonEntity(ModEntities.PIGEON, level);
         pigeon.setPos(player.getX(), player.getY() + 2.2, player.getZ());
-        pigeon.setTargetPlayer(target, player, p.message, p.effect, p.itemSlot, false);
+        pigeon.setTargetPlayer(target, player, p.message, p.effect, attachmentTag, false);
         level.addFreshEntity(pigeon);
 
         // 主声道鹦鹉叫

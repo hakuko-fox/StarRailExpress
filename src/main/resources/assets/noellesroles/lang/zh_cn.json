@@ -2954,6 +2954,7 @@
   "screen.noellesroles.courier.select_player": "选择收信人",
   "screen.noellesroles.courier.receive": "§6✉ 阅读信件",
   "screen.noellesroles.courier.claim": "领取",
+  "screen.noellesroles.courier.claim_reply": "领取并回信",
   "screen.noellesroles.courier.reply": "回信",
   "screen.noellesroles.courier.reply_item": "物品",
   "screen.noellesroles.courier.has_attached": "附件: 一件物品",

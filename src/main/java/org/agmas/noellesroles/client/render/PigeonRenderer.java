@@ -30,7 +30,11 @@ public class PigeonRenderer extends EntityRenderer<PigeonEntity> {
     public void render(PigeonEntity entity, float yaw, float partialTicks, PoseStack stack, MultiBufferSource buffers, int light) {
         stack.pushPose();
         stack.mulPose(Axis.YP.rotationDegrees(180.0F - entity.getYRot()));
-        stack.translate(0.0F, -1.2F, 0.0F);
+        // 正立（防止鹦鹉模型倒立）
+        stack.mulPose(Axis.ZP.rotationDegrees(180.0F));
+        // 前倾飞行
+        stack.mulPose(Axis.XP.rotationDegrees(-15.0F));
+        stack.translate(0.0F, -1.5F, 0.0F);
         stack.scale(1.4F, 1.4F, 1.4F);
 
         this.model.young = false;

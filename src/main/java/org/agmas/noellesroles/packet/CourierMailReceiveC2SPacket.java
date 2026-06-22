@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.packet;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -41,6 +42,25 @@ public record CourierMailReceiveC2SPacket(boolean mainHand) implements CustomPac
                     15 * 20, 0));
             case 3 -> player.addEffect(new MobEffectInstance(
                     ModEffects.DISGUISE, 10 * 20, 2)); // 三级伪装的amplifier是2
+        }
+
+        // 附件物品：领取时从信件NBT还原并给予收信人
+        if (CourierMailData.hasAttached(stack)) {
+            CompoundTag itemTag = CourierMailData.getAttachmentItem(stack);
+            if (!itemTag.isEmpty()) {
+                java.util.Optional<ItemStack> parsed = ItemStack.parse(player.serverLevel().registryAccess(), itemTag);
+                if (parsed.isPresent() && !parsed.get().isEmpty()) {
+                    ItemStack attached = parsed.get();
+                    attached.setCount(1);
+                    if (player.getInventory().getFreeSlot() >= 0) {
+                        player.getInventory().add(attached);
+                    } else {
+                        player.drop(attached, false);
+                    }
+                }
+            }
+            // 清除标记，防止重复领取
+            CourierMailData.setAttached(stack, false);
         }
         // 不删除信封——收信人还需要用它来回信；回信发包时由 CourierMailReplyC2SPacket 删除
     }

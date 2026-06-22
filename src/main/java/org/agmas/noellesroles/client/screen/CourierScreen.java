@@ -4,22 +4,27 @@ import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedHandledScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.font.TextFieldHelper;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.client.widget.MultiLineEditBox;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
-/** 信使送信 GUI — 信纸风格 */
+/** 信使送信 GUI — 信纸风格，参考便签实现多行编辑 */
 public class CourierScreen extends Screen {
     private static final int GUI_W = 256, GUI_H = 210;
-    private static final int LINE_TOP = 55;
+    private static final int LINE_TOP = 42;
     private static final int LINE_COUNT = 7;
+    private static final int MAX_CHARS = 36;
 
     private final InteractionHand hand;
-    private MultiLineEditBox messageBox;
-    private int selectedEffect = 0;
+    private final String[] lines = new String[]{"", "", "", "", "", "", ""};
+    private int currentRow;
+    private @Nullable TextFieldHelper textField;
+    private int selectedEffect;
     private int selectedItemSlot = -1;
     private Button effectBtn, itemBtn, confirmBtn;
     private boolean showingItems;
@@ -29,40 +34,46 @@ public class CourierScreen extends Screen {
         this.hand = hand;
     }
 
+    private String getFullMessage() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < LINE_COUNT; i++) {
+            if (i > 0) sb.append('\n');
+            sb.append(lines[i]);
+        }
+        return sb.toString().trim();
+    }
+
     @Override
     protected void init() {
         int cx = (width - GUI_W) / 2;
         int cy = (height - GUI_H) / 2;
 
-        // 写信区——多行文本框，36字/行，7行
-        messageBox = new MultiLineEditBox(font, cx + 38, cy + LINE_TOP, 36, LINE_COUNT);
-        addRenderableWidget(messageBox);
+        if (minecraft != null) {
+            textField = new TextFieldHelper(
+                    () -> lines[currentRow],
+                    s -> lines[currentRow] = s,
+                    TextFieldHelper.createClipboardGetter(minecraft),
+                    TextFieldHelper.createClipboardSetter(minecraft),
+                    s -> minecraft.font.width(s) <= MAX_CHARS * 6
+            );
+        }
 
-        effectBtn = buildBlackTextBtn(cx + 22, cy + GUI_H - 68, 100, 20, getEffectLabel(), btn -> cycleEffect());
+        effectBtn = new BlackTextBtn(cx + 22, cy + GUI_H - 68, 100, 20, getEffectLabel(), b -> cycleEffect());
         addRenderableWidget(effectBtn);
 
-        itemBtn = buildBlackTextBtn(cx + GUI_W - 122, cy + GUI_H - 68, 100, 20,
-                Component.translatable("screen.noellesroles.courier.item_btn"), btn -> showingItems = !showingItems);
+        itemBtn = new BlackTextBtn(cx + GUI_W - 122, cy + GUI_H - 68, 100, 20,
+                Component.translatable("screen.noellesroles.courier.item_btn"), b -> showingItems = !showingItems);
         addRenderableWidget(itemBtn);
 
-        confirmBtn = buildBlackTextBtn(cx + GUI_W / 2 - 40, cy + GUI_H - 30, 80, 20,
-                Component.translatable("screen.noellesroles.courier.confirm"), btn -> confirmSend());
+        confirmBtn = new BlackTextBtn(cx + GUI_W / 2 - 40, cy + GUI_H - 30, 80, 20,
+                Component.translatable("screen.noellesroles.courier.confirm"), b -> confirmSend());
         addRenderableWidget(confirmBtn);
     }
 
-    /** 创建黑色文字的按钮 */
-    private static Button buildBlackTextBtn(int x, int y, int w, int h, Component msg, Button.OnPress onPress) {
-        return new BlackTextButton(x, y, w, h, msg, onPress);
-    }
-
-    private static class BlackTextButton extends Button {
-        BlackTextButton(int x, int y, int w, int h, Component msg, OnPress onPress) {
-            super(x, y, w, h, msg, onPress, DEFAULT_NARRATION);
-        }
-        @Override
-        public void renderString(GuiGraphics g, net.minecraft.client.gui.Font font, int color) {
-            g.drawCenteredString(font, this.getMessage(), this.getX() + this.width / 2,
-                    this.getY() + (this.height - 8) / 2, 0x000000);
+    private static class BlackTextBtn extends Button {
+        BlackTextBtn(int x, int y, int w, int h, Component msg, OnPress onPress) { super(x, y, w, h, msg, onPress, DEFAULT_NARRATION); }
+        @Override public void renderString(GuiGraphics g, net.minecraft.client.gui.Font font, int color) {
+            g.drawCenteredString(font, this.getMessage(), this.getX() + this.width / 2, this.getY() + (this.height - 8) / 2, 0x000000);
         }
     }
 
@@ -81,12 +92,72 @@ public class CourierScreen extends Screen {
     }
 
     private void confirmSend() {
-        String msg = messageBox.getValue().trim();
-        // 空信件禁止发送
-        if (msg.isEmpty() && selectedEffect == 0 && selectedItemSlot < 0) {
-            return;
-        }
+        String msg = getFullMessage();
+        if (msg.isEmpty() && selectedEffect == 0 && selectedItemSlot < 0) return;
         Minecraft.getInstance().setScreen(new CourierPlayerSelectScreen(hand, msg, selectedEffect, selectedItemSlot));
+    }
+
+    // ── 键盘输入（与便签一致）──
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (textField == null) return super.keyPressed(keyCode, scanCode, modifiers);
+        if (keyCode == GLFW.GLFW_KEY_UP && currentRow > 0) {
+            currentRow--;
+            textField.setCursorToEnd();
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_DOWN && currentRow < LINE_COUNT - 1) {
+            currentRow++;
+            textField.setCursorToEnd();
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+            if (currentRow < LINE_COUNT - 1) {
+                currentRow++;
+                textField.setCursorToEnd();
+            }
+            return true;
+        }
+        if (textField.keyPressed(keyCode)) return true;
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        if (textField != null) {
+            textField.charTyped(chr);
+            return true;
+        }
+        return super.charTyped(chr, modifiers);
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int btn) {
+        // 点击行选择
+        int cx = (width - GUI_W) / 2;
+        int cy = (height - GUI_H) / 2;
+        int relY = (int) (my - cy - LINE_TOP);
+        int clickedRow = relY / 14;
+        if (clickedRow >= 0 && clickedRow < LINE_COUNT && textField != null) {
+            currentRow = clickedRow;
+            textField.setCursorToEnd();
+        }
+
+        if (showingItems && minecraft != null && minecraft.player != null) {
+            int sx = cx + 25, sy = cy + GUI_H - 120;
+            for (int i = 0; i < 9; i++) {
+                int ix = sx + i * 21;
+                if (mx >= ix && mx <= ix + 18 && my >= sy && my <= sy + 18) {
+                    ItemStack s = minecraft.player.getInventory().getItem(i);
+                    if (!s.isEmpty() && !isFilteredItem(s)) {
+                        selectedItemSlot = i;
+                        showingItems = false;
+                    }
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(mx, my, btn);
     }
 
     @Override
@@ -102,22 +173,27 @@ public class CourierScreen extends Screen {
         g.renderOutline(cx, cy, GUI_W, GUI_H, 0xFFA08060);
         g.renderOutline(cx + 6, cy + 6, GUI_W - 12, GUI_H - 12, 0xFFC4A882);
 
-        // 标题
         g.drawCenteredString(font, Component.literal("\u2709  ").append(title), cx + GUI_W / 2, cy + 12, 0xFF5B3A1E);
+        g.fill(cx + 30, cy + 30, cx + 31, cy + GUI_H - 65, 0xFFCC8888);
 
-        // 红色竖线
-        g.fill(cx + 30, cy + 38, cx + 31, cy + GUI_H - 70, 0xFFCC8888);
-
-        // 横格线
+        // 横格线 + 文字（基线对齐横线，不超出内框）
         for (int i = 0; i < LINE_COUNT; i++) {
             int lineY = cy + LINE_TOP + i * 14;
-            g.fill(cx + 35, lineY, cx + GUI_W - 25, lineY + 1, 0xFFD4C4A8);
+            g.fill(cx + 38, lineY, cx + GUI_W - 38, lineY + 1, 0xFFD4C4A8);
+            int textY = lineY - font.lineHeight + 1;
+            g.drawString(font, lines[i], cx + 38, textY, currentRow == i ? 0xFF3B2312 : 0xFF5B3A1E);
         }
 
-        // 底部分隔线
-        g.fill(cx + 20, cy + GUI_H - 75, cx + GUI_W - 20, cy + GUI_H - 74, 0xFFC4A882);
+        // 光标
+        if (textField != null && currentRow < LINE_COUNT) {
+            int cursorX = cx + 38 + font.width(lines[currentRow]);
+            int cursorLineY = cy + LINE_TOP + currentRow * 14;
+            g.fill(cursorX, cursorLineY - font.lineHeight + 1, cursorX + 1, cursorLineY, 0xFF000000);
+        }
 
-        // 物品选择弹窗
+        g.fill(cx + 20, cy + GUI_H - 70, cx + GUI_W - 20, cy + GUI_H - 69, 0xFFC4A882);
+
+        // 物品选择
         if (showingItems && minecraft != null && minecraft.player != null) {
             int sx = cx + 25, sy = cy + GUI_H - 120;
             g.fill(sx - 4, sy - 4, sx + 200, sy + 60, 0xFFF0E6D0);
@@ -138,32 +214,10 @@ public class CourierScreen extends Screen {
 
     private boolean isFilteredItem(ItemStack stack) {
         if (stack.isEmpty()) return true;
-        // 不能选信封自身
         if (stack.getItem() instanceof org.agmas.noellesroles.content.item.CourierMailItem) return true;
-        // 不能选传递盒(DELIVERY_BOX)排除的物品
         for (var predicate : LimitedHandledScreen.NotAllowItemTakePredicates) {
             if (predicate.test(stack)) return true;
         }
         return false;
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (showingItems && minecraft != null && minecraft.player != null) {
-            int cx = (width - GUI_W) / 2, cy = (height - GUI_H) / 2;
-            int sx = cx + 25, sy = cy + GUI_H - 120;
-            for (int i = 0; i < 9; i++) {
-                int ix = sx + i * 21;
-                if (mouseX >= ix && mouseX <= ix + 18 && mouseY >= sy && mouseY <= sy + 18) {
-                    ItemStack s = minecraft.player.getInventory().getItem(i);
-                    if (!s.isEmpty() && !isFilteredItem(s)) {
-                        selectedItemSlot = i;
-                        showingItems = false;
-                    }
-                    return true;
-                }
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
     }
 }

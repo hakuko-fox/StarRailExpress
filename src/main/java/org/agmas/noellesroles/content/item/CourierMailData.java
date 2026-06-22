@@ -18,6 +18,8 @@ public final class CourierMailData {
     private static final String TAG_ATTACH_NAME = "CourierAttachName";
     private static final String TAG_SENDER = "CourierSender";
     private static final String TAG_REPLY = "CourierIsReply";
+    private static final String TAG_REPLY_MODE = "CourierReplyMode";
+    private static final String TAG_ATTACHMENT_ITEM = "CourierAttachmentItem";
 
     private static CompoundTag getOrCreateTag(ItemStack stack) {
         CustomData cd = stack.get(DataComponents.CUSTOM_DATA);
@@ -86,6 +88,26 @@ public final class CourierMailData {
     public static void setReply(ItemStack stack, boolean v) {
         CompoundTag tag = getOrCreateTag(stack);
         tag.putBoolean(TAG_REPLY, v);
+        saveTag(stack, tag);
+    }
+
+    public static boolean isReplyMode(ItemStack stack) {
+        return getOrCreateTag(stack).getBoolean(TAG_REPLY_MODE);
+    }
+
+    public static void setReplyMode(ItemStack stack, boolean v) {
+        CompoundTag tag = getOrCreateTag(stack);
+        tag.putBoolean(TAG_REPLY_MODE, v);
+        saveTag(stack, tag);
+    }
+
+    public static CompoundTag getAttachmentItem(ItemStack stack) {
+        return getOrCreateTag(stack).getCompound(TAG_ATTACHMENT_ITEM);
+    }
+
+    public static void setAttachmentItem(ItemStack stack, CompoundTag itemTag) {
+        CompoundTag tag = getOrCreateTag(stack);
+        tag.put(TAG_ATTACHMENT_ITEM, itemTag);
         saveTag(stack, tag);
     }
 

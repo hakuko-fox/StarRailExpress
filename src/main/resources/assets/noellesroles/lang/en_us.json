@@ -2968,6 +2968,7 @@
   "screen.noellesroles.courier.select_player": "Select Recipient",
   "screen.noellesroles.courier.receive": "§6✉ Read Mail",
   "screen.noellesroles.courier.claim": "Claim",
+  "screen.noellesroles.courier.claim_reply": "Claim & Reply",
   "screen.noellesroles.courier.reply": "Reply",
   "screen.noellesroles.courier.reply_item": "Item",
   "screen.noellesroles.courier.has_attached": "Attachment: 1 item",

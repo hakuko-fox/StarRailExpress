@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.packet;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -16,6 +18,7 @@ import org.agmas.noellesroles.content.entity.PigeonEntity;
 import org.agmas.noellesroles.content.item.CourierMailData;
 import org.agmas.noellesroles.init.ModEntities;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** 收信人免费回信 C2S */
 public record CourierMailReplyC2SPacket(boolean mainHand, byte[] message, int itemSlot) implements CustomPacketPayload {
@@ -45,10 +48,24 @@ public record CourierMailReplyC2SPacket(boolean mainHand, byte[] message, int it
             return;
         }
 
+        // 附件物品：发送时立刻消耗并序列化到信鸽身上
+        @Nullable CompoundTag attachmentTag = null;
+        if (p.itemSlot >= 0) {
+            ItemStack slotStack = player.getInventory().getItem(p.itemSlot);
+            if (!slotStack.isEmpty()) {
+                ItemStack copy = slotStack.copyWithCount(1);
+                Tag saved = copy.save(level.registryAccess());
+                if (saved instanceof CompoundTag ct) {
+                    attachmentTag = ct;
+                }
+                slotStack.shrink(1);
+            }
+        }
+
         // 生成回信鸽
         PigeonEntity pigeon = new PigeonEntity(ModEntities.PIGEON, level);
         pigeon.setPos(player.getX(), player.getY() + 2.2, player.getZ());
-        pigeon.setTargetPlayer(courier, player, p.message, 0, p.itemSlot, true);
+        pigeon.setTargetPlayer(courier, player, p.message, 0, attachmentTag, true);
         level.addFreshEntity(pigeon);
 
         player.getItemInHand(p.mainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND).shrink(1);

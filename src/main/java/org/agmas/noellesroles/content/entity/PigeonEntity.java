@@ -34,7 +34,7 @@ public class PigeonEntity extends LivingEntity {
     private int life = 1200;
     private byte[] mailMessage;
     private int mailEffect;
-    private int mailItemSlot;
+    @Nullable private CompoundTag attachmentItemTag;
     private boolean isReply;
 
     public PigeonEntity(EntityType<? extends LivingEntity> type, Level level) {
@@ -47,12 +47,12 @@ public class PigeonEntity extends LivingEntity {
                 .add(Attributes.MAX_HEALTH, 10.0);
     }
 
-    public void setTargetPlayer(Player target, Player owner, byte[] message, int effect, int itemSlot, boolean reply) {
+    public void setTargetPlayer(Player target, Player owner, byte[] message, int effect, @Nullable CompoundTag attachmentTag, boolean reply) {
         this.targetUuid = target.getUUID();
         this.ownerUuid = owner.getUUID();
         this.mailMessage = message;
         this.mailEffect = effect;
-        this.mailItemSlot = itemSlot;
+        this.attachmentItemTag = attachmentTag;
         this.isReply = reply;
         this.entityData.set(HAS_DELIVERED, false);
         if (level() instanceof ServerLevel sl) {
@@ -109,23 +109,18 @@ public class PigeonEntity extends LivingEntity {
         ItemStack mailStack = new ItemStack(itemType);
         CourierMailData.setMessage(mailStack, mailMessage != null ? new String(mailMessage, java.nio.charset.StandardCharsets.UTF_8) : "");
         CourierMailData.setEffect(mailStack, mailEffect);
-        CourierMailData.setAttached(mailStack, mailItemSlot >= 0);
+        CourierMailData.setAttached(mailStack, attachmentItemTag != null);
         CourierMailData.setSender(mailStack, isReply ? "" : (ownerUuid != null ? ownerUuid.toString() : ""));
         CourierMailData.setReply(mailStack, isReply);
 
-        // 存储附件物品名
-        if (mailItemSlot >= 0 && ownerUuid != null && level() instanceof ServerLevel sl) {
-            Player owner = sl.getPlayerByUUID(ownerUuid);
-            if (owner != null) {
-                ItemStack attached = owner.getInventory().getItem(mailItemSlot).copy();
-                CourierMailData.setAttachmentName(mailStack, attached.getHoverName().getString());
+        // 附件物品存入信件NBT，等收信人点击"领取"时才给予
+        if (attachmentItemTag != null && level() instanceof ServerLevel sl) {
+            java.util.Optional<ItemStack> parsed = ItemStack.parse(sl.registryAccess(), attachmentItemTag);
+            if (parsed.isPresent() && !parsed.get().isEmpty()) {
+                ItemStack attached = parsed.get();
                 attached.setCount(1);
-                owner.getInventory().getItem(mailItemSlot).shrink(1);
-                if (target.getInventory().getFreeSlot() >= 0) {
-                    target.getInventory().add(attached);
-                } else {
-                    target.drop(attached, false);
-                }
+                CourierMailData.setAttachmentName(mailStack, attached.getHoverName().getString());
+                CourierMailData.setAttachmentItem(mailStack, attachmentItemTag);
             }
         }
         if (target.getInventory().getFreeSlot() >= 0) {
