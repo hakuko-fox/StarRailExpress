@@ -13,6 +13,7 @@ import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.client.PlayerPaginationHelper;
 import org.agmas.noellesroles.client.RoleScreenHelper;
 import org.agmas.noellesroles.client.widget.VoodooPlayerWidget;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -58,6 +59,20 @@ public abstract class VoodooScreenMixin extends LimitedHandledScreen<InventoryMe
     }
 
 
+    @Unique
+    private RoleScreenHelper<UUID> getRoleScreenHelper2() {
+        if (roleScreenHelper == null) {
+            roleScreenHelper = new RoleScreenHelper<>(
+                player,
+                BounsRoles.LENGXIAO,
+                this::createVoodooWidget,
+                TEXT_PROVIDER,
+                this::drawVoodooTip,
+                this::getEligiblePlayers
+            );
+        }
+        return roleScreenHelper;
+    }
     @Unique
     private RoleScreenHelper<UUID> getRoleScreenHelper() {
         if (roleScreenHelper == null) {
@@ -124,11 +139,13 @@ public abstract class VoodooScreenMixin extends LimitedHandledScreen<InventoryMe
     @Inject(method = "render", at = @At("HEAD"))
     private void noellesroles$onRender(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         getRoleScreenHelper().onRender(context, this);
+        getRoleScreenHelper2().onRender(context, this);
     }
 
     @Inject(method = "init", at = @At("HEAD"))
     private void noellesroles$onInit(CallbackInfo ci) {
         getRoleScreenHelper().onInit(this);
+        getRoleScreenHelper2().onInit(this);
     }
     
     @Override

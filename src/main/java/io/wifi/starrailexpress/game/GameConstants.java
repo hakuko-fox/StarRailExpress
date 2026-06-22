@@ -6,6 +6,8 @@ import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 
 import java.util.HashMap;
@@ -206,6 +208,7 @@ public class GameConstants {
         public static ResourceLocation FLAMETHROWER_BURNED = SRE.id("flamethrower_burned");
         public static ResourceLocation BOULDER_CRUSH = SRE.id("boulder_crush");
         public static ResourceLocation INCINERATOR_PUSHED = SRE.id("incinerator_pushed");
+        public static ResourceLocation GOD_COMMAND = Noellesroles.id("god_command");
     }
 
     public static int getFurandoruSafeLine() {

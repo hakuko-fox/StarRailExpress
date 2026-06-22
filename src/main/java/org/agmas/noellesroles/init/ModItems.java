@@ -24,10 +24,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.*;
-import org.agmas.noellesroles.content.item.FlareItem;
 import org.agmas.noellesroles.content.item.charge_item.*;
 import org.agmas.noellesroles.utils.LocalDateData;
-import org.agmas.noellesroles.content.item.JetpackItem;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -465,6 +463,16 @@ public class ModItems {
     public static final Item DELIVERY_BOX = register(
             new DeliveryBoxItem(new Item.Properties().stacksTo(8)),
             "delivery_box", ROLE_ITEMS_GROUP);
+ /**
+     * 快递包裹盒子
+     * - 射命丸文专属物品
+     * - 在商店以150金币购买
+     * - 指针对准玩家并右键使用，打开传递界面
+     * - 双方可以放入一样物品并交换
+     */
+    public static final Item NEWSPAPER = register(
+            new NewspaperItem(new Item.Properties().stacksTo(8)),
+            "newspaper", ROLE_ITEMS_GROUP);
 
     /**
      * 迷幻瓶

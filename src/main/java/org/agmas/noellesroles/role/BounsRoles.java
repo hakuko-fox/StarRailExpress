@@ -21,7 +21,7 @@ public class BounsRoles {
      * 职业：冷笑
      * 巫毒对立职业
      */
-    public static SRERole REMILIA = TMMRoles.registerRole(
+    public static SRERole LENGXIAO = TMMRoles.registerRole(
             new NormalRole(LENGXIAO_ID, new Color(230, 178, 130).getRGB(),
                     false, true, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, true))
