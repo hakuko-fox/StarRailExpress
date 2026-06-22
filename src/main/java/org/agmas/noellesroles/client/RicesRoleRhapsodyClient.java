@@ -727,7 +727,7 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
      * 注册Screen
      */
     public static void registerScreens() {
-        // 注册邮差传递界面
+        // 注册射命丸文传递界面
         MenuScreens.register(ModScreenHandlers.POSTMAN_SCREEN_HANDLER, PostmanHandledScreen::new);
 
         // 注册私家侦探审查界面

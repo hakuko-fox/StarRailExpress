@@ -10,6 +10,7 @@ import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerCompo
 import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.awesome_binglus.AwesomePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.broadcaster.BroadcasterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent;
@@ -28,7 +29,6 @@ import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianPlayerCompo
 import org.agmas.noellesroles.game.roles.innocent.noise_maker.NoiseMakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.pilot.PilotPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
@@ -136,9 +136,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "broadcaster"),
       BroadcasterPlayerComponent.class);
 
-  public static final ComponentKey<PostmanPlayerComponent> POSTMAN = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "postman"),
-      PostmanPlayerComponent.class);
+  public static final ComponentKey<AyayayaPlayerComponent> AYAYAYA = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ayayaya"),
+      AyayayaPlayerComponent.class);
 
   public static final ComponentKey<DetectivePlayerComponent> DETECTIVE = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "detective"),
@@ -455,10 +455,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BroadcasterPlayerComponent::new);
 
-    // 注册邮差组件 - 存储传递状态和物品
-    registry.beginRegistration(Player.class, POSTMAN)
+    // 注册射命丸文组件 - 存储传递状态和物品
+    registry.beginRegistration(Player.class, AYAYAYA)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(PostmanPlayerComponent::new);
+        .end(AyayayaPlayerComponent::new);
 
     // 注册私家侦探组件 - 存储审查技能冷却和目标状态
     registry.beginRegistration(Player.class, DETECTIVE)

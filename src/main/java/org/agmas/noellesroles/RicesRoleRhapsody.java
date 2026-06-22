@@ -38,11 +38,10 @@ import org.agmas.noellesroles.client.screen.PostmanScreenHandler;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.entity.LockEntityManager;
 import org.agmas.noellesroles.game.roles.innocent.athlete.AthletePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.ayayaya.AyayayaPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.boxer.BoxerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.LocksmithInspirationComponent;
-import org.agmas.noellesroles.game.roles.innocent.pilot.PilotPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
@@ -52,7 +51,6 @@ import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPlayerComponent;
@@ -305,7 +303,7 @@ public class RicesRoleRhapsody implements ModInitializer {
         // 注册电报员消息包
         PayloadTypeRegistry.playC2S().register(TelegrapherC2SPacket.ID, TelegrapherC2SPacket.CODEC);
 
-        // 注册邮差传递包
+        // 注册射命丸文传递包
         PayloadTypeRegistry.playC2S().register(PostmanC2SPacket.ID, PostmanC2SPacket.CODEC);
 
         // 注册私家侦探审查包
@@ -582,19 +580,19 @@ public class RicesRoleRhapsody implements ModInitializer {
             telegrapherComp.sendAnonymousMessage(payload.message());
         });
 
-        // 处理邮差传递包
+        // 处理射命丸文传递包
         ServerPlayNetworking.registerGlobalReceiver(POSTMAN_PACKET, (payload, context) -> {
             // 验证玩家存活
             if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
                 return;
 
-            // 获取玩家的邮差组件
-            PostmanPlayerComponent postmanComp = ModComponents.POSTMAN.get(context.player());
+            // 获取玩家的射命丸文组件
+            AyayayaPlayerComponent postmanComp = ModComponents.AYAYAYA.get(context.player());
 
-            // 根据不同操作处理（部分操作需要验证是否邮差角色）
+            // 根据不同操作处理（部分操作需要验证是否射命丸文角色）
             switch (payload.action()) {
                 case OPEN_DELIVERY -> {
-                    // 只有邮差才能发起传递
+                    // 只有射命丸文才能发起传递
                     // if (!gameWorld.isRole(context.player(), ModRoles.POSTMAN)) return;
 
                     // 验证目标玩家存在且存活
@@ -606,10 +604,10 @@ public class RicesRoleRhapsody implements ModInitializer {
                     postmanComp.startDelivery(payload.targetPlayer(), target.getName().getString());
 
                     // 通知目标玩家
-                    PostmanPlayerComponent targetComp = ModComponents.POSTMAN.get(target);
+                    AyayayaPlayerComponent targetComp = ModComponents.AYAYAYA.get(target);
                     targetComp.receiveDelivery(context.player().getUUID(), context.player().getName().getString());
 
-                    // 打开邮差界面 - 使用 ExtendedScreenHandlerFactory 传递 UUID
+                    // 打开射命丸文界面 - 使用 ExtendedScreenHandlerFactory 传递 UUID
                     if (context.player() instanceof ServerPlayer serverPlayer) {
                         serverPlayer.openMenu(
                                 new net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory<java.util.UUID>() {
@@ -676,15 +674,15 @@ public class RicesRoleRhapsody implements ModInitializer {
                     Player target = context.player().level().getPlayerByUUID(postmanComp.deliveryTarget);
                     if (target == null)
                         return;
-                    PostmanPlayerComponent targetComp = ModComponents.POSTMAN.get(target);
+                    AyayayaPlayerComponent targetComp = ModComponents.AYAYAYA.get(target);
 
                     // 确认交换 - 同步更新双方组件
                     boolean isPostman = !postmanComp.isReceiver;
 
                     // 更新自己的组件
                     if (isPostman) {
-                        postmanComp.postmanConfirmed = true;
-                        targetComp.postmanConfirmed = true; // 同步到对方
+                        postmanComp.senderConfirmed = true;
+                        targetComp.senderConfirmed = true; // 同步到对方
                     } else {
                         postmanComp.targetConfirmed = true;
                         targetComp.targetConfirmed = true; // 同步到对方
@@ -693,16 +691,16 @@ public class RicesRoleRhapsody implements ModInitializer {
                     targetComp.sync();
 
                     // 检查是否双方都确认（使用自己组件中的状态）
-                    if (postmanComp.postmanConfirmed && postmanComp.targetConfirmed) {
+                    if (postmanComp.senderConfirmed && postmanComp.targetConfirmed) {
                         // 执行交换
-                        ItemStack postmanItem = postmanComp.postmanItem.copy();
+                        ItemStack postmanItem = postmanComp.putItem.copy();
                         ItemStack targetItem = postmanComp.targetItem.copy();
 
-                        // 确定谁是邮差谁是接收方
+                        // 确定谁是射命丸文谁是接收方
                         Player postmanPlayer = isPostman ? context.player() : target;
                         Player receiverPlayer = isPostman ? target : context.player();
 
-                        // 邮差收到接收方的物品，接收方收到邮差的物品
+                        // 射命丸文收到接收方的物品，接收方收到射命丸文的物品
                         if (!targetItem.isEmpty()) {
                             postmanPlayer.addItem(targetItem);
                         }
@@ -710,7 +708,7 @@ public class RicesRoleRhapsody implements ModInitializer {
                             receiverPlayer.addItem(postmanItem);
                         }
 
-                        // 消耗邮差的传递盒
+                        // 消耗射命丸文的传递盒
                         consumeDeliveryBox(postmanPlayer);
 
                         // 重置双方状态（这会触发 isDeliveryActive() 返回 false）
@@ -731,11 +729,11 @@ public class RicesRoleRhapsody implements ModInitializer {
                     if (!postmanComp.isDeliveryActive())
                         return;
 
-                    // 取消传递 - 邮差和接收方都可以取消
+                    // 取消传递 - 射命丸文和接收方都可以取消
                     if (postmanComp.deliveryTarget != null) {
                         Player target = context.player().level().getPlayerByUUID(postmanComp.deliveryTarget);
                         if (target != null) {
-                            PostmanPlayerComponent targetComp = ModComponents.POSTMAN.get(target);
+                            AyayayaPlayerComponent targetComp = ModComponents.AYAYAYA.get(target);
                             targetComp.init();
                         }
                     }
@@ -1341,13 +1339,6 @@ public class RicesRoleRhapsody implements ModInitializer {
             boxerComponent.init();
         }
 
-        // ==================== 邮差角色处理 ====================
-        if (role.equals(ModRoles.POSTMAN)) {
-            // 重置邮差组件
-            PostmanPlayerComponent postmanComponent = ModComponents.POSTMAN.get(player);
-            postmanComponent.init();
-        }
-
         // ==================== 静语者角色处理 ====================
         if (role.equals(ModRoles.SILENCER)) {
             org.agmas.noellesroles.game.roles.killer.silencer.SilencerPlayerComponent silencerComponent =
@@ -1467,10 +1458,10 @@ public class RicesRoleRhapsody implements ModInitializer {
     // ==================== 工具方法 ====================
 
     /**
-     * 消耗邮差的传递盒
+     * 消耗射命丸文的传递盒
      * 在传递成功完成后调用
      *
-     * @param postmanPlayer 邮差玩家
+     * @param postmanPlayer 射命丸文玩家
      */
     private static void consumeDeliveryBox(Player postmanPlayer) {
         // 先检查主手

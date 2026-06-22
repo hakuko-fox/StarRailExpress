@@ -5,7 +5,6 @@ import io.github.mortuusars.exposure_polaroid.ExposurePolaroid;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -193,8 +192,6 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> ENGINEER_SHOP = new ArrayList<>();
   // ==================== 拳击手商店 ====================
   public static ArrayList<ShopEntry> BOXER_SHOP = new ArrayList<>();
-  // ==================== 邮差商店 ====================
-  public static ArrayList<ShopEntry> POSTMAN_SHOP = new ArrayList<>();
   // ==================== 心理学家商店 ====================
   public static ArrayList<ShopEntry> PSYCHOLOGIST_SHOP = new ArrayList<>();
   // ==================== 炸弹客商店 ====================
@@ -1098,10 +1095,6 @@ public class RoleShopHandler {
           List.of(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 150,
               ShopEntry.Type.TOOL)));
     }
-    {
-      ShopContent.customEntries.put(
-          ModRoles.POSTMAN_ID, POSTMAN_SHOP);
-    }
 
     ShopContent.customEntries.put(
         ModRoles.STALKER_ID,
@@ -1604,7 +1597,6 @@ public class RoleShopHandler {
     SLIPPERY_GHOST_SHOP.clear();
     ENGINEER_SHOP.clear();
     BOXER_SHOP.clear();
-    POSTMAN_SHOP.clear();
     PSYCHOLOGIST_SHOP.clear();
     BOMBER_SHOP.clear();
     DOCTOR_SHOP.clear();
@@ -1817,18 +1809,6 @@ public class RoleShopHandler {
         ModItems.BOXING_GLOVE.getDefaultInstance(),
         150,
         ShopEntry.Type.WEAPON));
-
-    // 邮差商店
-    // 传递盒 - 100金币
-    POSTMAN_SHOP.add(new ShopEntry(
-        ModItems.DELIVERY_BOX.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-    // 收纳袋 - 150金币
-    POSTMAN_SHOP.add(new ShopEntry(
-        Items.BUNDLE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
 
     // 心理学家商店
     // 薄荷糖 - 75金币

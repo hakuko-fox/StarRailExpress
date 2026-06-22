@@ -119,9 +119,6 @@ public class InitModRolesMax {
         // 鹈鹕每局最多 1 个（具体是否出现由动态概率控制）
         Harpymodloader.setRoleMaximum(ModRoles.PELICAN_ID, 1);
 
-        // 邮差每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.POSTMAN_ID, 1);
-
         // 私家侦探每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.DETECTIVE_ID, 1);
 
