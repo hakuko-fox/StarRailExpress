@@ -2501,14 +2501,20 @@ public class SimpleQuestMinigameScreen extends Screen {
         MinigameUI.ring(g, cx, cy, outerR, 6, 0xFF8090A0);
         drawCircle(g, cx, cy, outerR - 10, 0x443C5060);
 
-        // 辐条（随阀轮旋转）
+        // 辐条（随阀轮旋转，线状指针风格，与信号校准一致）
         for (int i = 0; i < spokeCount; i++) {
             double spokeAngle = valveAngle + i * Math.PI / 2.0;
             int sx = cx - (int) (Math.cos(spokeAngle) * innerR);
             int sy = cy + (int) (Math.sin(spokeAngle) * innerR);
             int ex = cx - (int) (Math.cos(spokeAngle) * (outerR - 8));
             int ey = cy + (int) (Math.sin(spokeAngle) * (outerR - 8));
-            g.fill(Math.min(sx, ex), Math.min(sy, ey), Math.max(sx, ex) + 2, Math.max(sy, ey) + 2, 0xFF6B7D90);
+            int steps = Math.max(1, (int) Math.sqrt((ex - sx) * (ex - sx) + (ey - sy) * (ey - sy)));
+            for (int s = 0; s <= steps; s++) {
+                float t = (float) s / steps;
+                int px = sx + (int) ((ex - sx) * t);
+                int py = sy + (int) ((ey - sy) * t);
+                g.fill(px - 1, py - 1, px + 1, py + 1, 0xFF6B7D90);
+            }
         }
 
         // 中心轴
