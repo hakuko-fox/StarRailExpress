@@ -211,14 +211,13 @@ public class MinigameQuestConfigScreen extends Screen {
         int prevX = rx + 65;
         g.fill(prevX, top + 4, prevX + 18, top + 22, 0xFF000000 | markerColor);
 
-        // 右侧标签
-        int labelX = rx + 65;
-        int labelY = top + 50; // 破坏任务输入区标签
-        if (isSabotageTrigger) {
+        // 破坏任务标签（与输入框同一水平线）
+        if (isSabotageTrigger && sabotageDurationInput != null && sabotageCooldownInput != null) {
+            int lx = sabotageDurationInput.getX() + sabotageDurationInput.getWidth() + 4;
             g.drawString(this.font, Component.translatable("screen.starrailexpress.sabotage_duration"),
-                    labelX, labelY, 0xAAAAAA);
+                    lx, sabotageDurationInput.getY() + (sabotageDurationInput.getHeight() - 8) / 2, 0xAAAAAA);
             g.drawString(this.font, Component.translatable("screen.starrailexpress.sabotage_cooldown"),
-                    labelX, labelY + 22, 0xAAAAAA);
+                    lx, sabotageCooldownInput.getY() + (sabotageCooldownInput.getHeight() - 8) / 2, 0xAAAAAA);
         }
     }
 
