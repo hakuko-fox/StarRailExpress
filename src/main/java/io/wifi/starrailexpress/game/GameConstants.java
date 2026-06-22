@@ -130,6 +130,7 @@ public class GameConstants {
     public static int CHAIR_TASK_DURATION = getInTicks(0, 8);
     public static int BATHE_TASK_DURATION = getInTicks(0, 10); // 洗澡任务持续时间
     public static int BREATHE_TASK_DURATION = getInTicks(0, 8); // 呼吸任务持续时间
+    public static int BE_ALONE_TASK_DURATION = getInTicks(0, 10); // 一个人静静任务持续时间（与冥想一致）
     public static float MID_MOOD_THRESHOLD = 0.55f;
     public static float DEPRESSIVE_MOOD_THRESHOLD = 0.2f;
     public static float ANGRY_MOOD_THRESHOLD = 0.75f;

@@ -2940,5 +2940,12 @@
   "gui.noellesroles.supply_crate.refresh_all": "是否同時刷新",
   "gui.noellesroles.supply_crate.shared": "是否共用物資",
   "gui.noellesroles.supply_crate.save": "保存配置",
-  "hud.noellesroles.task_instinct.render.supply_crate": "物資箱"
+  "hud.noellesroles.task_instinct.render.supply_crate": "物資箱",
+  "hud.noellesroles.task_instinct.render.light_stove": "爐灶",
+  "hud.noellesroles.task_instinct.render.clean_dust": "灰塵",
+  "hud.noellesroles.task_instinct.render.transport_start": "運輸起點",
+  "hud.noellesroles.task_instinct.render.transport_end": "運輸終點",
+  "hud.noellesroles.task_instinct.render.pray": "雕像",
+  "hud.noellesroles.task_instinct.render.prune_bush": "灌木",
+  "hud.noellesroles.task_instinct.render.harvest_crop": "草墊"
 }

@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.ModifierEffects;
+import org.agmas.noellesroles.scene.SceneTaskManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -70,6 +71,9 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         return player == this.player;
     }
 
+    /** 防止重复注册场景任务回调。 */
+    private static volatile boolean sceneCallbackRegistered = false;
+
     @Override
     public void init() {
         if (playerMoodComponent == null) {
@@ -84,6 +88,29 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         this.parallelTaskTypes.clear();
         this.nextTaskTimer = GameConstants.TIME_TO_FIRST_TASK;
         this.sync();
+
+        // 注册场景任务完成回调（全局仅注册一次）
+        if (!sceneCallbackRegistered) {
+            sceneCallbackRegistered = true;
+            SceneTaskManager.registerCompletionCallback((sp, sceneType) -> {
+                // 将 SceneTaskManager.Type 映射到 Task 枚举，触发对应 SceneTriggeredTask 完成
+                Task taskType = switch (sceneType) {
+                    case LIGHT_STOVE -> Task.LIGHT_STOVE;
+                    case CLEAN_DUST -> Task.CLEAN_DUST;
+                    case TRANSPORT -> Task.TRANSPORT;
+                    case PRAY -> Task.PRAY;
+                    case PRUNE_BUSH -> Task.PRUNE_BUSH;
+                    case HARVEST_CROP -> Task.HARVEST_CROP;
+                    default -> null;
+                };
+                if (taskType != null) {
+                    SREPlayerTaskComponent comp = KEY.get(sp);
+                    if (comp != null && comp.tasks.get(taskType) instanceof SceneTriggeredTask stt) {
+                        stt.setFulfilled(true);
+                    }
+                }
+            });
+        }
     }
 
     @Override
@@ -308,23 +335,22 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             if (disabledTasks.contains(task.name()))
                 continue;
             float weight = 1f / this.timesGotten.getOrDefault(task, 1);
-            // 情绪驱动的任务权重调整
+            // 情绪驱动的任务权重调整（基于任务种类）
+            Task.TaskCategory category = task.category;
             if (currentMood < GameConstants.MID_MOOD_THRESHOLD) {
-                // 情绪低落时：安抚性任务权重翻倍
-                if (task == Task.MEDITATE || task == Task.SLEEP || task == Task.CHAIR) {
+                // 情绪低落时：安抚性任务权重翻倍，活跃性任务权重降低
+                if (category == Task.TaskCategory.SOOTHING) {
                     weight *= 2f;
                 }
-                // 活跃性任务权重降低（呼吸任务需要到室外，归类为活跃性）
-                if (task == Task.EXERCISE || task == Task.OUTSIDE || task == Task.BREATHE) {
+                if (category == Task.TaskCategory.ACTIVE) {
                     weight *= 0.5f;
                 }
             } else if (currentMood > GameConstants.ANGRY_MOOD_THRESHOLD) {
-                // 情绪亢奋时：活跃性任务权重提升
-                if (task == Task.EXERCISE || task == Task.OUTSIDE || task == Task.NOTE_BLOCK) {
+                // 情绪亢奋时：活跃性任务权重提升，静态任务权重降低
+                if (category == Task.TaskCategory.ACTIVE) {
                     weight *= 1.5f;
                 }
-                // 静态任务权重降低
-                if (task == Task.SLEEP || task == Task.MEDITATE) {
+                if (category == Task.TaskCategory.STATIC || category == Task.TaskCategory.SOOTHING) {
                     weight *= 0.5f;
                 }
             }
@@ -361,6 +387,13 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             case TOILET -> new ToiletTask(GameConstants.TOILET_TASK_DURATION);
             case CHAIR -> new ChairTask(GameConstants.CHAIR_TASK_DURATION);
             case BREATHE -> new BreatheTask(GameConstants.BREATHE_TASK_DURATION);
+            case BE_ALONE -> new BeAloneTask(GameConstants.BE_ALONE_TASK_DURATION);
+            case LIGHT_STOVE -> new SceneTriggeredTask(Task.LIGHT_STOVE, "light_stove");
+            case CLEAN_DUST -> new SceneTriggeredTask(Task.CLEAN_DUST, "clean_dust");
+            case TRANSPORT -> new SceneTriggeredTask(Task.TRANSPORT, "transport");
+            case PRAY -> new SceneTriggeredTask(Task.PRAY, "pray");
+            case PRUNE_BUSH -> new SceneTriggeredTask(Task.PRUNE_BUSH, "prune_bush");
+            case HARVEST_CROP -> new SceneTriggeredTask(Task.HARVEST_CROP, "harvest_crop");
             case MANIC -> new ManicTask();
             default -> null;
         };
@@ -416,39 +449,73 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
     }
 
     public enum Task {
-        SLEEP(nbt -> new SleepTask(nbt.getInt("timer"))),
-        OUTSIDE(nbt -> new OutsideTask(nbt.getInt("timer"))), // 不要OUTSIDE
-        RAED_BOOK(nbt -> new ReadBookTask(nbt.getInt("timer"))),
-        EAT(nbt -> new EatTask()),
-        DRINK(nbt -> new DrinkTask()),
-        EXERCISE(nbt -> new ExerciseTask(nbt.getInt("timer"))),
-        MEDITATE(nbt -> new MeditateTask(nbt.getInt("timer"))), // 添加冥想任务
-        BATHE(nbt -> new BatheTask(nbt.getInt("timer"))), // 添加洗澡任务
-        TOILET(nbt -> new ToiletTask(nbt.getInt("timer"))), // 添加厕所任务
-        CHAIR(nbt -> new ChairTask(nbt.getInt("timer"))), // 添加座椅休息任务
-        NOTE_BLOCK(nbt -> new NoteBlockTask(nbt.getInt("timer"))), // 添加音符盒任务
-        BREATHE(nbt -> new BreatheTask(nbt.getInt("timer"))), // 呼吸新鲜空气任务
-        DNF_MEAL(nbt -> new PassiveTask("dnf_meal", nbt.getInt("type"))),
-        DNF_TOILET(nbt -> new PassiveTask("dnf_toilet", nbt.getInt("type"))),
-        DNF_LECTURE(nbt -> new PassiveTask("dnf_lecture", nbt.getInt("type"))),
-        DNF_LIBRARY_WEB(nbt -> new PassiveTask("dnf_library_web", nbt.getInt("type"))),
-        DNF_PRISON_DUST(nbt -> new PassiveTask("dnf_prison_dust", nbt.getInt("type"))),
-        DNF_CHEF_WORK(nbt -> new PassiveTask("dnf_chef_work", nbt.getInt("type"))),
-        DNF_POISON_FOOD(nbt -> new PassiveTask("dnf_poison_food", nbt.getInt("type"))),
-        DNF_POISON_DEPOSIT(nbt -> new PassiveTask("dnf_poison_deposit", nbt.getInt("type"))),
-        DNF_POISON_WATER(nbt -> new PassiveTask("dnf_poison_water", nbt.getInt("type"))),
-        DNF_REDEMPTION(nbt -> new PassiveTask("dnf_redemption", nbt.getInt("type"))),
-        CUSTOM(nbt -> new CustomTask(nbt.getString("customName"), nbt.getString("customId"))),
-        MANIC(nbt -> new ManicTask());
+        // ───────── 非场景任务 ─────────
+        SLEEP(nbt -> new SleepTask(nbt.getInt("timer")), TaskCategory.SOOTHING),
+        OUTSIDE(nbt -> new OutsideTask(nbt.getInt("timer")), TaskCategory.ACTIVE),
+        RAED_BOOK(nbt -> new ReadBookTask(nbt.getInt("timer")), TaskCategory.STATIC),
+        EAT(nbt -> new EatTask(), TaskCategory.ACTIVE),
+        DRINK(nbt -> new DrinkTask(), TaskCategory.ACTIVE),
+        EXERCISE(nbt -> new ExerciseTask(nbt.getInt("timer")), TaskCategory.ACTIVE),
+        MEDITATE(nbt -> new MeditateTask(nbt.getInt("timer")), TaskCategory.SOOTHING),
+        BATHE(nbt -> new BatheTask(nbt.getInt("timer")), TaskCategory.STATIC),
+        TOILET(nbt -> new ToiletTask(nbt.getInt("timer")), TaskCategory.STATIC),
+        CHAIR(nbt -> new ChairTask(nbt.getInt("timer")), TaskCategory.SOOTHING),
+        NOTE_BLOCK(nbt -> new NoteBlockTask(nbt.getInt("timer")), TaskCategory.ACTIVE),
+        BE_ALONE(nbt -> new BeAloneTask(nbt.getInt("timer")), TaskCategory.STATIC), // 一个人静静
 
-        private static List<Task> availableTasksList = List.of(SLEEP, RAED_BOOK, EAT, DRINK, EXERCISE, MEDITATE, BATHE,
-                CHAIR,
-                NOTE_BLOCK, TOILET, BREATHE);
-        public final @NotNull Function<CompoundTag, TrainTask> setFunction;
+        // ───────── 场景任务 ─────────
+        BREATHE(nbt -> new BreatheTask(nbt.getInt("timer")), TaskCategory.ACTIVE), // 呼吸新鲜空气
+        LIGHT_STOVE(nbt -> new SceneTriggeredTask(Task.LIGHT_STOVE, "light_stove"), TaskCategory.SOOTHING), // 取暖
+        CLEAN_DUST(nbt -> new SceneTriggeredTask(Task.CLEAN_DUST, "clean_dust"), TaskCategory.ACTIVE), // 清扫灰尘
+        TRANSPORT(nbt -> new SceneTriggeredTask(Task.TRANSPORT, "transport"), TaskCategory.ACTIVE), // 运送物资
+        PRAY(nbt -> new SceneTriggeredTask(Task.PRAY, "pray"), TaskCategory.SOOTHING), // 祷告
+        PRUNE_BUSH(nbt -> new SceneTriggeredTask(Task.PRUNE_BUSH, "prune_bush"), TaskCategory.ACTIVE), // 修剪灌木
+        HARVEST_CROP(nbt -> new SceneTriggeredTask(Task.HARVEST_CROP, "harvest_crop"), TaskCategory.ACTIVE), // 活动筋骨
 
-        Task(@NotNull Function<CompoundTag, TrainTask> function) {
-            this.setFunction = function;
+        // ───────── 不可刷新任务 ─────────
+        CUSTOM(nbt -> new CustomTask(nbt.getString("customName"), nbt.getString("customId")), TaskCategory.NON_REFRESHABLE),
+        MANIC(nbt -> new ManicTask(), TaskCategory.NON_REFRESHABLE);
+
+        /**
+         * 任务种类：用于任务生成时的权重调整。
+         * 安抚性任务 —— 情绪低落时权重翻倍
+         * 活跃性任务 —— 情绪亢奋时权重提升，情绪低落时降低
+         * 静态任务   —— 情绪亢奋时权重降低
+         * 不可刷新任务 —— 不参与随机任务池（如狂躁症任务、自定义任务）
+         */
+        public enum TaskCategory {
+            SOOTHING,       // 安抚性
+            ACTIVE,         // 活跃性
+            STATIC,         // 静态
+            NON_REFRESHABLE // 不可刷新
         }
+
+        /**
+         * 场景任务标记：
+         * 非场景任务 —— 在所有地图中都会出现。
+         * 场景任务   —— 只有在地图配置中设置了才会出现。
+         * 任务种类为不可刷新的任务始终视为场景任务。
+         */
+        public boolean isSceneTask() {
+            if (this.category == TaskCategory.NON_REFRESHABLE) return true;
+            return switch (this) {
+                case BREATHE, LIGHT_STOVE, CLEAN_DUST, TRANSPORT, PRAY, PRUNE_BUSH, HARVEST_CROP -> true;
+                default -> false;
+            };
+        }
+
+        /** 获取任务种类。 */
+        public final TaskCategory category;
+
+        Task(@NotNull Function<CompoundTag, TrainTask> function, TaskCategory category) {
+            this.setFunction = function;
+            this.category = category;
+        }
+
+        /** 非场景任务列表（在所有地图中都可刷出的任务）。 */
+        private static final List<Task> availableTasksList = List.of(
+                SLEEP, RAED_BOOK, EAT, DRINK, EXERCISE, MEDITATE, BATHE,
+                CHAIR, NOTE_BLOCK, TOILET, BE_ALONE);
 
         public static List<Task> getAvailableTasksList() {
             return availableTasksList;
@@ -492,34 +559,50 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         }
     }
 
-    public static class PassiveTask implements TrainTask {
-        private final String name;
-        private final int typeOrdinal;
+    /**
+     * 一个人静静任务类（非场景任务）
+     * 玩家周围4格内不能有其他玩家持续6秒， Y轴只检查3格
+     */
+    public static class BeAloneTask implements TrainTask {
+        private int timer;
 
-        public PassiveTask(String name, int typeOrdinal) {
-            this.name = name;
-            this.typeOrdinal = typeOrdinal;
+        public BeAloneTask(int time) {
+            this.timer = time;
         }
 
         @Override
-        public boolean isFulfilled(Player player) {
-            return false;
+        public void tick(@NotNull Player player) {
+            if (this.timer > 0) {
+                double radius = 4.0;
+                net.minecraft.world.phys.AABB box = player.getBoundingBox().inflate(radius, 3.0, radius);
+                boolean someoneNear = player.level().getEntitiesOfClass(Player.class, box,
+                        other -> other != player && other.isAlive() && !other.isSpectator()).size() > 0;
+                if (!someoneNear) {
+                    this.timer--;
+                }
+            }
+        }
+
+        @Override
+        public boolean isFulfilled(@NotNull Player player) {
+            return this.timer <= 0;
         }
 
         @Override
         public String getName() {
-            return name;
+            return "be_alone";
         }
 
         @Override
         public Task getType() {
-            return Task.values()[typeOrdinal];
+            return Task.BE_ALONE;
         }
 
         @Override
         public CompoundTag toNbt() {
             CompoundTag nbt = new CompoundTag();
-            nbt.putInt("type", typeOrdinal);
+            nbt.putInt("type", Task.BE_ALONE.ordinal());
+            nbt.putInt("timer", this.timer);
             return nbt;
         }
     }
@@ -987,6 +1070,51 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             CompoundTag nbt = new CompoundTag();
             nbt.putInt("type", Task.BREATHE.ordinal());
             nbt.putInt("timer", this.timer);
+            return nbt;
+        }
+    }
+
+
+    /**
+     * 场景触发任务：通过 SceneTaskManager 回调触发完成。
+     * 任务本身不自行检测完成条件，而是等待外部调用 setFulfilled()。
+     */
+    public static class SceneTriggeredTask implements TrainTask {
+        private final Task taskType;
+        private final String name;
+        private boolean fulfilled;
+
+        public SceneTriggeredTask(Task taskType, String name) {
+            this.taskType = taskType;
+            this.name = name;
+            this.fulfilled = false;
+        }
+
+        public void setFulfilled(boolean fulfilled) {
+            this.fulfilled = fulfilled;
+        }
+
+        @Override
+        public boolean isFulfilled(@NotNull Player player) {
+            return this.fulfilled;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public Task getType() {
+            return taskType;
+        }
+
+        @Override
+        public CompoundTag toNbt() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.putInt("type", taskType.ordinal());
+            nbt.putString("name", name);
+            nbt.putBoolean("fulfilled", fulfilled);
             return nbt;
         }
     }

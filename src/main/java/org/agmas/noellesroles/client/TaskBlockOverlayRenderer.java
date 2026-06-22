@@ -209,7 +209,7 @@ public class TaskBlockOverlayRenderer {
         if (!SREClient.gameComponent.isRunning())
             return;
 
-        boolean shouldDisplay[] = new boolean[20];
+        boolean shouldDisplay[] = new boolean[32];
         for (int i = 0; i < shouldDisplay.length; i++) {
             shouldDisplay[i] = false;
         }
@@ -303,6 +303,25 @@ public class TaskBlockOverlayRenderer {
                     case BREATHE:
                         // 呼吸任务无需特殊方块高亮
                         break;
+                    case LIGHT_STOVE:
+                        shouldDisplay[16] = true; // 炉灶 — 橙色
+                        break;
+                    case CLEAN_DUST:
+                        shouldDisplay[17] = true; // 灰尘 — 淡灰色
+                        break;
+                    case TRANSPORT:
+                        shouldDisplay[18] = true; // 运输点起点 — 亮绿色
+                        shouldDisplay[19] = true; // 运输点终点 — 深红色
+                        break;
+                    case PRAY:
+                        shouldDisplay[20] = true; // 雕像 — 淡黄色
+                        break;
+                    case PRUNE_BUSH:
+                        shouldDisplay[21] = true; // 灌木 — 黄绿色
+                        break;
+                    case HARVEST_CROP:
+                        shouldDisplay[22] = true; // 草垫 — 棕黄色
+                        break;
                     default:
                         break;
 
@@ -381,6 +400,48 @@ public class TaskBlockOverlayRenderer {
                                 true, 0f,
                                 Component.translatable("hud.noellesroles.task_instinct.render.supply_crate"));
                     }
+                    break;
+                case 16:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(255, 165, 0), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.light_stove"));
+                    break;
+                case 17:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(192, 192, 192), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.clean_dust"));
+                    break;
+                case 18:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(0, 255, 100), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.transport_start"));
+                    break;
+                case 19:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(180, 40, 40), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.transport_end"));
+                    break;
+                case 20:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(255, 255, 180), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.pray"));
+                    break;
+                case 21:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(173, 255, 47), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.prune_bush"));
+                    break;
+                case 22:
+                    if (shouldDisplay[type])
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                new Color(218, 165, 32), 1f, true, 0f,
+                                Component.translatable("hud.noellesroles.task_instinct.render.harvest_crop"));
                     break;
                 default:
                     BlockState block = renderContext.world().getBlockState(pos);

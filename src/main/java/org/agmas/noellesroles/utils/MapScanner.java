@@ -31,6 +31,7 @@ import org.agmas.noellesroles.content.block.SupplyCrateBlock;
 import org.agmas.noellesroles.content.block.VendingMachinesBlock;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
 import org.agmas.noellesroles.init.ModBlocks;
+import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
 
 import java.util.HashMap;
@@ -125,6 +126,24 @@ public class MapScanner {
                         GameUtils.taskBlocks.put(blockPos6, 3);
                     } else if (blockState.getBlock() instanceof TaskInstinctShowableInterface it) {
                         GameUtils.taskBlocks.put(blockPos6, it.taskInstinctId());
+                    }
+                    // ───── 场景任务方块扫描 ─────
+                    if (blockState.is(ModSceneBlocks.STOVE)) {
+                        GameUtils.taskBlocks.put(blockPos6, 16); // 炉灶 — 取暖
+                    } else if (blockState.is(ModSceneBlocks.DUST)) {
+                        GameUtils.taskBlocks.put(blockPos6, 17); // 灰尘 — 清扫
+                    } else if (blockState.is(ModSceneBlocks.TRANSPORT_POINT)) {
+                        if (blockState.getValue(org.agmas.noellesroles.content.block.scene.TransportPointBlock.END)) {
+                            GameUtils.taskBlocks.put(blockPos6, 19); // 运输点终点 — 深红色
+                        } else {
+                            GameUtils.taskBlocks.put(blockPos6, 18); // 运输点起点 — 亮绿色
+                        }
+                    } else if (blockState.is(ModSceneBlocks.STATUE)) {
+                        GameUtils.taskBlocks.put(blockPos6, 20); // 雕像 — 祷告
+                    } else if (blockState.is(ModSceneBlocks.BUSH)) {
+                        GameUtils.taskBlocks.put(blockPos6, 21); // 灌木 — 修剪
+                    } else if (blockState.is(ModSceneBlocks.CROP)) {
+                        GameUtils.taskBlocks.put(blockPos6, 22); // 草垫 — 活动筋骨
                     }
                 }
             }
