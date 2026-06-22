@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.role.touhou;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.NormalRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
@@ -15,11 +16,15 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+
 import org.agmas.noellesroles.game.roles.innocent.ghost.GhostPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.THEventHandler;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RedHouseRoles {

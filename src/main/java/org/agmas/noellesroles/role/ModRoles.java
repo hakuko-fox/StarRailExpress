@@ -45,7 +45,6 @@ import org.agmas.noellesroles.game.roles.innocent.locksmith_inspiration.Locksmit
 import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianRole;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocent.postman.PostmanPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
@@ -159,7 +158,6 @@ public class ModRoles {
     public static final ResourceLocation SLIPPERY_GHOST_ID = Noellesroles.id("slippery_ghost");
     public static final ResourceLocation ENGINEER_ID = Noellesroles.id("engineer");
     public static final ResourceLocation BOXER_ID = Noellesroles.id("boxer");
-    public static final ResourceLocation POSTMAN_ID = Noellesroles.id("postman");
     public static final ResourceLocation DETECTIVE_ID = Noellesroles.id("detective");
     public static final ResourceLocation ATHLETE_ID = Noellesroles.id("athlete");
     public static final ResourceLocation SUPERSTAR_ID = Noellesroles.id("star");
@@ -1376,37 +1374,6 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
     ).setComponentKey(BoxerPlayerComponent.KEY));;
-
-    /**
-     * 邮差角色
-     * - 属于乘客阵营 (isInnocent = true)
-     * - 不能使用杀手能力 (canUseKiller = false)
-     * - 真实心情系统
-     * - 标准冲刺时间
-     * - 在计分板上显示
-     * - 技能"隐秘传递"：
-     * - 花费350金币购买传递盒
-     * - 指针对准玩家并右键使用，打开传递界面（一格）
-     * - 双方可以将一样物品放入并交给对方
-     * - 无使用次数限制，但每次需要购买传递盒
-     */
-    public static SRERole POSTMAN = TMMRoles.registerRole(new NormalRole(
-            POSTMAN_ID, // 角色 ID
-            new Color(70, 130, 180).getRGB(), // 钢蓝色 - 代表邮差制服
-            true, // isInnocent = 乘客阵营
-            false, // canUseKiller = 无杀手能力
-            SRERole.MoodType.REAL, // 真实心情
-            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
-            false // 不显示计分板
-    ) {
-
-        @Override
-        public List<ItemStack> getDefaultItems() {
-            ArrayList<ItemStack> itemStacks = new ArrayList<>();
-            return itemStacks;
-        }
-
-    }.setComponentKey(PostmanPlayerComponent.KEY));;
 
     /**
      * 私家侦探角色
