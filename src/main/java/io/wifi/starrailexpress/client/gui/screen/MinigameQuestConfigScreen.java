@@ -32,22 +32,28 @@ public class MinigameQuestConfigScreen extends Screen {
     private String selectedMinigameId;
     private int markerColor;
     private boolean isTaskMarker;
+    private boolean isSabotageTrigger;
+    private int sabotageDuration;
 
     // 滚动
     private int scrollOffset = 0;
     private int maxScroll = 0;
 
-    // 颜色输入
+    // 输入框
     private EditBox colorInput;
+    private EditBox sabotageDurationInput;
 
     private static final Component TITLE = Component.translatable("screen.starrailexpress.minigame_quest_config");
 
-    public MinigameQuestConfigScreen(BlockPos pos, String selectedMinigameId, int markerColor, boolean isTaskMarker) {
+    public MinigameQuestConfigScreen(BlockPos pos, String selectedMinigameId, int markerColor, boolean isTaskMarker,
+            boolean isSabotageTrigger, int sabotageDuration) {
         super(TITLE);
         this.pos = pos;
         this.selectedMinigameId = selectedMinigameId != null ? selectedMinigameId : QuestMinigames.getDefaultId();
         this.markerColor = markerColor;
         this.isTaskMarker = isTaskMarker;
+        this.isSabotageTrigger = isSabotageTrigger;
+        this.sabotageDuration = sabotageDuration > 0 ? sabotageDuration : 60;
     }
 
     @Override
@@ -88,6 +94,34 @@ public class MinigameQuestConfigScreen extends Screen {
                 .pos(panelLeft + 180, inputY)
                 .size(60, 20)
                 .build());
+
+        // ── 破坏任务触发点设置 ──
+        int sabotageRowY = inputY + 28;
+        addRenderableWidget(Button.builder(
+                Component.translatable(isSabotageTrigger
+                        ? "screen.starrailexpress.sabotage_trigger_on"
+                        : "screen.starrailexpress.sabotage_trigger_off"),
+                btn -> {
+                    isSabotageTrigger = !isSabotageTrigger;
+                    btn.setMessage(Component.translatable(isSabotageTrigger
+                            ? "screen.starrailexpress.sabotage_trigger_on"
+                            : "screen.starrailexpress.sabotage_trigger_off"));
+                    sabotageDurationInput.setEditable(isSabotageTrigger);
+                    sabotageDurationInput.setVisible(isSabotageTrigger);
+                })
+                .pos(panelLeft, sabotageRowY)
+                .size(160, 20)
+                .build());
+
+        // 破坏任务持续时间输入框（仅在开启时显示）
+        sabotageDurationInput = new EditBox(this.font, panelLeft + 170, sabotageRowY, 40, 20,
+                Component.literal("Duration"));
+        sabotageDurationInput.setValue(String.valueOf(sabotageDuration));
+        sabotageDurationInput.setFilter(s -> s.matches("[0-9]*"));
+        sabotageDurationInput.setMaxLength(4);
+        sabotageDurationInput.setEditable(isSabotageTrigger);
+        sabotageDurationInput.setVisible(isSabotageTrigger);
+        addRenderableWidget(sabotageDurationInput);
 
         // 计算最大滚动量
         List<QuestMinigame> allMinigames = QuestMinigames.getAll();
@@ -159,6 +193,14 @@ public class MinigameQuestConfigScreen extends Screen {
         guiGraphics.drawString(this.font,
                 Component.translatable("screen.starrailexpress.minigame_quest_hint"),
                 panelLeft, centerY + PANEL_WIDTH / 2 + 36, 0xAAAAAA);
+
+        // 破坏任务持续时间标签
+        if (isSabotageTrigger) {
+            int sabotageRowY = centerY + PANEL_WIDTH / 2 + 38;
+            guiGraphics.drawString(this.font,
+                    Component.translatable("screen.starrailexpress.sabotage_duration"),
+                    panelLeft, sabotageRowY, 0xAAAAAA);
+        }
     }
 
     @Override
@@ -218,6 +260,15 @@ public class MinigameQuestConfigScreen extends Screen {
         data.putString("MinigameId", selectedMinigameId != null ? selectedMinigameId : QuestMinigames.getDefaultId());
         data.putInt("MarkerColor", markerColor);
         data.putBoolean("IsTaskMarker", isTaskMarker);
+        data.putBoolean("IsSabotageTrigger", isSabotageTrigger);
+        if (sabotageDurationInput != null) {
+            try {
+                sabotageDuration = Integer.parseInt(sabotageDurationInput.getValue());
+            } catch (NumberFormatException ignored) {
+                sabotageDuration = 60;
+            }
+        }
+        data.putInt("SabotageDuration", sabotageDuration);
 
         ClientPlayNetworking.send(new MinigameQuestPayload.SaveConfig(pos, data));
     }

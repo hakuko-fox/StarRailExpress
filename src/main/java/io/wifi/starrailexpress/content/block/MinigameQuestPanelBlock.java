@@ -99,6 +99,14 @@ public class MinigameQuestPanelBlock extends BaseEntityBlock
             if (player instanceof ServerPlayer sp && sp.isCreative()) {
                 questBe.openConfigUI(sp);
             } else if (player instanceof ServerPlayer sp) {
+                // 破坏任务触发点：仅杀手可右键
+                if (questBe.isSabotageTrigger()) {
+                    var role = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level())
+                            .getRole(sp);
+                    if (role == null || !role.isKiller()) {
+                        return InteractionResult.SUCCESS;
+                    }
+                }
                 String minigameId = questBe.getMinigameId();
                 if (minigameId != null && !minigameId.isEmpty()) {
                     net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(sp,
@@ -162,7 +170,15 @@ public class MinigameQuestPanelBlock extends BaseEntityBlock
         Level level = player.level();
         if (level != null) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MinigameQuestBlockEntity questBe) return questBe.isTaskMarker();
+            if (be instanceof MinigameQuestBlockEntity questBe) {
+                // 破坏任务触发点：仅杀手可见
+                if (questBe.isSabotageTrigger()) {
+                    var role = io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(level)
+                            .getRole(player);
+                    return role != null && role.isKiller();
+                }
+                return questBe.isTaskMarker();
+            }
         }
         return false;
     }
@@ -172,7 +188,11 @@ public class MinigameQuestPanelBlock extends BaseEntityBlock
         Level level = player.level();
         if (level != null) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MinigameQuestBlockEntity questBe) return new Color(questBe.getMarkerColor());
+            if (be instanceof MinigameQuestBlockEntity questBe) {
+                int c = questBe.getMarkerColor();
+                if (questBe.isSabotageTrigger() && c == 0x00FF00) return Color.RED;
+                return new Color(c);
+            }
         }
         return Color.GREEN;
     }
