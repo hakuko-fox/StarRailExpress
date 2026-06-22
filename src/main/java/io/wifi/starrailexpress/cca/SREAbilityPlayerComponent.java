@@ -1,6 +1,5 @@
 package io.wifi.starrailexpress.cca;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.RolePassive;
 import io.wifi.starrailexpress.api.RoleSkill;
@@ -12,8 +11,6 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
@@ -85,6 +82,10 @@ public class SREAbilityPlayerComponent
      */
     @Override
     public void init() {
+        init(true);
+    }
+
+    public void init(boolean sync) {
         this.cooldown = 0;
         this.charges = -1;
         this.maxCharges = -1;
@@ -93,7 +94,8 @@ public class SREAbilityPlayerComponent
         this.selectedSkill = 0;
         this.castingSkill = null;
         this.lastHoldTick = Long.MIN_VALUE;
-        this.sync();
+        if (sync)
+            this.sync();
     }
 
     @Override

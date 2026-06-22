@@ -276,14 +276,14 @@ public class ModPacketsReciever {
           ServerPlayer firstKiller = allExamplers.isEmpty() ? null : allExamplers.getFirst();
           for (ServerPlayer killer : allExamplers) {
             var abpc = SREAbilityPlayerComponent.KEY.get(killer);
-            abpc.charges++;
+            abpc.status++;
             // Noellesroles.LOGGER.info("Increase 1");
-            if (abpc.charges >= 3) {
+            if (abpc.status >= 3) {
               if (RoleUtils.insertStackInFreeSlot(killer, ModItems.ExamplerPsychoItemStack.copy())) {
                 killer.displayClientMessage(
                     Component.translatable("message.exampler.get_test_psycho").withStyle(ChatFormatting.GOLD),
                     true);
-                abpc.charges -= 3;
+                abpc.status -= 3;
               }
             }
             abpc.sync();

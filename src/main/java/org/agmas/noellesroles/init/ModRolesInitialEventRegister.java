@@ -2,7 +2,6 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
-import io.wifi.starrailexpress.api.RolePassive;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -35,7 +34,6 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
-import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.game.roles.innocent.accountant.AccountantPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.alchemist.AlchemistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.attendant.AttendantHandler;
@@ -143,8 +141,8 @@ public class ModRolesInitialEventRegister {
             }
             if (role.identifier().equals(ModRoles.EXAMPLER.identifier())) {
                 var tpc = SREAbilityPlayerComponent.KEY.get(player);
-                tpc.init();
-                tpc.charges = 0;
+                tpc.init(false);
+                tpc.status = 0;
                 tpc.sync();
                 return;
             }
@@ -908,29 +906,29 @@ public class ModRolesInitialEventRegister {
                         context -> MaChenXuPlayerComponent.KEY.get(context.player()).onGhostArt("seize"))
                         .announceToSelf(false).build());
 
-        // 出题人技能不能注册，注册会出BUG。CCA那边冲突了逻辑。
+        // 出题人技能注册，不能注册，注册会出BUG。
         // ：给所有人出题，冷却240秒，消耗300金币
-        // RoleSkill.register(ModRoles.EXAMPLER, RoleSkill.skill(
-        //         SRE.id("exampler_problem_all"),
-        //         "skill.noellesroles.exampler.problem_all",
-        //         context -> {
-        //             ServerPlayer player = context.player();
-        //             SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-        //             if (shop.balance < 300) {
-        //                 player.displayClientMessage(
-        //                         Component.translatable("message.noellesroles.insufficient_funds_money", 300)
-        //                                 .withStyle(ChatFormatting.RED),
-        //                         true);
-        //                 return false;
-        //             }
-        //             shop.addToBalance(-300);
-        //             player.serverLevel().players().forEach(sp -> {
-        //                 if (GameUtils.isPlayerAliveAndSurvival(sp)) {
-        //                     ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
-        //                 }
-        //             });
-        //             return true;
-        //         }).cooldownSeconds(240).build());
+        RoleSkill.register(ModRoles.EXAMPLER, RoleSkill.skill(
+                SRE.id("exampler_problem_all"),
+                "skill.noellesroles.exampler.problem_all",
+                context -> {
+                    ServerPlayer player = context.player();
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 300) {
+                        player.displayClientMessage(
+                                Component.translatable("message.noellesroles.insufficient_funds_money", 300)
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    shop.addToBalance(-300);
+                    player.serverLevel().players().forEach(sp -> {
+                        if (GameUtils.isPlayerAliveAndSurvival(sp)) {
+                            ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
+                        }
+                    });
+                    return true;
+                }).cooldownSeconds(240).build());
 
         // 年兽技能注册：发送红包给目标玩家（客户端选目标）
         RoleSkill.register(ModRoles.NIAN_SHOU, RoleSkill.skill(
