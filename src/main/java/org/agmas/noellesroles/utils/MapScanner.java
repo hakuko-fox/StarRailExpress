@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.block.*;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import io.wifi.starrailexpress.content.block_entity.BeveragePlateBlockEntity;
+import io.wifi.starrailexpress.content.block_entity.MinigameQuestBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
@@ -35,6 +36,7 @@ import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class MapScanner {
     public static void registerMapScanEvent() {
@@ -60,6 +62,7 @@ public class MapScanner {
         }
         GameUtils.taskBlocks.clear();
         var areas = AreasWorldComponent.KEY.get(serverLevel);
+        HashSet<String> collectedMinigameIds = new HashSet<>();
         BlockPos backupMinPos = BlockPos.containing(areas.getResetTemplateArea().getMinPosition());
         BlockPos backupMaxPos = BlockPos.containing(areas.getResetTemplateArea().getMaxPosition());
         BoundingBox backupTrainBox = BoundingBox.fromCorners(backupMinPos, backupMaxPos);
@@ -125,7 +128,17 @@ public class MapScanner {
                     } else if (blockState.getBlock() instanceof SprinklerBlock) {
                         GameUtils.taskBlocks.put(blockPos6, 3);
                     } else if (blockState.getBlock() instanceof TaskInstinctShowableInterface it) {
-                        GameUtils.taskBlocks.put(blockPos6, it.taskInstinctId());
+                        int instinctId = it.taskInstinctId();
+                        GameUtils.taskBlocks.put(blockPos6, instinctId);
+                        // 收集小游戏任务点方块的 minigameId（type 14 = MinigameQuestBlock, 15 = MinigameQuestPanelBlock）
+                        if (instinctId == 14 || instinctId == 15) {
+                            if (localLevel.getBlockEntity(blockPos6) instanceof MinigameQuestBlockEntity questBe) {
+                                String mgId = questBe.getMinigameId();
+                                if (mgId != null && !mgId.isEmpty()) {
+                                    collectedMinigameIds.add(mgId);
+                                }
+                            }
+                        }
                     }
                     // ───── 场景任务方块扫描 ─────
                     if (blockState.is(ModSceneBlocks.STOVE)) {
@@ -148,7 +161,11 @@ public class MapScanner {
                 }
             }
         }
-        SRE.LOGGER.info("Successed scanned task points! Total {}.", GameUtils.taskBlocks.size());
+        // 将扫描到的小游戏种类 ID 存入 AreasWorldComponent 并同步
+        areas.availableMinigameIds.clear();
+        areas.availableMinigameIds.addAll(collectedMinigameIds);
+        areas.sync();
+        SRE.LOGGER.info("Successed scanned task points! Total {}. Minigame types: {}.", GameUtils.taskBlocks.size(), collectedMinigameIds.size());
         // Minecraft.getInstance().player.displayClientMessage(
         // Component
         // .translatable("msg.noellesroles.taskpoint.available",

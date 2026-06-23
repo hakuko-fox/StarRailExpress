@@ -208,6 +208,8 @@ public class AreasWorldComponent implements AutoSyncedComponent {
 
     // 小游戏任务系统（默认关闭）：每完成 2 个普通任务派发一个小游戏任务，完成后奖励游戏代币
     public boolean minigameQuestEnabled = false;
+    /** 当前地图中存在的小游戏种类 ID 集合（由 MapScanner 扫描填充），用于小游戏任务刷新时随机选取。 */
+    public final HashSet<String> availableMinigameIds = new HashSet<>();
 
     // 支持的游戏模式列表，为空表示支持所有模式
     public java.util.List<String> gameModes = new java.util.ArrayList<>();
@@ -500,6 +502,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.daylightCycle = tag.contains("daylightCycle") ? tag.getBoolean("daylightCycle") : false;
         this.weatherCycle = tag.contains("weatherCycle") ? tag.getBoolean("weatherCycle") : false;
         this.minigameQuestEnabled = tag.contains("minigameQuestEnabled") && tag.getBoolean("minigameQuestEnabled");
+        this.availableMinigameIds.clear();
+        if (tag.contains("AvailableMinigameIds")) {
+            var mgList = tag.getList("AvailableMinigameIds", net.minecraft.nbt.Tag.TAG_STRING);
+            for (int i = 0; i < mgList.size(); i++) {
+                this.availableMinigameIds.add(mgList.getString(i));
+            }
+        }
         this.initialItems = new ArrayList<>();
         if (tag.contains("initialItems")) {
             var iiList = tag.getList("initialItems", net.minecraft.nbt.Tag.TAG_STRING);
@@ -592,6 +601,13 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putBoolean("daylightCycle", this.daylightCycle);
         tag.putBoolean("weatherCycle", this.weatherCycle);
         tag.putBoolean("minigameQuestEnabled", this.minigameQuestEnabled);
+
+        // 序列化 availableMinigameIds
+        var minigameIdsList = new net.minecraft.nbt.ListTag();
+        for (String id : this.availableMinigameIds) {
+            minigameIdsList.add(net.minecraft.nbt.StringTag.valueOf(id));
+        }
+        tag.put("AvailableMinigameIds", minigameIdsList);
 
         var initialItemsList = new net.minecraft.nbt.ListTag();
         for (String item : this.initialItems) {

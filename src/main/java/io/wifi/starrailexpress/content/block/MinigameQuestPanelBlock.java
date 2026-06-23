@@ -109,6 +109,33 @@ public class MinigameQuestPanelBlock extends BaseEntityBlock
                 }
                 String minigameId = questBe.getMinigameId();
                 if (minigameId != null && !minigameId.isEmpty()) {
+                    // 游戏运行中：校验任务和冷却
+                    if (io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(sp.level()).isRunning()) {
+                        var mgComp = io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(sp);
+                        if (!mgComp.hasPendingTask()) {
+                            sp.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.sre.minigame_no_task"),
+                                    true);
+                            return InteractionResult.SUCCESS;
+                        }
+                        if (mgComp.isBlockUsed(pos)) {
+                            sp.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.sre.minigame_cooldown"),
+                                    true);
+                            return InteractionResult.SUCCESS;
+                        }
+                        // 校验小游戏类型匹配
+                        if (mgComp.targetMinigameId != null && !mgComp.targetMinigameId.isEmpty()
+                                && !mgComp.targetMinigameId.equals(minigameId)) {
+                            sp.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.sre.minigame_wrong_type",
+                                            net.minecraft.network.chat.Component.translatable(
+                                                    "minigame.starrailexpress." + mgComp.targetMinigameId)),
+                                    true);
+                            return InteractionResult.SUCCESS;
+                        }
+                        mgComp.startBlockCooldown(pos);
+                    }
                     net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(sp,
                             new io.wifi.starrailexpress.network.MinigameQuestPayload.OpenGame(pos, minigameId));
                 }

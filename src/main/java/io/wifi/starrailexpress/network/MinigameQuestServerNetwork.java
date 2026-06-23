@@ -84,7 +84,8 @@ public class MinigameQuestServerNetwork {
                 if (io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(player.level()).minigameQuestEnabled) {
                     io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent.KEY.get(player)
                             .onMinigameBlockCompleted(player, pos,
-                                    io.wifi.starrailexpress.game.GameConstants.MINIGAME_TASK_TOKEN_REWARD);
+                                    io.wifi.starrailexpress.game.GameConstants.MINIGAME_TASK_TOKEN_REWARD,
+                                    questBe.getMinigameId());
                 }
             }
         });

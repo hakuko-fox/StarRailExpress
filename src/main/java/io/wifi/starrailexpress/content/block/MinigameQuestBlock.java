@@ -113,6 +113,16 @@ public class MinigameQuestBlock extends BaseEntityBlock
                                     true);
                             return InteractionResult.SUCCESS;
                         }
+                        // 校验小游戏类型匹配：若有指定目标类型，必须匹配
+                        if (mgComp.targetMinigameId != null && !mgComp.targetMinigameId.isEmpty()
+                                && !mgComp.targetMinigameId.equals(minigameId)) {
+                            sp.displayClientMessage(
+                                    net.minecraft.network.chat.Component.translatable("message.sre.minigame_wrong_type",
+                                            net.minecraft.network.chat.Component.translatable(
+                                                    "minigame.starrailexpress." + mgComp.targetMinigameId)),
+                                    true);
+                            return InteractionResult.SUCCESS;
+                        }
                         // 使用任务点即进入复用冷却（透视也随之隐藏）
                         mgComp.startBlockCooldown(pos);
                     }
