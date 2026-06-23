@@ -157,10 +157,10 @@ public class ModRoles {
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
     public static final ResourceLocation GLITCH_ROBOT_ID = Noellesroles.id("glitch_robot");
     public static final ResourceLocation AVENGER_ID = Noellesroles.id("avenger");
-    public static final ResourceLocation SLIPPERY_GHOST_ID = Noellesroles.id("slippery_ghost");
+    public static final ResourceLocation PRANKSTER_ID = Noellesroles.id("prankster");
     public static final ResourceLocation ENGINEER_ID = Noellesroles.id("engineer");
-    public static final ResourceLocation BOXER_ID = Noellesroles.id("boxer");
-    public static final ResourceLocation DETECTIVE_ID = Noellesroles.id("detective");
+    public static final ResourceLocation FIGHTER_ID = Noellesroles.id("fighter");
+    public static final ResourceLocation AGENT_ID = Noellesroles.id("agent");
     public static final ResourceLocation ATHLETE_ID = Noellesroles.id("athlete");
     public static final ResourceLocation SUPERSTAR_ID = Noellesroles.id("star");
     public static final ResourceLocation VETERAN_ID = Noellesroles.id("veteran");
@@ -1311,7 +1311,7 @@ public class ModRoles {
     ).setComponentKey(AvengerPlayerComponent.KEY));
 
     /**
-     * 滑头鬼角色
+     * 捣蛋鬼角色
      * - 不属于乘客阵营 (isInnocent = false)
      * - 不能使用杀手能力 (canUseKiller = false)，但有专属商店
      * - 假心情系统
@@ -1321,9 +1321,9 @@ public class ModRoles {
      * - 专属商店：空包弹(100)、烟雾弹(300)、撬锁器(50)、关灯(200)
      * - 胜利条件：与杀手同胜
      */
-    public static SRERole SLIPPERY_GHOST = TMMRoles.registerRole(new NormalRole(
-            SLIPPERY_GHOST_ID, // 角色 ID
-            new Color(176, 196, 222).getRGB(), // 灰色 - 代表滑头鬼的隐匿
+    public static SRERole PRANKSTER = TMMRoles.registerRole(new NormalRole(
+            PRANKSTER_ID, // 角色 ID
+            new Color(176, 196, 222).getRGB(), // 灰色 - 代表捣蛋鬼的隐匿
             false, // isInnocent = 非乘客阵营
             false, // canUseKiller = 无杀手能力（使用专属商店）
             SRERole.MoodType.FAKE, // 假心情
@@ -1353,7 +1353,7 @@ public class ModRoles {
     ));;
 
     /**
-     * 拳击手角色
+     * 斗士角色
      * - 属于乘客阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
      * - 真实心情系统
@@ -1367,8 +1367,8 @@ public class ModRoles {
      * - 攻击间隔1.2秒
      * - 使用后冷却80秒
      */
-    public static SRERole BOXER = TMMRoles.registerRole(new NormalRole(
-            BOXER_ID, // 角色 ID
+    public static SRERole FIGHTER = TMMRoles.registerRole(new NormalRole(
+            FIGHTER_ID, // 角色 ID
             new Color(205, 92, 92).getRGB(), // 猩红色 - 代表热血/格斗
             true, // isInnocent = 乘客阵营
             false, // canUseKiller = 无杀手能力
@@ -1378,7 +1378,7 @@ public class ModRoles {
     ).setComponentKey(BoxerPlayerComponent.KEY));;
 
     /**
-     * 私家侦探角色
+     * 探员角色
      * - 属于乘客阵营 (isInnocent = true)
      * - 不能使用杀手能力 (canUseKiller = false)
      * - 真实心情系统
@@ -1391,8 +1391,8 @@ public class ModRoles {
      * - 如果目标玩家移动则会关闭界面
      * - 使用后冷却60秒
      */
-    public static SRERole DETECTIVE = TMMRoles.registerRole(new NormalRole(
-            DETECTIVE_ID, // 角色 ID
+    public static SRERole AGENT = TMMRoles.registerRole(new NormalRole(
+            AGENT_ID, // 角色 ID
             new Color(205, 133, 63).getRGB(), // 棕色 - 代表侦探风衣
             true, // isInnocent = 乘客阵营
             false, // canUseKiller = 无杀手能力

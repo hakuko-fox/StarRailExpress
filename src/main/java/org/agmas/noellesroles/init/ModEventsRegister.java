@@ -176,7 +176,7 @@ public class ModEventsRegister {
     }
 
     /**
-     * 处理拳击手无敌反制
+     * 处理斗士无敌反制
      * 钢筋铁骨期间可以反弹任何死亡
      *
      * @param victim      受害者
@@ -187,10 +187,10 @@ public class ModEventsRegister {
         if (victim == null || victim.level().isClientSide())
             return false;
 
-        // 检查受害者是否是拳击手
+        // 检查受害者是否是斗士
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
 
-        // 模仿者拳击手无敌检测
+        // 模仿者斗士无敌检测
         if (gameWorld.isRole(victim, ModRoles.IMITATOR)) {
             org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent imitComp = ModComponents.IMITATOR
                     .get(victim);
@@ -208,11 +208,11 @@ public class ModEventsRegister {
             }
         }
 
-        if (!gameWorld.isRole(victim, ModRoles.BOXER))
+        if (!gameWorld.isRole(victim, ModRoles.FIGHTER))
             return false;
 
-        // 获取拳击手组件
-        BoxerPlayerComponent boxerComponent = ModComponents.BOXER.get(victim);
+        // 获取斗士组件
+        BoxerPlayerComponent boxerComponent = ModComponents.FIGHTER.get(victim);
 
         // 检查是否处于无敌状态
         if (!boxerComponent.isInvulnerable)
@@ -2062,12 +2062,12 @@ public class ModEventsRegister {
                 }
             }
         });
-        // 监听玩家死亡事件 - 用于激活复仇者能力、拳击手反制、跟踪者免疫和操纵师死亡判定
+        // 监听玩家死亡事件 - 用于激活复仇者能力、斗士反制、跟踪者免疫和操纵师死亡判定
         AllowPlayerDeath.EVENT.register((victim, deathReason) -> {
             // 检查窃皮者皮肤死亡免疫
             if (handleSkincrawlerDeath(victim, deathReason))
                 return false;
-            // 检查拳击手无敌反制
+            // 检查斗士无敌反制
             if (handleBoxerInvulnerability(victim, deathReason)) {
                 return false; // 阻止死亡
             }

@@ -186,11 +186,11 @@ public class RoleShopHandler {
   public static ArrayList<ShopEntry> CONSPIRATOR_SHOP = new ArrayList<>();
   // ==================== 柜子区商店 ====================
   public static ArrayList<ShopEntry> 柜子区的商店 = new ArrayList<>();
-  // ==================== 滑头鬼商店 ====================
+  // ==================== 捣蛋鬼商店 ====================
   public static ArrayList<ShopEntry> SLIPPERY_GHOST_SHOP = new ArrayList<>();
   // ==================== 工程师商店 ====================
   public static ArrayList<ShopEntry> ENGINEER_SHOP = new ArrayList<>();
-  // ==================== 拳击手商店 ====================
+  // ==================== 斗士商店 ====================
   public static ArrayList<ShopEntry> BOXER_SHOP = new ArrayList<>();
   // ==================== 心理学家商店 ====================
   public static ArrayList<ShopEntry> PSYCHOLOGIST_SHOP = new ArrayList<>();
@@ -971,7 +971,7 @@ public class RoleShopHandler {
     }
     {
       ShopContent.customEntries.put(
-          ModRoles.SLIPPERY_GHOST_ID, SLIPPERY_GHOST_SHOP);
+          ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);
     }
     {
       // PACHURI 商店
@@ -1067,7 +1067,7 @@ public class RoleShopHandler {
     }
     {
       ShopContent.customEntries.put(
-          ModRoles.BOXER_ID, BOXER_SHOP);
+          ModRoles.FIGHTER_ID, BOXER_SHOP);
     }
     {
       var shopEntries = new ArrayList<ShopEntry>();
@@ -1725,7 +1725,7 @@ public class RoleShopHandler {
         50,
         ShopEntry.Type.TOOL));
 
-    // 滑头鬼商店
+    // 捣蛋鬼商店
     // 空包弹 - 150金币
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(
         ModItems.BLANK_CARTRIDGE.getDefaultInstance(),
@@ -1744,7 +1744,7 @@ public class RoleShopHandler {
         50,
         ShopEntry.Type.TOOL));
 
-    // 闪光弹 - 175金币（滑头鬼专用）
+    // 闪光弹 - 175金币（捣蛋鬼专用）
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
       @Override
       public boolean canBuy(@NotNull Player player) {
@@ -1752,10 +1752,10 @@ public class RoleShopHandler {
       }
     });
 
-    // 诱饵弹 - 25金币（滑头鬼专用）
+    // 诱饵弹 - 25金币（捣蛋鬼专用）
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
 
-    // 监控失灵 - 50金币（滑头鬼专属）
+    // 监控失灵 - 50金币（捣蛋鬼专属）
     SLIPPERY_GHOST_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
       @Override
       public boolean onBuy(@NotNull Player player) {
@@ -1804,7 +1804,7 @@ public class RoleShopHandler {
           }
         });
 
-    // 拳击手商店
+    // 斗士商店
     BOXER_SHOP.add(new ShopEntry(
         ModItems.BOXING_GLOVE.getDefaultInstance(),
         150,

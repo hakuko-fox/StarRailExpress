@@ -306,10 +306,10 @@ public class RicesRoleRhapsody implements ModInitializer {
         // 注册射命丸文传递包
         PayloadTypeRegistry.playC2S().register(PostmanC2SPacket.ID, PostmanC2SPacket.CODEC);
 
-        // 注册私家侦探审查包
+        // 注册探员审查包
         PayloadTypeRegistry.playC2S().register(DetectiveC2SPacket.ID, DetectiveC2SPacket.CODEC);
 
-        // 注册拳击手技能包
+        // 注册斗士技能包
         PayloadTypeRegistry.playC2S().register(BoxerAbilityC2SPacket.ID, BoxerAbilityC2SPacket.CODEC);
 
         // 注册跟踪者窥视包
@@ -742,20 +742,20 @@ public class RicesRoleRhapsody implements ModInitializer {
             }
         });
 
-        // 处理私家侦探审查包
+        // 处理探员审查包
         ServerPlayNetworking.registerGlobalReceiver(DETECTIVE_PACKET, (payload, context) -> {
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
-            // 验证玩家是私家侦探
-            if (!gameWorld.isRole(context.player(), ModRoles.DETECTIVE))
+            // 验证玩家是探员
+            if (!gameWorld.isRole(context.player(), ModRoles.AGENT))
                 return;
 
             // 验证玩家存活
             if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
                 return;
 
-            // 获取私家侦探组件
-            DetectivePlayerComponent component = ModComponents.DETECTIVE.get(context.player());
+            // 获取探员组件
+            DetectivePlayerComponent component = ModComponents.AGENT.get(context.player());
 
             // 检查技能冷却
             if (!component.canUseAbility()) {
@@ -822,22 +822,22 @@ public class RicesRoleRhapsody implements ModInitializer {
             }
         });
 
-        // 处理拳击手技能包
+        // 处理斗士技能包
         ServerPlayNetworking.registerGlobalReceiver(BOXER_ABILITY_PACKET, (payload, context) -> {
             if (RoleSkill.blockForSpectator(context.player()))
                 return;
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(context.player().level());
 
-            // 验证玩家是拳击手
-            if (!gameWorld.isRole(context.player(), ModRoles.BOXER))
+            // 验证玩家是斗士
+            if (!gameWorld.isRole(context.player(), ModRoles.FIGHTER))
                 return;
 
             // 验证玩家存活
             if (!GameUtils.isPlayerAliveAndSurvival(context.player()))
                 return;
 
-            // 获取拳击手组件
-            BoxerPlayerComponent boxerComponent = ModComponents.BOXER.get(context.player());
+            // 获取斗士组件
+            BoxerPlayerComponent boxerComponent = ModComponents.FIGHTER.get(context.player());
 
             // 在服务端使用技能
             boxerComponent.useAbility();
@@ -1319,10 +1319,10 @@ public class RicesRoleRhapsody implements ModInitializer {
             conspiratorComponent.init();
         }
 
-        // ==================== 滑头鬼角色处理 ====================
-        if (role.equals(ModRoles.SLIPPERY_GHOST)) {
-            // 重置滑头鬼组件
-            SlipperyGhostPlayerComponent slipperyGhostComponent = ModComponents.SLIPPERY_GHOST.get(player);
+        // ==================== 捣蛋鬼角色处理 ====================
+        if (role.equals(ModRoles.PRANKSTER)) {
+            // 重置捣蛋鬼组件
+            SlipperyGhostPlayerComponent slipperyGhostComponent = ModComponents.PRANKSTER.get(player);
             slipperyGhostComponent.init();
         }
 
@@ -1332,10 +1332,10 @@ public class RicesRoleRhapsody implements ModInitializer {
             // 商店逻辑在 EngineerShopMixin 中处理
         }
 
-        // ==================== 拳击手角色处理 ====================
-        if (role.equals(ModRoles.BOXER)) {
-            // 重置拳击手组件 - 设置开局冷却
-            BoxerPlayerComponent boxerComponent = ModComponents.BOXER.get(player);
+        // ==================== 斗士角色处理 ====================
+        if (role.equals(ModRoles.FIGHTER)) {
+            // 重置斗士组件 - 设置开局冷却
+            BoxerPlayerComponent boxerComponent = ModComponents.FIGHTER.get(player);
             boxerComponent.init();
         }
 
@@ -1346,10 +1346,10 @@ public class RicesRoleRhapsody implements ModInitializer {
             silencerComponent.init();
         }
 
-        // ==================== 私家侦探角色处理 ====================
-        if (role.equals(ModRoles.DETECTIVE)) {
-            // 重置私家侦探组件
-            DetectivePlayerComponent detectiveComponent = ModComponents.DETECTIVE.get(player);
+        // ==================== 探员角色处理 ====================
+        if (role.equals(ModRoles.AGENT)) {
+            // 重置探员组件
+            DetectivePlayerComponent detectiveComponent = ModComponents.AGENT.get(player);
             detectiveComponent.init();
         }
 

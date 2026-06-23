@@ -96,8 +96,8 @@ public class InitModRolesMax {
         // 复仇者每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.AVENGER_ID, 1);
 
-        // 滑头鬼每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.SLIPPERY_GHOST_ID, 1);
+        // 捣蛋鬼每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.PRANKSTER_ID, 1);
 
         // 不应该刷新
         Harpymodloader.setRoleMaximum(SpecialGameModeRoles.CUSTOM_PENDING, 0);
@@ -108,8 +108,8 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.LOCKSMITH_ID, 0);
         Harpymodloader.setRoleMaximum(ModRoles.MA_CHEN_XU, 0);
         Harpymodloader.setRoleMaximum(ModRoles.GUEST_GHOST, 0);
-        // 拳击手每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.BOXER_ID, 1);
+        // 斗士每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.FIGHTER_ID, 1);
 
         // 小偷每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.THIEF_ID, 1);
@@ -120,8 +120,8 @@ public class InitModRolesMax {
         // 鹈鹕每局最多 1 个（具体是否出现由动态概率控制）
         Harpymodloader.setRoleMaximum(ModRoles.PELICAN_ID, 1);
 
-        // 私家侦探每局只能有 1 个
-        Harpymodloader.setRoleMaximum(ModRoles.DETECTIVE_ID, 1);
+        // 探员每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.AGENT_ID, 1);
 
         // 运动员每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ATHLETE_ID, 1);

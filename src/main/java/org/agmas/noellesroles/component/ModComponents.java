@@ -128,8 +128,8 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "conspirator"),
       ConspiratorPlayerComponent.class);
 
-  public static final ComponentKey<SlipperyGhostPlayerComponent> SLIPPERY_GHOST = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "slippery_ghost"),
+  public static final ComponentKey<SlipperyGhostPlayerComponent> PRANKSTER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "prankster"),
       SlipperyGhostPlayerComponent.class);
 
   public static final ComponentKey<BroadcasterPlayerComponent> BROADCASTER = ComponentRegistry.getOrCreate(
@@ -140,15 +140,15 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ayayaya"),
       AyayayaPlayerComponent.class);
 
-  public static final ComponentKey<DetectivePlayerComponent> DETECTIVE = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "detective"),
+  public static final ComponentKey<DetectivePlayerComponent> AGENT = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "agent"),
       DetectivePlayerComponent.class);
 
   public static final ComponentKey<NoiseMakerPlayerComponent> NOISEMAKER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "noise_maker"),
       NoiseMakerPlayerComponent.class);
-  public static final ComponentKey<BoxerPlayerComponent> BOXER = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "boxer"),
+  public static final ComponentKey<BoxerPlayerComponent> FIGHTER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "fighter"),
       BoxerPlayerComponent.class);
 
   public static final ComponentKey<StalkerPlayerComponent> STALKER = ComponentRegistry.getOrCreate(
@@ -441,8 +441,8 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(ConspiratorPlayerComponent::new);
 
-    // 注册滑头鬼组件 - 被动收入计时器
-    registry.beginRegistration(Player.class, SLIPPERY_GHOST)
+    // 注册捣蛋鬼组件 - 被动收入计时器
+    registry.beginRegistration(Player.class, PRANKSTER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SlipperyGhostPlayerComponent::new);
 
@@ -460,13 +460,13 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(AyayayaPlayerComponent::new);
 
-    // 注册私家侦探组件 - 存储审查技能冷却和目标状态
-    registry.beginRegistration(Player.class, DETECTIVE)
+    // 注册探员组件 - 存储审查技能冷却和目标状态
+    registry.beginRegistration(Player.class, AGENT)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(DetectivePlayerComponent::new);
 
-    // 注册拳击手组件 - 存储钢筋铁骨技能状态
-    registry.beginRegistration(Player.class, BOXER)
+    // 注册斗士组件 - 存储钢筋铁骨技能状态
+    registry.beginRegistration(Player.class, FIGHTER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BoxerPlayerComponent::new);
 

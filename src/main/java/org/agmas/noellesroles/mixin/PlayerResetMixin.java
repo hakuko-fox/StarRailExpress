@@ -147,7 +147,7 @@ public abstract class PlayerResetMixin {
         InsaneKillerPlayerComponent insaneKillerComp = ModComponents.INSANE_KILLER.get(player);
         insaneKillerComp.clear();
 
-        SlipperyGhostPlayerComponent slipperyGhostComp = ModComponents.SLIPPERY_GHOST.get(player);
+        SlipperyGhostPlayerComponent slipperyGhostComp = ModComponents.PRANKSTER.get(player);
         slipperyGhostComp.clear();
 
         BroadcasterPlayerComponent broadcasterComp = ModComponents.BROADCASTER.get(player);
@@ -156,10 +156,10 @@ public abstract class PlayerResetMixin {
         AyayayaPlayerComponent postmanComp = ModComponents.AYAYAYA.get(player);
         postmanComp.clear();
 
-        DetectivePlayerComponent detectiveComp = ModComponents.DETECTIVE.get(player);
+        DetectivePlayerComponent detectiveComp = ModComponents.AGENT.get(player);
         detectiveComp.clear();
 
-        BoxerPlayerComponent boxerComp = ModComponents.BOXER.get(player);
+        BoxerPlayerComponent boxerComp = ModComponents.FIGHTER.get(player);
         boxerComp.clear();
 
         AthletePlayerComponent athleteComp = ModComponents.ATHLETE.get(player);
