@@ -282,6 +282,17 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         return Set.of();
     }
 
+    /**
+     * 获取当前地图启用的场景任务列表
+     */
+    private Set<String> getEnabledSceneTasks() {
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(this.player.level());
+        if (areas != null) {
+            return areas.getEnabledSceneTasks();
+        }
+        return Set.of();
+    }
+
     public @Nullable TrainTask generateTask() {
         if (!this.tasks.isEmpty())
             return null;
@@ -328,6 +339,7 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         float currentMood = (playerMoodComponent != null) ? playerMoodComponent.getMood() : 1f;
         // 获取当前地图禁用的任务
         Set<String> disabledTasks = getDisabledTasks();
+        // 遍历非场景任务
         for (Task task : Task.getAvailableTasksList()) {
             if (this.tasks.containsKey(task))
                 continue;
@@ -336,26 +348,24 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
                 continue;
             float weight = 1f / this.timesGotten.getOrDefault(task, 1);
             // 情绪驱动的任务权重调整（基于任务种类）
-            Task.TaskCategory category = task.category;
-            if (currentMood < GameConstants.MID_MOOD_THRESHOLD) {
-                // 情绪低落时：安抚性任务权重翻倍，活跃性任务权重降低
-                if (category == Task.TaskCategory.SOOTHING) {
-                    weight *= 2f;
-                }
-                if (category == Task.TaskCategory.ACTIVE) {
-                    weight *= 0.5f;
-                }
-            } else if (currentMood > GameConstants.ANGRY_MOOD_THRESHOLD) {
-                // 情绪亢奋时：活跃性任务权重提升，静态任务权重降低
-                if (category == Task.TaskCategory.ACTIVE) {
-                    weight *= 1.5f;
-                }
-                if (category == Task.TaskCategory.STATIC || category == Task.TaskCategory.SOOTHING) {
-                    weight *= 0.5f;
-                }
-            }
+            weight = applyMoodWeight(weight, task.category, currentMood);
             map.put(task, weight);
             total += weight;
+        }
+        // 遍历启用的场景任务
+        Set<String> enabledSceneTasks = getEnabledSceneTasks();
+        if (!enabledSceneTasks.isEmpty()) {
+            for (Task task : Task.getSceneTasksList()) {
+                if (this.tasks.containsKey(task))
+                    continue;
+                // 只有在地图启用列表中的场景任务才可选
+                if (!enabledSceneTasks.contains(task.name()))
+                    continue;
+                float weight = 1f / this.timesGotten.getOrDefault(task, 1);
+                weight = applyMoodWeight(weight, task.category, currentMood);
+                map.put(task, weight);
+                total += weight;
+            }
         }
 
         if (total <= 0)
@@ -371,6 +381,28 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             }
         }
         return null;
+    }
+
+    /** 根据情绪状态调整任务权重。 */
+    private static float applyMoodWeight(float weight, Task.TaskCategory category, float currentMood) {
+        if (currentMood < GameConstants.MID_MOOD_THRESHOLD) {
+            // 情绪低落时：安抚性任务权重翻倍，活跃性任务权重降低
+            if (category == Task.TaskCategory.SOOTHING) {
+                weight *= 2f;
+            }
+            if (category == Task.TaskCategory.ACTIVE) {
+                weight *= 0.5f;
+            }
+        } else if (currentMood > GameConstants.ANGRY_MOOD_THRESHOLD) {
+            // 情绪亢奋时：活跃性任务权重提升，静态任务权重降低
+            if (category == Task.TaskCategory.ACTIVE) {
+                weight *= 1.5f;
+            }
+            if (category == Task.TaskCategory.STATIC || category == Task.TaskCategory.SOOTHING) {
+                weight *= 0.5f;
+            }
+        }
+        return weight;
     }
 
     private @Nullable TrainTask createTaskInstance(Task taskType) {
@@ -520,6 +552,14 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
 
         public static List<Task> getAvailableTasksList() {
             return availableTasksList;
+        }
+
+        /** 场景任务列表（仅在地图启用时才能刷出）。 */
+        private static final List<Task> sceneTasksList = List.of(
+                BREATHE, LIGHT_STOVE, CLEAN_DUST, TRANSPORT, PRAY, PRUNE_BUSH, HARVEST_CROP);
+
+        public static List<Task> getSceneTasksList() {
+            return sceneTasksList;
         }
     }
 

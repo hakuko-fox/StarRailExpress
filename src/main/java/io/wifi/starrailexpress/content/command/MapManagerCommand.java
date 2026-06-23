@@ -127,6 +127,7 @@ public class MapManagerCommand {
                   areas.canJump = false;
                   areas.canSwim = false;
                   areas.disabledTasks = new HashSet<>();
+                  areas.enableSceneTask = new HashSet<>();
                   areas.haveOutsideSound = false;
                   areas.sceneOutsideSound = "train";
                   areas.mapName = "new_area";
@@ -184,6 +185,7 @@ public class MapManagerCommand {
                 .then(setMustCopy())
                 .then(setMapName())
                 .then(setDisabledTasks())
+                .then(setEnableSceneTask())
                 .then(setWeather())
                 .then(setGravity())
                 .then(setEffect())
@@ -228,7 +230,8 @@ public class MapManagerCommand {
                 .then(buildGetSimple("weatherCycle", a -> String.valueOf(a.weatherCycle)))
                 .then(buildGetSimple("minigameQuestEnabled", a -> String.valueOf(a.minigameQuestEnabled)))
                 .then(buildGetSimple("initialItems", a -> a.initialItems.isEmpty() ? "(none)" : String.join(", ", a.initialItems)))
-                .then(getDisabledTasks()))
+                .then(getDisabledTasks())
+                .then(getEnableSceneTask()))
             .then(Commands.literal("remove")
                 .requires(source -> source.hasPermission(3))
                 .then(Commands.argument("mapName", MapLoadArgumentType.string())
@@ -663,7 +666,8 @@ public class MapManagerCommand {
     sb.append("weatherCycle: ").append(areas.weatherCycle).append("\n");
     sb.append("minigameQuestEnabled: ").append(areas.minigameQuestEnabled).append("\n");
     sb.append("initialItems: ").append(areas.initialItems.isEmpty() ? "(none)" : String.join(", ", areas.initialItems)).append("\n");
-    sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks));
+    sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks)).append("\n");
+    sb.append("enableSceneTask: ").append(formatDisabledTasks(areas.enableSceneTask));
     source.sendSuccess(
         () -> Component.literal(sb.toString()).withStyle(style -> style.withColor(ChatFormatting.AQUA)),
         false);
@@ -1209,6 +1213,42 @@ public class MapManagerCommand {
                 })));
   }
 
+  // enableSceneTask
+  private static void addEnableSceneTask(CommandSourceStack source, String taskId) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    if (areas.enableSceneTask == null)
+      areas.enableSceneTask = new HashSet<>();
+    areas.enableSceneTask.add(taskId);
+    areas.sync();
+    sendSetFeedback(source, "enableSceneTask.add", taskId);
+  }
+
+  private static void removeEnableSceneTask(CommandSourceStack source, String taskId) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    if (areas.enableSceneTask != null && areas.enableSceneTask.remove(taskId)) {
+      areas.sync();
+      sendSetFeedback(source, "enableSceneTask.remove", taskId);
+    } else {
+      source.sendFailure(Component.literal("场景任务 " + taskId + " 不在启用列表中"));
+    }
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setEnableSceneTask() {
+    return Commands.literal("enableSceneTask")
+        .then(Commands.literal("add")
+            .then(Commands.argument("taskId", StringArgumentType.string())
+                .executes(ctx -> {
+                  addEnableSceneTask(ctx.getSource(), StringArgumentType.getString(ctx, "taskId"));
+                  return 1;
+                })))
+        .then(Commands.literal("remove")
+            .then(Commands.argument("taskId", StringArgumentType.string())
+                .executes(ctx -> {
+                  removeEnableSceneTask(ctx.getSource(), StringArgumentType.getString(ctx, "taskId"));
+                  return 1;
+                })));
+  }
+
   // ======================== get 命令树构建 ========================
 
   private static LiteralArgumentBuilder<CommandSourceStack> getSpawnPos() {
@@ -1313,6 +1353,23 @@ public class MapManagerCommand {
               AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
               boolean has = a.disabledTasks != null && a.disabledTasks.contains(taskId);
               sendGetFeedback(ctx.getSource(), "disabledTasks.contains(" + taskId + ")", String.valueOf(has));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> getEnableSceneTask() {
+    return Commands.literal("enableSceneTask")
+        .executes(ctx -> {
+          AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
+          sendGetFeedback(ctx.getSource(), "enableSceneTask", formatDisabledTasks(a.enableSceneTask));
+          return 1;
+        })
+        .then(Commands.argument("taskId", StringArgumentType.string())
+            .executes(ctx -> {
+              String taskId = StringArgumentType.getString(ctx, "taskId");
+              AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
+              boolean has = a.enableSceneTask != null && a.enableSceneTask.contains(taskId);
+              sendGetFeedback(ctx.getSource(), "enableSceneTask.contains(" + taskId + ")", String.valueOf(has));
               return 1;
             }));
   }

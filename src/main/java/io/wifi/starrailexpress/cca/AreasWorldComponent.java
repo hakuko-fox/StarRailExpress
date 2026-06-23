@@ -48,12 +48,22 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     private String sceneAssetRemoteUrl = "";
     private boolean sceneAssetTrusted = false;
     private Vec3 sceneDisplayOffset = Vec3.ZERO;
+    /** 禁用非场景任务列表（仅可填非场景任务名）。 */
     public HashSet<String> disabledTasks = new HashSet<>();
 
     public HashSet<String> getDisabledTasks() {
         if (this.disabledTasks == null)
             return new HashSet<>();
         return new HashSet<>(this.disabledTasks);
+    }
+
+    /** 启用场景任务列表（仅可填场景任务名）。为空表示不启用任何场景任务。 */
+    public HashSet<String> enableSceneTask = new HashSet<>();
+
+    public HashSet<String> getEnabledSceneTasks() {
+        if (this.enableSceneTask == null)
+            return new HashSet<>();
+        return new HashSet<>(this.enableSceneTask);
     }
 
     public static class PosWithOrientation {

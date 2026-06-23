@@ -244,6 +244,7 @@ public class MapManager {
         jsonObject.addProperty("canJump", areas.canJump);
         jsonObject.addProperty("canSwim", areas.canSwim);
         jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
+        jsonObject.add("enableSceneTask", gson.toJsonTree(areas.enableSceneTask));
         jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
         jsonObject.addProperty("sceneOutsideSound", areas.sceneOutsideSound);
         jsonObject.addProperty("noReset", areas.noReset);
@@ -691,8 +692,14 @@ public class MapManager {
                 for (JsonElement data : jsonArr.asList()) {
                     areas.disabledTasks.add(data.getAsString());
                 }
-            } else {
-                areas.disabledTasks.add("BREATHE");
+            }
+
+            areas.enableSceneTask.clear();
+            if (jsonObject.has("enableSceneTask")) {
+                var jsonArr = jsonObject.get("enableSceneTask").getAsJsonArray();
+                for (JsonElement data : jsonArr.asList()) {
+                    areas.enableSceneTask.add(data.getAsString());
+                }
             }
 
             // 加载支持的游戏模式列表
