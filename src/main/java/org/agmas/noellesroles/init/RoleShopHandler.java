@@ -2176,6 +2176,29 @@ public class RoleShopHandler {
         75,
         ShopEntry.Type.TOOL));
 
+    // 狙击枪 - 400金币（已拥有狙击枪时无法购买）
+    SWAST_SHOP.add(new ShopEntry(
+        TMMItems.SNIPER_RIFLE.getDefaultInstance(),
+        400,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.SNIPER_RIFLE);
+      }
+    });
+
+    // 武术教官商店
+    // 双节棍 - 400金币（已拥有双节棍时无法购买）
+    MARTIAL_ARTS_INSTRUCTOR_SHOP.add(new ShopEntry(
+        TMMItems.NUNCHUCK.getDefaultInstance(),
+        400,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.NUNCHUCK);
+      }
+    });
+
     // 海王商店
     // 普通三叉戟 - 150金币
     var trident = Items.TRIDENT.getDefaultInstance();
