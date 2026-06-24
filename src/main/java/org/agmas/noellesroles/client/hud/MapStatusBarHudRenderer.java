@@ -32,11 +32,11 @@ public final class MapStatusBarHudRenderer {
 
         int value = Math.round((MapStatusBarClientState.value() / (float) MapStatusBarClientState.maxValue()) * 20.0F);
         int right = graphics.guiWidth() / 2 + 91 - 9;
-        int y = graphics.guiHeight() - 39;
+        int y = graphics.guiHeight() - 32;
 
         for (int i = 0; i < 10; i++) {
             int x = right - i * 8;
-            int units = value - i * 2;
+            int units = value - (9 - i) * 2;
             graphics.blitSprite(empty(type), x, y, 9, 9);
             if (units >= 2) {
                 graphics.blitSprite(full(type), x, y, 9, 9);
