@@ -103,50 +103,59 @@ public class HurricaneEntity extends Entity {
 
     private void pullPlayers(ServerLevel level) {
         Vec3 center = position();
-        double catchRadius = Math.max(3.2D, height * 0.28D + 1.5D);
+        double topSpread = height * 0.28D + 0.5D;
+        double catchRadius = Math.max(3.2D, topSpread + 2.0D);
         AABB box = new AABB(center.x - catchRadius, center.y - 0.5D, center.z - catchRadius,
                 center.x + catchRadius, center.y + height + 1.0D, center.z + catchRadius);
         for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, box, GameUtils::isPlayerAliveAndSurvival)) {
-            Vec3 relative = player.position().subtract(center);
-            double horizontal = Math.sqrt(relative.x * relative.x + relative.z * relative.z);
+            double dx = player.getX() - getX();
+            double dz = player.getZ() - getZ();
+            double horiz = Math.sqrt(dx * dx + dz * dz);
+            if (horiz < 0.01D) {
+                dx = 0.01D;
+                dz = 0.0D;
+                horiz = 0.01D;
+            }
             double y = Math.max(0.0D, player.getY() - getY());
-            // 飓风在当前高度的可见宽度（与粒子半径一致）
-            double visualRadius = 0.25D + y * 0.28D;
-            if (horizontal > visualRadius + 1.2D) {
+            double visualRadius = 0.5D + y * 0.28D;
+            if (horiz > visualRadius + 2.0D) {
                 continue;
             }
 
             int caughtTicks = caughtPlayers.getOrDefault(player.getUUID(), 0) + 1;
             caughtPlayers.put(player.getUUID(), caughtTicks);
 
-            // 盘旋角度：沿圆周快速旋转
-            double orbitSpeed = 1.5D + (1.0D - Mth.clamp(horizontal / Math.max(visualRadius, 0.5D), 0.0D, 1.0D)) * 1.5D;
-            double angle = Math.atan2(relative.z, relative.x) + orbitSpeed;
+            // 径向单位向量（指向外）
+            double rx = dx / horiz;
+            double rz = dz / horiz;
+            // 切向单位向量（顺时针环绕）
+            double tx = -rz;
+            double tz = rx;
 
-            // 轨道半径：保持在飓风边缘附近盘旋
-            double orbitRadius = Math.max(1.2D, visualRadius * 0.85D);
-            double pullSpeed = horizontal > orbitRadius * 1.1D ? 0.35D : 0.15D;
-            double targetRadius = Mth.lerp(pullSpeed, horizontal, orbitRadius);
-            double targetX = getX() + Math.cos(angle) * targetRadius;
-            double targetZ = getZ() + Math.sin(angle) * targetRadius;
+            // 轨道半径（飓风边缘）
+            double orbitRadius = Math.max(1.2D, visualRadius * 0.9D);
+
+            // 径向力：拉到轨道半径
+            double radialForce = (horiz - orbitRadius) * 0.4D;
+            // 切向力：推动环绕
+            double orbitSpeed = 1.8D + (1.0D - Mth.clamp(horiz / Math.max(orbitRadius, 1.0D), 0.0D, 1.0D)) * 2.0D;
+            double tangentialForce = orbitRadius * orbitSpeed * 0.15D;
 
             double heightRatio = Mth.clamp(y / height, 0.0D, 1.0D);
-            double upwardBase = 0.28D - heightRatio * 0.18D;
-            double upwardOscillation = Math.sin(caughtTicks * 0.18D) * 0.06D;
+            double upwardBase = 0.24D - heightRatio * 0.14D;
+            double upwardOscillation = Math.sin(caughtTicks * 0.2D) * 0.05D;
             double upward = upwardBase + upwardOscillation;
 
-            int maxCaughtTicks = (int) Math.clamp(height * 10, 80, 400);
-            Vec3 motion = new Vec3(
-                    (targetX - player.getX()) * 0.32D,
-                    upward,
-                    (targetZ - player.getZ()) * 0.32D);
+            // 合速度 = 径向 + 切向 + 上升
+            double vx = -rx * radialForce + tx * tangentialForce;
+            double vz = -rz * radialForce + tz * tangentialForce;
 
+            int maxCaughtTicks = (int) Math.clamp(height * 10, 80, 400);
             if (player.getY() >= getY() + height - 0.35D || caughtTicks >= maxCaughtTicks) {
-                Vec3 throwDir = new Vec3(Math.cos(angle), 0.35D, Math.sin(angle)).normalize().scale(1.25D);
-                player.setDeltaMovement(throwDir.x, 0.7D, throwDir.z);
+                player.setDeltaMovement(rx * 1.5D, 0.7D, rz * 1.5D);
                 caughtPlayers.remove(player.getUUID());
             } else {
-                player.setDeltaMovement(motion);
+                player.setDeltaMovement(vx, upward, vz);
                 player.fallDistance = 0.0F;
             }
             player.hurtMarked = true;
