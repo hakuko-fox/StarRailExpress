@@ -6,14 +6,11 @@ import java.util.UUID;
 
 import org.agmas.noellesroles.content.entity.HurricaneEntity;
 import org.agmas.noellesroles.init.ModEntities;
-import org.agmas.noellesroles.game.modes.repair.RepairMapRuntimeConfig;
 
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.data.MapConfig;
-import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,11 +65,6 @@ public final class SceneRuntimeEvents {
     }
 
     private static boolean isOxygenDrowningEnabled(ServerLevel level) {
-        String mapName = AreasWorldComponent.KEY.get(level).mapName;
-        if (mapName != null) {
-            MapConfig.MapEntry entry = ServerMapConfig.getInstance(level).getMapById(mapName);
-            if (entry != null) return entry.enableOxygenDrowning;
-        }
-        return RepairMapRuntimeConfig.currentMap(level).map(entry -> entry.enableOxygenDrowning).orElse(false);
+        return AreasWorldComponent.KEY.get(level).enableOxygenDrowning;
     }
 }

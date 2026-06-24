@@ -85,6 +85,7 @@
   "sre.map_helper.areas.hint": "Position: %s, %s, %s (including offset)",
   "sre.field.canJump": "Allow Jumping",
   "sre.field.canSwim": "Allow Swimming",
+  "sre.field.enableOxygenDrowning": "Enable Oxygen Drowning",
   "sre.field.noReset": "Skip Map Reset",
   "sre.field.haveOutsideSound": "Enable Background Sound",
   "sre.field.sceneOutsideSound": "Scene Background Sound",

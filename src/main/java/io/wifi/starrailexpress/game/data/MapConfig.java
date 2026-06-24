@@ -50,12 +50,6 @@ public class MapConfig {
         @SerializedName("repair")
         public RepairConfig repair;
 
-        @SerializedName("enableOxygenDrowning")
-        public boolean enableOxygenDrowning = false;
-
-        @SerializedName("mapStatusBar")
-        public MapStatusBarType mapStatusBar = MapStatusBarType.NONE;
-
         // 用于运行时转换颜色值
         public transient int parsedColor;
 

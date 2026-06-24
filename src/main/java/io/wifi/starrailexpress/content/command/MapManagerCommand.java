@@ -12,6 +12,7 @@ import io.wifi.starrailexpress.content.block_entity.SecurityMonitorBlockEntity;
 import io.wifi.starrailexpress.content.command.argument.MapLoadArgumentType;
 import io.wifi.starrailexpress.content.item.BindingToolItem;
 import io.wifi.starrailexpress.game.MapManager;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.index.TMMBlocks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -126,6 +127,8 @@ public class MapManagerCommand {
                   var areas = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
                   areas.canJump = false;
                   areas.canSwim = false;
+                  areas.enableOxygenDrowning = false;
+                  areas.mapStatusBar = MapStatusBarType.NONE;
                   areas.disabledTasks = new HashSet<>();
                   areas.enableSceneTask = new HashSet<>();
                   areas.haveOutsideSound = false;
@@ -170,6 +173,8 @@ public class MapManagerCommand {
                 .then(setRoomPositions())
                 .then(setCanJump())
                 .then(setCanSwim())
+                .then(setEnableOxygenDrowning())
+                .then(setMapStatusBar())
                 .then(setNoReset())
                 .then(setHaveOutsideSound())
                 .then(setSceneOutsideSound())
@@ -208,6 +213,8 @@ public class MapManagerCommand {
                 .then(getRoomPositions())
                 .then(buildGetSimple("canJump", a -> String.valueOf(a.canJump)))
                 .then(buildGetSimple("canSwim", a -> String.valueOf(a.canSwim)))
+                .then(buildGetSimple("enableOxygenDrowning", a -> String.valueOf(a.enableOxygenDrowning)))
+                .then(buildGetSimple("mapStatusBar", a -> String.valueOf(a.mapStatusBar == null ? MapStatusBarType.NONE : a.mapStatusBar)))
                 .then(buildGetSimple("noReset", a -> String.valueOf(a.noReset)))
                 .then(buildGetSimple("haveOutsideSound", a -> String.valueOf(a.haveOutsideSound)))
                 .then(buildGetSimple("sceneOutsideSound", a -> a.sceneOutsideSound))
@@ -433,6 +440,20 @@ public class MapManagerCommand {
     sendSetFeedback(source, "canSwim", String.valueOf(value));
   }
 
+  private static void setEnableOxygenDrowning(CommandSourceStack source, boolean value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.enableOxygenDrowning = value;
+    areas.sync();
+    sendSetFeedback(source, "enableOxygenDrowning", String.valueOf(value));
+  }
+
+  private static void setMapStatusBar(CommandSourceStack source, MapStatusBarType value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.mapStatusBar = value == null ? MapStatusBarType.NONE : value;
+    areas.sync();
+    sendSetFeedback(source, "mapStatusBar", areas.mapStatusBar.name());
+  }
+
   private static void setNoReset(CommandSourceStack source, boolean value) {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
     areas.noReset = value;
@@ -644,6 +665,8 @@ public class MapManagerCommand {
     sb.append("roomPositions: ").append(formatRoomPositions(areas.getRoomPositions())).append("\n");
     sb.append("canJump: ").append(areas.canJump).append("\n");
     sb.append("canSwim: ").append(areas.canSwim).append("\n");
+    sb.append("enableOxygenDrowning: ").append(areas.enableOxygenDrowning).append("\n");
+    sb.append("mapStatusBar: ").append(areas.mapStatusBar == null ? MapStatusBarType.NONE : areas.mapStatusBar).append("\n");
     sb.append("noReset: ").append(areas.noReset).append("\n");
     sb.append("haveOutsideSound: ").append(areas.haveOutsideSound).append("\n");
     sb.append("sceneOutsideSound: \"").append(areas.sceneOutsideSound).append("\"\n");
@@ -1049,6 +1072,33 @@ public class MapManagerCommand {
         .then(Commands.argument("value", BoolArgumentType.bool())
             .executes(ctx -> {
               setCanSwim(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setEnableOxygenDrowning() {
+    return Commands.literal("enableOxygenDrowning")
+        .then(Commands.argument("value", BoolArgumentType.bool())
+            .executes(ctx -> {
+              setEnableOxygenDrowning(ctx.getSource(), BoolArgumentType.getBool(ctx, "value"));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> setMapStatusBar() {
+    return Commands.literal("mapStatusBar")
+        .then(Commands.argument("value", StringArgumentType.word())
+            .suggests((ctx, builder) -> {
+              for (MapStatusBarType type : MapStatusBarType.values()) {
+                String name = type.name().toLowerCase();
+                if (name.startsWith(builder.getRemainingLowerCase())) {
+                  builder.suggest(name);
+                }
+              }
+              return builder.buildFuture();
+            })
+            .executes(ctx -> {
+              setMapStatusBar(ctx.getSource(), MapStatusBarType.byName(StringArgumentType.getString(ctx, "value")));
               return 1;
             }));
   }

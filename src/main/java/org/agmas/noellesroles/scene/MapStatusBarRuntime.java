@@ -4,9 +4,7 @@ import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.data.MapConfig;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
-import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -29,7 +27,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.content.block.scene.StoveBlock;
-import org.agmas.noellesroles.game.modes.repair.RepairMapRuntimeConfig;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.agmas.noellesroles.packet.MapStatusBarSyncS2CPacket;
@@ -241,14 +238,8 @@ public final class MapStatusBarRuntime {
     }
 
     private static MapStatusBarType currentStatusBar(ServerLevel level) {
-        String mapName = AreasWorldComponent.KEY.get(level).mapName;
-        if (mapName != null) {
-            MapConfig.MapEntry entry = ServerMapConfig.getInstance(level).getMapById(mapName);
-            if (entry != null && entry.mapStatusBar != null) {
-                return entry.mapStatusBar;
-            }
-        }
-        return RepairMapRuntimeConfig.currentMap(level).map(entry -> entry.mapStatusBar).orElse(MapStatusBarType.NONE);
+        MapStatusBarType type = AreasWorldComponent.KEY.get(level).mapStatusBar;
+        return type == null ? MapStatusBarType.NONE : type;
     }
 
     private static boolean isColdGround(BlockState state) {

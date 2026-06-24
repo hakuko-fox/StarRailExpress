@@ -88,6 +88,7 @@
   "sre.map_helper.areas.hint": "坐标: %s, %s, %s (含偏移)",
   "sre.field.canJump": "允许跳跃",
   "sre.field.canSwim": "允许游泳",
+  "sre.field.enableOxygenDrowning": "启用氧气不足窒息",
   "sre.field.noReset": "跳过地图重置",
   "sre.field.haveOutsideSound": "是否启用背景音效",
   "sre.field.sceneOutsideSound": "场景背景音效",

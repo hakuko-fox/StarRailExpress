@@ -99,6 +99,7 @@
   "commands.sre.minigamequest.off": "小遊戲任務系統已關閉",
   "commands.sre.minigamequest.query": "小遊戲任務系統目前狀態: %s",
   "sre.field.canSwim": "允許游泳",
+  "sre.field.enableOxygenDrowning": "啟用氧氣不足窒息",
   "sre.field.noReset": "跳過地圖重置",
   "sre.field.haveOutsideSound": "是否啟用背景音效",
   "sre.field.sceneOutsideSound": "場景背景音效",
