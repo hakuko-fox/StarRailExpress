@@ -9,6 +9,7 @@ import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -1214,16 +1215,16 @@ public class SREClient implements ClientModInitializer {
             canRender = false;
         }
         if (player != null && !isInLobby && gameComponent.isRunning()) {
-            if (SRE.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
+            if (ChatHudRules.cantUseChatHud.stream().anyMatch(pre -> pre.test(player))) {
                 canRender = false;
                 cachedRenderVanillaHud = false;
             } else if (!cachedPlayerAliveAndInSurvival) {
                 canRender = true;
                 cachedRenderVanillaHud = true;
             } else {
-                canRender = SRE.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
+                canRender = ChatHudRules.canUseChatHudPlayer.stream().anyMatch(predicate -> predicate.test(player))
                         || (cachedPlayerRole != null
-                                && SRE.canUseChatHud.stream().anyMatch(predicate -> predicate.test(cachedPlayerRole)));
+                                && ChatHudRules.canUseChatHud.stream().anyMatch(predicate -> predicate.test(cachedPlayerRole)));
             }
         }
         cachedCanRenderChatHud = canRender;
