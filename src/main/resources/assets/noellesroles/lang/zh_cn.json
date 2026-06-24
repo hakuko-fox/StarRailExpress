@@ -1712,7 +1712,7 @@
   "gui.vendingmachine.knob.tooltip": "点击购买选中商品",
   "gui.vendingmachine.collect.tooltip": "点击收集商品",
   "gui.vendingmachine.money_display": "%s",
-  "gui.vendingmachine.minigame_token_display": "%s代币",
+  "gui.vendingmachine.minigame_token_display": "%s\uE782",
   "noellesroles.bought_item": "§a购买成功",
   "noellesroles.not_enough_money": "§4金币不足",
   "noellesroles.not_enough_minigame_token": "§4小游戏代币不足",

@@ -1689,7 +1689,7 @@
   "gui.vendingmachine.knob.tooltip": "Click to buy selected item",
   "gui.vendingmachine.collect.tooltip": "Click to collect item",
   "gui.vendingmachine.money_display": "%s",
-  "gui.vendingmachine.minigame_token_display": "%s tokens",
+  "gui.vendingmachine.minigame_token_display": "%s\uE782",
   "noellesroles.bought_item": "§aPurchase successful",
   "noellesroles.not_enough_money": "§4Insufficient coins",
   "noellesroles.not_enough_minigame_token": "§4Insufficient minigame tokens",

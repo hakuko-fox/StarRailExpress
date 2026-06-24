@@ -1708,7 +1708,7 @@
   "gui.vendingmachine.knob.tooltip": "點擊購買選中商品",
   "gui.vendingmachine.collect.tooltip": "點擊收集商品",
   "gui.vendingmachine.money_display": "%s",
-  "gui.vendingmachine.minigame_token_display": "%s代幣",
+  "gui.vendingmachine.minigame_token_display": "%s\uE782",
   "noellesroles.bought_item": "§a購買成功",
   "noellesroles.not_enough_money": "§4金幣不足",
   "noellesroles.not_enough_minigame_token": "§4小遊戲代幣不足",
