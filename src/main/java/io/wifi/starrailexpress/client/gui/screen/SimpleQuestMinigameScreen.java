@@ -11,6 +11,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import org.agmas.noellesroles.init.SREFumoBlocks;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -74,7 +75,11 @@ public class SimpleQuestMinigameScreen extends Screen {
         THREE_CARDS("three_cards"),
         BREAK_JAR("break_jar"),
         ZONE_CALIBRATION("zone_calibration"),
-        KLOTSKI("klotski");
+        KLOTSKI("klotski"),
+        GOLD_MINER("gold_miner"),
+        ONE_STROKE("one_stroke"),
+        CLAW_MACHINE("claw_machine"),
+        BALLOON_SNIPER("balloon_sniper");
 
         private final String id;
 
@@ -309,6 +314,36 @@ public class SimpleQuestMinigameScreen extends Screen {
     private int scaleLeft, scaleRight, scaleWeight, scaleTarget;
     // 华容道 (4列×5行, 0=空 1=曹操2×2 2=竖将 3=横将 4=兵)
     private int[][] klotskiGrid; private int klotskiSelR=-1,klotskiSelC=-1; private double klotskiStartX,klotskiStartY;
+
+    private final List<MinerRock> minerRocks = new ArrayList<>();
+    private float minerAngle, minerHookLen;
+    private int minerState, minerScore;
+    private MinerRock minerCarry;
+
+    private int[] oneNodeX, oneNodeY;
+    private int[][] oneEdges;
+    private boolean[] oneUsed;
+    private int oneCurrent = -1, oneUsedCount;
+
+    private final List<ClawPrize> clawPrizes = new ArrayList<>();
+    private float clawX, clawY;
+    private int clawState, clawCarry = -1;
+    private static final ItemStack[] CLAW_REQUIRED_PLUSH = {
+            new ItemStack(SREFumoBlocks.CANYUESAMA_PLUSH),
+            new ItemStack(SREFumoBlocks.BAMBOO_PLUSH),
+            new ItemStack(SREFumoBlocks.HAIMAN233_PLUSH)
+    };
+    private static final ItemStack[] CLAW_EXTRA_PLUSH = {
+            new ItemStack(SREFumoBlocks.BAKA_PLUSH),
+            new ItemStack(SREFumoBlocks.REIMU_PLUSH),
+            new ItemStack(SREFumoBlocks.MARISA_PLUSH),
+            new ItemStack(SREFumoBlocks.REMILIA_PLUSH),
+            new ItemStack(SREFumoBlocks.MILK_DRAGON_PLUSH),
+            new ItemStack(SREFumoBlocks.TOMATO_PLUSH)
+    };
+
+    private final List<BalloonTarget> balloons = new ArrayList<>();
+    private int balloonsHit;
 
     /** 成功动画：>=0 表示已完成，正在播放成功反馈，到达时长后关闭。 */
     private int successTicks = -1;
@@ -626,6 +661,10 @@ public class SimpleQuestMinigameScreen extends Screen {
             case MAZE -> setupMaze();
             case BALANCE_SCALE -> setupBalanceScale();
             case KLOTSKI -> setupKlotski();
+            case GOLD_MINER -> setupGoldMiner();
+            case ONE_STROKE -> setupOneStroke();
+            case CLAW_MACHINE -> setupClawMachine();
+            case BALLOON_SNIPER -> setupBalloonSniper();
             default -> {
             }
         }
@@ -721,6 +760,9 @@ public class SimpleQuestMinigameScreen extends Screen {
             case REACTION_TEST -> tickReactionTest();
             case TETRIS -> tickTetris();
             case MEMORY_MATCH -> tickMemMatch();
+            case GOLD_MINER -> tickGoldMiner();
+            case CLAW_MACHINE -> tickClawMachine();
+            case BALLOON_SNIPER -> tickBalloonSniper();
             default -> {
             }
         }
@@ -870,6 +912,10 @@ public class SimpleQuestMinigameScreen extends Screen {
             case MAZE -> renderMaze(g, left, top);
             case BALANCE_SCALE -> renderBalanceScale(g, left, top);
             case KLOTSKI -> renderKlotski(g, left, top);
+            case GOLD_MINER -> renderGoldMiner(g, left, top);
+            case ONE_STROKE -> renderOneStroke(g, left, top);
+            case CLAW_MACHINE -> renderClawMachine(g, left, top);
+            case BALLOON_SNIPER -> renderBalloonSniper(g, left, top, mouseX, mouseY);
         }
         g.pose().popPose();
 
@@ -1415,6 +1461,10 @@ public class SimpleQuestMinigameScreen extends Screen {
             case BALANCE_SCALE -> clickScale(mouseX, mouseY);
             case COLOR_SORT -> clickColorSort(mouseX, mouseY);
             case KLOTSKI -> clickKlotski(mouseX, mouseY);
+            case GOLD_MINER -> launchMinerHook();
+            case ONE_STROKE -> clickOneStroke(mouseX, mouseY);
+            case CLAW_MACHINE -> clickClawMachine(mouseX, mouseY);
+            case BALLOON_SNIPER -> shootBalloon(mouseX, mouseY);
             default -> {
             }
         }
@@ -1711,6 +1761,24 @@ public class SimpleQuestMinigameScreen extends Screen {
         if (mode == Mode.SHOOTING && keyCode == GLFW.GLFW_KEY_SPACE) {
             fireBullet();
             return true;
+        }
+        if (mode == Mode.GOLD_MINER && keyCode == GLFW.GLFW_KEY_SPACE) {
+            launchMinerHook();
+            return true;
+        }
+        if (mode == Mode.CLAW_MACHINE) {
+            if (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_A) {
+                moveClaw(-18);
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_RIGHT || keyCode == GLFW.GLFW_KEY_D) {
+                moveClaw(18);
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_ENTER) {
+                pressClawButton();
+                return true;
+            }
         }
         if (mode == Mode.PIPE_BIRD && keyCode == GLFW.GLFW_KEY_SPACE) {
             flapBird();
@@ -3116,6 +3184,292 @@ public class SimpleQuestMinigameScreen extends Screen {
     }
 
     // ── 内类 ──
+    private void setupGoldMiner() {
+        minerRocks.clear();
+        minerState = 0;
+        minerScore = 0;
+        minerHookLen = 34;
+        minerCarry = null;
+        int left = panelLeft(), top = panelTop();
+        int[] values = {10, 20, 35, 50, 20, 35};
+        int[] colors = {0xFFB98648, 0xFFFFCC42, 0xFF8E6D48, 0xFFFFE066, 0xFFFFC14A, 0xFF917258};
+        for (int i = 0; i < values.length; i++) {
+            minerRocks.add(new MinerRock(left + 56 + (i % 3) * 118 + rng.nextInt(18),
+                    top + 130 + (i / 3) * 52 + rng.nextInt(12),
+                    10 + rng.nextInt(7), values[i], colors[i]));
+        }
+    }
+
+    private void tickGoldMiner() {
+        int px = width / 2;
+        int py = panelTop() + 42;
+        if (minerState == 0) {
+            minerAngle = (float) Math.sin(uiTicks * 0.055f) * 0.95f;
+            return;
+        }
+        if (minerState == 1) {
+            minerHookLen += 7.0f;
+            float hx = px + (float) Math.sin(minerAngle) * minerHookLen;
+            float hy = py + (float) Math.cos(minerAngle) * minerHookLen;
+            for (MinerRock rock : minerRocks) {
+                if (!rock.taken && distance(hx, hy, rock.x, rock.y) <= rock.r + 5) {
+                    rock.taken = true;
+                    minerCarry = rock;
+                    minerState = 2;
+                    break;
+                }
+            }
+            if (minerHookLen > 205) minerState = 2;
+        } else if (minerState == 2) {
+            minerHookLen -= minerCarry == null ? 8.0f : 4.3f;
+            if (minerHookLen <= 34) {
+                minerHookLen = 34;
+                if (minerCarry != null) {
+                    minerScore += minerCarry.value;
+                    minerCarry = null;
+                    if (minerScore >= 100) complete();
+                }
+                minerState = 0;
+            }
+        }
+    }
+
+    private void renderGoldMiner(GuiGraphics g, int left, int top) {
+        g.drawCenteredString(font, tr("gold_miner.score", minerScore, 100), width / 2, top + 32, WHITE);
+        MinigameUI.roundRect(g, left + 28, top + 82, left + PANEL_W - 28, top + 230, 8, 0xFF3D2B1E);
+        int px = width / 2, py = top + 42;
+        float hx = px + (float) Math.sin(minerAngle) * minerHookLen;
+        float hy = py + (float) Math.cos(minerAngle) * minerHookLen;
+        drawLine(g, px, py, Math.round(hx), Math.round(hy), 0xFFE2C37A);
+        drawCircle(g, px, py, 8, 0xFFE2C37A);
+        drawCircle(g, Math.round(hx), Math.round(hy), 6, 0xFFD8DDE8);
+        for (MinerRock rock : minerRocks) {
+            if (rock.taken && rock != minerCarry) continue;
+            int rx = rock == minerCarry ? Math.round(hx) : Math.round(rock.x);
+            int ry = rock == minerCarry ? Math.round(hy + rock.r + 2) : Math.round(rock.y);
+            drawCircle(g, rx, ry, rock.r, rock.color);
+            g.drawCenteredString(font, Component.literal(String.valueOf(rock.value)), rx, ry - 4, 0xFF23190B);
+        }
+    }
+
+    private void launchMinerHook() {
+        if (minerState == 0) minerState = 1;
+    }
+
+    private void setupOneStroke() {
+        int left = panelLeft(), top = panelTop();
+        oneNodeX = new int[] {left + 105, left + 215, left + 325, left + 270, left + 160};
+        oneNodeY = new int[] {top + 85, top + 45, top + 85, top + 185, top + 185};
+        oneEdges = new int[][] {{0,1},{1,2},{2,3},{3,4},{4,0},{0,2}};
+        oneUsed = new boolean[oneEdges.length];
+        oneCurrent = -1;
+        oneUsedCount = 0;
+    }
+
+    private void renderOneStroke(GuiGraphics g, int left, int top) {
+        g.drawCenteredString(font, tr("one_stroke.hint"), width / 2, top + 32, MUTED);
+        if (oneEdges == null) return;
+        for (int i = 0; i < oneEdges.length; i++) {
+            int a = oneEdges[i][0], b = oneEdges[i][1];
+            drawLine(g, oneNodeX[a], oneNodeY[a], oneNodeX[b], oneNodeY[b], oneUsed[i] ? GREEN : 0xFF5B6A7E);
+        }
+        for (int i = 0; i < oneNodeX.length; i++) {
+            drawCircle(g, oneNodeX[i], oneNodeY[i], i == oneCurrent ? 13 : 10, i == oneCurrent ? YELLOW : BLUE);
+            g.drawCenteredString(font, Component.literal(String.valueOf(i + 1)), oneNodeX[i], oneNodeY[i] - 4, WHITE);
+        }
+        g.drawCenteredString(font, tr("common.hits", oneUsedCount, oneEdges.length), width / 2, top + 218, WHITE);
+    }
+
+    private void clickOneStroke(double mouseX, double mouseY) {
+        int node = -1;
+        for (int i = 0; i < oneNodeX.length; i++) {
+            if (inCircle(mouseX, mouseY, oneNodeX[i], oneNodeY[i], 16)) {
+                node = i;
+                break;
+            }
+        }
+        if (node < 0) return;
+        if (oneCurrent < 0) {
+            oneCurrent = node;
+            return;
+        }
+        for (int i = 0; i < oneEdges.length; i++) {
+            int a = oneEdges[i][0], b = oneEdges[i][1];
+            if (!oneUsed[i] && ((a == oneCurrent && b == node) || (b == oneCurrent && a == node))) {
+                oneUsed[i] = true;
+                oneUsedCount++;
+                oneCurrent = node;
+                if (oneUsedCount >= oneEdges.length) complete();
+                return;
+            }
+        }
+        Arrays.fill(oneUsed, false);
+        oneUsedCount = 0;
+        oneCurrent = node;
+    }
+
+    private void setupClawMachine() {
+        clawPrizes.clear();
+        clawX = panelLeft() + 76;
+        clawY = panelTop() + 62;
+        clawState = 0;
+        clawCarry = -1;
+        int left = panelLeft(), top = panelTop();
+        List<ItemStack> plush = new ArrayList<>();
+        plush.addAll(Arrays.asList(CLAW_REQUIRED_PLUSH));
+        for (int i = 0; i < 3; i++) plush.add(CLAW_EXTRA_PLUSH[rng.nextInt(CLAW_EXTRA_PLUSH.length)]);
+        Collections.shuffle(plush, rng);
+        for (int i = 0; i < plush.size(); i++) {
+            clawPrizes.add(new ClawPrize(left + 95 + (i % 3) * 75, top + 174 + (i / 3) * 32, plush.get(i)));
+        }
+    }
+
+    private void tickClawMachine() {
+        if (clawState == 1) {
+            clawY += 4.0f;
+            if (clawY >= panelTop() + 174) {
+                for (int i = 0; i < clawPrizes.size(); i++) {
+                    ClawPrize prize = clawPrizes.get(i);
+                    if (!prize.taken && Math.abs(clawX - prize.x) < 22) {
+                        prize.taken = true;
+                        clawCarry = i;
+                        break;
+                    }
+                }
+                clawState = 2;
+            }
+        } else if (clawState == 2) {
+            clawY -= 4.0f;
+            if (clawY <= panelTop() + 62) {
+                clawY = panelTop() + 62;
+                clawState = 0;
+            }
+        }
+    }
+
+    private void renderClawMachine(GuiGraphics g, int left, int top) {
+        MinigameUI.roundRect(g, left + 46, top + 42, left + 342, top + 218, 8, 0xFF263241);
+        MinigameUI.roundRect(g, left + 54, top + 50, left + 334, top + 206, 6, 0xFF17212E);
+        MinigameUI.roundRect(g, left + 44, top + 210, left + 96, top + 238, 5, 0xFF3E5062);
+        g.drawCenteredString(font, tr("claw_machine.exit"), left + 70, top + 220, WHITE);
+        for (int i = 0; i < clawPrizes.size(); i++) {
+            ClawPrize prize = clawPrizes.get(i);
+            if (prize.taken && i != clawCarry) continue;
+            int x = i == clawCarry ? Math.round(clawX - 8) : Math.round(prize.x - 8);
+            int y = i == clawCarry ? Math.round(clawY + 18) : Math.round(prize.y - 8);
+            g.renderItem(prize.stack, x, y);
+        }
+        int railY = top + 58;
+        g.fill(left + 70, railY, left + 318, railY + 3, 0xFF9FB2C8);
+        drawLine(g, Math.round(clawX), railY + 2, Math.round(clawX), Math.round(clawY), 0xFFBCC7D6);
+        drawClaw(g, Math.round(clawX), Math.round(clawY));
+        drawButton(g, left + 358, top + 82, 28, 24, Component.literal("<"));
+        drawButton(g, left + 392, top + 82, 28, 24, Component.literal(">"));
+        drawButton(g, left + 358, top + 122, 62, 28, tr("claw_machine.drop"));
+    }
+
+    private void clickClawMachine(double mouseX, double mouseY) {
+        int left = panelLeft(), top = panelTop();
+        if (inRect(mouseX, mouseY, left + 358, top + 82, 28, 24)) moveClaw(-18);
+        else if (inRect(mouseX, mouseY, left + 392, top + 82, 28, 24)) moveClaw(18);
+        else if (inRect(mouseX, mouseY, left + 358, top + 122, 62, 28)) pressClawButton();
+    }
+
+    private void moveClaw(float delta) {
+        if (clawState == 0) clawX = Mth.clamp(clawX + delta, panelLeft() + 70, panelLeft() + 318);
+    }
+
+    private void pressClawButton() {
+        if (clawState != 0) return;
+        if (clawCarry >= 0 && clawX <= panelLeft() + 96) {
+            complete();
+        } else if (clawCarry >= 0) {
+            ClawPrize prize = clawPrizes.get(clawCarry);
+            prize.taken = false;
+            prize.x = clawX;
+            prize.y = panelTop() + 190;
+            clawCarry = -1;
+        } else {
+            clawState = 1;
+        }
+    }
+
+    private void drawClaw(GuiGraphics g, int x, int y) {
+        g.fill(x - 5, y - 4, x + 5, y + 4, 0xFFD8DDE8);
+        drawLine(g, x - 2, y + 3, x - 12, y + 15, 0xFFD8DDE8);
+        drawLine(g, x + 2, y + 3, x + 12, y + 15, 0xFFD8DDE8);
+    }
+
+    private void setupBalloonSniper() {
+        balloons.clear();
+        balloonsHit = 0;
+        int left = panelLeft(), top = panelTop();
+        int[] colors = {RED, YELLOW, BLUE, GREEN, 0xFFFF88CC, 0xFFFF8844};
+        for (int i = 0; i < 6; i++) {
+            balloons.add(new BalloonTarget(left + 52 + i * 54, top + 62 + rng.nextInt(90),
+                    1.2f + rng.nextFloat() * 1.5f, colors[i]));
+        }
+    }
+
+    private void tickBalloonSniper() {
+        int left = panelLeft();
+        for (BalloonTarget balloon : balloons) {
+            balloon.x += balloon.speed;
+            if (balloon.x < left + 38 || balloon.x > left + PANEL_W - 38) {
+                balloon.speed *= -1;
+            }
+        }
+    }
+
+    private void renderBalloonSniper(GuiGraphics g, int left, int top, int mouseX, int mouseY) {
+        g.drawCenteredString(font, tr("common.hits", balloonsHit, 6), width / 2, top + 32, WHITE);
+        int gx = width / 2, gy = top + 220;
+        drawLine(g, gx, gy, mouseX, mouseY, 0x66FFFFFF);
+        for (BalloonTarget balloon : balloons) {
+            drawLine(g, Math.round(balloon.x), Math.round(balloon.y + 16), Math.round(balloon.x), Math.round(balloon.y + 32), 0xFFCCCCCC);
+            drawCircle(g, Math.round(balloon.x), Math.round(balloon.y), 14, balloon.color);
+            drawCircle(g, Math.round(balloon.x - 4), Math.round(balloon.y - 5), 4, 0x88FFFFFF);
+        }
+        g.fill(gx - 30, gy + 10, gx + 30, gy + 22, 0xFF5A6170);
+        g.fill(gx - 6, gy - 14, gx + 6, gy + 12, 0xFFB9C2D1);
+        g.fill(gx + 4, gy - 16, gx + 34, gy - 11, 0xFFB9C2D1);
+    }
+
+    private void shootBalloon(double mouseX, double mouseY) {
+        float gx = width / 2f, gy = panelTop() + 220;
+        for (int i = 0; i < balloons.size(); i++) {
+            BalloonTarget balloon = balloons.get(i);
+            if (distanceToSegment(balloon.x, balloon.y, gx, gy, (float) mouseX, (float) mouseY) <= 15) {
+                balloons.remove(i);
+                balloonsHit++;
+                if (balloonsHit >= 6) complete();
+                return;
+            }
+        }
+    }
+
+    private void drawLine(GuiGraphics g, int x1, int y1, int x2, int y2, int color) {
+        int steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+        if (steps <= 0) {
+            g.fill(x1, y1, x1 + 1, y1 + 1, color);
+            return;
+        }
+        for (int i = 0; i <= steps; i++) {
+            float t = i / (float) steps;
+            int x = Math.round(Mth.lerp(t, x1, x2));
+            int y = Math.round(Mth.lerp(t, y1, y2));
+            g.fill(x, y, x + 2, y + 2, color);
+        }
+    }
+
+    private float distanceToSegment(float px, float py, float ax, float ay, float bx, float by) {
+        float dx = bx - ax, dy = by - ay;
+        float len2 = dx * dx + dy * dy;
+        if (len2 <= 0.001f) return distance(px, py, ax, ay);
+        float t = Mth.clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0f, 1f);
+        return distance(px, py, ax + dx * t, ay + dy * t);
+    }
+
     private static class Egg {float x,y;int type;boolean caught;Egg(float x,float y,int t){this.x=x;this.y=y;this.type=t;}}
 
     private static class Brick {
@@ -3184,6 +3538,44 @@ public class SimpleQuestMinigameScreen extends Screen {
             this.y = y;
             this.radius = radius;
             this.kind = kind;
+        }
+    }
+
+    private static class MinerRock {
+        float x, y;
+        int r, value, color;
+        boolean taken;
+
+        MinerRock(float x, float y, int r, int value, int color) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+            this.value = value;
+            this.color = color;
+        }
+    }
+
+    private static class ClawPrize {
+        float x, y;
+        final ItemStack stack;
+        boolean taken;
+
+        ClawPrize(float x, float y, ItemStack stack) {
+            this.x = x;
+            this.y = y;
+            this.stack = stack;
+        }
+    }
+
+    private static class BalloonTarget {
+        float x, y, speed;
+        int color;
+
+        BalloonTarget(float x, float y, float speed, int color) {
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.color = color;
         }
     }
 
