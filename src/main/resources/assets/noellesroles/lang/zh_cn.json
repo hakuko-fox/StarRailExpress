@@ -3000,6 +3000,7 @@
   "death_reason.starrailexpress.drowned": "淹死",
   "screen.noellesroles.hurricane_device.title": "飓风装置",
   "screen.noellesroles.hurricane_device.radius": "生成半径",
+  "screen.noellesroles.hurricane_device.height": "飓风高度",
   "screen.noellesroles.hurricane_device.persistent.yes": "常驻：是",
   "screen.noellesroles.hurricane_device.persistent.no": "常驻：否",
   "screen.noellesroles.hurricane_device.interval": "生成间隔（秒）",

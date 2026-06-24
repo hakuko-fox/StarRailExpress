@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 public class HurricaneDeviceBlockEntity extends BlockEntity {
     private UUID hurricaneUuid;
     private int radius = 6;
+    private double height = 8.0D;
     private boolean persistent = true;
     private int spawnIntervalSeconds = 20;
     private int durationSeconds = 12;
@@ -33,7 +34,11 @@ public class HurricaneDeviceBlockEntity extends BlockEntity {
     }
 
     public int getRadius() {
-        return Mth.clamp(radius, 1, 64);
+        return Mth.clamp(radius, 1, 100);
+    }
+
+    public double getHeight() {
+        return Mth.clamp(height, 2.0D, 325.0D);
     }
 
     public boolean isPersistent() {
@@ -48,8 +53,9 @@ public class HurricaneDeviceBlockEntity extends BlockEntity {
         return Mth.clamp(durationSeconds, 1, 3600);
     }
 
-    public void setConfig(int radius, boolean persistent, int spawnIntervalSeconds, int durationSeconds) {
-        this.radius = Mth.clamp(radius, 1, 64);
+    public void setConfig(int radius, double height, boolean persistent, int spawnIntervalSeconds, int durationSeconds) {
+        this.radius = Mth.clamp(radius, 1, 100);
+        this.height = Mth.clamp(height, 2.0D, 325.0D);
         this.persistent = persistent;
         this.spawnIntervalSeconds = Mth.clamp(spawnIntervalSeconds, 1, 3600);
         this.durationSeconds = Mth.clamp(durationSeconds, 1, 3600);
@@ -90,6 +96,7 @@ public class HurricaneDeviceBlockEntity extends BlockEntity {
         HurricaneEntity hurricane = new HurricaneEntity(ModEntities.HURRICANE, serverLevel);
         hurricane.setPos(spawn.getX() + 0.5D, spawn.getY() + 0.05D, spawn.getZ() + 0.5D);
         hurricane.setMaxAgeSeconds(durationSeconds);
+        hurricane.setHeight(getHeight());
         hurricane.setupRoaming(worldPosition, getRadius());
         serverLevel.addFreshEntity(hurricane);
         hurricaneUuid = hurricane.getUUID();
@@ -110,6 +117,7 @@ public class HurricaneDeviceBlockEntity extends BlockEntity {
         super.saveAdditional(tag, registries);
         if (hurricaneUuid != null) tag.putUUID("Hurricane", hurricaneUuid);
         tag.putInt("Radius", radius);
+        tag.putDouble("Height", height);
         tag.putBoolean("Persistent", persistent);
         tag.putInt("SpawnIntervalSeconds", spawnIntervalSeconds);
         tag.putInt("DurationSeconds", durationSeconds);
@@ -121,6 +129,7 @@ public class HurricaneDeviceBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         hurricaneUuid = tag.hasUUID("Hurricane") ? tag.getUUID("Hurricane") : null;
         if (tag.contains("Radius")) radius = tag.getInt("Radius");
+        if (tag.contains("Height")) height = tag.getDouble("Height");
         if (tag.contains("Persistent")) persistent = tag.getBoolean("Persistent");
         if (tag.contains("SpawnIntervalSeconds")) spawnIntervalSeconds = tag.getInt("SpawnIntervalSeconds");
         if (tag.contains("DurationSeconds")) durationSeconds = tag.getInt("DurationSeconds");

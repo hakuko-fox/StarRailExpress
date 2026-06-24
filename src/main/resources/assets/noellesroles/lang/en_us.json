@@ -3012,6 +3012,7 @@
   "death_reason.starrailexpress.drowned": "Drowned",
   "screen.noellesroles.hurricane_device.title": "Hurricane Device",
   "screen.noellesroles.hurricane_device.radius": "Spawn radius",
+  "screen.noellesroles.hurricane_device.height": "Hurricane height",
   "screen.noellesroles.hurricane_device.persistent.yes": "Persistent: Yes",
   "screen.noellesroles.hurricane_device.persistent.no": "Persistent: No",
   "screen.noellesroles.hurricane_device.interval": "Spawn interval (seconds)",

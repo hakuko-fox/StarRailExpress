@@ -41,7 +41,7 @@ public class HurricaneDeviceBlock extends BaseEntityBlock {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof HurricaneDeviceBlockEntity hbe) {
                 Minecraft.getInstance().setScreen(new HurricaneDeviceConfigScreen(pos, hbe.getRadius(),
-                        hbe.isPersistent(), hbe.getSpawnIntervalSeconds(), hbe.getDurationSeconds()));
+                        hbe.getHeight(), hbe.isPersistent(), hbe.getSpawnIntervalSeconds(), hbe.getDurationSeconds()));
             }
             return InteractionResult.SUCCESS;
         }
