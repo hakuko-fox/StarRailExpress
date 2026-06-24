@@ -346,7 +346,42 @@ public class NoellesRolesConfig implements ConfigData {
      * Manipulator - Control target cooldown in seconds
      */
 
-    public int manipulatorCooldown = 60;
+    public int manipulatorCooldown = 80;
+
+    /**
+     * Manipulator - Max distance (blocks) allowed to start controlling a marked target
+     */
+    public int manipulatorMaxControlRange = 100;
+
+    /**
+     * Manipulator - Total control duration in seconds
+     */
+    public int manipulatorControlSeconds = 30;
+
+    /**
+     * Manipulator - Seconds of uninterrupted staring required to mark a target
+     */
+    public int manipulatorMarkSeconds = 6;
+
+    /**
+     * Manipulator - Max distance (blocks) to stare-mark a target
+     */
+    public int manipulatorMarkRange = 20;
+
+    /**
+     * Manipulator - Nausea duration (seconds) applied to the target on a successful mark
+     */
+    public int manipulatorMarkNauseaSeconds = 4;
+
+    /**
+     * Manipulator - Coins rewarded for a successful mark
+     */
+    public int manipulatorMarkReward = 15;
+
+    /**
+     * Manipulator - Coins rewarded when the controlled target dies during control
+     */
+    public int manipulatorTargetDeathReward = 75;
 
     /**
      * Skill Echo Event - global switch (default off)

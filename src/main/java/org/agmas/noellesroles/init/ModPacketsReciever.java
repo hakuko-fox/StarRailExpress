@@ -475,17 +475,49 @@ public class ModPacketsReciever {
         return;
 
       if (gameWorldComponent.isRole(context.player(), ModRoles.MANIPULATOR)) {
-        // 设置操纵师的冷却时间（根据配置）
-        abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
-            NoellesRolesConfig.HANDLER.instance().manipulatorCooldown);
-        abilityPlayerComponent.sync();
-
-        // 获取操纵师组件并设置目标
+        // 获取操纵师组件并设置目标；校验（标记/距离/事件）与冷却由 setTarget 内部处理
         ManipulatorPlayerComponent manipulatorPlayerComponent = (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY
             .get(context.player());
         manipulatorPlayerComponent.setTarget(payload.player());
       }
     });
+
+    // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.ID, (payload, context) -> {
+          ManipulatorPlayerComponent manipulatorPlayerComponent =
+              (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY.get(context.player());
+          if (!manipulatorPlayerComponent.isControlling || manipulatorPlayerComponent.target == null)
+            return;
+          if (payload.stop()) {
+            manipulatorPlayerComponent.stopControl(false);
+            return;
+          }
+          var targetPlayer = context.player().level().getPlayerByUUID(manipulatorPlayerComponent.target);
+          if (targetPlayer == null)
+            return;
+          var inControlCCA = org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA.KEY.get(targetPlayer);
+          // 校验：发送者确实是该目标的操控者
+          if (!context.player().getUUID().equals(inControlCCA.controller))
+            return;
+          inControlCCA.applyControlInput(payload.movementBits(), payload.yaw(), payload.pitch());
+        });
+
+    // 操纵师附身期间：以目标身份释放目标自身技能（冷却记在目标身上）
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket.ID, (payload, context) -> {
+          ManipulatorPlayerComponent manipulatorPlayerComponent =
+              (ManipulatorPlayerComponent) ManipulatorPlayerComponent.KEY.get(context.player());
+          if (!manipulatorPlayerComponent.isControlling || manipulatorPlayerComponent.target == null)
+            return;
+          var targetPlayer = context.player().level().getPlayerByUUID(manipulatorPlayerComponent.target);
+          if (!(targetPlayer instanceof net.minecraft.server.level.ServerPlayer targetServerPlayer))
+            return;
+          var inControlCCA = org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA.KEY.get(targetPlayer);
+          if (!context.player().getUUID().equals(inControlCCA.controller))
+            return;
+          RoleSkill.beginUsePossessed(targetServerPlayer);
+        });
 
     ServerPlayNetworking.registerGlobalReceiver(TryThrowItemPacket.ID, (payload, context) -> {
       final var player = context.player();

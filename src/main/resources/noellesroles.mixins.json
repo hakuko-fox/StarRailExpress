@@ -96,6 +96,7 @@
     "client.roles.ma_chen_xu.OtherworldShaderMixin",
     "client.roles.manipulator.CameraMixin",
     "client.roles.manipulator.KeyBindingMixin",
+    "client.roles.manipulator.ManipulatorControllerInputMixin",
     "client.roles.manipulator.ManipulatorScreenMixin",
     "client.roles.monokuma.MonokumaInkShaderMixin",
     "client.roles.morphling.MorphlingCapeRendererMixin",

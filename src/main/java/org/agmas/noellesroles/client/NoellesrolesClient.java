@@ -153,6 +153,8 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static Set<BlockPos> enabledTaskMarkerPositions = new HashSet<>();
     public static boolean isShowHelpDisplay = true;
     private static boolean foolMeetingPauseHandled = false;
+    /** 操纵师附身期间，本地相机是否已绑定到被操控目标 */
+    public static boolean manipulatorCameraBound = false;
     public static Map<UUID, UUID> SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static Map<UUID, UUID> JEB_SHUFFLED_PLAYER_ENTRIES_CACHE = Maps.newHashMap();
     public static int jebShuffleTime = 0;
@@ -1013,6 +1015,44 @@ public class NoellesrolesClient implements ClientModInitializer {
                                 }
                             }
                         });
+            }
+        });
+        // 操纵师附身：相机绑定到目标 + 远程驱动目标移动
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.level == null)
+                return;
+            org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent manipulatorComp =
+                    org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent.KEY.get(client.player);
+            if (manipulatorComp.isControlling && manipulatorComp.target != null) {
+                net.minecraft.world.entity.player.Player target = client.level.getPlayerByUUID(manipulatorComp.target);
+                if (target != null) {
+                    if (client.getCameraEntity() != target) {
+                        client.setCameraEntity(target);
+                        manipulatorCameraBound = true;
+                    }
+                    // 读取移动键（已经过 ModEffects 按键拦截）→ 发送驱动包
+                    int bits = 0;
+                    if (client.options.keyUp.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_FORWARD;
+                    if (client.options.keyDown.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_BACK;
+                    if (client.options.keyLeft.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_LEFT;
+                    if (client.options.keyRight.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_RIGHT;
+                    if (client.options.keyJump.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_JUMP;
+                    if (client.options.keySprint.isDown())
+                        bits |= org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.BIT_SPRINT;
+                    ClientPlayNetworking.send(new org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket(
+                            bits, client.player.getYRot(), client.player.getXRot(), false));
+                }
+            } else if (manipulatorCameraBound) {
+                // 操控结束：解除相机绑定
+                if (client.getCameraEntity() != client.player) {
+                    client.setCameraEntity(client.player);
+                }
+                manipulatorCameraBound = false;
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

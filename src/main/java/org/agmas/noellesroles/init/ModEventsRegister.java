@@ -760,6 +760,22 @@ public class ModEventsRegister {
             if (gameWorldComponent != null && gameWorldComponent.isRunning()) {
                 final var inControlCCA = InControlCCA.KEY.get(victim);
                 if (inControlCCA != null) {
+                    // 被操控的目标在操控期间死亡：奖励操纵师金币并结束操控
+                    if (inControlCCA.isControlling && inControlCCA.controller != null) {
+                        var controllerPlayer = level.getPlayerByUUID(inControlCCA.controller);
+                        if (controllerPlayer != null) {
+                            io.wifi.starrailexpress.data.PlayerEconomyManager.addCoinNum(controllerPlayer,
+                                    NoellesRolesConfig.HANDLER.instance().manipulatorTargetDeathReward);
+                            controllerPlayer.displayClientMessage(Component.translatable(
+                                    "message.noellesroles.manipulator.target_died", victim.getName())
+                                    .withStyle(ChatFormatting.GOLD), true);
+                            var controllerComp = org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent.KEY
+                                    .get(controllerPlayer);
+                            if (controllerComp != null) {
+                                controllerComp.stopControl(false);
+                            }
+                        }
+                    }
                     inControlCCA.isControlling = false;
                     inControlCCA.sync();
                 }
