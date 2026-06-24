@@ -2,7 +2,6 @@ package org.agmas.noellesroles.packet;
 
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,12 +12,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.PigeonEntity;
-import org.agmas.noellesroles.content.item.CourierMailData;
-import org.agmas.noellesroles.content.item.CourierMailItem;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
@@ -99,7 +95,7 @@ public record CourierMailSendC2SPacket(boolean mainHand, UUID targetUuid, byte[]
         // 生成信鸽
         PigeonEntity pigeon = new PigeonEntity(ModEntities.PIGEON, level);
         pigeon.setPos(player.getX(), player.getY() + 2.2, player.getZ());
-        pigeon.setTargetPlayer(target, player, p.message, p.effect, attachmentTag, false);
+        pigeon.setTargetPlayer(target, player, p.message, p.effect, attachmentTag, false, cost);
         level.addFreshEntity(pigeon);
 
         // 主声道鹦鹉叫

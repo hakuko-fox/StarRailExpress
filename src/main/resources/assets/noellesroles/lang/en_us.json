@@ -2994,6 +2994,8 @@
   "message.noellesroles.courier.reply_fail": "Cannot reply",
   "message.noellesroles.courier.self_send": "§cYou can't send mail to yourself!",
   "message.noellesroles.pigeon.failed": "§cYour pigeon failed to deliver the mail!",
+  "message.noellesroles.pigeon.target_dead": "§cThe recipient has died. Your letter and gold have been refunded!",
+  "message.noellesroles.courier.courier_dead": "§cThe courier has died. Unable to reply! Items returned.",
   "entity.noellesroles.pigeon": "Pigeon",
   "announcement.star.role.courier": "Courier",
   "announcement.star.role.noellesroles.courier": "Courier",

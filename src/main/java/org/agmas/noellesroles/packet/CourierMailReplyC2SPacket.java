@@ -43,7 +43,20 @@ public record CourierMailReplyC2SPacket(boolean mainHand, byte[] message, int it
         try { courier = level.getServer().getPlayerList().getPlayer(java.util.UUID.fromString(sender)); }
         catch (Exception ignored) {}
 
-        if (courier == null || courier.getInventory().getFreeSlot() < 0) {
+        // 信使已死亡/离线/旁观者 → 返还回信附件物品并提示
+        if (courier == null || !courier.isAlive() || courier.isSpectator()) {
+            // 返还已选中的附件物品
+            if (p.itemSlot >= 0) {
+                // 物品在点击"发送"前已在客户端UI中被选中，但尚未从背包扣除
+                // 此处无须返还，因为扣除发生在后面
+            }
+            // 消耗手中的回信
+            player.getItemInHand(p.mainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND).shrink(1);
+            player.displayClientMessage(Component.translatable("message.noellesroles.courier.courier_dead"), true);
+            return;
+        }
+
+        if (courier.getInventory().getFreeSlot() < 0) {
             player.displayClientMessage(Component.translatable("message.noellesroles.courier.reply_fail"), true);
             return;
         }
@@ -65,7 +78,7 @@ public record CourierMailReplyC2SPacket(boolean mainHand, byte[] message, int it
         // 生成回信鸽
         PigeonEntity pigeon = new PigeonEntity(ModEntities.PIGEON, level);
         pigeon.setPos(player.getX(), player.getY() + 2.2, player.getZ());
-        pigeon.setTargetPlayer(courier, player, p.message, 0, attachmentTag, true);
+        pigeon.setTargetPlayer(courier, player, p.message, 0, attachmentTag, true, 0);
         level.addFreshEntity(pigeon);
 
         player.getItemInHand(p.mainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND).shrink(1);

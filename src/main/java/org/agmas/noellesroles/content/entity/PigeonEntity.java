@@ -1,11 +1,13 @@
 package org.agmas.noellesroles.content.entity;
 
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -18,15 +20,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.content.item.CourierMailData;
-import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /** 信鸽实体：手动飞行递送信件，可被击杀。 */
 public class PigeonEntity extends LivingEntity {
-    private static final double FLY_SPEED = 0.18;
+    private static final double FLY_SPEED = 0.25;
     private static final EntityDataAccessor<Boolean> HAS_DELIVERED = SynchedEntityData.defineId(PigeonEntity.class, EntityDataSerializers.BOOLEAN);
 
     @Nullable private UUID targetUuid;
@@ -34,6 +36,7 @@ public class PigeonEntity extends LivingEntity {
     private int life = 1200;
     private byte[] mailMessage;
     private int mailEffect;
+    private int mailCost;
     @Nullable private CompoundTag attachmentItemTag;
     private boolean isReply;
 
@@ -47,11 +50,13 @@ public class PigeonEntity extends LivingEntity {
                 .add(Attributes.MAX_HEALTH, 10.0);
     }
 
-    public void setTargetPlayer(Player target, Player owner, byte[] message, int effect, @Nullable CompoundTag attachmentTag, boolean reply) {
+    public void setTargetPlayer(Player target, Player owner, byte[] message, int effect,
+            @Nullable CompoundTag attachmentTag, boolean reply, int cost) {
         this.targetUuid = target.getUUID();
         this.ownerUuid = owner.getUUID();
         this.mailMessage = message;
         this.mailEffect = effect;
+        this.mailCost = cost;
         this.attachmentItemTag = attachmentTag;
         this.isReply = reply;
         this.entityData.set(HAS_DELIVERED, false);
@@ -79,18 +84,29 @@ public class PigeonEntity extends LivingEntity {
         // 飞向目标
         if (targetUuid != null && level() instanceof ServerLevel sl && !entityData.get(HAS_DELIVERED)) {
             Player target = sl.getPlayerByUUID(targetUuid);
-            if (target != null && target.isAlive()) {
-                if (this.distanceToSqr(target) < 3.0) {
-                    deliver(target);
-                    return;
-                }
-                Vec3 dir = target.position().add(0, 1.5, 0).subtract(this.position()).normalize().scale(FLY_SPEED);
-                this.setPos(this.getX() + dir.x, this.getY() + dir.y, this.getZ() + dir.z);
-                this.setYRot((float) Math.toDegrees(Math.atan2(-dir.x, dir.z)));
-            } else {
-                onFailed();
+
+            // 收件人死亡/离线/旁观者 → 退款并清除
+            if (target == null || !target.isAlive() || target.isSpectator()) {
+                onTargetDead(sl);
                 return;
             }
+
+            // 信使死亡/旁观者 → 直接清除信鸽
+            if (ownerUuid != null) {
+                Player owner = sl.getPlayerByUUID(ownerUuid);
+                if (owner == null || !owner.isAlive() || owner.isSpectator()) {
+                    this.discard();
+                    return;
+                }
+            }
+
+            if (this.distanceToSqr(target) < 3.0) {
+                deliver(target);
+                return;
+            }
+            Vec3 dir = target.position().add(0, 1.5, 0).subtract(this.position()).normalize().scale(FLY_SPEED);
+            this.setPos(this.getX() + dir.x, this.getY() + dir.y, this.getZ() + dir.z);
+            this.setYRot((float) Math.toDegrees(Math.atan2(-dir.x, dir.z)));
         }
 
         // 飞行音效
@@ -115,7 +131,7 @@ public class PigeonEntity extends LivingEntity {
 
         // 附件物品存入信件NBT，等收信人点击"领取"时才给予
         if (attachmentItemTag != null && level() instanceof ServerLevel sl) {
-            java.util.Optional<ItemStack> parsed = ItemStack.parse(sl.registryAccess(), attachmentItemTag);
+            Optional<ItemStack> parsed = ItemStack.parse(sl.registryAccess(), attachmentItemTag);
             if (parsed.isPresent() && !parsed.get().isEmpty()) {
                 ItemStack attached = parsed.get();
                 attached.setCount(1);
@@ -127,6 +143,38 @@ public class PigeonEntity extends LivingEntity {
             target.getInventory().add(mailStack);
         } else {
             target.drop(mailStack, false);
+        }
+        this.discard();
+    }
+
+    /** 收件人死亡/离线 → 清除信鸽，返还金币、附件物品和冷却 */
+    private void onTargetDead(ServerLevel sl) {
+        if (ownerUuid != null) {
+            Player owner = sl.getPlayerByUUID(ownerUuid);
+            if (owner instanceof ServerPlayer sp) {
+                // 返还金币
+                if (mailCost > 0) {
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(sp);
+                    if (shop != null) {
+                        shop.addToBalance(mailCost);
+                    }
+                }
+                // 清除冷却
+                sp.getCooldowns().removeCooldown(ModItems.COURIER_MAIL);
+                // 返还附件物品
+                if (attachmentItemTag != null) {
+                    Optional<ItemStack> parsed = ItemStack.parse(sl.registryAccess(), attachmentItemTag);
+                    if (parsed.isPresent() && !parsed.get().isEmpty()) {
+                        ItemStack refund = parsed.get();
+                        refund.setCount(1);
+                        if (!sp.getInventory().add(refund)) {
+                            sp.drop(refund, false);
+                        }
+                    }
+                }
+                sp.displayClientMessage(
+                        Component.translatable("message.noellesroles.pigeon.target_dead"), true);
+            }
         }
         this.discard();
     }

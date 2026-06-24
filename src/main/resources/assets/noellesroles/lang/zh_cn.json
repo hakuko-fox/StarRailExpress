@@ -2985,6 +2985,8 @@
   "message.noellesroles.courier.reply_fail": "无法回信",
   "message.noellesroles.courier.self_send": "§c不能给自己送信！",
   "message.noellesroles.pigeon.failed": "§c你的信鸽未能送达信物！",
+  "message.noellesroles.pigeon.target_dead": "§c收件人已死亡，信件被退回，金币与物品已返还！",
+  "message.noellesroles.courier.courier_dead": "§c信使已经死亡，无法回信！物品已返还。",
   "entity.noellesroles.pigeon": "信鸽",
   "announcement.star.role.courier": "信使",
   "announcement.star.role.noellesroles.courier": "信使",
