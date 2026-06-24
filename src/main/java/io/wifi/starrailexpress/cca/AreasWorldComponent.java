@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
@@ -169,6 +170,8 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     Map<Integer, Vec3> roomPositions = new HashMap<>();
     public boolean canJump = false;
     public boolean canSwim = false;
+    public boolean enableOxygenDrowning = false;
+    public MapStatusBarType mapStatusBar = MapStatusBarType.NONE;
     public boolean noReset = false;
     public String mapName = null;
     public boolean haveOutsideSound = false;
@@ -487,6 +490,10 @@ public class AreasWorldComponent implements AutoSyncedComponent {
                 : null;
         this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
         this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
+        this.enableOxygenDrowning = tag.contains("enableOxygenDrowning") && tag.getBoolean("enableOxygenDrowning");
+        this.mapStatusBar = tag.contains("mapStatusBar")
+                ? MapStatusBarType.byName(tag.getString("mapStatusBar"))
+                : MapStatusBarType.NONE;
         this.haveOutsideSound = tag.contains("haveOutsideSound") ? tag.getBoolean("haveOutsideSound") : false;
         this.sceneOutsideSound = tag.contains("sceneOutsideSound") && !tag.getString("sceneOutsideSound").isBlank()
                 ? tag.getString("sceneOutsideSound") : "train";
@@ -589,6 +596,8 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         tag.putInt("roomCount", this.roomCount);
         tag.putBoolean("canJump", this.canJump);
         tag.putBoolean("canSwim", this.canSwim);
+        tag.putBoolean("enableOxygenDrowning", this.enableOxygenDrowning);
+        tag.putString("mapStatusBar", (this.mapStatusBar == null ? MapStatusBarType.NONE : this.mapStatusBar).name());
         tag.putBoolean("haveOutsideSound", this.haveOutsideSound);
         tag.putString("sceneOutsideSound", this.sceneOutsideSound);
         tag.putBoolean("snowEnabled", this.snowEnabled);

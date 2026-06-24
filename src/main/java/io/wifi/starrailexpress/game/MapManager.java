@@ -243,6 +243,10 @@ public class MapManager {
         jsonObject.add("roomPositions", roomPositionsObj);
         jsonObject.addProperty("canJump", areas.canJump);
         jsonObject.addProperty("canSwim", areas.canSwim);
+        jsonObject.addProperty("enableOxygenDrowning", areas.enableOxygenDrowning);
+        jsonObject.addProperty("mapStatusBar", (areas.mapStatusBar == null
+                ? io.wifi.starrailexpress.game.data.MapStatusBarType.NONE
+                : areas.mapStatusBar).name());
         jsonObject.add("disabledTasks", gson.toJsonTree(areas.disabledTasks));
         jsonObject.add("enableSceneTask", gson.toJsonTree(areas.enableSceneTask));
         jsonObject.addProperty("haveOutsideSound", areas.haveOutsideSound);
@@ -373,6 +377,12 @@ public class MapManager {
             } else {
                 areas.canSwim = false;
             }
+
+            areas.enableOxygenDrowning = jsonObject.has("enableOxygenDrowning")
+                    && jsonObject.get("enableOxygenDrowning").getAsBoolean();
+            areas.mapStatusBar = jsonObject.has("mapStatusBar")
+                    ? io.wifi.starrailexpress.game.data.MapStatusBarType.byName(jsonObject.get("mapStatusBar").getAsString())
+                    : io.wifi.starrailexpress.game.data.MapStatusBarType.NONE;
 
             // 加载雪花效果配置（默认关闭）
             if (jsonObject.has("snowEnabled")) {

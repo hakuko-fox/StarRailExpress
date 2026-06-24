@@ -307,6 +307,10 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.render.PigeonRenderer::new);
         EntityRendererRegistry.register(ModEntities.MOVING_PLATFORM,
                 org.agmas.noellesroles.client.render.MovingPlatformRenderer::new);
+        EntityRendererRegistry.register(ModEntities.HURRICANE,
+                org.agmas.noellesroles.client.render.EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MUMMY,
+                net.minecraft.client.renderer.entity.HuskRenderer::new);
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);
@@ -552,6 +556,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(RepairCombatFeedbackS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> RepairEscapeHud.pushCombatCue(payload.kind(), payload.entityId(),
                     payload.x(), payload.y(), payload.z(), payload.weaponId()));
+        });
+        ClientPlayNetworking.registerGlobalReceiver(MapStatusBarSyncS2CPacket.ID, (payload, context) -> {
+            context.client().execute(() -> org.agmas.noellesroles.client.hud.MapStatusBarClientState
+                    .set(payload.barType(), payload.value(), payload.maxValue()));
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenLockGuiS2CPacket.ID, (payload, context) -> {
             final var client = context.client();
