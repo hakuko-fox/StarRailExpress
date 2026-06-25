@@ -6,7 +6,6 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
-import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -34,7 +33,7 @@ import java.util.List;
  * - 击杀玩家时为游戏增加20秒（被动）
  * - 当存在滞时鬼且游戏时间为1分25秒（85秒）时，增加30秒（仅触发一次，被动）
  * - 主动技能【时间锚点】：按技能键消耗 75 金币锚定当前状态，8 秒后自动回溯（仅自己）：
- *   回溯位置、金钱、药水效果；若已死亡则复活；不回溯物品栏与物品冷却。
+ *   回溯位置、金钱、药水效果；若已死亡则不会复活；不回溯物品栏与物品冷却。
  *   回溯时全场所有人短暂恍惚（时空滤镜 shader + 反胃）并播放玻璃破碎声。冷却 120 秒。
  */
 public class DelayerPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
@@ -115,12 +114,12 @@ public class DelayerPlayerComponent implements RoleComponent, ServerTickingCompo
         }
         NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
 
-        // 回溯位置 / 复活
+        // 回溯位置；死亡状态不复活
         if (sp.isSpectator()) {
-            GameUtils.revivePlayer(sp, anchorX, anchorY, anchorZ);
-        } else {
-            sp.teleportTo(anchorX, anchorY, anchorZ);
+            this.effectSnapshot.clear();
+            return;
         }
+        sp.teleportTo(anchorX, anchorY, anchorZ);
 
         // 回溯金钱
         SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(sp);
