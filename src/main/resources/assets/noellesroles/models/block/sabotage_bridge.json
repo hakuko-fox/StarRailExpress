@@ -1,6 +1,3 @@
 {
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "noellesroles:block/sabotage_bridge"
-  }
+  "parent": "noellesroles:block/breaking_bridge"
 }

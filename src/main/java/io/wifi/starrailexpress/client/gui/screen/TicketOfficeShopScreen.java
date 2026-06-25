@@ -47,7 +47,7 @@ public class TicketOfficeShopScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         int panelX = this.width / 2 - 96;
         int y = this.height / 2 - 82;
         graphics.fill(panelX, y, panelX + 192, y + 154, 0xEE20282E);
@@ -55,14 +55,8 @@ public class TicketOfficeShopScreen extends Screen {
         graphics.renderItem(ticket, panelX + 22, y + 40);
         graphics.drawString(font, Component.literal(data.getString("TicketName")), panelX + 48, y + 44, 0xFFFFFFFF, false);
         graphics.renderItem(currency.iconStack(), panelX + 24, y + 74);
-        Component price = Component.literal(String.valueOf(data.getInt("Price")))
-                .append(" ")
-                .append(Component.translatable(currency.priceTranslationKey()));
-        graphics.drawString(font, price, panelX + 48, y + 78, currency.color(), false);
-        int uses = data.getInt("Uses");
-        Component useText = uses < 0
-                ? Component.translatable("tooltip.starrailexpress.admission_ticket.infinite")
-                : Component.translatable("tooltip.starrailexpress.admission_ticket.uses", uses);
-        graphics.drawString(font, useText, panelX + 24, y + 104, 0xFFC7D4D8, false);
+        graphics.drawString(font, Component.literal(String.valueOf(data.getInt("Price"))), panelX + 48, y + 78,
+                currency.color(), false);
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 }

@@ -86,6 +86,10 @@ public class SREPayloadRegister {
                 io.wifi.starrailexpress.sponsor.SponsorListPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.OpenRoleRosterScreenPayload.ID,
                 io.wifi.starrailexpress.network.OpenRoleRosterScreenPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.MapIntroRequestPayload.ID,
+                io.wifi.starrailexpress.network.MapIntroRequestPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.MapIntroSyncPayload.ID,
+                io.wifi.starrailexpress.network.MapIntroSyncPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
                 io.wifi.starrailexpress.network.RoleRosterUpdatePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(ShowSelectedMapUIPayload.ID, ShowSelectedMapUIPayload.CODEC);

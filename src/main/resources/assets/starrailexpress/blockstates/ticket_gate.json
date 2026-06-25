@@ -6,7 +6,7 @@
     },
     {
       "when": { "half": "lower", "facing": "east", "open": "false" },
-      "apply": { "model": "starrailexpress:block/ticket_gate_lower", "y": 90 }
+      "apply": { "model": "starrailexpress:block/ticket_gate_lower", "y": 270 }
     },
     {
       "when": { "half": "lower", "facing": "south", "open": "false" },
@@ -14,7 +14,7 @@
     },
     {
       "when": { "half": "lower", "facing": "west", "open": "false" },
-      "apply": { "model": "starrailexpress:block/ticket_gate_lower", "y": 270 }
+      "apply": { "model": "starrailexpress:block/ticket_gate_lower", "y": 90 }
     },
     {
       "when": { "half": "lower", "facing": "north", "open": "true" },
@@ -38,7 +38,7 @@
     },
     {
       "when": { "half": "upper", "facing": "east", "open": "false" },
-      "apply": { "model": "starrailexpress:block/ticket_gate_upper", "y": 90 }
+      "apply": { "model": "starrailexpress:block/ticket_gate_upper", "y": 270 }
     },
     {
       "when": { "half": "upper", "facing": "south", "open": "false" },
@@ -46,7 +46,7 @@
     },
     {
       "when": { "half": "upper", "facing": "west", "open": "false" },
-      "apply": { "model": "starrailexpress:block/ticket_gate_upper", "y": 270 }
+      "apply": { "model": "starrailexpress:block/ticket_gate_upper", "y": 90 }
     },
     {
       "when": { "half": "upper", "facing": "north", "open": "true" },
