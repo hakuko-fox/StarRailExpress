@@ -48,49 +48,75 @@ public class TicketGateBlock extends DoorBlock implements EntityBlock {
         if (state.getValue(HALF) != DoubleBlockHalf.LOWER || !type.equals(TMMBlockEntities.TICKET_GATE)) {
             return null;
         }
-        return level.isClientSide ? null : (l, p, s, e) -> TicketGateBlockEntity.serverTick(l, p, s,
-                (TicketGateBlockEntity) e);
+        return level.isClientSide ? null
+                : (l, p, s, e) -> TicketGateBlockEntity.serverTick(l, p, s, (TicketGateBlockEntity) e);
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
-        return handleGateUse(state, level, pos, player);
+        // 先检查创意模式绑定
+        if (canBind(state, level, pos, player)) {
+            return InteractionResult.CONSUME;
+        }
+        return handleGateOpen(state, level, pos, player);
     }
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
             Player player, InteractionHand hand, BlockHitResult hit) {
-        InteractionResult result = handleGateUse(state, level, pos, player);
-        return result.consumesAction() ? ItemInteractionResult.CONSUME : ItemInteractionResult.FAIL;
+        // 创意模式蹲下 + 入场券 → 绑定
+        if (canBind(state, level, pos, player)) {
+            return ItemInteractionResult.CONSUME;
+        }
+        // 普通检票开门
+        InteractionResult result = handleGateOpen(state, level, pos, player);
+        return result.consumesAction()
+                ? ItemInteractionResult.CONSUME
+                : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
-    private InteractionResult handleGateUse(BlockState state, Level level, BlockPos pos, Player player) {
+    /** 创意模式右键用入场券绑定检票门，服务端执行绑定逻辑 */
+    private boolean canBind(BlockState state, Level level, BlockPos pos, Player player) {
+        if (!player.isCreative()) {
+            return false;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (!stack.is(TMMItems.ADMISSION_TICKET)) {
+            return false;
+        }
+        if (level.isClientSide) {
+            return true; // 客户端直接标记为已处理，由服务端实际绑定
+        }
+        BlockPos lowerPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
+        if (!(level.getBlockEntity(lowerPos) instanceof TicketGateBlockEntity gate)) {
+            return false;
+        }
+        String ticketId = AdmissionTicketItem.getTicketId(stack);
+        if (ticketId.isBlank()) {
+            player.displayClientMessage(
+                    Component.translatable("message.starrailexpress.ticket_gate.invalid_ticket"), true);
+            return true;
+        }
+        gate.setTicketId(ticketId);
+        player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.bound"), true);
+        return true;
+    }
+
+    /** 普通检票开门逻辑 */
+    private InteractionResult handleGateOpen(BlockState state, Level level, BlockPos pos, Player player) {
         BlockPos lowerPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
         if (!(level.getBlockEntity(lowerPos) instanceof TicketGateBlockEntity gate)) {
             return InteractionResult.FAIL;
         }
-        ItemStack stack = player.getMainHandItem();
-        if (player.isCreative() && player.isShiftKeyDown() && stack.is(TMMItems.ADMISSION_TICKET)) {
-            if (!level.isClientSide) {
-                String ticketId = AdmissionTicketItem.getTicketId(stack);
-                if (ticketId.isBlank()) {
-                    player.displayClientMessage(
-                            Component.translatable("message.starrailexpress.ticket_gate.invalid_ticket"), true);
-                    return InteractionResult.FAIL;
-                }
-                gate.setTicketId(ticketId);
-                player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.bound"), true);
-            }
-            return InteractionResult.CONSUME;
-        }
         if (!gate.hasTicket()) {
             if (!level.isClientSide) {
-                player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.not_bound"),
-                        true);
+                player.displayClientMessage(
+                        Component.translatable("message.starrailexpress.ticket_gate.not_bound"), true);
             }
             return InteractionResult.FAIL;
         }
+        ItemStack stack = player.getMainHandItem();
         if (!AdmissionTicketItem.matches(stack, gate.getTicketId())) {
             if (!level.isClientSide) {
                 level.playSound(null, lowerPos, TMMSounds.BLOCK_DOOR_LOCKED, SoundSource.BLOCKS, 1f, 1f);
@@ -105,10 +131,10 @@ public class TicketGateBlock extends DoorBlock implements EntityBlock {
             }
             BlockState lowerState = level.getBlockState(lowerPos);
             boolean open = lowerState.getValue(DoorBlock.OPEN);
-            // 用原版门的 setOpen 方式切换开关状态
             level.setBlock(lowerPos, lowerState.setValue(DoorBlock.OPEN, !open),
                     Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
-            level.setBlock(lowerPos.above(), level.getBlockState(lowerPos.above()).setValue(DoorBlock.OPEN, !open),
+            level.setBlock(lowerPos.above(),
+                    level.getBlockState(lowerPos.above()).setValue(DoorBlock.OPEN, !open),
                     Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
         }
         return InteractionResult.CONSUME;
