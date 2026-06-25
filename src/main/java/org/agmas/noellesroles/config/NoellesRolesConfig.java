@@ -442,6 +442,19 @@ public class NoellesRolesConfig implements ConfigData {
 
     public int swapperSwapCooldown = 60;
 
+    /** Swapper - G 键瞬移交换：与正前方目标交换位置的冷却（秒） */
+    public int swapperFrontSwapCooldown = 120;
+    /** Swapper - G 键瞬移交换：可作用的最大距离（格） */
+    public double swapperFrontSwapRange = 10.0;
+
+    // ==================== Noisemaker (大嗓门) 冲击波 ====================
+    /** 大嗓门 - 冲击波击退前方玩家的作用距离（格） */
+    public double noisemakerShockwaveRange = 8.0;
+    /** 大嗓门 - 冲击波水平击退强度 */
+    public double noisemakerShockwaveKnockback = 1.4;
+    /** 大嗓门 - 冲击波眩晕（定身）秒数 */
+    public int noisemakerStunSeconds = 2;
+
     /**
      * Manipulator - Control target cooldown in seconds
      */
