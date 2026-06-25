@@ -176,7 +176,7 @@
   "message.noellesroles.diviner.not_corpse": "That's a living player, cannot divine",
   "message.noellesroles.diviner.already": "This corpse has already been divined",
   "message.noellesroles.diviner.unknown": "Unknown",
-  "info.screen.roleid.delayer": "Delayer (Killer team)\nPassive: each kill extends the game by 20s; when 1m25s remain, extend by another 30s (once per round).\nActive [Time Anchor]: press the ability key, spend 75 coins to anchor the current moment; 8s later you automatically rewind (only yourself):\nposition, money and potion effects are restored; if you are dead by then you are revived on the spot; inventory and item cooldowns are NOT rewound.\nThe instant you rewind, everyone is briefly dazed (time-warp filter + nausea) with a glass-break sound. Cooldown 120s.",
+  "info.screen.roleid.delayer": "Delayer (Killer team)\nPassive: each kill extends the game by 20s; when 1m25s remain, extend by another 30s (once per round).\nActive [Time Anchor]: press the ability key, spend 75 coins to anchor the current moment; 8s later you automatically rewind (only yourself):\nposition, money and potion effects are restored; inventory and item cooldowns are NOT rewound. If you are dead by then, the rewind will not revive you.\nThe instant you rewind, everyone is briefly dazed (time-warp filter + nausea) with a glass-break sound. Cooldown 120s.",
   "effect.noellesroles.time_rewind_daze": "Temporal Daze",
   "message.noellesroles.delayer.anchored": "Time anchor set - auto-rewinding in %ss...",
   "message.noellesroles.delayer.rewound": "Time rewind! You returned to the anchored state",
