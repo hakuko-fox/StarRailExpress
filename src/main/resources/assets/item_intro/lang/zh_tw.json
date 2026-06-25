@@ -1,4 +1,5 @@
 ﻿{
+  "item.noellesroles.crystal_ball.desc": "占卜家專用。右鍵對準一具屍體占卜，得知死者的職業與名字（60 秒冷卻，已占卜的屍體不可再次占卜）。若占卜對象為亡語殺手偽裝的屍體，視為其用刀刺死了自己。",
   "item.noellesroles.wizard_staff.desc": "巫師專用。右鍵蓄力釋放魔法火焰箭，可穿透多名玩家，被命中者 3 秒後死亡；左鍵擊退目標。Explosion! 就緒時，下一次施放為可穿牆的九環火球術。",
   "item.noellesroles.wizard_potion.desc": "巫師專用。使用後進入冷卻，獲得大量魔素，並在接下來 60 秒內免疫一次致命攻擊。",
   "item.trainmurdermystery.bat.desc": "原版攻擊邏輯，左鍵打人。坐在輪椅上無法攻擊。",

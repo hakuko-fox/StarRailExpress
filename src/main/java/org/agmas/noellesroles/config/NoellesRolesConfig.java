@@ -342,6 +342,12 @@ public class NoellesRolesConfig implements ConfigData {
      */
     public int jadeGeneralSlowSeconds = 5;
 
+    // ==================== Diviner (占卜家) ====================
+    /** Diviner - Divination cooldown in seconds */
+    public int divinerCooldown = 60;
+    /** Diviner - Crystal ball targeting range in blocks */
+    public double divinerRange = 4.0;
+
     // ==================== Delayer (滞时鬼) ====================
     /** Delayer - Rewind skill: seconds between anchoring and the automatic rewind */
     public int delayerRewindDelaySeconds = 8;
