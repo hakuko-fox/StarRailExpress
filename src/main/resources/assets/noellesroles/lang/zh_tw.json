@@ -527,6 +527,7 @@
   "tip.recaller.teleport": "按 %s 傳送！",
   "tip.vulture": "已吃掉 %s/%s 具屍體。",
   "message.noellesroles.photographer.blindness": "§6你被致盲",
+  "message.noellesroles.photographer.frame_teleport": "§b你穿過了畫框，來到照片拍攝的地點",
   "announcement.star.goals.thief": "你對金錢的渴望大過所有人！",
   "announcement.star.role.thief": "小偷",
   "announcement.star.role.candlebearer": "秉燭人",

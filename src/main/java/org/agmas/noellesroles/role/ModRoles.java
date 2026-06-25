@@ -48,6 +48,7 @@ import org.agmas.noellesroles.game.roles.innocent.monitor.MonitorPlayerComponent
 import org.agmas.noellesroles.game.roles.innocent.mortician.MorticianRole;
 import org.agmas.noellesroles.game.roles.innocent.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.psychologist.PsychologistPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.super_star.SuperStarPlayerComponent;
@@ -1597,7 +1598,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
-    ));
+    ).setComponentKey(PhotographerPlayerComponent.KEY));
 
     /**
      * 画家角色

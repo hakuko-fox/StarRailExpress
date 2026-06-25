@@ -17,6 +17,7 @@ import org.agmas.noellesroles.game.roles.innocent.builder.BuilderPlayerComponent
 import org.agmas.noellesroles.game.roles.innocent.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.diviner.DivinerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocent.photographer.PhotographerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.clock_maker.ClockmakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.detective.DetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.driver.DiverPlayerComponent;
@@ -392,6 +393,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<DivinerPlayerComponent> DIVINER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "diviner"),
       DivinerPlayerComponent.class);
+
+  // 摄影师组件 - 记录画框购买次数
+  public static final ComponentKey<PhotographerPlayerComponent> PHOTOGRAPHER = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "photographer"),
+      PhotographerPlayerComponent.class);
 
   // 超级亡命徒组件
   public static final ComponentKey<SuperLooseEndPlayerComponent> SUPER_LOOSE_END = ComponentRegistry.getOrCreate(
@@ -792,6 +798,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, DIVINER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(DivinerPlayerComponent::new);
+
+    // 注册摄影师组件 - 画框购买次数
+    registry.beginRegistration(Player.class, PHOTOGRAPHER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(PhotographerPlayerComponent::new);
 
     // 注册超级亡命徒组件
     registry.beginRegistration(Player.class, SUPER_LOOSE_END)

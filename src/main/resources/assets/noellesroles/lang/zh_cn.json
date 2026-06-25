@@ -534,6 +534,7 @@
   "tip.recaller.teleport": "按 %s 传送！",
   "tip.vulture": "已吃掉 %s/%s 具尸体。",
   "message.noellesroles.photographer.blindness": "§6你被致盲",
+  "message.noellesroles.photographer.frame_teleport": "§b你穿过了画框，来到照片拍摄的地点",
   "announcement.star.goals.thief": "你对金钱的渴望大过所有人！",
   "announcement.star.role.thief": "小偷",
   "announcement.star.role.candlebearer": "秉烛人",

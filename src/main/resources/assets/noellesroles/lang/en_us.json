@@ -515,6 +515,7 @@
   "tip.recaller.teleport": "Press %s to teleport!",
   "tip.vulture": "Eaten %s/%s corpses.",
   "message.noellesroles.photographer.blindness": "§6You were blinded",
+  "message.noellesroles.photographer.frame_teleport": "§bYou stepped through the frame to where the photo was taken",
   "announcement.star.goals.thief": "Your desire for money surpasses everyone else!",
   "announcement.star.role.thief": "Thief",
   "announcement.star.role.candlebearer": "Candlebearer",
