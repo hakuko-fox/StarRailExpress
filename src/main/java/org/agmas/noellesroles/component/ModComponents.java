@@ -61,6 +61,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.cupid.CupidPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
@@ -418,6 +419,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<PhantomMusicianPlayerComponent> PHANTOM_MUSICIAN = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_musician"),
       PhantomMusicianPlayerComponent.class);
+
+  public static final ComponentKey<CupidPlayerComponent> CUPID = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "cupid"),
+      CupidPlayerComponent.class);
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -825,6 +830,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .end(PhantomMusicianPlayerComponent::new);
 
     // 注册咒法师组件
+    registry.beginRegistration(Player.class, CUPID)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(CupidPlayerComponent::new);
+
     registry.beginRegistration(Player.class, WARLOCK)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent::new);
