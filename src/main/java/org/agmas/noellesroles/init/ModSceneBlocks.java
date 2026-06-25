@@ -45,6 +45,7 @@ import org.agmas.noellesroles.content.block.scene.WaterValveBlock;
 import org.agmas.noellesroles.content.block.scene.WaterPumpBlock;
 import org.agmas.noellesroles.content.block.scene.SceneGateBlock;
 import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
+import org.agmas.noellesroles.content.block.scene.TrashCanBlock;
 import org.agmas.noellesroles.content.block_entity.scene.CoffinBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.DebrisPileBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.FlamethrowerBlockEntity;
@@ -60,6 +61,7 @@ import org.agmas.noellesroles.content.block_entity.scene.FogZoneBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.ManholeBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.PoisonZoneBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.SceneGateBlockEntity;
+import org.agmas.noellesroles.content.block_entity.scene.TrashCanBlockEntity;
 
 /**
  * 场景方块注册与" SRE 场景方块"创造标签栏。
@@ -156,6 +158,8 @@ public interface ModSceneBlocks {
             new CoffinBlock(Properties.ofFullCopy(Blocks.DARK_OAK_PLANKS).noOcclusion()));
     Block WATER_PUMP = registerBlock("water_pump",
             new WaterPumpBlock(Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+    Block TRASH_CAN = registerBlock("trash_can",
+            new TrashCanBlock(Properties.ofFullCopy(Blocks.CAULDRON).noOcclusion()));
 
     BlockEntityType<IncineratorBlockEntity> INCINERATOR_ENTITY = blockEntityRegistrar.create("incinerator",
             BlockEntityType.Builder.of(IncineratorBlockEntity::new, INCINERATOR));
@@ -167,6 +171,8 @@ public interface ModSceneBlocks {
             BlockEntityType.Builder.of(CoffinBlockEntity::new, COFFIN));
     BlockEntityType<WaterPumpBlockEntity> WATER_PUMP_ENTITY = blockEntityRegistrar.create("water_pump",
             BlockEntityType.Builder.of(WaterPumpBlockEntity::new, WATER_PUMP));
+    BlockEntityType<TrashCanBlockEntity> TRASH_CAN_ENTITY = blockEntityRegistrar.create("trash_can",
+            BlockEntityType.Builder.of(TrashCanBlockEntity::new, TRASH_CAN));
 
     // ───────────────────────── 场景任务点方块 → SRE 任务点方块 ─────────────────────────
 
