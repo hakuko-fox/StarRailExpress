@@ -217,7 +217,10 @@
       "noellesroles:phantom_musician",
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
-      "noellesroles:silencer"
+      "noellesroles:silencer",
+      "noellesroles:jade_general",
+      "noellesroles:wizard",
+      "noellesroles:diviner"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [
