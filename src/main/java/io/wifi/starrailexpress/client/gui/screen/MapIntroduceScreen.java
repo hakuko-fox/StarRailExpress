@@ -24,29 +24,29 @@ import org.agmas.noellesroles.init.ModSceneBlocks;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class MapIntroduceScreen extends Screen {
-    private static final int MAX_WIDTH = 720;
-    private static final int LEFT_RATIO_NUM = 31;
-    private static final int PAD = 7;
-    private static final int ROW_H = 34;
-    private static final int GAP = 5;
-    private static final int TOP_H = 20;
-    private static final int TAB_H = 18;
-    private static final int BOTTOM_H = 27;
-    private static final int PANEL = 0xD0141822;
-    private static final int PANEL_ALT = 0xE01C2230;
-    private static final int LINE = 0x805C6C86;
-    private static final int TEXT = 0xFFE8EEF8;
-    private static final int MUTED = 0xFF9AA9BE;
+    private static final int MAX_WIDTH = 700;
+    private static final int LEFT_RATIO_NUM = 30;
+    private static final int PAD = 6;
+    private static final int ROW_H = 42;
+    private static final int GAP = 4;
+    private static final int TOP_H = 18;
+    private static final int TAB_H = 16;
+    private static final int BOTTOM_H = 24;
+    private static final int TEXT = 0xFFFFF4DC;
+    private static final int MUTED = 0xFF9E8B6E;
 
     private final List<MapEntry> maps = new ArrayList<>();
     private final List<Entry> entries = new ArrayList<>();
     private final List<FormattedCharSequence> detailLines = new ArrayList<>();
+    private final Map<String, MapIntroSyncPayload.VoteMap> voteMaps = new HashMap<>();
     private final Set<String> bagMaps = new HashSet<>();
     private final Set<String> policeMaps = new HashSet<>();
     private final Set<String> underwaterMaps = new HashSet<>();
@@ -75,6 +75,7 @@ public class MapIntroduceScreen extends Screen {
 
     public void updateFromPacket(MapIntroSyncPayload payload) {
         maps.clear();
+        voteMaps.clear();
         bagMaps.clear();
         policeMaps.clear();
         underwaterMaps.clear();
@@ -83,15 +84,20 @@ public class MapIntroduceScreen extends Screen {
         policeMaps.addAll(payload.policeMaps());
         underwaterMaps.addAll(payload.underwaterMaps());
         airMaps.addAll(payload.airMaps());
+        for (MapIntroSyncPayload.VoteMap map : payload.voteMaps()) {
+            if (map.id() != null && !map.id().isBlank()) {
+                voteMaps.put(map.id(), map);
+            }
+        }
         for (MapIntroSyncPayload.MapJson map : payload.maps()) {
             try {
                 JsonObject root = JsonParser.parseString(map.json()).getAsJsonObject();
-                maps.add(new MapEntry(map.id(), root));
+                maps.add(new MapEntry(map.id(), root, voteMaps.get(map.id())));
             } catch (Exception ignored) {
-                maps.add(new MapEntry(map.id(), new JsonObject()));
+                maps.add(new MapEntry(map.id(), new JsonObject(), voteMaps.get(map.id())));
             }
         }
-        maps.sort(Comparator.comparing(m -> m.id));
+        maps.sort(Comparator.comparing(m -> m.name.getString()));
         rebuildEntries();
         if (selected == null && !entries.isEmpty()) {
             selected = entries.get(0);
@@ -116,7 +122,7 @@ public class MapIntroduceScreen extends Screen {
 
     private void computeLayout() {
         panelW = Math.min(MAX_WIDTH, (int) (width * 0.9F));
-        panelH = Math.min(360, Math.max(230, (int) (height * 0.82F)));
+        panelH = Math.min(360, Math.max(230, (int) (height * 0.78F)));
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         leftW = panelW * LEFT_RATIO_NUM / 100;
@@ -129,9 +135,8 @@ public class MapIntroduceScreen extends Screen {
         switch (tab) {
             case MAP_PROPERTIES -> {
                 for (MapEntry map : maps) {
-                    Component name = Component.translatableWithFallback("map." + map.id + ".name", map.id);
-                    if (matches(q, map.id, name.getString())) {
-                        entries.add(Entry.map(map, name));
+                    if (matches(q, map.id, map.name.getString())) {
+                        entries.add(Entry.map(map, map.name));
                     }
                 }
             }
@@ -184,6 +189,23 @@ public class MapIntroduceScreen extends Screen {
         addWrapped(Component.literal(map.name.getString()).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD), wrapW);
         addWrapped(Component.translatable("map_intro.map.id", map.id).withStyle(ChatFormatting.GRAY), wrapW);
         addBlank();
+        if (map.voteMap != null) {
+            addSection("map_intro.section.vote_config", wrapW);
+            addLine("map_intro.vote.display_name", map.name.getString(), wrapW);
+            addLine("map_intro.vote.min_count",
+                    Component.translatable(map.voteMap.minCount() == -1
+                            ? "map_intro.vote.no_min_count"
+                            : "map_intro.vote.count_value", map.voteMap.minCount()),
+                    wrapW);
+            addLine("map_intro.vote.max_count",
+                    Component.translatable(map.voteMap.maxCount() == -1
+                            ? "map_intro.vote.no_max_count"
+                            : "map_intro.vote.count_value", map.voteMap.maxCount()),
+                    wrapW);
+            addLine(map.voteMap.canSelect() ? "map_intro.vote.can_select.true" : "map_intro.vote.can_select.false", wrapW);
+            addLine("map_intro.vote.game_modes", gameModesText(map.voteMap.gameModes()), wrapW);
+            addBlank();
+        }
         addSection("map_intro.section.special_roles", wrapW);
         boolean anySpecial = false;
         anySpecial |= addIfContains(bagMaps, map.id, "map_intro.special.bag", wrapW);
@@ -332,14 +354,16 @@ public class MapIntroduceScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         renderBackground(graphics, mouseX, mouseY, delta);
         computeLayout();
-        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, PANEL);
-        graphics.fill(panelX + leftW + GAP / 2, panelY, panelX + leftW + GAP / 2 + 1, panelY + panelH, LINE);
-        graphics.drawString(font, title, panelX + PAD, panelY - 13, TEXT, false);
+        drawPanelBg(graphics, panelX, panelY, leftW, panelH);
+        drawPanelBg(graphics, panelX + leftW + GAP, panelY, rightW, panelH);
+        graphics.fillGradient(0, 0, width, panelY - 4, 0xBB000000, 0x00000000);
+        graphics.drawCenteredString(font, title, width / 2, 8, 0xF5E8C8);
         super.render(graphics, mouseX, mouseY, delta);
         renderTabs(graphics, mouseX, mouseY);
         renderList(graphics, mouseX, mouseY);
         renderDetail(graphics);
-        graphics.drawString(font, Component.translatable("map_intro.hint"), panelX + panelW - font.width(Component.translatable("map_intro.hint")), panelY + panelH + 4, MUTED, false);
+        graphics.drawCenteredString(font, Component.translatable("map_intro.hint").withStyle(ChatFormatting.GRAY),
+                width / 2, height - 24, MUTED);
     }
 
     private void renderTabs(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -350,11 +374,25 @@ public class MapIntroduceScreen extends Screen {
         for (int i = 0; i < tabs.size(); i++) {
             TabInfo info = tabs.get(i);
             int bx = x + i * (each + GAP);
-            int color = info.tab == tab ? info.color : 0xFF293242;
-            graphics.fill(bx, y, bx + each, y + TAB_H, color);
-            graphics.fill(bx, y + TAB_H - 1, bx + each, y + TAB_H, info.color);
             Component label = Component.translatable(info.labelKey);
-            graphics.drawCenteredString(font, label, bx + each / 2, y + 5, 0xFFFFFFFF);
+            boolean active = info.tab == tab;
+            boolean hovered = !active && inside(mouseX, mouseY, bx, y, each, TAB_H);
+            if (active) {
+                graphics.fillGradient(bx, y, bx + each, y + TAB_H,
+                        blendColors(0xFF1A1008, info.color, 0.55F),
+                        blendColors(0xFF120A04, info.color, 0.30F));
+                graphics.fill(bx, y + TAB_H - 2, bx + each, y + TAB_H, info.color);
+            } else if (hovered) {
+                graphics.fillGradient(bx, y, bx + each, y + TAB_H,
+                        blendColors(0xFF1A1008, info.color, 0.25F),
+                        blendColors(0xFF120A04, info.color, 0.12F));
+                graphics.renderOutline(bx, y, each, TAB_H, 0x558B6914);
+            } else {
+                graphics.fill(bx, y, bx + each, y + TAB_H, 0x551A1008);
+                graphics.renderOutline(bx, y, each, TAB_H, 0x558B6914);
+            }
+            String text = font.plainSubstrByWidth(label.getString(), Math.max(4, each - 8));
+            graphics.drawCenteredString(font, text, bx + each / 2, y + 4, active ? (info.color | 0xFF000000) : TEXT);
         }
     }
 
@@ -369,14 +407,18 @@ public class MapIntroduceScreen extends Screen {
             Entry entry = entries.get(i + listScroll);
             int ry = y + i * ROW_H;
             boolean active = selected != null && entry.sameTarget(selected);
-            graphics.fill(x, ry, x + leftW - PAD * 2, ry + ROW_H - 3, active ? 0xFF2B5870 : PANEL_ALT);
+            int rowW = leftW - PAD * 2;
+            graphics.fillGradient(x, ry, x + rowW, ry + ROW_H - 3,
+                    active ? blendColors(0xFF1A1008, 0xFFC9A84C, 0.32F) : 0xFF1A1008,
+                    active ? blendColors(0xFF120A04, 0xFFC9A84C, 0.18F) : 0xFF120A04);
+            graphics.renderOutline(x, ry, rowW, ROW_H - 3, active ? 0xFFD4AF37 : 0xFF5A4530);
             if (entry.item != null) {
-                graphics.renderItem(new ItemStack(entry.item), x + 5, ry + 8);
-                graphics.drawString(font, entry.name, x + 26, ry + 7, TEXT, false);
-                graphics.drawString(font, BuiltInRegistries.ITEM.getKey(entry.item).toString(), x + 26, ry + 19, MUTED, false);
+                graphics.renderItem(new ItemStack(entry.item), x + 6, ry + 11);
+                graphics.drawString(font, trim(entry.name.getString(), rowW - 32), x + 28, ry + 8, TEXT, false);
+                graphics.drawString(font, trim(BuiltInRegistries.ITEM.getKey(entry.item).toString(), rowW - 32), x + 28, ry + 22, MUTED, false);
             } else {
-                graphics.drawString(font, entry.name, x + 6, ry + 7, TEXT, false);
-                graphics.drawString(font, entry.id, x + 6, ry + 19, MUTED, false);
+                graphics.drawString(font, trim(entry.name.getString(), rowW - 12), x + 6, ry + 8, TEXT, false);
+                graphics.drawString(font, trim(entry.id, rowW - 12), x + 6, ry + 22, MUTED, false);
             }
         }
     }
@@ -385,7 +427,6 @@ public class MapIntroduceScreen extends Screen {
         int x = panelX + leftW + GAP + PAD;
         int y = panelY + PAD;
         int h = panelH - BOTTOM_H - PAD * 2;
-        graphics.fill(x - PAD / 2, y - 1, x + rightW - PAD, y + h, 0x9018202D);
         int visible = Math.max(1, h / 11);
         int maxScroll = Math.max(0, detailLines.size() - visible);
         detailScroll = Mth.clamp(detailScroll, 0, maxScroll);
@@ -455,6 +496,33 @@ public class MapIntroduceScreen extends Screen {
         return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
     }
 
+    private String trim(String value, int maxWidth) {
+        return font.plainSubstrByWidth(value, Math.max(4, maxWidth));
+    }
+
+    private static void drawPanelBg(GuiGraphics graphics, int x, int y, int w, int h) {
+        graphics.fillGradient(x, y, x + w, y + h, 0xD81A1008, 0xD820140A);
+        graphics.renderOutline(x, y, w, h, 0xFF8B6914);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + 2, 0x22FFE8C0);
+    }
+
+    private static int blendColors(int c1, int c2, float t) {
+        t = Mth.clamp(t, 0.0F, 1.0F);
+        int a1 = c1 >>> 24;
+        int r1 = c1 >> 16 & 255;
+        int g1 = c1 >> 8 & 255;
+        int b1 = c1 & 255;
+        int a2 = c2 >>> 24;
+        int r2 = c2 >> 16 & 255;
+        int g2 = c2 >> 8 & 255;
+        int b2 = c2 & 255;
+        int a = (int) (a1 + (a2 - a1) * t);
+        int r = (int) (r1 + (r2 - r1) * t);
+        int g = (int) (g1 + (g2 - g1) * t);
+        int b = (int) (b1 + (b2 - b1) * t);
+        return a << 24 | r << 16 | g << 8 | b;
+    }
+
     private static List<Item> sceneBlockItems() {
         return List.of(
                 ModSceneBlocks.POISON_ZONE.asItem(), ModSceneBlocks.BREAKING_BRIDGE.asItem(),
@@ -480,7 +548,59 @@ public class MapIntroduceScreen extends Screen {
                 ModSceneBlocks.REACTOR.asItem(), ModSceneBlocks.WATER_VALVE.asItem(), ModSceneBlocks.DEBRIS_PILE.asItem(),
                 ModSceneBlocks.STOVE.asItem(), ModSceneBlocks.DUST.asItem(), ModSceneBlocks.TRANSPORT_POINT.asItem(),
                 ModSceneBlocks.STATUE.asItem(), ModSceneBlocks.BUSH.asItem(), ModSceneBlocks.CROP.asItem(),
-                Items.BLACK_CONCRETE, Items.NOTE_BLOCK, Items.LECTERN);
+                Items.BLACK_CONCRETE, Items.NOTE_BLOCK, Items.LECTERN,
+                TMMBlocks.LIGHT_TOILET.asItem(), TMMBlocks.DARK_TOILET.asItem(),
+                TMMBlocks.WHITE_TRIMMED_BED.asItem(), TMMBlocks.RED_TRIMMED_BED.asItem(),
+                TMMBlocks.STAINLESS_STEEL_SPRINKLER.asItem(), TMMBlocks.GOLD_SPRINKLER.asItem(),
+                TMMBlocks.FOOD_PLATTER.asItem(), TMMBlocks.DRINK_TRAY.asItem(),
+                TMMBlocks.CAMERA.asItem(), TMMBlocks.SECURITY_MONITOR.asItem(),
+                TMMBlocks.MINIGAME_QUEST_BLOCK_ITEM, TMMBlocks.MINIGAME_QUEST_PANEL_ITEM);
+    }
+
+    private static Component gameModesText(List<String> values) {
+        if (values == null || values.isEmpty()
+                || values.stream().allMatch(value -> value == null || value.isBlank())) {
+            return Component.translatable("map_intro.vote.all_game_modes");
+        }
+        List<String> names = new ArrayList<>();
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            String path = value.contains(":") ? value.substring(value.indexOf(':') + 1) : value;
+            names.add(Component.translatableWithFallback("game_mode.noellesroles." + path,
+                    Component.translatableWithFallback("game_mode.starrailexpress." + path, value).getString()).getString());
+        }
+        if (names.isEmpty()) {
+            return Component.translatable("map_intro.vote.all_game_modes");
+        }
+        return Component.literal(String.join(", ", names));
+    }
+
+    private static Component mapDisplayName(String id, MapIntroSyncPayload.VoteMap voteMap) {
+        if (voteMap != null && voteMap.displayName() != null && !voteMap.displayName().isBlank()) {
+            return translateConfiguredText(voteMap.displayName());
+        }
+        return Component.translatableWithFallback("map." + id + ".name", id);
+    }
+
+    private static Component translateConfiguredText(String value) {
+        String trimmed = value.trim();
+        List<String> candidates = new ArrayList<>();
+        candidates.add(trimmed);
+        if (trimmed.startsWith("gui.tmm.map_selector.")) {
+            candidates.add("gui.sre.map_selector." + trimmed.substring("gui.tmm.map_selector.".length()));
+        } else if (trimmed.startsWith("gui.sre.map_selector.")) {
+            candidates.add("gui.tmm.map_selector." + trimmed.substring("gui.sre.map_selector.".length()));
+        }
+        Language language = Language.getInstance();
+        for (String key : candidates) {
+            String translated = language.getOrDefault(key);
+            if (!translated.equals(key)) {
+                return Component.literal(translated);
+            }
+        }
+        return Component.literal(trimmed);
     }
 
     private static String statusName(String value) {
@@ -555,11 +675,13 @@ public class MapIntroduceScreen extends Screen {
         final String id;
         final JsonObject json;
         final Component name;
+        final MapIntroSyncPayload.VoteMap voteMap;
 
-        MapEntry(String id, JsonObject json) {
+        MapEntry(String id, JsonObject json, MapIntroSyncPayload.VoteMap voteMap) {
             this.id = id;
             this.json = json;
-            this.name = Component.translatableWithFallback("map." + id + ".name", id);
+            this.voteMap = voteMap;
+            this.name = mapDisplayName(id, voteMap);
         }
     }
 

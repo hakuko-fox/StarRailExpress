@@ -217,6 +217,8 @@
       "noellesroles:phantom_musician",
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
+      "noellesroles:jade_general",
+      "noellesroles:wizard",
       "noellesroles:silencer"
     ],
     "loom:injected_interfaces": {

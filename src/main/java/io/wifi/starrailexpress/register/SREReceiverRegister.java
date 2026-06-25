@@ -166,6 +166,7 @@ public class SREReceiverRegister {
 
     private static void sendMapIntro(ServerPlayer player) {
         ArrayList<io.wifi.starrailexpress.network.MapIntroSyncPayload.MapJson> maps = new ArrayList<>();
+        ArrayList<io.wifi.starrailexpress.network.MapIntroSyncPayload.VoteMap> voteMaps = new ArrayList<>();
         Path mapsDir = player.server.getWorldPath(LevelResource.ROOT)
                 .resolve("train_maps")
                 .toAbsolutePath()
@@ -183,10 +184,27 @@ public class SREReceiverRegister {
                 SRE.LOGGER.warn("Failed to read map intro json for {}", mapId, e);
             }
         }
+        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
+                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(player.server);
+        if (mapConfig.getMaps() != null) {
+            for (io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry : mapConfig.getMaps()) {
+                if (entry == null || entry.id == null || entry.id.isBlank()) {
+                    continue;
+                }
+                voteMaps.add(new io.wifi.starrailexpress.network.MapIntroSyncPayload.VoteMap(
+                        entry.id,
+                        entry.displayName,
+                        entry.minCount,
+                        entry.maxCount,
+                        entry.canSelect,
+                        entry.gameModes == null ? java.util.List.of() : entry.gameModes));
+            }
+        }
         org.agmas.noellesroles.config.NoellesRolesConfig config =
                 org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance();
         ServerPlayNetworking.send(player, new io.wifi.starrailexpress.network.MapIntroSyncPayload(
                 maps,
+                voteMaps,
                 config.maChenXuMaps,
                 config.swastMaps,
                 config.underwaterRolesMaps,

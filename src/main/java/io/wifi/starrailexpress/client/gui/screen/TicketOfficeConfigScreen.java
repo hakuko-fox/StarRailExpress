@@ -36,7 +36,7 @@ public class TicketOfficeConfigScreen extends Screen {
         this.priceBox = new EditBox(this.font, panelX + 86, y + 30, 72, 20, Component.empty());
         this.priceBox.setValue(String.valueOf(Math.max(0, data.getInt("Price"))));
         this.usesBox = new EditBox(this.font, panelX + 86, y + 60, 72, 20, Component.empty());
-        this.usesBox.setValue(String.valueOf(data.contains("Uses") ? data.getInt("Uses") : 1));
+        this.usesBox.setValue(String.valueOf(Math.max(1, data.contains("Uses") ? data.getInt("Uses") : 1)));
         addRenderableWidget(nameBox);
         addRenderableWidget(priceBox);
         addRenderableWidget(usesBox);
@@ -56,7 +56,7 @@ public class TicketOfficeConfigScreen extends Screen {
         CompoundTag tag = data.copy();
         tag.putString("TicketName", nameBox.getValue().trim());
         tag.putInt("Price", parseInt(priceBox.getValue(), 0));
-        tag.putInt("Uses", parseInt(usesBox.getValue(), 1));
+        tag.putInt("Uses", Math.max(1, parseInt(usesBox.getValue(), tag.contains("Uses") ? tag.getInt("Uses") : 1)));
         tag.putString("Currency", currency.serializedName());
         ClientPlayNetworking.send(new TicketPayload.SaveOfficeConfig(pos, tag));
         onClose();
@@ -72,7 +72,7 @@ public class TicketOfficeConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         int panelX = this.width / 2 - 120;
         int y = this.height / 2 - 72;
         graphics.fill(panelX, y - 30, panelX + 240, y + 136, 0xEE1D2328);
@@ -83,5 +83,6 @@ public class TicketOfficeConfigScreen extends Screen {
                 0xFFC8D4D8, false);
         graphics.drawString(font, Component.translatable("screen.starrailexpress.ticket_office.uses"), panelX + 12, y + 66,
                 0xFFC8D4D8, false);
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 }
