@@ -22,6 +22,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.init.ModEffects;
@@ -598,12 +599,13 @@ public class ImitatorSkillRegistry {
     }
 
     /**
-     * 医生：自我治疗（即时回血 + 再生II + 吸收）
+     * 医生：获得一个解毒剂
      */
     private static void executeDoctor(ServerPlayer player) {
-        player.heal(6.0F); // 即时回复3颗心
-        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1, false, false, true)); // 再生II 10秒
-        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 30 * 20, 0, false, false, true)); // 吸收 30秒
+        ItemStack antidote = new ItemStack(ModItems.ANTIDOTE);
+        if (!player.getInventory().add(antidote)) {
+            player.drop(antidote, false);
+        }
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS,
                 1.0F, 1.5F);
         player.displayClientMessage(Component.translatable("message.noellesroles.imitator.doctor_heal")
