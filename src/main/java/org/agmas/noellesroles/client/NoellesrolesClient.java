@@ -316,6 +316,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.render.EmptyEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.MUMMY,
                 net.minecraft.client.renderer.entity.HuskRenderer::new);
+        EntityRendererRegistry.register(ModEntities.UNDEAD,
+                org.agmas.noellesroles.client.renderer.UndeadEntityRenderer::new);
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);

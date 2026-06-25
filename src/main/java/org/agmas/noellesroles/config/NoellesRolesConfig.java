@@ -414,6 +414,30 @@ public class NoellesRolesConfig implements ConfigData {
     /** Wizard - Potion attack-immunity window in seconds */
     public int wizardPotionImmuneSeconds = 60;
 
+    // ==================== Undead Lord (亡灵之主) ====================
+    /** Undead Lord - Raise-from-corpse skill cooldown in seconds */
+    public int undeadLordReviveCooldownSeconds = 45;
+    /** Undead Lord - Max undead raised from corpses that can coexist (skill cap) */
+    public int undeadLordMaxActive = 3;
+    /** Undead Lord - Absolute hard cap of simultaneous undead (incl. conversions/charm) */
+    public int undeadLordHardCap = 8;
+    /** Undead Lord - Infection decay per second (percent) */
+    public double undeadLordInfectionDecayPerSecond = 2.0;
+    /** Undead Lord - Delay (seconds) between reaching 100% infection and death */
+    public int undeadLordInfectionDeathDelaySeconds = 3;
+    /** Undead Lord - Plague Fog duration in seconds */
+    public int undeadLordFogSeconds = 10;
+    /** Undead Lord - Plague Fog radius in blocks */
+    public double undeadLordFogRadius = 4.0;
+    /** Undead Lord - Plague Fog infection added per second to players inside */
+    public double undeadLordFogInfectPerSecond = 5.0;
+    /** Undead Lord - Soul Summon Charm temporary undead lifetime in seconds */
+    public int undeadLordCharmLifetimeSeconds = 45;
+    /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled) */
+    public int undeadLordAmpSeconds = 60;
+    /** Undead Lord - Soul Chain follow duration in seconds */
+    public int undeadLordSoulChainSeconds = 20;
+
     /**
      * Phantom - Invisibility duration in seconds
      */

@@ -209,6 +209,8 @@ public class ModRoles {
     public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
     // 巫师角色 ID
     public static final ResourceLocation WIZARD_ID = Noellesroles.id("wizard");
+    // 亡灵之主角色 ID
+    public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
     public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
     public static final ResourceLocation REPAIR_HUNTER_ID = Noellesroles.id("repair_hunter");
     public static final ResourceLocation REPAIR_NEUTRAL_ID = Noellesroles.id("repair_neutral");
@@ -493,6 +495,25 @@ public class ModRoles {
             true // 隐藏计分板
     )).setCanSeeCoin(true).setComponentKey(ModComponents.WIZARD).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1).setDefaultEnableChance(2500);
+
+    /**
+     * 亡灵之主（杀手阵营，控场 / 滚雪球）。
+     * 右键尸体发动【亡者复苏】将其转化为无意识亡灵（最多同时 3 个，45 秒冷却）。
+     * 亡灵追击活人并以攻击累积感染值，满值 3 秒后死亡并转化为新的亡灵。
+     * 专属商店：亡灵延命药剂 / 瘟疫之雾 / 亡者召唤符 / 感染增幅器 / 灵魂锁链 / 时之沙漏。
+     */
+    public static SRERole UNDEAD_LORD = TMMRoles.registerRole(
+            new org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordRole(
+                    UNDEAD_LORD_ID, // 角色 ID
+                    new Color(148, 0, 211).getRGB(), // 灰紫色 - 亡灵
+                    false, // isInnocent = 杀手阵营
+                    true, // canUseKiller = 有杀手能力
+                    SRERole.MoodType.FAKE, // 假心情
+                    Integer.MAX_VALUE, // 无限冲刺
+                    true // 隐藏计分板
+            )).setCanSeeCoin(true).setComponentKey(ModComponents.UNDEAD_LORD)
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500)
+            .setDefaultEnableNeededPlayerCount(12);
 
     public static SRERole GUEST_GHOST = TMMRoles.registerRole(new NormalRole(
             GUEST_GHOST_ID, // 角色 ID

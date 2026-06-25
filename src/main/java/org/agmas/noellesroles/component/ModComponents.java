@@ -424,6 +424,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_musician"),
       PhantomMusicianPlayerComponent.class);
 
+  // 亡灵之主组件 - 杀手阵营，亡灵召唤 + 感染滚雪球
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordPlayerComponent> UNDEAD_LORD = ComponentRegistry.getOrCreate(
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "undead_lord"),
+      org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordPlayerComponent.class);
+
   public ModComponents() {
     // CCA 需要无参构造函数
   }
@@ -833,6 +838,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, PHANTOM_MUSICIAN)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(PhantomMusicianPlayerComponent::new);
+
+    // 注册亡灵之主组件 - 杀手阵营，亡灵召唤 + 感染滚雪球
+    registry.beginRegistration(Player.class, UNDEAD_LORD)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordPlayerComponent::new);
 
     // 注册咒法师组件
     registry.beginRegistration(Player.class, WARLOCK)
