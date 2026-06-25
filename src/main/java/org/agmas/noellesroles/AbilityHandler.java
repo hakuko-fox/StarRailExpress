@@ -15,6 +15,7 @@ import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.game.roles.innocent.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
@@ -141,6 +142,28 @@ public class AbilityHandler {
                 abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
                         NoellesRolesConfig.HANDLER.instance().jadeGeneralKickCooldown);
             }
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.DELAYER)
+                && abilityPlayerComponent.cooldown <= 0) {
+            DelayerPlayerComponent delayer = ModComponents.DELAYER.get(player);
+            if (delayer.isAnchored()) {
+                return; // 已锚定，等待回溯
+            }
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            int cost = NoellesRolesConfig.HANDLER.instance().delayerRewindCost;
+            if (shop.balance < cost) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.delayer.no_money", cost)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            shop.balance -= cost;
+            shop.sync();
+            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
+                    NoellesRolesConfig.HANDLER.instance().delayerRewindCooldown);
+            delayer.anchor();
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.WIZARD)) {

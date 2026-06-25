@@ -278,6 +278,12 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7B68EE));
 
     /**
+     * 时间回溯恍惚：滞时鬼回溯时所有人短暂获得，触发客户端时空滤镜 shader。
+     */
+    public static final Holder<MobEffect> TIME_REWIND_DAZE = register("time_rewind_daze",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8A6BFF));
+
+    /**
      * 注册药水效果到注册表
      */
 

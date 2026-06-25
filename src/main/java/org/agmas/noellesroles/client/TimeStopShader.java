@@ -29,6 +29,9 @@ public class TimeStopShader {
     // 水墨风状态
     private float inkStrength = 0.0f; // 水墨风强度 (0~1)
 
+    // 时间回溯恍惚滤镜强度 (0~1)
+    private float rewindStrength = 0.0f;
+
     // 上一次的状态（用于检测效果开始或刷新）
     private boolean lastHasTimeStop = false;
     private int lastDuration = 0;
@@ -247,6 +250,37 @@ public class TimeStopShader {
 
             return true;
         }));
+
+        // 时间回溯恍惚滤镜（滞时鬼回溯时全场触发）
+        m_post.addSinglePassEntry("time_rewind", pass -> processPlayer(mc.player, () -> {
+            if (mc.player == null)
+                return false;
+
+            totalTime += 0.016f;
+
+            boolean isActive = mc.player.hasEffect(ModEffects.TIME_REWIND_DAZE);
+            if (isActive) {
+                rewindStrength = Math.min(1.0f, rewindStrength + 0.08f); // 快速淡入
+            } else {
+                rewindStrength = Math.max(0.0f, rewindStrength - 0.04f); // 缓慢淡出
+            }
+            if (rewindStrength <= 0.01f)
+                return false;
+
+            var effect = pass.getEffect();
+            if (effect == null)
+                return false;
+
+            var strengthUniform = effect.safeGetUniform("Strength");
+            if (strengthUniform != null) {
+                strengthUniform.set(rewindStrength);
+            }
+            var timeUniform = effect.safeGetUniform("Time");
+            if (timeUniform != null) {
+                timeUniform.set(totalTime);
+            }
+            return true;
+        }));
     }
 
     public void renderPostProcess(float partialTicks) {
@@ -266,6 +300,7 @@ public class TimeStopShader {
         hasBlackMonitorEffect = false;
         lastHasBlackMonitor = false;
         inkStrength = 0.0f;
+        rewindStrength = 0.0f;
     }
 
     public void forceStart() {
