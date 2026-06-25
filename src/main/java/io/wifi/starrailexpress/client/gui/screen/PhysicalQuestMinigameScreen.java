@@ -166,16 +166,42 @@ public class PhysicalQuestMinigameScreen extends Screen {
         }
     }
 
+    private static final float BC = (float) Math.cos(Math.toRadians(45));
+    private static final float BS = (float) Math.sin(Math.toRadians(45));
+
     private void tickThrowBall() {
         if (!birdFlying) return;
         birdX += birdVelX; birdY += birdVelY;
         birdVelY += 0.28f; birdVelX *= 0.996f; birdVelY *= 0.996f;
         int l = left(), t = top();
-        boolean inBucket = birdX > l + 5 && birdX < l + 135 && birdY > t + 80 && birdY < t + 210;
-        if (inBucket) {
-            birdVelX *= 0.82f; birdVelY *= -0.35f;
-            stableInBucket = Math.abs(birdVelX) + Math.abs(birdVelY) < 0.8f ? stableInBucket + 1 : 0;
-            if (stableInBucket > 35) complete();
+        float bcx = l + 70, bcy = t + 150;
+        // 世界→桶局部坐标（还原 -45° 旋转 = 正向 +45° 旋转）
+        float dx = birdX - bcx;
+        float dy = birdY - bcy;
+        float lx = dx * BC + dy * BS;
+        float ly = -dx * BS + dy * BC;
+        float bHalfW = 42, bTop = -30, bBot = 30;
+        if (lx > -bHalfW && lx < bHalfW && ly > bTop - 8 && ly < bBot + 8) {
+            float lvx = birdVelX * BC + birdVelY * BS;
+            float lvy = -birdVelX * BS + birdVelY * BC;
+            // 左右壁碰撞反弹
+            if (lx <= -bHalfW + 8) { lx = -bHalfW + 8; lvx = Math.abs(lvx) * 0.55f; }
+            if (lx >= bHalfW - 8)  { lx = bHalfW - 8;  lvx = -Math.abs(lvx) * 0.55f; }
+            // 底部碰撞反弹
+            if (ly >= bBot - 6)     { ly = bBot - 6;     lvy = -Math.abs(lvy) * 0.45f; }
+            // 顶部开口允许进入，难逃出
+            if (ly < bTop - 6 && lvy < 0) { lvy *= 0.3f; ly = bTop - 6; }
+            // 桶局部→世界坐标（-45° 旋转）
+            birdX = bcx + lx * BC + ly * BS;
+            birdY = bcy - lx * BS + ly * BC;
+            birdVelX = lvx * BC + lvy * BS;
+            birdVelY = -lvx * BS + lvy * BC;
+            // 稳定性检测
+            boolean inside = lx > -bHalfW + 10 && lx < bHalfW - 10 && ly > bTop && ly < bBot - 4;
+            if (inside) {
+                stableInBucket = Math.abs(birdVelX) + Math.abs(birdVelY) < 0.6f ? stableInBucket + 1 : 0;
+                if (stableInBucket > 35) complete();
+            } else { stableInBucket = 0; }
         }
         if (birdY > t + H + 50 || birdX < l - 60 || birdX > l + W + 60) {
             birdFlying = false; birdX = l + W - 80; birdY = t + 100;
@@ -186,7 +212,7 @@ public class PhysicalQuestMinigameScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
         int l = left(), t = top();
 
         float intro = MinigameUI.easeOut((introTicks + partialTick) / INTRO_TICKS);
@@ -215,7 +241,6 @@ public class PhysicalQuestMinigameScreen extends Screen {
             g.drawCenteredString(font, Component.translatable("minigame.starrailexpress.common.done"),
                     width / 2, t + 128, GREEN);
         }
-        super.render(g, mouseX, mouseY, partialTick);
     }
 
     // ==================== 灭火 ====================
@@ -425,13 +450,13 @@ public class PhysicalQuestMinigameScreen extends Screen {
     // ==================== 投球 ====================
 
     private void renderThrowBall(GuiGraphics g, int l, int t, int mx, int my) {
-        // 桶：镜像翻转（开口朝右→朝左），加深
+        // 桶：-45°倾斜，开口朝右上
         g.pose().pushPose();
         g.pose().translate(l + 70, t + 150, 0);
-        g.pose().mulPose(Axis.ZP.rotationDegrees(50));
+        g.pose().mulPose(Axis.ZP.rotationDegrees(-45));
         // 桶底
         g.fill(-45, -32, 45, -28, 0xFFB08048);
-        // 桶身
+        // 桶身（加深内部）
         g.fill(-45, -28, 45, 32, 0xFF8A5A32);
         g.renderOutline(-45, -28, 90, 60, 0xFFB08048);
         // 桶沿
