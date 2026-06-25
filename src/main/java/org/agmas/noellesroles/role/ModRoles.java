@@ -63,6 +63,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerCom
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
+import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
@@ -257,6 +258,7 @@ public class ModRoles {
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
+    public static final ResourceLocation NOSTALGIST_ID = Noellesroles.id("nostalgist");
 
     // 中立阵营
     public static final ResourceLocation STALKER_ID = Noellesroles.id("stalker");
@@ -479,7 +481,7 @@ public class ModRoles {
 
     /**
      * 巫师（杀手阵营）。开局携带法杖与魔药；所有金币收入转化为魔素（bossbar）。
-     * 法杖：右键蓄力火焰箭（穿透、3 秒延迟死亡），左键击退；魔药：大量魔素 + 60 秒一次攻击免疫。
+     * 法杖：右键蓄力火焰箭（最多贯穿 2 名、命中即死），左键击退；魔药：大量魔素 + 60 秒一次攻击免疫。
      * 法术池（潜行+技能键切换，技能键释放）：盔甲护身 / 冰霜震慑 / 笼罩暗影 / Explosion!。
      */
     public static SRERole WIZARD = TMMRoles.registerRole(new NormalRole(
@@ -598,6 +600,24 @@ public class ModRoles {
                     .setComponentKey(ModComponents.NINJA)
                     .setCanSeeCoin(true)
                     .setDefaultMax(1));
+
+    /**
+     * 怀旧者（杀手阵营）。
+     * - 处于「里世界」时：视角灰白，对所有阵营隐身、奔跑无声无粒子、不可被看见/听见/攻击；
+     *   但身处里世界无法击杀任何人，只能潜行/开锁/侦察。
+     * - 商店仅出售撬锁器与刀。
+     * - 当场上仅剩怀旧者一名杀手时，里世界崩塌，现身为普通杀手并可正常击杀。
+     */
+    public static SRERole NOSTALGIST = TMMRoles.registerRole(new NostalgistRole(
+            NOSTALGIST_ID, // 角色 ID
+            new Color(150, 160, 170).getRGB(), // 灰白色 - 代表里世界
+            false, // isInnocent = 杀手阵营
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            Integer.MAX_VALUE, // 无限冲刺
+            true // 隐藏计分板
+    )).setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500);
 
     public static SRERole DELAYER = TMMRoles.registerRole(new NormalRole(
             DELAYER_ID,
