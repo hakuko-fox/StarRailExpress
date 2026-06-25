@@ -1,6 +1,6 @@
 package io.wifi.starrailexpress.content.block;
 
-import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
+import com.mojang.serialization.MapCodec;
 import io.wifi.starrailexpress.content.block_entity.TicketGateBlockEntity;
 import io.wifi.starrailexpress.content.item.AdmissionTicketItem;
 import io.wifi.starrailexpress.index.TMMBlockEntities;
@@ -14,25 +14,27 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-public class TicketGateBlock extends SmallDoorBlock {
-    public TicketGateBlock(Properties properties) {
-        super(properties);
+public class TicketGateBlock extends DoorBlock implements EntityBlock {
+    public TicketGateBlock(BlockSetType type, Properties properties) {
+        super(type, properties);
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
-        BlockState state = super.getStateForPlacement(ctx);
-        return state == null ? null : state.setValue(OPEN, false).setValue(POWERED, false);
+    public MapCodec<? extends DoorBlock> codec() {
+        return null;
     }
 
     @Override
@@ -43,16 +45,11 @@ public class TicketGateBlock extends SmallDoorBlock {
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
             BlockEntityType<T> type) {
-        if (state.getValue(HALF) != DoubleBlockHalf.LOWER) {
+        if (state.getValue(HALF) != DoubleBlockHalf.LOWER || !type.equals(TMMBlockEntities.TICKET_GATE)) {
             return null;
         }
-        return level.isClientSide ? createTickerHelper(type, getBlockEntityType(), DoorBlockEntity::clientTick)
-                : createTickerHelper(type, getBlockEntityType(), TicketGateBlockEntity::serverTick);
-    }
-
-    @Override
-    protected BlockEntityType<? extends DoorBlockEntity> getBlockEntityType() {
-        return TMMBlockEntities.TICKET_GATE;
+        return level.isClientSide ? null : (l, p, s, e) -> TicketGateBlockEntity.serverTick(l, p, s,
+                (TicketGateBlockEntity) e);
     }
 
     @Override
@@ -78,8 +75,8 @@ public class TicketGateBlock extends SmallDoorBlock {
             if (!level.isClientSide) {
                 String ticketId = AdmissionTicketItem.getTicketId(stack);
                 if (ticketId.isBlank()) {
-                    player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.invalid_ticket"),
-                            true);
+                    player.displayClientMessage(
+                            Component.translatable("message.starrailexpress.ticket_gate.invalid_ticket"), true);
                     return InteractionResult.FAIL;
                 }
                 gate.setTicketId(ticketId);
@@ -89,15 +86,16 @@ public class TicketGateBlock extends SmallDoorBlock {
         }
         if (!gate.hasTicket()) {
             if (!level.isClientSide) {
-                player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.not_bound"), true);
+                player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.not_bound"),
+                        true);
             }
             return InteractionResult.FAIL;
         }
         if (!AdmissionTicketItem.matches(stack, gate.getTicketId())) {
             if (!level.isClientSide) {
                 level.playSound(null, lowerPos, TMMSounds.BLOCK_DOOR_LOCKED, SoundSource.BLOCKS, 1f, 1f);
-                player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_gate.requires_ticket"),
-                        true);
+                player.displayClientMessage(
+                        Component.translatable("message.starrailexpress.ticket_gate.requires_ticket"), true);
             }
             return InteractionResult.FAIL;
         }
@@ -105,7 +103,13 @@ public class TicketGateBlock extends SmallDoorBlock {
             if (!player.isCreative()) {
                 AdmissionTicketItem.consumeUse(stack);
             }
-            open(state, level, gate, lowerPos);
+            BlockState lowerState = level.getBlockState(lowerPos);
+            boolean open = lowerState.getValue(DoorBlock.OPEN);
+            // 用原版门的 setOpen 方式切换开关状态
+            level.setBlock(lowerPos, lowerState.setValue(DoorBlock.OPEN, !open),
+                    Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
+            level.setBlock(lowerPos.above(), level.getBlockState(lowerPos.above()).setValue(DoorBlock.OPEN, !open),
+                    Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
         }
         return InteractionResult.CONSUME;
     }

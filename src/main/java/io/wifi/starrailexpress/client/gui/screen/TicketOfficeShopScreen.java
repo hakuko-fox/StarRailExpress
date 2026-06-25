@@ -47,7 +47,7 @@ public class TicketOfficeShopScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
         int panelX = this.width / 2 - 96;
         int y = this.height / 2 - 82;
         graphics.fill(panelX, y, panelX + 192, y + 154, 0xEE20282E);
@@ -64,6 +64,5 @@ public class TicketOfficeShopScreen extends Screen {
                 ? Component.translatable("tooltip.starrailexpress.admission_ticket.infinite")
                 : Component.translatable("tooltip.starrailexpress.admission_ticket.uses", uses);
         graphics.drawString(font, useText, panelX + 24, y + 104, 0xFFC7D4D8, false);
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 }

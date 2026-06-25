@@ -138,7 +138,7 @@ public class EffectGeneratorConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
         int panelX = width / 2 - 150;
         int panelY = height / 2 - 105;
         graphics.fill(panelX, panelY, panelX + 310, panelY + 226, 0xE0202428);
@@ -153,7 +153,6 @@ public class EffectGeneratorConfigScreen extends Screen {
             graphics.drawString(font, (scroll + 1) + "/" + (maxScroll() + 1), panelX + 268, panelY + 52,
                     0xAFC7D0, false);
         }
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private static class Entry {

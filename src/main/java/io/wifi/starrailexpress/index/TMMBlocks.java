@@ -749,7 +749,7 @@ public interface TMMBlocks {
                     org.agmas.noellesroles.init.ModSceneBlocks.SCENE_CREATIVE_GROUP });
 
     Block TICKET_GATE = sreBlockRegistrar.create("ticket_gate",
-            new TicketGateBlock(BlockBehaviour.Properties.ofFullCopy(SMALL_GLASS_DOOR).sound(SoundType.COPPER)));
+            new TicketGateBlock(BlockSetType.COPPER, BlockBehaviour.Properties.ofFullCopy(SMALL_GLASS_DOOR).sound(SoundType.COPPER)));
     Item TICKET_GATE_ITEM = sreItemRegistrar.create("ticket_gate",
             new BlockItem(TICKET_GATE, new Item.Properties().rarity(Rarity.EPIC)),
             new net.minecraft.resources.ResourceKey[] { CreativeModeTabs.OP_BLOCKS,
