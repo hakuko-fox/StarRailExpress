@@ -28,11 +28,10 @@ public class PhotographFrameItemMixin {
     @Redirect(method = "useOn", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/entity/player/Player;mayUseItemAt(Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/world/item/ItemStack;)Z"))
     private boolean sre$bypassAdventurePlacement(Player player, BlockPos pos, Direction direction, ItemStack stack) {
-        boolean photographer = PhotographerFrameEvents.isPhotographer(player);
-        sre$placingPhotographer.set(photographer);
-        if (photographer) {
-            return true;
-        }
+        // 仅记录“本次放置是否摄影师发起”，供 createEntity 时打标记。
+        // 冒险模式放置放行交由 PhotographerFramePlaceMixin（直接注入原版 mayUseItemAt）处理，
+        // 这里委托回真实方法即可，避免跨 mod 调用点注入在实机上不生效。
+        sre$placingPhotographer.set(PhotographerFrameEvents.isPhotographer(player));
         return player.mayUseItemAt(pos, direction, stack);
     }
 

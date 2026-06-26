@@ -468,6 +468,8 @@ public class NoellesRolesConfig implements ConfigData {
     public double undeadLordBoneStaffInfection = 20.0;
     /** Undead Lord - Bone Staff shop price */
     public int undeadLordBoneStaffPrice = 130;
+    /** Undead Lord - Real damage each undead deals to a player per attack (HP, 0=disabled) */
+    public double undeadLordUndeadAttackDamage = 1.0;
 
     /** Leon (里昂) - Combat skill (kick) cooldown in seconds */
     public int leonKickCooldown = 12;

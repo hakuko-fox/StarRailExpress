@@ -75,9 +75,7 @@ public class UndeadLordRole extends NormalRole {
         entries.add(effectEntry(Items.CLOCK, 200, "hourglass", comp -> {
             comp.resetAllUndeadLifetime();
         }));
-        entries.add(effectEntry(TMMItems.CROWBAR, 100, "crowbar", comp -> {
-            comp.resetAllUndeadLifetime();
-        }));
+        entries.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 100, dev.doctor4t.wathe.util.ShopEntry.Type.TOOL));
 
         return entries;
     }

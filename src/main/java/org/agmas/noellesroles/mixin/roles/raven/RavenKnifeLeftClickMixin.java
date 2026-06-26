@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,6 +32,9 @@ public abstract class RavenKnifeLeftClickMixin {
         }
 
         if (!attacker.getItemInHand(InteractionHand.MAIN_HAND).is(TMMItems.KNIFE)) {
+            return;
+
+        }        if (!attacker.getItemInHand(InteractionHand.MAIN_HAND).is(ModItems.BONE_STAFF)) {
             return;
         }
 

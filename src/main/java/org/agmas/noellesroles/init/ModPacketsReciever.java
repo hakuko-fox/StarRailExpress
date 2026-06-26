@@ -346,13 +346,14 @@ public class ModPacketsReciever {
 
       if (payload.player() == null)
         return;
-      if (abilityPlayerComponent.cooldown > 0)
-        return;
       if (context.player().level().getPlayerByUUID(payload.player()) == null)
         return;
 
       if (gameWorldComponent.isRole(context.player(), ModRoles.VOODOO)
           || gameWorldComponent.isRole(context.player(), BounsRoles.LENGXIAO)) {
+        // 巫毒/冷霄使用共享技能冷却。
+        if (abilityPlayerComponent.cooldown > 0)
+          return;
         abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
             NoellesRolesConfig.HANDLER.instance().voodooCooldown);
         abilityPlayerComponent.sync();
@@ -364,6 +365,9 @@ public class ModPacketsReciever {
       if (gameWorldComponent.isRole(context.player(), ModRoles.MORPHLING)) {
         MorphlingPlayerComponent morphlingPlayerComponent = (MorphlingPlayerComponent) MorphlingPlayerComponent.KEY
             .get(context.player());
+        // 变形使用自身独立冷却（morphTicks，负值表示冷却中），不受举刀假人共享技能冷却影响。
+        if (morphlingPlayerComponent.getMorphTicks() != 0)
+          return;
         morphlingPlayerComponent.startMorph(payload.player());
       }
     });
