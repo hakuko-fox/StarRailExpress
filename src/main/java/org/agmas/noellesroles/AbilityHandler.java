@@ -263,6 +263,10 @@ public class AbilityHandler {
             ModComponents.CAKE_MAKER.get(player).useSmoker();
             return;
         }
+        if (gameWorldComponent.isRole(player, ModRoles.ADVENTURER)) {
+            ModComponents.ADVENTURER.get(player).useWaypointAbility();
+            return;
+        }
         if (gameWorldComponent.isRole(player, ModRoles.OLDMAN)) {
             if (player.getVehicle() != null && player.getVehicle() instanceof WheelchairEntity we) {
                 if (player.getCooldowns().isOnCooldown(ModItems.WHEELCHAIR)) {

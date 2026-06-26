@@ -314,6 +314,9 @@ public class ModRolesInitialEventRegister {
             if (role.equals(ModRoles.RAVEN)) {
                 ModComponents.RAVEN.get(player).init();
             }
+            if (role.equals(ModRoles.ADVENTURER)) {
+                ModComponents.ADVENTURER.get(player).init();
+            }
             // 操纵师角色初始化
             if (role.equals(ModRoles.MANIPULATOR)) {
                 ManipulatorPlayerComponent manipulatorPlayerComponent = ManipulatorPlayerComponent.KEY.get(player);
