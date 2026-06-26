@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.entity;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,8 +28,10 @@ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.role.ModRoles;
 
 /**
@@ -60,6 +63,12 @@ public class UndeadEntity extends PathfinderMob {
     private static final double TOUCH_RANGE = 1.6D;
     private static final float INFECTION_PER_HIT = 15.0f;
     private static final double BASE_SPEED = 0.25D;
+    /** 重新选择目标的间隔（计算可抵达性较重，节流处理）。 */
+    private static final int RETARGET_INTERVAL = 10;
+    /** 重新寻路的间隔（追击过程中周期性刷新路径）。 */
+    private static final int REPATH_INTERVAL = 10;
+    /** 单次重新选择时最多对几个最近目标做寻路可抵达性判定。 */
+    private static final int MAX_REACH_CHECKS = 4;
 
     /** 召唤者（亡灵之主）UUID，用于结算感染与统计存活数量。 */
     private UUID ownerUuid = null;
@@ -70,6 +79,9 @@ public class UndeadEntity extends PathfinderMob {
     /** 灵魂锁链：> 0 时强制跟随召唤者移动。 */
     private int followOwnerTicks = 0;
     private boolean slowedNearEnd = false;
+    /** 当前追踪目标 UUID；周期性重新评估（优先可抵达目标）。 */
+    private UUID currentTargetUuid = null;
+    private int retargetCooldown = 0;
 
     public UndeadEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -104,7 +116,7 @@ public class UndeadEntity extends PathfinderMob {
         this.ownerCache = owner;
         this.entityData.set(SKIN_UUID, Optional.ofNullable(skinPlayerUuid));
         this.remainingLifetime = lifetimeTicks;
-        this.addEffect(new MobEffectInstance(MobEffects.GLOWING, lifetimeTicks + 200, 0, false, false, false));
+//        this.addEffect(new MobEffectInstance(MobEffects.GLOWING, lifetimeTicks + 200, 0, false, false, false));
     }
 
     public UUID getSkinUuid() {
@@ -205,32 +217,112 @@ public class UndeadEntity extends PathfinderMob {
             return;
         }
 
-        // 寻找最近的可感染目标（存活、冒险模式、非杀手阵营、非召唤者）
-        Optional<ServerPlayer> target = serverLevel.players().stream()
-                .filter(p -> p.gameMode.getGameModeForPlayer() == GameType.ADVENTURE)
-                .filter(GameUtils::isPlayerAliveAndSurvival)
-                .filter(p -> p.getUUID() != ownerUuid && !p.getUUID().equals(ownerUuid))
-                .filter(p -> !gameWorldComponent.isKillerTeam(p))
-                .filter(p -> this.distanceToSqr(p) <= PERCEPTION_RANGE * PERCEPTION_RANGE)
-                .min(Comparator.comparingDouble(this::distanceToSqr));
+        if (retargetCooldown > 0) {
+            retargetCooldown--;
+        }
 
-        if (target.isPresent()) {
-            ServerPlayer victim = target.get();
+        // 当前目标若仍有效（存活、在感知范围内、可抵达）则保持，否则重新选择。
+        ServerPlayer victim = resolveCurrentTarget(serverLevel, gameWorldComponent);
+        if (victim == null || retargetCooldown <= 0) {
+            retargetCooldown = RETARGET_INTERVAL;
+            ServerPlayer reselected = selectBestTarget(serverLevel, gameWorldComponent);
+            if (reselected != null) {
+                victim = reselected;
+                currentTargetUuid = reselected.getUUID();
+            } else if (victim == null) {
+                currentTargetUuid = null;
+            }
+        }
+
+        if (victim != null) {
             setTarget(victim);
-            getNavigation().moveTo(victim, 1.0D);
             getLookControl().setLookAt(victim);
+            // 周期性刷新寻路，避免目标移动后停滞。
+            if (getNavigation().isDone() || tickCount % REPATH_INTERVAL == 0) {
+                getNavigation().moveTo(victim, 1.0D);
+            }
 
             if (attackCooldown <= 0 && this.distanceToSqr(victim) <= TOUCH_RANGE * TOUCH_RANGE) {
-                attackCooldown = ATTACK_INTERVAL;
-                this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-                float amount = INFECTION_PER_HIT;
-                ModComponents.UNDEAD_LORD.maybeGet(owner).ifPresent(comp -> comp.addInfection(victim, amount));
-                serverLevel.playSound(null, victim.blockPosition(), SoundEvents.ZOMBIE_INFECT,
-                        SoundSource.HOSTILE, 0.8f, 0.7f);
+                performAttack(serverLevel, owner, victim);
             }
         } else {
             setTarget(null);
         }
+    }
+
+    /** 校验当前目标是否仍可作为攻击对象（存活、感知范围内、可抵达）。 */
+    private ServerPlayer resolveCurrentTarget(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent) {
+        if (currentTargetUuid == null) {
+            return null;
+        }
+        if (!(serverLevel.getPlayerByUUID(currentTargetUuid) instanceof ServerPlayer victim)) {
+            return null;
+        }
+        if (!isValidVictim(victim, gameWorldComponent)) {
+            return null;
+        }
+        if (this.distanceToSqr(victim) > PERCEPTION_RANGE * PERCEPTION_RANGE) {
+            return null;
+        }
+        // 当前目标已变得不可抵达：放弃，交由 selectBestTarget 切换到其它可抵达目标。
+        if (!isReachable(victim)) {
+            return null;
+        }
+        return victim;
+    }
+
+    /**
+     * 选择最佳目标：在感知范围内的候选目标中，优先返回最近的「可寻路抵达」目标；
+     * 若全部不可抵达，则退而追踪最近者（路径可能稍后打开）。
+     */
+    private ServerPlayer selectBestTarget(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent) {
+        List<ServerPlayer> candidates = serverLevel.players().stream()
+                .filter(p -> isValidVictim(p, gameWorldComponent))
+                .filter(p -> this.distanceToSqr(p) <= PERCEPTION_RANGE * PERCEPTION_RANGE)
+                .sorted(Comparator.comparingDouble(this::distanceToSqr))
+                .toList();
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        int checks = Math.min(MAX_REACH_CHECKS, candidates.size());
+        for (int i = 0; i < checks; i++) {
+            if (isReachable(candidates.get(i))) {
+                return candidates.get(i);
+            }
+        }
+        return candidates.get(0);
+    }
+
+    /** 目标筛选条件：存活、冒险模式、非杀手阵营、非召唤者。 */
+    private boolean isValidVictim(ServerPlayer p, SREGameWorldComponent gameWorldComponent) {
+        return p.gameMode.getGameModeForPlayer() == GameType.ADVENTURE
+                && GameUtils.isPlayerAliveAndSurvival(p)
+                && !p.getUUID().equals(ownerUuid)
+                && !gameWorldComponent.isKillerTeam(p);
+    }
+
+    /** 是否能寻路抵达目标。 */
+    private boolean isReachable(ServerPlayer victim) {
+        Path path = getNavigation().createPath(victim, 0);
+        return path != null && path.canReach();
+    }
+
+    /** 执行一次攻击：挥手、注入感染并造成真实伤害（归属于亡灵之主）。 */
+    private void performAttack(ServerLevel serverLevel, Player owner, ServerPlayer victim) {
+        attackCooldown = ATTACK_INTERVAL;
+        this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+
+        ModComponents.UNDEAD_LORD.maybeGet(owner).ifPresent(comp -> comp.addInfection(victim, INFECTION_PER_HIT));
+
+        float damage = (float) NoellesRolesConfig.HANDLER.instance().undeadLordUndeadAttackDamage;
+        if (damage > 0f) {
+            // 以召唤者身份造成伤害，使击杀归属于亡灵之主（杀手阵营）。
+            DamageSource source = owner.damageSources().playerAttack(owner);
+            victim.hurt(source, damage);
+        }
+
+        serverLevel.playSound(null, victim.blockPosition(), SoundEvents.ZOMBIE_INFECT,
+                SoundSource.HOSTILE, 0.8f, 0.7f);
     }
 
     private void spawnMistParticles(ServerLevel serverLevel) {

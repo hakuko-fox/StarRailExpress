@@ -47,6 +47,7 @@
     "roles.photographer.PhotographerMixin",
     "roles.photographer.PhotographFrameItemMixin",
     "roles.photographer.PhotographFrameEntityMixin",
+    "roles.photographer.PhotographerFramePlaceMixin",
     "roles.painter.PainterItemPickupMixin",
     "roles.poisoner.PoisonerNoPoisonMixin",
     "roles.puppeteer.PuppeteerBodyGunPayloadMixin",
