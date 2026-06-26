@@ -90,7 +90,16 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     @Override
     public void serverTick() {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
-        if (!game.isRole(player, ModRoles.RAVEN) || !game.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+
+        // If the player still has hunt state but is no longer a RAVEN
+        // (e.g. role was changed mid-hunt), clean up immediately.
+        if (!game.isRole(player, ModRoles.RAVEN)) {
+            if (isHunting() || bodyUuid != null) {
+                endHunt(false);
+            }
+            return;
+        }
+        if (!game.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
             return;
         }
 
