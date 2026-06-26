@@ -73,6 +73,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocent.cake_maker.CakeMakerComponent;
+import org.agmas.noellesroles.game.roles.innocent.adventurer.AdventurerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.shadow_falcon.ShadowFalconPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
@@ -444,6 +445,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<RavenPlayerComponent> RAVEN = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "raven"), RavenPlayerComponent.class);
   public static final ComponentKey<CakeMakerComponent> CAKE_MAKER = CakeMakerComponent.KEY;
+  public static final ComponentKey<AdventurerPlayerComponent> ADVENTURER = AdventurerPlayerComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -881,6 +883,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, CAKE_MAKER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(CakeMakerComponent::new);
+    registry.beginRegistration(Player.class, ADVENTURER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(AdventurerPlayerComponent::new);
 
     registry.beginRegistration(Player.class, WARLOCK)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)

@@ -55,6 +55,7 @@
     "roles.morphling.MorphlingDummyGunPayloadMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
+    "roles.adventurer.AdventurerDeathImmunityMixin",
     "roles.raven.RavenKnifeLeftClickMixin",
     "roles.traitor.DesperateFaithKnifeCooldownMixin",
     "roles.thief.DelayedCoinDisplayMixin",
