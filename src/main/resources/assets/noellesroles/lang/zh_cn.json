@@ -1936,7 +1936,7 @@
   "message.noellesroles.leon.shield_exists": "你已经拥有护盾，无法叠加。",
   "message.noellesroles.leon.kick_hit": "你猛踹了一脚！",
   "message.noellesroles.leon.kick_miss": "面前没有可以踹的目标。",
-  "message.noellesroles.morphling.dummy_spawned": "举刀假人已派出，向前突进！",
+  "message.noellesroles.morphling.dummy_spawned": "假人已派出，向前突进！",
   "message.noellesroles.nostalgist.collapse": "里世界崩塌——你现身为普通杀手！（+%s 金币）",
   "message.noellesroles.nostalgist.income": "里世界的馈赠：+%s 金币",
   "hud.noellesroles.nostalgist.back_world": "里世界 · 存活杀手：%s",

@@ -1915,7 +1915,7 @@
   "message.noellesroles.leon.shield_exists": "You already have a shield; it cannot stack.",
   "message.noellesroles.leon.kick_hit": "You delivered a hard kick!",
   "message.noellesroles.leon.kick_miss": "No target in front to kick.",
-  "message.noellesroles.morphling.dummy_spawned": "Knife dummy deployed — charging forward!",
+  "message.noellesroles.morphling.dummy_spawned": "Dummy deployed — charging forward!",
   "message.noellesroles.nostalgist.collapse": "The Otherworld collapses — you manifest as a normal killer! (+%s coins)",
   "message.noellesroles.nostalgist.income": "Gift of the Otherworld: +%s coins",
   "hud.noellesroles.nostalgist.back_world": "Otherworld · Killers alive: %s",
