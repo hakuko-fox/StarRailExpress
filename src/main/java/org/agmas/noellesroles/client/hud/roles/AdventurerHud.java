@@ -17,16 +17,21 @@ public final class AdventurerHud {
 
             int x = context.guiWidth() - 180;
             int y = context.guiHeight() - 40;
+            var font = Minecraft.getInstance().font;
 
-            context.drawString(Minecraft.getInstance().font,
+            context.drawString(font,
                     Component.translatable("hud.noellesroles.adventurer.immunities", adv.immunities),
                     x, y, 0x55FF55);
 
             if (adv.waypointCooldown > 0) {
                 int sec = (adv.waypointCooldown + 19) / 20;
-                context.drawString(Minecraft.getInstance().font,
+                context.drawString(font,
                         Component.translatable("hud.noellesroles.adventurer.waypoint_cd", sec),
                         x, y + 11, 0xAAAAAA);
+            } else {
+                context.drawString(font,
+                        Component.translatable("hud.noellesroles.adventurer.waypoint_ready"),
+                        x, y + 11, 0xFFD700);
             }
         });
     }

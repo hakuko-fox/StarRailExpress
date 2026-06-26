@@ -486,6 +486,7 @@ public class InitModRolesMax {
             case bigmap -> config.swastMaps.contains(currentMap);
             case underwater -> config.underwaterRolesMaps.contains(currentMap);
             case fly -> config.airRolesMaps.contains(currentMap);
+            case trap -> config.trapRolesMaps.contains(currentMap);
         };
     }
 

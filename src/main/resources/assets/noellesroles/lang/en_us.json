@@ -3187,6 +3187,7 @@
   "announcement.star.goals.adventurer": "Explore dangerous areas, mark waypoints, complete your journey.",
   "hud.noellesroles.adventurer.immunities": "Env. immunity left: %s",
   "hud.noellesroles.adventurer.waypoint_cd": "Waypoint CD: %ss",
+  "hud.noellesroles.adventurer.waypoint_ready": "Waypoint Ready",
   "message.noellesroles.adventurer.immunity": "Environmental immunity triggered! Remaining: %s",
   "message.noellesroles.adventurer.waypoint_on": "Map waypoints enabled (auto-off in 3 min)",
   "message.noellesroles.adventurer.waypoint_off": "Map waypoints disabled",

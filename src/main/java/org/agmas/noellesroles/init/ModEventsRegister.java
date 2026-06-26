@@ -1184,6 +1184,9 @@ public class ModEventsRegister {
             }
             // 清除全局墙位置注册表
             org.agmas.noellesroles.game.roles.innocent.builder.BuilderWallPositions.clearAll();
+            // 清除冒险家开启的路径点
+            io.wifi.starrailexpress.game.data.WaypointVisibilityManager.get(world.getServer())
+                    .setWaypointsVisibility(false);
             // 清除鹈鹕状态 - 释放所有被吞噬的玩家
             org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.releaseAllInWorld(world);
             org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager.clearAll();

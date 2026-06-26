@@ -3,6 +3,9 @@ package org.agmas.noellesroles.game.roles.innocent.adventurer;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.data.WaypointVisibilityManager;
+import io.wifi.starrailexpress.network.PacketTracker;
+import io.wifi.starrailexpress.network.packet.SyncWaypointVisibilityPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -27,6 +30,7 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
     private static final int MAX_IMMUNITIES = 3;
     private static final int IMMUNITY_COOLDOWN_TICKS = 70; // 3.5 s
     private static final int WAYPOINT_COOLDOWN_TICKS = 120 * 20;
+    private static final int WAYPOINT_DURATION_TICKS = 180 * 20; // 3 minutes
 
     /** Death reasons the adventurer is immune to. */
     public static final Set<ResourceLocation> ENVIRONMENTAL_DEATHS = Set.of(
@@ -49,6 +53,7 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
     private final Player player;
     public int immunities;
     public int waypointCooldown;
+    public int waypointTimer; // remaining ticks until auto-off, 0 = inactive
     /** Per-death-reason cooldown remaining (ticks). */
     public final Map<ResourceLocation, Integer> immunityCooldowns = new HashMap<>();
 
@@ -64,6 +69,7 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
     public void init() {
         immunities = MAX_IMMUNITIES;
         waypointCooldown = 0;
+        waypointTimer = 0;
         immunityCooldowns.clear();
         sync();
     }
@@ -77,8 +83,18 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
 
         if (waypointCooldown > 0) waypointCooldown--;
 
+        // Waypoint auto-off after 3 minutes
+        if (waypointTimer > 0) {
+            waypointTimer--;
+            if (waypointTimer == 0) {
+                waypointOff(false);
+            }
+        }
+
         immunityCooldowns.replaceAll((k, v) -> Math.max(0, v - 1));
         immunityCooldowns.values().removeIf(v -> v <= 0);
+
+        if (player.tickCount % 20 == 0) sync();
     }
 
     /**
@@ -107,11 +123,43 @@ public final class AdventurerPlayerComponent implements RoleComponent, ServerTic
                             (waypointCooldown + 19) / 20).withStyle(ChatFormatting.RED), true);
             return;
         }
+
         waypointCooldown = WAYPOINT_COOLDOWN_TICKS;
-        sp.displayClientMessage(
-                Component.translatable("message.noellesroles.adventurer.waypoint_on")
-                        .withStyle(ChatFormatting.GOLD), true);
+        boolean currentlyVisible = WaypointVisibilityManager.get(sp.server())
+                .getWaypointsVisibility();
+
+        if (!currentlyVisible) {
+            // Turn waypoints ON
+            setWaypointVisibility(sp, true);
+            waypointTimer = WAYPOINT_DURATION_TICKS;
+            sp.displayClientMessage(
+                    Component.translatable("message.noellesroles.adventurer.waypoint_on")
+                            .withStyle(ChatFormatting.GOLD), true);
+        } else {
+            // Turn waypoints OFF
+            waypointOff(true);
+        }
         sync();
+    }
+
+    /** Turn waypoints off and optionally notify the player. */
+    private void waypointOff(boolean notify) {
+        waypointTimer = 0;
+        if (player instanceof ServerPlayer sp) {
+            setWaypointVisibility(sp, false);
+            if (notify) {
+                sp.displayClientMessage(
+                        Component.translatable("message.noellesroles.adventurer.waypoint_off")
+                                .withStyle(ChatFormatting.GRAY), true);
+            }
+        }
+    }
+
+    private static void setWaypointVisibility(ServerPlayer sp, boolean visible) {
+        WaypointVisibilityManager.get(sp.server()).setWaypointsVisibility(visible);
+        for (ServerPlayer target : sp.server().getPlayerList().getPlayers()) {
+            PacketTracker.sendToClient(target, new SyncWaypointVisibilityPacket(visible));
+        }
     }
 
     @Override

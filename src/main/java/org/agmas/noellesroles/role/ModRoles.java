@@ -791,7 +791,8 @@ public class ModRoles {
             new AdventurerRole(ADVENTURER_ID, new Color(34, 139, 34).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanJumpManhole(true).setCanAcrossFog(true)
-            .setComponentKey(AdventurerPlayerComponent.KEY).setDefaultEnableNeededPlayerCount(6);
+            .setComponentKey(AdventurerPlayerComponent.KEY).setDefaultEnableNeededPlayerCount(6)
+            .setSpecialMapRole(SRERole.SpecialMapRole.trap).setDefaultMax(0);
     // 红尘客
     public static SRERole WAYFARER = TMMRoles.registerRole(
             new NormalRole(WAYFARER_ID, new Color(255, 54, 105).getRGB(),

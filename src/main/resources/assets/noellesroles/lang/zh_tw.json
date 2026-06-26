@@ -3137,6 +3137,7 @@
   "announcement.star.goals.adventurer": "探索危險區域，標記地圖，完成你的旅途。",
   "hud.noellesroles.adventurer.immunities": "環境免疫剩餘：%s",
   "hud.noellesroles.adventurer.waypoint_cd": "標點冷卻：%ss",
+  "hud.noellesroles.adventurer.waypoint_ready": "標點已就緒",
   "message.noellesroles.adventurer.immunity": "環境免疫觸發！剩餘次數：%s",
   "message.noellesroles.adventurer.waypoint_on": "地圖標點已開啟（3分鐘後自動關閉）",
   "message.noellesroles.adventurer.waypoint_off": "地圖標點已關閉",
