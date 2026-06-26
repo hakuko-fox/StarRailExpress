@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.innocent.cake_maker;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
+import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -33,9 +34,13 @@ import java.util.UUID;
 /**
  * Cake Maker role component — manages the smoker, cake-baking process, and placed cakes.
  * <p>
+ * Smoker placement and cooking are separated:
+ * placing the smoker only deploys the block visually; the 40-second cooking timer
+ * starts when the first wheat is inserted.
+ * <p>
  * Baking stages:
  * <ol>
- *   <li>Stage 0 — add up to 3 wheat, then wait 3s</li>
+ *   <li>Stage 0 — add up to 3 wheat (first wheat starts timer), then wait 3s</li>
  *   <li>Stage 2 — add 1 egg, then add up to 2 sugar, then wait 3s</li>
  *   <li>Stage 4 — add up to 3 milk buckets, then wait 5s</li>
  *   <li>Stage 5 — cake complete (handled in server tick)</li>
@@ -103,6 +108,7 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         sugar       = 0;
         milk        = 0;
         smokerPos   = null;
+        smokerId    = null;
     }
 
     @Override
@@ -142,19 +148,21 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         if (cooldown > 0) {
             cooldown--;
         }
+
+        // Cooking timer: only ticks after the first ingredient has been inserted
         if (smokerTicks > 0) {
             smokerTicks--;
+            // Smoker expired mid-cooking
+            if (smokerTicks == 0 && smokerId != null) {
+                removeSmoker();
+            }
         }
+
         eatCooldowns.replaceAll((id, t) -> Math.max(0, t - 1));
 
         // Locked period elapsed → advance baking stage
         if (lockedTicks > 0 && --lockedTicks == 0) {
             onLockedPeriodEnd();
-        }
-
-        // Smoker expired
-        if (smokerTicks == 0 && smokerId != null) {
-            removeSmoker();
         }
     }
 
@@ -197,14 +205,13 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         }
         if (!(player instanceof ServerPlayer sp)
                 || cooldown > 0
-                || smokerTicks > 0
+                || smokerId != null
                 || !sp.getMainHandItem().is(Items.SMOKER)) {
             return false;
         }
 
         smokerPos   = sp.blockPosition();
         smokerId    = UUID.randomUUID();
-        smokerTicks = SMOKER_DURATION_TICKS;
         cooldown    = SMOKER_COOLDOWN_TICKS;
         stage       = 0;
         wheat       = 0;
@@ -212,7 +219,8 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         milk        = 0;
         lockedTicks = 0;
 
-        broadcast(new CakeMakerBlockS2CPacket(smokerId, smokerPos, false, 0, smokerTicks, false));
+        // Smoker is placed but cooking hasn't started — send a long-lived client block
+        broadcast(new CakeMakerBlockS2CPacket(smokerId, smokerPos, false, 0, Integer.MAX_VALUE, false));
         sp.displayClientMessage(
                 Component.translatable("message.noellesroles.cake_maker.smoker_ready")
                         .withStyle(ChatFormatting.GOLD),
@@ -263,8 +271,8 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         var mood = SREPlayerMoodComponent.KEY.get(eater);
         mood.setMood(Math.min(1.0F, mood.getMood() + MOOD_RESTORE_PCT / 100.0F));
 
-        // Restore vanilla hunger / saturation
-        eater.getFoodData().eat(20, 20);
+        // Restore sprint stamina to full
+        ((PlayerStaminaGetter) eater).starrailexpress$setStamina(Float.MAX_VALUE);
 
         // Fill whichever MapStatusBar is active for the current scene
         MapStatusBarRuntime.addWarmth(eater, STATUS_BAR_MAX);
@@ -288,7 +296,7 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
      * Only accepts items in the correct order for the current baking stage.
      */
     public boolean addIngredient(Player p) {
-        if (smokerTicks <= 0
+        if (smokerId == null
                 || smokerPos == null
                 || p.distanceToSqr(smokerPos.getCenter()) > INTERACT_DISTANCE_SQ
                 || lockedTicks > 0) {
@@ -298,8 +306,11 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         var held = p.getMainHandItem();
         boolean accepted = false;
 
-        // Stage 0 — wheat (×3)
+        // Stage 0 — wheat (×3).  First wheat starts the 40 s cooking timer.
         if (stage == 0 && held.is(Items.WHEAT) && wheat < WHEAT_NEEDED) {
+            if (wheat == 0) {
+                startCookingTimer();
+            }
             wheat++;
             accepted = true;
             if (wheat == WHEAT_NEEDED) {
@@ -344,6 +355,12 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
     private void waitFor(int nextStage, int ticks) {
         stage       = nextStage;
         lockedTicks = ticks;
+    }
+
+    /** Start the 40-second cooking timer and sync the client block. */
+    private void startCookingTimer() {
+        smokerTicks = SMOKER_DURATION_TICKS;
+        broadcast(new CakeMakerBlockS2CPacket(smokerId, smokerPos, false, 0, smokerTicks, false));
     }
 
     // ── Network helpers ───────────────────────────────────────
