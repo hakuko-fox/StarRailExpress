@@ -1083,6 +1083,7 @@ public class ModItems {
         registrar.registerEntries();
         // 不再注册旧的 MISC_CREATIVE_GROUP 和 SAN_CREATIVE_GROUP，所有物品已分配到新分类标签页
         TMMItems.INVISIBLE_ITEMS.add(ModItems.PAN);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.GROSELL_TRAVELOG);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SMOKE_GRENADE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.BLANK_CARTRIDGE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.ALARM_TRAP);

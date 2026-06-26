@@ -50,7 +50,7 @@ public class GreatDetectiveRole extends NormalRole {
     @Override
     public List<ItemStack> getDefaultItems() {
         List<ItemStack> items = new ArrayList<>(super.getDefaultItems());
-        items.add(new ItemStack(ModItems.DEDUCTION_BOOK));
+//        items.add(new ItemStack(ModItems.DEDUCTION_BOOK));
         return items;
     }
 
