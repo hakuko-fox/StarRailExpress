@@ -1159,13 +1159,7 @@ public class ModEventsRegister {
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
             org.agmas.noellesroles.game.roles.killer.delayer.DelayerPlayerComponent.timeBoostTriggered = false;
-            // 清除所有玩家被玉将军“变老人”的标记与长期减速
-            for (ServerPlayer player : world.players()) {
-                if (player.getAttachedOrElse(ModRoles.KICKED_INTO_OLDMAN, false)) {
-                    player.removeAttached(ModRoles.KICKED_INTO_OLDMAN);
-                    player.removeEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN);
-                }
-            }
+
             // 清除所有玩家的感染状态
             for (ServerPlayer player : world.players()) {
                 InfectedPlayerComponent infectedComponent = org.agmas.noellesroles.component.ModComponents.INFECTED
@@ -1251,16 +1245,6 @@ public class ModEventsRegister {
         });
         OnVendingMachinesBuyItems.EVENT.register((player, itemStack) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            // 被玉将军飞踢“变老人”的玩家无法购买轮椅
-            if (itemStack.stack().is(ModItems.WHEELCHAIR)
-                    && player.getAttachedOrElse(ModRoles.KICKED_INTO_OLDMAN, false)) {
-                player.displayClientMessage(
-                        net.minecraft.network.chat.Component
-                                .translatable("message.noellesroles.jade_general.cannot_buy_wheelchair")
-                                .withStyle(net.minecraft.ChatFormatting.RED),
-                        true);
-                return false;
-            }
             if (itemStack.stack().is(ModItems.ONCE_REVOLVER)) {
                 var role = gameWorldComponent.getRole(player);
                 if (role != null) {

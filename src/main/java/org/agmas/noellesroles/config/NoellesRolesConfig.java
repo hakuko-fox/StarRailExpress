@@ -357,10 +357,7 @@ public class NoellesRolesConfig implements ConfigData {
      */
     public int jadeGeneralStunSeconds = 2;
 
-    /**
-     * Jade General - Slowness seconds applied to a kicked target
-     */
-    public int jadeGeneralSlowSeconds = 5;
+
 
     // ==================== Diviner (占卜家) ====================
     /** Diviner - Divination cooldown in seconds */

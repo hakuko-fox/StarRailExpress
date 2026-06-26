@@ -145,8 +145,7 @@ public class ModRoles {
      * 非持久化（不写入存档），并在每局结束时统一清除。
      */
     @SuppressWarnings("deprecation")
-    public static final AttachmentType<Boolean> KICKED_INTO_OLDMAN = AttachmentRegistry.<Boolean>builder()
-            .buildAndRegister(Noellesroles.id("kicked_into_oldman"));
+
     // ==================== 角色 ID 定义 ====================
     // 建议格式：MOD_ID:role_name
 
