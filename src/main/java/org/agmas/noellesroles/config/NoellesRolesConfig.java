@@ -482,6 +482,11 @@ public class NoellesRolesConfig implements ConfigData {
     /** Leon (里昂) - Alive player count threshold to grant the red herb */
     public int leonRedHerbAtPlayers = 3;
 
+    /** Morphling (变形者) - Knife dummy skill cooldown in seconds */
+    public int morphlingDummyCooldown = 90;
+    /** Morphling (变形者) - Knife dummy max lifetime / forward-rush time in seconds */
+    public int morphlingDummyLifetime = 10;
+
     /**
      * Phantom - Invisibility duration in seconds
      */

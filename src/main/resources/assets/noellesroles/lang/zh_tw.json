@@ -1934,6 +1934,7 @@
   "message.noellesroles.leon.shield_exists": "你已經擁有護盾，無法疊加。",
   "message.noellesroles.leon.kick_hit": "你猛踹了一腳！",
   "message.noellesroles.leon.kick_miss": "面前沒有可以踹的目標。",
+  "message.noellesroles.morphling.dummy_spawned": "舉刀假人已派出，向前突進！",
   "message.noellesroles.nostalgist.collapse": "裏世界崩塌——你現身為普通殺手！（+%s 金幣）",
   "message.noellesroles.nostalgist.income": "裏世界的饋贈：+%s 金幣",
   "hud.noellesroles.nostalgist.back_world": "裏世界 · 存活殺手：%s",
