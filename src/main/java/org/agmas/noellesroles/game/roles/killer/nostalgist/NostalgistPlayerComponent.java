@@ -3,8 +3,10 @@ package org.agmas.noellesroles.game.roles.killer.nostalgist;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -16,6 +18,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +53,9 @@ public class NostalgistPlayerComponent implements RoleComponent, ServerTickingCo
     /** 同步用：当前存活杀手数（仅展示给自己）。 */
     public int aliveKillerCount = 0;
 
+    /** 里世界被动收入计时器（服务端），每达到间隔发放一次金币。 */
+    private int backWorldIncomeTimer = 0;
+
     public NostalgistPlayerComponent(Player player) {
         this.player = player;
     }
@@ -73,6 +79,7 @@ public class NostalgistPlayerComponent implements RoleComponent, ServerTickingCo
         this.inBackWorld = true;
         this.converted = false;
         this.aliveKillerCount = 0;
+        this.backWorldIncomeTimer = 0;
         sync();
     }
 
@@ -81,6 +88,7 @@ public class NostalgistPlayerComponent implements RoleComponent, ServerTickingCo
         this.inBackWorld = false;
         this.converted = false;
         this.aliveKillerCount = 0;
+        this.backWorldIncomeTimer = 0;
         if (player.hasEffect(MobEffects.INVISIBILITY)) {
             player.removeEffect(MobEffects.INVISIBILITY);
         }
@@ -145,19 +153,54 @@ public class NostalgistPlayerComponent implements RoleComponent, ServerTickingCo
             // ambient=true，不显示粒子/图标
             player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, true, false, false));
         }
+
+        // 里世界被动收入：每隔配置的间隔发放金币
+        int interval = GameConstants.getInTicks(0,
+                NoellesRolesConfig.HANDLER.instance().nostalgistBackWorldIncomeInterval);
+        if (++backWorldIncomeTimer >= interval) {
+            backWorldIncomeTimer = 0;
+            int amount = NoellesRolesConfig.HANDLER.instance().nostalgistBackWorldIncomeAmount;
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            shop.balance += amount;
+            shop.sync();
+            serverPlayer.displayClientMessage(
+                    Component.translatable("message.noellesroles.nostalgist.income", amount)
+                            .withStyle(ChatFormatting.GOLD),
+                    true);
+        }
+    }
+
+    /**
+     * 主动从里世界崩塌：玩家在里世界中按下技能键时调用。
+     * 仅在仍处于活跃里世界时生效。
+     */
+    public void tryManualCollapse(ServerPlayer serverPlayer) {
+        if (!isActiveBackWorld()) {
+            return;
+        }
+        collapseBackWorld(serverPlayer);
     }
 
     /** 里世界崩塌：移除隐身并切换为普通杀手。 */
     private void collapseBackWorld(ServerPlayer serverPlayer) {
         converted = true;
         inBackWorld = false;
+        backWorldIncomeTimer = 0;
         if (player.hasEffect(MobEffects.INVISIBILITY)) {
             player.removeEffect(MobEffects.INVISIBILITY);
+        }
+
+        // 离开里世界奖励金币
+        int reward = NoellesRolesConfig.HANDLER.instance().nostalgistCollapseReward;
+        if (reward > 0) {
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            shop.balance += reward;
+            shop.sync();
         }
         sync();
 
         serverPlayer.displayClientMessage(
-                Component.translatable("message.noellesroles.nostalgist.collapse")
+                Component.translatable("message.noellesroles.nostalgist.collapse", reward)
                         .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD),
                 false);
 

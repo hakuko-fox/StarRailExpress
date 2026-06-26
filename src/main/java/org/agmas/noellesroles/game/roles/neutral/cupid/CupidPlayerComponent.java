@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -65,7 +66,8 @@ public class CupidPlayerComponent implements RoleComponent {
     }
 
     private static boolean isRegenerationArrow(Arrow arrow) {
-        PotionContents contents = arrow.getPotionContents();
+        PotionContents contents = arrow.getPickupItemStackOrigin()
+                .getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
         for (MobEffectInstance effect : contents.getAllEffects()) {
             if (effect.getEffect().equals(MobEffects.REGENERATION)) {
                 return true;

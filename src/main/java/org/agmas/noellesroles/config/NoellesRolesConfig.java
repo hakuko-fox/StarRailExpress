@@ -313,6 +313,21 @@ public class NoellesRolesConfig implements ConfigData {
     public int recallerTeleportCooldown = 30;
 
     /**
+     * Nostalgist (怀旧者) - Interval in seconds between passive coin payouts while in the back world
+     */
+    public int nostalgistBackWorldIncomeInterval = 60;
+
+    /**
+     * Nostalgist (怀旧者) - Coins granted each passive payout while in the back world
+     */
+    public int nostalgistBackWorldIncomeAmount = 50;
+
+    /**
+     * Nostalgist (怀旧者) - Coins granted when leaving the back world (manual or forced collapse)
+     */
+    public int nostalgistCollapseReward = 100;
+
+    /**
      * Jade General (玉将军) - Flying kick cooldown in seconds
      */
     public int jadeGeneralKickCooldown = 90;

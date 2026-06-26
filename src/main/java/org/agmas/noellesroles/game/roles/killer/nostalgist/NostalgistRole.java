@@ -1,7 +1,7 @@
 package org.agmas.noellesroles.game.roles.killer.nostalgist;
 
 import io.wifi.starrailexpress.api.NormalRole;
-import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.resources.ResourceLocation;
 
@@ -15,7 +15,7 @@ import java.util.List;
  * 当场上仅剩怀旧者一名杀手时，里世界崩塌，怀旧者现身为普通杀手（见
  * {@link NostalgistPlayerComponent}）。
  *
- * <p>专属商店仅出售撬锁器与刀。
+ * <p>商店为通用杀手商店（{@link ShopContent#defaultKnifeEntries}）。
  */
 public class NostalgistRole extends NormalRole {
 
@@ -26,8 +26,7 @@ public class NostalgistRole extends NormalRole {
 
     @Override
     public List<ShopEntry> getShopEntries() {
-        return List.of(
-                new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 130, ShopEntry.Type.WEAPON),
-                new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+        // 通用杀手商店（与默认刀手商店一致）
+        return ShopContent.defaultKnifeEntries;
     }
 }

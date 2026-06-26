@@ -201,6 +201,11 @@ public class AbilityHandler {
             }
             return;
         }
+        if (gameWorldComponent.isRole(player, ModRoles.NOSTALGIST)) {
+            // 里世界中按技能键：主动让里世界崩塌并现身
+            ModComponents.NOSTALGIST.get(player).tryManualCollapse(player);
+            return;
+        }
         // 处理超级亡命徒技能
     }
 
