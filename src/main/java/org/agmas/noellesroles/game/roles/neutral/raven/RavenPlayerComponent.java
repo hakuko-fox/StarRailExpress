@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.util.SREItemUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -216,12 +217,17 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
 
     public void endHunt(boolean applyCooldown) {
         if (player instanceof ServerPlayer serverPlayer && isHunting()) {
-            removeBody(serverPlayer.serverLevel());
-            serverPlayer.teleportTo(serverPlayer.serverLevel(), bodyPosition.x, bodyPosition.y, bodyPosition.z, bodyYaw, bodyPitch);
-            serverPlayer.getInventory().items.removeIf(stack -> stack.is(TMMItems.KNIFE) || stack.is(TMMItems.LOCKPICK));
+            // Clear effects before teleport so the client never sees disguised skin at body pos
             serverPlayer.removeEffect(ModEffects.DISGUISE);
             serverPlayer.removeEffect(ModEffects.VOICE_SILENCE);
             serverPlayer.removeEffect(ModEffects.NO_COLLIDE);
+
+            // Remove knife and lockpick from all inventory slots.
+            SREItemUtils.clearItem(serverPlayer,
+                    stack -> stack.is(TMMItems.KNIFE) || stack.is(TMMItems.LOCKPICK));
+
+            removeBody(serverPlayer.serverLevel());
+            serverPlayer.teleportTo(serverPlayer.serverLevel(), bodyPosition.x, bodyPosition.y, bodyPosition.z, bodyYaw, bodyPitch);
         }
         if (applyCooldown) cooldownTicks = COOLDOWN_TICKS;
         huntTicks = 0;

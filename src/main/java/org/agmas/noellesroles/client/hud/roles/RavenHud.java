@@ -16,10 +16,31 @@ public final class RavenHud {
             RavenPlayerComponent raven = ModComponents.RAVEN.get(player);
             int x = context.guiWidth() - 180;
             int y = context.guiHeight() - 40;
-            context.drawString(Minecraft.getInstance().font, Component.translatable("hud.noellesroles.raven.charges", raven.charges, RavenPlayerComponent.MAX_CHARGES), x, y, 0x6B4B9E);
-            context.drawString(Minecraft.getInstance().font, Component.translatable("hud.noellesroles.raven.kills", raven.kills, raven.requiredKills), x, y + 11, 0xA66DCC);
+
+            // Hunt charges
+            context.drawString(Minecraft.getInstance().font,
+                    Component.translatable("hud.noellesroles.raven.charges", raven.charges, RavenPlayerComponent.MAX_CHARGES),
+                    x, y, 0x6B4B9E);
+
+            // Kill progress
+            context.drawString(Minecraft.getInstance().font,
+                    Component.translatable("hud.noellesroles.raven.kills", raven.kills, raven.requiredKills),
+                    x, y + 11, 0xA66DCC);
+
+            // Cooldown countdown
+            if (raven.cooldownTicks > 0) {
+                int seconds = (raven.cooldownTicks + 19) / 20;
+                context.drawString(Minecraft.getInstance().font,
+                        Component.translatable("hud.noellesroles.raven.cooldown", seconds),
+                        x, y + 22, 0xAAAAAA);
+            }
+
+            // Target role during hunt
             if (raven.isHunting() && raven.targetRoleId != null) {
-                context.drawString(Minecraft.getInstance().font, Component.translatable("hud.noellesroles.raven.target", Component.translatable("announcement.star.role." + raven.targetRoleId.getPath())), x, y - 11, 0xFF5555);
+                context.drawString(Minecraft.getInstance().font,
+                        Component.translatable("hud.noellesroles.raven.target",
+                                Component.translatable("announcement.star.role." + raven.targetRoleId.getPath())),
+                        x, y - 11, 0xFF5555);
             }
         });
     }

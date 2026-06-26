@@ -54,6 +54,7 @@
     "roles.courier.PigeonGunPayloadMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
+    "roles.raven.RavenKnifeLeftClickMixin",
     "roles.traitor.DesperateFaithKnifeCooldownMixin",
     "roles.thief.DelayedCoinDisplayMixin",
     "roles.thief.ThiefsHonorMixin",
