@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.Innocent.jade_general;
+package org.agmas.noellesroles.game.roles.innocent.jade_general;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
