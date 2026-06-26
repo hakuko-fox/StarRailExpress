@@ -1,9 +1,16 @@
 package org.agmas.noellesroles.game.roles.neutral.amon;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.network.TriggerStatusBarPayload;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -12,10 +19,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.init.NRSounds;
+import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
 import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
@@ -119,6 +129,10 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     @Override
     public void clear() {
         clearDisguise();
+        // 若终幕进行中被重置，关闭全服表现（音乐/滤镜/状态栏）。
+        if (finalePhase && player instanceof ServerPlayer amon && amon.level() instanceof ServerLevel level) {
+            broadcastFinale(level, false);
+        }
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
@@ -289,15 +303,20 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             return false;
         }
 
-        Vec3 pos = host.position();
-        float yRot = host.getYRot();
-        float xRot = host.getXRot();
+        Vec3 hostPos = host.position();
+        float hostYRot = host.getYRot();
+        float hostXRot = host.getXRot();
+        // 阿蒙抛下的旧躯壳位置（用于生成阿蒙自己的尸体）。
+        Vec3 amonOldPos = amon.position();
+        float amonOldYRot = amon.getYHeadRot();
 
-        // 强制击杀宿主以确保夺舍确定性（留下尸体，死因 AMON_USURP）。
-        GameUtils.forceKillPlayer(host, true, null, GameConstants.DeathReasons.AMON_USURP);
+        // 宿主被夺舍：不生成宿主尸体（躯体被阿蒙鸠占）。
+        GameUtils.forceKillPlayer(host, false, null, GameConstants.DeathReasons.AMON_USURP);
+        // 阿蒙抛下原来的躯壳：在旧位置生成阿蒙自己的尸体。
+        spawnOwnBody(amon, level, amonOldPos, amonOldYRot);
 
         // 阿蒙占据宿主位置并顶替其外观。
-        amon.teleportTo(level, pos.x, pos.y, pos.z, yRot, xRot);
+        amon.teleportTo(level, hostPos.x, hostPos.y, hostPos.z, hostYRot, hostXRot);
         setDisguise(hostUuid);
 
         usurpCount++;
@@ -309,6 +328,22 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
         sync();
         return true;
+    }
+
+    /** 在指定位置生成阿蒙自己的尸体（夺舍时抛下的旧躯壳，死因 AMON_USURP）。 */
+    private void spawnOwnBody(ServerPlayer amon, ServerLevel level, Vec3 pos, float yRot) {
+        PlayerBodyEntity body = TMMEntities.PLAYER_BODY.create(level);
+        if (body == null) return;
+        body.getAttribute(Attributes.SCALE).setBaseValue(amon.getAttributeValue(Attributes.SCALE));
+        PlayerBodyEntityComponent bodycca = body.getComponent();
+        bodycca.setDeathReason(GameConstants.DeathReasons.AMON_USURP.toString(), false);
+        body.setPlayerUuid(amon.getUUID());
+        body.moveTo(pos.x, pos.y, pos.z, yRot, 0f);
+        body.setYRot(yRot);
+        body.setYHeadRot(yRot);
+        level.addFreshEntity(body);
+        bodycca.playerRole = ModRoles.AMON.identifier();
+        bodycca.sync();
     }
 
     private void setDisguise(UUID hostUuid) {
@@ -364,14 +399,28 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.clear();
         applyGlow(amon);
         stealItems(amon, level);
-        // 全服播报：终幕降临，阿蒙戴上单片眼镜、全程发光。
-        MutableComponent msg = Component.translatable("message.noellesroles.amon.finale_start")
-                .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD);
-        BroadcastMessageS2CPacket packet = new BroadcastMessageS2CPacket(msg);
-        for (ServerPlayer p : level.players()) {
-            ServerPlayNetworking.send(p, packet);
-        }
+        broadcastFinale(level, true);
         sync();
+    }
+
+    /**
+     * 全服「阿蒙时刻」表现层：
+     * active=true → 播报「杀死阿蒙」、播放音效、触发全局状态栏与偏灰滤镜、播放小丑音乐；
+     * active=false → 关闭上述表现（客户端据此停止音乐/滤镜/状态栏）。
+     */
+    private void broadcastFinale(ServerLevel level, boolean active) {
+        AmonFinaleS2CPacket finalePacket = new AmonFinaleS2CPacket(active);
+        for (ServerPlayer p : level.players()) {
+            ServerPlayNetworking.send(p, finalePacket);
+            if (active) {
+                ServerPlayNetworking.send(p, new BroadcastMessageS2CPacket(
+                        Component.translatable("message.noellesroles.amon.finale_start")
+                                .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD)));
+                ServerPlayNetworking.send(p, new TriggerStatusBarPayload("AmonFinale"));
+                // 登场音效（音乐由客户端环境音根据终幕状态循环播放）。
+                p.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1.0F, 0.8F);
+            }
+        }
     }
 
     private void tickFinale(ServerPlayer amon, SREGameWorldComponent game) {
@@ -400,6 +449,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private void declareWin(ServerPlayer amon) {
         if (!(amon.level() instanceof ServerLevel level)) return;
         finalePhase = false;
+        broadcastFinale(level, false);
         RoleUtils.customWinnerWin(level, GameUtils.WinStatus.CUSTOM,
                 ModRoles.AMON_ID.getPath(), OptionalInt.of(ModRoles.AMON.color()));
     }
@@ -441,7 +491,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             ItemStack stack = inv.getItem(slot);
             ItemStack stolen = stack.copy();
             // 枪/左轮：复制给阿蒙，目标保留；其他物品：夺走。
-            if (!stack.is(TMMItemTags.GUNS)) {
+            if (!stack.is(TMMItemTags.GUNS)&& !stack.is(Items.BOW)) {
                 inv.setItem(slot, ItemStack.EMPTY);
             }
             RoleUtils.insertStackInFreeSlot(amon, stolen);

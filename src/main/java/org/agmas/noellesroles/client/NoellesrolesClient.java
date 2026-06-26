@@ -219,6 +219,12 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         NoellesrolesClientAmbientSounds.register();
+        // 阿蒙终幕「阿蒙时刻」：全屏稍偏灰滤镜。
+        org.agmas.noellesroles.client.event.CommonHudRenderCallback.EVENT.register((g, dt) -> {
+            if (org.agmas.noellesroles.client.ClientAmonState.finaleActive) {
+                g.fill(0, 0, g.guiWidth(), g.guiHeight(), 0x33707078);
+            }
+        });
         // 注册游戏结束事件，清除建筑师客户端墙
         {
             NewspaperItem.runner = (stack, hand) -> {
@@ -614,6 +620,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                     client.player.containerMenu.setCarried(ItemStack.EMPTY);
                     // 清除窃皮者皮肤映射，确保游戏结束时皮肤能正确还原
                     ClientSkincrawlerState.clearAll();
+                    // 清除阿蒙伪装与终幕表现状态
+                    org.agmas.noellesroles.client.ClientAmonState.clearAll();
                 }
             });
         });
@@ -1064,6 +1072,9 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientVoteCache.clientTick();
             if (!hasInitStatusBar) {
                 hasInitStatusBar = true;
+                StatusInit.statusBars.put("AmonFinale", new StatusInit.StatusBar("AmonFinale",
+                        Component.translatable("hud.noellesroles.amon.finale_bar").getString(),
+                        () -> org.agmas.noellesroles.client.ClientAmonState.finaleProgress()));
                 StatusInit.statusBars.put("Time_Stop", new StatusInit.StatusBar("Time_Stop",
                         Component.translatable("mob_effect.noellesroles.time_stop").getString(), () -> {
                             LocalPlayer player = Minecraft.getInstance().player;

@@ -2108,7 +2108,7 @@ public class ModRoles {
             false,
             false,
             SRERole.MoodType.FAKE,
-            Integer.MAX_VALUE,
+                    TMMRoles.CIVILIAN.getMaxSprintTime()*2,
             true))
             .setComponentKey(org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY)
             .setNeutrals(true).setNeutralForKiller(false)

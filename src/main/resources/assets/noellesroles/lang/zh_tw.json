@@ -3135,6 +3135,7 @@
   "message.noellesroles.amon.finale_escape": "你自灰霧中遁走——剩餘備用能力 %s。",
   "hud.noellesroles.amon.finale_time": "終幕：%s 秒",
   "hud.noellesroles.amon.reserve": "備用能力：%s",
+  "hud.noellesroles.amon.finale_bar": "擊殺阿蒙",
   "skill.noellesroles.amon.plant_seed": "寄生",
   "skill.noellesroles.amon.usurp": "奪舍",
   "hud.noellesroles.amon.seeds": "灰霧種子：%s/%s",

@@ -3188,6 +3188,7 @@
   "message.noellesroles.amon.finale_escape": "You slip through the grey fog — %s reserve(s) left.",
   "hud.noellesroles.amon.finale_time": "Finale: %ss",
   "hud.noellesroles.amon.reserve": "Reserve escapes: %s",
+  "hud.noellesroles.amon.finale_bar": "Kill Amon",
   "skill.noellesroles.amon.plant_seed": "Parasitize",
   "skill.noellesroles.amon.usurp": "Usurp",
   "hud.noellesroles.amon.seeds": "Grey Fog Seeds: %s/%s",

@@ -4,6 +4,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 
+import net.minecraft.util.Mth;
+import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
 import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
@@ -19,6 +21,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ClientAmonState {
     private static final Map<UUID, UUID> skins = new ConcurrentHashMap<>();
+
+    /** 终幕「阿蒙时刻」全局表现：偏灰滤镜、小丑音乐与状态栏倒计时是否激活。 */
+    public static volatile boolean finaleActive = false;
+    private static long finaleStartMs = 0L;
+    /** 终幕总时长（毫秒），与服务端 FINALE_TICKS(2 分钟) 对应。 */
+    private static final long FINALE_DURATION_MS = 120_000L;
 
     public static void register() {
         OnGettingPlayerSkin.EVENT.register((player) -> {
@@ -46,14 +54,27 @@ public class ClientAmonState {
                         skins.remove(payload.amonId());
                     }
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(AmonFinaleS2CPacket.ID,
+                (payload, ctx) -> ctx.client().execute(() -> {
+                    finaleActive = payload.active();
+                    finaleStartMs = System.currentTimeMillis();
+                }));
+    }
+
+    /** 终幕进度（1→0），供全局状态栏显示倒计时。 */
+    public static float finaleProgress() {
+        if (!finaleActive) return 0f;
+        long elapsed = System.currentTimeMillis() - finaleStartMs;
+        return Mth.clamp(1f - (float) elapsed / FINALE_DURATION_MS, 0f, 1f);
     }
 
     public static UUID disguiseTargetFor(UUID amonId) {
         return amonId == null ? null : skins.get(amonId);
     }
 
-    /** 游戏重置时清空所有阿蒙伪装映射。 */
+    /** 游戏重置时清空所有阿蒙伪装映射与终幕状态。 */
     public static void clearAll() {
         skins.clear();
+        finaleActive = false;
     }
 }

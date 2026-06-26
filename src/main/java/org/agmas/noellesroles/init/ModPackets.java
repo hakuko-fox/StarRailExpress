@@ -236,6 +236,10 @@ public class ModPackets {
         PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.AmonSkinS2CPacket.ID,
                 org.agmas.noellesroles.packet.AmonSkinS2CPacket.CODEC);
 
+        // 注册阿蒙终幕状态网络包
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.AmonFinaleS2CPacket.ID,
+                org.agmas.noellesroles.packet.AmonFinaleS2CPacket.CODEC);
+
         // 注册物资箱网络包
         PayloadTypeRegistry.playC2S().register(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(SupplyCrateSaveConfigC2SPacket.ID, SupplyCrateSaveConfigC2SPacket::handle);
