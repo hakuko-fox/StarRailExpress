@@ -140,5 +140,8 @@
   "item.noellesroles.chocolate.desc": "美味的巧克力，食用后短时间内san值不会下降。（持续15秒）",
   "item.noellesroles.calming_tea.desc": "安神茶，饮用后减缓san值消耗。（持续60秒）",
   "item.noellesroles.talisman.desc": "护身符，携带在物品栏中时降低低san视觉干扰并缓慢恢复san值。",
-  "item.noellesroles.energizing_coffee.desc": "提神咖啡，饮用后大幅恢复san值并获得速度提升。（持续30秒）"
+  "item.noellesroles.energizing_coffee.desc": "提神咖啡，饮用后大幅恢复san值并获得速度提升。（持续30秒）",
+  "item.noellesroles.cake_ingredients.desc": "右键拆开，获得烹饪蛋糕所需的材料。",
+  "item.noellesroles.cake_egg.desc": "蛋糕烹饪材料。",
+  "item.noellesroles.cake_milk_bucket.desc": "蛋糕烹饪材料，可堆叠至 16 个。"
 }

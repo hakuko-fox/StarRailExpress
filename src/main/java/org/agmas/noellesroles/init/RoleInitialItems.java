@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Unbreakable;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -146,6 +147,11 @@ public class RoleInitialItems {
             return item;
         });
         INITIAL_ITEMS_MAP.put(ModRoles.CUPID, cupidItems);
+
+        List<Supplier<ItemStack>> cakeMakerItems = new ArrayList<>();
+        cakeMakerItems.add(ModItems.CAKE_INGREDIENTS::getDefaultInstance);
+        cakeMakerItems.add(Items.BUNDLE::getDefaultInstance);
+        INITIAL_ITEMS_MAP.put(ModRoles.CAKE_MAKER, cakeMakerItems);
 
         // //黑白
         // List<Supplier<ItemStack>> monokuma_items = new ArrayList<>();

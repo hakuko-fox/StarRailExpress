@@ -1,0 +1,3 @@
+package org.agmas.noellesroles.packet;
+import net.minecraft.network.FriendlyByteBuf; import net.minecraft.network.RegistryFriendlyByteBuf; import net.minecraft.network.codec.StreamCodec; import net.minecraft.network.protocol.common.custom.CustomPacketPayload; import org.agmas.noellesroles.Noellesroles; import java.util.UUID;
+public record CakeMakerEatC2SPacket(UUID cakeId) implements CustomPacketPayload { public static final Type<CakeMakerEatC2SPacket> ID=new Type<>(Noellesroles.id("cake_maker_eat")); public static final StreamCodec<RegistryFriendlyByteBuf,CakeMakerEatC2SPacket> CODEC=StreamCodec.ofMember((p,b)->b.writeUUID(p.cakeId),b->new CakeMakerEatC2SPacket(b.readUUID())); public Type<? extends CustomPacketPayload> type(){return ID;} }

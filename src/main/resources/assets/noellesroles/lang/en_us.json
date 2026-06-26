@@ -3147,5 +3147,16 @@
   "hud.noellesroles.raven.target": "You must kill: %s",
   "message.noellesroles.raven.charge": "Hunt charges: %s/%s",
   "message.noellesroles.raven.no_target": "No eligible role remains on the field.",
-  "message.noellesroles.raven.entry": "A raven cries from a branch"
+  "message.noellesroles.raven.entry": "A raven cries from a branch",
+  "announcement.star.role.cake_maker": "Cake Maker",
+  "announcement.star.goals.cake_maker": "Complete tasks, bake cakes, and supply your allies.",
+  "message.noellesroles.cake_maker.hotbar_full": "You need at least 4 empty hotbar slots to unpack cake ingredients.",
+  "item.noellesroles.cake_ingredients": "Cake Ingredients",
+  "item.noellesroles.cake_egg": "Egg",
+  "item.noellesroles.cake_milk_bucket": "Milk Bucket",
+  "message.noellesroles.cake_maker.smoker_ready": "The smoker is lit. Add 3 wheat in order.",
+  "message.noellesroles.cake_maker.wrong_ingredient": "That ingredient cannot be added now.",
+  "message.noellesroles.cake_maker.add_egg_sugar": "Add 1 egg, then 2 sugar.",
+  "message.noellesroles.cake_maker.add_milk": "Add 3 milk buckets.",
+  "message.noellesroles.cake_maker.complete": "The cake is ready!"
 }

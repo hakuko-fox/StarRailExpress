@@ -308,6 +308,9 @@ public class ModRolesInitialEventRegister {
                 RoleUtils.insertStackInFreeSlot(player, Items.CANDLE.getDefaultInstance());
                 candleBearer.sync();
             }
+            if (role.equals(ModRoles.CAKE_MAKER)) {
+                ModComponents.CAKE_MAKER.get(player).init();
+            }
             if (role.equals(ModRoles.RAVEN)) {
                 ModComponents.RAVEN.get(player).init();
             }

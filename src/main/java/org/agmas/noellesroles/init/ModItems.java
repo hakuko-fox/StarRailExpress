@@ -161,6 +161,9 @@ public class ModItems {
     public static final Item FOOD_STUFF = register(
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
+    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)), "cake_ingredients", CONSUMABLES_GROUP);
+    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg", CONSUMABLES_GROUP);
+    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)), "cake_milk_bucket", CONSUMABLES_GROUP);
     public static final Item PAN = register(
             new PanItem((new Item.Properties()).stacksTo(1)), "pan",
             CONSUMABLES_GROUP);

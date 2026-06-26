@@ -70,6 +70,7 @@ import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.neutral.admirer.AdmirerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.cake_maker.CakeMakerRole;
 import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
@@ -211,6 +212,7 @@ public class ModRoles {
     public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
     // 巫师角色 ID
     public static final ResourceLocation WIZARD_ID = Noellesroles.id("wizard");
+    public static final ResourceLocation CAKE_MAKER_ID = Noellesroles.id("cake_maker");
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
     public static final ResourceLocation REPAIR_SURVIVOR_ID = Noellesroles.id("repair_survivor");
@@ -754,6 +756,10 @@ public class ModRoles {
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true)
             .setComponentKey(FoodDrinkGlowComponent.KEY);
+    public static SRERole CAKE_MAKER = TMMRoles.registerRole(
+            new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
+                    SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true).setDefaultEnableNeededPlayerCount(8);
     // 红尘客
     public static SRERole WAYFARER = TMMRoles.registerRole(
             new NormalRole(WAYFARER_ID, new Color(255, 54, 105).getRGB(),

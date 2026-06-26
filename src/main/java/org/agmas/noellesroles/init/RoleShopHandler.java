@@ -714,6 +714,17 @@ public class RoleShopHandler {
       ShopContent.customEntries.put(ModRoles.CHEF_ID, shop);
     }
     {
+      var shop = new ArrayList<ShopEntry>();
+      shop.add(new ShopEntry(ModItems.CAKE_INGREDIENTS.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+      shop.add(new ShopEntry(Items.SMOKER.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+        @Override public boolean canBuy(Player player) {
+          for (int i = 0; i < 9; i++) if (player.getInventory().getItem(i).is(Items.SMOKER)) return false;
+          return true;
+        }
+      });
+      ShopContent.customEntries.put(ModRoles.CAKE_MAKER_ID, shop);
+    }
+    {
       // 指挥官的商店
       var _SHOP = new ArrayList<ShopEntry>();
       _SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));

@@ -112,6 +112,7 @@ import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.Innocent.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -748,6 +749,11 @@ public class ModEventsRegister {
     public static List<Item> canThrowItems = new ArrayList<>();
 
     public static void registerEvents() {
+        UseItemCallback.EVENT.register((player, world, hand) -> {
+            if (world.isClientSide || !SREGameWorldComponent.KEY.get(world).isRole(player, ModRoles.CAKE_MAKER)) return InteractionResultHolder.pass(player.getItemInHand(hand));
+            if (ModComponents.CAKE_MAKER.get(player).addIngredient(player)) return InteractionResultHolder.consume(player.getItemInHand(hand));
+            return InteractionResultHolder.pass(player.getItemInHand(hand));
+        });
         // 吝啬 - 商店购买返还20%金币
         StandardRevolverItem.registerEvents();
         AllowPlayerPunching.EVENT.register(player -> {
