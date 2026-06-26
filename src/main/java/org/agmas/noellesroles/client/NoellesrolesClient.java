@@ -318,6 +318,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 net.minecraft.client.renderer.entity.HuskRenderer::new);
         EntityRendererRegistry.register(ModEntities.UNDEAD,
                 org.agmas.noellesroles.client.renderer.UndeadEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MORPHLING_KNIFE_DUMMY,
+                org.agmas.noellesroles.client.renderer.MorphlingKnifeDummyRenderer::new);
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);

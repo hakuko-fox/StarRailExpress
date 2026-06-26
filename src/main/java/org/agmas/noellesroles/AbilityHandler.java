@@ -156,6 +156,40 @@ public class AbilityHandler {
             return;
         }
 
+        if (gameWorldComponent.isRole(player, ModRoles.MORPHLING)
+                && abilityPlayerComponent.cooldown <= 0) {
+            // 召唤举刀假人向前突进
+            if (!io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(player)) {
+                return;
+            }
+            NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
+            net.minecraft.server.level.ServerLevel level = player.serverLevel();
+            org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent morphComp =
+                    org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent.KEY.get(player);
+            UUID skin = (morphComp.morphTicks > 0 && morphComp.disguise != null)
+                    ? morphComp.disguise
+                    : player.getUUID();
+            float yaw = player.getYRot();
+            double rad = Math.toRadians(yaw);
+            double dx = -Math.sin(rad);
+            double dz = Math.cos(rad);
+            org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity dummy =
+                    new org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity(
+                            org.agmas.noellesroles.init.ModEntities.MORPHLING_KNIFE_DUMMY, level);
+            dummy.setPos(player.getX() + dx * 1.5D, player.getY(), player.getZ() + dz * 1.5D);
+            dummy.setup(player, skin, GameConstants.getInTicks(0, cfg.morphlingDummyLifetime), yaw);
+            level.addFreshEntity(dummy);
+            level.playSound(null, player.blockPosition(),
+                    net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG,
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.2f);
+            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.morphlingDummyCooldown);
+            player.displayClientMessage(
+                    Component.translatable("message.noellesroles.morphling.dummy_spawned")
+                            .withStyle(ChatFormatting.GREEN),
+                    true);
+            return;
+        }
+
         if (gameWorldComponent.isRole(player, ModRoles.RECALLER)
                 && abilityPlayerComponent.cooldown <= 0) {
             RecallerPlayerComponent recallerPlayerComponent = RecallerPlayerComponent.KEY.get(player);
