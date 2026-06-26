@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import java.awt.Color;
+import java.util.function.Consumer;
 
 import com.mojang.serialization.MapCodec;
 
@@ -8,9 +9,7 @@ import org.agmas.noellesroles.content.block_entity.scene.ReactorBlockEntity;
 import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.agmas.noellesroles.scene.SceneEventManager;
 
-import io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -39,6 +38,9 @@ public class ReactorBlock extends BaseEntityBlock implements TaskInstinctShowabl
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
     public static final BooleanProperty CLOSED = BooleanProperty.create("closed");
 
+    /** 客户端回调：打开反应堆小游戏屏幕。由 NoellesrolesClient 在客户端初始化时设置。 */
+    public static Consumer<BlockPos> openReactorScreenCallback;
+
     public ReactorBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(this.stateDefinition.any()
@@ -65,16 +67,9 @@ public class ReactorBlock extends BaseEntityBlock implements TaskInstinctShowabl
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         if (level.isClientSide) {
-            // 客户端：打开温度调节小游戏
-            if (state.getValue(ACTIVE) && !state.getValue(CLOSED)) {
-                Minecraft.getInstance().setScreen(
-                        new SimpleQuestMinigameScreen(pos,
-                                () -> {
-                                    // 小游戏完成回调：发送完成包
-                                    net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-                                            new org.agmas.noellesroles.packet.ReactorMinigameCompleteC2SPacket(pos));
-                                },
-                                SimpleQuestMinigameScreen.Mode.REACTOR_TEMPERATURE));
+            // 客户端：通过回调打开温度调节小游戏（避免服务端加载 Screen 类）
+            if (state.getValue(ACTIVE) && !state.getValue(CLOSED) && openReactorScreenCallback != null) {
+                openReactorScreenCallback.accept(pos);
             }
             return InteractionResult.SUCCESS;
         }

@@ -305,6 +305,55 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             client.setScreen(new ChefStartGameScreen());
         };
+        // 场景方块客户端屏幕回调（避免服务端加载 Screen 类导致崩溃）
+        org.agmas.noellesroles.content.block.scene.ReactorBlock.openReactorScreenCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            mc.setScreen(new io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen(pos,
+                    () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.packet.ReactorMinigameCompleteC2SPacket(pos)),
+                    io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen.Mode.REACTOR_TEMPERATURE));
+        };
+        org.agmas.noellesroles.content.block.scene.WaterValveBlock.openWaterValveScreenCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            mc.setScreen(new io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen(pos,
+                    () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.packet.WaterValveMinigameCompleteC2SPacket(pos)),
+                    io.wifi.starrailexpress.client.gui.screen.SimpleQuestMinigameScreen.Mode.WATER_VALVE));
+        };
+        org.agmas.noellesroles.content.block.scene.DebrisPileBlock.openDebrisPileScreenCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            mc.setScreen(new io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen(pos,
+                    () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                            new org.agmas.noellesroles.packet.DebrisPileMinigameCompleteC2SPacket(pos)),
+                    io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen.Kind.EXTINGUISH));
+        };
+        org.agmas.noellesroles.content.block.scene.MovingPlatformBlock.openMovingPlatformConfigCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            if (mc.level.getBlockEntity(pos) instanceof org.agmas.noellesroles.content.block_entity.scene.MovingPlatformBlockEntity mbe) {
+                mc.setScreen(new org.agmas.noellesroles.client.screen.MovingPlatformConfigScreen(
+                        pos, mbe.getDistance(), mbe.getSpeed(), mbe.getCollisionSize()));
+            }
+        };
+        org.agmas.noellesroles.content.block.scene.HurricaneDeviceBlock.openHurricaneDeviceConfigCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            if (mc.level.getBlockEntity(pos) instanceof org.agmas.noellesroles.content.block_entity.scene.HurricaneDeviceBlockEntity hbe) {
+                mc.setScreen(new org.agmas.noellesroles.client.screen.HurricaneDeviceConfigScreen(pos, hbe.getRadius(),
+                        hbe.getHeight(), hbe.isPersistent(), hbe.getSpawnIntervalSeconds(), hbe.getDurationSeconds()));
+            }
+        };
+        org.agmas.noellesroles.content.block.scene.TrashCanBlock.openTrashCanConfigCallback = (pos) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+            if (mc.level.getBlockEntity(pos) instanceof org.agmas.noellesroles.content.block_entity.scene.TrashCanBlockEntity trashCan) {
+                mc.setScreen(new org.agmas.noellesroles.client.screen.TrashCanConfigScreen(pos, trashCan.isWhitelistEnabled(),
+                        trashCan.getWhitelist(), trashCan.isBlacklistEnabled(), trashCan.getBlacklist()));
+            }
+        };
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,

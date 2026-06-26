@@ -1,7 +1,6 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -16,11 +15,16 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import org.agmas.noellesroles.client.screen.TrashCanConfigScreen;
 import org.agmas.noellesroles.content.block_entity.scene.TrashCanBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Consumer;
+
 public class TrashCanBlock extends BaseEntityBlock {
+
+    /** 客户端回调：打开垃圾桶配置屏幕。由 NoellesrolesClient 在客户端初始化时设置。 */
+    public static Consumer<BlockPos> openTrashCanConfigCallback;
+
     public TrashCanBlock(Properties properties) {
         super(properties);
     }
@@ -68,9 +72,8 @@ public class TrashCanBlock extends BaseEntityBlock {
         if (!player.isCreative()) {
             return InteractionResult.PASS;
         }
-        if (level.isClientSide && level.getBlockEntity(pos) instanceof TrashCanBlockEntity trashCan) {
-            Minecraft.getInstance().setScreen(new TrashCanConfigScreen(pos, trashCan.isWhitelistEnabled(),
-                    trashCan.getWhitelist(), trashCan.isBlacklistEnabled(), trashCan.getBlacklist()));
+        if (level.isClientSide && openTrashCanConfigCallback != null) {
+            openTrashCanConfigCallback.accept(pos);
         }
         return InteractionResult.SUCCESS;
     }

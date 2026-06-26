@@ -1,9 +1,7 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
-import io.wifi.starrailexpress.client.gui.screen.PhysicalQuestMinigameScreen;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -23,11 +21,15 @@ import org.agmas.noellesroles.init.ModSceneBlocks;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;
+import java.util.function.Consumer;
 
 public class DebrisPileBlock extends BaseEntityBlock implements TaskInstinctShowableInterface {
     public static final int TASK_INSTINCT_ID = 18;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
     public static final BooleanProperty CLOSED = BooleanProperty.create("closed");
+
+    /** 客户端回调：打开碎屑堆灭火小游戏屏幕。由 NoellesrolesClient 在客户端初始化时设置。 */
+    public static Consumer<BlockPos> openDebrisPileScreenCallback;
 
     public DebrisPileBlock(Properties settings) {
         super(settings);
@@ -49,11 +51,8 @@ public class DebrisPileBlock extends BaseEntityBlock implements TaskInstinctShow
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         if (level.isClientSide) {
-            if (state.getValue(ACTIVE) && !state.getValue(CLOSED)) {
-                Minecraft.getInstance().setScreen(new PhysicalQuestMinigameScreen(pos,
-                        () -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
-                                new org.agmas.noellesroles.packet.DebrisPileMinigameCompleteC2SPacket(pos)),
-                        PhysicalQuestMinigameScreen.Kind.EXTINGUISH));
+            if (state.getValue(ACTIVE) && !state.getValue(CLOSED) && openDebrisPileScreenCallback != null) {
+                openDebrisPileScreenCallback.accept(pos);
             }
             return InteractionResult.SUCCESS;
         }
