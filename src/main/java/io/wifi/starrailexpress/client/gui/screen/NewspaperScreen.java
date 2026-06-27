@@ -809,6 +809,10 @@ public class NewspaperScreen extends Screen {
             }
             return true;
         }
+        if(keyCode == 256){
+            this.saveChanges(false);
+            this.onClose();
+        }
         if (super.keyPressed(keyCode, scanCode, modifiers))
             return true;
 
