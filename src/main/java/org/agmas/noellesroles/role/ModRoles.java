@@ -9,7 +9,6 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.util.ShopEntry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.resources.ResourceLocation;
@@ -24,7 +23,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.init.ModItems;
 import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.Noellesroles;
 
@@ -140,12 +138,6 @@ public class ModRoles {
     public static final AttachmentType<String> ENTITY_NOTE_MAKER = AttachmentRegistry.<String>builder()
             .persistent(Codec.STRING)
             .buildAndRegister(Noellesroles.id("entity_note_maker"));
-
-    /**
-     * 被玉将军飞踢“变老人”的玩家标记：为 true 时无法购买轮椅。
-     * 非持久化（不写入存档），并在每局结束时统一清除。
-     */
-    @SuppressWarnings("deprecation")
 
     // ==================== 角色 ID 定义 ====================
     // 建议格式：MOD_ID:role_name

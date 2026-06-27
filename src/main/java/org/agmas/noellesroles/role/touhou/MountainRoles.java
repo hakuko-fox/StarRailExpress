@@ -67,6 +67,12 @@ public class MountainRoles {
             return SHOP;
         }
 
+        @Override
+        public InteractionResult onDropItem(Player player, ItemStack item) {
+            if (item.is(Items.BUNDLE))
+                return InteractionResult.SUCCESS;
+            return InteractionResult.PASS;
+        }
     }.setComponentKey(AyayayaPlayerComponent.KEY));
 
     public static SRERole HATATE = TMMRoles.registerRole(new TouhouRole(
