@@ -1061,7 +1061,7 @@ public class RoleShopHandler {
           for (int i = 0; i < count; i++) {
             var p = players.get(i);
 
-            var ct = Component.translatable("%s\n%s", Component.translatable("item.written_book.per_role_title", i + 1),
+            var ct = Component.translatable("%s%s", Component.translatable("item.written_book.per_role_title", i + 1),
                 Component
                     .translatable("item.written_book.per_role_content",
                         p.getName(),
