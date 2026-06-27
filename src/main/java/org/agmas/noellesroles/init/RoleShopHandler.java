@@ -720,8 +720,11 @@ public class RoleShopHandler {
       var shop = new ArrayList<ShopEntry>();
       shop.add(new ShopEntry(ModItems.CAKE_INGREDIENTS.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
       shop.add(new ShopEntry(Items.SMOKER.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
-        @Override public boolean canBuy(Player player) {
-          for (int i = 0; i < 9; i++) if (player.getInventory().getItem(i).is(Items.SMOKER)) return false;
+        @Override
+        public boolean canBuy(Player player) {
+          for (int i = 0; i < 9; i++)
+            if (player.getInventory().getItem(i).is(Items.SMOKER))
+              return false;
           return true;
         }
       });
@@ -1050,32 +1053,28 @@ public class RoleShopHandler {
           int count = 1;
           var contents = new ArrayList<Filterable<Component>>();
           {
-            var fstct = Component.translatable("%s\n%s", Component.translatable("item.written_book.role_title")
-                .withStyle(ChatFormatting.BOLD, ChatFormatting.GOLD),
-                Component.translatable("item.written_book.role_intro")
-                    .withStyle(ChatFormatting.GRAY));
+            var fstct = Component.translatable("%s\n%s", Component.translatable("item.written_book.role_title"),
+                Component.translatable("item.written_book.role_intro"));
             var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
             contents.add(fstcontent);
           }
           for (int i = 0; i < count; i++) {
             var p = players.get(i);
-            var ct = Component.translatable("%s\n%s", Component.translatable("item.written_book.per_role_title", i + 1)
-                .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.GOLD),
+            var ct = Component.translatable("%s\n%s", Component.translatable("item.written_book.per_role_title", i + 1),
                 Component
                     .translatable("item.written_book.per_role_content",
-                        p.getName().copy().withStyle(ChatFormatting.DARK_GRAY),
-                        RoleUtils.getRoleOrModifierNameWithColor(gameWorldComponent.getRole(p)))
-                    .withStyle(ChatFormatting.DARK_AQUA));
+                        p.getName(),
+                        RoleUtils.getRoleOrModifierName(gameWorldComponent.getRole(p))));
             var content = new Filterable<Component>(ct, Optional.of(ct));
             contents.add(content);
             if (p instanceof ServerPlayer sp)
               BroadcastCommand.BroadcastMessage(sp,
                   Component.translatable("message.pachuri.be_known_role").withStyle(ChatFormatting.RED));
           }
-          String title = "\u00a7d\u00a7lPachuri Knowledge Book";
+          String title = "Pachuri Knowledge Book";
 
           itemStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
-              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), "System", 1, contents, true));
+              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), player.getScoreboardName(), 1, contents, true));
           return RoleUtils.insertStackInFreeSlot(player, itemStack);
         }
       });
@@ -2687,12 +2686,14 @@ public class RoleShopHandler {
         var timeComp = io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level());
         int elapsed = timeComp.getResetTime() - timeComp.getTime();
         if (elapsed < 2 * 60 * 20) {
-          player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.time_not_ready").withStyle(ChatFormatting.YELLOW), true);
+          player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.time_not_ready")
+              .withStyle(ChatFormatting.YELLOW), true);
           return false;
         }
         for (ItemStack stack : player.getInventory().items) {
           if (stack.is(ModItems.REASONER_COMPASS)) {
-            player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.already_has_compass").withStyle(ChatFormatting.YELLOW), true);
+            player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.already_has_compass")
+                .withStyle(ChatFormatting.YELLOW), true);
             return false;
           }
         }

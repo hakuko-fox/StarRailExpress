@@ -285,7 +285,7 @@
   "item.written_book.role_intro": "翻页开始阅读",
   "item.written_book.per_role_title": "第 %s 个职业",
   "item.written_book.per_role_content": "%s:\n%s",
-  "message.pachuri.be_known_role": "你已被帕秋莉得知身份。",
+  "message.pachuri.be_known_role": "[!] 你已被帕秋莉得知身份。",
   "=============== 蕾米莉亚 ===============": "",
   "=============== 芙兰朵露 ===============": "",
   "announcement.star.win.furandoru": "芙兰朵露获胜！",
