@@ -93,8 +93,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private final Set<UUID> maturedHosts = new HashSet<>();
     /** 当前伪装目标（夺舍后顶替其皮肤+名字）。 */
     private UUID disguiseTarget;
-    /** 「操纵」中通过背包锁定的待夺舍目标（须为成熟宿主）；非空即处于操纵期间，按 G 直接夺舍。 */
-    public UUID lockedTarget;
+    /** 正在附身的目标（须为成熟宿主）；非空即处于附身中，按 G 完成夺舍。 */
+    public UUID possessTarget;
+    /** 附身开始时记录的「本体」位置（完成夺舍时在此生成阿蒙自己的尸体）。 */
+    private Vec3 homePos;
+    private float homeYRot;
 
     public int usurpCount;
     public boolean hasUsurped;
@@ -113,8 +116,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     public int clientMatured;
     /** 客户端镜像：成熟宿主 UUID（仅同步给阿蒙本人，供背包选目标界面显示）。 */
     public final Set<UUID> clientMaturedHosts = new HashSet<>();
-    /** 客户端镜像：当前锁定的待夺舍目标。 */
-    public UUID clientLockedTarget;
+    /** 客户端镜像：当前附身的目标。 */
+    public UUID clientPossessTarget;
 
     public AmonPlayerComponent(Player player) {
         this.player = player;
@@ -132,7 +135,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
-        lockedTarget = null;
+        possessTarget = null;
+        homePos = null;
         usurpCount = 0;
         hasUsurped = false;
         seedCap = 2;
@@ -142,13 +146,17 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         clientSeeds = 0;
         clientMatured = 0;
         clientMaturedHosts.clear();
-        clientLockedTarget = null;
+        clientPossessTarget = null;
         sync();
     }
 
     @Override
     public void clear() {
         clearDisguise();
+        // 若附身进行中被重置，清掉隐身/无敌表现。
+        if (possessTarget != null && player instanceof ServerPlayer amon) {
+            clearPossessionEffects(amon);
+        }
         // 若终幕进行中被重置，关闭全服表现（音乐/滤镜/状态栏）。
         if (finalePhase && player instanceof ServerPlayer amon && amon.level() instanceof ServerLevel level) {
             broadcastFinale(level, false);
@@ -156,7 +164,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
-        lockedTarget = null;
+        possessTarget = null;
+        homePos = null;
         usurpCount = 0;
         hasUsurped = false;
         seedCap = 2;
@@ -166,7 +175,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         clientSeeds = 0;
         clientMatured = 0;
         clientMaturedHosts.clear();
-        clientLockedTarget = null;
+        clientPossessTarget = null;
         sync();
     }
 
@@ -177,12 +186,14 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
         // 角色被中途更换：清理残留状态与伪装。
         if (!game.isRole(amon, ModRoles.AMON)) {
-            if (!seeds.isEmpty() || !maturedHosts.isEmpty() || disguiseTarget != null || lockedTarget != null) {
+            if (!seeds.isEmpty() || !maturedHosts.isEmpty() || disguiseTarget != null || possessTarget != null) {
                 clearDisguise();
+                if (possessTarget != null) clearPossessionEffects(amon);
                 seeds.clear();
                 maturedHosts.clear();
                 disguiseTarget = null;
-                lockedTarget = null;
+                possessTarget = null;
+                homePos = null;
                 sync();
             }
             return;
@@ -196,6 +207,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             return;
         }
         if (!alive) return;
+
+        // 附身中：跟随目标、维持隐身/无敌；目标失效则解除附身。
+        if (possessTarget != null) {
+            handlePossessionTick(amon);
+        }
 
         seedCap = Math.max(1, (game.getPlayerCount() ) / 6);
 
@@ -231,12 +247,6 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             changed = true;
         }
 
-        // 锁定目标若已不在成熟宿主集合（被他人击杀/离线/已夺舍）则解除锁定。
-        if (lockedTarget != null && !maturedHosts.contains(lockedTarget)) {
-            lockedTarget = null;
-            changed = true;
-        }
-
         if (changed || amon.tickCount % 20 == 0) sync();
     }
 
@@ -268,94 +278,125 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     }
 
     /**
-     * 背包选目标：把一名成熟宿主锁定为待夺舍目标，进入「操纵」。
+     * 背包点选玩家：附身到该成熟宿主身上（阿蒙隐身+无敌并贴附跟随目标），记录本体位置。
      * 由 {@code AmonSelectTargetC2SPacket} 服务端接收后调用。
      */
-    public boolean setUsurpTarget(UUID targetUuid) {
-        if (!(player instanceof ServerPlayer amon)) return false;
+    public boolean setPossessTarget(UUID targetUuid) {
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return false;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
         if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
             return false;
         }
-        if (finalePhase) return false;
-        // 只能锁定已成熟、仍存活的宿主。
+        if (finalePhase || possessTarget != null) return false;
+        // 只能附身已成熟、仍存活的宿主。
         if (targetUuid == null || !maturedHosts.contains(targetUuid)) {
             return false;
         }
-        Player host = amon.level().getPlayerByUUID(targetUuid);
-        if (host == null || !GameUtils.isPlayerAliveAndSurvival(host)) {
+        Player hostPlayer = level.getPlayerByUUID(targetUuid);
+        if (!(hostPlayer instanceof ServerPlayer host) || !GameUtils.isPlayerAliveAndSurvival(host)) {
             maturedHosts.remove(targetUuid);
             sync();
             return false;
         }
-        lockedTarget = targetUuid;
-        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.target_locked", host.getName())
+        // 记录本体位置（完成夺舍时在此生成阿蒙自己的尸体）。
+        homePos = amon.position();
+        homeYRot = amon.getYHeadRot();
+        possessTarget = targetUuid;
+        refreshPossessionEffects(amon);
+        // 立即贴附到目标身上。
+        amon.teleportTo(level, host.getX(), host.getY(), host.getZ(), host.getYRot(), host.getXRot());
+        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.possess_start", host.getName())
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
         sync();
         return true;
     }
 
-    /** 操纵期间：是否已锁定可夺舍的目标（此时再次按 G 触发夺舍）。 */
-    public boolean hasUsurpTarget() {
-        return lockedTarget != null;
+    /** 是否正在附身（此时按 G 完成夺舍）。 */
+    public boolean isPossessing() {
+        return possessTarget != null;
+    }
+
+    /** 附身每 tick：跟随目标并维持隐身/无敌；目标失效则解除附身。 */
+    private void handlePossessionTick(ServerPlayer amon) {
+        if (!(amon.level() instanceof ServerLevel level)) return;
+        Player t = level.getPlayerByUUID(possessTarget);
+        if (!(t instanceof ServerPlayer target) || !GameUtils.isPlayerAliveAndSurvival(target)) {
+            cancelPossession(amon, "message.noellesroles.amon.possession_lost");
+            return;
+        }
+        refreshPossessionEffects(amon);
+        amon.teleportTo(level, target.getX(), target.getY(), target.getZ(), target.getYRot(), target.getXRot());
     }
 
     /**
-     * 操纵期间按 G：夺舍当前锁定的目标——夺取其全部物品并杀死之（不伪装、不传送）。
-     * 与致命伤「夺舍续命」（{@link #usurp}）不同，此为主动掠夺式击杀。
+     * 附身期间按 G：完成夺舍——变成目标（伪装其皮肤/名字）、令其死亡，并在本体处生成阿蒙自己的尸体。
      */
-    public boolean usurpLockedTarget() {
-        if (!(player instanceof ServerPlayer amon)) return false;
+    public boolean finalizePossession() {
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level)) return false;
+        if (possessTarget == null) return false;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
         if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
             return false;
         }
-        UUID targetUuid = lockedTarget;
-        if (targetUuid == null) return false;
-        return usurpLootKill(targetUuid);
-    }
-
-    /** 夺取指定宿主的全部物品并杀死之（主动掠夺式夺舍：不伪装、不传送）。 */
-    private boolean usurpLootKill(UUID hostUuid) {
-        if (!(player instanceof ServerPlayer amon)) return false;
-        if (!(amon.level() instanceof ServerLevel level)) return false;
-        Player hostPlayer = level.getPlayerByUUID(hostUuid);
-        if (!(hostPlayer instanceof ServerPlayer host) || !GameUtils.isPlayerAliveAndSurvival(host)) {
-            seeds.remove(hostUuid);
-            maturedHosts.remove(hostUuid);
-            if (hostUuid.equals(lockedTarget)) lockedTarget = null;
-            amon.displayClientMessage(Component.translatable("message.noellesroles.amon.no_matured_host")
-                    .withStyle(ChatFormatting.RED), true);
-            sync();
+        UUID targetUuid = possessTarget;
+        Player t = level.getPlayerByUUID(targetUuid);
+        if (!(t instanceof ServerPlayer target) || !GameUtils.isPlayerAliveAndSurvival(target)) {
+            cancelPossession(amon, "message.noellesroles.amon.possession_lost");
             return false;
         }
-        // 夺取目标全部物品到阿蒙背包。
-        lootAllItems(amon, host);
-        // 杀死目标（沿用夺舍死因，不生成宿主尸体）。
-        GameUtils.forceKillPlayer(host, false, null, GameConstants.DeathReasons.AMON_USURP);
+        Vec3 targetPos = target.position();
+        float targetYRot = target.getYRot();
+        float targetXRot = target.getXRot();
+
+        // 本体处生成阿蒙自己的尸体。
+        Vec3 home = homePos != null ? homePos : amon.position();
+        spawnOwnBody(amon, level, home, homeYRot);
+        // 令目标死亡（不生成目标尸体——躯体被阿蒙鸠占）。
+        GameUtils.forceKillPlayer(target, false, null, GameConstants.DeathReasons.AMON_USURP);
+
+        // 解除附身表现，变成目标，停留在目标死亡处。
+        clearPossessionEffects(amon);
+        amon.teleportTo(level, targetPos.x, targetPos.y, targetPos.z, targetYRot, targetXRot);
+        setDisguise(targetUuid);
 
         usurpCount++;
         hasUsurped = true;
-        seeds.remove(hostUuid);
-        maturedHosts.remove(hostUuid);
-        lockedTarget = null;
+        seeds.remove(targetUuid);
+        maturedHosts.remove(targetUuid);
+        possessTarget = null;
+        homePos = null;
 
-        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.usurp_loot")
+        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.usurp_done")
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
         sync();
         return true;
     }
 
-    /** 夺取目标背包内的全部物品（移动到阿蒙的空位）。 */
-    private void lootAllItems(ServerPlayer amon, ServerPlayer host) {
-        Inventory inv = host.getInventory();
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            ItemStack s = inv.getItem(i);
-            if (s.isEmpty()) continue;
-            ItemStack looted = s.copy();
-            inv.setItem(i, ItemStack.EMPTY);
-            RoleUtils.insertStackInFreeSlot(amon, looted);
+    /** 解除附身（目标失效/重置）：清表现、传回本体、清状态。 */
+    private void cancelPossession(ServerPlayer amon, String msgKey) {
+        clearPossessionEffects(amon);
+        if (homePos != null && amon.level() instanceof ServerLevel level) {
+            amon.teleportTo(level, homePos.x, homePos.y, homePos.z, homeYRot, 0f);
         }
+        possessTarget = null;
+        homePos = null;
+        if (msgKey != null) {
+            amon.displayClientMessage(Component.translatable(msgKey).withStyle(ChatFormatting.RED), true);
+        }
+        sync();
+    }
+
+    /** 维持附身表现：隐身 + 无敌 + 无碰撞（短时长，每 tick 续期，附身结束自然消失）。 */
+    private void refreshPossessionEffects(ServerPlayer amon) {
+        amon.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0, false, false, false));
+        amon.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 40, 0, false, false, false));
+        amon.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 40, 0, false, false, false));
+    }
+
+    private void clearPossessionEffects(ServerPlayer amon) {
+        amon.removeEffect(MobEffects.INVISIBILITY);
+        amon.removeEffect(ModEffects.INVINCIBLE);
+        amon.removeEffect(ModEffects.NO_COLLIDE);
     }
 
     /**
@@ -644,7 +685,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             maturedList.add(net.minecraft.nbt.StringTag.valueOf(u.toString()));
         }
         tag.put("MaturedHosts", maturedList);
-        if (lockedTarget != null) tag.putUUID("Locked", lockedTarget);
+        if (possessTarget != null) tag.putUUID("Possess", possessTarget);
         tag.putInt("UsurpCount", usurpCount);
         tag.putBoolean("HasUsurped", hasUsurped);
         tag.putInt("SeedCap", seedCap);
@@ -665,7 +706,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             } catch (IllegalArgumentException ignored) {
             }
         }
-        clientLockedTarget = tag.hasUUID("Locked") ? tag.getUUID("Locked") : null;
+        clientPossessTarget = tag.hasUUID("Possess") ? tag.getUUID("Possess") : null;
         usurpCount = tag.getInt("UsurpCount");
         hasUsurped = tag.getBoolean("HasUsurped");
         seedCap = tag.getInt("SeedCap");

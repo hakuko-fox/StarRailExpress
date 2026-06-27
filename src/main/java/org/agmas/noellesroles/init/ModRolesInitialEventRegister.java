@@ -484,22 +484,25 @@ public class ModRolesInitialEventRegister {
                     return comp != null && comp.releaseLast();
                 }).announceToSelf(false).build());
 
-        // 阿蒙技能：G 键对准星玩家静默种下时之虫；若已通过背包锁定成熟宿主（操纵期间），
-        // 再次按 G 直接夺舍该目标（夺取其全部物品并杀死之）。夺舍目标改由背包点选，不再用 Shift+G。
+        // 阿蒙技能：G 键对准星玩家静默种下时之虫；在背包点选玩家附身后（附身期间），
+        // 随时再按 G 完成夺舍（变成目标、令其死亡、本体处生成尸体）。夺舍改由背包点选附身，不再用 Shift+G。
+        // toggleable=true：让附身完成夺舍不受种虫冷却限制（「随时可按 G」）。
         RoleSkill.register(ModRoles.AMON,
                 RoleSkill.skill(SRE.id("amon_plant_seed"), "skill.noellesroles.amon.plant_seed", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     var comp = org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY.get(player);
                     if (comp == null) return false;
-                    // 操纵期间（已锁定待夺舍目标）：再次按 G 直接夺舍。
-                    if (comp.hasUsurpTarget()) {
-                        return comp.usurpLockedTarget();
+                    // 附身期间：随时按 G 完成夺舍（即使种虫还在冷却）。
+                    if (comp.isPossessing()) {
+                        return comp.finalizePossession();
                     }
+                    // 非附身：种时之虫需冷却就绪。
+                    if (!context.skillReady()) return false;
                     ServerPlayer target = context.target() == null ? null
                             : (player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null);
                     return comp.plantSeed(target);
-                }).cooldownSeconds(20).announceToSelf(false).build());
+                }).cooldownSeconds(20).toggleable(true).announceToSelf(false).build());
 
         // 葬仪技能注册：使用当前模式的技能
         RoleSkill.register(ModRoles.MORTICIAN_BODYMAKER, context -> {

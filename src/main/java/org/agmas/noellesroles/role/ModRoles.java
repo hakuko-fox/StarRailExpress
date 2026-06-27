@@ -2122,7 +2122,14 @@ public class ModRoles {
             false,
             SRERole.MoodType.FAKE,
                     TMMRoles.CIVILIAN.getMaxSprintTime()*2,
-            true))
+            true){
+                @Override
+                public List<ItemStack> getDefaultItems() {
+                    var itemStacks = new ArrayList<ItemStack>();
+                    itemStacks.add(Items.BUNDLE.getDefaultInstance());
+                    return itemStacks;
+                }
+            })
             .setComponentKey(org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY)
             .setNeutrals(true).setNeutralForKiller(false)
             .setCanSeeTeammateKiller(false).setCanPickUpRevolver(false)
