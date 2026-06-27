@@ -418,7 +418,7 @@ public class FilterSelectionScreen extends Screen {
         int size = 10;
         if (checked) {
             g.fill(x, y, x + size, y + size, 0xFF2A1A0A);
-            g.drawCenteredString(font, Component.literal("√"), x + size / 2, y + size / 2 - font.lineHeight / 2,
+            g.drawCenteredString(font, Component.literal("✔"), x + size / 2, y + size / 2 - font.lineHeight / 2,
                     0xFFB8960C);
             g.renderOutline(x, y, size, size, 0xFFB8960C);
         } else {

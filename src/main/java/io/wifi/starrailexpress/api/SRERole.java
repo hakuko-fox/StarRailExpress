@@ -82,10 +82,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
     public HashSet<SRERole> opposingJobs = new HashSet<>();
-    /**
-     * 显示FLAG。用于RoleIntroduceScreen的filter
-     */
-    public HashSet<String> flags = new HashSet<>();
+    
 
     /**
      * 添加显示FLAG
@@ -97,12 +94,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
-    /**
-     * 获取显示FLAG
-     */
-    public HashSet<String> getFlags() {
-        return this.flags;
-    }
 
     /**
      * 是否为指定flag

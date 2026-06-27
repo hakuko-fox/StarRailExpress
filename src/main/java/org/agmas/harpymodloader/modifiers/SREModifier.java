@@ -43,10 +43,6 @@ public class SREModifier extends SREAbstractInfoClass {
     public int defaultMaxPlayerCount = -1;
     public boolean isOtherModeRole = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
-    /**
-     * 显示FLAG。用于RoleIntroduceScreen的filter
-     */
-    public HashSet<String> flags = new HashSet<>();
 
     /**
      * 添加显示FLAG
