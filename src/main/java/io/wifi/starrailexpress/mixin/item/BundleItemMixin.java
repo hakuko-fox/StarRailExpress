@@ -34,7 +34,7 @@ public class BundleItemMixin {
 
     @ModifyConstant(method = "appendHoverText", constant = @Constant(intValue = 64, ordinal = 1))
     private int modifyTooltipMaxWeight(int original) {
-        return 64; // 与新上限一致
+        return 64 * 4; // 与新上限一致
     }
 
     @ModifyReturnValue(method = "getFullnessDisplay", at = @At("RETURN"))
