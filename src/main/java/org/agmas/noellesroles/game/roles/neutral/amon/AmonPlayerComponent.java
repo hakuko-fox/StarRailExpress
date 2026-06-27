@@ -417,8 +417,9 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
                         Component.translatable("message.noellesroles.amon.finale_start")
                                 .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD)));
                 ServerPlayNetworking.send(p, new TriggerStatusBarPayload("AmonFinale"));
-                // 登场音效（音乐由客户端环境音根据终幕状态循环播放）。
-                p.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1.0F, 0.8F);
+                // 登场音效：在每名玩家所在位置播放，确保全员可闻（音乐由客户端环境音循环播放）。
+                level.playSound(null, p.getX(), p.getY(), p.getZ(),
+                        SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1.0F, 0.8F);
             }
         }
     }
