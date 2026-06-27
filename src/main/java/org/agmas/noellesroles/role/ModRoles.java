@@ -2488,6 +2488,8 @@ public class ModRoles {
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.EXECUTIONER);
         // 设置鹈鹕与傀儡师互斥
         ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.PUPPETEER);
+        // 设置鹈鹕与渡鸦互斥
+        ModRoles.PELICAN.addTwoWayOpposingJobs(ModRoles.RAVEN);
 
         RoleSkill.register(ModRoles.THE_FOOL, FoolPlayerComponent::useSkill);
 
