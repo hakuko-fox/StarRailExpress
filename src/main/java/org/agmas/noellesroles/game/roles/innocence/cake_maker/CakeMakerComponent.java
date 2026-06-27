@@ -176,8 +176,9 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
             if (cooldown % 20 == 0 || cooldown == 0) sync();
         }
 
-        // Idle timeout: 6 seconds without ingredients → smoker disappears
-        if (smokerId != null && smokerTicks == 0 && smokerIdle > 0) {
+        // Idle timeout: 6 seconds without ingredients → smoker disappears.
+        // Skips while locked (waiting period between stages) since input is blocked.
+        if (smokerId != null && lockedTicks == 0 && smokerIdle > 0) {
             smokerIdle--;
             if (smokerIdle == 0) {
                 if (player instanceof ServerPlayer sp) {
