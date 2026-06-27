@@ -322,10 +322,10 @@ public class ReasonerCompassScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        // 1. 按钮在最上层
-        super.render(g, mouseX, mouseY, partialTick);
+        // 底层：罗盘面板图案
+        drawPanel(g);
 
-        // 2. 问题文字标签
+        // 文字标签
         if (selectionQuestion == 0) {
             drawQuestionLabels(g);
         } else if (selectionQuestion == 2) {
@@ -334,11 +334,8 @@ public class ReasonerCompassScreen extends Screen {
             drawSelectionTitle(g);
         }
 
-        // 3. 罗盘面板图案
-        drawPanel(g);
-
-        // 4. 半透明暗色背景（最外层图层）
-        renderBackground(g, mouseX, mouseY, partialTick);
+        // 最上层：按钮和输入框
+        super.render(g, mouseX, mouseY, partialTick);
     }
 
     // ───── 面板绘制 ─────
@@ -446,5 +443,10 @@ public class ReasonerCompassScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 不绘制全屏背景，交由 drawPanel 处理
     }
 }
