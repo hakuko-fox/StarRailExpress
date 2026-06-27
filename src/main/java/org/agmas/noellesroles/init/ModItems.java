@@ -59,6 +59,9 @@ public class ModItems {
     public static final Item DEDUCTION_BOOK = register(
             new DeductionBookItem(new Item.Properties().stacksTo(1)),
             "deduction_book", ROLE_ITEMS_GROUP);
+    public static final Item REASONER_COMPASS = register(
+            new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
+            "reasoner_compass", ROLE_ITEMS_GROUP);
     public static final Item FLARE = register(
             new FlareItem(new Item.Properties().stacksTo(8)),
             "flare", ROLE_ITEMS_GROUP);
@@ -1093,6 +1096,7 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.CONSPIRACY_PAGE);
         TMMItems.INVISIBLE_ITEMS.add(Items.BUNDLE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEDUCTION_BOOK);
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.REASONER_COMPASS);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.CRYSTAL_BALL);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.LETTER_ITEM);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEFIBRILLATOR);

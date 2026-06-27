@@ -85,6 +85,7 @@ import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.reasoner.ReasonerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -295,6 +296,7 @@ public class ModRoles {
     public static final ResourceLocation SKINCRAWLER_ID = Noellesroles.id("skincrawler");
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
     public static final ResourceLocation RAVEN_ID = Noellesroles.id("raven");
+    public static final ResourceLocation REASONER_ID = Noellesroles.id("reasoner");
     public static final ResourceLocation AMON_ID = Noellesroles.id("amon");
     public static final ResourceLocation FORTUNETELLER_ID = Noellesroles.id("fortuneteller");
     // 占卜家角色 ID
@@ -2094,6 +2096,17 @@ public class ModRoles {
             true)).setComponentKey(RavenPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setDefaultEnableNeededPlayerCount(10);
+
+    public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(
+            REASONER_ID,
+            new Color(212, 178, 92).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            TMMRoles.CIVILIAN.getMaxSprintTime(),
+            true)).setComponentKey(ReasonerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
+            .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
+            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(2500);
 
     /**
      * 阿蒙（诡秘之主）—— 中立独立胜利角色，核心机制「寄生」。

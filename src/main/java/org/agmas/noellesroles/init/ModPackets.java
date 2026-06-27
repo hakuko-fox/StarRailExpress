@@ -130,6 +130,10 @@ public class ModPackets {
         ServerPlayNetworking.registerGlobalReceiver(RepairSearchBeginC2SPacket.ID, RepairSearchBeginC2SPacket::handle);
         ServerPlayNetworking.registerGlobalReceiver(RepairSearchCancelC2SPacket.ID, RepairSearchCancelC2SPacket::handle);
 
+        PayloadTypeRegistry.playS2C().register(ReasonerOpenScreenS2CPacket.ID, ReasonerOpenScreenS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket::handle);
+
         PayloadTypeRegistry.playS2C().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(BloodConfigS2CPacket.ID, BloodConfigS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(CreateClientSmokeAreaPacket.ID, CreateClientSmokeAreaPacket.CODEC);
