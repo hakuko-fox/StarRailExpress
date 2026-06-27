@@ -12,6 +12,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.util.ShopEntry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -71,6 +72,10 @@ public class MountainRoles {
         public InteractionResult onDropItem(Player player, ItemStack item) {
             if (item.is(Items.BUNDLE))
                 return InteractionResult.SUCCESS;
+            if (item.is(ModItems.NEWSPAPER)) {
+                if (item.has(DataComponents.WRITTEN_BOOK_CONTENT))
+                    return InteractionResult.SUCCESS;
+            }
             return InteractionResult.PASS;
         }
     }.setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
@@ -118,6 +123,10 @@ public class MountainRoles {
         public InteractionResult onDropItem(Player player, ItemStack item) {
             if (item.is(Items.BUNDLE))
                 return InteractionResult.SUCCESS;
+            if (item.is(ModItems.NEWSPAPER)) {
+                if (item.has(DataComponents.WRITTEN_BOOK_CONTENT))
+                    return InteractionResult.SUCCESS;
+            }
             return InteractionResult.PASS;
         }
 

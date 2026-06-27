@@ -1076,10 +1076,17 @@ public class RoleShopHandler {
                   Component.translatable("message.pachuri.be_known_role").withStyle(ChatFormatting.RED));
           }
           String title = "Pachuri Knowledge Book";
-
+          String shortTitle = title;
+          if (shortTitle.length() >= 10) {
+            shortTitle = shortTitle.substring(0, 8) + "...";
+          }
           itemStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
               new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), player.getScoreboardName(), 1,
                   contents, true));
+          itemStack.set(DataComponents.ITEM_NAME,
+              Component.translatable("item.noellesroles.newspaper.name",
+                  Component.translatable("item.noellesroles.newspaper.title.warp", shortTitle)
+                      .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
           return RoleUtils.insertStackInFreeSlot(player, itemStack);
         }
       });
