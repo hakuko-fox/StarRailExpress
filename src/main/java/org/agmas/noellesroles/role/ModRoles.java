@@ -2106,7 +2106,7 @@ public class ModRoles {
             Integer.MAX_VALUE,
             true)).setComponentKey(ReasonerPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKiller(false).setCanUseInstinct(true)
-            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(2500);
+            .setDefaultMax(1).setDefaultEnableNeededPlayerCount(10).setDefaultEnableChance(6500);
 
     /**
      * 阿蒙（诡秘之主）—— 中立独立胜利角色，核心机制「寄生」。
