@@ -60,6 +60,7 @@ import org.agmas.noellesroles.packet.Loot.*;
 import org.agmas.noellesroles.register.RiceEventRegister;
 import org.agmas.noellesroles.register.RicePacketTypeRegister;
 import org.agmas.noellesroles.register.RiceReceiverRegister;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
@@ -357,7 +358,7 @@ public class RicesRoleRhapsody implements ModInitializer {
         }
 
         // ==================== 电报员角色处理 ====================
-        if (role.equals(ModRoles.TELEGRAPHER)) {
+        if (role.equals(BounsRoles.TELEGRAPHER)) {
             // 重置电报员组件
             TelegrapherPlayerComponent telegrapherComponent = ModComponents.TELEGRAPHER.get(player);
             telegrapherComponent.init();
