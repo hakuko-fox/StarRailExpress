@@ -124,6 +124,10 @@ public class StatusBarHUD {
         if (mc.options.hideGui || mc.screen != null)
             return;
 
+        // 仅在游戏真正运行时渲染，和体力条一致
+        if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+            return;
+
         int screenWidth = mc.getWindow().getGuiScaledWidth();
         int screenHeight = mc.getWindow().getGuiScaledHeight();
 
