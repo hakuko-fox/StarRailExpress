@@ -3,11 +3,13 @@ package org.agmas.noellesroles.client.screen;
 import io.wifi.ConfigCompact.ui.RoleManageConfigUI;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RepairRole;
+import io.wifi.starrailexpress.api.SREAbstractInfoClass;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.PinYinUtils;
+import io.wifi.starrailexpress.customrole.CustomNormalRole;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
@@ -18,6 +20,8 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
@@ -505,6 +509,8 @@ public class RoleIntroduceScreen extends Screen {
                 // 其它模式：只显示其他模式的物品
                 return isOtherModeItem(path);
             case FILTER:
+                if (filterFlags.isEmpty())
+                    return true;
                 return false;
             default:
                 return true;
@@ -569,7 +575,7 @@ public class RoleIntroduceScreen extends Screen {
         detailLines.add(FormattedCharSequence.EMPTY);
         if (selectedRole instanceof SRERole role) {
             var rid = role.identifier();
-            if ("customrole".equals(rid.getNamespace())) {
+            if (selectedRole instanceof CustomNormalRole) {
                 var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(rid.getPath());
                 // 客户端回退到网络同步的数据
                 if (cd == null) {
@@ -603,21 +609,37 @@ public class RoleIntroduceScreen extends Screen {
 
             detailLines.add(FormattedCharSequence.EMPTY);
         }
-        detailLines.addAll(font.split(
-                Component.translatable("screen.roleintroduce.detail.description")
-                        .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD),
-                textW));
-
         int dashCount = textW / Math.max(1, font.width("─"));
+
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < dashCount; i++)
             sb.append("─");
-        detailLines.addAll(font.split(
-                Component.literal(sb.toString()).withStyle(ChatFormatting.DARK_GRAY), textW));
-        detailLines.addAll(font.split(
-                RoleUtils.getRoleOrModifierOrItemDescription(selectedRole)
-                        .copy().withStyle(ChatFormatting.WHITE),
-                textW));
+        {
+            detailLines.addAll(font.split(
+                    Component.translatable("screen.roleintroduce.detail.description")
+                            .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD),
+                    textW));
+            detailLines.addAll(font.split(
+                    Component.literal(sb.toString()).withStyle(ChatFormatting.DARK_GRAY), textW));
+            detailLines.addAll(font.split(
+                    RoleUtils.getRoleOrModifierOrItemDescription(selectedRole)
+                            .copy().withStyle(ChatFormatting.WHITE),
+                    textW));
+        }
+
+        if (selectedRole instanceof SREAbstractInfoClass flagInfoable) {
+
+            detailLines.addAll(font.split(
+                    Component.translatable("screen.roleintroduce.detail.flags")
+                            .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD),
+                    textW));
+
+            detailLines.addAll(font.split(
+                    Component.literal(sb.toString()).withStyle(ChatFormatting.DARK_GRAY), textW));
+            detailLines.addAll(font.split(
+                    getFlagText(flagInfoable).withStyle(ChatFormatting.WHITE),
+                    textW));
+        }
         {
             // 商店显示
             if (selectedRole instanceof SRERole sreRole) {
@@ -724,6 +746,11 @@ public class RoleIntroduceScreen extends Screen {
         int totalTextH = detailLines.size() * (font.lineHeight + 2);
         maxDetailScroll = Math.max(0, totalTextH - detailContentH());
         detailScrollOffset = 0;
+    }
+
+    public static MutableComponent getFlagText(SREAbstractInfoClass flagInfoable) {
+        return ComponentUtils.formatList(flagInfoable.getFlags(), Component.literal(", "),
+                (t) -> Component.translatable("screen.roleintroduce.flag." + t));
     }
 
     private String getObjectPath(Object it) {
