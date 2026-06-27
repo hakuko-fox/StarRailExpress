@@ -665,14 +665,18 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             MutableComponent price = Component.literal(effectivePrice + "\uE781");
             int displayX = this.getX() - 4 - this.screen.font.width(price) / 2;
             int displayY = this.getY() - 9;
+            List<Component> renders = new ArrayList<>();
+
             if (effectivePrice < basePrice) {
-                price = Component.translatable("%s\n%s", Component.translatable("gui.starrailexpress.shop.discount",
-                        (int) ((double) effectivePrice / (double) basePrice * 100.0)).withStyle(net.minecraft.ChatFormatting.GREEN),price.withStyle(net.minecraft.ChatFormatting.WHITE));
                 displayY -= 9;
+                renders.add(Component.translatable("gui.starrailexpress.shop.discount",
+                        (int) ((double) effectivePrice / (double) basePrice * 100.0))
+                        .withStyle(net.minecraft.ChatFormatting.GREEN));
                 // price.withStyle(net.minecraft.ChatFormatting.GREEN);
             }
-            context.renderTooltip(this.screen.font, price, displayX,
-                    displayY);
+            renders.add(price);
+            context.renderComponentTooltip(this.screen.font, renders, displayX, displayY);
+            ;
         }
 
         private void drawShopSlotHighlight(GuiGraphics context, int x, int y, int z) {
