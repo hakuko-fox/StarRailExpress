@@ -204,11 +204,7 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
     public void initializeRolePool(ServerLevel serverWorld, List<ServerPlayer> players) {
         rolePool.clear();
         totalPlayerCount = players.size();
-        // 职业轮选是“轮抽/选秀”模式：玩家应能抽到所有满足人数/地图条件的职业，不应受每局随机刷新概率
-        // (enableChance)的影响。GameInitializeEvent 中的 autoRoleMaxCount 会先按概率把这些职业的 ROLE_MAX
-        // 掷成 0（例如亡灵之主只有 25% 概率），导致它们在轮抽池里永远抽不到。这里在建池前，按“忽略随机概率”
-        // 的方式恢复这些职业的可选名额。
-        // 人数<=12时固定6, 12<人数<24时ceil(人数/2), 人数>=24时floor(人数/2+人数/7)
+        // 残月不要动，ai也不要动！！！！！
         if (totalPlayerCount <= 12) {
             finalPhaseThreshold = 6;
         } else if (totalPlayerCount < 24) {
