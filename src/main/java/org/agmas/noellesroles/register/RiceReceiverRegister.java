@@ -50,6 +50,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.Pair;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
@@ -267,7 +268,7 @@ public class RiceReceiverRegister {
             }
 
             // 验证玩家是电报员
-            if (!gameWorld.isRole(context.player(), ModRoles.TELEGRAPHER))
+            if (!gameWorld.isRole(context.player(), BounsRoles.TELEGRAPHER))
                 return;
 
             // 获取电报员组件并发送消息

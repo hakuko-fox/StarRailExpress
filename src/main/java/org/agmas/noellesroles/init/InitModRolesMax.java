@@ -20,6 +20,7 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -104,7 +105,7 @@ public class InitModRolesMax {
 
         // 工程师每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.ENGINEER_ID, 1);
-        Harpymodloader.setRoleMaximum(ModRoles.BASEBALL_PLAYER_ID, 1);
+        Harpymodloader.setRoleMaximum(BounsRoles.BASEBALL_PLAYER_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.LOCKSMITH_ID, 0);
         // 斗士每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.FIGHTER_ID, 1);
@@ -218,10 +219,10 @@ public class InitModRolesMax {
         Harpymodloader.setRoleMaximum(ModRoles.BETTER_VIGILANTE_ID, 0);
 
         // 作家 - 默认为0，在 InitModRolesMax 中动态设置（0.5%概率刷新）
-        Harpymodloader.setRoleMaximum(ModRoles.WRITER_ID, 0);
+        Harpymodloader.setRoleMaximum(BounsRoles.WRITER_ID, 0);
 
         // 电报员 - 默认为0，在 InitModRolesMax 中动态设置（0.5%概率刷新）
-        Harpymodloader.setRoleMaximum(ModRoles.TELEGRAPHER_ID, 0);
+        Harpymodloader.setRoleMaximum(BounsRoles.TELEGRAPHER_ID, 0);
 
         // 设置角色最大数量
         Harpymodloader.setRoleMaximum(ModRoles.POISONER_ID, 0);

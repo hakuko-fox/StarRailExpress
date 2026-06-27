@@ -1005,7 +1005,7 @@ public class ModPacketsReciever {
             return;
           }
 
-          if (gameWorldComponent.isRole(player, ModRoles.CREEPER)) {
+          if (gameWorldComponent.isRole(player, BounsRoles.CREEPER)) {
             CreeperPlayerComponent creeperComponent = CreeperPlayerComponent.KEY.get(player);
             creeperComponent.ignite();
           }

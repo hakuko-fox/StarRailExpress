@@ -46,6 +46,7 @@ import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComp
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -662,7 +663,7 @@ public class RoleShopHandler {
           ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(SERoles.NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
       ShopContent.customEntries.put(SERoles.ARSONIST.getIdentifier(), NECROMANCER_SHOP);
-      ShopContent.customEntries.put(ModRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
+      ShopContent.customEntries.put(BounsRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
 
       {
         var CAT_KILLER_SHOP = new ArrayList<>(NECROMANCER_SHOP);
@@ -673,7 +674,7 @@ public class RoleShopHandler {
             return SREPlayerShopComponent.usePsychoMode(player, 1.1);
           }
         });
-        ShopContent.customEntries.put(ModRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
+        ShopContent.customEntries.put(BounsRoles.CAT_KILLER.getIdentifier(), CAT_KILLER_SHOP);
       }
     }
     {
@@ -1301,7 +1302,7 @@ public class RoleShopHandler {
     // 作家商店
     {
       ShopContent.customEntries.put(
-          ModRoles.WRITER_ID, WRITER_SHOP);
+          BounsRoles.WRITER_ID, WRITER_SHOP);
     }
     // 搜救员商店
     {

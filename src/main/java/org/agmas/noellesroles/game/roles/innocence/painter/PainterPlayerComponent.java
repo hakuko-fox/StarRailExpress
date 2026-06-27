@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.jetbrains.annotations.NotNull;
@@ -213,7 +214,7 @@ public class PainterPlayerComponent implements RoleComponent, ServerTickingCompo
                 continue;
             if (!GameUtils.isPlayerAliveAndSurvival(p))
                 continue;
-            if (SREGameWorldComponent.KEY.get(p.level()).isRole(p, ModRoles.WRITER)) {
+            if (SREGameWorldComponent.KEY.get(p.level()).isRole(p, BounsRoles.WRITER)) {
                 return true;
             }
         }
@@ -350,7 +351,7 @@ public class PainterPlayerComponent implements RoleComponent, ServerTickingCompo
             }
             
             // 给予作家画板（作家需要单独处理，因为作家没有组件）
-            if (gameWorld.isRole(p, ModRoles.WRITER)) {
+            if (gameWorld.isRole(p, BounsRoles.WRITER)) {
                 MCItemsUtils.insertStackInFreeSlot(p, TMMItems.DRAWING_BOARD.getDefaultInstance());
                 if (p instanceof ServerPlayer sp) {
                     sp.displayClientMessage(

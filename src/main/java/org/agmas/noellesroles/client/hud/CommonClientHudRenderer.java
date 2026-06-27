@@ -53,6 +53,7 @@ import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponen
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.MessageDetail;
@@ -1578,12 +1579,12 @@ public class CommonClientHudRenderer {
     });
 
     // 苦力怕HUD
-    RoleHudRenderCallback.EVENT.register(ModRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
+    RoleHudRenderCallback.EVENT.register(BounsRoles.CREEPER_ID, (guiGraphics, deltaTracker) -> {
       var client = Minecraft.getInstance();
       if (client == null || client.player == null || SREClient.gameComponent == null) {
         return;
       }
-      if (!SREClient.gameComponent.isRole(client.player, ModRoles.CREEPER)) {
+      if (!SREClient.gameComponent.isRole(client.player, BounsRoles.CREEPER)) {
         return;
       }
 
