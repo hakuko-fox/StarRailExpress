@@ -1043,7 +1043,7 @@ public class RoleShopHandler {
           ShopEntry.Type.TOOL) {
         @Override
         public boolean onBuy(Player player) {
-          var itemStack = Items.WRITTEN_BOOK.getDefaultInstance();
+          var itemStack = ModItems.NEWSPAPER.getDefaultInstance();
           var players = new ArrayList<>(player.level().players());
           var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
           players.removeIf((p) -> {
@@ -1052,19 +1052,23 @@ public class RoleShopHandler {
           Collections.shuffle(players);
           int count = 1;
           var contents = new ArrayList<Filterable<Component>>();
-          {
-            var fstct = Component.translatable("%s\n%s", Component.translatable("item.written_book.role_title"),
-                Component.translatable("item.written_book.role_intro"));
-            var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
-            contents.add(fstcontent);
-          }
+          // {
+          var fstct = Component.translatable("%s\n%s\n", Component.translatable("item.written_book.role_title"),
+              Component.translatable("item.written_book.role_intro"));
+          // var fstcontent = new Filterable<Component>(fstct, Optional.of(fstct));
+          // contents.add(fstcontent);
+          // }
           for (int i = 0; i < count; i++) {
             var p = players.get(i);
+
             var ct = Component.translatable("%s\n%s", Component.translatable("item.written_book.per_role_title", i + 1),
                 Component
                     .translatable("item.written_book.per_role_content",
                         p.getName(),
                         RoleUtils.getRoleOrModifierName(gameWorldComponent.getRole(p))));
+            if (i == 0) {
+              ct = fstct.append(ct);
+            }
             var content = new Filterable<Component>(ct, Optional.of(ct));
             contents.add(content);
             if (p instanceof ServerPlayer sp)
@@ -1074,7 +1078,8 @@ public class RoleShopHandler {
           String title = "Pachuri Knowledge Book";
 
           itemStack.set(DataComponents.WRITTEN_BOOK_CONTENT,
-              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), player.getScoreboardName(), 1, contents, true));
+              new WrittenBookContent(new Filterable<String>(title, Optional.of(title)), player.getScoreboardName(), 1,
+                  contents, true));
           return RoleUtils.insertStackInFreeSlot(player, itemStack);
         }
       });
