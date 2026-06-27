@@ -127,6 +127,9 @@ public class StatusBarHUD {
         // 仅在游戏真正运行时渲染，和体力条一致
         if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
             return;
+        // 自由相机/观战状态下不渲染，和体力条一致
+        if (!SREClient.isPlayerAliveAndInSurvival())
+            return;
 
         int screenWidth = mc.getWindow().getGuiScaledWidth();
         int screenHeight = mc.getWindow().getGuiScaledHeight();

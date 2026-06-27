@@ -35,7 +35,7 @@ public final class MapStatusBarHudRenderer {
             return;
         }
         // 自由相机/观战状态下不渲染，和体力条一致
-        if (SREClient.isPlayerSpectator()) {
+        if (!SREClient.isPlayerAliveAndInSurvival()) {
             return;
         }
         MapStatusBarType type = MapStatusBarClientState.type();
