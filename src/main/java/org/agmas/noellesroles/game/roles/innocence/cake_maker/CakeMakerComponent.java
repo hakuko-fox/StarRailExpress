@@ -328,8 +328,9 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         var mood = SREPlayerMoodComponent.KEY.get(eater);
         mood.setMood(Math.min(1.0F, mood.getMood() + MOOD_RESTORE_PCT / 100.0F));
 
-        // Restore sprint stamina to full
-        ((PlayerStaminaGetter) eater).starrailexpress$setStamina(Float.MAX_VALUE);
+        // Restore sprint stamina to full (capped to player's max sprint time)
+        int maxSprint = SREGameWorldComponent.KEY.get(eater.level()).getRole(eater).getMaxSprintTime(eater);
+        ((PlayerStaminaGetter) eater).starrailexpress$setStamina(maxSprint);
 
         // Fill whichever MapStatusBar is active for the current scene
         MapStatusBarRuntime.addWarmth(eater, STATUS_BAR_MAX);
