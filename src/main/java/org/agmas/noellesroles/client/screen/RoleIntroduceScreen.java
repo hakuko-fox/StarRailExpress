@@ -31,7 +31,6 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.client.screen.RoleIntroduceScreen.IntroductionGameMode;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -505,6 +504,8 @@ public class RoleIntroduceScreen extends Screen {
             case OTHER:
                 // 其它模式：只显示其他模式的物品
                 return isOtherModeItem(path);
+            case FILTER:
+                return false;
             default:
                 return true;
         }

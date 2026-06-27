@@ -24,7 +24,7 @@ import org.agmas.noellesroles.role.touhou.RedHouseRoles;
  * 彩蛋角色类，受到彩蛋刷新概率影响
  */
 public class BounsRoles {
-    public static final String NAMESPACE = "egg";
+    public static final String NAMESPACE = "bouns";
     public static final ResourceLocation LENGXIAO_ID = id("lengxiao");
     public static final ResourceLocation BEST_VIGILANTE_ID = id("best_vigilante");
     public static final ResourceLocation WRITER_ID = id("writer");
