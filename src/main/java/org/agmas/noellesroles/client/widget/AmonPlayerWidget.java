@@ -43,15 +43,15 @@ public class AmonPlayerWidget extends Button {
         if (player == null) return;
 
         AmonPlayerComponent comp = AmonPlayerComponent.KEY.get(player);
-        boolean locked = comp.clientLockedTarget != null
-                && comp.clientLockedTarget.equals(targetPlayer.getProfile().getId());
+        boolean possessed = comp.clientPossessTarget != null
+                && comp.clientPossessTarget.equals(targetPlayer.getProfile().getId());
 
         super.renderWidget(context, mouseX, mouseY, delta);
         context.blitSprite(ShopEntry.Type.WEAPON.getTexture(), this.getX() - 7, this.getY() - 7, 30, 30);
         PlayerFaceRenderer.draw(context, targetPlayer.getSkin().texture(), this.getX(), this.getY(), 16);
 
-        // 当前锁定的待夺舍目标用红框高亮。
-        if (locked) {
+        // 当前附身的目标用红框高亮。
+        if (possessed) {
             context.renderOutline(this.getX() - 1, this.getY() - 1, 18, 18, Color.RED.getRGB());
         }
 

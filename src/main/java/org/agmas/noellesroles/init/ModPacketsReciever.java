@@ -523,7 +523,7 @@ public class ModPacketsReciever {
       }
     });
 
-    // 阿蒙背包选目标包：将点选的成熟宿主锁定为待夺舍目标（进入「操纵」）。校验由 setUsurpTarget 内部处理。
+    // 阿蒙背包点选玩家包：附身到点选的成熟宿主身上（进入附身）。校验由 setPossessTarget 内部处理。
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.AMON_SELECT_TARGET_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
@@ -533,7 +533,7 @@ public class ModPacketsReciever {
           .get(context.player().level());
       if (gameWorldComponent.isRole(context.player(), ModRoles.AMON)) {
         org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY
-            .get(context.player()).setUsurpTarget(payload.player());
+            .get(context.player()).setPossessTarget(payload.player());
       }
     });
 
