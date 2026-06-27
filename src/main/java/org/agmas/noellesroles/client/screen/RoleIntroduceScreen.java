@@ -627,8 +627,8 @@ public class RoleIntroduceScreen extends Screen {
                     textW));
         }
 
-        if (selectedRole instanceof SREAbstractInfoClass flagInfoable) {
-
+        if (selectedRole instanceof SREAbstractInfoClass flagInfoable && !flagInfoable.getFlags().isEmpty()) {
+            detailLines.add(FormattedCharSequence.EMPTY);
             detailLines.addAll(font.split(
                     Component.translatable("screen.roleintroduce.detail.flags")
                             .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD),
