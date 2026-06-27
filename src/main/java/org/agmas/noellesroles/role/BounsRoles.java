@@ -44,7 +44,7 @@ public class BounsRoles {
      * - 标准冲刺时间
      * - 在计分板上显示
      * - 技能：开局自带一个球棒
-     * - 1%概率刷新
+     * - 2% * egg chance 概率刷新
      */
     public static SRERole BASEBALL_PLAYER = TMMRoles.registerRole(new EggRole(
             BASEBALL_PLAYER_ID, // 角色 ID
@@ -81,7 +81,7 @@ public class BounsRoles {
             return ModRoles.PUPPETEER_COLOR.getOrRandomColor();
         }
     }).setComponentKey(ModComponents.CREEPER).setCanBeRandomedByOtherRoles(false).setDefaultMax(1)
-            .setDefaultEnableChance(2500);
+            .setDefaultEnableChance(5000);
     /**
      * 作家角色
      * - 属于乘客阵营 (isInnocent = true)
@@ -159,7 +159,7 @@ public class BounsRoles {
             Integer.MAX_VALUE, // 标准冲刺时间
             true // 不显示计分板
     )).setCanSeeTime(true).setCanSeeCoin(true)
-            .setDefaultMax(1).setDefaultEnableChance(1000).setDefaultEnableNeededPlayerCount(12);
+            .setDefaultMax(1).setDefaultEnableChance(4000).setDefaultEnableNeededPlayerCount(12);
     /**
      * 更好的义警角色
      * - 属于警长阵营 (isInnocent = true, setVigilanteTeam = true)
