@@ -61,6 +61,8 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
     private final List<FogZone> fogZones = new ArrayList<>();
     /** 感染增幅剩余时间（tick），> 0 时亡灵攻击感染翻倍。 */
     public int infectionAmpTicks = 0;
+    /** 亡者召唤符冷却剩余时间（tick）。 */
+    public int summonCharmCooldown = 0;
 
     // ===== 同步给客户端用于 HUD =====
     public int syncedUndeadCount = 0;
@@ -130,6 +132,7 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
         bossBars.clear();
         fogZones.clear();
         infectionAmpTicks = 0;
+        summonCharmCooldown = 0;
         syncedUndeadCount = 0;
         syncedMaxUndead = maxActiveUndead();
         syncedAmpActive = false;
@@ -208,6 +211,33 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
 
     // ==================== 商店效果 ====================
 
+    /**
+     * 亡者召唤符购买入口：受 60 秒冷却与亡灵上限限制。
+     * <p>冷却中或已达上限时拒绝（返回 false，不扣金币）；否则按剩余容量召唤并进入冷却。
+     *
+     * @return 是否成功召唤（true 时商店应扣费）。
+     */
+    public boolean trySummonCharm(int count, int lifetimeTicks) {
+        if (!(player instanceof ServerPlayer sp)) {
+            return false;
+        }
+        if (summonCharmCooldown > 0) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.undead_lord.charm_cooldown",
+                    (summonCharmCooldown + 19) / 20).withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+        int capacity = maxActiveUndead() - ownedUndead.size();
+        if (capacity <= 0) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.undead_lord.charm_full",
+                    maxActiveUndead()).withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+        summonTemporaryUndead(Math.min(count, capacity), lifetimeTicks);
+        summonCharmCooldown = config().undeadLordCharmCooldownSeconds * 20;
+        sync();
+        return true;
+    }
+
     /** 亡者召唤符：在自身周围召唤临时亡灵（无需尸体），每只随机选取一名其他玩家的皮肤外观。 */
     public void summonTemporaryUndead(int count, int lifetimeTicks) {
         if (!(player.level() instanceof ServerLevel serverLevel)) {
@@ -274,6 +304,11 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
                 syncedAmpActive = false;
                 dirty = true;
             }
+        }
+
+        // 亡者召唤符冷却计时
+        if (summonCharmCooldown > 0) {
+            summonCharmCooldown--;
         }
 
         // 清理失效的亡灵引用

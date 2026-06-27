@@ -523,6 +523,20 @@ public class ModPacketsReciever {
       }
     });
 
+    // 阿蒙背包选目标包：将点选的成熟宿主锁定为待夺舍目标（进入「操纵」）。校验由 setUsurpTarget 内部处理。
+    ServerPlayNetworking.registerGlobalReceiver(ModPackets.AMON_SELECT_TARGET_PACKET, (payload, context) -> {
+      if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
+        return;
+      if (payload.player() == null)
+        return;
+      SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+          .get(context.player().level());
+      if (gameWorldComponent.isRole(context.player(), ModRoles.AMON)) {
+        org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY
+            .get(context.player()).setUsurpTarget(payload.player());
+      }
+    });
+
     // 操纵师附身移动输入包：驱动被操控目标移动，或请求结束操控
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ManipulatorControlInputC2SPacket.ID, (payload, context) -> {

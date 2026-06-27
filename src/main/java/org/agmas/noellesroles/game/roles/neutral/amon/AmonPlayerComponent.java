@@ -93,6 +93,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private final Set<UUID> maturedHosts = new HashSet<>();
     /** 当前伪装目标（夺舍后顶替其皮肤+名字）。 */
     private UUID disguiseTarget;
+    /** 「操纵」中通过背包锁定的待夺舍目标（须为成熟宿主）；非空即处于操纵期间，按 G 直接夺舍。 */
+    public UUID lockedTarget;
 
     public int usurpCount;
     public boolean hasUsurped;
@@ -109,6 +111,10 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     // ===== 客户端镜像（仅用于 HUD 显示）=====
     public int clientSeeds;
     public int clientMatured;
+    /** 客户端镜像：成熟宿主 UUID（仅同步给阿蒙本人，供背包选目标界面显示）。 */
+    public final Set<UUID> clientMaturedHosts = new HashSet<>();
+    /** 客户端镜像：当前锁定的待夺舍目标。 */
+    public UUID clientLockedTarget;
 
     public AmonPlayerComponent(Player player) {
         this.player = player;
@@ -126,6 +132,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
+        lockedTarget = null;
         usurpCount = 0;
         hasUsurped = false;
         seedCap = 2;
@@ -134,6 +141,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         reserveLives = 0;
         clientSeeds = 0;
         clientMatured = 0;
+        clientMaturedHosts.clear();
+        clientLockedTarget = null;
         sync();
     }
 
@@ -147,6 +156,7 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
+        lockedTarget = null;
         usurpCount = 0;
         hasUsurped = false;
         seedCap = 2;
@@ -155,6 +165,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         reserveLives = 0;
         clientSeeds = 0;
         clientMatured = 0;
+        clientMaturedHosts.clear();
+        clientLockedTarget = null;
         sync();
     }
 
@@ -165,11 +177,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
         // 角色被中途更换：清理残留状态与伪装。
         if (!game.isRole(amon, ModRoles.AMON)) {
-            if (!seeds.isEmpty() || !maturedHosts.isEmpty() || disguiseTarget != null) {
+            if (!seeds.isEmpty() || !maturedHosts.isEmpty() || disguiseTarget != null || lockedTarget != null) {
                 clearDisguise();
                 seeds.clear();
                 maturedHosts.clear();
                 disguiseTarget = null;
+                lockedTarget = null;
                 sync();
             }
             return;
@@ -218,6 +231,12 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             changed = true;
         }
 
+        // 锁定目标若已不在成熟宿主集合（被他人击杀/离线/已夺舍）则解除锁定。
+        if (lockedTarget != null && !maturedHosts.contains(lockedTarget)) {
+            lockedTarget = null;
+            changed = true;
+        }
+
         if (changed || amon.tickCount % 20 == 0) sync();
     }
 
@@ -248,20 +267,95 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         return true;
     }
 
-    /** 主动夺舍：夺舍最近的成熟宿主。 */
-    public boolean usurpNearestMatured() {
+    /**
+     * 背包选目标：把一名成熟宿主锁定为待夺舍目标，进入「操纵」。
+     * 由 {@code AmonSelectTargetC2SPacket} 服务端接收后调用。
+     */
+    public boolean setUsurpTarget(UUID targetUuid) {
         if (!(player instanceof ServerPlayer amon)) return false;
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
         if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
             return false;
         }
-        UUID host = pickAliveMaturedHost(amon);
-        if (host == null) {
-            amon.displayClientMessage(Component.translatable("message.noellesroles.amon.no_matured_host")
-                    .withStyle(ChatFormatting.RED), true);
+        if (finalePhase) return false;
+        // 只能锁定已成熟、仍存活的宿主。
+        if (targetUuid == null || !maturedHosts.contains(targetUuid)) {
             return false;
         }
-        return usurp(host);
+        Player host = amon.level().getPlayerByUUID(targetUuid);
+        if (host == null || !GameUtils.isPlayerAliveAndSurvival(host)) {
+            maturedHosts.remove(targetUuid);
+            sync();
+            return false;
+        }
+        lockedTarget = targetUuid;
+        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.target_locked", host.getName())
+                .withStyle(ChatFormatting.DARK_PURPLE), true);
+        sync();
+        return true;
+    }
+
+    /** 操纵期间：是否已锁定可夺舍的目标（此时再次按 G 触发夺舍）。 */
+    public boolean hasUsurpTarget() {
+        return lockedTarget != null;
+    }
+
+    /**
+     * 操纵期间按 G：夺舍当前锁定的目标——夺取其全部物品并杀死之（不伪装、不传送）。
+     * 与致命伤「夺舍续命」（{@link #usurp}）不同，此为主动掠夺式击杀。
+     */
+    public boolean usurpLockedTarget() {
+        if (!(player instanceof ServerPlayer amon)) return false;
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
+        if (!game.isRunning() || !game.isRole(amon, ModRoles.AMON) || !GameUtils.isPlayerAliveAndSurvival(amon)) {
+            return false;
+        }
+        UUID targetUuid = lockedTarget;
+        if (targetUuid == null) return false;
+        return usurpLootKill(targetUuid);
+    }
+
+    /** 夺取指定宿主的全部物品并杀死之（主动掠夺式夺舍：不伪装、不传送）。 */
+    private boolean usurpLootKill(UUID hostUuid) {
+        if (!(player instanceof ServerPlayer amon)) return false;
+        if (!(amon.level() instanceof ServerLevel level)) return false;
+        Player hostPlayer = level.getPlayerByUUID(hostUuid);
+        if (!(hostPlayer instanceof ServerPlayer host) || !GameUtils.isPlayerAliveAndSurvival(host)) {
+            seeds.remove(hostUuid);
+            maturedHosts.remove(hostUuid);
+            if (hostUuid.equals(lockedTarget)) lockedTarget = null;
+            amon.displayClientMessage(Component.translatable("message.noellesroles.amon.no_matured_host")
+                    .withStyle(ChatFormatting.RED), true);
+            sync();
+            return false;
+        }
+        // 夺取目标全部物品到阿蒙背包。
+        lootAllItems(amon, host);
+        // 杀死目标（沿用夺舍死因，不生成宿主尸体）。
+        GameUtils.forceKillPlayer(host, false, null, GameConstants.DeathReasons.AMON_USURP);
+
+        usurpCount++;
+        hasUsurped = true;
+        seeds.remove(hostUuid);
+        maturedHosts.remove(hostUuid);
+        lockedTarget = null;
+
+        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.usurp_loot")
+                .withStyle(ChatFormatting.DARK_PURPLE), true);
+        sync();
+        return true;
+    }
+
+    /** 夺取目标背包内的全部物品（移动到阿蒙的空位）。 */
+    private void lootAllItems(ServerPlayer amon, ServerPlayer host) {
+        Inventory inv = host.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack s = inv.getItem(i);
+            if (s.isEmpty()) continue;
+            ItemStack looted = s.copy();
+            inv.setItem(i, ItemStack.EMPTY);
+            RoleUtils.insertStackInFreeSlot(amon, looted);
+        }
     }
 
     /**
@@ -541,9 +635,16 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
 
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        // 仅同步给阿蒙本人（见 shouldSyncWith）：写计数而非宿主 UUID，避免泄露。
+        // 仅同步给阿蒙本人（见 shouldSyncWith）：写计数避免对其他人泄露；
+        // 成熟宿主 UUID 与锁定目标也仅发往阿蒙本人，供其背包选目标界面使用。
         tag.putInt("Seeds", seeds.size());
         tag.putInt("Matured", maturedHosts.size());
+        net.minecraft.nbt.ListTag maturedList = new net.minecraft.nbt.ListTag();
+        for (UUID u : maturedHosts) {
+            maturedList.add(net.minecraft.nbt.StringTag.valueOf(u.toString()));
+        }
+        tag.put("MaturedHosts", maturedList);
+        if (lockedTarget != null) tag.putUUID("Locked", lockedTarget);
         tag.putInt("UsurpCount", usurpCount);
         tag.putBoolean("HasUsurped", hasUsurped);
         tag.putInt("SeedCap", seedCap);
@@ -556,6 +657,15 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
         clientSeeds = tag.getInt("Seeds");
         clientMatured = tag.getInt("Matured");
+        clientMaturedHosts.clear();
+        net.minecraft.nbt.ListTag maturedList = tag.getList("MaturedHosts", net.minecraft.nbt.Tag.TAG_STRING);
+        for (int i = 0; i < maturedList.size(); i++) {
+            try {
+                clientMaturedHosts.add(UUID.fromString(maturedList.getString(i)));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        clientLockedTarget = tag.hasUUID("Locked") ? tag.getUUID("Locked") : null;
         usurpCount = tag.getInt("UsurpCount");
         hasUsurped = tag.getBoolean("HasUsurped");
         seedCap = tag.getInt("SeedCap");

@@ -37,7 +37,7 @@ public abstract class AdventurerDeathImmunityMixin {
         AdventurerPlayerComponent adv = ModComponents.ADVENTURER.get(sp);
         if (adv == null) return;
 
-        if (adv.consumeImmunity(deathReason)) {
+        if (adv.blockEnvironmentalDeath(deathReason)) {
             ci.cancel();
         }
     }

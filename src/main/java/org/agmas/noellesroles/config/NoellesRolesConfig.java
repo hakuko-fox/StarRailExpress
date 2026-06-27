@@ -467,6 +467,8 @@ public class NoellesRolesConfig implements ConfigData {
     public double undeadLordFogInfectPerSecond = 5.0;
     /** Undead Lord - Soul Summon Charm temporary undead lifetime in seconds */
     public int undeadLordCharmLifetimeSeconds = 45;
+    /** Undead Lord - Soul Summon Charm cooldown in seconds */
+    public int undeadLordCharmCooldownSeconds = 60;
     /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled) */
     public int undeadLordAmpSeconds = 60;
     /** Undead Lord - Coins awarded each time infection is successfully injected (bone staff / undead attack); 0 disables */
