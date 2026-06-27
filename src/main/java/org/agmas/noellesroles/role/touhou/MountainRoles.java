@@ -13,6 +13,8 @@ import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -104,6 +106,13 @@ public class MountainRoles {
         @Override
         public List<ShopEntry> getShopEntries() {
             return SHOP;
+        }
+
+        @Override
+        public InteractionResult onDropItem(Player player, ItemStack item) {
+            if (item.is(Items.BUNDLE))
+                return InteractionResult.SUCCESS;
+            return InteractionResult.PASS;
         }
 
     }.setComponentKey(AyayayaPlayerComponent.KEY));
