@@ -2513,7 +2513,7 @@ public class ModRoles {
             false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.KEY))
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setNeutrals(true)
-            .setCanUseInstinct(true).setCanSeeCoin(true);
+            .setCanUseInstinct(true).setCanSeeCoin(true).setDefaultEnableChance(4500);
 
     // ==================== 窃皮者 ====================
     public static SRERole SKINCRAWLER = TMMRoles.registerRole(new NormalRole(
