@@ -1,7 +1,7 @@
 {
   "unknown": "未知",
   "sre.command.permission_denied": "你没有权限做这件事！",
-  "sre.command.not_enabled":"未启用Roster功能。请在配置文件中启用！",
+  "sre.command.not_enabled":"未启用Roster功能。请在配置文件中启用后重启服务器！",
   "sre.general.unknown": "未知",
   "commands.loot.error.execute_fail": "执行失败, 原因:\n %s",
   "commands.loot.success.add_or_degree_chance": "成功为玩家 %s 添加 %s 次抽奖次数. 当前总次数: %s",
