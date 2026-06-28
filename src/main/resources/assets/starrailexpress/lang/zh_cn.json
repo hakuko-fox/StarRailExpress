@@ -1305,6 +1305,8 @@
     "logic.nand": "与非",
     "logic.nor": "或非",
     "logic.or": "或",
+    "gui.sre.pause.join_discord": "加入残月列车官方 Discord",
+    "gui.sre.pause.join_qq": "加入残月列车官方 QQ 群",
     "menu.sre.feedback": "反馈BUG",
     "menu.sre.feedback_train_bug": "反馈列车BUG",
     "menu.sre.join_discord": "加入 Discord",
