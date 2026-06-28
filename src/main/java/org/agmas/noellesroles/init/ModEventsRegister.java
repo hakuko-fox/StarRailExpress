@@ -45,6 +45,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Saddleable;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -764,10 +765,19 @@ public class ModEventsRegister {
     public static List<Item> canThrowItems = new ArrayList<>();
 
     public static void registerEvents() {
-        UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (world.isClientSide || !SREGameWorldComponent.KEY.get(world).isRole(player, ModRoles.CAKE_MAKER)) return InteractionResultHolder.pass(player.getItemInHand(hand));
-            if (ModComponents.CAKE_MAKER.get(player).addIngredient(player)) return InteractionResultHolder.consume(player.getItemInHand(hand));
-            return InteractionResultHolder.pass(player.getItemInHand(hand));
+        // Cake Maker: ingredient input via right-click on smoker interaction entity
+        UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (world.isClientSide) return InteractionResult.PASS;
+            if (CakeMakerComponent.isSmokerInteractionEntity(entity)) {
+                UUID ownerId = CakeMakerComponent.getSmokerOwner(entity);
+                // Only the cake maker who owns the smoker can add ingredients
+                if (ownerId != null && ownerId.equals(player.getUUID())) {
+                    if (ModComponents.CAKE_MAKER.get(player).addIngredient(player, entity)) {
+                        return InteractionResult.SUCCESS;
+                    }
+                }
+            }
+            return InteractionResult.PASS;
         });
         // 吝啬 - 商店购买返还20%金币
         StandardRevolverItem.registerEvents();

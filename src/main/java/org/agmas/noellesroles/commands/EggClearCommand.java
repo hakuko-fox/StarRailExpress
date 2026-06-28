@@ -101,15 +101,19 @@ public class EggClearCommand {
             }
         }
 
+        // 清理蛋糕师烟熏炉方块展示实体和交互实体
+        cleared += org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent
+                .removeSmokerEntitiesInRange(level, origin, range);
+
         final int finalCleared = cleared;
         final int finalRange = (int) range;
         if (finalCleared > 0) {
             source.sendSuccess(() -> Component.literal(
-                    "Cleared " + finalCleared + " cuckoo egg(s) within " + finalRange + " blocks range")
+                    "Cleared " + finalCleared + " cuckoo egg(s) / cake maker smoker(s) within " + finalRange + " blocks range")
                     .withStyle(ChatFormatting.GREEN), true);
         } else {
             source.sendFailure(Component.literal(
-                    "No cuckoo eggs found within " + finalRange + " blocks range")
+                    "No cuckoo eggs or cake maker smokers found within " + finalRange + " blocks range")
                     .withStyle(ChatFormatting.YELLOW));
         }
 

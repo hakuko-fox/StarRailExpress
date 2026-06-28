@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.game.roles.innocence.cake_maker;
 
+import com.mojang.math.Transformation;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
@@ -15,14 +16,22 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.CakeMakerBlockS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.scene.MapStatusBarRuntime;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -30,6 +39,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Cake Maker role component — manages the smoker, cake-baking process, and placed cakes.
@@ -72,6 +82,30 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
     private static final int SUGAR_NEEDED  = 2;
     private static final int MILK_NEEDED   = 3;
 
+    /** Tag applied to cake maker smoker block-display and interaction entities */
+    public static final String SMOKER_ENTITY_TAG = "cake_maker_smoker";
+
+    /** Interaction entity is slightly larger than the smoker block (1.0×1.0) to be easy to click. */
+    private static final double INTERACTION_WIDTH  = 1.2;
+    private static final double INTERACTION_HEIGHT = 1.2;
+
+    /**
+     * Server-side smoker entity registry — maps interaction entity UUID to owner info.
+     * Similar to {@code CuckooEggData}, avoids needing persistent-data on the entity.
+     */
+    public static final class SmokerEntityInfo {
+        public final UUID ownerUuid;
+        public Display.BlockDisplay displayEntity;
+        public Interaction interactionEntity;
+
+        public SmokerEntityInfo(UUID ownerUuid) {
+            this.ownerUuid = ownerUuid;
+        }
+    }
+
+    /** interactionEntity UUID → SmokerEntityInfo */
+    private static final Map<UUID, SmokerEntityInfo> SMOKER_ENTITIES = new ConcurrentHashMap<>();
+
     // ── State ──────────────────────────────────────────────────
     private final Player player;
     public int cooldown;
@@ -84,6 +118,8 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
     public int milk;
     public BlockPos smokerPos;
     public UUID smokerId;
+    /** UUID of the interaction entity for this player's active smoker */
+    public UUID interactionEntityId;
     public final Map<UUID, Cake> cakes = new HashMap<>();
     public final Map<UUID, Integer> eatCooldowns = new HashMap<>();
 
@@ -101,22 +137,23 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
 
     @Override
     public void init() {
-        cooldown    = 0;
-        smokerTicks = 0;
-        smokerIdle  = 0;
-        lockedTicks = 0;
-        stage       = 0;
-        wheat       = 0;
-        sugar       = 0;
-        milk        = 0;
-        smokerPos   = null;
-        smokerId    = null;
+        cooldown           = 0;
+        smokerTicks        = 0;
+        smokerIdle         = 0;
+        lockedTicks        = 0;
+        stage              = 0;
+        wheat              = 0;
+        sugar              = 0;
+        milk               = 0;
+        smokerPos          = null;
+        smokerId           = null;
+        interactionEntityId = null;
     }
 
     @Override
     public void clear() {
-        // Remove the deployed smoker and any placed cakes from all clients so they
-        // don't linger in the world (and into the next round).
+        // Remove the deployed smoker entities and any placed cakes from all clients
+        // so they don't linger in the world (and into the next round).
         removeSmoker();
         for (Map.Entry<UUID, Cake> entry : cakes.entrySet()) {
             Cake cake = entry.getValue();
@@ -176,7 +213,7 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
             if (cooldown % 20 == 0 || cooldown == 0) sync();
         }
 
-        // Idle timeout: 6 seconds without ingredients → smoker disappears.
+        // Idle timeout: 40 seconds without ingredients → smoker disappears.
         // Skips while locked (waiting period between stages) since input is blocked.
         if (smokerId != null && lockedTicks == 0 && smokerIdle > 0) {
             smokerIdle--;
@@ -251,7 +288,7 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
      * Called when the player presses the skill key.
      * <ul>
      *   <li>If holding a cake → place it on the ground.</li>
-     *   <li>If holding a smoker and off cooldown → deploy client-side smoker.</li>
+     *   <li>If holding a smoker and off cooldown → deploy server-side smoker entities.</li>
      * </ul>
      */
     public boolean useSmoker() {
@@ -268,15 +305,51 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         smokerPos   = sp.blockPosition();
         smokerId    = UUID.randomUUID();
         cooldown    = SMOKER_COOLDOWN_TICKS;
-        smokerIdle  = 6 * 20;
+        smokerIdle  = 40 * 20;  // 40 seconds idle timeout
         stage       = 0;
         wheat       = 0;
         sugar       = 0;
         milk        = 0;
         lockedTicks = 0;
 
-        // Smoker is placed but cooking hasn't started — send a long-lived client block
-        broadcast(new CakeMakerBlockS2CPacket(smokerId, smokerPos, false, 0, Integer.MAX_VALUE, false));
+        var level = sp.serverLevel();
+        double x = smokerPos.getX() + 0.5;
+        double y = smokerPos.getY();
+        double z = smokerPos.getZ() + 0.5;
+
+        // 1. Create block display entity (smoker model)
+        var displayEntity = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+        displayEntity.setBlockState(Blocks.SMOKER.defaultBlockState());
+        displayEntity.setPos(x, y, z);
+        displayEntity.setTransformation(new Transformation(
+                new Vector3f(0, 0, 0),
+                new Quaternionf(),
+                new Vector3f(1.0f, 1.0f, 1.0f),
+                new Quaternionf()
+        ));
+        displayEntity.addTag(SMOKER_ENTITY_TAG);
+        level.addFreshEntity(displayEntity);
+
+        // 2. Create interaction entity (slightly larger than the smoker)
+        var interactionEntity = new Interaction(EntityType.INTERACTION, level);
+        interactionEntity.setPos(x, y + INTERACTION_HEIGHT / 2.0, z);
+        // Set bounding box to match the desired interaction area
+        interactionEntity.setBoundingBox(new AABB(
+                x - INTERACTION_WIDTH / 2.0, y,
+                z - INTERACTION_WIDTH / 2.0,
+                x + INTERACTION_WIDTH / 2.0, y + INTERACTION_HEIGHT,
+                z + INTERACTION_WIDTH / 2.0
+        ));
+        interactionEntity.addTag(SMOKER_ENTITY_TAG);
+        level.addFreshEntity(interactionEntity);
+
+        // 3. Register in the server-side map
+        SmokerEntityInfo info = new SmokerEntityInfo(sp.getUUID());
+        info.displayEntity = displayEntity;
+        info.interactionEntity = interactionEntity;
+        SMOKER_ENTITIES.put(interactionEntity.getUUID(), info);
+        interactionEntityId = interactionEntity.getUUID();
+
         sync(); // 立即同步冷却到客户端
         sp.displayClientMessage(
                 Component.translatable("message.noellesroles.cake_maker.smoker_ready")
@@ -352,12 +425,16 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
     /**
      * Try to add the player's held item as an ingredient into the active smoker.
      * Only accepts items in the correct order for the current baking stage.
+     * @param clickedEntity the interaction entity the player right-clicked (must match this smoker's entity)
      */
-    public boolean addIngredient(Player p) {
+    public boolean addIngredient(Player p, Entity clickedEntity) {
         if (smokerId == null
                 || smokerPos == null
-                || p.distanceToSqr(smokerPos.getCenter()) > INTERACT_DISTANCE_SQ
                 || lockedTicks > 0) {
+            return false;
+        }
+        // Verify the clicked entity is our interaction entity
+        if (interactionEntityId == null || !interactionEntityId.equals(clickedEntity.getUUID())) {
             return false;
         }
 
@@ -406,7 +483,7 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         }
 
         held.shrink(1);
-        smokerIdle = 6 * 20; // 投入食材重置6秒空闲计时
+        smokerIdle = 40 * 20; // 投入食材重置40秒空闲计时
         return true;
     }
 
@@ -416,10 +493,9 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
         lockedTicks = ticks;
     }
 
-    /** Start the 40-second cooking timer and sync the client block. */
+    /** Start the 40-second cooking timer. */
     private void startCookingTimer() {
         smokerTicks = SMOKER_DURATION_TICKS;
-        broadcast(new CakeMakerBlockS2CPacket(smokerId, smokerPos, false, 0, smokerTicks, false));
     }
 
     // ── Sync ───────────────────────────────────────────────────
@@ -441,12 +517,83 @@ public final class CakeMakerComponent implements RoleComponent, ServerTickingCom
 
     private void removeSmoker() {
         if (smokerId != null) {
-            broadcast(new CakeMakerBlockS2CPacket(smokerId, smokerPos, false, 0, 0, true));
+            // Remove entities from the server-side registry and world
+            if (interactionEntityId != null) {
+                SmokerEntityInfo info = SMOKER_ENTITIES.remove(interactionEntityId);
+                if (info != null) {
+                    if (info.displayEntity != null && !info.displayEntity.isRemoved()) {
+                        info.displayEntity.remove(Entity.RemovalReason.DISCARDED);
+                    }
+                    if (info.interactionEntity != null && !info.interactionEntity.isRemoved()) {
+                        info.interactionEntity.remove(Entity.RemovalReason.DISCARDED);
+                    }
+                }
+            }
         }
-        smokerId    = null;
-        smokerPos   = null;
-        smokerIdle  = 0;
-        smokerTicks = 0;
+        smokerId            = null;
+        smokerPos           = null;
+        interactionEntityId = null;
+        smokerIdle          = 0;
+        smokerTicks         = 0;
+    }
+
+    // ── Static helpers for external access ───────────────────
+
+    /** Check if an interaction entity belongs to a cake maker smoker. */
+    public static boolean isSmokerInteractionEntity(Entity entity) {
+        return entity instanceof Interaction
+                && SMOKER_ENTITIES.containsKey(entity.getUUID());
+    }
+
+    /** Get the owner UUID for a smoker interaction entity. */
+    public static UUID getSmokerOwner(Entity entity) {
+        SmokerEntityInfo info = SMOKER_ENTITIES.get(entity.getUUID());
+        return info != null ? info.ownerUuid : null;
+    }
+
+    /** Remove all cake maker smoker entities in the world (for game end / eggclear). */
+    public static void removeAllSmokerEntities(net.minecraft.server.level.ServerLevel level) {
+        for (var entry : SMOKER_ENTITIES.entrySet()) {
+            SmokerEntityInfo info = entry.getValue();
+            if (info.displayEntity != null && !info.displayEntity.isRemoved()) {
+                info.displayEntity.remove(Entity.RemovalReason.DISCARDED);
+            }
+            if (info.interactionEntity != null && !info.interactionEntity.isRemoved()) {
+                info.interactionEntity.remove(Entity.RemovalReason.DISCARDED);
+            }
+        }
+        SMOKER_ENTITIES.clear();
+    }
+
+    /** Remove smoker entities within a range around a position. */
+    public static int removeSmokerEntitiesInRange(net.minecraft.server.level.ServerLevel level, BlockPos origin, float range) {
+        int cleared = 0;
+        double rangeSq = range * range;
+        var iter = SMOKER_ENTITIES.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            SmokerEntityInfo info = entry.getValue();
+            if (info.displayEntity != null && !info.displayEntity.isRemoved()) {
+                double dx = info.displayEntity.getX() - origin.getX();
+                double dy = info.displayEntity.getY() - origin.getY();
+                double dz = info.displayEntity.getZ() - origin.getZ();
+                if (dx * dx + dy * dy + dz * dz <= rangeSq) {
+                    info.displayEntity.remove(Entity.RemovalReason.DISCARDED);
+                    if (info.interactionEntity != null && !info.interactionEntity.isRemoved()) {
+                        info.interactionEntity.remove(Entity.RemovalReason.DISCARDED);
+                    }
+                    iter.remove();
+                    cleared++;
+                }
+            } else {
+                // Clean up stale entries
+                if (info.interactionEntity != null && !info.interactionEntity.isRemoved()) {
+                    info.interactionEntity.remove(Entity.RemovalReason.DISCARDED);
+                }
+                iter.remove();
+            }
+        }
+        return cleared;
     }
 
     private void broadcast(CakeMakerBlockS2CPacket packet) {
