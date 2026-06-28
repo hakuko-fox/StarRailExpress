@@ -76,12 +76,13 @@ public class SREPlushBlock extends PlushBlock {
       return ret;
    }
 
-    public ResourceLocation getCustomSound(Level world, BlockPos pos, BlockState state) {
-        if (world.getBlockEntity(pos) instanceof SREPlushBlockEntity sp) {
-            return sp.getClickSound();
-        }
-        return null;
-    }
+   public ResourceLocation getCustomSound(Level world, BlockPos pos, BlockState state) {
+      if (world.getBlockEntity(pos) instanceof SREPlushBlockEntity sp) {
+         return sp.getClickSound();
+      }
+      return null;
+   }
+
    @Override
    public RenderShape getRenderShape(BlockState state) {
       return super.getRenderShape(state);
@@ -149,7 +150,6 @@ public class SREPlushBlock extends PlushBlock {
    }
 
    @Override
-
    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
       return SHAPE;
    }
