@@ -4,7 +4,6 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGameEnd;
-import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
 import net.exmo.sre.subtitle.SubtitleCommand;
 import net.exmo.sre.subtitle.SubtitleS2CPayload;
 import net.minecraft.ChatFormatting;
