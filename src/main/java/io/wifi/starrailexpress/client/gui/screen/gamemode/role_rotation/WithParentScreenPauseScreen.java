@@ -35,8 +35,8 @@ public class WithParentScreenPauseScreen extends PauseScreen {
     public static final Component ROLE_INTRODUCTION = Component.translatable("menu.sre.role_introduction");
     public static final Component FEEDBACK_TRAIN = Component.translatable("menu.sre.feedback_train_bug");
     public static final Component SETTINGS = Component.translatable("menu.sre.train_options");
-    public static final Component JOIN_QQ = Component.translatable("menu.sre.join_qq");
-    public static final Component JOIN_DISCORD = Component.translatable("menu.sre.join_discord");
+    public static final Component JOIN_QQ = Component.translatable("gui.sre.pause.join_qq");
+    public static final Component JOIN_DISCORD = Component.translatable("gui.sre.pause.join_discord");
     public static final Component JOIN_FEEDBACK = Component.translatable("menu.sre.feedback");
 
     public WithParentScreenPauseScreen(boolean bl) {

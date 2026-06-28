@@ -10,7 +10,6 @@ import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
-import io.wifi.starrailexpress.roster.RoleRosterManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,6 +35,7 @@ import java.util.Random;
 
 public class InitModRolesMax {
     public static Random random = new Random();
+
     public static void autoChangePresent() {
         // 自动切换预设：游戏结束时应用配置的预设，使其在下一局游戏中生效
         io.wifi.starrailexpress.SREConfig sreConfig = io.wifi.starrailexpress.SREConfig.instance();
@@ -291,9 +291,6 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.SHADOW_FALCON, ModRoles.PILOT);
     }
 
-    public static void applyRosterMax(){
-        RoleRosterManager.getState();
-    }
     public static void registerDynamic() {
         GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
             // 从配置应用角色概率
@@ -579,7 +576,7 @@ public class InitModRolesMax {
         }
 
         /// SPLIT_PERSONALITY
-        if (Harpymodloader.MODIFIER_MAX.get(SEModifiers.SPLIT_PERSONALITY.identifier) > 0) {
+        if (Harpymodloader.MODIFIER_MAX.get(SEModifiers.SPLIT_PERSONALITY.identifier()) > 0) {
         } else {
             if (players >= config.minPlayerForLovers
                     && random.nextInt(0, 100) <= config.chanceOfModifierLovers) {
