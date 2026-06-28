@@ -39,10 +39,9 @@ public class MeatballHud {
             int screenWidth = client.getWindow().getGuiScaledWidth();
             int screenHeight = client.getWindow().getGuiScaledHeight();
 
-            int centerX = screenWidth / 2;
-            int statusY = screenHeight / 2 + 30;
             int bountyY = screenHeight - 25;
             int bountyX = screenWidth - 120;
+            int statusY = bountyY - 12;
 
             Player player = client.player;
             var gameWorld = SREGameWorldComponent.KEY.get(player.level());
@@ -53,7 +52,7 @@ public class MeatballHud {
             if (nearDoor) {
                 Component nearDoorText = Component.translatable("hud.noellesroles.meatball.near_door")
                         .withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
-                guiGraphics.drawCenteredString(client.font, nearDoorText, centerX, statusY, 0xFF5555);
+                guiGraphics.drawString(client.font, nearDoorText, bountyX, statusY, 0xFF5555);
             } else {
                 // 检测独处状态
                 boolean isAlone = isAlone(player, gameWorld);
@@ -61,11 +60,11 @@ public class MeatballHud {
                 if (isAlone) {
                     Component aloneText = Component.translatable("hud.noellesroles.meatball.alone")
                             .withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
-                    guiGraphics.drawCenteredString(client.font, aloneText, centerX, statusY, 0xFF5555);
+                    guiGraphics.drawString(client.font, aloneText, bountyX, statusY, 0xFF5555);
                 } else {
                     Component notAloneText = Component.translatable("hud.noellesroles.meatball.not_alone")
                             .withStyle(ChatFormatting.GREEN);
-                    guiGraphics.drawCenteredString(client.font, notAloneText, centerX, statusY, 0x55FF55);
+                    guiGraphics.drawString(client.font, notAloneText, bountyX, statusY, 0x55FF55);
                 }
             }
 
