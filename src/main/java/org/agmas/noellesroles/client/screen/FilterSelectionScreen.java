@@ -342,6 +342,11 @@ public class FilterSelectionScreen extends Screen {
     public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
         this.renderBlurredBackground(f);
         this.renderMenuBackground(guiGraphics);
+
+        int panelX = (width - panelWidth) / 2;
+        int panelY = 30;
+        drawPanelBg(guiGraphics, panelX, panelY, panelWidth, panelHeight);
+
     }
 
     @Override
@@ -351,8 +356,6 @@ public class FilterSelectionScreen extends Screen {
         int panelX = (width - panelWidth) / 2;
         int panelY = 30;
         super.render(g, mouseX, mouseY, partialTick);
-
-        drawPanelBg(g, panelX, panelY, panelWidth, panelHeight);
 
         int titleY = panelY + 4;
         g.drawCenteredString(font, titleComp, width / 2, titleY, 0xF5E8C8);
