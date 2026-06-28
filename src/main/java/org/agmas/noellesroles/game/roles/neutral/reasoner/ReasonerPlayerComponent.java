@@ -42,14 +42,12 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
 
     public static final int GIVE_COMPASS_TICKS = 2 * 60 * 20;
     public static final int KILLER_QUESTION_TICKS = 3 * 60 * 20;
-    public static final int ANSWER_COOLDOWN_TICKS = 35 * 20;
 
     private final Player player;
 
     private boolean compassGiven;
     private boolean killerQuestionPushed;
     private int activeTicks;
-    private int cooldownTicks;
     private UUID roleQuestionTarget;
     private UUID bodyQuestionTarget;
     private UUID taskQuestionTarget;
@@ -73,7 +71,6 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         compassGiven = false;
         killerQuestionPushed = false;
         activeTicks = 0;
-        cooldownTicks = 0;
         roleQuestionTarget = null;
         bodyQuestionTarget = null;
         taskQuestionTarget = null;
@@ -106,10 +103,6 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
 
         activeTicks++;
         boolean changed = false;
-        if (cooldownTicks > 0) {
-            cooldownTicks--;
-            changed = cooldownTicks % 20 == 0 || cooldownTicks == 0;
-        }
 
         if (!compassGiven && getElapsedTicks() >= GIVE_COMPASS_TICKS && player instanceof ServerPlayer serverPlayer) {
             giveCompass(serverPlayer);
@@ -120,7 +113,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         // 游戏经过 3 分钟后，主动推送杀手数量问题显现
         if (!killerQuestionPushed && !solvedKillerCount && getElapsedTicks() >= KILLER_QUESTION_TICKS && player instanceof ServerPlayer serverPlayer) {
             killerQuestionPushed = true;
-            ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer.serverLevel()));
+            ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer));
             changed = true;
         }
 
@@ -129,7 +122,8 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         }
     }
 
-    private ReasonerOpenScreenS2CPacket buildOpenScreenPacket(ServerLevel level) {
+    private ReasonerOpenScreenS2CPacket buildOpenScreenPacket(ServerPlayer serverPlayer) {
+        ServerLevel level = serverPlayer.serverLevel();
         refreshQuestionTargets(level);
         String roleTargetName = getRoleQuestionTargetName(level);
         String bodyTargetName = getBodyQuestionTargetName(level);
@@ -140,6 +134,8 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         // 目标为 "?" 时当作已解答隐藏该问题，避免死局（组件实际 solved 状态不变）
         boolean hideRole = solvedRole || "?".equals(roleTargetName);
         boolean hideTask = solvedTask || "?".equals(taskTargetName);
+        // 原版物品冷却状态
+        int vanillaCooldown = serverPlayer.getCooldowns().isOnCooldown(ModItems.REASONER_COMPASS) ? 1 : 0;
         return new ReasonerOpenScreenS2CPacket(
                 roleTargetName,
                 bodyTargetName,
@@ -154,16 +150,14 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
                 solvedDeathReason,
                 hideTask,
                 solvedKillerCount,
-                cooldownTicks);
+                vanillaCooldown);
     }
 
     public void openCompass(ServerPlayer serverPlayer) {
-        if (cooldownTicks > 0) {
-            serverPlayer.displayClientMessage(Component.translatable(
-                    "message.noellesroles.reasoner.cooldown", secondsLeft(cooldownTicks)).withStyle(ChatFormatting.YELLOW), true);
+        if (serverPlayer.getCooldowns().isOnCooldown(ModItems.REASONER_COMPASS)) {
             return;
         }
-        ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer.serverLevel()));
+        ServerPlayNetworking.send(serverPlayer, buildOpenScreenPacket(serverPlayer));
     }
 
     public void submitAnswer(ServerPlayer serverPlayer, int question, String answer) {
@@ -171,9 +165,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         if (!game.isRole(serverPlayer, ModRoles.REASONER) || !game.isRunning() || !GameUtils.isPlayerAliveAndSurvival(serverPlayer)) {
             return;
         }
-        if (cooldownTicks > 0) {
-            serverPlayer.displayClientMessage(Component.translatable(
-                    "message.noellesroles.reasoner.cooldown", secondsLeft(cooldownTicks)).withStyle(ChatFormatting.YELLOW), true);
+        if (serverPlayer.getCooldowns().isOnCooldown(ModItems.REASONER_COMPASS)) {
             return;
         }
         if (isSolved(question)) {
@@ -192,15 +184,16 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
             default -> false;
         };
 
-        cooldownTicks = ANSWER_COOLDOWN_TICKS;
+        // 原版物品冷却系统
+        serverPlayer.getCooldowns().addCooldown(ModItems.REASONER_COMPASS, 35 * 20);
         if (correct) {
             markSolved(question);
             serverPlayer.displayClientMessage(Component.translatable(
-                    "message.noellesroles.reasoner.correct", solvedCount(), 5).withStyle(ChatFormatting.GREEN), false);
+                    "message.noellesroles.reasoner.correct", solvedCount(), 5).withStyle(ChatFormatting.GREEN), true);
             checkWin(serverPlayer.serverLevel());
         } else {
             serverPlayer.displayClientMessage(Component.translatable(
-                    "message.noellesroles.reasoner.incorrect").withStyle(ChatFormatting.RED), false);
+                    "message.noellesroles.reasoner.incorrect").withStyle(ChatFormatting.RED), true);
         }
         sync();
     }
@@ -260,17 +253,32 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
             taskQuestionTarget = pickRandomUuid(taskTargets);
         }
 
-        // 二次校验：目标离线时尝试重新选择，无符合条件则隐藏问题
-        if (roleQuestionTarget != null
+        // 二次校验：目标离线时持续尝试重新选择，直到找到有效目标或池子耗尽
+        while (roleQuestionTarget != null
                 && level.getServer().getPlayerList().getPlayer(roleQuestionTarget) == null) {
-            roleQuestionTarget = pickRandomUuid(alive);
+            UUID next = pickRandomUuid(alive);
+            if (next == null || next.equals(roleQuestionTarget)) {
+                roleQuestionTarget = null;
+                break;
+            }
+            roleQuestionTarget = next;
         }
-        if (bodyQuestionTarget != null && "?".equals(getBodyQuestionTargetName(level))) {
-            bodyQuestionTarget = pickRandomBodyOwner(bodies);
+        while (bodyQuestionTarget != null && "?".equals(getBodyQuestionTargetName(level))) {
+            UUID next = pickRandomBodyOwner(bodies);
+            if (next == null || next.equals(bodyQuestionTarget)) {
+                bodyQuestionTarget = null;
+                break;
+            }
+            bodyQuestionTarget = next;
         }
-        if (taskQuestionTarget != null
+        while (taskQuestionTarget != null
                 && level.getServer().getPlayerList().getPlayer(taskQuestionTarget) == null) {
-            taskQuestionTarget = pickRandomUuid(taskTargets);
+            UUID next = pickRandomUuid(taskTargets);
+            if (next == null || next.equals(taskQuestionTarget)) {
+                taskQuestionTarget = null;
+                break;
+            }
+            taskQuestionTarget = next;
         }
     }
 
@@ -292,7 +300,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     private boolean checkDeathReasonAnswer(ServerLevel level, String answer) {
-        if (solvedDeathReason || deadPlayerCount(level) <= 3 || bodyQuestionTarget == null) {
+        if (solvedDeathReason || deadPlayerCount(level) < 3 || bodyQuestionTarget == null) {
             return false;
         }
         PlayerBodyEntity body = findBody(level, bodyQuestionTarget);
@@ -476,15 +484,10 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         }
     }
 
-    private int secondsLeft(int ticks) {
-        return Math.max(1, (ticks + 19) / 20);
-    }
-
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("compassGiven", compassGiven);
         tag.putInt("activeTicks", activeTicks);
-        tag.putInt("cooldownTicks", cooldownTicks);
         tag.putBoolean("solvedAliveCount", solvedAliveCount);
         tag.putBoolean("solvedRole", solvedRole);
         tag.putBoolean("solvedDeathReason", solvedDeathReason);
@@ -496,7 +499,6 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         compassGiven = tag.getBoolean("compassGiven");
         activeTicks = tag.getInt("activeTicks");
-        cooldownTicks = tag.getInt("cooldownTicks");
         solvedAliveCount = tag.getBoolean("solvedAliveCount");
         solvedRole = tag.getBoolean("solvedRole");
         solvedDeathReason = tag.getBoolean("solvedDeathReason");
