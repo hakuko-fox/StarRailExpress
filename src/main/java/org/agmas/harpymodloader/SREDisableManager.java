@@ -18,12 +18,12 @@ public class SREDisableManager {
             boolean onewayflag = false;
 
             if (!RoleManageConfigUI.RoleEnableStatus.isEmpty()) {
-                if (!RoleManageConfigUI.RoleEnableStatus.getOrDefault(role, true))
+                if (!RoleManageConfigUI.RoleEnableStatus.getOrDefault(role.identifier().toString(), true))
                     return true;
                 onewayflag = true;
             }
             if (ClientRoleRosterCache.snapshot().enabled) {
-                if (ClientRoleRosterCache.snapshot().roleCounts.getOrDefault(role.identifier().toString(), 1) <= 0) {
+                if (ClientRoleRosterCache.snapshot().roleCounts.getOrDefault(role.identifier().toString(), 0) <= 0) {
                     return true;
                 }
                 onewayflag = true;
@@ -44,13 +44,13 @@ public class SREDisableManager {
         if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)) {
             boolean onewayflag = false;
             if (!RoleManageConfigUI.ModifierEnableStatus.isEmpty()) {
-                if (!RoleManageConfigUI.ModifierEnableStatus.getOrDefault(modifier, true))
+                if (!RoleManageConfigUI.ModifierEnableStatus.getOrDefault(modifier.identifier().toString(), true))
                     return true;
                 onewayflag = true;
             }
             if (ClientRoleRosterCache.snapshot().enabled) {
                 if (ClientRoleRosterCache.snapshot().modifierCounts.getOrDefault(modifier.identifier().toString(),
-                        1) <= 0) {
+                        0) <= 0) {
                     return true;
                 }
                 onewayflag = true;
@@ -72,7 +72,7 @@ public class SREDisableManager {
             if (!ClientRoleRosterCache.snapshot().enabled)
                 return false;
 
-            if (ClientRoleRosterCache.snapshot().roleCounts.getOrDefault(role.identifier().toString(), 1) <= 0) {
+            if (ClientRoleRosterCache.snapshot().roleCounts.getOrDefault(role.identifier().toString(), 0) <= 0) {
                 return true;
             }
             return false;
@@ -88,7 +88,7 @@ public class SREDisableManager {
                 return false;
 
             if (ClientRoleRosterCache.snapshot().modifierCounts.getOrDefault(modifier.identifier().toString(),
-                    1) <= 0) {
+                    0) <= 0) {
                 return true;
             }
             return false;
@@ -101,7 +101,7 @@ public class SREDisableManager {
     public static boolean isRoleConfigDisabled(SRERole role) {
         if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)) {
             if (!RoleManageConfigUI.RoleEnableStatus.isEmpty()) {
-                if (!RoleManageConfigUI.RoleEnableStatus.getOrDefault(role, true))
+                if (!RoleManageConfigUI.RoleEnableStatus.getOrDefault(role.identifier().toString(), true))
                     return true;
                 return false;
             }
@@ -115,7 +115,7 @@ public class SREDisableManager {
     public static boolean isModifierConfigDisabled(SREModifier modifier) {
         if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)) {
             if (!RoleManageConfigUI.ModifierEnableStatus.isEmpty()) {
-                if (!RoleManageConfigUI.ModifierEnableStatus.getOrDefault(modifier, true))
+                if (!RoleManageConfigUI.ModifierEnableStatus.getOrDefault(modifier.identifier().toString(), true))
                     return true;
                 return false;
             }
