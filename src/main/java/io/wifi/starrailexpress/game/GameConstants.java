@@ -216,6 +216,7 @@ public class GameConstants {
         public static ResourceLocation THIRST = SRE.id("thirst");
         public static ResourceLocation STARVED = SRE.id("starved");
         public static ResourceLocation GOD_COMMAND = Noellesroles.id("god_command");
+        public static ResourceLocation GENERAL_ATTACK = SRE.id("general_attack");
     }
 
     public static int getFurandoruSafeLine() {
