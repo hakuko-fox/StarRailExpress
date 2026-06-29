@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.core.NonNullList;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -1053,6 +1054,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setOtherModeRole(boolean isOtherModeRole) {
         this.isOtherModeRole = isOtherModeRole;
+        this.addFlag("other_gamemode");
         return this;
     }
 
@@ -1145,17 +1147,38 @@ public abstract class SRERole extends SREAbstractInfoClass {
     @Override
     public Component getName() {
         String translationKey = "announcement.star.role." + this.identifier().getPath();
+        if (!Language.getInstance().has(translationKey)) {
+            return Component.translatable("info.screen.role.name.error", translationKey);
+        }
         return Component.translatable(translationKey);
     }
 
     @Override
     public Component getDescription() {
         var id = this.identifier();
-        return Component.translatable("info.screen.roleid." + id.getPath());
+        String path = "info.screen.roleid." + id.getPath();
+        if (!Language.getInstance().has(path)) {
+            return Component.translatable("info.screen.role.desc.error", path);
+        }
+        return Component.translatable(path);
+    }
+
+    @Override
+    public boolean hasSimpleDescription() {
+        var id = this.identifier();
+        String path = "info.screen.roleid." + id.getPath() + ".simple";
+        if (!Language.getInstance().has(path)) {
+            return false;
+        }
+        return true;
     }
 
     public Component getSimpleDescription() {
         var id = this.identifier();
-        return Component.translatable("info.screen.roleid." + id.getPath() + ".simple");
+        String path = "info.screen.roleid." + id.getPath() + ".simple";
+        if (!Language.getInstance().has(path)) {
+            return getDescription();
+        }
+        return Component.translatable(path);
     }
 }
