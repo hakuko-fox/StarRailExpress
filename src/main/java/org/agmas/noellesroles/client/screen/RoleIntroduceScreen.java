@@ -66,7 +66,7 @@ public class RoleIntroduceScreen extends Screen {
         }
     }
 
-    private IntroductionGameMode currentMode = IntroductionGameMode.FILTER;
+    private IntroductionGameMode currentMode = IntroductionGameMode.ALL;
     public static HashSet<String> filterFlags = new HashSet<>();
 
     private int modeButtonX = 0;
@@ -254,7 +254,7 @@ public class RoleIntroduceScreen extends Screen {
         for (IntroductionGameMode mode : IntroductionGameMode.values())
             totalModeW += font.width(Component.translatable(mode.labelKey)) + 20 + MODE_GAP;
         totalModeW -= MODE_GAP;
-        modeButtonX = panelX + PANEL_PAD * 2;
+        modeButtonX = panelX + PANEL_PAD;
         modeButtonY = panelY + panelH - 24;
         modeButtonW = totalModeW;
     }
@@ -470,7 +470,7 @@ public class RoleIntroduceScreen extends Screen {
     private class InitialItemTab implements DetailTab {
         private int scrollOffset = 0;
         private int maxScroll = 0;
-        private final List<ItemStack> entries = new ArrayList<>();
+        private final ArrayList<ItemStack> entries = new ArrayList<>();
         private List<FormattedCharSequence> headerLines = new ArrayList<>(); // 顶部描述文本
         private static final int ITEM_H = 32;
         private static final int TEXT_GAP = 2;
@@ -500,7 +500,7 @@ public class RoleIntroduceScreen extends Screen {
             int currentY = y - scrollOffset;
 
             // 绘制顶部描述文本（支持多行自动换行）
-            if (!headerLines.isEmpty()) {
+            if (headerLines != null && !headerLines.isEmpty()) {
                 for (FormattedCharSequence line : headerLines) {
                     if (currentY + LINE_H > y && currentY < y + h) {
                         g.drawString(font, line, x + 4, currentY, 0xFFAAAAAA);
@@ -586,7 +586,7 @@ public class RoleIntroduceScreen extends Screen {
         public void onSwitchTo() {
             scrollOffset = 0;
             entries.clear();
-            headerLines.clear();
+            headerLines = null;
             if (selectedRole instanceof SRERole role) {
                 entries.addAll(getInitialItems(role));
                 // 准备顶部描述文本（从语言文件读取，支持自动换行）
@@ -892,7 +892,7 @@ public class RoleIntroduceScreen extends Screen {
             g.drawCenteredString(font,
                     Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY), width / 2,
                     height - 24, 0x9E8B6E);
-        renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 4);
+        renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 2);
     }
 
     private void renderModeButtons(GuiGraphics g, int mouseX, int mouseY, int maxWidth) {
