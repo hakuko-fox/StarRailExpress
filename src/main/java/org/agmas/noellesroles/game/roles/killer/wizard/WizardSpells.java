@@ -125,10 +125,11 @@ public final class WizardSpells {
             }
         }
 
-        explode(level, detonation, radius, sp);
+        explode(level, detonation, radius, sp, comp);
     }
 
-    private static void explode(ServerLevel level, Vec3 center, double radius, ServerPlayer caster) {
+    private static void explode(ServerLevel level, Vec3 center, double radius, ServerPlayer caster,
+                                WizardPlayerComponent comp) {
         // “九环”火焰环 + 大爆炸粒子
         for (int ring = 1; ring <= 9; ring++) {
             double r = radius * ring / 9.0;

@@ -121,7 +121,7 @@ public class InventoryIntroductionRenderer {
                   int x = 10;
                   int y = (int) ((float) context.guiHeight()) - 10;
                   for (var modifier : modifiers) {
-                     Component modifierNameComponent = modifier.getName()
+                     Component modifierNameComponent = modifier.getName().copy()
                            .withStyle(ChatFormatting.BOLD);
                      Component modifierInfoComponent = RoleUtils.getModifierDescription(modifier);
                      PoseStack poseStack = context.pose();
