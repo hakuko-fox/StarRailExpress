@@ -386,7 +386,7 @@ public class RoleUtils extends MCItemsUtils {
         } else if (role instanceof SREModifier m) {
             return getModifierName(m);
         } else {
-            return Component.literal("Unknown");
+            return Component.translatable("Unknown");
         }
     }
 
@@ -408,7 +408,7 @@ public class RoleUtils extends MCItemsUtils {
         } else if (role instanceof SREModifier m) {
             return getModifierSimpleDescription(m);
         } else {
-            return Component.literal("Unknown");
+            return Component.translatable("Unknown");
         }
     }
 
@@ -442,7 +442,7 @@ public class RoleUtils extends MCItemsUtils {
         } else if (role instanceof SREModifier m) {
             return getModifierDescription(m);
         } else {
-            return Component.literal("Unknown");
+            return Component.translatable("Unknown");
         }
     }
 

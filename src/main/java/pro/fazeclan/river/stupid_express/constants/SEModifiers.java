@@ -1,6 +1,5 @@
 package pro.fazeclan.river.stupid_express.constants;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.rules.*;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.TMMRoles;

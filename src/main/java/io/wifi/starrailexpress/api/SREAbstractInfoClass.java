@@ -31,6 +31,7 @@ public abstract class SREAbstractInfoClass {
 
     public abstract Component getName();
     public abstract Component getDescription();
+    public abstract boolean hasSimpleDescription();
     public abstract Component getSimpleDescription();
     public abstract ResourceLocation identifier();
     public abstract int color();

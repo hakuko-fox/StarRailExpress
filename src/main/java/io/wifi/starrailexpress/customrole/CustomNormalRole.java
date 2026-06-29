@@ -94,4 +94,9 @@ public class CustomNormalRole extends ExtraEffectRole {
     public Component getSimpleDescription() {
         return getDescription();
     }
+
+    
+    public boolean hasSimpleDescription() {
+        return true;
+    }
 }
