@@ -591,7 +591,7 @@ public class RoleIntroduceScreen extends Screen {
                 entries.addAll(getInitialItems(role));
                 // 准备顶部描述文本（从语言文件读取，支持自动换行）
                 Component desc = Component.translatable("screen.roleintroduce.detail.initial_item.tip");
-                int textW = rightW - PANEL_PAD * 2 - SCROLL_W - 4; // 使用内容区宽度
+                int textW = rightW - PANEL_PAD * 2 - SCROLL_W - 4; // 使用内容区宽度1
                 headerLines = font.split(desc, textW);
             }
         }
