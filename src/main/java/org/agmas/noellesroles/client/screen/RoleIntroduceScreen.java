@@ -48,7 +48,7 @@ import java.util.function.Predicate;
 public class RoleIntroduceScreen extends Screen {
 
     // ══════════════════════════════════════════════════════════════════
-    // 【模式切换】三种模式：谋杀、修机、其它
+    // 【模式切换】四种模式：全部、谋杀、修机、过滤
     // ══════════════════════════════════════════════════════════════════
     public enum IntroductionGameMode {
         ALL("screen.roleintroduce.mode.all", 0xFF55DD88),
@@ -73,7 +73,6 @@ public class RoleIntroduceScreen extends Screen {
     private int modeButtonW = 0;
     private int modeButtonH = 16;
     private static final int MODE_GAP = 4;
-    private static final int BOTTOM_BUTTON_AREA_H = 24;
 
     Screen parent = null;
 
@@ -407,7 +406,7 @@ public class RoleIntroduceScreen extends Screen {
         void onSwitchTo();
 
         default int getColor() {
-            return 0xFFAA88CC; // 原来的默认色
+            return 0xFFAA88CC;
         }
 
         default void onSwitchAway() {
@@ -434,8 +433,6 @@ public class RoleIntroduceScreen extends Screen {
                 lineY += getLineHeight();
             }
             g.disableScissor();
-            // 滚动条交给外部统一绘制
-
             int totalH = getContentHeight();
             maxScroll = Math.max(0, totalH - h);
         }
@@ -474,7 +471,7 @@ public class RoleIntroduceScreen extends Screen {
         private int maxScroll = 0;
         private final List<ShopEntry> entries = new ArrayList<>();
         private static final int ITEM_H = 32;
-        private static final int TEXT_GAP = 2; // 新增：名称与价格之间的额外像素间距
+        private static final int TEXT_GAP = 2;
 
         @Override
         public Component getTitle() {
@@ -517,7 +514,6 @@ public class RoleIntroduceScreen extends Screen {
             g.disableScissor();
             int totalH = entries.size() * ITEM_H;
             maxScroll = Math.max(0, totalH - h);
-            // 工具提示
             if (mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h) {
                 int relY = mouseY - y + scrollOffset;
                 int idx = relY / ITEM_H;
@@ -564,9 +560,6 @@ public class RoleIntroduceScreen extends Screen {
         }
     }
 
-    /**
-     * 构建标签页
-     */
     private void buildTabs() {
         tabs.clear();
         if (selectedRole == null)
@@ -591,21 +584,17 @@ public class RoleIntroduceScreen extends Screen {
                 int dashCount = textW / Math.max(1, font.width("─"));
                 String dashes = "─".repeat(dashCount);
 
-                // 1. 名称（加粗，带职业颜色）
-                Component nameComp = RoleUtils.getRoleOrModifierOrItemNameWithColor(selectedRole)
-                        .copy().withStyle(ChatFormatting.BOLD);
-
-                // 2. ID（灰色小字）
+                // 名称 + ID
+                Component nameComp = RoleUtils.getRoleOrModifierOrItemNameWithColor(selectedRole).copy()
+                        .withStyle(ChatFormatting.BOLD);
                 Component idComp = Component.translatable("screen.roleintroduce.detail.name.id.warp",
                         RoleUtils.getRoleOrModifierOrItemIdentifier(selectedRole).toString())
                         .withStyle(ChatFormatting.DARK_GRAY);
-                Component nameWithIdComp = Component.translatable("%s%s", nameComp, idComp);
-                lines.addAll(font.split(nameWithIdComp, textW));
+                lines.addAll(font.split(Component.literal("").append(nameComp).append(idComp), textW));
 
-                // 3. 目标（Goals）
+                // 目标
+                lines.add(FormattedCharSequence.EMPTY);
                 if (selectedRole instanceof SRERole role) {
-                    lines.add(FormattedCharSequence.EMPTY);
-
                     var rid = role.identifier();
                     String path = rid.getPath();
                     String goalKey = "announcement.star.goals." + path;
@@ -613,45 +602,33 @@ public class RoleIntroduceScreen extends Screen {
                         var cd = io.wifi.starrailexpress.customrole.CustomRoleLoader.getCustomRoleData(path);
                         if (cd == null)
                             cd = io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.getSyncedRole(path);
-                        if (cd != null && !cd.goals.isEmpty()) {
+                        if (cd != null && !cd.goals.isEmpty())
                             lines.addAll(font.split(Component.literal(cd.goals), textW));
-                        } else {
+                        else
                             lines.addAll(font.split(Component.translatable(goalKey), textW));
-                        }
                     } else {
                         lines.addAll(font.split(Component.translatable(goalKey), textW));
                     }
                 } else if (selectedRole instanceof Item it) {
-                    lines.add(FormattedCharSequence.EMPTY);
                     lines.addAll(font.split(it.getDescription(), textW));
                 } else if (selectedRole instanceof SREModifier mod) {
-                    lines.add(FormattedCharSequence.EMPTY);
                     lines.addAll(font.split(mod.getName(), textW));
                 }
 
-                // 4. 简介文本（可选，从语言文件读取）
-                if (selectedRole instanceof SREAbstractInfoClass role) {
-                    if (role.hasSimpleDescription()) {
-                        lines.add(FormattedCharSequence.EMPTY);
-                        lines.addAll(font.split(Component.translatable("screen.roleintroduce.detail.flags")
-                                .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), textW));
-
-                        // 5. 分割线
-                        lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
-
-                        lines.addAll(font.split(role.getSimpleDescription(), textW));
-                    }
+                // 简介文本（可选，语言文件键 star.intro.<type>.<path>）
+                String introKey = "star.intro." + getObjectType(selectedRole) + "." + getObjectPath(selectedRole);
+                if (Language.getInstance().has(introKey)) {
+                    lines.add(FormattedCharSequence.EMPTY);
+                    lines.addAll(font.split(Component.translatable(introKey).withStyle(ChatFormatting.WHITE), textW));
                 }
-                // 6. 标签（Flags）
+
+                // 分割线 + 标签
                 if (selectedRole instanceof SREAbstractInfoClass flagInfoable && !flagInfoable.getFlags().isEmpty()) {
                     lines.add(FormattedCharSequence.EMPTY);
-
+                    lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
+                    lines.add(FormattedCharSequence.EMPTY);
                     lines.addAll(font.split(Component.translatable("screen.roleintroduce.detail.flags")
                             .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), textW));
-
-                    // 5. 分割线
-                    lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
-
                     lines.addAll(font.split(getFlagText(flagInfoable).withStyle(ChatFormatting.WHITE), textW));
                 }
             }
@@ -705,7 +682,7 @@ public class RoleIntroduceScreen extends Screen {
             }
         });
 
-        // Settings
+        // 设置
         tabs.add(new AbstractTextTab() {
             @Override
             public Component getTitle() {
@@ -724,10 +701,9 @@ public class RoleIntroduceScreen extends Screen {
             protected void prepareLines() {
                 lines.clear();
                 String settingsKey = "star.settings." + getObjectType(selectedRole) + "." + getObjectPath(selectedRole);
-                {
+                if (Language.getInstance().has(settingsKey))
                     lines.addAll(
                             font.split(Component.translatable(settingsKey).withStyle(ChatFormatting.WHITE), textW));
-                }
             }
         });
     }
@@ -777,12 +753,12 @@ public class RoleIntroduceScreen extends Screen {
         g.drawCenteredString(font, this.title, width / 2, 8, 0xF5E8C8);
         if (isSmall)
             g.drawCenteredString(font,
-                    Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY),
-                    width / 2, height - 15, 0x9E8B6E);
+                    Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY), width / 2,
+                    height - 15, 0x9E8B6E);
         else
             g.drawCenteredString(font,
-                    Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY),
-                    width / 2, height - 24, 0x9E8B6E);
+                    Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY), width / 2,
+                    height - 24, 0x9E8B6E);
         renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 4);
     }
 
@@ -845,7 +821,6 @@ public class RoleIntroduceScreen extends Screen {
             g.drawCenteredString(font, truncated, curX + btnW / 2, curY + (btnH - font.lineHeight) / 2, textColor);
             curX += btnW + MODE_GAP;
         }
-        // 焦点边框已移除
     }
 
     private void renderLeftPanel(GuiGraphics g, int mouseX, int mouseY) {
@@ -880,7 +855,6 @@ public class RoleIntroduceScreen extends Screen {
         int totalH = Math.max(1, filteredItems.size() * (CARD_H + CARD_SPACING));
         renderVScrollbar(g, sbX, areaY, areaH, listScrollOffset, maxListScroll, totalH, mouseX, mouseY,
                 isDraggingListScroll);
-        // 焦点边框已移除
     }
 
     private void renderCategoryBar(GuiGraphics g, int mouseX, int mouseY, int barX, int barY, int barW, int barH) {
@@ -925,7 +899,6 @@ public class RoleIntroduceScreen extends Screen {
             g.drawCenteredString(font, truncated, curX + tw / 2, barY + (barH - font.lineHeight) / 2, textColor);
             curX += tw + TAB_GAP;
         }
-        // 焦点边框已移除
     }
 
     private void renderListCard(GuiGraphics g, Object role, int x, int y, int w, int h, float hover, boolean selected) {
@@ -1034,6 +1007,19 @@ public class RoleIntroduceScreen extends Screen {
         return Component.literal("");
     }
 
+    // 辅助方法：获取标签栏和内容区域坐标
+    private int getDetailTabBarTop() {
+        return panelY + BANNER_H + PANEL_PAD;
+    }
+
+    private int getRightContentTop() {
+        return getDetailTabBarTop() + DETAIL_TAB_H + 6; // 6px 上边距
+    }
+
+    private int getRightContentHeight() {
+        return panelY + panelH - getRightContentTop() - PANEL_PAD;
+    }
+
     private void renderRightPanel(GuiGraphics g, int mouseX, int mouseY) {
         drawPanelBg(g, rightX, panelY, rightW, panelH);
 
@@ -1081,12 +1067,12 @@ public class RoleIntroduceScreen extends Screen {
                     bIconX + bIconSize + 5 + nameWidth + 5, panelY + (BANNER_H - font.lineHeight) / 2, 0xFFFFFF, true);
         }
 
-        int tabBarY = panelY + BANNER_H;
         int tabBarH = DETAIL_TAB_H;
-        int contentY = tabBarY + tabBarH + 6 + PANEL_PAD; // 增加上边距
-        int contentH = panelY + panelH - contentY - PANEL_PAD;
+        int contentY = getRightContentTop();
+        int contentH = getRightContentHeight();
 
-        renderDetailTabBar(g, mouseX, mouseY, rightX + PANEL_PAD, tabBarY + PANEL_PAD, rightW - PANEL_PAD * 2, tabBarH);
+        renderDetailTabBar(g, mouseX, mouseY, rightX + PANEL_PAD, getDetailTabBarTop(), rightW - PANEL_PAD * 2,
+                tabBarH);
 
         if (activeTabIndex >= 0 && activeTabIndex < tabs.size()) {
             DetailTab currentTab = tabs.get(activeTabIndex);
@@ -1096,7 +1082,6 @@ public class RoleIntroduceScreen extends Screen {
             renderVScrollbar(g, sbX, contentY, contentH, currentTab.getScrollOffset(), currentTab.getMaxScroll(),
                     currentTab.getContentHeight(), mouseX, mouseY, isDraggingDetailScroll);
         }
-        // 焦点边框已移除
     }
 
     private void renderDetailTabBar(GuiGraphics g, int mouseX, int mouseY, int barX, int barY, int barW, int barH) {
@@ -1122,7 +1107,6 @@ public class RoleIntroduceScreen extends Screen {
             if (active) {
                 g.fillGradient(curX, barY, curX + btnW, barY + barH,
                         blendColors(0xFF1A1008, baseColor, 0.55f), blendColors(0xFF120A04, baseColor, 0.30f));
-
                 g.renderOutline(curX, barY, btnW, barH, 0x558B6914);
                 g.fill(curX, barY + barH - 2, curX + btnW, barY + barH, baseColor);
             } else if (hovered) {
@@ -1133,6 +1117,10 @@ public class RoleIntroduceScreen extends Screen {
                 g.fill(curX, barY, curX + btnW, barY + barH, 0x551A1008);
                 g.renderOutline(curX, barY, btnW, barH, 0x558B6914);
             }
+            // 1px 左右边框
+            g.fill(curX, barY, curX + 1, barY + barH, 0x55FFFFFF);
+            g.fill(curX + btnW - 1, barY, curX + btnW, barY + barH, 0x55FFFFFF);
+
             String title = tab.getTitle().getString();
             String truncated = font.plainSubstrByWidth(title, btnW - 4);
             int textColor = active ? 0xFFFFF4DC : hovered ? 0xFFFFF4DC : 0xFF9E8B6E;
@@ -1196,7 +1184,7 @@ public class RoleIntroduceScreen extends Screen {
             }
 
             if (selectedRole != null) {
-                int tabBarY = panelY + BANNER_H, tabBarH = DETAIL_TAB_H;
+                int tabBarY = getDetailTabBarTop(), tabBarH = DETAIL_TAB_H;
                 int tabXStart = rightX + PANEL_PAD, tabWTotal = rightW - PANEL_PAD * 2;
                 int visibleCount = (int) tabs.stream().filter(DetailTab::isVisible).count();
                 if (visibleCount > 0) {
@@ -1251,8 +1239,8 @@ public class RoleIntroduceScreen extends Screen {
             }
 
             if (selectedRole != null && activeTabIndex >= 0 && activeTabIndex < tabs.size()) {
-                int contentY = panelY + BANNER_H + DETAIL_TAB_H + 4;
-                int contentH = panelY + panelH - contentY - PANEL_PAD;
+                int contentY = getRightContentTop();
+                int contentH = getRightContentHeight();
                 int rsbX = rightX + rightW - PANEL_PAD - SCROLL_W;
                 if (isInRect((int) mx, (int) my, rsbX, contentY, SCROLL_W, contentH)
                         && tabs.get(activeTabIndex).getMaxScroll() > 0) {
@@ -1318,8 +1306,8 @@ public class RoleIntroduceScreen extends Screen {
         if (isDraggingDetailScroll && !tabs.isEmpty() && activeTabIndex < tabs.size()) {
             DetailTab tab = tabs.get(activeTabIndex);
             if (tab.getMaxScroll() > 0) {
-                int contentY = panelY + BANNER_H + DETAIL_TAB_H + 4;
-                int contentH = panelY + panelH - contentY - PANEL_PAD;
+                int contentY = getRightContentTop();
+                int contentH = getRightContentHeight();
                 int totalH = tab.getContentHeight();
                 int thumbH = Math.max(SCROLL_MIN_THUMB, (int) (contentH * Math.min(1f, (float) contentH / totalH)));
                 double trackH = contentH - thumbH;
@@ -1348,8 +1336,8 @@ public class RoleIntroduceScreen extends Screen {
         if (mx >= rightX && mx < rightX + rightW && my >= panelY && my < panelY + panelH) {
             if (!tabs.isEmpty() && activeTabIndex < tabs.size()) {
                 DetailTab tab = tabs.get(activeTabIndex);
-                int contentY = panelY + BANNER_H + DETAIL_TAB_H + 4;
-                int contentH = panelY + panelH - contentY - PANEL_PAD;
+                int contentY = getRightContentTop();
+                int contentH = getRightContentHeight();
                 int areaX = rightX + PANEL_PAD;
                 int areaW = rightW - PANEL_PAD * 2 - SCROLL_W - 2;
                 if (mx >= areaX && mx < areaX + areaW && my >= contentY && my < contentY + contentH) {
@@ -1366,7 +1354,6 @@ public class RoleIntroduceScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // Tab 键切换焦点区域
         if (keyCode == 258) {
             boolean forward = !hasShiftDown();
             FocusArea[] vals = FocusArea.values();
@@ -1376,7 +1363,6 @@ public class RoleIntroduceScreen extends Screen {
             return true;
         }
 
-        // Page Up / Page Down 切换右侧标签页（仅可见）
         if (keyCode == 266 || keyCode == 267) {
             List<Integer> visibleIndices = new ArrayList<>();
             for (int i = 0; i < tabs.size(); i++)
@@ -1399,7 +1385,6 @@ public class RoleIntroduceScreen extends Screen {
             return true;
         }
 
-        // 上下箭头：列表选择
         if (keyCode == 265 || keyCode == 264) {
             int idx = filteredItems.indexOf(selectedRole) + (keyCode == 265 ? -1 : 1);
             idx = Mth.clamp(idx, 0, filteredItems.size() - 1);
@@ -1416,10 +1401,9 @@ public class RoleIntroduceScreen extends Screen {
             return true;
         }
 
-        // 左右箭头
         if (keyCode == 263 || keyCode == 262) {
             if (currentFocusArea == FocusArea.SEARCH) {
-                // 留给搜索框
+                // let EditBox handle
             } else if (currentFocusArea == FocusArea.MODE_BUTTONS) {
                 int currentModeIndex = currentMode.ordinal();
                 int delta = keyCode == 263 ? -1 : 1;
