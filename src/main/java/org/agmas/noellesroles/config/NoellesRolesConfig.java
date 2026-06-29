@@ -408,7 +408,7 @@ public class NoellesRolesConfig implements ConfigData {
     /** Wizard - Max players a single fire arrow can pierce */
     public int wizardFireArrowMaxPierce = 2;
     /** Wizard - Fire arrow hits required on one target before delayed death */
-    public int wizardFireArrowHitsToKill = 2;
+    public int wizardFireArrowHitsToKill = 3;
     /** Wizard - Fire arrow delayed death seconds after enough hits */
     public int wizardFireArrowDeathDelaySeconds = 3;
     /** Wizard - Fire arrow (staff projectile) cooldown in seconds between shots */

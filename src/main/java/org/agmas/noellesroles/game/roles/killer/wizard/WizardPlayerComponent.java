@@ -378,7 +378,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             explosionArmed = false;
             sync();
             WizardSpells.castNineRingFireball(this, sp);
-            sp.getCooldowns().addCooldown(ModItems.WIZARD_STAFF, 20);
         } else {
             if (sp.getCooldowns().isOnCooldown(ModItems.WIZARD_STAFF)) {
                 return;
@@ -388,8 +387,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
                         SoundSource.PLAYERS, 0.8f, 1.2f);
             }
             WizardSpells.castFireArrow(this, sp);
-            int cooldown = (int) Math.round(config().wizardFireArrowCooldownSeconds * 20);
-            sp.getCooldowns().addCooldown(ModItems.WIZARD_STAFF, cooldown);
         }
     }
 
