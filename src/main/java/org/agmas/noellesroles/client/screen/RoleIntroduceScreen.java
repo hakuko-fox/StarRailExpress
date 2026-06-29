@@ -1,5 +1,32 @@
 package org.agmas.noellesroles.client.screen;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+
+import org.agmas.harpymodloader.SREDisableManager;
+import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.init.RoleInitialItems;
+import org.agmas.noellesroles.utils.RoleUtils;
+import org.joml.Matrix4f;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+
+import io.wifi.mixins.client.GuiGraphicsAccessor;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SREAbstractInfoClass;
@@ -15,6 +42,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
@@ -30,23 +58,29 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
-import org.agmas.harpymodloader.SREDisableManager;
-import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modifiers.HMLModifiers;
-import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.init.RoleInitialItems;
-import org.agmas.noellesroles.utils.RoleUtils;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
-
 public class RoleIntroduceScreen extends Screen {
+    /**
+     * 绘制带四个角颜色的矩形（双线性插值，实现任意二维渐变）
+     */
+    /**
+     * 绘制一个二维渐变矩形（每个角独立颜色），使用原版渲染管道保证透明度正确。
+     */
+    private void fillGradient2D(GuiGraphics guiGraphics,
+            int x1, int y1, int x2, int y2,
+            int colorTL, int colorTR, int colorBL, int colorBR) {
+        VertexConsumer consumer = guiGraphics.bufferSource().getBuffer(RenderType.gui());
+        Matrix4f matrix = guiGraphics.pose().last().pose();
+        int z = 0; // 深度值，通常为 0
+
+        // 顶点顺序：左上 → 左下 → 右下 → 右上（与原版 fillGradient 一致）
+        consumer.addVertex(matrix, (float) x1, (float) y1, (float) z).setColor(colorTL);
+        consumer.addVertex(matrix, (float) x1, (float) y2, (float) z).setColor(colorBL);
+        consumer.addVertex(matrix, (float) x2, (float) y2, (float) z).setColor(colorBR);
+        consumer.addVertex(matrix, (float) x2, (float) y1, (float) z).setColor(colorTR);
+
+        // 立即刷新缓冲区，确保绘制
+        guiGraphics.flush();
+    }
 
     // ══════════════════════════════════════════════════════════════════
     // 【模式切换】四种模式：全部、谋杀、修机、过滤
@@ -71,7 +105,7 @@ public class RoleIntroduceScreen extends Screen {
 
     private int modeButtonX = 0;
     private int modeButtonY = 0;
-    private int modeButtonW = 0;
+    public int modeButtonW = 0;
     private int modeButtonH = 16;
     private static final int MODE_GAP = 4;
 
@@ -407,7 +441,7 @@ public class RoleIntroduceScreen extends Screen {
         void onSwitchTo();
 
         default int getColor() {
-            return 0xFFAA88CC;
+            return 0xFFDDDDDD;
         }
 
         default void onSwitchAway() {
@@ -746,20 +780,22 @@ public class RoleIntroduceScreen extends Screen {
                     lines.addAll(font.split(mod.getName(), textW));
                 }
 
-                // 简介文本（可选，语言文件键 star.intro.<type>.<path>）
-                String introKey = "star.intro." + getObjectType(selectedRole) + "." + getObjectPath(selectedRole);
-                if (Language.getInstance().has(introKey)) {
+                // 分割线 + 标签
+                if (selectedRole instanceof SREAbstractInfoClass flagInfoable) {
                     lines.add(FormattedCharSequence.EMPTY);
-                    lines.addAll(font.split(Component.translatable(introKey).withStyle(ChatFormatting.WHITE), textW));
+                    lines.addAll(font.split(Component.translatable("screen.roleintroduce.detail.simple_description")
+                            .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), textW));
+                    lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
+                    lines.addAll(font.split(flagInfoable.getSimpleDescription().copy().withStyle(ChatFormatting.WHITE),
+                            textW));
                 }
 
                 // 分割线 + 标签
                 if (selectedRole instanceof SREAbstractInfoClass flagInfoable && !flagInfoable.getFlags().isEmpty()) {
                     lines.add(FormattedCharSequence.EMPTY);
-                    lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
-                    lines.add(FormattedCharSequence.EMPTY);
                     lines.addAll(font.split(Component.translatable("screen.roleintroduce.detail.flags")
                             .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD), textW));
+                    lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
                     lines.addAll(font.split(getFlagText(flagInfoable).withStyle(ChatFormatting.WHITE), textW));
                 }
             }
@@ -895,62 +931,99 @@ public class RoleIntroduceScreen extends Screen {
         renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 2);
     }
 
+    private boolean isSmallUI() {
+        return leftW <= 150;
+    }
+
+    // 可重写此方法来定制哪些模式在小 UI 下隐藏
+    protected boolean shouldHideModeButton(IntroductionGameMode mode) {
+        return isSmallUI() && (mode == IntroductionGameMode.REPAIR || mode == IntroductionGameMode.MURDER);
+    }
+
     private void renderModeButtons(GuiGraphics g, int mouseX, int mouseY, int maxWidth) {
         IntroductionGameMode[] modes = IntroductionGameMode.values();
         int n = modes.length;
         if (n == 0)
             return;
 
-        int[] naturalW = new int[n];
-        int totalNaturalWidth = 0;
+        // 1. 确定哪些按钮可见
+        boolean[] visible = new boolean[n];
+        int visibleCount = 0;
         for (int i = 0; i < n; i++) {
-            naturalW[i] = font.width(Component.translatable(modes[i].labelKey)) + 20;
-            totalNaturalWidth += naturalW[i];
+            visible[i] = !shouldHideModeButton(modes[i]);
+            if (visible[i])
+                visibleCount++;
         }
-        int totalGap = MODE_GAP * (n - 1);
-        int totalNaturalWithGap = totalNaturalWidth + totalGap;
+        if (visibleCount == 0)
+            return;
+
+        // 2. 计算可见按钮的自然宽度
+        int[] naturalW = new int[n];
+        int totalNatural = 0;
+        for (int i = 0; i < n; i++) {
+            if (!visible[i])
+                continue;
+            naturalW[i] = font.width(Component.translatable(modes[i].labelKey)) + 20;
+            totalNatural += naturalW[i];
+        }
+        int totalGap = MODE_GAP * (visibleCount - 1);
+        int totalNaturalWithGap = totalNatural + totalGap;
+
+        // 3. 缩放（若超出可用宽度）
         float scale = 1.0f;
         if (totalNaturalWithGap > maxWidth) {
             int availableForButtons = maxWidth - totalGap;
-            scale = availableForButtons > 0 ? (float) availableForButtons / totalNaturalWidth : 0;
+            scale = availableForButtons > 0 ? (float) availableForButtons / totalNatural : 0;
         }
 
-        int totalScaledWidth = 0;
+        // 4. 计算缩放后每个可见按钮的宽度，并记录实际总宽度（用于居中）
         int[] scaledW = new int[n];
+        int totalScaledWidth = 0;
         for (int i = 0; i < n; i++) {
+            if (!visible[i])
+                continue;
             scaledW[i] = (int) (naturalW[i] * scale);
             totalScaledWidth += scaledW[i];
         }
         totalScaledWidth += totalGap;
 
+        // 5. 居中摆放
         int startX = modeButtonX + (maxWidth - totalScaledWidth) / 2;
-        int curX = startX, curY = modeButtonY, btnH = modeButtonH;
+        int curX = startX;
+        int curY = modeButtonY;
+        int btnH = modeButtonH;
+
         for (int i = 0; i < n; i++) {
+            if (!visible[i]) {
+                modeBtnW[i] = 0; // 标记为不可点击
+                continue;
+            }
             int btnW = scaledW[i];
             modeBtnX[i] = curX;
             modeBtnW[i] = btnW;
 
-            String label = Component.translatable(modes[i].labelKey).getString();
+            IntroductionGameMode mode = modes[i];
+            String label = Component.translatable(mode.labelKey).getString();
             String truncated = font.plainSubstrByWidth(label, Math.max(4, btnW - 8));
-            boolean isActive = (modes[i] == currentMode);
+            boolean isActive = (mode == currentMode);
             boolean isHovered = !isActive && isInRect(mouseX, mouseY, curX, curY, btnW, btnH);
 
             if (isActive) {
                 g.fillGradient(curX, curY, curX + btnW, curY + btnH,
-                        blendColors(0xFF1A1008, modes[i].color, 0.55f), blendColors(0xFF120A04, modes[i].color, 0.30f));
-                g.fill(curX, curY + btnH - 2, curX + btnW, curY + btnH, modes[i].color);
-                g.fill(curX, curY, curX + 1, curY + btnH, (modes[i].color & 0x00FFFFFF) | 0xAA000000);
-                g.fill(curX + btnW - 1, curY, curX + btnW, curY + btnH, (modes[i].color & 0x00FFFFFF) | 0xAA000000);
+                        blendColors(0xFF1A1008, mode.color, 0.55f), blendColors(0xFF120A04, mode.color, 0.30f));
+                g.fill(curX, curY + btnH - 2, curX + btnW, curY + btnH, mode.color);
+                g.fill(curX, curY, curX + 1, curY + btnH, (mode.color & 0x00FFFFFF) | 0xAA000000);
+                g.fill(curX + btnW - 1, curY, curX + btnW, curY + btnH, (mode.color & 0x00FFFFFF) | 0xAA000000);
             } else if (isHovered) {
                 g.fillGradient(curX, curY, curX + btnW, curY + btnH,
-                        blendColors(0xFF1A1008, modes[i].color, 0.25f), blendColors(0xFF120A04, modes[i].color, 0.12f));
-                g.renderOutline(curX, curY, btnW, btnH, (modes[i].color & 0x00FFFFFF) | 0x44000000);
+                        blendColors(0xFF1A1008, mode.color, 0.25f), blendColors(0xFF120A04, mode.color, 0.12f));
+                g.renderOutline(curX, curY, btnW, btnH, (mode.color & 0x00FFFFFF) | 0x44000000);
             } else {
                 g.fill(curX, curY, curX + btnW, curY + btnH, 0x551A1008);
                 g.renderOutline(curX, curY, btnW, btnH, 0x558B6914);
             }
 
-            int textColor = isActive ? (modes[i].color | 0xFF000000) : isHovered ? 0xFFFFF4DC : 0xFF9E8B6E;
+            int textColor = isActive ? (mode.color | 0xFF000000) : isHovered ? 0xFFFFF4DC : 0xFF9E8B6E;
             g.drawCenteredString(font, truncated, curX + btnW / 2, curY + (btnH - font.lineHeight) / 2, textColor);
             curX += btnW + MODE_GAP;
         }
@@ -1164,10 +1237,27 @@ public class RoleIntroduceScreen extends Screen {
         }
 
         int rawColor = RoleUtils.getRoleOrModifierColor(selectedRole);
+        // 左半：保持不变
         g.fillGradient(rightX + 1, panelY + 1, rightX + rightW / 2, panelY + BANNER_H,
                 (rawColor & 0x00FFFFFF) | 0xCC000000, (rawColor & 0x00FFFFFF) | 0x44000000);
-        g.fillGradient(rightX + rightW / 2, panelY + 1, rightX + rightW - 1, panelY + BANNER_H,
-                (rawColor & 0x00FFFFFF) | 0x44000000, 0x00000000);
+
+        // 右半：使用二维渐变，水平从左到右渐变为透明，垂直保留层次
+        int centerX = rightX + rightW / 2;
+        int rightEdge = rightX + rightW - 1;
+        int topY = panelY + 1;
+        int bottomY = panelY + BANNER_H;
+
+        int colorTopLeft = (rawColor & 0x00FFFFFF) | 0xCC000000; // 高透明度（顶部）
+        int colorBottomLeft = (rawColor & 0x00FFFFFF) | 0x44000000; // 低透明度（底部）
+        int colorTransparent = 0x00000000; // 完全透明
+
+        fillGradient2D(g,
+                centerX, topY, rightEdge, bottomY,
+                colorTopLeft, // 左上角：与左半顶部一致
+                colorTransparent, // 右上角：透明
+                colorBottomLeft, // 左下角：与左半底部一致
+                colorTransparent // 右下角：透明
+        );
 
         int bIconSize = BANNER_H - 6;
         int bIconX = rightX + PANEL_PAD, bIconY = panelY + 3;
@@ -1424,6 +1514,7 @@ public class RoleIntroduceScreen extends Screen {
         }
     }
 
+    @SuppressWarnings("unused")
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
         if (isDraggingListScroll && maxListScroll > 0) {
