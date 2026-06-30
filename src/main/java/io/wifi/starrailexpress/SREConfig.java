@@ -236,7 +236,7 @@ public class SREConfig implements ConfigData {
     public boolean forensicShowCorpseFacing = true;
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
-    public boolean forensicBloodTrail = true;
+    public boolean forensicBloodTrail = false;
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
     public int forensicBloodTrailSeconds = 40;
