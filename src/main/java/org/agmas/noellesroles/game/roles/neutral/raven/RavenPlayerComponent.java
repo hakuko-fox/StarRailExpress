@@ -303,7 +303,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     public void endHunt(boolean applyCooldown) {
-        if (player instanceof ServerPlayer serverPlayer && isHunting()) {
+        if (player instanceof ServerPlayer serverPlayer && bodyUuid != null) {
             // Clear effects before teleport so the client never sees disguised skin at body
             // pos
             serverPlayer.removeEffect(ModEffects.DISGUISE);
