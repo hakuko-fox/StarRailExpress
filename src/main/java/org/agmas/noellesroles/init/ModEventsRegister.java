@@ -25,6 +25,7 @@ import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
 import io.wifi.starrailexpress.util.SREItemUtils;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
@@ -48,7 +49,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Saddleable;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -126,6 +126,7 @@ import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.MapScanner;
@@ -770,7 +771,8 @@ public class ModEventsRegister {
     public static void registerEvents() {
         // Cake Maker: ingredient input via right-click on smoker interaction entity
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClientSide || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+            if (world.isClientSide || hand != InteractionHand.MAIN_HAND)
+                return InteractionResult.PASS;
             if (CakeMakerComponent.isSmokerInteractionEntity(entity)) {
                 UUID ownerId = CakeMakerComponent.getSmokerOwner(entity);
                 // Only the cake maker who owns the smoker can add ingredients
@@ -801,9 +803,11 @@ public class ModEventsRegister {
             return SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.RAVEN) && raven.isHunting();
         });
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN)) return true;
+            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN))
+                return true;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(killer);
-            if (!raven.isHunting()) return true;
+            if (!raven.isHunting())
+                return true;
             if (!raven.canKill(victim)) {
                 raven.endHunt(true);
                 return false;
@@ -811,12 +815,15 @@ public class ModEventsRegister {
             return true;
         });
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN)) return;
+            if (killer == null || !SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.RAVEN))
+                return;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(killer);
-            if (raven.canKill(victim)) raven.onTargetKilled(victim);
+            if (raven.canKill(victim))
+                raven.onTargetKilled(victim);
         });
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (!SREGameWorldComponent.KEY.get(victim.level()).isRole(victim, ModRoles.RAVEN)) return true;
+            if (!SREGameWorldComponent.KEY.get(victim.level()).isRole(victim, ModRoles.RAVEN))
+                return true;
             RavenPlayerComponent raven = ModComponents.RAVEN.get(victim);
             return !raven.isHunting();
         });
@@ -905,8 +912,11 @@ public class ModEventsRegister {
                         BlockPos checkPos = meatballPos.offset(dx, dy, dz);
                         double dist = Math.sqrt(
                                 (checkPos.getX() + 0.5 - victim.getX()) * (checkPos.getX() + 0.5 - victim.getX()) +
-                                (checkPos.getY() + 0.5 - victim.getY()) * (checkPos.getY() + 0.5 - victim.getY()) +
-                                (checkPos.getZ() + 0.5 - victim.getZ()) * (checkPos.getZ() + 0.5 - victim.getZ()));
+                                        (checkPos.getY() + 0.5 - victim.getY())
+                                                * (checkPos.getY() + 0.5 - victim.getY())
+                                        +
+                                        (checkPos.getZ() + 0.5 - victim.getZ())
+                                                * (checkPos.getZ() + 0.5 - victim.getZ()));
                         if (dist <= doorCheckRange) {
                             if (victim.level().getBlockState(checkPos).getBlock() instanceof SmallDoorBlock) {
                                 if (victim instanceof ServerPlayer sp) {
@@ -1470,8 +1480,8 @@ public class ModEventsRegister {
             SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(victim.level());
             if (gw == null || !gw.isRunning())
                 return;
-            io.wifi.starrailexpress.game.forensic.ForensicCategory cat =
-                    io.wifi.starrailexpress.game.forensic.ForensicCategory.fromDeathReason(deathReason);
+            io.wifi.starrailexpress.game.forensic.ForensicCategory cat = io.wifi.starrailexpress.game.forensic.ForensicCategory
+                    .fromDeathReason(deathReason);
             // 仅常见杀人凶器（刀/枪/球棒）触发流血滴血，其它死因（毒/爆炸/坠落/碾压等）不触发。
             if (cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLADE
                     && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.FIREARM
@@ -1702,6 +1712,18 @@ public class ModEventsRegister {
                                 Component.translatable("message.monitor.killer_killed", victim.getName())
                                         .withStyle(ChatFormatting.AQUA),
                                 true);
+                    }
+                } else if (gameWorldComponent.isRole(p, THMiscRoles.TENSHI)) {
+                    if (p.getCooldowns().isOnCooldown(Items.BARRIER)) {
+                        continue;
+                    } else {
+                        p.getCooldowns().addCooldown(Items.BARRIER, 30 * 20);
+                        if (p instanceof ServerPlayer sp) {
+                            SRENetworkMessageUtils.sendCODSubtitleToPlayerTop(sp,
+                                    Component.translatable("message.tenshi.killer_killed.title")
+                                            .withStyle(ChatFormatting.RED),
+                                    Component.translatable("message.tenshi.killer_killed.subtitle", 30), 40);
+                        }
                     }
                 }
             }
