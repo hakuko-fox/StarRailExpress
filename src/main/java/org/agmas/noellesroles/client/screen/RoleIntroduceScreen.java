@@ -660,8 +660,10 @@ public class RoleIntroduceScreen extends Screen {
                         if (stack != null && !stack.isEmpty()) {
                             List<Component> tooltipLines;
                             try {
+                                TooltipFlag tooltipFlag = minecraft.options.advancedItemTooltips ? TooltipFlag.ADVANCED
+                                        : TooltipFlag.NORMAL;
                                 tooltipLines = stack.getTooltipLines(Item.TooltipContext.EMPTY, minecraft.player,
-                                        TooltipFlag.NORMAL);
+                                        tooltipFlag);
                             } catch (Exception e) {
                                 tooltipLines = List
                                         .of(Component.translatable("screen.roleintroduce.error", e.getMessage()));
@@ -828,8 +830,9 @@ public class RoleIntroduceScreen extends Screen {
                     ItemStack stack = entries.get(idx).stack();
                     List<Component> tooltipLines;
                     try {
-                        tooltipLines = stack.getTooltipLines(Item.TooltipContext.EMPTY, minecraft.player,
-                                TooltipFlag.NORMAL);
+                        TooltipFlag tooltipFlag = minecraft.options.advancedItemTooltips ? TooltipFlag.ADVANCED
+                                : TooltipFlag.NORMAL;
+                        tooltipLines = stack.getTooltipLines(Item.TooltipContext.EMPTY, minecraft.player, tooltipFlag);
                     } catch (Exception e) {
                         tooltipLines = List.of(Component.translatable("screen.roleintroduce.error", e.getMessage()));
                     }
@@ -936,9 +939,12 @@ public class RoleIntroduceScreen extends Screen {
                             .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD), textW));
                     lines.addAll(font.split(Component.literal(dashes).withStyle(ChatFormatting.DARK_GRAY), textW));
                     try {
+
+                        TooltipFlag tooltipFlag = minecraft.options.advancedItemTooltips ? TooltipFlag.ADVANCED
+                                : TooltipFlag.NORMAL;
                         var itemStack = item.getDefaultInstance();
                         var tooltipLines = itemStack.getTooltipLines(Item.TooltipContext.EMPTY, minecraft.player,
-                                TooltipFlag.NORMAL);
+                                tooltipFlag);
                         for (var l : tooltipLines) {
                             lines.addAll(
                                     font.split(l.copy().withStyle(ChatFormatting.WHITE),
@@ -979,7 +985,7 @@ public class RoleIntroduceScreen extends Screen {
             @Override
             protected void prepareLines() {
                 lines.clear();
-                if (selectedRole != null){
+                if (selectedRole != null) {
                     lines.addAll(font.split(RoleUtils.getRoleOrModifierOrItemDescription(selectedRole).copy()
                             .withStyle(ChatFormatting.WHITE), textW));
                 }
