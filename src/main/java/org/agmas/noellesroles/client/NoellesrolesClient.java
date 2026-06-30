@@ -1028,7 +1028,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     });
                 });
 
-        DetectiveListenStepHandler.registerEvents();
+        AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
         // 注册零一五第二枪客户端处理器
         // ClientPlayNetworking.registerGlobalReceiver(

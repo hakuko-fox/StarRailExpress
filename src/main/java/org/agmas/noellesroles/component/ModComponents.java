@@ -18,7 +18,7 @@ import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayer
 import org.agmas.noellesroles.game.roles.innocence.builder.BuilderPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.diviner.DivinerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
@@ -152,9 +152,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "ayayaya"),
       AyayayaPlayerComponent.class);
 
-  public static final ComponentKey<DetectivePlayerComponent> AGENT = ComponentRegistry.getOrCreate(
+  public static final ComponentKey<AgentPlayerComponent> AGENT = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "agent"),
-      DetectivePlayerComponent.class);
+      AgentPlayerComponent.class);
 
   public static final ComponentKey<NoiseMakerPlayerComponent> NOISEMAKER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "noise_maker"),
@@ -536,7 +536,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     // 注册探员组件 - 存储审查技能冷却和目标状态
     registry.beginRegistration(Player.class, AGENT)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(DetectivePlayerComponent::new);
+        .end(AgentPlayerComponent::new);
 
     // 注册斗士组件 - 存储钢筋铁骨技能状态
     registry.beginRegistration(Player.class, FIGHTER)

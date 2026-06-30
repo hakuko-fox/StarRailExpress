@@ -14,7 +14,7 @@ import org.agmas.noellesroles.client.screen.ModScreenHandlers;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.boxer.BoxerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
@@ -319,7 +319,7 @@ public class RicesRoleRhapsody implements ModInitializer {
         // ==================== 探员角色处理 ====================
         if (role.equals(ModRoles.AGENT)) {
             // 重置探员组件
-            DetectivePlayerComponent detectiveComponent = ModComponents.AGENT.get(player);
+            AgentPlayerComponent detectiveComponent = ModComponents.AGENT.get(player);
             detectiveComponent.init();
         }
 

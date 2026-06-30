@@ -13,13 +13,13 @@ public class OtherRolesRegister {
     public static void registerSons() {
     CuckooHud.register();
         VoteHud.register();
-
+        GreatDetectiveHud.register();
         CustomPendingHud.register();
         AdmirerHud.register();
         AvengerHud.register();
         BomberHud.register();
         BoxerHud.register();
-        DetectiveHud.register();
+        AgentHud.register();
         DetectivePassiveHud.register();
         DIOHud.register();
         ExecutionerHud.register();

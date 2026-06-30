@@ -27,7 +27,7 @@ import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
 import org.agmas.noellesroles.game.roles.innocence.awesome_binglus.AwesomePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.detective.DetectivePlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
@@ -613,7 +613,7 @@ public class InstinctRenderer {
             if (!SREClient.gameComponent.isRole(self, ModRoles.AGENT)) {
                 return -1;
             }
-            var awpc = DetectivePlayerComponent.KEY.get(self);
+            var awpc = AgentPlayerComponent.KEY.get(self);
             if (awpc.conspiratorInstinctTime <= 0)
                 return -1;
             return ModRoles.AGENT.color();
