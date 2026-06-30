@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropRevolverWhenDead;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.LeftClickKillable;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.SkinUtils;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,9 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-public class ScarletPerceptionSwordItem extends Item implements LeftClickKillable {
-
-    public static final int COOLDOWN_TIME = 20 * 60;
+public class ScarletPerceptionSwordItem extends Item implements LeftClickKillable, DropRevolverWhenDead {
 
     public ScarletPerceptionSwordItem(Properties properties) {
         super(properties);
@@ -40,7 +40,7 @@ public class ScarletPerceptionSwordItem extends Item implements LeftClickKillabl
             return;
         }
         if (!attacker.isCreative()) {
-            attacker.getCooldowns().addCooldown(this, COOLDOWN_TIME);
+            attacker.getCooldowns().addCooldown(this, GameConstants.getRevolverDefaultTicks());
         }
         GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(this));
     }

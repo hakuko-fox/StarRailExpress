@@ -13,6 +13,8 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.item.StandardRevolverItem;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropRevolverWhenDead;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropWhenDead;
 import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -54,6 +56,7 @@ import net.minecraft.world.entity.Saddleable;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.Item;
@@ -1772,96 +1775,126 @@ public class ModEventsRegister {
         });
 
         WayfarerPlayerComponent.registerEvents();
-        OnPlayerDeath.EVENT.register((playerEntity, reason) -> {
-            ServerPlayNetworking.send((ServerPlayer) playerEntity, new CloseUiPayload());
-            FortunetellerPlayerComponent.KEY.get(playerEntity).init();
-            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(playerEntity.level());
-            if (!RefugeeComponent.KEY.get(playerEntity.level()).isAnyRevivals) {
-                PuppeteerPlayerComponent.KEY.get(playerEntity).clear();
-                if (gameWorldComponent.isRole(playerEntity,
+        OnPlayerDeath.EVENT.register((p, reason) -> {
+            if (!(p instanceof ServerPlayer player))
+                return;
+            /**
+             * 掉落枪 接口：DropRevolverWhenDead
+             */
+            {
+                int dropCount = 1 + MCItemsUtils.clearItem(player, (t) -> {
+                    return t.getItem() instanceof DropRevolverWhenDead || t.is(TMMItemTags.GUNS);
+                });
+                while (dropCount > 0) {
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    dropCount--;
+                }
+            }
+            /**
+             * 自定义掉落 接口：DropWhenDead
+             */
+            {
+                Inventory container = player.getInventory();
+                for (int k = 0; k < container.getContainerSize(); ++k) {
+                    ItemStack itemStack = container.getItem(k);
+                    if (itemStack.getItem() instanceof DropWhenDead dwd) {
+                        var it = dwd.onDrop(player, itemStack);
+                        if (it != null && !it.isEmpty()) {
+                            player.drop(it, false);
+                        }
+                        container.setItem(k, ItemStack.EMPTY);
+                    }
+                }
+            }
+            ServerPlayNetworking.send((ServerPlayer) player, new CloseUiPayload());
+            FortunetellerPlayerComponent.KEY.get(player).init();
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (!RefugeeComponent.KEY.get(player.level()).isAnyRevivals) {
+                PuppeteerPlayerComponent.KEY.get(player).clear();
+                if (gameWorldComponent.isRole(player,
                         ModRoles.INSANE_KILLER)) {
-                    final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(playerEntity);
+                    final var insaneKillerPlayerComponent = InsaneKillerPlayerComponent.KEY.get(player);
                     insaneKillerPlayerComponent.init();
                 }
             }
-            RoleUtils.removeAllEffects(playerEntity);
+            RoleUtils.removeAllEffects(player);
             // 葬仪死亡时清除拖动状态
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.MORTICIAN_BODYMAKER)) {
+            if (gameWorldComponent.isRole(player, ModRoles.MORTICIAN_BODYMAKER)) {
                 var morticianComponent = org.agmas.noellesroles.component.ModComponents.MORTICIAN_BODYMAKER
-                        .get(playerEntity);
+                        .get(player);
                 if (morticianComponent != null && morticianComponent.draggedBodyUuid != null) {
                     morticianComponent.draggedBodyUuid = null;
                     morticianComponent.sync();
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.JOJO)) {
-                int dropCount = 1 + MCItemsUtils.countItem(playerEntity, TMMItemTags.GUNS);
+            if (gameWorldComponent.isRole(player, ModRoles.JOJO)) {
+                int dropCount = 1 + MCItemsUtils.clearItem(player, TMMItemTags.GUNS);
                 while (dropCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     dropCount--;
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.ELF)) {
-                int bowcount = SREItemUtils.clearItem(playerEntity, Items.BOW);
-                int crossbowcount = SREItemUtils.clearItem(playerEntity, Items.CROSSBOW);
+            if (gameWorldComponent.isRole(player, ModRoles.ELF)) {
+                int bowcount = SREItemUtils.clearItem(player, Items.BOW);
+                int crossbowcount = SREItemUtils.clearItem(player, Items.CROSSBOW);
                 int dropCount = bowcount + crossbowcount;
                 while (dropCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     dropCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
-                int nunchuckCount = SREItemUtils.clearItem(playerEntity, TMMItems.NUNCHUCK);
+            if (gameWorldComponent.isRole(player, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
+                int nunchuckCount = SREItemUtils.clearItem(player, TMMItems.NUNCHUCK);
                 while (nunchuckCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     nunchuckCount--;
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.GUARD)) {
-                int batonCount = SREItemUtils.clearItem(playerEntity, org.agmas.noellesroles.init.ModItems.BATON);
+            if (gameWorldComponent.isRole(player, ModRoles.GUARD)) {
+                int batonCount = SREItemUtils.clearItem(player, org.agmas.noellesroles.init.ModItems.BATON);
                 while (batonCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     batonCount--;
                 }
             }
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.SEA_KING)) {
-                if (playerEntity.level() instanceof ServerLevel level) {
+            if (gameWorldComponent.isRole(player, ModRoles.SEA_KING)) {
+                if (player.level() instanceof ServerLevel level) {
                     for (var e : level.getAllEntities()) {
                         if (e instanceof ThrownTrident te)
-                            if (te.getOwner().getUUID().equals(playerEntity.getUUID())) {
-                                playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                            if (te.getOwner().getUUID().equals(player.getUUID())) {
+                                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                                 te.discard();
                             }
                     }
                 }
             }
             {
-                int tridentCount = SREItemUtils.clearItem(playerEntity, net.minecraft.world.item.Items.TRIDENT);
+                int tridentCount = SREItemUtils.clearItem(player, net.minecraft.world.item.Items.TRIDENT);
                 while (tridentCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     tridentCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.WATER_GHOST)) {
-                int tridentCount = SREItemUtils.clearItem(playerEntity, net.minecraft.world.item.Items.TRIDENT);
+            if (gameWorldComponent.isRole(player, ModRoles.WATER_GHOST)) {
+                int tridentCount = SREItemUtils.clearItem(player, net.minecraft.world.item.Items.TRIDENT);
                 while (tridentCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     tridentCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.SWAST)) {
-                int sniperRifleCount = SREItemUtils.clearItem(playerEntity, TMMItems.SNIPER_RIFLE);
+            if (gameWorldComponent.isRole(player, ModRoles.SWAST)) {
+                int sniperRifleCount = SREItemUtils.clearItem(player, TMMItems.SNIPER_RIFLE);
                 while (sniperRifleCount > 0) {
-                    playerEntity.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                    player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                     sniperRifleCount--;
                 }
             }
 
-            if (gameWorldComponent.isRole(playerEntity, ModRoles.BETTER_VIGILANTE)) {
-                final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(playerEntity);
+            if (gameWorldComponent.isRole(player, ModRoles.BETTER_VIGILANTE)) {
+                final var betterVigilantePlayerComponent = BetterVigilantePlayerComponent.KEY.get(player);
                 betterVigilantePlayerComponent.init();
             }
         });

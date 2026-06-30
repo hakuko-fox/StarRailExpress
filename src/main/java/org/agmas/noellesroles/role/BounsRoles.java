@@ -16,6 +16,7 @@ import java.awt.Color;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
+import org.agmas.noellesroles.modifier.BounsModifiers;
 import org.agmas.noellesroles.role.touhou.ForestRoles;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
@@ -201,6 +202,7 @@ public class BounsRoles {
         MountainRoles.init();
         ForestRoles.init();
         THMiscRoles.init();
+        BounsModifiers.init();
         registerEvents();
     }
 

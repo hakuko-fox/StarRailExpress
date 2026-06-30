@@ -22,6 +22,24 @@ public class SREItemProperties {
     }
 
     /**
+     * 死亡时掉落物品
+     */
+    public interface DropWhenDead {
+        /**
+         * 当死亡时调用
+         */
+        public default ItemStack onDrop(ServerPlayer player, ItemStack stack) {
+            return stack;
+        }
+    }
+
+    /**
+     * 死亡时物品掉落左轮手枪
+     */
+    public interface DropRevolverWhenDead {
+    }
+
+    /**
      * 像左轮手枪一样举起来
      */
     public interface HeldLikeRevolver {

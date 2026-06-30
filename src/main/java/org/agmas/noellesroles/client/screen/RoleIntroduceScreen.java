@@ -80,7 +80,7 @@ public class RoleIntroduceScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
     public enum IntroductionGameMode {
         ALL("screen.roleintroduce.mode.all", 0xFF55DD88),
-        CURRENT("screen.roleintroduce.mode.current", 0xFF5655AE),
+        CURRENT("screen.roleintroduce.mode.current", 0xFF56A5AE),
         MURDER("screen.roleintroduce.mode.murder", 0xFFCC2233),
         REPAIR("screen.roleintroduce.mode.repair", 0xFF44AACC),
         FILTER("screen.roleintroduce.mode.flag", 0xFF11AA33);
@@ -266,8 +266,8 @@ public class RoleIntroduceScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        if (currentMode == IntroductionGameMode.CURRENT && SREClient.gameComponent == null
-                || !SREClient.gameComponent.isRunning()) {
+        if (currentMode == IntroductionGameMode.CURRENT && (SREClient.gameComponent == null
+                || !SREClient.gameComponent.isRunning())) {
             currentMode = IntroductionGameMode.ALL;
         }
         computeLayout();
@@ -1092,7 +1092,11 @@ public class RoleIntroduceScreen extends Screen {
         if (filteredItems.isEmpty()) {
             g.drawCenteredString(font,
                     Component.translatable("screen.noellesroles.search.empty").withStyle(ChatFormatting.RED),
-                    leftX + leftW / 2, areaY + areaH / 2, 0xFF5555);
+                    leftX + leftW / 2, areaY + areaH / 2 - font.lineHeight - 2, 0xFF5555);
+
+            g.drawCenteredString(font,
+                    Component.translatable("screen.noellesroles.search.empty.2").withStyle(ChatFormatting.RED),
+                    leftX + leftW / 2, areaY + areaH / 2 + 2, 0xFF5555);
         }
 
         int sbX = leftX + leftW - PANEL_PAD - SCROLL_W;
