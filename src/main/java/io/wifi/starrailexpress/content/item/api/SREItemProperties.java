@@ -61,14 +61,15 @@ public class SREItemProperties {
         }
 
         /**
-         * 服务端玩家攻击玩家时触发
+         * 服务端玩家攻击玩家时触发。
+         * 攻击力度可通过 self.getAttackStrengthScale(0.75F) >= 1f 获取
          * 
          * @param attacker
          * @param target
          * @param mainhandItem
          * @return boolean 是否启用原版逻辑
          */
-        public default boolean onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+        public default boolean onServerAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
             return true;
         }
     }
@@ -78,7 +79,7 @@ public class SREItemProperties {
      */
     public interface LeftClickKillable extends LeftClickHurtable {
         @Override
-        public default boolean onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+        public default boolean onServerAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
             if (GameUtils.isPlayerAliveAndSurvival(attacker) && GameUtils.isPlayerAliveAndSurvival(target)) {
                 GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(mainhandItem));
             }

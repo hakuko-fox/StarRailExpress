@@ -6,6 +6,8 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.SkinUtils;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,11 +36,14 @@ public class ScarletPerceptionSwordItem extends SwordItem implements LeftClickKi
         if (attacker.getCooldowns().isOnCooldown(this)) {
             return InteractionResult.FAIL;
         }
+        if (attacker.getAttackStrengthScale(0.75F) < 1F) {
+            return InteractionResult.FAIL;
+        }
         return InteractionResult.PASS;
     }
 
     @Override
-    public boolean onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+    public boolean onServerAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
         if (!GameUtils.isPlayerAliveAndSurvival(attacker) || !GameUtils.isPlayerAliveAndSurvival(target)) {
             return false;
         }
@@ -49,6 +54,8 @@ public class ScarletPerceptionSwordItem extends SwordItem implements LeftClickKi
             attacker.getCooldowns().addCooldown(this, GameConstants.getRevolverDefaultTicks());
         }
         GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(this));
+        attacker.level().playSound(null, attacker.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.PLAYERS, 3f, 1f);
         return true;
     }
 }

@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
@@ -73,19 +74,25 @@ public class ServerPlayerEntityMixin {
             self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
             ci.cancel();
             return;
-        } else if (mainhandItem.getItem() instanceof SREItemProperties.LeftClickHurtable htit
-                && self.getAttackStrengthScale(0.75F) >= 1f) {
+        } else if (mainhandItem.getItem() instanceof SREItemProperties.LeftClickHurtable htit) {
             boolean original = true;
+            var result = htit.onTryHurt(self, target, self.getMainHandItem());
+            if (result.equals(InteractionResult.CONSUME) || result.equals(InteractionResult.FAIL)) {
+                ci.cancel();
+                return;
+            }
             if (target instanceof ServerPlayer playerTarget) {
-                original = htit.onAttack(self, playerTarget, mainhandItem);
+                original = htit.onServerAttack(self, playerTarget, mainhandItem);
             }
             if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
                 puppeteerBodyEntity.playerHurt(self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
             }
+            // self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT,
+            // SoundSource.PLAYERS, 3f, 1f);
             CrosshairaddonsCompat.onAttack(target);
-            self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
-            if (!original)
+            if (!original) {
                 ci.cancel();
+            }
             return;
         }
 
