@@ -5,6 +5,8 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -66,15 +68,17 @@ public final class KillerKnifeDurability {
     }
 
     /**
-     * 消耗一点耐久（封顶为最大值，永不破坏/移除物品）。
+     * 消耗一点耐久（封顶为最大值，移除物品）。
      * Consume one durability point (capped at max; never breaks or removes the item).
+     * @param player 
      *
      * @return 消耗后是否已耗尽 / whether the knife is depleted after this consumption
      */
-    public static boolean consumeOne(@NotNull ItemStack stack) {
+    public static boolean consumeOne(@NotNull ItemStack stack, ServerPlayer player) {
         if (!isMarkedKnife(stack)) {
             return false;
         }
+        stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
         int next = Math.min(stack.getMaxDamage(), stack.getDamageValue() + 1);
         stack.setDamageValue(next);
         return next >= stack.getMaxDamage();
