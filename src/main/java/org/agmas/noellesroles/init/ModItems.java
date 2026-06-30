@@ -1233,7 +1233,8 @@ public class ModItems {
         ModItems.BANDIT_SHOP_ENTRIES
                 .add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
         ModItems.BANDIT_SHOP_ENTRIES
-                .add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
+                .add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
+                        (int) (SREConfig.instance().blackoutPrice * 1.275), ShopEntry.Type.TOOL) {
                     public boolean onBuy(@NotNull Player player) {
                         return SREPlayerShopComponent.useBlackout(player);
                     }
