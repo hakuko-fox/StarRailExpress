@@ -1282,6 +1282,7 @@
   "message.noellesroles.doctor.antidote_inherited": "You inherited the syringe from %s!",
   "message.noellesroles.doctor.items_inherited": "You inherited items from %s!",
   "message.noellesroles.doctor.someone_toxin": "Someone nearby is poisoned!",
+  "message.noellesroles.toxin.depleted": "The toxin is out of durability. Re-buy it at the shop to refill.",
   "message.noellesroles.monitor.target_not_found": "Target invalid or already dead!",
   "message.noellesroles.swapper.swapped": "You were swapped by the Swapper!",
   "message.noellesroles.swapper.front_swapped": "§bYou swapped places with the target ahead",

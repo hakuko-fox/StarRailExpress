@@ -147,7 +147,8 @@ public class ModItems {
                     .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F)
                             .alwaysEdible().build())),
             "pill", CONSUMABLES_GROUP);
-    public static final Item TOXIN = register(new ToxinItem((new Item.Properties()).stacksTo(1)), "toxin",
+    public static final Item TOXIN = register(
+            new ToxinItem((new Item.Properties()).durability(ToxinDurability.MAX_DURABILITY)), "toxin",
             CONSUMABLES_GROUP);
     public static final Item CATALYST = register(new CatalystItem((new Item.Properties()).stacksTo(1)), "catalyst",
             CONSUMABLES_GROUP);
@@ -1153,9 +1154,8 @@ public class ModItems {
         ITEM_COOLDOWNS.put(ModItems.SHORT_SHOTGUN, getInTicks(30, 0));
         ITEM_COOLDOWNS.put(TMMItems.SCORPION, getInTicks(0, 35));
         ITEM_COOLDOWNS.put(ModItems.CATALYST, getInTicks(0, 75));
-        // 毒药/80
-        ModItems.POISONER_SHOP_ENTRIES
-                .add(new ShopEntry(ModItems.TOXIN.getDefaultInstance(), 80, ShopEntry.Type.POISON));
+        // 毒药/80（3 点耐久，购买补满，第二次购买半价——与杀手刀一致）
+        ModItems.POISONER_SHOP_ENTRIES.add(new ToxinShopEntry(80));
         // 毒药瓶/50
         ModItems.POISONER_SHOP_ENTRIES
                 .add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 50,

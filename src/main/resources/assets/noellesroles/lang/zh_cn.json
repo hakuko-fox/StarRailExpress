@@ -1308,6 +1308,7 @@
   "message.noellesroles.doctor.antidote_inherited": "你从 %s 那里继承了针管！",
   "message.noellesroles.doctor.items_inherited": "你从 %s 那里继承了物品！",
   "message.noellesroles.doctor.someone_toxin": "你的附近有人中毒了！",
+  "message.noellesroles.toxin.depleted": "毒针耐久已耗尽，回商店购买可补满耐久。",
   "message.noellesroles.monitor.target_not_found": "目标无效或已死亡！",
   "message.noellesroles.swapper.swapped": "你被交换者交换了位置！",
   "message.noellesroles.swapper.front_swapped": "§b你与正前方的目标交换了位置",

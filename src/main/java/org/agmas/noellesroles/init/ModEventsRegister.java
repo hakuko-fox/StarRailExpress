@@ -1472,11 +1472,17 @@ public class ModEventsRegister {
                 return;
             io.wifi.starrailexpress.game.forensic.ForensicCategory cat =
                     io.wifi.starrailexpress.game.forensic.ForensicCategory.fromDeathReason(deathReason);
-            // 凶器大类决定滴血持续时长（枪/穿刺出血久=血迹更长，刀较短）
+            // 仅常见杀人凶器（刀/枪/球棒）触发流血滴血，其它死因（毒/爆炸/坠落/碾压等）不触发。
+            if (cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLADE
+                    && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.FIREARM
+                    && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLUNT)
+                return;
+            // 凶器大类决定滴血持续时长（整体缩短：枪较长，刀较短，球棒居中）
             int bleedTicks = switch (cat) {
-                case FIREARM, PROJECTILE -> 14 * 20;
-                case BLADE -> 8 * 20;
-                default -> 10 * 20;
+                case FIREARM -> 7 * 20;
+                case BLADE -> 4 * 20;
+                case BLUNT -> 5 * 20;
+                default -> 5 * 20;
             };
             gw.startKillerBleed(killerSp, victim.position(), victim.level().getGameTime(), bleedTicks);
         });
