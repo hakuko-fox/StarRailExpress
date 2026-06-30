@@ -1,5 +1,7 @@
 package org.agmas.noellesroles.content.item;
 
+import java.util.Random;
+
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropRevolverWhenDead;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.LeftClickKillable;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -17,6 +19,7 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 
 public class ScarletPerceptionSwordItem extends SwordItem implements LeftClickKillable, DropRevolverWhenDead {
+    static Random random = new Random();
 
     public ScarletPerceptionSwordItem(Properties properties) {
         super(Tiers.GOLD, properties);
@@ -39,26 +42,19 @@ public class ScarletPerceptionSwordItem extends SwordItem implements LeftClickKi
         if (attacker.getAttackStrengthScale(0.75F) < 1F) {
             return InteractionResult.FAIL;
         }
+        if (attacker instanceof ServerPlayer serverAttacker && target instanceof ServerPlayer serverTarget) {
+            if (!serverAttacker.isCreative()) {
+                serverAttacker.getCooldowns().addCooldown(this, GameConstants.getRevolverDefaultTicks());
+            }
+            GameUtils.killPlayer(serverTarget, true, serverAttacker, SkinUtils.getItemTypeResourceLocation(this));
+            serverAttacker.level().playSound(null, serverAttacker.blockPosition(), SoundEvents.AMETHYST_BLOCK_BREAK,
+                    SoundSource.PLAYERS, 3f, random.nextFloat(0f, 2f));
+        }
         return InteractionResult.PASS;
     }
 
     @Override
-    public boolean onServerAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
-        if (!GameUtils.isPlayerAliveAndSurvival(attacker) || !GameUtils.isPlayerAliveAndSurvival(target)) {
-            return false;
-        }
-        if (attacker.getCooldowns().isOnCooldown(this)) {
-            return false;
-        }
-        if (attacker.getAttackStrengthScale(0.75F) < 1F) {
-            return false;
-        }
-        if (!attacker.isCreative()) {
-            attacker.getCooldowns().addCooldown(this, GameConstants.getRevolverDefaultTicks());
-        }
-        GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(this));
-        attacker.level().playSound(null, attacker.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
-                SoundSource.PLAYERS, 3f, 1f);
+    public boolean onServerAttack(ServerPlayer serverAttacker, ServerPlayer serverTarget, ItemStack mainhandItem) {
         return true;
     }
 }
