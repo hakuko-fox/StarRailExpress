@@ -770,6 +770,7 @@ public class ModEventsRegister {
 
     public static boolean isMJVerifyEnabled = false;
     public static List<Item> canThrowItems = new ArrayList<>();
+    public static final int TRACK_DISTANCE = 8;
 
     public static void registerEvents() {
         // Cake Maker: ingredient input via right-click on smoker interaction entity
@@ -1490,6 +1491,11 @@ public class ModEventsRegister {
                     && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.FIREARM
                     && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLUNT)
                 return;
+            // 仅一定距离内才会有血迹（鼓励远距离射击）
+            int track_distance= GameConstants.getBloodTrackWetDistance();
+            if (killer.distanceToSqr(victim) <= track_distance) {
+                return;
+            }
             // 凶器大类决定滴血持续时长（整体缩短：枪较长，刀较短，球棒居中）
             int bleedTicks = switch (cat) {
                 case FIREARM -> 7 * 20;
@@ -2451,6 +2457,7 @@ public class ModEventsRegister {
         });
         DropRules.canDropItem.addAll(List.of(
                 "exposure:stacked_photographs",
+                "noellesroles:newspaper",
                 "exposure:album",
                 "exposure:photograph",
                 "noellesroles:mint_candies",

@@ -84,7 +84,7 @@ public class InventoryIntroductionRenderer {
                   float lineY = (float) currentY / scale;
                   if (currentY >= (float) context.guiHeight() / 3) {
                      maxInfoWidth = Math.max(maxInfoWidth, font.width(moreInfo));
-                     context.drawString(font, moreInfo, (int) scaledX, (int) lineY, 11184810);
+                     // context.drawString(font, moreInfo, (int) scaledX, (int) lineY, 11184810);
                      break;
                   }
                   maxInfoWidth = Math.max(maxInfoWidth, font.width(line));
@@ -95,6 +95,7 @@ public class InventoryIntroductionRenderer {
                   float lineY = (float) currentY / scale;
                   maxInfoWidth = Math.max(maxInfoWidth, font.width(moreInfo));
                   context.drawString(font, moreInfo, (int) scaledX, (int) lineY, 11184810);
+                  i++;
                }
                poseStack.popPose();
                int infoLineCount = i;

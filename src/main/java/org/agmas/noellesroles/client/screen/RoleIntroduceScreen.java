@@ -1090,13 +1090,18 @@ public class RoleIntroduceScreen extends Screen {
         g.disableScissor();
 
         if (filteredItems.isEmpty()) {
+            final int lineHeight = font.lineHeight + 4;
             g.drawCenteredString(font,
                     Component.translatable("screen.noellesroles.search.empty").withStyle(ChatFormatting.RED),
-                    leftX + leftW / 2, areaY + areaH / 2 - font.lineHeight - 2, 0xFF5555);
+                    leftX + leftW / 2, areaY + areaH / 2 - lineHeight - font.lineHeight / 2, 0xFF5555);
 
             g.drawCenteredString(font,
                     Component.translatable("screen.noellesroles.search.empty.2").withStyle(ChatFormatting.RED),
-                    leftX + leftW / 2, areaY + areaH / 2 + 2, 0xFF5555);
+                    leftX + leftW / 2, areaY + areaH / 2 - font.lineHeight / 2, 0xFF5555);
+
+            g.drawCenteredString(font,
+                    Component.translatable("screen.noellesroles.search.empty.3").withStyle(ChatFormatting.RED),
+                    leftX + leftW / 2, areaY + areaH / 2 + lineHeight - font.lineHeight / 2, 0xFF5555);
         }
 
         int sbX = leftX + leftW - PANEL_PAD - SCROLL_W;
