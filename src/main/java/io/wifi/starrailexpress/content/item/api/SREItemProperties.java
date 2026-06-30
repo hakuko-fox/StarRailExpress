@@ -32,7 +32,7 @@ public class SREItemProperties {
      */
     public interface LeftClickHurtable {
         /**
-         * 客户端/服务端尝试攻击玩家时触发。返回CONSUME则取消原有攻击逻辑传递链。
+         * 客户端/服务端尝试攻击玩家时触发。返回CONSUME/FAIL则取消原有攻击逻辑传递链。
          * 
          * @param attacker
          * @param target
@@ -59,7 +59,9 @@ public class SREItemProperties {
     public interface LeftClickKillable extends LeftClickHurtable {
         @Override
         public default void onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
-            GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+            if (GameUtils.isPlayerAliveAndSurvival(attacker) && GameUtils.isPlayerAliveAndSurvival(target)) {
+                GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+            }
         }
     }
 }

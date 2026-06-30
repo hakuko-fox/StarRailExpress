@@ -19,6 +19,7 @@ import org.agmas.noellesroles.game.roles.killer.creeper.RainbowCreeperRole;
 import org.agmas.noellesroles.role.touhou.ForestRoles;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
 
 /**
  * 彩蛋角色类，受到彩蛋刷新概率影响
@@ -199,7 +200,7 @@ public class BounsRoles {
         RedHouseRoles.init();
         MountainRoles.init();
         ForestRoles.init();
-
+        THMiscRoles.init();
         registerEvents();
     }
 
