@@ -19,16 +19,16 @@ public final class RavenHud {
             int x = context.guiWidth() - 180;
             int y = context.guiHeight() - 40;
 
-            // Hunt charges
-            context.drawString(Minecraft.getInstance().font,
-                    Component.translatable("hud.noellesroles.raven.charges", raven.charges, RavenPlayerComponent.MAX_CHARGES),
-                    x, y, 0x6B4B9E);
-
             context.drawString(Minecraft.getInstance().font,
                     Component.translatable("hud.noellesroles.raven.charge_progress",
                             String.format(Locale.ROOT, "%.2f", raven.moodProgress),
                             String.format(Locale.ROOT, "%.2f", raven.moodProgressThreshold)),
-                    x, y + 11, 0x8B5EB8);
+                    x, y, 0x8B5EB8);
+
+            // Hunt charges
+            context.drawString(Minecraft.getInstance().font,
+                    Component.translatable("hud.noellesroles.raven.charges", raven.charges, RavenPlayerComponent.MAX_CHARGES),
+                    x, y + 11, 0x6B4B9E);
 
             // Kill progress
             context.drawString(Minecraft.getInstance().font,
