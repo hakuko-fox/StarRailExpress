@@ -169,9 +169,12 @@ public class ModItems {
     public static final Item FOOD_STUFF = register(
             new FoodStuffItem((new Item.Properties()).stacksTo(16)), "foodstuff",
             CONSUMABLES_GROUP);
-    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)), "cake_ingredients", CONSUMABLES_GROUP);
-    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg", CONSUMABLES_GROUP);
-    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)), "cake_milk_bucket", CONSUMABLES_GROUP);
+    public static final Item CAKE_INGREDIENTS = register(new CakeIngredientsItem(new Item.Properties().stacksTo(16)),
+            "cake_ingredients", CONSUMABLES_GROUP);
+    public static final Item CAKE_EGG = register(new Item(new Item.Properties().stacksTo(16)), "cake_egg",
+            CONSUMABLES_GROUP);
+    public static final Item CAKE_MILK_BUCKET = register(new Item(new Item.Properties().stacksTo(16)),
+            "cake_milk_bucket", CONSUMABLES_GROUP);
     public static final Item PAN = register(
             new PanItem((new Item.Properties()).stacksTo(1)), "pan",
             CONSUMABLES_GROUP);
@@ -474,7 +477,7 @@ public class ModItems {
     public static final Item DELIVERY_BOX = register(
             new DeliveryBoxItem(new Item.Properties().stacksTo(8)),
             "delivery_box", ROLE_ITEMS_GROUP);
- /**
+    /**
      * 快递包裹盒子
      * - 射命丸文专属物品
      * - 在商店以150金币购买
@@ -1044,6 +1047,10 @@ public class ModItems {
             new Item(new Item.Properties().stacksTo(1)),
             "transport_package", MISC_ITEMS_GROUP);
 
+    public static final Item SCARLET_PERCEPTION_SWORD = register(
+            new ScarletPerceptionSwordItem(
+                    new Item.Properties().stacksTo(1).attributes(AxeItem.createAttributes(Tiers.WOOD, 0.0F, -3.0F))),
+            "scarlet_perception_sword", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
     public static List<ShopEntry> POISONER_SHOP_ENTRIES = new ArrayList<>();

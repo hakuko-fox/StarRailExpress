@@ -17,19 +17,12 @@ import org.agmas.noellesroles.init.RoleInitialItems;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.Matrix4f;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
-import io.wifi.mixins.client.GuiGraphicsAccessor;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RepairRole;
 import io.wifi.starrailexpress.api.SREAbstractInfoClass;
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.SREClient;
@@ -87,6 +80,7 @@ public class RoleIntroduceScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
     public enum IntroductionGameMode {
         ALL("screen.roleintroduce.mode.all", 0xFF55DD88),
+        CURRENT("screen.roleintroduce.mode.current", 0xFF56A5AE),
         MURDER("screen.roleintroduce.mode.murder", 0xFFCC2233),
         REPAIR("screen.roleintroduce.mode.repair", 0xFF44AACC),
         FILTER("screen.roleintroduce.mode.flag", 0xFF11AA33);
@@ -237,12 +231,16 @@ public class RoleIntroduceScreen extends Screen {
         this();
         this.parent = parent;
         this.selectedRole = sreRole;
+        this.currentMode = IntroductionGameMode.CURRENT;
+
     }
 
     public RoleIntroduceScreen(Screen parent, SREModifier modifier) {
         this();
         this.parent = parent;
         this.selectedRole = modifier;
+        this.currentMode = IntroductionGameMode.CURRENT;
+
     }
 
     private static SRERole getRole(Player player) {
@@ -253,21 +251,31 @@ public class RoleIntroduceScreen extends Screen {
 
     public RoleIntroduceScreen(Player player) {
         this(player, getRole(player));
+        if (this.selectedRole != null)
+            this.currentMode = IntroductionGameMode.CURRENT;
+
     }
 
     public RoleIntroduceScreen(Player player, SRERole sreRole) {
         this();
         this.selectedRole = sreRole;
+        this.currentMode = IntroductionGameMode.CURRENT;
+
     }
 
     @Override
     protected void init() {
         super.init();
+        if (currentMode == IntroductionGameMode.CURRENT && (SREClient.gameComponent == null
+                || !SREClient.gameComponent.isRunning())) {
+            currentMode = IntroductionGameMode.ALL;
+        }
         computeLayout();
         initSearchBox();
         refreshFilter();
         if (selectedRole == null && !filteredItems.isEmpty())
             selectedRole = filteredItems.get(0);
+
         onSelectionChanged();
         setFocusArea(FocusArea.SEARCH);
     }
@@ -371,6 +379,14 @@ public class RoleIntroduceScreen extends Screen {
             case MURDER -> !isRepairRole(role) && !role.isOtherModeRole();
             case REPAIR -> isRepairRole(role);
             case FILTER -> role.isFlagWithInner(filterFlags);
+            case CURRENT -> {
+                if (this.minecraft.player == null || SREClient.gameComponent == null)
+                    yield false;
+                var nowRole = SREClient.gameComponent.getRole(this.minecraft.player);
+                if (nowRole == null)
+                    yield false;
+                yield RoleUtils.compareRole(role, nowRole);
+            }
         };
     }
 
@@ -384,6 +400,11 @@ public class RoleIntroduceScreen extends Screen {
             case MURDER -> !mod.isOtherModeRole();
             case REPAIR -> false;
             case FILTER -> mod.isFlagWithInner(filterFlags);
+            case CURRENT -> {
+                if (this.minecraft.player == null || SREClient.modifierComponent == null)
+                    yield false;
+                yield SREClient.modifierComponent.isModifier(minecraft.player, mod);
+            }
         };
     }
 
@@ -394,6 +415,11 @@ public class RoleIntroduceScreen extends Screen {
             case MURDER -> !isRepairItem(path) && !isOtherModeItem(path);
             case REPAIR -> isRepairItem(path);
             case FILTER -> filterFlags.isEmpty() || false;
+            case CURRENT -> {
+                if (this.minecraft.player == null || this.minecraft.player.getInventory() == null)
+                    yield false;
+                yield this.minecraft.player.getInventory().hasAnyMatching((it) -> it.is(item));
+            }
         };
     }
 
@@ -937,6 +963,18 @@ public class RoleIntroduceScreen extends Screen {
 
     // 可重写此方法来定制哪些模式在小 UI 下隐藏
     protected boolean shouldHideModeButton(IntroductionGameMode mode) {
+        if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()) {
+            if (SREClient.gameComponent.getGameMode().identifier.equals(SREGameModes.REPAIR_ESCAPE_ID)) {
+                if (mode == IntroductionGameMode.MURDER)
+                    return true;
+            } else {
+                if (mode == IntroductionGameMode.REPAIR)
+                    return true;
+            }
+        } else {
+            if (mode == IntroductionGameMode.CURRENT)
+                return true;
+        }
         return isSmallUI() && (mode == IntroductionGameMode.REPAIR || mode == IntroductionGameMode.MURDER);
     }
 
@@ -1054,7 +1092,11 @@ public class RoleIntroduceScreen extends Screen {
         if (filteredItems.isEmpty()) {
             g.drawCenteredString(font,
                     Component.translatable("screen.noellesroles.search.empty").withStyle(ChatFormatting.RED),
-                    leftX + leftW / 2, areaY + areaH / 2, 0xFF5555);
+                    leftX + leftW / 2, areaY + areaH / 2 - font.lineHeight - 2, 0xFF5555);
+
+            g.drawCenteredString(font,
+                    Component.translatable("screen.noellesroles.search.empty.2").withStyle(ChatFormatting.RED),
+                    leftX + leftW / 2, areaY + areaH / 2 + 2, 0xFF5555);
         }
 
         int sbX = leftX + leftW - PANEL_PAD - SCROLL_W;
@@ -1380,7 +1422,12 @@ public class RoleIntroduceScreen extends Screen {
                                 .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
                         if (clickedMode == IntroductionGameMode.FILTER)
                             openFilterScreen();
-                        else if (currentMode != clickedMode)
+                        else if (clickedMode == IntroductionGameMode.CURRENT) {
+                            if (minecraft.player != null && SREClient.gameComponent != null
+                                    && SREClient.gameComponent.getRole(minecraft.player) != null) {
+                                refreshFilter(clickedMode);
+                            }
+                        } else if (currentMode != clickedMode)
                             refreshFilter(clickedMode);
                         setFocusArea(FocusArea.MODE_BUTTONS);
                         return true;

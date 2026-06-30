@@ -22,6 +22,24 @@ public class SREItemProperties {
     }
 
     /**
+     * 死亡时掉落物品
+     */
+    public interface DropWhenDead {
+        /**
+         * 当死亡时调用
+         */
+        public default ItemStack onDrop(ServerPlayer player, ItemStack stack) {
+            return stack;
+        }
+    }
+
+    /**
+     * 死亡时物品掉落左轮手枪
+     */
+    public interface DropRevolverWhenDead {
+    }
+
+    /**
      * 像左轮手枪一样举起来
      */
     public interface HeldLikeRevolver {
@@ -32,7 +50,7 @@ public class SREItemProperties {
      */
     public interface LeftClickHurtable {
         /**
-         * 客户端/服务端尝试攻击玩家时触发。返回CONSUME则取消原有攻击逻辑传递链。
+         * 客户端/服务端尝试攻击玩家时触发。返回CONSUME/FAIL则取消原有攻击逻辑传递链。
          * 
          * @param attacker
          * @param target
@@ -59,7 +77,9 @@ public class SREItemProperties {
     public interface LeftClickKillable extends LeftClickHurtable {
         @Override
         public default void onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
-            GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+            if (GameUtils.isPlayerAliveAndSurvival(attacker) && GameUtils.isPlayerAliveAndSurvival(target)) {
+                GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+            }
         }
     }
 }

@@ -207,7 +207,6 @@ public class ModRoles {
     public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
-    
 
     // 悍匪角色 ID
     public static final ResourceLocation GANGSTERS_ID = Noellesroles.id("gangsters");
@@ -645,7 +644,8 @@ public class ModRoles {
             SRERole.MoodType.FAKE, // 假心情
             Integer.MAX_VALUE, // 无限冲刺
             true // 隐藏计分板
-    ).addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 99999,0,false,false,false))).setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
+    ).addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, 99999, 0, false, false, false)))
+            .setComponentKey(ModComponents.NOSTALGIST).setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(2500);
 
     public static SRERole DELAYER = TMMRoles.registerRole(new NormalRole(
@@ -978,12 +978,6 @@ public class ModRoles {
             .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(2000)
             .setSpecialVigilante(true);
 
-   
-
-
-    
-
-    
     /**
      * 搜救员角色
      * - 属于乘客阵营 (isInnocent = true)
@@ -1395,7 +1389,7 @@ public class ModRoles {
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setCanSeeCoin(true).setOccupiedRoleCount(3).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
-            .setMafiaTeam(true).setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(2500);
+            .setMafiaTeam(true).setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000);
     public static SRERole MAFIOSO = TMMRoles
             .registerRole(new NormalRole(MAFIOSO_ID, new Color(218, 112, 214).getRGB(), false,
                     false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
@@ -1417,6 +1411,7 @@ public class ModRoles {
             .setNeutrals(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
 
+    // 验尸官
     public static SRERole CORONER = TMMRoles
             .registerRole(new NormalRole(CORONER_ID, new Color(122, 122, 122).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
@@ -2295,7 +2290,6 @@ public class ModRoles {
             .setDefaultMax(0)
             .setCanBeRandomedByOtherRoles(false);
 
-
     // ─────────────────────── 信使 Courier ───────────────────────
     public static final ResourceLocation COURIER_ID = Noellesroles.id("courier");
     public static SRERole COURIER = TMMRoles.registerRole(new NormalRole(
@@ -2307,8 +2301,6 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 冲刺时间
             false // 不能看时间
     )).setDefaultMax(1).setCanSeeCoin(true);
-
-    
 
     // ==================== 其他变量定义 ====================
     public static ArrayList<SRERole> SHOW_MONEY_ROLES = new ArrayList<>();

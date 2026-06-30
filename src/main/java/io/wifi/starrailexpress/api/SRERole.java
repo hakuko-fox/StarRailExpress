@@ -1176,7 +1176,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public Component getSimpleDescription() {
         var id = this.identifier();
         String path = "info.screen.roleid." + id.getPath() + ".simple";
-        if (!Language.getInstance().has(path)) {
+        if (!Language.getInstance().has(path) || Language.getInstance().getOrDefault(path, "").isEmpty()) {
             return getDescription();
         }
         return Component.translatable(path);
