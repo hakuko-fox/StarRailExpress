@@ -21,6 +21,8 @@ public class SREConfig implements ConfigData {
             SREConfig.class);
 
 
+
+
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -237,6 +239,10 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
     public boolean forensicBloodTrail = true;
+    
+    @ConfigEntry.Category(value = "forensic")
+    public static int bloodTrackWetDistance;
+
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
     public int forensicBloodTrailSeconds = 40;

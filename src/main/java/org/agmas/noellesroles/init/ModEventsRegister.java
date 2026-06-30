@@ -1492,7 +1492,8 @@ public class ModEventsRegister {
                     && cat != io.wifi.starrailexpress.game.forensic.ForensicCategory.BLUNT)
                 return;
             // 仅一定距离内才会有血迹（鼓励远距离射击）
-            if (killer.distanceToSqr(victim) <= TRACK_DISTANCE * TRACK_DISTANCE) {
+            int track_distance= GameConstants.getBloodTrackWetDistance();
+            if (killer.distanceToSqr(victim) <= track_distance) {
                 return;
             }
             // 凶器大类决定滴血持续时长（整体缩短：枪较长，刀较短，球棒居中）

@@ -355,4 +355,9 @@ public class GameConstants {
     public static int getRevolverDefaultTicks() {
         return SREConfig.instance().revolverCooldown * 20;
     }
+
+    public static int getBloodTrackWetDistance() {
+        
+        return SREConfig.instance().bloodTrackWetDistance * 20;
+    }
 }
