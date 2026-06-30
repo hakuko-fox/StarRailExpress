@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.agmas.harpymodloader.SREDisableManager;
@@ -13,7 +14,6 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.client.screen.RoleIntroduceScreen.IntroductionGameMode;
 import org.agmas.noellesroles.init.RoleInitialItems;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.Matrix4f;
@@ -43,6 +43,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
@@ -1552,12 +1553,70 @@ public class RoleIntroduceScreen extends Screen {
             g.fill(curX, barY, curX + 1, barY + barH, 0x55FFFFFF);
             g.fill(curX + btnW - 1, barY, curX + btnW, barY + barH, 0x55FFFFFF);
 
-            String title = tab.getTitle().getString();
-            String truncated = font.plainSubstrByWidth(title, btnW - 4);
+            Component title = tab.getTitle();
+            Component truncated = substrByWidth(title, btnW - 4);
             int textColor = active ? 0xFFFFF4DC : hovered ? 0xFFFFF4DC : 0xFF9E8B6E;
             g.drawCenteredString(font, truncated, curX + btnW / 2, barY + (barH - font.lineHeight) / 2, textColor);
             curX += btnW + gap;
         }
+    }
+
+    /**
+     * 截断 Component 使其渲染宽度不超过 maxWidth，保留样式和兄弟顺序。
+     * 在截断处末尾添加省略号（如果发生了截断）。
+     */
+    private Component substrByWidth(Component component, int maxWidth) {
+        if (maxWidth <= 0) {
+            return Component.empty();
+        }
+        // 先计算整个组件的宽度，如果不需要截断就直接返回
+        int fullWidth = font.width(component);
+        if (fullWidth <= maxWidth) {
+            return component;
+        }
+
+        // 扁平化组件为样式文本片段列表
+        List<Component> parts = new ArrayList<>();
+        component.visit((style, text) -> {
+            if (!text.isEmpty()) {
+                parts.add(Component.literal(text).withStyle(style));
+            }
+            return Optional.empty();
+        }, Style.EMPTY);
+
+        // 计算省略号（使用最后一个片段的样式，如果有的话）
+        Component ellipsisComponent = parts.isEmpty() ? Component.literal("...")
+                : Component.literal("...").withStyle(parts.get(parts.size() - 1).getStyle());
+        int ellipsisWidth = font.width(ellipsisComponent);
+
+        MutableComponent result = Component.empty();
+        int accumulated = 0;
+        boolean truncated = false;
+
+        for (Component part : parts) {
+            int partWidth = font.width(part);
+            if (accumulated + partWidth <= maxWidth) {
+                result.append(part);
+                accumulated += partWidth;
+            } else {
+                // 需要截断当前片段
+                int remaining = maxWidth - accumulated;
+                if (remaining > 0) {
+                    String text = part.getString();
+                    Style style = part.getStyle();
+                    if (remaining >= ellipsisWidth) {
+                        String trimmed = font.plainSubstrByWidth(text, remaining - ellipsisWidth);
+                        result.append(Component.literal(trimmed + "...").withStyle(style));
+                    } else {
+                        result.append(Component.literal("...").withStyle(style));
+                    }
+                }
+                truncated = true;
+                break;
+            }
+        }
+
+        return truncated ? result : component;
     }
 
     // ══════════════════════════════════════════════════════════════════
