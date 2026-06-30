@@ -53,25 +53,12 @@ public class ChangeRoleCommand {
       srePlayerTaskComponent.sync();
 
       SRERole oldRole = gameWorldComponent.getRole(targetPlayer);
-      if (oldRole!=null) {
-        var cacheItems = new ArrayList<ItemStack>();
-        targetPlayer.getInventory().items.forEach(
-                itemStack -> {
-                  if (oldRole.getDefaultItems().stream().anyMatch(itemStack1 -> itemStack1.getItem().equals(itemStack.getItem()))) {
-                    cacheItems.add(itemStack);
-                  }
-                }
-        );
-        cacheItems.forEach(
-                itemStack -> {
-                  targetPlayer.getInventory().removeItem(itemStack);
-                }
-        );
-      }
-      // 自定义职业的初始物品已通过 INITIAL_ITEMS_MAP 在 changeRole → ModdedRoleAssigned 事件中发放，此处跳过避免重复
-      if (!"customrole".equals(newRole.identifier().getNamespace())) {
-        newRole.getDefaultItems().forEach(itemStack -> targetPlayer.getInventory().add(itemStack.copy()));
-      }
+
+      // 不删除旧的职业物品。删除旧职业物品请使用另一个命令：
+      // /tmm:game role role_change_mode
+
+      // 自定义职业的初始物品已通过 INITIAL_ITEMS_MAP 在 changeRole → ModdedRoleAssigned
+      // 事件中发放，此处跳过避免重复
       RoleUtils.changeRole(targetPlayer, newRole, record, addStats);
 
       // 发送反馈消息
@@ -120,17 +107,16 @@ public class ChangeRoleCommand {
         // 清除旧角色默认物品
         var cacheItems = new ArrayList<ItemStack>();
         targetPlayer.getInventory().items.forEach(
-                itemStack -> {
-                  if (oldRole.getDefaultItems().stream().anyMatch(itemStack1 -> itemStack1.getItem().equals(itemStack.getItem()))) {
-                    cacheItems.add(itemStack);
-                  }
-                }
-        );
+            itemStack -> {
+              if (oldRole.getDefaultItems().stream()
+                  .anyMatch(itemStack1 -> itemStack1.getItem().equals(itemStack.getItem()))) {
+                cacheItems.add(itemStack);
+              }
+            });
         cacheItems.forEach(
-                itemStack -> {
-                  targetPlayer.getInventory().removeItem(itemStack);
-                }
-        );
+            itemStack -> {
+              targetPlayer.getInventory().removeItem(itemStack);
+            });
         // 触发移除事件
         ((ModdedRoleRemoved) ModdedRoleRemoved.EVENT.invoker()).removeModdedRole(targetPlayer, oldRole);
       }
