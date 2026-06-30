@@ -52,6 +52,7 @@
   "text.autoconfig.starrailexpress.option.forensicShowWeaponCategory": "尸检显示凶器大类（利器/枪械/钝器/毒…）",
   "text.autoconfig.starrailexpress.option.forensicShowCorpseFacing": "尸检显示死者面朝方向",
   "text.autoconfig.starrailexpress.option.forensicBloodTrail": "启用血迹路径（凶手击杀时沿其方向留下会衰减的血迹）",
+  "text.autoconfig.starrailexpress.option.bloodTrackWetDistance": "血迹沾染距离（仅击杀时在此距离内会开始留下血迹）",
   "text.autoconfig.starrailexpress.option.forensicBloodTrailSeconds": "血迹路径持续秒数",
   "text.autoconfig.starrailexpress.option.forensicShowDeathOrder": "尸检显示死亡顺序（需多具尸体）",
   "text.autoconfig.starrailexpress.option.forensicShowDragMark": "尸检显示尸体是否被移动过",
