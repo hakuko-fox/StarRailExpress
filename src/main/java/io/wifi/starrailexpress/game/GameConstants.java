@@ -357,7 +357,6 @@ public class GameConstants {
     }
 
     public static int getBloodTrackWetDistance() {
-        
         return SREConfig.instance().bloodTrackWetDistance * 20;
     }
 }

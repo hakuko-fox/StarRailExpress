@@ -87,6 +87,8 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     @Tooltip(count = 2)
     public boolean knifeDurabilityMode = true;
+    @ConfigEntry.Category(value = "shop")
+    public boolean knifeBrokenWhenNotAvailable = true;
     @ConfigSync(shouldSync = true)
     @ConfigEntry.Category(value = "shop")
     public int revolverPrice = 285;
@@ -241,7 +243,6 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "forensic")
     public int bloodTrackWetDistance = 8;
     @ConfigEntry.Category(value = "forensic")
-    @ConfigSync(shouldSync = true)
     public int forensicBloodTrailSeconds = 20;
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
@@ -250,7 +251,6 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     public boolean forensicShowDragMark = true;
     @ConfigEntry.Category(value = "forensic")
-    @ConfigSync(shouldSync = true)
     public boolean forensicDoorMark = false;
 
     // // 自动切换预设配置 - 游戏开始前自动应用指定预设，留空则不自动切换
