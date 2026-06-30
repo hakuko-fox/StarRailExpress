@@ -31,16 +31,24 @@ public class ChangeRoleCommand {
         .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
         .then(Commands.argument("player", EntityArgument.player())
             .then(Commands.literal("reset")
-                .executes(ChangeRoleCommand::executeReset))
+                .executes((ctx) -> executeClear(ctx, false))
+                .then(Commands.literal("clear")
+                    .executes((ctx) -> executeClear(ctx, true))))
             .then(Commands.argument("role", RoleArgumentType.create())
-                .executes((ctx) -> execute(ctx, true, false))
+                .executes((ctx) -> execute(ctx, true, false, false))
                 .then(Commands.argument("record_replay", BoolArgumentType.bool())
                     .then(Commands.argument("add_stats", BoolArgumentType.bool())
                         .executes((ctx) -> execute(ctx, BoolArgumentType.getBool(ctx, "record_replay"),
-                            BoolArgumentType.getBool(ctx, "add_stats"))))))));
+                            BoolArgumentType.getBool(ctx, "add_stats"), false))
+                        .then(Commands.literal("clear")
+                            .executes((ctx) -> execute(ctx, BoolArgumentType.getBool(ctx, "record_replay"),
+                                BoolArgumentType.getBool(ctx, "add_stats"), true)))
+
+                    )))));
   }
 
-  private static int execute(CommandContext<CommandSourceStack> context, boolean record, boolean addStats)
+  private static int execute(CommandContext<CommandSourceStack> context, boolean record, boolean addStats,
+      boolean clearOldItems)
       throws CommandSyntaxException {
     try {
       if (!Harpymodloader.officialVerify) {
@@ -62,7 +70,7 @@ public class ChangeRoleCommand {
 
       // 自定义职业的初始物品已通过 INITIAL_ITEMS_MAP 在 changeRole → ModdedRoleAssigned
       // 事件中发放，此处跳过避免重复
-      RoleUtils.changeRole(targetPlayer, newRole, record, addStats);
+      RoleUtils.changeRole(targetPlayer, newRole, record, addStats, clearOldItems);
 
       // 发送反馈消息
       final MutableComponent newRoleText = Harpymodloader.getRoleName(newRole).withColor(newRole.color())
@@ -92,7 +100,8 @@ public class ChangeRoleCommand {
     return 1;
   }
 
-  private static int executeReset(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+  private static int executeClear(CommandContext<CommandSourceStack> context, boolean clearOldItems)
+      throws CommandSyntaxException {
     try {
       if (!Harpymodloader.officialVerify) {
         return 1;
@@ -107,19 +116,22 @@ public class ChangeRoleCommand {
 
       SRERole oldRole = gameWorldComponent.getRole(targetPlayer);
       if (oldRole != null) {
-        // 清除旧角色默认物品
-        var cacheItems = new ArrayList<ItemStack>();
-        targetPlayer.getInventory().items.forEach(
-            itemStack -> {
-              if (oldRole.getDefaultItems().stream()
-                  .anyMatch(itemStack1 -> itemStack1.getItem().equals(itemStack.getItem()))) {
-                cacheItems.add(itemStack);
-              }
-            });
-        cacheItems.forEach(
-            itemStack -> {
-              targetPlayer.getInventory().removeItem(itemStack);
-            });
+        if (clearOldItems) {
+          // 清除旧角色默认物品
+          var cacheItems = new ArrayList<ItemStack>();
+          targetPlayer.getInventory().items.forEach(
+              itemStack -> {
+                if (oldRole.getDefaultItems().stream()
+                    .anyMatch(itemStack1 -> itemStack1.getItem().equals(itemStack.getItem()))) {
+                  cacheItems.add(itemStack);
+                }
+              });
+          cacheItems.forEach(
+              itemStack -> {
+                targetPlayer.getInventory().removeItem(itemStack);
+              });
+        }
+
         // 触发移除事件
         ((ModdedRoleRemoved) ModdedRoleRemoved.EVENT.invoker()).removeModdedRole(targetPlayer, oldRole);
       }

@@ -45,6 +45,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.OptionalInt;
 
 /**
@@ -251,12 +252,31 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static void changeRole(Player player, SRERole role, boolean record, boolean addStats) {
+        changeRole(player, role, record, addStats, false);
+    }
+
+    public static void changeRole(Player player, SRERole role, boolean record, boolean addStats,
+            boolean clearOldItems) {
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         // 删除旧职业
         var oldRole = gameWorldComponent.getRole(player);
         if (oldRole != null) {
             if (record) {
                 SRE.REPLAY_MANAGER.recordPlayerRoleChange(player.getUUID(), oldRole, role);
+            }
+            if (clearOldItems) {
+                var cacheItems = new ArrayList<ItemStack>();
+                player.getInventory().items.forEach(
+                        itemStack -> {
+                            if (oldRole.getDefaultItems().stream()
+                                    .anyMatch(itemStack1 -> itemStack1.getItem().equals(itemStack.getItem()))) {
+                                cacheItems.add(itemStack);
+                            }
+                        });
+                cacheItems.forEach(
+                        itemStack -> {
+                            player.getInventory().removeItem(itemStack);
+                        });
             }
             ((ModdedRoleRemoved) ModdedRoleRemoved.EVENT.invoker()).removeModdedRole(player, oldRole);
         }

@@ -243,7 +243,7 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "forensic")
     public int bloodTrackWetDistance = 8;
     @ConfigEntry.Category(value = "forensic")
-    public int forensicBloodTrailSeconds = 20;
+    public int forensicBloodTrailSeconds = 6;
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
     public boolean forensicShowDeathOrder = false;

@@ -58,7 +58,6 @@ import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerCompone
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mortician.MorticianBodyMakerPlayerComponent;
@@ -200,8 +199,8 @@ public class ModRolesInitialEventRegister {
                 return;
             }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
-                if (!SREItemUtils.hasItem(player, io.wifi.starrailexpress.index.TMMItems.REVOLVER)) {
-                    player.addItem(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance().copy());
+                if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
+                    player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
                 }
                 return;
             }
@@ -280,8 +279,6 @@ public class ModRolesInitialEventRegister {
                 recorderPlayerComponent.init();
                 recorderPlayerComponent.sync();
             }
-            // 使用映射表添加初始物品
-            RoleInitialItems.addInitialItemsForRole(player, role);
 
             if (role.equals(ModRoles.GAMBLER)) {
                 org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent gamblerPlayerComponent = org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent.KEY
