@@ -8,14 +8,20 @@ import io.wifi.starrailexpress.util.SkinUtils;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
 
-public class ScarletPerceptionSwordItem extends Item implements LeftClickKillable, DropRevolverWhenDead {
+public class ScarletPerceptionSwordItem extends SwordItem implements LeftClickKillable, DropRevolverWhenDead {
 
     public ScarletPerceptionSwordItem(Properties properties) {
-        super(properties);
+        super(Tiers.GOLD, properties);
+    }
+
+    @Override
+    public void postHurtEnemy(ItemStack itemStack, LivingEntity livingEntity, LivingEntity livingEntity2) {
     }
 
     @Override
@@ -32,16 +38,17 @@ public class ScarletPerceptionSwordItem extends Item implements LeftClickKillabl
     }
 
     @Override
-    public void onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+    public boolean onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
         if (!GameUtils.isPlayerAliveAndSurvival(attacker) || !GameUtils.isPlayerAliveAndSurvival(target)) {
-            return;
+            return false;
         }
         if (attacker.getCooldowns().isOnCooldown(this)) {
-            return;
+            return false;
         }
         if (!attacker.isCreative()) {
             attacker.getCooldowns().addCooldown(this, GameConstants.getRevolverDefaultTicks());
         }
         GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(this));
+        return true;
     }
 }

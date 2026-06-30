@@ -75,15 +75,17 @@ public class ServerPlayerEntityMixin {
             return;
         } else if (mainhandItem.getItem() instanceof SREItemProperties.LeftClickHurtable htit
                 && self.getAttackStrengthScale(0.75F) >= 1f) {
+            boolean original = true;
             if (target instanceof ServerPlayer playerTarget) {
-                htit.onAttack(self, playerTarget, mainhandItem);
+                original = htit.onAttack(self, playerTarget, mainhandItem);
             }
             if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
                 puppeteerBodyEntity.playerHurt(self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
             }
             CrosshairaddonsCompat.onAttack(target);
             self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
-            ci.cancel();
+            if (!original)
+                ci.cancel();
             return;
         }
 

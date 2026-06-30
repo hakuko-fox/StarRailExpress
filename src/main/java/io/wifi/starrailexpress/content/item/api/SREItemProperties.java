@@ -66,8 +66,10 @@ public class SREItemProperties {
          * @param attacker
          * @param target
          * @param mainhandItem
+         * @return boolean 是否启用原版逻辑
          */
-        public default void onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+        public default boolean onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+            return true;
         }
     }
 
@@ -76,10 +78,11 @@ public class SREItemProperties {
      */
     public interface LeftClickKillable extends LeftClickHurtable {
         @Override
-        public default void onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
+        public default boolean onAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
             if (GameUtils.isPlayerAliveAndSurvival(attacker) && GameUtils.isPlayerAliveAndSurvival(target)) {
                 GameUtils.killPlayer(target, true, attacker, SkinUtils.getItemTypeResourceLocation(mainhandItem));
             }
+            return false;
         }
     }
 }
