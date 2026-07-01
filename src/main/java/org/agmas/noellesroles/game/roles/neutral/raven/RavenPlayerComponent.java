@@ -274,6 +274,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, HUNT_TICKS, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, HUNT_TICKS, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, HUNT_TICKS, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, HUNT_TICKS, 0, false, false, false));
     }
 
     public boolean canKill(Player victim) {
@@ -309,6 +310,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             serverPlayer.removeEffect(ModEffects.VOICE_SILENCE);
             serverPlayer.removeEffect(ModEffects.NO_COLLIDE);
             serverPlayer.removeEffect(ModEffects.INVINCIBLE);
+            serverPlayer.removeEffect(ModEffects.CHAT_BAN);
 
             // Remove knife and lockpick from all inventory slots.
             SREItemUtils.clearItem(serverPlayer,
