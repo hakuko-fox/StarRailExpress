@@ -14,6 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -288,6 +290,11 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         if (!canKill(victim))
             return;
         kills++;
+        // 全场播放烈风死亡音效
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+                    SoundEvents.BREEZE_DEATH, SoundSource.MASTER, 1.0F, 1.0F);
+        }
         // 击杀正确目标时，充能次数+1（不超过上限）
         if (charges < MAX_CHARGES) {
             charges++;
