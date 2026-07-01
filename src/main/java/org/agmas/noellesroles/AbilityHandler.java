@@ -5,10 +5,12 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -23,6 +25,7 @@ import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -56,6 +59,24 @@ public class AbilityHandler {
             return;
         }
         if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.EXAMPLER)) {
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            if (shop.balance < 300) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.insufficient_funds_money", 300)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            shop.addToBalance(-300);
+            player.serverLevel().players().forEach(sp -> {
+                if (GameUtils.isPlayerAliveAndSurvival(sp)) {
+                    ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
+                }
+            });
+            abilityPlayerComponent.setCooldown(240 * 20);
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)) {
@@ -136,7 +157,8 @@ public class AbilityHandler {
                         player.getX() - victim.getX(), player.getZ() - victim.getZ());
                 victim.hurtMarked = true;
                 // 玩家受服务端击退需主动同步速度
-                victim.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(victim));
+                victim.connection
+                        .send(new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(victim));
                 int slowTicks = (int) (cfg.leonKickSlowSeconds * 20);
                 victim.addEffect(new net.minecraft.world.effect.MobEffectInstance(
                         MobEffects.MOVEMENT_SLOWDOWN, slowTicks, 2));
@@ -165,8 +187,8 @@ public class AbilityHandler {
             }
             NoellesRolesConfig cfg = NoellesRolesConfig.HANDLER.instance();
             net.minecraft.server.level.ServerLevel level = player.serverLevel();
-            org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent morphComp =
-                    org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent.KEY.get(player);
+            org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent morphComp = org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent.KEY
+                    .get(player);
             // 从所有存活玩家中随机选择一个作为皮肤（排除召唤者自身）
             List<ServerPlayer> aliveOthers = level.players().stream()
                     .filter(p -> GameUtils.isPlayerAliveAndSurvival(p) && !p.getUUID().equals(player.getUUID()))
@@ -184,9 +206,8 @@ public class AbilityHandler {
             double rad = Math.toRadians(yaw);
             double dx = -Math.sin(rad);
             double dz = Math.cos(rad);
-            org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity dummy =
-                    new org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity(
-                            org.agmas.noellesroles.init.ModEntities.MORPHLING_KNIFE_DUMMY, level);
+            org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity dummy = new org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity(
+                    org.agmas.noellesroles.init.ModEntities.MORPHLING_KNIFE_DUMMY, level);
             dummy.setPos(player.getX() + dx * 1.5D, player.getY(), player.getZ() + dz * 1.5D);
             dummy.setup(player, skin, GameConstants.getInTicks(0, cfg.morphlingDummyLifetime), yaw);
             level.addFreshEntity(dummy);
@@ -331,6 +352,25 @@ public class AbilityHandler {
             return;
         }
         if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
+            return;
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.EXAMPLER)) {
+            if (targetUUID == null)
+                return;
+            Player target = player.level().getPlayerByUUID(targetUUID);
+            if (!(target instanceof ServerPlayer sp))
+                return;
+            SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+            if (shop.balance < 100) {
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.insufficient_funds")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
+            shop.addToBalance(-100);
+            ServerPlayNetworking.send(player, new ProblemScreenOpenC2SPacket(true, 2));
+            ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 2));
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.IMITATOR)) {
