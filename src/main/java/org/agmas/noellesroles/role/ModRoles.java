@@ -801,7 +801,7 @@ public class ModRoles {
             })
             .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true)
             .setComponentKey(ModComponents.GHOST_EYE)
-            .setDefaultMax(1).setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(8);
+            .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(7000).setDefaultEnableNeededPlayerCount(8);
 
     /**
      * 警长 / 鬼眼·杨间 共用：在尚未通过完成两个任务解锁左轮手枪、且身上也没有左轮手枪时死亡，

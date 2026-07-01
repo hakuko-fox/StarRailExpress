@@ -57,7 +57,7 @@ public class BounsRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 显示计分板
     )).setVigilanteTeam(true).setCanPickUpRevolver(true).setCanBeRandomedByOtherRoles(false)
-            .setDefaultEnableChance(200).setCanSetSpawnInfoInConfig(true);
+            .setSpecialVigilante(true).setDefaultEnableChance(200).setCanSetSpawnInfoInConfig(true);
 
     /**
      * 苦力怕角色

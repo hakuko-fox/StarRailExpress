@@ -132,7 +132,7 @@
   "item.noellesroles.leon_blue_herb.desc": "Exclusive item for Leon. Right-click to use instantly and refresh the Combat Skill cooldown. Obtained when only 6 players remain; it does not drop together with the revolver when Leon dies.",
   "item.noellesroles.leon_red_herb.desc": "Exclusive item for Leon. Hold right-click to use, applying a shield to yourself (does not stack). Obtained when only 3 players remain; it does not drop together with the revolver when Leon dies.",
   "item.noellesroles.radio.desc": "Right-click to use, allows voice communication with other players remotely.",
-  "item.noellesroles.short_shotgun.desc": "Single-use item. Kills all players within a 2-block cone.",
+  "item.noellesroles.short_shotgun.desc": "Single-use item. Right-click and charge to shoot; the lethal cone range smoothly increases from 2 to 4 blocks. Once it reaches 3 blocks, players within 2 blocks beyond the current lethal cone take 1 damage and are knocked back.",
   "item.noellesroles.executioner_gun.desc": "Exclusive weapon for The Fool. Only damages players with the 'Heretic' effect (one-shot kill). Starts with 1 bullet, can only be reloaded via Tarot Club meetings.",
   "item.noellesroles.honored_note.desc": "Purchased from The Fool's shop. Right-click on a wall/floor to stick, creating an indestructible text entity. Players can press J to pray near the note to become a 'Tarot Club Member'.",
   "item.noellesroles.spirit_cloak.desc": "Purchased from The Fool's shop. Right-click to use, granting 5 seconds of invincibility, inability to attack, but normal movement speed. 90-second cooldown.",
