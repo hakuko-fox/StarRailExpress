@@ -281,7 +281,7 @@ public class ModItems {
 
     public static final Item FAKE_CROWBAR = register(
             new FakeCrowbarItem(new Item.Properties().stacksTo(1)),
-            "fake_crowbar", WEAPONS_GROUP);
+            "fake_crowbar", TOOLS_GROUP);
 
     public static final Item FAKE_BODY_BAG = register(
             new FakeBodyBagItem(new Item.Properties().stacksTo(1)),
