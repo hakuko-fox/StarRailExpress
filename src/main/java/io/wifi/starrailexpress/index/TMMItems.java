@@ -158,7 +158,7 @@ public interface TMMItems {
             new net.minecraft.resources.ResourceKey[] { net.minecraft.world.item.CreativeModeTabs.OP_BLOCKS });
 
     // === 杂项 (MISC) ===
-    Item BLACKOUT = registrar.create("blackout", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
+    Item BLACKOUT = registrar.create("blackout", new BlackoutItem(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
     Item MONITOR_BROKEN = registrar.create("monitor_broken", new Item(new Item.Properties().stacksTo(1)),
             SRE_ALL_GROUP);
     Item PSYCHO_MODE = registrar.create("psycho_mode", new Item(new Item.Properties().stacksTo(1)), SRE_ALL_GROUP);
