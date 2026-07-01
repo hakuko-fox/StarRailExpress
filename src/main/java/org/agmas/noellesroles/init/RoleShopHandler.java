@@ -2634,7 +2634,11 @@ public class RoleShopHandler {
     // 飞刀 - 225金币
     JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
     // 关灯 - 200金币
-    JANITOR_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+    JANITOR_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
+        public boolean onBuy(@NotNull Player player) {
+            return SREPlayerShopComponent.useBlackout(player);
+        }
+    });
     // 短管霰弹枪 - 250金币
     JANITOR_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
 
