@@ -1249,7 +1249,7 @@
     "item.trainmurdermystery.standard_revolver": "制式左轮",
     "item.trainmurdermystery.standard_revolver.tooltip": "瞄准，右键并射击\n命中玩家后永不掉落",
     "item.trainmurdermystery.sticky_grenade": "粘性雷",
-    "item.trainmurdermystery.sticky_grenade.tooltip": "右键蓄力投掷，粘附在墙面或目标身上\n粘附后3秒引爆，被粘住的目标无处可逃！\n单次使用，有5分钟冷却时间",
+    "item.trainmurdermystery.sticky_grenade.tooltip": "右键蓄力投掷，粘附在墙面或目标身上\n粘附后3秒引爆，拆弹钳可以拆掉粘附在玩家身上的粘性雷\n单次使用，有5分钟冷却时间",
     "item.trainmurdermystery.thrown_grenade": "投掷手榴弹",
     "item.trainmurdermystery.timed_grenade": "滞时雷",
     "item.trainmurdermystery.timed_grenade.tooltip": "按住右键拉栓，4秒后必爆\n松手投出，在地上会反弹滚动\n超时未扔将在手中爆炸！\n单次使用，有5分钟冷却时间",
