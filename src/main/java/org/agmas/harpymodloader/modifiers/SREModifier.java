@@ -42,6 +42,58 @@ public class SREModifier extends SREAbstractInfoClass {
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
 
     /**
+     * 添加与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的职业。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier removeRelatedRole(SRERole... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedRoles.remove(i);
+        }
+        return this;
+    }
+
+    /**
+     * 添加与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier addRelatedModifier(SREModifier... modifier) {
+        for (var i : modifier) {
+            if (i != null)
+                this.relatedModifiers.add(i);
+        }
+        return this;
+    }
+
+    /**
+     * 删除与此相关的修饰符。用于职业介绍。
+     * 
+     * @return
+     */
+    public SREModifier removeRelatedModifier(SREModifier... role) {
+        for (var i : role) {
+            if (i != null)
+                this.relatedModifiers.remove(i);
+        }
+        return this;
+    }
+
+    /**
      * 添加显示FLAG
      */
     public SREModifier addFlag(String... flag) {
@@ -216,6 +268,20 @@ public class SREModifier extends SREAbstractInfoClass {
         this.spawnInfo = spinfo;
         return this;
     };
+
+    /**
+     * 修饰符普通玩家不可视
+     * 隐藏修饰符
+     * 
+     * @return
+     */
+    public SREModifier setHidden(boolean flag) {
+        if (flag)
+            this.addFlag("inner.hidden");
+        else
+            this.removeFlag("inner.hidden");
+        return this;
+    }
 
     public SREModifier(ResourceLocation identifier, int color, HashSet<SRERole> cannotBeAppliedTo,
             HashSet<SRERole> canOnlyBeAppliedTo, boolean killerOnly, boolean civilianOnly) {
