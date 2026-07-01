@@ -684,6 +684,7 @@ public class SREClient implements ClientModInitializer {
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
             SceneAssetClient.clearRuntime();
             ClientPlayerStatsCache.clear();
+            RoleRotationCache.clear();
             // 清理自定义职业客户端缓存
             io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.clearCache();
             // 清理 OpenAL 语音特效资源

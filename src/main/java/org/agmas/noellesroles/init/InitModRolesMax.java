@@ -600,7 +600,7 @@ public class InitModRolesMax {
         }
 
         /// SPLIT_PERSONALITY
-        if (Harpymodloader.MODIFIER_MAX.get(SEModifiers.SPLIT_PERSONALITY.identifier()) > 0) {
+        if (Harpymodloader.MODIFIER_MAX.getOrDefault(SEModifiers.SPLIT_PERSONALITY.identifier(), 0) > 0) {
         } else {
             if (players >= config.minPlayerForLovers
                     && random.nextInt(0, 100) <= config.chanceOfModifierLovers) {
