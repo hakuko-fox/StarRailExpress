@@ -3235,6 +3235,7 @@
   "message.noellesroles.amon.death_transfer": "致命一擊襲來——你遁入了等待中的宿主。",
   "announcement.star.win.raven": "渡鴉勝利！",
   "game.win.star.raven": "渡鴉完成了狩獵，黑翼遮蔽了終局！",
+  "hud.noellesroles.raven.return_hint": "按技能鍵主動返回本體",
   "hud.noellesroles.raven.charges": "狩獵充能：%s/%s",
   "hud.noellesroles.raven.charge_progress": "充能進度：%s/%s",
   "hud.noellesroles.raven.kills": "獵殺進度：%s/%s",

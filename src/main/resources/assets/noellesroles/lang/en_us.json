@@ -3288,6 +3288,7 @@
   "message.noellesroles.amon.death_transfer": "Struck down — you slip into a waiting host.",
   "announcement.star.win.raven": "Raven wins!",
   "game.win.star.raven": "The raven completed its hunt — black wings overshadow the final act!",
+  "hud.noellesroles.raven.return_hint": "Press skill key to return to body",
   "hud.noellesroles.raven.charges": "Hunt charges: %s/%s",
   "hud.noellesroles.raven.charge_progress": "Charge progress: %s/%s",
   "hud.noellesroles.raven.kills": "Hunt progress: %s/%s",
