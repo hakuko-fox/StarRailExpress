@@ -505,6 +505,13 @@ public class RoleUtils extends MCItemsUtils {
         }
     }
 
+    public static int getRoleOrModifierOrItemColor(Object obj) {
+        if (obj instanceof Item) {
+            return (ChatFormatting.WHITE.getColor());
+        } else {
+            return getRoleOrModifierColor(obj);
+        }
+    }
     public static ResourceLocation getRoleOrModifierOrItemIdentifier(Object selectedRole) {
         if (selectedRole instanceof Item it) {
             return BuiltInRegistries.ITEM.getKey(it);
@@ -647,4 +654,5 @@ public class RoleUtils extends MCItemsUtils {
         }
         return role.getName().copy().withColor(role.color());
     }
+
 }

@@ -683,18 +683,36 @@ public class RoleIntroduceScreen extends Screen {
                 g.drawString(font, title, contentX + 2, y + GAP + TITLE_H / 2 - font.lineHeight / 2, 0xFFFFFF);
             }
             y += TITLE_H + GAP;
-
+            int i = 1;
             for (Object obj : list) {
                 if (y + ITEM_H > contentY && y < contentY + contentH) {
                     boolean hovered = isInRect(mouseX, mouseY, contentX, y, w, ITEM_H);
                     if (hovered) {
                         g.fill(contentX, y, contentX + w, y + ITEM_H, 0x22FFFFFF);
                     }
-                    Component name = RoleUtils.getRoleOrModifierOrItemNameWithColor(obj);
-                    g.drawString(font, Component.literal(" - ").withStyle(ChatFormatting.WHITE).append(name), contentX + 6,
-                            y + (ITEM_H - font.lineHeight) / 2, 0xffffffff);
+                    Component name = RoleUtils.getRoleOrModifierOrItemName(obj);
+                    String numText = "" + i;
+                    Component idtext = Component.literal(RoleUtils.getRoleOrModifierOrItemIdentifier(obj).toString());
+                    int color = RoleUtils.getRoleOrModifierOrItemColor(obj);
+                    g.drawString(font,
+                            Component.translatable("%s.  %s", numText, name.copy().withColor(color))
+                                    .withStyle(ChatFormatting.WHITE),
+                            contentX + 6,
+                            y + (ITEM_H / 2 - font.lineHeight - 3), 0xffffffff);
+                    int num_w = font.width(Component.translatable("%s.  ", numText));
+                    g.drawString(font, idtext.copy()
+                            .withStyle(ChatFormatting.DARK_GRAY),
+                            contentX + 6 + num_w,
+                            y + (ITEM_H / 2 + 3), 0xffffffff);
                     g.fill(contentX + 4, y + ITEM_H - 1, contentX + w - 4, y + ITEM_H, 0x20FFFFFF);
+                    if (hovered) {
+                        List<FormattedCharSequence> tooltip = new ArrayList<>();
+                        tooltip.addAll(font.split(name, w));
+                        tooltip.addAll(font.split(idtext.copy().withStyle(ChatFormatting.DARK_GRAY), w));
+                        g.renderTooltip(font, tooltip, mouseX, mouseY);
+                    }
                 }
+                i++;
                 y += ITEM_H + GAP;
             }
             return y;
