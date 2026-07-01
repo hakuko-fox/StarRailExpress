@@ -13,7 +13,7 @@ import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
 public class SetOccupationRoleCommand {
 
   public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-    dispatcher.register(Commands.literal("setOccupationRole")
+    dispatcher.register(Commands.literal("sre:occupation_role")
         .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
         .then(Commands.argument("mainRole", RoleArgumentType.create())
             .then(Commands.argument("companionRole", RoleArgumentType.create())
