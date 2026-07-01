@@ -151,7 +151,7 @@ public class TraitorAndModifiers {
             Noellesroles.id("rebel"),
             new Color(0, 100, 0).getRGB(), // 暗绿色
             null, null, false, true))
-            .setDefaultEnableChance(2500);
+            .setDefaultEnableChance(2500).setHidden(true);
 
     // 晕血症 - 看到死亡获得缓慢和反胃
     public static SREModifier HEMOPHOBIA = HMLModifiers.registerModifier(new SREModifier(

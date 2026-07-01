@@ -217,6 +217,19 @@ public class SREModifier extends SREAbstractInfoClass {
         return this;
     };
 
+    /**
+     * 修饰符普通玩家不可视
+     * 
+     * @return
+     */
+    public SREModifier setHidden(boolean flag) {
+        if (flag)
+            this.addFlag("inner.hidden");
+        else
+            this.removeFlag("inner.hidden");
+        return this;
+    }
+
     public SREModifier(ResourceLocation identifier, int color, HashSet<SRERole> cannotBeAppliedTo,
             HashSet<SRERole> canOnlyBeAppliedTo, boolean killerOnly, boolean civilianOnly) {
         this.identifier = identifier;

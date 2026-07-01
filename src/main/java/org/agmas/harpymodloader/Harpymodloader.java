@@ -57,10 +57,6 @@ public class Harpymodloader implements ModInitializer {
     public static ArrayList<SRERole> VANNILA_ROLES = new ArrayList<>();
     public static ArrayList<SRERole> SPECIAL_ROLES = new ArrayList<>();
     public static ArrayList<SRERole> OVERWRITE_ROLES = new ArrayList<>();
-    /**
-     * Use 'Identifier().getPath();'
-     */
-    public static ArrayList<String> HIDDEN_MODIFIERS = new ArrayList<>();
     public static String MOD_ID = "harpymodloader";
 
     public static GameMode MODDED_GAMEMODE;
@@ -91,9 +87,6 @@ public class Harpymodloader implements ModInitializer {
 
         registerCommands();
         HMLModifiers.init();
-
-        // 将不屈设为隐藏词条，玩家自己不会看到
-        HIDDEN_MODIFIERS.add("unyielding");
 
         MODDED_GAMEMODE = SREGameModes.MURDER;
 
