@@ -270,7 +270,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     }
 
     private void applyHuntEffects() {
-        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, HUNT_TICKS, 3, false, false, false));
+        player.addEffect(new MobEffectInstance(ModEffects.DISGUISE, HUNT_TICKS + 6 * 20, 3, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, HUNT_TICKS, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.NO_COLLIDE, HUNT_TICKS, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, HUNT_TICKS, 0, false, false, false));
@@ -297,9 +297,8 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
     public void onBodyDeath(Player killer, ResourceLocation reason) {
         if (!isHunting() || !(player instanceof ServerPlayer serverPlayer))
             return;
-        bodyUuid = null;
         endHunt(false);
-        GameUtils.killPlayer(serverPlayer, true, killer, reason);
+        GameUtils.forceKillPlayer(serverPlayer, true, killer, reason);
     }
 
     public void endHunt(boolean applyCooldown) {
