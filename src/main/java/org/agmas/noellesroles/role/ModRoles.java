@@ -2291,6 +2291,7 @@ public class ModRoles {
             .setCanUseSkillWhileSpectator(true)
             .setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
+            .setSpecialVigilante(true)
             // 划分到警长阵营（isVigilanteTeam 为权威的警长归属判定）
             .setVigilanteTeam(true)
             // 出现概率下调一半（3000 -> 1500）
