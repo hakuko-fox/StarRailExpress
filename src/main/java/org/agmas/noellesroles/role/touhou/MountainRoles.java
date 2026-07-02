@@ -43,7 +43,7 @@ public class MountainRoles {
             new Color(162, 221, 233).getRGB(),
             false, // isInnocent = 乘客阵营
             false, // canUseKiller = 无杀手能力
-            SRERole.MoodType.FAKE, // 真实心情
+            SRERole.MoodType.REAL, // 真实心情
             Integer.MAX_VALUE, // 标准冲刺时间
             true)).setNeutrals(true).setDefaultEnableNeededPlayerCount(12).setDefaultEnableChance(100)
             .setCanUseInstinct(false).setCanPickUpRevolver(false);
