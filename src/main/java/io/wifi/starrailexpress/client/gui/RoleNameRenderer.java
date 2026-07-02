@@ -108,7 +108,7 @@ public class RoleNameRenderer {
                             targetRole = null;
                             nametag = Component.literal("");
                             return;
-                        } else if (target.isInvisible()) {
+                        } else if (target.isInvisibleTo(player) && !GameUtils.isPlayerSpectatingOrCreative(player)) {
                             targetRoleType = TrainRole.BYSTANDER;
                             targetRole = null;
                             nametag = Component.literal("");
