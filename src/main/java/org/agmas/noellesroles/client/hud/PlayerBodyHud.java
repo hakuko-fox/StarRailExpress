@@ -211,7 +211,7 @@ public class PlayerBodyHud {
                     nameMessage = Component.empty();
                     deathMessage = Component.translatable("message.noellesroles.penalty.limit.death");
                 }
-                context.drawString(renderer, nameMessage, -renderer.width(nameMessage) / 2, 22, CommonColors.RED);
+                context.drawString(renderer, nameMessage, -renderer.width(nameMessage) / 2, 16, CommonColors.RED);
                 context.drawString(renderer, deathMessage, -renderer.width(deathMessage) / 2, 32, CommonColors.RED);
                 SRERole foundRole = TMMRoles.CIVILIAN;
                 for (SRERole role : TMMRoles.ROLES.values()) {
