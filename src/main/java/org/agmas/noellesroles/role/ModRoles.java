@@ -876,6 +876,7 @@ public class ModRoles {
             })
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setCanUseInstinct(true)
             .setPassiveIncome(true)
+            .setComponentKey(ModComponents.JESTER)
             .setDefaultMax(1);
     public static SRERole CONDUCTOR = TMMRoles
             .registerRole(new NormalRole(CONDUCTOR_ID, new Color(184, 134, 11).getRGB(), true,
