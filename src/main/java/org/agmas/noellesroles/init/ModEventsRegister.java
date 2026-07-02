@@ -1631,6 +1631,23 @@ public class ModEventsRegister {
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
             ShadowFalconPlayerComponent.onDeathGiveJetpacks(victim);
         });
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (killer == null)
+                return;
+            var gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
+            for (var p : victim.level().players()) {
+                if (gameWorldComponent.isRole(p, ModRoles.MONITOR)) {
+                    if (p.getCooldowns().isOnCooldown(Items.BARRIER)) {
+                        continue;
+                    }
+                    p.getCooldowns().addCooldown(Items.BARRIER, 60 * 20);
+                    p.displayClientMessage(
+                            Component.translatable("message.monitor.killer_killed", victim.getName())
+                                    .withStyle(ChatFormatting.AQUA),
+                            true);
+                }
+            }
+        });
         // 葬仪被动-引渡：杀手/杀手方中立/魔术师死亡时向所有杀手、杀手方中立和魔术师广播
         // 葬仪死亡后被动失效（场上没有存活的葬仪时不会触发广播）
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
@@ -1717,19 +1734,6 @@ public class ModEventsRegister {
                         false, // showParticles（显示粒子）
                         false // showIcon（显示图标）
                 ));
-            }
-            for (var p : victim.level().players()) {
-                if (gameWorldComponent.isRole(p, ModRoles.MONITOR)) {
-                    if (p.getCooldowns().isOnCooldown(Items.BARRIER)) {
-                        continue;
-                    } else {
-                        p.getCooldowns().addCooldown(Items.BARRIER, 60 * 20);
-                        p.displayClientMessage(
-                                Component.translatable("message.monitor.killer_killed", victim.getName())
-                                        .withStyle(ChatFormatting.AQUA),
-                                true);
-                    }
-                }
             }
         });
         ShouldDropOnDeath.EVENT.register(((stack) -> {
