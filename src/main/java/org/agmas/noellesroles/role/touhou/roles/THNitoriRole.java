@@ -166,7 +166,7 @@ public class THNitoriRole extends TouhouRole {
       SHOP.add(new ShopEntry(TMMItems.MARTINI.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
       SHOP.add(new ShopEntry(TMMItems.COSMOPOLITAN.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
       SHOP.add(new ShopEntry(TMMItems.CHAMPAGNE.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
-      SHOP.add(new ShopEntry(FunnyItems.SHISIYE.getDefaultInstance(), 1000, ShopEntry.Type.TOOL));
+      SHOP.add(new ShopEntry(FunnyItems.SHISIYE.getDefaultInstance(), 500, ShopEntry.Type.TOOL));
     }
     // 食物
     {
