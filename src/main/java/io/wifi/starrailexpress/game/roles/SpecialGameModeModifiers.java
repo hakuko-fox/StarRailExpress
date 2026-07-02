@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.game.roles;
 
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
 
 import io.wifi.starrailexpress.SRE;
 
@@ -16,7 +17,8 @@ public class SpecialGameModeModifiers {
             null,
             new HashSet<>(),
             false,
-            false)).setDefaultMax(0).setOtherModeRole(true);
+            false)).setDefaultMax(0).setOtherModeRole(true).setCanSetSpawnInfoInConfig(false)
+            .setSpawnInfo(new SpawnInfo().setMax(0));
 
     public static void init() {
 

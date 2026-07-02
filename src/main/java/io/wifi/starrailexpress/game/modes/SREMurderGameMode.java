@@ -1,6 +1,5 @@
 package io.wifi.starrailexpress.game.modes;
 
-import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.RepairRole;
@@ -235,7 +234,6 @@ public class SREMurderGameMode extends GameMode {
                     }
                 }
             }
-            SRE.LOGGER.info("mod: {}",mod.getName().getString());
             if (SREDisableManager.isModifierDisabled(mod)) {
                 continue;
             }
@@ -243,7 +241,6 @@ public class SREMurderGameMode extends GameMode {
             // 名单只决定修饰符是否启用（上面的过滤），数量始终沿用 MODIFIER_MAX，名单不再接管数量。
             int m_max = Harpymodloader.MODIFIER_MAX.getOrDefault(mod.identifier(), 1);
             int targetAssignments = specificDesiredRoleCount;
-            SRE.LOGGER.info("mod not disabled: {}; max = {}",mod.getName().getString(),m_max);
 
             if (m_max == -1 || m_max == 0)
                 continue;
@@ -329,7 +326,8 @@ public class SREMurderGameMode extends GameMode {
         }
 
         var role = gameWorldComponent.getRole(player);
-        if (modifier.canOnlyBeAppliedTo != null && role != null && !modifier.canOnlyBeAppliedTo.contains(role)) {
+        if (modifier.canOnlyBeAppliedTo != null && !modifier.canOnlyBeAppliedTo.isEmpty() && role != null
+                && !modifier.canOnlyBeAppliedTo.contains(role)) {
             return false;
         }
         if (modifier.cannotBeAppliedTo != null && role != null && modifier.cannotBeAppliedTo.contains(role)) {

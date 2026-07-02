@@ -693,17 +693,21 @@ public class RoleIntroduceScreen extends Screen {
                     Component name = RoleUtils.getRoleOrModifierOrItemName(obj);
                     String numText = "" + i;
                     Component idtext = Component.literal(RoleUtils.getRoleOrModifierOrItemIdentifier(obj).toString());
+                    int num_w = 32;
                     int color = RoleUtils.getRoleOrModifierOrItemColor(obj);
                     g.drawString(font,
-                            Component.translatable("%s.  %s", numText, name.copy().withColor(color))
+                            numText,
+                            contentX + 6 + (num_w - font.width(numText)) / 2,
+                            y + (ITEM_H - font.lineHeight) / 2, 0xffffffff);
+                    g.drawString(font,
+                            Component.translatable("%s", name.copy().withColor(color))
                                     .withStyle(ChatFormatting.WHITE),
-                            contentX + 6,
-                            y + (ITEM_H / 2 - font.lineHeight - 3), 0xffffffff);
-                    int num_w = font.width(Component.translatable("%s.  ", numText));
+                            contentX + 6 + num_w,
+                            y + (ITEM_H / 2 - font.lineHeight - 1), 0xffffffff);
                     g.drawString(font, idtext.copy()
                             .withStyle(ChatFormatting.DARK_GRAY),
                             contentX + 6 + num_w,
-                            y + (ITEM_H / 2 + 3), 0xffffffff);
+                            y + (ITEM_H / 2 + 1), 0xffffffff);
                     g.fill(contentX + 4, y + ITEM_H - 1, contentX + w - 4, y + ITEM_H, 0x20FFFFFF);
                     if (hovered) {
                         List<FormattedCharSequence> tooltip = new ArrayList<>();

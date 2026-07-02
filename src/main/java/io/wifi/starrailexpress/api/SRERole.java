@@ -1076,6 +1076,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setDefaultMax(int count) {
         defaultMaxCount = count;
+        this.spawnInfo.maxSpawn = count;
         return this;
     };
 
@@ -1087,16 +1088,19 @@ public abstract class SRERole extends SREAbstractInfoClass {
         for (String s : maps) {
             this.defaultSpawnMaps.add(s);
         }
+        this.spawnInfo.addMaps(maps);
         return this;
     };
 
     public SRERole setDefaultEnableMaxPlayerCount(int count) {
         defaultEnableMaxPlayerCount = count;
+        this.spawnInfo.maxEnabledPlayer = count;
         return this;
     };
 
     public SRERole setDefaultEnableNeededPlayerCount(int count) {
         defaultEnableNeedPlayerCount = count;
+        this.spawnInfo.minEnabledPlayer = count;
         return this;
     };
 
@@ -1118,6 +1122,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setDefaultEnableChance(int count) {
         defaultEnableChance = count;
+        this.spawnInfo.enableChance = count;
         return this;
     };
 

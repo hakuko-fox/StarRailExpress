@@ -28,9 +28,9 @@ public class SREModifier extends SREAbstractInfoClass {
     public int color;
     public HashSet<SRERole> cannotBeAppliedTo;
     public HashSet<SRERole> canOnlyBeAppliedTo;
-    public boolean killerOnly;
-    public boolean civilianOnly;
-    public boolean notVigilante;
+    public boolean killerOnly = false;
+    public boolean civilianOnly = false;
+    public boolean notVigilante = false;
     public Consumer<ServerPlayer> serverTickEvent = null;
     public Consumer<Player> clientTickEvent = null;
     public int defaultMaxCount = 1;
@@ -211,6 +211,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultMax(int count) {
         defaultMaxCount = count;
+        this.spawnInfo.maxSpawn = defaultMaxCount;
         return this;
     };
 
@@ -222,6 +223,7 @@ public class SREModifier extends SREAbstractInfoClass {
         for (String s : maps) {
             this.defaultSpawnMaps.add(s);
         }
+        this.spawnInfo.addMaps(maps);
         return this;
     };
 
@@ -233,6 +235,7 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultMaxPlayerCount(int count) {
         defaultMaxPlayerCount = count;
+        this.spawnInfo.maxEnabledPlayer = count;
         return this;
     };
 
@@ -244,6 +247,8 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultEnableNeededPlayerCount(int count) {
         defaultNeedPlayerCount = count;
+        this.spawnInfo.minEnabledPlayer = count;
+
         return this;
     };
 
@@ -255,6 +260,8 @@ public class SREModifier extends SREAbstractInfoClass {
      */
     public SREModifier setDefaultEnableChance(int chance) {
         defaultEnableChance = chance;
+        this.spawnInfo.enableChance = chance;
+
         return this;
     };
 
