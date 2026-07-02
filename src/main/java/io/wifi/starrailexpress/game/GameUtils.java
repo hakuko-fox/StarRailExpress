@@ -969,28 +969,7 @@ public class GameUtils {
 
         // reset all players
         for (ServerPlayer player : world.getServer().getPlayerList().getPlayers()) {
-            // 重置重力为默认值
-            var gravityAttr = player.getAttribute(Attributes.GRAVITY);
-            if (gravityAttr != null && gravityAttr.getBaseValue() != 0.08) {
-                gravityAttr.setBaseValue(0.08);
-            }
-            // 清除全局药水效果
-            AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
-            for (String effectStr : areas.effect) {
-                if (effectStr.isEmpty())
-                    continue;
-                try {
-                    String[] parts = effectStr.split(",");
-                    if (parts.length >= 1) {
-                        ResourceLocation effectId = ResourceLocation.parse(parts[0]);
-                        var effectHolder = BuiltInRegistries.MOB_EFFECT.getHolder(effectId).orElse(null);
-                        if (effectHolder != null) {
-                            player.removeEffect(effectHolder);
-                        }
-                    }
-                } catch (Exception ignored) {
-                }
-            }
+            // 不需要别的逻辑，会自己清掉修饰符+药水
             resetPlayerAfterGame(player);
         }
         HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
