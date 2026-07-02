@@ -56,7 +56,6 @@ public class RoleNameRenderer {
         return 2f;
     }
 
-    @SuppressWarnings("unused")
     public static void renderHud(Font renderer, @NotNull LocalPlayer player, FakeGuiGraphics context,
             DeltaTracker tickCounter) {
 
@@ -91,7 +90,7 @@ public class RoleNameRenderer {
         {
 
             Player target = null;
-            if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof Player player1,
+            if (ProjectileUtil.getHitResultOnViewVector(player, entity -> entity instanceof Player,
                     range) instanceof EntityHitResult entityHitResult
                     && entityHitResult.getEntity() instanceof Player) {
                 target = (Player) entityHitResult.getEntity();
@@ -109,7 +108,7 @@ public class RoleNameRenderer {
                             targetRole = null;
                             nametag = Component.literal("");
                             return;
-                        } else if (player.isInvisible()) {
+                        } else if (target.isInvisible()) {
                             targetRoleType = TrainRole.BYSTANDER;
                             targetRole = null;
                             nametag = Component.literal("");
@@ -214,16 +213,12 @@ public class RoleNameRenderer {
                                     roleText1 = roleText2;
                                 }
                             }
-                            if (roleText1 == null)
-                                return;
-                            int roleWidth1 = renderer.width(roleText1);
-                            context.drawString(renderer, roleText1, -roleWidth1 / 2, 0,
-                                    Mth.color(1f, 0f, 0f) | ((int) (1 * 255) << 24));
+                            if (roleText1 != null) {
+                                int roleWidth1 = renderer.width(roleText1);
+                                context.drawString(renderer, roleText1, -roleWidth1 / 2, 0,
+                                        Mth.color(1f, 0f, 0f) | ((int) (1 * 255) << 24));
+                            }
                         }
-                    }
-                    {
-                        OnRenderRoleName.RENDER_PLAYER_EXTRA.invoker().renderExtra(player, target, context, tickCounter,
-                                renderer);
                     }
                     {
                         Component cohortText = Component.translatable("game.tip.cohort");
@@ -248,7 +243,10 @@ public class RoleNameRenderer {
                                     Mth.color(1f, 0f, 0f) | ((int) (255) << 24));
                         }
                     }
-
+                    {
+                        OnRenderRoleName.RENDER_PLAYER_EXTRA.invoker().renderExtra(player, target, context, tickCounter,
+                                renderer);
+                    }
                 }
                 context.pose().popPose();
             }

@@ -30,7 +30,6 @@ import java.util.UUID;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.client.NoellesrolesClient;
-import org.agmas.noellesroles.client.RicesRoleRhapsodyClient;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
@@ -186,10 +185,13 @@ public class PlayerBodyHud {
                         deathText = it.getDescription();
                     }
                 }
-
-                MutableComponent nameMessage = Component
-                        .translatable("hud.coroner.death_info.name", targetBody.tickCount / 20,
-                                bodyDeathReasonComponent.getOwnerName());
+                String victimName = bodyDeathReasonComponent.getOwnerName();
+                MutableComponent nameMessage = Component.empty();
+                if (victimName != null) {
+                    nameMessage = Component
+                            .translatable("hud.coroner.death_info.name",
+                                    victimName);
+                }
                 MutableComponent deathMessage = Component
                         .translatable("hud.coroner.death_info.new", targetBody.tickCount / 20, deathText);
                 boolean vultured = bodyDeathReasonComponent.vultured;
@@ -209,7 +211,7 @@ public class PlayerBodyHud {
                     nameMessage = Component.empty();
                     deathMessage = Component.translatable("message.noellesroles.penalty.limit.death");
                 }
-                context.drawString(renderer, deathMessage, -renderer.width(nameMessage) / 2, 22, CommonColors.RED);
+                context.drawString(renderer, nameMessage, -renderer.width(nameMessage) / 2, 22, CommonColors.RED);
                 context.drawString(renderer, deathMessage, -renderer.width(deathMessage) / 2, 32, CommonColors.RED);
                 SRERole foundRole = TMMRoles.CIVILIAN;
                 for (SRERole role : TMMRoles.ROLES.values()) {

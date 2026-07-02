@@ -99,9 +99,11 @@ public class SREClientEvents {
         });
         // 低理智
         OnRenderRoleName.RENDER_PLAYER_NAME.register((player, target, c, d, f) -> {
-            if (SREPlayerMoodComponent.KEY.get(player).getMood() <= 0.4) {
-                // return TrueFalseAndCustomResult.custom(Component.empty());
-                return TrueFalseAndCustomResult.disallow();
+            if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                if (SREPlayerMoodComponent.KEY.get(player).getMood() <= 0.4) {
+                    // return TrueFalseAndCustomResult.custom(Component.empty());
+                    return TrueFalseAndCustomResult.disallow();
+                }
             }
             return TrueFalseAndCustomResult.pass();
         });
@@ -117,8 +119,7 @@ public class SREClientEvents {
             return TrueFalseAndCustomResult.pass();
         });
         OnRenderRoleName.RENDER_PLAYER.register((player, target, context, delta, font) -> {
-            if (!player.getUUID().equals(target.getUUID())
-                    && RoleUtils.isPlayerTheJob(target, ModRoles.RAVEN)
+            if (RoleUtils.isPlayerTheJob(target, ModRoles.RAVEN)
                     && ModComponents.RAVEN.get(target).isHunting()) {
                 return TrueFalseResult.FALSE;
             }
