@@ -42,19 +42,25 @@ import java.util.UUID;
 
 public class WraithAssassinPlayerComponent implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<WraithAssassinPlayerComponent> KEY = ModComponents.WRAITH_ASSASSIN;
-    public static final boolean 残月不改 = true;
-    public static final int LOW_SAN_BLUE = 10;
+    public static final int MAX_ENERGY = 1000;
+    public static final int LOW_SAN_BLUE = 20;
     public static final int LOW_SAN_YELLOW = 30;
     public static final int ASSAULT_COST = 30;
     public static final int WAIL_COST = 100;
     public static final int MANIFEST_COST = 320;
     public static final int MANIFEST_TICKS = 15 * 20;
-    public static final int PANIC_TICKS = 4 * 20;
+    public static final int PANIC_TICKS = 8 * 20;
+    public static final int WAIL_RADIUS = 12;
+    public static final int WAIL_SAN_DAMAGE = 25;
+    public static final int DRAIN_RADIUS = 8;
+    public static final int DRAIN_SAN_AMOUNT = 30;
+    public static final int DRAIN_COOLDOWN_TICKS = 30 * 20;
     public static final ResourceLocation DEATH_REASON = Noellesroles.id("wraith_assault");
 
     private final Player player;
     public int energy;
     public int manifestTicks;
+    public int drainCooldownTicks;
     private int heartbeatTimer;
 
     public WraithAssassinPlayerComponent(Player player) {
@@ -79,6 +85,7 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     public void init() {
         energy = 0;
         manifestTicks = 0;
+        drainCooldownTicks = 0;
         heartbeatTimer = 0;
         sync();
     }
@@ -103,8 +110,6 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         if (!(player instanceof ServerPlayer sp)) {
             return;
         }
-        if (残月不改)
-            return;
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(player.level());
         if (gw == null || !gw.isRunning() || !gw.isRole(player, ModRoles.WRAITH_ASSASSIN)) {
             removeWraithEffects();
@@ -113,6 +118,13 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             removeWraithEffects();
             return;
+        }
+
+        if (drainCooldownTicks > 0) {
+            drainCooldownTicks--;
+            if (drainCooldownTicks == 0 || drainCooldownTicks % 20 == 0) {
+                sync();
+            }
         }
 
         if (manifestTicks > 0) {
@@ -177,9 +189,13 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         if (amount <= 0) {
             return false;
         }
-        energy += amount;
+        energy = Mth.clamp(energy + amount, 0, MAX_ENERGY);
         sync();
         return true;
+    }
+
+    public float getEnergyPercent() {
+        return Mth.clamp(energy / (float) MAX_ENERGY, 0.0f, 1.0f);
     }
 
     private boolean spendEnergy(ServerPlayer player, int amount) {
@@ -240,15 +256,17 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
         for (ServerPlayer target : level.players()) {
             if (target == self || !GameUtils.isPlayerAliveAndSurvival(target) || gw.isKillerTeam(target)
-                    || target.distanceToSqr(self) > 8 * 8) {
+                    || target.distanceToSqr(self) > WAIL_RADIUS * WAIL_RADIUS) {
                 continue;
             }
-            addSan(target, -10);
-            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, PANIC_TICKS, 1, false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, PANIC_TICKS, 0, false, false, true));
+            addSan(target, -WAIL_SAN_DAMAGE);
+            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, PANIC_TICKS, 2, false, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, PANIC_TICKS, 0, false, false, true));
+            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 4 * 20, 0, false, false, true));
+            target.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, PANIC_TICKS, 1, false, false, true));
             target.playNotifySound(SoundEvents.WARDEN_HEARTBEAT, SoundSource.HOSTILE, 1.0f, 0.55f);
         }
-        level.playSound(null, self.blockPosition(), SoundEvents.WARDEN_ROAR, SoundSource.HOSTILE, 1.2f, 0.7f);
+        level.playSound(null, self.blockPosition(), SoundEvents.WARDEN_ROAR, SoundSource.HOSTILE, 1.8f, 0.55f);
         return true;
     }
 
@@ -265,31 +283,38 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     }
 
     public boolean buyDrain(ServerPlayer self) {
+        if (drainCooldownTicks > 0) {
+            self.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.drain_cooldown",
+                    Mth.ceil(drainCooldownTicks / 20.0f)).withStyle(ChatFormatting.RED), true);
+            return false;
+        }
         ServerLevel level = self.serverLevel();
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
-        ServerPlayer target = null;
-        double best = Double.MAX_VALUE;
+        int totalDrained = 0;
+        int targetCount = 0;
         for (ServerPlayer p : level.players()) {
             if (p == self || !GameUtils.isPlayerAliveAndSurvival(p) || gw.isKillerTeam(p)) {
                 continue;
             }
-            double dist = p.distanceToSqr(self);
-            if (dist < best && dist <= 8 * 8 && getSan(p) > 0) {
-                best = dist;
-                target = p;
+            if (p.distanceToSqr(self) <= DRAIN_RADIUS * DRAIN_RADIUS && getSan(p) > 0) {
+                int drained = Math.min(DRAIN_SAN_AMOUNT, getSan(p));
+                addSan(p, -drained);
+                totalDrained += drained;
+                targetCount++;
+                p.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 3 * 20, 0, false, false, true));
+                p.playNotifySound(SoundEvents.WARDEN_NEARBY_CLOSEST, SoundSource.HOSTILE, 1.0f, 0.75f);
             }
         }
-        if (target == null) {
+        if (totalDrained <= 0) {
             self.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.no_drain_target")
                     .withStyle(ChatFormatting.RED), true);
             return false;
         }
-        int drained = Math.min(25, getSan(target));
-        addSan(target, -drained);
-        addEnergy(drained);
-        target.playNotifySound(SoundEvents.WARDEN_NEARBY_CLOSEST, SoundSource.HOSTILE, 1.0f, 0.75f);
-        self.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.drain", drained,
-                target.getName()).withStyle(ChatFormatting.DARK_PURPLE), true);
+        addEnergy(totalDrained);
+        drainCooldownTicks = DRAIN_COOLDOWN_TICKS;
+        sync();
+        self.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.drain_area",
+                totalDrained, targetCount).withStyle(ChatFormatting.DARK_PURPLE), true);
         return true;
     }
 
@@ -369,12 +394,14 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putInt("energy", energy);
         tag.putInt("manifestTicks", manifestTicks);
+        tag.putInt("drainCooldownTicks", drainCooldownTicks);
     }
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         energy = tag.getInt("energy");
         manifestTicks = tag.getInt("manifestTicks");
+        drainCooldownTicks = tag.getInt("drainCooldownTicks");
     }
 
     @Override

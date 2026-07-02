@@ -3428,5 +3428,11 @@
   "message.noellesroles.wraith_assassin.energy_gain": "痛苦凝成能量：+%s SAN",
   "message.noellesroles.wraith_assassin.not_enough_energy": "能量不足：需要 %s SAN，当前 %s SAN",
   "message.noellesroles.wraith_assassin.no_drain_target": "附近没有可吸收 SAN 的目标。",
-  "message.noellesroles.wraith_assassin.drain": "你从 %2$s 身上吸收了 %1$s SAN。"
+  "message.noellesroles.wraith_assassin.drain": "你从 %2$s 身上吸收了 %1$s SAN。",
+  "message.noellesroles.wraith_assassin.drain_area": "你吸收了周围 %2$s 名玩家共 %1$s SAN。",
+  "hud.noellesroles.wraith_assassin.drain_cooldown": "吸收冷却：%ss",
+  "hud.noellesroles.wraith_assassin.manifesting": "显现中：%ss",
+  "hud.noellesroles.wraith_assassin.costs": "消耗：突袭 %1$s / 嚎叫 %2$s / 显现 %3$s",
+  "hud.noellesroles.wraith_assassin.energy": "当前 SAN：%1$s/%2$s",
+  "message.noellesroles.wraith_assassin.drain_cooldown": "吸收 SAN 冷却中，还需 %s 秒。"
 }
