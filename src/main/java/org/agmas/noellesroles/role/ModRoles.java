@@ -1776,6 +1776,7 @@ public class ModRoles {
     )).setOccupiedRoleCount(0) // 不占用杀手位
             .setCanUseInstinct(false) // 没有杀手透视
             .setCanSeeTeammateKiller(false) // 杀手本能看不到队友，对杀手的框显示如平民
+            .setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1).setDefaultEnableChance(2000).setDefaultEnableNeededPlayerCount(12);
 
     /**
