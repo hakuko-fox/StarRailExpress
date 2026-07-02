@@ -1,5 +1,6 @@
 package org.agmas.noellesroles.game.roles.neutral.infected;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
@@ -289,12 +290,11 @@ public class InfectedWinChecker {
                     for (ServerPlayer p : level.getServer().getPlayerList().getPlayers()) {
                         ServerPlayNetworking.send(p, new BroadcastMessageS2CPacket(broadcast));
                     }
-                    // 疫使技能冷却立刻清零
+                    // 疫使技能冷却立刻清零（同时重置统一冷却和独立技能状态冷却）
                     for (ServerPlayer p : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
                         if (gameWorldComponent.isRole(p, ModRoles.INFECTED)) {
                             SREAbilityPlayerComponent abilityComponent = SREAbilityPlayerComponent.KEY.get(p);
-                            abilityComponent.cooldown = 0;
-                            abilityComponent.sync();
+                            abilityComponent.resetAllCooldowns();
                         }
                     }
                 }
@@ -327,7 +327,9 @@ public class InfectedWinChecker {
         }
         if (infectedPlayer == null || totalNonInfected > 0) return;
         SREAbilityPlayerComponent abilityComponent = SREAbilityPlayerComponent.KEY.get(infectedPlayer);
+        abilityComponent.resetAllCooldowns();
         abilityComponent.cooldown = GameConstants.getInTicks(0, 3);
+        abilityComponent.getSkillState(SRE.id("infected_infect")).cooldown = abilityComponent.cooldown;
         abilityComponent.sync();
         for (ServerPlayer player : players) {
             if (gameWorldComponent.isRole(player, ModRoles.INFECTED)) continue;
@@ -408,8 +410,7 @@ public class InfectedWinChecker {
                 for (ServerPlayer p : level.getPlayers(GameUtils::isPlayerAliveAndSurvival)) {
                     if (gameWorldComponent.isRole(p, ModRoles.INFECTED)) {
                         SREAbilityPlayerComponent abilityComponent = SREAbilityPlayerComponent.KEY.get(p);
-                        abilityComponent.cooldown = 0;
-                        abilityComponent.sync();
+                        abilityComponent.resetAllCooldowns();
                     }
                 }
             }
