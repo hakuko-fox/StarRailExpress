@@ -184,7 +184,7 @@ public class SEModifiers {
             StupidExpress.id("black_white"),
             Color.BLACK.getRGB(),
             null,
-            new HashSet<>(List.of(TMMRoles.VIGILANTE)),
+            new HashSet<>(List.of(ModRoles.SHERIFF)),
             false,
             true))
             .setDefaultMax(1)
