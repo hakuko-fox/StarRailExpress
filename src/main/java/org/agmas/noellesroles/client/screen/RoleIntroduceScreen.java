@@ -697,8 +697,9 @@ public class RoleIntroduceScreen extends Screen {
                     int color = RoleUtils.getRoleOrModifierOrItemColor(obj);
                     g.drawString(font,
                             numText,
-                            contentX + 6 + (num_w - font.width(numText)) / 2,
+                            contentX + (num_w - font.width(numText)) / 2,
                             y + (ITEM_H - font.lineHeight) / 2, 0xffffffff);
+                    g.fill(contentX + num_w - 2, y + 2, contentX + num_w - 1, y + ITEM_H - 3, 0x20FFFFFF);
                     g.drawString(font,
                             Component.translatable("%s", name.copy().withColor(color))
                                     .withStyle(ChatFormatting.WHITE),
