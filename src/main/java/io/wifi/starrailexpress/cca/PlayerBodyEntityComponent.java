@@ -224,8 +224,10 @@ public class PlayerBodyEntityComponent implements RoleComponent, ServerTickingCo
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         // 同步基本数据，不包含物品（打开容器时由菜单自动同步物品）
-        tag.putString("oname", ownerName);
-        tag.putString("playerRole", playerRole.toString());
+        if (ownerName != null)
+            tag.putString("oname", ownerName);
+        if (playerRole != null)
+            tag.putString("playerRole", playerRole.toString());
         tag.putBoolean("vultured", vultured);
         tag.putBoolean("isFakeBody", isFakeBody);
         if (killer != null) {
@@ -234,7 +236,8 @@ public class PlayerBodyEntityComponent implements RoleComponent, ServerTickingCo
         if (conspiratorEvidence != null) {
             tag.putUUID("ConspiratorEvidence", conspiratorEvidence);
         }
-        tag.putString("DeathReason", deathReason);
+        if (deathReason != null)
+            tag.putString("DeathReason", deathReason);
     }
 
     @Override
@@ -256,7 +259,8 @@ public class PlayerBodyEntityComponent implements RoleComponent, ServerTickingCo
         } else {
             conspiratorEvidence = null;
         }
-        deathReason = tag.getString("DeathReason");
+        if (tag.contains("DeathReason"))
+            deathReason = tag.getString("DeathReason");
     }
 
     @Override
