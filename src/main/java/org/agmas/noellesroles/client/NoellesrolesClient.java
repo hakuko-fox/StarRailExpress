@@ -147,10 +147,6 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static KeyMapping foolPrayerBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key.noellesroles.fool_prayer",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, "category.starrailexpress.keybinds"));
-    public static Player target;
-    public static PlayerBodyEntity targetBody;
-    public static Player targetFakeBody;
-    public static Player hudTarget;
     public static boolean isTaskInstinctEnabled = false;
     // 记录被触发启用透视的任务路标位置
     public static Set<BlockPos> enabledTaskMarkerPositions = new HashSet<>();
@@ -215,6 +211,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static HashMap<BlockPos, Integer> taskBlocks = new HashMap<>();
     public static int scanTaskPointsCountDown = -1;
     public static String myRoomNumber = null;
+    public static PlayerBodyEntity targetBody;
 
     @Override
     public void onInitializeClient() {
