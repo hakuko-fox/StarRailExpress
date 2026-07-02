@@ -550,7 +550,7 @@ public class ModRoles {
             .setDefaultMax(1);
 
     // DIO 迪奥
-    public static SRERole DIO = TMMRoles.registerRole(new NormalRole(
+    public static SRERole DIO = TMMRoles.registerRole(new EggRole(
             DIO_ID, // 角色 ID
             new Color(255, 215, 0).getRGB(), // 黄色 - 代表 DIO 的金色气场
             false, // isInnocent = 非乘客阵营（杀手）
@@ -561,7 +561,7 @@ public class ModRoles {
     )).setCanSeeCoin(true).setComponentKey(ModComponents.DIO).setOccupiedRoleCount(2).setCanSeeBodyDeathReason(true)
             .setCanBeRandomedByOtherRoles(false).setDefaultMax(0);
     // JOJO 承太郎
-    public static SRERole JOJO = TMMRoles.registerRole(new NormalRole(
+    public static SRERole JOJO = TMMRoles.registerRole(new EggRole(
             JOJO_ID, // 角色 ID
             Color.YELLOW.getRGB(),
             true, // isInnocent = 非乘客阵营（杀手）
@@ -579,7 +579,7 @@ public class ModRoles {
                     false, true, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, true))
             .setCanSeeCoin(true).setCanSeeTeammateKiller(true)
-            .setCanUseInstinct(true).setDefaultMax(0);
+            .setCanUseInstinct(true).setDefaultMax(1).setDefaultEnableNeededPlayerCount(12).setDefaultEnableChance(400);
 
     // 好人：锁匠
     public static SRERole LOCKSMITH = TMMRoles.registerRole(
