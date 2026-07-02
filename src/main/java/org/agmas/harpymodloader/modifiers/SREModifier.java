@@ -298,13 +298,6 @@ public class SREModifier extends SREAbstractInfoClass {
         this.canOnlyBeAppliedTo = canOnlyBeAppliedTo;
         this.killerOnly = killerOnly;
         this.civilianOnly = civilianOnly;
-        if (this.cannotBeAppliedTo == null) {
-            this.cannotBeAppliedTo = new HashSet<>();
-        }
-
-        if (this.canOnlyBeAppliedTo == null) {
-            this.canOnlyBeAppliedTo = new HashSet<>();
-        }
     }
 
     @Override
