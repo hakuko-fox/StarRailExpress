@@ -201,6 +201,7 @@ public class PlayerBodyHud {
                     }
                 }
                 if (vultured) {
+                    nameMessage = Component.empty();
                     deathMessage = Component.literal("abcdefghijklmnopqrstuvwxyzaa")
                             .withStyle(ChatFormatting.OBFUSCATED);
                 }
