@@ -1,7 +1,8 @@
-package pro.fazeclan.river.stupid_express.mixin.client.modifier.split_personality;
+package org.agmas.noellesroles.client.hud.modifiers;
+
+import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.client.gui.RoleNameRenderer;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
@@ -11,18 +12,19 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
 
-@Mixin(RoleNameRenderer.class)
-public abstract class SplitPersonalityHudMixin {
+public class ShitSplitHud {
+    public static void register() {
+        CommonHudRenderCallback.EVENT.register((context, deltaTracker) -> {
+            var client = Minecraft.getInstance();
+            var font = client.font;
+            splitPersonalityHud(font, client.player, context, deltaTracker);
+        });
+    }
 
-    @Inject(method = "renderHud", at = @At("TAIL"))
     private static void splitPersonalityHud(Font renderer, LocalPlayer player, FakeGuiGraphics context,
-            DeltaTracker tickCounter, CallbackInfo ci) {
+            DeltaTracker tickCounter) {
         var clientPlayer = Minecraft.getInstance().player;
         if (clientPlayer == null)
             return;
@@ -91,7 +93,8 @@ public abstract class SplitPersonalityHudMixin {
         context.drawString(renderer, statusText, x, y, color);
     }
 
-    private static void renderSwitchTimer(FakeGuiGraphics context, Font renderer, SplitPersonalityComponent component,
+    private static void renderSwitchTimer(FakeGuiGraphics context, Font renderer,
+            SplitPersonalityComponent component,
             int x, int y) {
         long remaining = component.canSwitch() ? 0 : (1200 - (component.getBaseTickCounter())) / 20;
         if (remaining < 0)
@@ -107,7 +110,8 @@ public abstract class SplitPersonalityHudMixin {
         }
     }
 
-    private static void renderRevivalTimer(FakeGuiGraphics context, Font renderer, SplitPersonalityComponent component,
+    private static void renderRevivalTimer(FakeGuiGraphics context, Font renderer,
+            SplitPersonalityComponent component,
             int x, int y) {
         if (component.getTemporaryRevivalStartTick() <= 0)
             return;
@@ -143,7 +147,8 @@ public abstract class SplitPersonalityHudMixin {
         }
     }
 
-    private static void renderChoiceStatus(FakeGuiGraphics context, Font renderer, SplitPersonalityComponent component,
+    private static void renderChoiceStatus(FakeGuiGraphics context, Font renderer,
+            SplitPersonalityComponent component,
             int x, int y) {
         // 显示当前选择状态
         MutableComponent choiceText;
@@ -213,4 +218,5 @@ public abstract class SplitPersonalityHudMixin {
 
         // context.drawString(renderer, partnerChoiceText, x, y + 12, partnerColor);
     }
+
 }

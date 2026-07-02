@@ -71,10 +71,6 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
     // 慕恋者窥视状态
     private static boolean admirerGazingLastTick = false;
 
-    // ==================== 客户端状态 ====================
-    // 当前选中的目标玩家（用于需要选择目标的技能）
-    public static Player targetPlayer;
-
     @Override
     public void onInitializeClient() {
 

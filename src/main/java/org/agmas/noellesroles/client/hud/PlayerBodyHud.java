@@ -39,7 +39,6 @@ import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
 
 public class PlayerBodyHud {
-
     public static PlayerBodyEntity targetBody;
     public static Player targetFakeBody;
     public static Player hudTarget;
@@ -189,7 +188,8 @@ public class PlayerBodyHud {
                 }
 
                 MutableComponent nameMessage = Component
-                        .translatable("hud.coroner.death_info.name", targetBody.tickCount / 20, bodyDeathReasonComponent.getOwnerName());
+                        .translatable("hud.coroner.death_info.name", targetBody.tickCount / 20,
+                                bodyDeathReasonComponent.getOwnerName());
                 MutableComponent deathMessage = Component
                         .translatable("hud.coroner.death_info.new", targetBody.tickCount / 20, deathText);
                 boolean vultured = bodyDeathReasonComponent.vultured;
@@ -291,6 +291,7 @@ public class PlayerBodyHud {
                 context.pose().popPose();
                 return;
             }
+            ForensicHud.renderCorpse(renderer, player, targetBody, context, tickCounter);
         }
     }
 
@@ -307,7 +308,7 @@ public class PlayerBodyHud {
                     targetBody = playerBodyEntity;
                     NoellesrolesClient.targetBody = targetBody;// 用于秃鹫兼容
                 } else if (ehr.getEntity() instanceof Player targetPlayer) {
-                    RicesRoleRhapsodyClient.targetPlayer = targetPlayer;
+                    NoellesrolesClient.targetPlayer = targetPlayer;
                     InsaneKillerPlayerComponent component = InsaneKillerPlayerComponent.KEY.get(targetPlayer);
                     if (component.isActive) {
                         targetFakeBody = targetPlayer;

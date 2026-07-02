@@ -93,8 +93,6 @@
     "client.roles.bartender.DefenseVialViewMixin",
     "client.roles.builder.BuilderBlockUpdateMixin",
     "client.roles.bodymaker.BodymakerScreenMixin",
-    "client.forensic.ForensicCorpseHudMixin",
-    "client.forensic.ForensicDoorHudMixin",
     "client.roles.detective.PlaySoundEventMixin",
     "client.roles.exampler.ExamplerScreenMixin",
     "client.roles.executioner.ExecutionerShopScreenMixin",
@@ -114,7 +112,6 @@
     "client.roles.monokuma.MonokumaInkShaderMixin",
     "client.roles.morphling.MorphlingCapeRendererMixin",
     "client.roles.morphling.MorphlingRendererMixin",
-    "client.roles.morphling.MorphlingRoleNameRendererMixin",
     "client.roles.morphling.MorphlingScreenMixin",
     "client.roles.morphling.SPClientTick",
     "client.roles.silencer.SilencerScreenMixin",
@@ -129,7 +126,6 @@
     "client.roles.voodoo.VoodooScreenMixin",
     "client.roles.voodoo.LengxiaoScreenMixin",
     "client.roles.vulture.VultureEatenBodyMixin",
-    "client.roles.wayfarer.TargetEntityHudmixin",
     "client.time_stop.CantControlMixin",
     "client.time_stop.EntityCantUpdatePositionMixin",
     "client.time_stop.GameRendererMixin",
@@ -143,8 +139,6 @@
     "roles.photographer.BlindnessEffectMixin",
     "client.C4ItemEntityRendererMixin",
     "client.AbstractClientPlayerSkinMixin",
-    "client.SkincrawlerRoleNameRendererMixin",
-    "client.AmonRoleNameRendererMixin",
     "game.PelicanAliveCheckMixin"
   ],
   "overwrites": {

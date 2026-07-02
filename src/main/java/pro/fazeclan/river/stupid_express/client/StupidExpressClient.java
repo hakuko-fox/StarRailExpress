@@ -9,7 +9,6 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.StatusInit.StatusBar;
 import io.wifi.starrailexpress.client.util.SREClientUtils;
-import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
@@ -26,7 +25,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -45,9 +43,6 @@ import pro.fazeclan.river.stupid_express.role.arsonist.cca.DousedPlayerComponent
 import java.util.*;
 
 public class StupidExpressClient implements ClientModInitializer {
-
-    public static Player target;
-    public static PlayerBodyEntity targetBody;
 
     public static boolean isSplitPerson = false;
     static boolean isUsedRefugee = false;

@@ -109,6 +109,11 @@ public class RoleNameRenderer {
                             targetRole = null;
                             nametag = Component.literal("");
                             return;
+                        } else if (player.isInvisible()) {
+                            targetRoleType = TrainRole.BYSTANDER;
+                            targetRole = null;
+                            nametag = Component.literal("");
+                            return;
                         }
                     }
                 }
@@ -120,7 +125,7 @@ public class RoleNameRenderer {
                     } else if (result.isCustom()) {
                         nametag = result.getContent().orElse(Component.empty());
                     } else {
-                        nametag = target.getDisplayName();
+                        nametag = getDisplayName(target);
                     }
                 }
                 if (SREClient.modifierComponent != null) {
@@ -135,7 +140,6 @@ public class RoleNameRenderer {
                         modifierText = result.getContent().orElse(Component.empty());
                         shouldRender = true;
                     } else {
-                        shouldRender = true;
                         shouldRender = GameUtils.isPlayerSpectatingOrCreative(player);
                         MutableComponent temp = Component.literal("");
                         var modifiers = SREClient.modifierComponent.getModifiers(target);
@@ -143,9 +147,9 @@ public class RoleNameRenderer {
                             temp = temp.append(Component.translatable(" [%s]", modifier.getName())
                                     .withColor(modifier.color));
                         }
-                    modifierText = temp;
+                        modifierText = temp;
                     }
-                    if(shouldRender){
+                    if (shouldRender) {
                         nametag = nametag.copy().append(modifierText);
                     }
                 }
@@ -314,6 +318,10 @@ public class RoleNameRenderer {
         {
             OnRenderRoleName.RENDER_END.invoker().render(player, range, context, tickCounter, renderer);
         }
+    }
+
+    private static Component getDisplayName(Player target) {
+        return target.getDisplayName();
     }
 
     public enum TrainRole {

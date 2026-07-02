@@ -211,6 +211,10 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static HashMap<BlockPos, Integer> taskBlocks = new HashMap<>();
     public static int scanTaskPointsCountDown = -1;
     public static String myRoomNumber = null;
+
+    // ==================== 客户端状态 ====================
+    // 当前选中的目标玩家（用于需要选择目标的技能）
+    public static Player targetPlayer;
     public static PlayerBodyEntity targetBody;
 
     @Override
