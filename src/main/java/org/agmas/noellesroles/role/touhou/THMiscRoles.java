@@ -1,6 +1,6 @@
 package org.agmas.noellesroles.role.touhou;
 
-import org.agmas.noellesroles.role.touhou.roles.THNitoriRole;
+import org.agmas.noellesroles.role.touhou.roles.THRinnosukeRole;
 import org.agmas.noellesroles.role.touhou.roles.THTenshiRole;
 
 import io.wifi.starrailexpress.api.SRERole;
@@ -23,7 +23,7 @@ public class THMiscRoles {
           TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false));
   public static final ResourceLocation RINNOSUKE_ID = id("morichika_rinnosuke");
   // 森近霖之助 Morichika Rinnosuke
-  public static SRERole RINNOSUKE = TMMRoles.registerRole(new THNitoriRole(
+  public static SRERole RINNOSUKE = TMMRoles.registerRole(new THRinnosukeRole(
       RINNOSUKE_ID, // 角色 ID
       new java.awt.Color(252, 250, 249).getRGB(),
       false, // isInnocent = 乘客阵营
