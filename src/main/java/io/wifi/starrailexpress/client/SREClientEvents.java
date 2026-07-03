@@ -173,7 +173,7 @@ public class SREClientEvents {
         });
 
         // 阿蒙名字替换：夺舍后，其他玩家看到的名牌显示为被夺舍宿主的名字。
-        OnRenderRoleName.RENDER_PLAYER_NAME.register((_, target, ctx, delta, font) -> {
+        OnRenderRoleName.RENDER_PLAYER_NAME.register((___player, target, ctx, delta, font) -> {
             UUID disguiseTarget = ClientAmonState.disguiseTargetFor(target.getUUID());
             if (disguiseTarget != null) {
                 PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(disguiseTarget);
@@ -186,7 +186,7 @@ public class SREClientEvents {
             }
             return TrueFalseAndCustomResult.pass();
         });
-        OnRenderRoleName.RENDER_PLAYER_NAME.register((_, target, ctx, delta, font) -> {
+        OnRenderRoleName.RENDER_PLAYER_NAME.register((___player, target, ctx, delta, font) -> {
             UUID stolenTarget = ClientSkincrawlerState.stolenSkinFor(target.getUUID());
             if (stolenTarget != null) {
                 PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(stolenTarget);
@@ -200,7 +200,7 @@ public class SREClientEvents {
             return TrueFalseAndCustomResult.pass();
         });
 
-        OnRenderRoleName.RENDER_PLAYER_NAME.register((_, target, ctx, delta, font) -> {
+        OnRenderRoleName.RENDER_PLAYER_NAME.register((___player, target, ctx, delta, font) -> {
             if (getShuffledTarget(target) != null) {
                 return TrueFalseAndCustomResult.custom(Component.literal("??!?!").withStyle(ChatFormatting.OBFUSCATED));
             }
