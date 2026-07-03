@@ -85,18 +85,34 @@ public class ServerUtilsCommands {
                     .executes(ServerUtilsCommands::setMaxPlayers)))));
   }
 
+  private static int getPermissionLevel(MinecraftServer server, GameProfile profile) {
+    return server.getProfilePermissions(profile);
+  }
+
+  private static int getPermissionLevel(MinecraftServer server, ServerPlayer player) {
+    return getPermissionLevel(server, player.getGameProfile());
+  }
+
   private static int changePlayerPermission(CommandContext<CommandSourceStack> ctx, GameProfile gameProfile,
       final int newPermissionLevel,
       final boolean bypassPlayerLimit) {
+    final var server = ctx.getSource().getServer();
+    int runnerPermission = ctx.getSource().isPlayer() ? getPermissionLevel(server, ctx.getSource().getPlayer()) : 4;
     if (gameProfile == null) {
       return 0;
     }
-    final var server = ctx.getSource().getServer();
     if (server.isSingleplayerOwner(gameProfile)) {
       ctx.getSource().sendFailure(
           Component.translatable("message.serverutils.permission.set.failed", gameProfile.getName(),
               Component.translatable("message.serverutils.permission.set.failed.singleplayer")));
       return 4;
+    }
+    if (newPermissionLevel > runnerPermission) {
+      ctx.getSource().sendFailure(
+          Component.translatable("message.serverutils.permission.set.failed", gameProfile.getName(),
+              Component.translatable("message.serverutils.permission.set.failed.permission_low", runnerPermission,
+                  newPermissionLevel)));
+      return 0;
     }
     final int permissionLevelBefore = server.getProfilePermissions(gameProfile);
     var t = Component.translatable("message.serverutils.permission.set.success", gameProfile.getName(),
