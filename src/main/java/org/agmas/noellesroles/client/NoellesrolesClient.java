@@ -22,7 +22,6 @@ import io.wifi.starrailexpress.client.util.TMMItemTooltips;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.event.AllowNameRender;
-import io.wifi.starrailexpress.event.OnKillerCohortDisplay;
 import io.wifi.starrailexpress.event.OnRoundStartWelcomeTimmer;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -92,13 +91,11 @@ import org.agmas.noellesroles.content.entity.WheelchairEntityModel;
 import org.agmas.noellesroles.content.entity.WheelchairEntityRenderer;
 import org.agmas.noellesroles.content.entity.WheelchairFieldItemRenderer;
 import org.agmas.noellesroles.content.item.*;
-import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.packet.Loot.*;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.RoleUtils;
 import org.agmas.noellesroles.utils.lottery.LotteryManager;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -1049,24 +1046,6 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         AgentListenStepHandler.registerEvents();
         InvisbleHandItem.register();
-        // 注册零一五第二枪客户端处理器
-        // ClientPlayNetworking.registerGlobalReceiver(
-        // org.agmas.noellesroles.content.item.ZeroOneFiveSecondShotPayload.ID,
-        // new ZeroOneFiveSecondShotHandler());
-        OnKillerCohortDisplay.EVENT.register((player) -> {
-            if (player == null)
-                return null;
-            if (SREClient.gameComponent != null) {
-                if (SREClient.gameComponent.isRole(player, ModRoles.MAGICIAN)) {
-                    var roleR = MagicianPlayerComponent.KEY.get(player).getDisguiseRoleId();
-
-                    // Noellesroles.LOGGER.info("mag player:
-                    // "+player.getDisplayName().getString()+(roleR!=null?" "+roleR:" Null role"));
-                    return RoleUtils.getRoleName(roleR);
-                }
-            }
-            return null;
-        });
         ClientPlayConnectionEvents.JOIN.register((a, b, c) -> {
             // 加入游戏清空信息
             currentBroadcastMessage.clear();

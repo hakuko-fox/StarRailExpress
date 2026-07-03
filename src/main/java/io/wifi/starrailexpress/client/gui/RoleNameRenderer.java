@@ -7,7 +7,6 @@ import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.util.SREClientUtils;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.event.AllowNameRender;
-import io.wifi.starrailexpress.event.OnKillerCohortDisplay;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.TrueFalseResult;
@@ -206,13 +205,6 @@ public class RoleNameRenderer {
                         }
                         if (allowRenderRole) {
                             context.pose().translate(0, 20 + renderer.lineHeight, 0);
-                            if (target != null) {
-                                MutableComponent roleText2 = OnKillerCohortDisplay.EVENT.invoker()
-                                        .onCohortRender(target);
-                                if (roleText2 != null) {
-                                    roleText1 = roleText2;
-                                }
-                            }
                             if (roleText1 != null) {
                                 int roleWidth1 = renderer.width(roleText1);
                                 context.drawString(renderer, roleText1, -roleWidth1 / 2, 0,

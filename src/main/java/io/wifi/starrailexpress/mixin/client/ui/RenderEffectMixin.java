@@ -15,6 +15,7 @@ import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -27,17 +28,24 @@ public class RenderEffectMixin {
     @Shadow
     @Final
     private Minecraft minecraft;
+    @Unique
+    private boolean sre$pushed = false;
 
-    @Inject(method = "renderEffects", at = @At("HEAD"))
+    @Inject(method = "renderEffects", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;enableBlend()V", shift = At.Shift.AFTER))
     private void sre$moveEffectPostion_head(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         customRenderEffect(guiGraphics, deltaTracker);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(0, CommonClientHudRenderer.effectStartY, 0);
+        // 标记已推入
+        sre$pushed = true;
     }
 
     @Inject(method = "renderEffects", at = @At(value = "RETURN"))
     private void sre$moveEffectPostion_tail(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        guiGraphics.pose().popPose();
+        if (sre$pushed) {
+            guiGraphics.pose().popPose();
+            sre$pushed = false; // 重置以备下次调用
+        }
     }
 
     @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)

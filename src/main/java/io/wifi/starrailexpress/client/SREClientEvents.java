@@ -32,6 +32,7 @@ import org.agmas.noellesroles.client.hud.ForensicHud;
 import org.agmas.noellesroles.client.hud.PlayerBodyHud;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
@@ -78,7 +79,7 @@ public class SREClientEvents {
     public static void registerClientEvents() {
         registerRoleNameRendererEvents();
         OnGameStartedClient.EVENT.register(() -> {
-            if (!Minecraft.getInstance().isLocalServer()){
+            if (!Minecraft.getInstance().isLocalServer()) {
                 SRE.LOGGER.info("[CLIENT] Re-register shop entries.");
                 RoleShopHandler.shopRegister();
             }
@@ -88,6 +89,33 @@ public class SREClientEvents {
     public static void registerRoleNameRendererEvents() {
         PlayerBodyHud.registerEvents();
         ForensicHud.registerEvents();
+        // 魔术师
+        // 显示职业
+        OnRenderRoleName.RENDER_PLAYER_ROLE.register((player, target, context, tickCounter, renderer) -> {
+            if (target == null)
+                return null;
+            if (SREClient.gameComponent != null) {
+                if (SREClient.gameComponent.isRole(target, ModRoles.MAGICIAN)) {
+                    var roleR = MagicianPlayerComponent.KEY.get(target).getDisguiseRoleId();
+                    return TrueFalseAndCustomResult.custom(RoleUtils.getRoleName(roleR));
+                }
+            }
+            return TrueFalseAndCustomResult.pass();
+        });
+        // 显示同伙
+        OnRenderRoleName.RENDER_PLAYER_COHORT.register((player, target, context, tickCounter, renderer) -> {
+            if (target == null)
+                return null;
+            if (SREClient.gameComponent != null) {
+                if (SREClient.gameComponent.isKillerTeam(player)) {
+                    if (SREClient.gameComponent.isRole(target, ModRoles.MAGICIAN)) {
+                        return TrueFalseAndCustomResult.allow();
+                    }
+                }
+            }
+            return TrueFalseAndCustomResult.pass();
+        });
+        
         // 杂项
         OnRenderRoleName.RENDER_ALL.register((player, context, d, font) -> {
             // Penalty 直接啥也别看了
