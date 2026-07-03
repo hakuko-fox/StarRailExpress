@@ -1466,6 +1466,8 @@
   "screen.roleintroduce.flag.inner.disable": "❌ 当前已禁用",
   "screen.roleintroduce.flag.inner.enable": "✔ 当前已启用",
   "screen.roleintroduce.flag.inner.hidden": "隐藏修饰符",
+  "screen.roleintroduce.flag.lord_of_mysteries": "《诡秘之主》相关",
+  "screen.roleintroduce.flag.slay_the_spire":"《杀戮尖塔》相关",
   "screen.roleintroduce.flag.anime": "动漫相关",
   "screen.roleintroduce.flag.touhou": "东方同人",
   "screen.roleintroduce.flag.bouns": "彩蛋角色",
