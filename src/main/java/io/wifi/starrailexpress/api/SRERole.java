@@ -1228,7 +1228,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public SRERole setOtherModeRole(boolean isOtherModeRole) {
         this.isOtherModeRole = isOtherModeRole;
-        this.addFlag("other_gamemode");
+        this.addFlag("inner.other_gamemode");
         return this;
     }
 

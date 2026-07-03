@@ -434,7 +434,7 @@ public class SREModifier extends SREAbstractInfoClass {
         this.isOtherModeRole = isOtherModeRole;
         if (isOtherModeRole)
             this.canSetSpawnInfoInConfig = false;
-        this.addFlag("other_gamemode");
+        this.addFlag("inner.other_gamemode");
         return this;
     }
 
