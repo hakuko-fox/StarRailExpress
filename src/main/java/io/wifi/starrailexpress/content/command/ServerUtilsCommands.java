@@ -273,8 +273,8 @@ public class ServerUtilsCommands {
       source.sendSuccess(
           () -> Component
               .translatable("message.serverutils.max_player.set.success",
-                  Component.literal("" + oldMaxPlayers).withStyle(ChatFormatting.ITALIC,
-                      ChatFormatting.RED, ChatFormatting.STRIKETHROUGH),
+                  Component.literal("" + oldMaxPlayers).withStyle(
+                      ChatFormatting.RED),
                   Component.literal("" + newMaxPlayers).withStyle(ChatFormatting.AQUA))
               .withStyle(ChatFormatting.GREEN),
           true);

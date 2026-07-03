@@ -116,19 +116,28 @@ public final class RoleSkill {
             return this;
         }
 
-        /** Allow this skill's handler to run even while on cooldown, for toggle-style deactivation. */
+        /**
+         * Allow this skill's handler to run even while on cooldown, for toggle-style
+         * deactivation.
+         */
         public Builder toggleable(boolean toggleable) {
             this.toggleable = toggleable;
             return this;
         }
 
-        /** Mark this skill as triggered only when the player is sneaking (shift + G). Excluded from V-key cycling. */
+        /**
+         * Mark this skill as triggered only when the player is sneaking (shift + G).
+         * Excluded from V-key cycling.
+         */
         public Builder shifted(boolean shifted) {
             this.shifted = shifted;
             return this;
         }
 
-        /** Whether this skill should appear on the HUD. Defaults to false. Set true for skills that need HUD display. */
+        /**
+         * Whether this skill should appear on the HUD. Defaults to false. Set true for
+         * skills that need HUD display.
+         */
         public Builder showOnHud(boolean showOnHud) {
             this.showOnHud = showOnHud;
             return this;
@@ -253,7 +262,10 @@ public final class RoleSkill {
         return beginUse(player, null, -1, Phase.PRESS, player.isShiftKeyDown());
     }
 
-    /** Convenience: use with target while respecting the player's current sneak state. */
+    /**
+     * Convenience: use with target while respecting the player's current sneak
+     * state.
+     */
     public static boolean beginUseShiftedWithTarget(ServerPlayer player, UUID target) {
         return beginUse(player, target, -1, Phase.PRESS, player.isShiftKeyDown());
     }
@@ -270,11 +282,13 @@ public final class RoleSkill {
         return beginUse(player, null, -1, Phase.PRESS, player.isShiftKeyDown(), true);
     }
 
-    public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted) {
+    public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase,
+            boolean shifted) {
         return beginUse(player, target, requestedSlot, phase, shifted, false);
     }
 
-    public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted, boolean possessed) {
+    public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase,
+            boolean shifted, boolean possessed) {
         if (player == null) {
             return false;
         }
@@ -311,7 +325,7 @@ public final class RoleSkill {
     }
 
     private static boolean useUnified(ServerPlayer player, SRERole role, List<Definition> definitions,
-                                      @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted) {
+            @Nullable UUID target, int requestedSlot, Phase phase, boolean shifted) {
         SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
 
         // Filter definitions by shifted state and select the right one
@@ -407,6 +421,7 @@ public final class RoleSkill {
 
     /**
      * 访问此应当在初始化中访问而非在static中直接调用，这很可能会因为role为null导致崩溃。
+     * 
      * @param role
      * @param handler
      */
