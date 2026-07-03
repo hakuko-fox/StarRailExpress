@@ -73,10 +73,12 @@ public class OpenLightToolItem extends Item {
                     sp.displayClientMessage(
                             Component.translatable("message.starrailexpress.open_light_tool.cahnge_distance", distance),
                             true);
+
+                    tag.putInt("distance", distance);
+                    it.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
                 }
-                it.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             } else if (player instanceof ServerPlayer sp) {
-                AttendantHandler.openLight(sp,pos, distance);
+                AttendantHandler.openLight(sp, pos, distance);
             }
         }
         return true;
