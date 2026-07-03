@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.game.GameUtils;
 import org.agmas.noellesroles.content.entity.SaltedFishBodyEntity;
 import org.agmas.noellesroles.init.ModEntities;
@@ -60,10 +61,10 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
         return player;
     }
 
-    @Override
-    public boolean shouldSyncWith(ServerPlayer target) {
-        return target.level() == player.level();
-    }
+//    @Override
+//    public boolean shouldSyncWith(ServerPlayer target) {
+//        return target.level() == player.level();
+//    }
 
     public void sync() {
         KEY.sync(player);

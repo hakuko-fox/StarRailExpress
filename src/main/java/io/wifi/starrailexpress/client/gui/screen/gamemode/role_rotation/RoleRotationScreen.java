@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.agmas.noellesroles.client.NoellesrolesClient;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.*;
@@ -324,6 +325,10 @@ public class RoleRotationScreen extends Screen {
                 // 鹅鸭杀轮抽模式：玩家选择随机时不展示职业
                 if (SREConfig.instance().hideRandomRoleInRoleRotation
                         && RoleRotationCache.getRandomChoosers().contains(playerUuid)) {
+                    roleText = Component.translatable("gui.sre.role_rotation.random").getString();
+                    roleColor = 0xFFFFAA33;
+                } else if (selectedRolePath.equals(ModRoles.MAGICIAN_ID.toString())) {
+                    // 魔术师职业在左侧列表中显示为"随机"，隐藏真实身份
                     roleText = Component.translatable("gui.sre.role_rotation.random").getString();
                     roleColor = 0xFFFFAA33;
                 } else {

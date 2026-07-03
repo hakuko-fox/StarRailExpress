@@ -13,6 +13,7 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.game.modes.ChairWheelRaceGame;
+import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
@@ -117,6 +118,12 @@ public class NRRulePredicateEvents {
                 if (gameComp != null) {
                     if (gameComp.isRole(serverPlayer, ModRoles.NOSTALGIST)) {
                         return true;
+                    }
+                    if (gameComp.isRole(serverPlayer, ModRoles.SALTED_FISH)) {
+                        if (SaltedFishPlayerComponent.KEY.get(serverPlayer).isActive()){
+                            return true;
+                        }
+
                     }
                     if (gameComp.isRole(serverPlayer, ModRoles.INSANE_KILLER)) {
                         InsaneKillerPlayerComponent insaneKiller = InsaneKillerPlayerComponent.KEY.get(serverPlayer);
