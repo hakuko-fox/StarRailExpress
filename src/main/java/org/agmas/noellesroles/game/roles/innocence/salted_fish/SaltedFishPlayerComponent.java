@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
@@ -204,6 +205,7 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
         player.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, 10, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 10, 0, false, false, false));
         player.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 10, 0, false, false, false));
+        player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 10, 0, false, false, false));
     }
 
     private void stopHorizontalMotion(ServerPlayer sp) {
