@@ -111,15 +111,14 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         if (!(player instanceof ServerPlayer sp)) {
             return;
         }
-        if (残月还是没修罪人)
-            return;
+        
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(player.level());
         if (gw == null || !gw.isRunning() || !gw.isRole(player, ModRoles.WRAITH_ASSASSIN)) {
-            removeWraithEffects();
+            
             return;
         }
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
-            removeWraithEffects();
+            
             return;
         }
 
