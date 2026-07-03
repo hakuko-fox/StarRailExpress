@@ -311,7 +311,7 @@ public class DivinerPlayerComponent implements RoleComponent, ServerTickingCompo
             ServerPlayer killer = sp.getServer().getPlayerList().getPlayer(killerUuid);
             if (killer != null) {
                 SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(sp.level());
-                ResourceLocation roleId = gw.getRoleId(killer);
+                ResourceLocation roleId = gw.getRole(killer).identifier();
                 killerRole = RoleUtils.getRoleName(roleId);
             } else {
                 // 凶手已离线：从尸体 NBT 查
@@ -433,7 +433,7 @@ public class DivinerPlayerComponent implements RoleComponent, ServerTickingCompo
 
     /** 根据 UUID 查找尸体。 */
     private Entity findBodyById(ServerPlayer sp, UUID bodyId) {
-        if (bodyId == null || sp.level() instanceof ServerLevel sl) {
+        if (bodyId == null && sp.level() instanceof ServerLevel sl) {
             return sl.getEntity(bodyId);
         }
         return null;
