@@ -241,17 +241,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         return useBlackout(player, SREWorldBlackoutComponent.getMaxDuration(player.level()));
     }
 
-    /**
-     * 触发psycho
-     * 
-     * @param player
-     * @param multtiplier 时间倍乘参数
-     * @param armour      护盾层数
-     * @return
-     */
-    public static boolean usePsychoMode(@NotNull Player player, double multtiplier, int armour) {
-        player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
-                GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
+    public static void addGlobalPsychoCooldown(Player player) {
         var gamecca = SREGameWorldComponent.getInstance(player);
         for (var p : player.level().players()) {
             if (GameUtils.isPlayerAliveAndSurvival(p) && gamecca.isKillerTeam(p)) {
@@ -261,9 +251,22 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                 }
             }
         }
+    }
 
+    /**
+     * 触发psycho
+     * 
+     * @param player
+     * @param multtiplier 时间倍乘参数
+     * @param armour      护盾层数
+     * @return
+     */
+    public static boolean usePsychoMode(@NotNull Player player, double multtiplier, int armour) {
         boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho(multtiplier, armour);
         if (started) {
+            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
+                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
+            addGlobalPsychoCooldown(player);
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.PSYCHO_MODE));
         }
         return started;
