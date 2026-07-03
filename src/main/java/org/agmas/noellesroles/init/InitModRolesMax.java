@@ -342,6 +342,11 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
                 isEggEnabled = false;
 
+                for (var a : HMLModifiers.MODIFIERS) {
+                    if (a instanceof EggModifier) {
+                        Harpymodloader.MODIFIER_MAX.put(a.identifier(), 0);
+                    }
+                }
                 for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof EggRole) {
                         Harpymodloader.setRoleMaximum(a, 0);
