@@ -54,7 +54,7 @@ public class UndeadEntity extends PathfinderMob {
     public static final int DEFAULT_LIFETIME = 90 * 20;
     private static final int WARNING_FADE_TICKS = 30 * 20;
     private static final int WARNING_FLICKER_TICKS = 10 * 20;
-    private static final double PERCEPTION_RANGE = 21.0D;
+    private static final double PERCEPTION_RANGE = 40.0D;
     private static final int ATTACK_INTERVAL = 30; // 1.5 秒
     private static final double TOUCH_RANGE = 1.6D;
     /** 亡灵每次攻击注入的感染值（已加速 20%）。 */
