@@ -67,7 +67,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableChance = -1;
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
-    protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.all;
+    protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.ALL;
     protected boolean specialVigilante = false;
     protected boolean refreshableSpecialVigilante = false;
     protected int refreshableSpecialVigilanteChance = -1;
@@ -431,7 +431,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        all, qiyucun, bigmap, underwater, fly, trap
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {
@@ -439,12 +439,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public SRERole setSpecialMapRole(SpecialMapRoleMap specialMapRole) {
-        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.all : specialMapRole;
+        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.ALL : specialMapRole;
         return this;
     }
 
     public boolean isSpecialMapRole() {
-        return this.specialMapRole != SpecialMapRoleMap.all;
+        return this.specialMapRole != SpecialMapRoleMap.ALL;
     }
 
     public boolean isSpecialVigilante() {

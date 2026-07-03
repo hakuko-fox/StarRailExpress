@@ -513,12 +513,12 @@ public class InitModRolesMax {
 
     private static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
         return switch (role.getSpecialMapRole()) {
-            case all -> true;
-            case qiyucun -> config.maChenXuMaps.contains(currentMap);
-            case bigmap -> config.swastMaps.contains(currentMap);
-            case underwater -> config.underwaterRolesMaps.contains(currentMap);
-            case fly -> config.airRolesMaps.contains(currentMap);
-            case trap -> config.trapRolesMaps.contains(currentMap);
+            case ALL -> true;
+            case QIYUCUN -> config.maChenXuMaps.contains(currentMap);
+            case BIGMAP -> config.swastMaps.contains(currentMap);
+            case UNDERWATER -> config.underwaterRolesMaps.contains(currentMap);
+            case FLY -> config.airRolesMaps.contains(currentMap);
+            case TRAP -> config.trapRolesMaps.contains(currentMap);
         };
     }
 
