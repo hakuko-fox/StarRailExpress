@@ -42,6 +42,7 @@ import java.util.UUID;
 
 public class WraithAssassinPlayerComponent implements RoleComponent, ServerTickingComponent {
     public static final ComponentKey<WraithAssassinPlayerComponent> KEY = ModComponents.WRAITH_ASSASSIN;
+    public static final boolean 残月还是没修罪人 = true;
     public static final int MAX_ENERGY = 1000;
     public static final int LOW_SAN_BLUE = 20;
     public static final int LOW_SAN_YELLOW = 30;
@@ -110,6 +111,8 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         if (!(player instanceof ServerPlayer sp)) {
             return;
         }
+        if (残月还是没修罪人)
+            return;
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(player.level());
         if (gw == null || !gw.isRunning() || !gw.isRole(player, ModRoles.WRAITH_ASSASSIN)) {
             removeWraithEffects();
