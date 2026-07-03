@@ -31,7 +31,6 @@
     "item.ItemPickupProgressionMixin",
     "item.ItemStackMixin",
     "item.UseItemProgressionMixin",
-    "network.ConnectionDeadlockFixMixin",
     "network.NetworkReceiveStatisticsMixin",
     "network.NetworkStatisticsMixin",
     "network.ServerListFixMixin",
