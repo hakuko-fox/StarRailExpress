@@ -21,7 +21,7 @@ import java.util.*;
 
 /**
  * 职业轮选模式GUI
- * 
+ *
  * 布局：
  * - 左侧一列：所有玩家的轮选序号状态（已选择职业的玩家显示职业名，未选择的显示"?"）
  * - 右侧：选职业区域（轮到玩家时显示3个候选职业+随机选项，未轮到时显示"等待中"）
@@ -98,7 +98,7 @@ public class RoleRotationScreen extends Screen {
         float scaleX = (float) (width - 16) / PANEL_WIDTH;
         float scaleY = (float) (height - 16) / PANEL_HEIGHT;
         renderScale = Math.min(1.0f, Math.min(scaleX, scaleY));
-        
+
         // 面板位置（未缩放坐标系，可允许负值，通过矩阵变换后正确居中）
         panelX = (width - PANEL_WIDTH) / 2;
         panelY = (height - PANEL_HEIGHT) / 2;
@@ -187,18 +187,18 @@ public class RoleRotationScreen extends Screen {
     private void drawTimer(GuiGraphics g) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
-        
+
         UUID myUuid = mc.player.getUUID();
         int remainingSeconds;
         int finalTimerColor;
         boolean isAdjustPhase = !RoleRotationCache.isSelecting();
-        
+
         // 检查是否处于职业调整阶段（所有人都选完，等待确认倒计时）
         if (isAdjustPhase) {
             // 职业调整阶段，显示确认倒计时
             remainingSeconds = RoleRotationCache.getConfirmCountdown() / 20;
             finalTimerColor = (tickCounter % 20 < 10) ? 0xFFFFAA00 : 0xFFFF8800;
-            
+
             // 显示职业调整阶段提示
             Component adjustPhase = Component.translatable("gui.sre.role_rotation.adjust_phase")
                     .withStyle(style -> style.withColor(0xFFFFAA00).withBold(true));
@@ -214,7 +214,7 @@ public class RoleRotationScreen extends Screen {
             // 轮到当前玩家，显示个人倒计时
             remainingSeconds = RoleRotationCache.getRemainingSeconds();
             int sec = Math.max(0, remainingSeconds);
-            
+
             if (sec <= 10) {
                 finalTimerColor = (tickCounter % 20 < 10) ? COL_TIMER_URGENT : COL_TIMER_URGENT - 0x300000;
             } else if (sec <= 30) {
@@ -222,16 +222,16 @@ public class RoleRotationScreen extends Screen {
             } else {
                 finalTimerColor = COL_TIMER_NORMAL;
             }
-            
+
             // 绘制个人倒计时
             drawCountdownTimer(g, remainingSeconds, finalTimerColor);
             return;
         }
-        
+
         // 绘制职业调整阶段倒计时
         drawCountdownTimer(g, remainingSeconds, finalTimerColor);
     }
-    
+
     private void drawCountdownTimer(GuiGraphics g, int remainingSeconds, int timerColor) {
         int sec = Math.max(0, remainingSeconds);
         String timeStr = String.format("%d:%02d", sec / 60, sec % 60);
@@ -254,14 +254,14 @@ public class RoleRotationScreen extends Screen {
 
         // 当前轮到第几个玩家
         Component indicator = Component.translatable("gui.sre.role_rotation.current_turn",
-                currentIndex, totalPlayers)
+                        currentIndex, totalPlayers)
                 .withStyle(ChatFormatting.GOLD);
 
         int tx = panelX + PANEL_WIDTH - 130;
         int ty = panelY + 12;
 
         g.drawString(font, indicator, tx, ty, 0xFFFFFF);
-        
+
         // 你是第几号玩家
         if (myIndex > 0) {
             Component yourIndex = Component.translatable("gui.sre.role_rotation.your_index", myIndex)
@@ -529,7 +529,7 @@ public class RoleRotationScreen extends Screen {
         if (renderScale >= 1.0f) return (int) screenX;
         return (int) (width / 2.0 + (screenX - width / 2.0) / renderScale);
     }
-    
+
     private int scaleMouseY(double screenY) {
         if (renderScale >= 1.0f) return (int) screenY;
         return (int) (height / 2.0 + (screenY - height / 2.0) / renderScale);
@@ -569,6 +569,11 @@ public class RoleRotationScreen extends Screen {
             }
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
+
     }
 
     @Override
