@@ -215,99 +215,15 @@ public class RoleShopHandler {
     stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
   }
 
-  // ==================== 商店项目列表 ====================
   public static ArrayList<ShopEntry> FRAMING_ROLES_SHOP = new ArrayList<>();
-  // ==================== 阴谋家商店 ====================
-  public static ArrayList<ShopEntry> CONSPIRATOR_SHOP = new ArrayList<>();
-  // ==================== 柜子区商店 ====================
-  public static ArrayList<ShopEntry> 柜子区的商店 = new ArrayList<>();
-  // ==================== 捣蛋鬼商店 ====================
-  public static ArrayList<ShopEntry> SLIPPERY_GHOST_SHOP = new ArrayList<>();
-  // ==================== 工程师商店 ====================
-  public static ArrayList<ShopEntry> ENGINEER_SHOP = new ArrayList<>();
-  // ==================== 斗士商店 ====================
-  public static ArrayList<ShopEntry> BOXER_SHOP = new ArrayList<>();
-  // ==================== 心理学家商店 ====================
-  public static ArrayList<ShopEntry> PSYCHOLOGIST_SHOP = new ArrayList<>();
-  // ==================== 炸弹客商店 ====================
-  public static ArrayList<ShopEntry> BOMBER_SHOP = new ArrayList<>();
-  // ==================== 医生商店 ====================
-  public static ArrayList<ShopEntry> DOCTOR_SHOP = new ArrayList<>();
-  // ==================== 歌手商店 ====================
-  public static ArrayList<ShopEntry> SINGER_SHOP = new ArrayList<>();
-  // ==================== 乘务员商店 ====================
-  public static ArrayList<ShopEntry> ATTENDANT_SHOP = new ArrayList<>();
-  // ==================== 退伍军人商店 ====================
-  public static ArrayList<ShopEntry> VETERAN_SHOP = new ArrayList<>();
-  // ==================== 巡警商店 ====================
-  public static ArrayList<ShopEntry> PATROLLER_SHOP = new ArrayList<>();
-  // ==================== 年兽商店 ====================
-  public static ArrayList<ShopEntry> NIAN_SHOU_SHOP = new ArrayList<>();
-  // ==================== 魔术师商店 ====================
-  public static ArrayList<ShopEntry> MAGICIAN_SHOP = new ArrayList<>();
-  // ==================== 强盗商店 ====================
-  public static ArrayList<ShopEntry> BANDIT_SHOP = new ArrayList<>();
-  // ==================== 仇杀客商店 ====================
   public static ArrayList<ShopEntry> BLOOD_FEUDIST_SHOP = new ArrayList<>();
-  // ==================== 小偷商店 ====================
-  public static ArrayList<ShopEntry> THIEF_SHOP = new ArrayList<>();
-  // ==================== 钟表匠商店 ====================
-  public static ArrayList<ShopEntry> CLOCKMAKER_SHOP = new ArrayList<>();
-  // ==================== 作家商店 ====================
-  public static ArrayList<ShopEntry> WRITER_SHOP = new ArrayList<>();
-  // ==================== 搜救员商店 ====================
-  public static ArrayList<ShopEntry> RESCUER_SHOP = new ArrayList<>();
-  // ==================== 消防员商店 ====================
-  public static ArrayList<ShopEntry> FIREFIGHTER_SHOP = new ArrayList<>();
-  // ==================== 会计商店 ====================
-  public static ArrayList<ShopEntry> ACCOUNTANT_SHOP = new ArrayList<>();
-  // ==================== 特警商店 ====================
-  public static ArrayList<ShopEntry> SWAST_SHOP = new ArrayList<>();
-  // ==================== 武术教官商店 ====================
-  public static ArrayList<ShopEntry> MARTIAL_ARTS_INSTRUCTOR_SHOP = new ArrayList<>();
-  // ==================== 海王商店 ====================
-  public static ArrayList<ShopEntry> SEA_KING_SHOP = new ArrayList<>();
-  // ==================== 水鬼商店 ====================
   public static ArrayList<ShopEntry> WATER_GHOST_SHOP = new ArrayList<>();
-  // ==================== 秉烛人商店 ====================
-  public static ArrayList<ShopEntry> CANDLE_BEARER_SHOP = new ArrayList<>();
-  // ==================== 雇佣兵商店 ====================
-  public static ArrayList<ShopEntry> MERCENARY_SHOP = new ArrayList<>();
-  // ==================== 超级亡命徒商店 ====================
-  public static ArrayList<ShopEntry> SUPER_LOOSE_END_SHOP = new ArrayList<>();
-  // ==================== 飞行员商店 ====================
-  public static ArrayList<ShopEntry> PILOT_SHOP = new ArrayList<>();
-  // ==================== 影隼商店 ====================
-  public static ArrayList<ShopEntry> SHADOW_FALCON_SHOP = new ArrayList<>();
-  // ==================== 疫使商店 ====================
-  public static ArrayList<ShopEntry> INFECTED_SHOP = new ArrayList<>();
-  // ==================== 葬仪商店 ====================
-  public static ArrayList<ShopEntry> MORTICIAN_BODYMAKER_SHOP = new ArrayList<>();
-  // ==================== 悍匪商店 ====================
-  public static ArrayList<ShopEntry> GANGSTERS_SHOP = new ArrayList<>();
-  // ==================== 钳工商店 ====================
-  public static ArrayList<ShopEntry> FITTER_SHOP = new ArrayList<>();
-  // ==================== 鹈鹕商店 ====================
-  public static ArrayList<ShopEntry> PELICAN_SHOP = new ArrayList<>();
-  // ==================== Mafia 商店 ====================
-  public static ArrayList<ShopEntry> GODFATHER_SHOP = new ArrayList<>();
-  public static ArrayList<ShopEntry> MAFIOSO_SHOP = new ArrayList<>();
-  public static ArrayList<ShopEntry> JANITOR_SHOP = new ArrayList<>();
-  public static ArrayList<ShopEntry> NUTRITIONIST_SHOP = new ArrayList<>();
-  public static ArrayList<ShopEntry> PARASOL_SHOP = new ArrayList<>();
-  // ==================== 咒法师商店 ====================
-  public static ArrayList<ShopEntry> WARLOCK_SHOP = new ArrayList<>();
-  // ==================== 嬉命人商店 ====================
-  public static ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
-  public static ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
-  public static ArrayList<ShopEntry> WRAITH_ASSASSIN_SHOP = new ArrayList<>();
-  // ==================== 推理师商店 ====================
-  public static ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
 
   /**
    * 初始化框架角色商店
    */
   public static void initializeFramingShop() {
+    FRAMING_ROLES_SHOP.clear();
     FRAMING_ROLES_SHOP
         .add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 50,
             ShopEntry.Type.TOOL));
@@ -327,6 +243,7 @@ public class RoleShopHandler {
    */
   public static void initializeWaterGhostShop() {
     // 开锁器 - 100金币
+    WATER_GHOST_SHOP.clear();
     WATER_GHOST_SHOP.add(new ShopEntry(
         TMMItems.LOCKPICK.getDefaultInstance(),
         100,
@@ -368,6 +285,7 @@ public class RoleShopHandler {
    * - 疯狂模式：275金币（冷却30秒）
    */
   public static void initializeBloodFeudistShop() {
+    BLOOD_FEUDIST_SHOP.clear();
     // 撬棍 - 35金币
     BLOOD_FEUDIST_SHOP.add(new ShopEntry(
         TMMItems.CROWBAR.getDefaultInstance(),
@@ -410,7 +328,1241 @@ public class RoleShopHandler {
 
     ShopContent.register();
     registerRepairModeShops();
+    ArrayList<ShopEntry> PELICAN_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> CONSPIRATOR_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> 柜子区的商店 = new ArrayList<>();
+    ArrayList<ShopEntry> SLIPPERY_GHOST_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> ENGINEER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> BOXER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> PSYCHOLOGIST_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> BOMBER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> DOCTOR_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> SINGER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> ATTENDANT_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> VETERAN_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> PATROLLER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> NIAN_SHOU_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> MAGICIAN_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> BANDIT_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> THIEF_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> CLOCKMAKER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> WRITER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> RESCUER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> FIREFIGHTER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> ACCOUNTANT_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> SWAST_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> MARTIAL_ARTS_INSTRUCTOR_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> SEA_KING_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> CANDLE_BEARER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> SUPER_LOOSE_END_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> PILOT_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> SHADOW_FALCON_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> GANGSTERS_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> FITTER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> GODFATHER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> MAFIOSO_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> JANITOR_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> NUTRITIONIST_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> PARASOL_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> WARLOCK_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> WRAITH_ASSASSIN_SHOP = new ArrayList<>();
+    ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
 
+    柜子区的商店.add(new ShopEntry(
+        ModItems.BANDIT_REVOLVER.getDefaultInstance(),
+        130,
+        ShopEntry.Type.TOOL));
+    柜子区的商店.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), SREConfig.instance().firecrackerPrice,
+        ShopEntry.Type.TOOL));
+    柜子区的商店.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+    柜子区的商店.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), SREConfig.instance().bodyBagPrice,
+        ShopEntry.Type.TOOL));
+    柜子区的商店.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
+        ShopEntry.Type.TOOL) {
+      public boolean onBuy(@NotNull Player player) {
+
+        boolean triggered = SREPlayerShopComponent.useBlackout(player);
+        if (triggered) {
+          player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
+              Math.max(60 * 20, GameConstants.getBlackoutCooldownGlobal()));
+          return true;
+        }
+        return triggered;
+      }
+    });
+    // 监控失灵 - 60金币（刽子手专属）
+    柜子区的商店.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+      }
+    });
+    {
+      // 射击狂热 - 275金币（魔改psycho，狂暴模式）
+      var 柜子区疯魔 = TMMItems.PSYCHO_MODE.getDefaultInstance();
+      柜子区疯魔.set(DataComponents.ITEM_NAME, Component.translatable("itemstack.executioner.psychoitem.item_name"));
+      var lore = new ItemLore(List.of(
+          Component.translatable("itemstack.executioner.psychoitem.item_lore.1")
+              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+          Component.translatable("itemstack.executioner.psychoitem.item_lore.2")
+              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+      柜子区疯魔.set(DataComponents.LORE, lore);
+      柜子区的商店.add(new ShopEntry(
+          柜子区疯魔,
+          325,
+          ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          ShootingFrenzyPlayerComponent frenzyComponent = ShootingFrenzyPlayerComponent.KEY.get(player);
+          boolean success = frenzyComponent.startFrenzy();
+          if (success) {
+            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 20 * 60);
+          }
+          return success;
+        }
+      });
+    }
+    {
+      // 切换目标 - 200金币
+      var 柜子区切换目标 = Items.PAPER.getDefaultInstance();
+      柜子区切换目标.set(DataComponents.ITEM_NAME, Component.translatable("itemstack.executioner.change_target.item_name"));
+      var lore = new ItemLore(List.of(
+          Component.translatable("itemstack.executioner.change_target.item_lore.1")
+              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
+          Component.translatable("itemstack.executioner.change_target.item_lore.2")
+              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
+      柜子区切换目标.set(DataComponents.LORE, lore);
+      柜子区的商店.add(new ShopEntry(
+          柜子区切换目标,
+          200,
+          ShopEntry.Type.WEAPON) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          boolean success = false;
+          var cca = ExecutionerPlayerComponent.KEY.get(player);
+          success = cca.assignRandomTarget(true);
+          if (success) {
+            player.getCooldowns().addCooldown(Items.PAPER, 20);
+          }
+          return success;
+        }
+      });
+    }
+    // 阴谋家商店
+    CONSPIRATOR_SHOP.add(new ShopEntry(
+        ModItems.CONSPIRACY_PAGE.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+
+    CONSPIRATOR_SHOP.add(new KillerKnifeShopEntry(
+
+        120));
+
+    CONSPIRATOR_SHOP.add(new ShopEntry(
+        io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance(),
+        200,
+        ShopEntry.Type.WEAPON));
+
+    CONSPIRATOR_SHOP.add(new ShopEntry(
+        io.wifi.starrailexpress.index.TMMItems.LOCKPICK.getDefaultInstance(),
+        50,
+        ShopEntry.Type.TOOL));
+
+    // 捣蛋鬼商店
+    // 空包弹 - 150金币
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(
+        ModItems.BLANK_CARTRIDGE.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+
+    // 烟雾弹 - 150金币
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(
+        ModItems.SMOKE_GRENADE.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+
+    // 撬锁器 - 50金币 (原版杀手商店物品)
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(
+        io.wifi.starrailexpress.index.TMMItems.LOCKPICK.getDefaultInstance(),
+        50,
+        ShopEntry.Type.TOOL));
+
+    // 闪光弹 - 175金币（捣蛋鬼专用）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
+      }
+    });
+
+    // 诱饵弹 - 25金币（捣蛋鬼专用）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
+
+    // 监控失灵 - 50金币（捣蛋鬼专属）
+    SLIPPERY_GHOST_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+      }
+    });
+
+    // 关灯 - 300金币 (原版杀手商店物品)
+    SLIPPERY_GHOST_SHOP.add(
+        new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
+            ShopEntry.Type.TOOL) {
+          public boolean onBuy(@NotNull Player player) {
+            return SREPlayerShopComponent.useBlackout(player);
+          }
+        });
+
+    // 工程师商店
+    // 加固门 - 30金币
+    ENGINEER_SHOP.add(new ShopEntry(
+        ModItems.REINFORCEMENT.getDefaultInstance(),
+        30,
+        ShopEntry.Type.TOOL));
+
+    // 警报陷阱 - 15金币
+    ENGINEER_SHOP.add(new ShopEntry(
+        ModItems.ALARM_TRAP.getDefaultInstance(),
+        15,
+        ShopEntry.Type.TOOL));
+
+    ENGINEER_SHOP.add(new ShopEntry(
+        ModItems.MASTER_KEY_P.getDefaultInstance(),
+        90,
+        ShopEntry.Type.TOOL));
+
+    ENGINEER_SHOP.add(new ShopEntry(
+        ModItems.LOCK_ITEM.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+
+    // 年兽商店
+    // 关灯 - 200金币
+    NIAN_SHOU_SHOP.add(
+        new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
+          public boolean onBuy(@NotNull Player player) {
+            return SREPlayerShopComponent.useBlackout(player);
+          }
+        });
+
+    // 斗士商店
+    BOXER_SHOP.add(new ShopEntry(
+        ModItems.BOXING_GLOVE.getDefaultInstance(),
+        150,
+        ShopEntry.Type.WEAPON));
+
+    // 心理学家商店
+    // 薄荷糖 - 75金币
+    PSYCHOLOGIST_SHOP.add(new ShopEntry(
+        ModItems.MINT_CANDIES.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
+    // 维生素 - 125金币
+    PSYCHOLOGIST_SHOP.add(new ShopEntry(
+        ModItems.ALCHEMIST_BUFF_POTION.getDefaultInstance(),
+        125,
+        ShopEntry.Type.TOOL));
+    // 炸弹客商店
+    BOMBER_SHOP.add(new ShopEntry(
+        TMMItems.GRENADE.getDefaultInstance(),
+        290,
+        ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+        TMMItems.TIMED_GRENADE.getDefaultInstance(),
+        290, ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+        TMMItems.STICKY_GRENADE.getDefaultInstance(),
+        290,
+        ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+        TMMItems.FIRECRACKER.getDefaultInstance(),
+        25,
+        ShopEntry.Type.TOOL));
+
+    // 巡警商店
+    // 左轮手枪 - 325金币
+    PATROLLER_SHOP.add(new ShopEntry(
+        TMMItems.REVOLVER.getDefaultInstance(),
+        325,
+        ShopEntry.Type.WEAPON));
+    BOMBER_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        80,
+        ShopEntry.Type.TOOL));
+    // 歌手商店
+    for (int i = 1; i <= 5; i++) {
+      ItemStack singer_shop_item = ModItems.SINGER_MUSIC_DISC.getDefaultInstance();
+      singer_shop_item.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.shop.singer.display_name.root",
+              Component.translatable(
+                  "item.noellesroles.shop.singer.display_name."
+                      + i)
+                  .withStyle(ChatFormatting.GOLD))
+              .withStyle(ChatFormatting.AQUA));
+      var lores = new ArrayList<Component>();
+      lores.add(Component.translatable("item.noellesroles.shop.singer.lore",
+          Component.translatable("item.noellesroles.shop.singer.effect." + i)
+              .withStyle(ChatFormatting.YELLOW))
+          .withStyle(ChatFormatting.GRAY));
+      singer_shop_item.set(DataComponents.LORE, new ItemLore(lores));
+      final int idx = i;
+      // 第5张唱片(Lupinus)价格为500金币，其他为100金币
+      int price = (i == 5) ? 500 : 100;
+      SINGER_SHOP.add(new ShopEntry(singer_shop_item, price, ShopEntry.Type.TOOL) {
+        public boolean onBuy(@NotNull Player player) {
+          return SingerPlayerComponent.buyDisc(player, idx);
+        }
+      });
+    }
+
+    // 医生商店
+    DOCTOR_SHOP.add(new ShopEntry(
+        ModItems.ANTIDOTE_REAGENT.getDefaultInstance(),
+        50,
+        ShopEntry.Type.TOOL));
+    // 针管 - 75金币
+    DOCTOR_SHOP.add(new ShopEntry(
+        ModItems.ANTIDOTE.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
+    // 药丸 - 75金币
+    DOCTOR_SHOP.add(new ShopEntry(
+        ModItems.createPillStack(false),
+        75,
+        ShopEntry.Type.TOOL));
+    // 净化弹 - 300金币
+    DOCTOR_SHOP.add(new ShopEntry(
+        ModItems.PURIFY_BOMB.getDefaultInstance(),
+        300,
+        ShopEntry.Type.TOOL));
+
+    // 乘务员商店
+    // 乘务员钥匙 - 50金币
+    ATTENDANT_SHOP.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+
+    // 铁门钥匙 - 75金币
+    ATTENDANT_SHOP
+        .add(new ShopEntry(
+            io.wifi.starrailexpress.index.TMMItems.IRON_DOOR_KEY
+                .getDefaultInstance(),
+            75, ShopEntry.Type.TOOL));
+    // 手电筒（moonlight_lamp） - 150金币
+    if (BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse("handheldmoon:moonlight_lamp"))) {
+      final var moonlightLampItem = BuiltInRegistries.ITEM
+          .get(ResourceLocation.parse("handheldmoon:moonlight_lamp"));
+      if (moonlightLampItem != null) {
+        final var defaultInstance = moonlightLampItem.getDefaultInstance();
+        ATTENDANT_SHOP.add(new ShopEntry(defaultInstance, 150, ShopEntry.Type.TOOL));
+      }
+    }
+
+    // 魔术师商店
+    // 假刀 - 50金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_KNIFE.getDefaultInstance(),
+        50,
+        ShopEntry.Type.WEAPON));
+
+    // 假撬棍 - 35金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_CROWBAR.getDefaultInstance(),
+        35,
+        ShopEntry.Type.WEAPON));
+
+    // 假开锁器 - 80金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_LOCKPICK.getDefaultInstance(),
+        80,
+        ShopEntry.Type.WEAPON));
+
+    // 鞭炮 - 30金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        TMMItems.FIRECRACKER.getDefaultInstance(),
+        30,
+        ShopEntry.Type.WEAPON));
+
+    // 假裹尸袋 - 100金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_BODY_BAG.getDefaultInstance(),
+        100,
+        ShopEntry.Type.WEAPON));
+
+    // 便签 - 100金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        TMMItems.NOTE.getDefaultInstance(),
+        100,
+        ShopEntry.Type.WEAPON));
+
+    // 假枪 - 175金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_REVOLVER.getDefaultInstance(),
+        175,
+        ShopEntry.Type.WEAPON));
+
+    // 假手雷 - 200金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_GRENADE.getDefaultInstance(),
+        200,
+        ShopEntry.Type.WEAPON));
+
+    // 假疯狂模式 - 325金币
+    MAGICIAN_SHOP.add(new ShopEntry(
+        ModItems.FAKE_PSYCHO_MODE.getDefaultInstance(),
+        325,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        // 获得假球棒并启动假疯狂模式
+        var magicianComponent = org.agmas.noellesroles.component.ModComponents.MAGICIAN
+            .get(player);
+        if (magicianComponent != null) {
+          if (!magicianComponent.startFakePsycho()) {
+            return false;
+          }
+        }
+        return true;
+      }
+    });
+
+    // 强盗商店（已调整价格与条目）
+    BANDIT_SHOP.add(new KillerKnifeShopEntry(
+
+        200));
+
+    // 匪徒短管霰弹枪 - 450金币
+    BANDIT_SHOP.add(new ShopEntry(
+        ModItems.SHORT_SHOTGUN.getDefaultInstance(),
+        450,
+        ShopEntry.Type.WEAPON));
+
+    // 匪徒手枪 - 175金币
+    BANDIT_SHOP.add(new ShopEntry(
+        ModItems.BANDIT_REVOLVER.getDefaultInstance(),
+        180,
+        ShopEntry.Type.WEAPON));
+
+    // 手榴弹 - 600金币
+    BANDIT_SHOP.add(new ShopEntry(
+        TMMItems.TIMED_GRENADE.getDefaultInstance(),
+        600,
+        ShopEntry.Type.WEAPON));
+
+    // 关灯 - 配置价格 * 1.275 后取整
+    BANDIT_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), banditBlackoutPrice(),
+        ShopEntry.Type.TOOL) {
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useBlackout(player);
+      }
+    });
+
+    // 监控失灵 - 75金币（强盗专属）
+    BANDIT_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+      }
+    });
+
+    // 闪光弹
+    BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 30, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
+      }
+    });
+
+    // 诱饵弹 - 15金币
+    BANDIT_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
+
+    {
+      // 保安商店：远程监控台 - 150金币
+      var GUARD_SHOP = new java.util.ArrayList<ShopEntry>();
+      GUARD_SHOP.add(new ShopEntry(ModItems.MONITORING_TERMINAL.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+      ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
+    }
+
+    // 小偷商店
+    // 小偷的荣誉（金锭） - 根据人数动态计算价格
+    // ShopEntry THIEF_SHOP_ENTRY = new
+    // ShopEntry(Items.GOLD_INGOT.getDefaultInstance(),
+    // 0, // 价格在onBuy中动态计算
+    // ShopEntry.Type.TOOL) {
+    // @Override
+    // public int price() {
+    // return 0;
+    // }
+
+    // @Override
+    // public boolean onBuy(@NotNull Player player) {
+    // var tpc = ThiefPlayerComponent.KEY.get(player);
+    // int cost = tpc.honorCost;
+    // // 扣除金币并给予金锭
+    // shop.addToBalance(-cost);
+
+    // player.addItem(Items.GOLD_INGOT.getDefaultInstance().copy());
+    // player.displayClientMessage(
+    // Component.translatable("message.noellesroles.thief.honor_purchased", cost)
+    // .withStyle(ChatFormatting.GOLD),
+    // true);
+    // return true;
+    // }
+    // };
+    // THIEF_SHOP.add(THIEF_SHOP_ENTRY);
+
+    // 钟表匠商店
+    // 时钟（原版） - 100金币
+    CLOCKMAKER_SHOP.add(new ShopEntry(
+        Items.CLOCK.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+
+    // 怀表 - 150金币
+    CLOCKMAKER_SHOP.add(new ShopEntry(
+        ModItems.POCKET_WATCH.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+
+    // 作家商店
+    // 书与笔（原版） - 100金币
+    WRITER_SHOP.add(new ShopEntry(
+        Items.WRITABLE_BOOK.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+
+    // 搜救员商店
+    // 绳索 - 150金币
+    RESCUER_SHOP.add(new ShopEntry(
+        ModItems.ROPE.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+
+    // 裹尸袋 - 75金币
+    RESCUER_SHOP.add(new ShopEntry(
+        TMMItems.BODY_BAG.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
+
+    // 消防员商店
+    // 消防斧 - 150金币
+    FIREFIGHTER_SHOP.add(new ShopEntry(
+        ModItems.FIRE_AXE.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(Player player) {
+        if (SREItemUtils.countItem(player, Items.CHAIN_COMMAND_BLOCK) > 0) {
+          return false;
+        }
+        if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
+          player.getInventory().setItem(14, Items.CHAIN_COMMAND_BLOCK.getDefaultInstance());
+          return true;
+        }
+        return false;
+      }
+    });
+
+    // 灭火器 - 150金币
+    FIREFIGHTER_SHOP.add(new ShopEntry(
+        ModItems.EXTINGUISHER.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(Player player) {
+        if (SREItemUtils.countItem(player, Items.REPEATING_COMMAND_BLOCK) > 0) {
+          return false;
+        }
+        if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
+          player.getInventory().setItem(15, Items.REPEATING_COMMAND_BLOCK.getDefaultInstance());
+          return true;
+        }
+        return false;
+      }
+    });
+
+    // 会计商店
+    // 存折 - 100金币（只能购买1次）
+    ACCOUNTANT_SHOP.add(new ShopEntry(
+        ModItems.PASSBOOK.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(Player player) {
+        if (SREItemUtils.countItem(player, Items.COMMAND_BLOCK) > 0) {
+          return false;
+        }
+        if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
+          player.getInventory().setItem(16, Items.COMMAND_BLOCK.getDefaultInstance());
+          return true;
+        }
+        return false;
+      }
+    });
+
+    // 特警商店
+    // 马格南子弹 - 125金币
+    SWAST_SHOP.add(new ShopEntry(
+        TMMItems.MAGNUM_BULLET.getDefaultInstance(),
+        125,
+        ShopEntry.Type.WEAPON));
+
+    // 瞄准镜 - 25金币
+    SWAST_SHOP.add(new ShopEntry(
+        TMMItems.SCOPE.getDefaultInstance(),
+        25,
+        ShopEntry.Type.WEAPON));
+
+    // 铁门钥匙 - 75金币
+    SWAST_SHOP.add(new ShopEntry(
+        TMMItems.IRON_DOOR_KEY.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
+
+    // 狙击枪 - 400金币（已拥有狙击枪时无法购买）
+    SWAST_SHOP.add(new ShopEntry(
+        TMMItems.SNIPER_RIFLE.getDefaultInstance(),
+        400,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.SNIPER_RIFLE);
+      }
+    });
+
+    // 武术教官商店
+    // 双节棍 - 400金币（已拥有双节棍时无法购买）
+    MARTIAL_ARTS_INSTRUCTOR_SHOP.add(new ShopEntry(
+        TMMItems.NUNCHUCK.getDefaultInstance(),
+        400,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean canBuy(@NotNull Player player) {
+        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.NUNCHUCK);
+      }
+    });
+
+    // 海王商店
+    // 普通三叉戟 - 150金币
+    var trident = Items.TRIDENT.getDefaultInstance();
+    trident.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+    SEA_KING_SHOP.add(new ShopEntry(
+        trident,
+        150,
+        ShopEntry.Type.WEAPON));
+
+    // 水鬼商店
+    initializeWaterGhostShop();
+
+    // 秉烛人商店
+    // 撬锁器 - 75金币
+
+    CANDLE_BEARER_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        75,
+        ShopEntry.Type.TOOL));
+
+    // 隐身机会 - 125金币（图标为药水，购买后隐身机会+1）
+    {
+      var invisItem = Items.POTION.getDefaultInstance();
+      invisItem.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.candlebearer.shop.invisibility_charge")
+              .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
+      var invisLore = new ArrayList<Component>();
+      invisLore.add(Component.translatable("item.noellesroles.candlebearer.shop.invisibility_charge.lore1")
+          .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+      invisItem.set(DataComponents.LORE, new ItemLore(invisLore));
+
+      CANDLE_BEARER_SHOP.add(new ShopEntry(invisItem, 125, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          var comp = CandleBearerPlayerComponent.KEY.get(player);
+          if (comp == null)
+            return false;
+          if (comp.invisibilityCharges >= CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES)
+            return false;
+          comp.invisibilityCharges++;
+          if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                Component.translatable("message.noellesroles.candlebearer.charge_gained",
+                    comp.invisibilityCharges, CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES)
+                    .withStyle(ChatFormatting.GOLD),
+                true);
+          }
+          comp.sync();
+          return true;
+        }
+      });
+    }
+
+    // 蜡烛 - 50金币
+    {
+      var candleItem = Items.CANDLE.getDefaultInstance();
+      candleItem.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.candlebearer.shop.candle").withStyle(ChatFormatting.YELLOW));
+      var candleLore = new ArrayList<Component>();
+      candleLore.add(Component.translatable("item.noellesroles.candlebearer.shop.candle.lore1")
+          .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+      candleItem.set(DataComponents.LORE, new ItemLore(candleLore));
+
+      CANDLE_BEARER_SHOP.add(new ShopEntry(candleItem, 50, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
+        }
+      });
+    }
+
+    // 超级亡命徒商店
+    // 飞刀
+    SUPER_LOOSE_END_SHOP.add(new ShopEntry(
+        ModItems.THROWING_KNIFE.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+    // 绳索（拉人）
+    SUPER_LOOSE_END_SHOP.add(new ShopEntry(
+        ModItems.ROPE.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+
+    // 飞行员商店
+    // 喷气背包 - 150金币
+    PILOT_SHOP.add(new ShopEntry(
+        ModItems.JETPACK.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+    // 鞘翅 - 400金币
+    PILOT_SHOP.add(new ShopEntry(
+        Items.ELYTRA.getDefaultInstance(),
+        400,
+        ShopEntry.Type.TOOL));
+    // 烟花火箭 - 75金币
+    PILOT_SHOP.add(new ShopEntry(
+        new ItemStack(Items.FIREWORK_ROCKET, 1),
+        75,
+        ShopEntry.Type.TOOL));
+
+    // 影隼商店
+    SHADOW_FALCON_SHOP.add(new KillerKnifeShopEntry(
+
+        130));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        ModItems.THROWING_KNIFE.getDefaultInstance(),
+        145,
+        ShopEntry.Type.TOOL));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.CROWBAR.getDefaultInstance(),
+        35,
+        ShopEntry.Type.TOOL));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        100,
+        ShopEntry.Type.TOOL));
+    SHADOW_FALCON_SHOP.add(new ShopEntry(
+        TMMItems.GRENADE.getDefaultInstance(),
+        350,
+        ShopEntry.Type.WEAPON));
+    // 跳跃提升2药水 - 100金币，购买后给予30秒效果（图标为poison）
+    {
+      ItemStack jumpBoostPotion = Items.SPLASH_POTION.getDefaultInstance();
+      jumpBoostPotion.set(DataComponents.ITEM_NAME,
+          Component.translatable("item.noellesroles.shadow_falcon.jump_boost")
+              .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
+      var jumpBoostLore = new ArrayList<Component>();
+      jumpBoostLore.add(Component.translatable("item.noellesroles.shadow_falcon.jump_boost.lore1")
+          .setStyle(Style.EMPTY.withItalic(false))
+          .withStyle(ChatFormatting.GRAY));
+      jumpBoostPotion.set(DataComponents.LORE, new ItemLore(jumpBoostLore));
+
+      SHADOW_FALCON_SHOP.add(new ShopEntry(jumpBoostPotion, 100, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          // 给予30秒跳跃提升2效果
+          player.addEffect(new MobEffectInstance(
+              MobEffects.JUMP,
+              30 * 20, // 30秒
+              1, // 等级1 = 跳跃提升2
+              false, // ambient
+              true, // showParticles
+              true // showIcon
+          ));
+          return true;
+        }
+      });
+    }
+    // 鞘翅 - 250金币，购买时额外给予10个烟花火箭
+    {
+      SHADOW_FALCON_SHOP.add(new ShopEntry(Items.ELYTRA.getDefaultInstance(), 250, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          // 给予鞘翅
+          if (!RoleUtils.insertStackInFreeSlot(player, Items.ELYTRA.getDefaultInstance().copy())) {
+            player.displayClientMessage(
+                Component.translatable("message.noellesroles.shadow_falcon.elytra_inventory_full"),
+                true);
+            return false;
+          }
+          // 额外给予10个烟花火箭
+          ItemStack fireworks = new ItemStack(Items.FIREWORK_ROCKET, 10);
+          if (!player.getInventory().add(fireworks)) {
+            // 背包满了就丢在地上
+            player.drop(fireworks, true);
+          }
+          return true;
+        }
+      });
+    }
+
+    // ==================== 悍匪商店 ====================
+    // 刀 - 160金币
+    GANGSTERS_SHOP.add(new KillerKnifeShopEntry(
+
+        160));
+
+    // 短管霰弹枪 - 185金币
+    GANGSTERS_SHOP.add(new ShopEntry(
+        ModItems.SHORT_SHOTGUN.getDefaultInstance(),
+        185,
+        ShopEntry.Type.WEAPON));
+
+    // C4炸药 - 300金币
+    GANGSTERS_SHOP.add(new ShopEntry(
+        ModItems.C4.getDefaultInstance(),
+        300,
+        ShopEntry.Type.TOOL));
+
+    // 撬棍 - 25金币
+    GANGSTERS_SHOP.add(new ShopEntry(
+        TMMItems.CROWBAR.getDefaultInstance(),
+        25,
+        ShopEntry.Type.TOOL));
+
+    // 开锁器 - 80金币
+    GANGSTERS_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        80,
+        ShopEntry.Type.TOOL));
+
+    // 关灯 - 使用配置价格
+    GANGSTERS_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
+        ShopEntry.Type.TOOL) {
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useBlackout(player);
+      }
+    });
+
+    // ==================== 钳工商店 ====================
+    // 开灯 - 225金币（购买后立即结束关灯时间并清除全场黑暗与失明药水效果，未处于关灯时间无法购买）
+    FITTER_SHOP.add(new ShopEntry(ModItems.LIGHTUP.getDefaultInstance(), 225, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        SREWorldBlackoutComponent blackCCA = SREWorldBlackoutComponent.KEY.get(player.level());
+        if (blackCCA.blackOutRemainingTicks <= 0)
+          return false;
+        blackCCA.reset();
+        // 清除全场黑暗与失明药水效果
+        for (Player p : player.level().players()) {
+          p.removeEffect(MobEffects.BLINDNESS);
+          p.removeEffect(MobEffects.DARKNESS);
+        }
+        // 全场播放 block.smithing_table.use 音效
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+            SoundEvents.SMITHING_TABLE_USE, SoundSource.MASTER, 1.0F, 1.0F);
+        // 冷却与关灯一致
+        player.level().players().forEach(
+            p -> p.getCooldowns().addCooldown(ModItems.LIGHTUP, GameConstants.getBlackoutCooldownGlobal()));
+        player.getCooldowns().addCooldown(ModItems.LIGHTUP,
+            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.BLACKOUT, 0));
+        return true;
+      }
+    });
+
+    // 监控恢复 - 75金币（购买后立即结束监控失灵时间，未处于监控失灵期间无法购买）
+    FITTER_SHOP.add(new ShopEntry(ModItems.MONITOR_RECOVERY.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        SREMonitorWorldComponent monitorCCA = SREMonitorWorldComponent.KEY.get(player.level());
+        if (monitorCCA.brokenTime <= 0)
+          return false;
+        monitorCCA.reset();
+        // 全场播放 ui.loom.take_result 音效
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+            SoundEvents.UI_LOOM_TAKE_RESULT, SoundSource.MASTER, 1.0F, 1.0F);
+        // 冷却与监控失灵一致
+        player.level().players().forEach(
+            p -> p.getCooldowns().addCooldown(ModItems.MONITOR_RECOVERY,
+                GameConstants.getMonitorBrokenCooldownGlobal()));
+        player.getCooldowns().addCooldown(ModItems.MONITOR_RECOVERY,
+            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
+        return true;
+      }
+    });
+
+    // ==================== 鹈鹕商店 ====================
+    // 开锁器 - 150金币
+    PELICAN_SHOP.add(new ShopEntry(
+        TMMItems.LOCKPICK.getDefaultInstance(),
+        150,
+        ShopEntry.Type.TOOL));
+
+    // ==================== 教父商店 ====================
+    // 开锁器 - 150金币
+    GODFATHER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+    // 子弹 - 275金币（右键装填或购买时自动装填）
+    GODFATHER_SHOP.add(new ShopEntry(
+        ModItems.BULLET.getDefaultInstance(),
+        275,
+        ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.tryLoadBullet((ServerPlayer) player);
+      }
+    });
+
+    // ==================== 家族教徒商店 ====================
+    // 刀 - 200金币
+    MAFIOSO_SHOP.add(new KillerKnifeShopEntry(200));
+    // 左轮手枪 - 300金币
+    MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
+
+    // ==================== 家族侍卫商店 ====================
+    // 飞刀 - 225金币
+    JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
+    // 关灯 - 200金币
+    JANITOR_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.useBlackout(player);
+      }
+    });
+    // 短管霰弹枪 - 250金币
+    JANITOR_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
+
+    // ==================== 家族保姆商店 ====================
+    // 护盾试剂 - 325金币
+    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.DEFENSE_VIAL.getDefaultInstance(), 325, ShopEntry.Type.WEAPON));
+    // 毒药试剂 - 200金币
+    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
+    // 喷溅型速度3 - 275金币 (持续5秒)
+    {
+      var SPEED_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var speedList = List.of(new MobEffectInstance(
+          MobEffects.MOVEMENT_SPEED,
+          5 * 20,
+          2,
+          false,
+          true,
+          true));
+      var speedContent = new PotionContents(Optional.empty(), Optional.of(53503),
+          speedList);
+      SPEED_SPLASH.set(DataComponents.POTION_CONTENTS, speedContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(SPEED_SPLASH, 275, ShopEntry.Type.WEAPON));
+    }
+    // 喷溅型禁止移动药水 - 275金币 (持续2.5秒)
+    {
+      var IMMOBILE_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var immobileList = List.of(new MobEffectInstance(
+          ModEffects.MOVE_BANED,
+          50, // 2.5秒 = 50 ticks
+          0,
+          false,
+          true,
+          true));
+      var immobileContent = new PotionContents(Optional.empty(), Optional.of(0x8B0000),
+          immobileList);
+      IMMOBILE_SPLASH.set(DataComponents.POTION_CONTENTS, immobileContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(IMMOBILE_SPLASH, 275, ShopEntry.Type.WEAPON));
+    }
+    // 喷溅型无碰撞药水 - 175金币 (持续20秒)
+    {
+      var NOCLIP_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var noclipList = List.of(new MobEffectInstance(
+          ModEffects.NO_COLLIDE,
+          20 * 20, // 20秒
+          0,
+          false,
+          true,
+          true));
+      var noclipContent = new PotionContents(Optional.empty(), Optional.of(0x00FF7F),
+          noclipList);
+      NOCLIP_SPLASH.set(DataComponents.POTION_CONTENTS, noclipContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(NOCLIP_SPLASH, 175, ShopEntry.Type.WEAPON));
+    }
+    // 喷溅型无限体力药水 - 200金币 (持续15秒)
+    {
+      var STAMINA_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
+      var staminaList = List.of(new MobEffectInstance(
+          ModEffects.INFINITE_STAMINA,
+          15 * 20, // 15秒
+          0,
+          false,
+          true,
+          true));
+      var staminaContent = new PotionContents(Optional.empty(), Optional.of(0x00CED1),
+          staminaList);
+      STAMINA_SPLASH.set(DataComponents.POTION_CONTENTS, staminaContent);
+      NUTRITIONIST_SHOP.add(new ShopEntry(STAMINA_SPLASH, 200, ShopEntry.Type.WEAPON));
+    }
+
+    // ==================== 家族保护伞商店 ====================
+    // 手榴弹 - 450金币
+    PARASOL_SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 450, ShopEntry.Type.WEAPON));
+    // 烟雾弹 - 175金币
+    PARASOL_SHOP.add(new ShopEntry(ModItems.SMOKE_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.WEAPON));
+    // 闪光弹 - 125金币
+    PARASOL_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 125, ShopEntry.Type.WEAPON));
+
+    // ==================== 咒法师商店 ====================
+    // 刀 - 130金币
+    WARLOCK_SHOP.add(new KillerKnifeShopEntry(130));
+    // 撬棍 - 35金币
+    WARLOCK_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
+    // 开锁器 - 80金币
+    WARLOCK_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
+    // 疯狂模式 - 400金币（冷却与通用杀手商店一致）
+    WARLOCK_SHOP.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(), 400, ShopEntry.Type.WEAPON) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        return SREPlayerShopComponent.usePsychoMode(player);
+      }
+    });
+    // 关灯 - 使用配置价格
+    WARLOCK_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
+        ShopEntry.Type.TOOL));
+    // 监控失灵 - 60金币
+    WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL));
+
+    // ==================== 嬉命人商店 ====================
+    // 开锁器 - 100金币
+    EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+
+    {
+      ItemStack s = new ItemStack(Items.SCULK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.wraith_assassin.energy_exchange"));
+      WRAITH_ASSASSIN_SHOP.add(new ShopEntry(s, 25, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          if (!(player instanceof ServerPlayer sp)) {
+            return false;
+          }
+          WraithAssassinPlayerComponent.KEY.get(sp).addEnergy(25);
+          WraithAssassinPlayerComponent.KEY.get(sp).playConversionCue(sp);
+          sp.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.energy_gain", 25)
+              .withStyle(ChatFormatting.DARK_AQUA), true);
+          return true;
+        }
+      });
+    }
+    WRAITH_ASSASSIN_SHOP.add(new ShopEntry(ModItems.INFERIOR_LOCKPICK.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
+    {
+      ItemStack s = new ItemStack(Items.ECHO_SHARD);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.wraith_assassin.san_drain"));
+      WRAITH_ASSASSIN_SHOP.add(new ShopEntry(s, 80, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player player) {
+          return player instanceof ServerPlayer sp && WraithAssassinPlayerComponent.KEY.get(sp).buyDrain(sp);
+        }
+      });
+    }
+
+    // ==================== 推理师商店 ====================
+    // 罗盘 - 100金币（游戏时间>=2分钟且没有罗盘时才能购买）
+    REASONER_SHOP.add(new ShopEntry(ModItems.REASONER_COMPASS.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+      @Override
+      public boolean onBuy(@NotNull Player player) {
+        var timeComp = io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level());
+        int elapsed = timeComp.getResetTime() - timeComp.getTime();
+        if (elapsed < 2 * 60 * 20) {
+          player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.time_not_ready")
+              .withStyle(ChatFormatting.YELLOW), true);
+          return false;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+          if (stack.is(ModItems.REASONER_COMPASS)) {
+            player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.already_has_compass")
+                .withStyle(ChatFormatting.YELLOW), true);
+            return false;
+          }
+        }
+        return true;
+      }
+    });
+
+    // ==================== 幻音师商店 ====================
+    // 出刀的声音 - 50金币, 冷却30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.knife_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.knifeSoundCooldown > 0)
+            return false;
+          c.knifeSoundCooldown = PhantomMusicianPlayerComponent.KNIFE_SOUND_COOLDOWN;
+          c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_KNIFE_STAB, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 左轮手枪开火的声音 - 75金币, 冷却30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.revolver_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.revolverSoundCooldown > 0)
+            return false;
+          c.revolverSoundCooldown = PhantomMusicianPlayerComponent.REVOLVER_SOUND_COOLDOWN;
+          c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 潜行者觉醒的声音 - 100金币, 冷却120秒, MASTER全场
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.stalker_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.stalkerSoundCooldown > 0)
+            return false;
+          c.stalkerSoundCooldown = PhantomMusicianPlayerComponent.STALKER_SOUND_COOLDOWN;
+          c.sync();
+          if (p instanceof ServerPlayer sp)
+            for (var pp : sp.serverLevel().players())
+              if (pp != null)
+                pp.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1F, 1.5F);
+          return true;
+        }
+      });
+    }
+    // 疯狂模式的声音 - 350金币, 冷却5分钟, 持续播放30秒
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.psycho_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 350, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.psychoSoundCooldown > 0)
+            return false;
+          c.psychoSoundCooldown = PhantomMusicianPlayerComponent.PSYCHO_SOUND_COOLDOWN;
+          c.psychoSoundPlayTimer = PhantomMusicianPlayerComponent.PSYCHO_SOUND_PLAY_DURATION;
+          c.sync();
+          return true;
+        }
+      });
+    }
+    // 撬棍撬门的声音 - 25金币, 冷却1分钟
+    {
+      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.crowbar_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 25, ShopEntry.Type.TOOL) {
+        @Override
+        public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.crowbarSoundCooldown > 0)
+            return false;
+          c.crowbarSoundCooldown = PhantomMusicianPlayerComponent.CROWBAR_SOUND_COOLDOWN;
+          c.sync();
+          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_CROWBAR_PRY, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 随机播放音效 - 50金币, 冷却40秒, 图标为音乐唱片
+    {
+      ItemStack s = new ItemStack(Items.MUSIC_DISC_RELIC);
+      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.random_sound"));
+      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
+        private final java.util.List<Object> allSounds = java.util.List.of(
+            // === TMMSounds (starrailexpress) ===
+            TMMSounds.ITEM_KNIFE_STAB, TMMSounds.ITEM_KNIFE_PREPARE,
+            TMMSounds.ITEM_REVOLVER_SHOOT, TMMSounds.ITEM_REVOLVER_CLICK,
+            TMMSounds.ITEM_CROWBAR_PRY, TMMSounds.ITEM_SNIPER_RIFLE_SHOOT,
+            TMMSounds.ITEM_SNIPER_RIFLE_RELOAD, TMMSounds.ITEM_DERRINGER_RELOAD,
+            TMMSounds.ITEM_GRENADE_THROW, TMMSounds.ITEM_GRENADE_EXPLODE,
+            TMMSounds.ITEM_BAT_HIT, TMMSounds.ITEM_PSYCHO_ARMOUR,
+            TMMSounds.ITEM_SCOPE_ATTACH, TMMSounds.ITEM_SCOPE_DETACH,
+            TMMSounds.ITEM_LOCKPICK_DOOR, TMMSounds.ITEM_KEY_DOOR,
+            TMMSounds.BLOCK_DOOR_LOCKED, TMMSounds.BLOCK_DOOR_TOGGLE,
+            TMMSounds.BLOCK_CARGO_BOX_OPEN, TMMSounds.BLOCK_CARGO_BOX_CLOSE,
+            TMMSounds.BLOCK_LIGHT_TOGGLE, TMMSounds.BLOCK_SPRINKLER_RUN,
+            TMMSounds.BLOCK_PRIVACY_PANEL_TOGGLE, TMMSounds.BLOCK_SPACE_BUTTON_TOGGLE,
+            TMMSounds.BLOCK_BUTTON_TOGGLE_NO_POWER,
+            TMMSounds.UI_SHOP_BUY, TMMSounds.UI_SHOP_BUY_FAIL,
+            TMMSounds.UI_PIANO, TMMSounds.UI_PIANO_WIN,
+            TMMSounds.UI_PIANO_LOSE, TMMSounds.UI_PIANO_STINGER,
+            TMMSounds.UI_RISER,
+            TMMSounds.AMBIENT_TRAIN_HORN, TMMSounds.AMBIENT_TRAIN_INSIDE,
+            TMMSounds.AMBIENT_TRAIN_OUTSIDE, TMMSounds.AMBIENT_PSYCHO_DRONE,
+            TMMSounds.AMBIENT_BLACKOUT,
+            // === NRSounds (noellesroles) ===
+            NRSounds.SHOTGUN_FIRE, NRSounds.SHOTGUNU_COCK,
+            NRSounds.SHORT_CIRCUIT, NRSounds.BEEP, NRSounds.C4_BEEP,
+            NRSounds.SYRINGE_STAB, NRSounds.INFECTED_COUGH, NRSounds.INFECTED_INFECT,
+            NRSounds.MAFIA, NRSounds.PARTY_SKILL,
+            NRSounds.TIME_STOP, NRSounds.TIME_START, NRSounds.DIO_SPAWN,
+            NRSounds.WIND, NRSounds.GAMBER_DEATH, NRSounds.MUSIC_CLOCK,
+            NRSounds.GONGXI_FACAI, NRSounds.TO_BE_CONTINUED,
+            NRSounds.HARPY_WELCOME, NRSounds.JESTER_AMBIENT,
+            NRSounds.NYAN_CAT, NRSounds.THMUSIC_UN_OWEN, NRSounds.BAKA_BAKA,
+            // === Vanilla SoundEvents ===
+            SoundEvents.WITHER_SPAWN, SoundEvents.WITHER_DEATH,
+            SoundEvents.LIGHTNING_BOLT_THUNDER, SoundEvents.ENDER_DRAGON_GROWL,
+            SoundEvents.ENDER_DRAGON_DEATH, SoundEvents.EVOKER_PREPARE_SUMMON,
+            SoundEvents.EVOKER_CAST_SPELL, SoundEvents.GENERIC_EXPLODE,
+            SoundEvents.FIREWORK_ROCKET_LARGE_BLAST,
+            SoundEvents.WARDEN_ROAR, SoundEvents.WARDEN_HEARTBEAT,
+            SoundEvents.WARDEN_AGITATED, SoundEvents.GHAST_SCREAM,
+            SoundEvents.RAVAGER_ROAR, SoundEvents.ANVIL_DESTROY,
+            SoundEvents.ANVIL_PLACE, SoundEvents.ANVIL_USE,
+            SoundEvents.BEACON_POWER_SELECT, SoundEvents.CONDUIT_ATTACK_TARGET,
+            SoundEvents.TRIDENT_THROW, SoundEvents.TRIDENT_RETURN,
+            SoundEvents.SHIELD_BLOCK, SoundEvents.CHAIN_HIT,
+            SoundEvents.END_PORTAL_SPAWN, SoundEvents.IRON_GOLEM_REPAIR,
+            SoundEvents.SMITHING_TABLE_USE, SoundEvents.BELL_BLOCK,
+            SoundEvents.TOTEM_USE, SoundEvents.EXPERIENCE_ORB_PICKUP,
+            SoundEvents.PLAYER_BURP, SoundEvents.ITEM_BREAK,
+            SoundEvents.FLINTANDSTEEL_USE, SoundEvents.EGG_THROW,
+            SoundEvents.VILLAGER_YES, SoundEvents.TOTEM_USE,
+            SoundEvents.UI_BUTTON_CLICK, SoundEvents.UI_LOOM_TAKE_RESULT,
+            SoundEvents.NOTE_BLOCK_BELL, SoundEvents.NOTE_BLOCK_HARP,
+            SoundEvents.NOTE_BLOCK_BASEDRUM, SoundEvents.NOTE_BLOCK_PLING,
+            SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundEvents.GENERIC_DRINK,
+            SoundEvents.IRON_DOOR_OPEN, SoundEvents.PANDA_SNEEZE);
+
+        @Override
+        public boolean onBuy(@NotNull Player p) {
+          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
+          if (c.randomSoundCooldown > 0)
+            return false;
+          c.randomSoundCooldown = PhantomMusicianPlayerComponent.RANDOM_SOUND_COOLDOWN;
+          c.sync();
+          Object obj = allSounds.get(new java.util.Random().nextInt(allSounds.size()));
+          net.minecraft.sounds.SoundEvent sound;
+          if (obj instanceof net.minecraft.sounds.SoundEvent se) {
+            sound = se;
+          } else if (obj instanceof net.minecraft.core.Holder<?> h
+              && h.value() instanceof net.minecraft.sounds.SoundEvent se2) {
+            sound = se2;
+          } else {
+            return false;
+          }
+          p.level().playSound(null, p.blockPosition(), sound, SoundSource.PLAYERS, 1F, 1F);
+          return true;
+        }
+      });
+    }
+    // 正片开始
     {
       var SHOP = new ArrayList<ShopEntry>();
       SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), SREConfig.instance().lockpickPrice,
@@ -418,7 +1570,7 @@ public class RoleShopHandler {
       SHOP.add(
           new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
       SHOP.add(
-          new KillerKnifeShopEntry( SREConfig.instance().knifePrice));
+          new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
       SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), SREConfig.instance().revolverPrice,
           ShopEntry.Type.WEAPON));
       SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), SREConfig.instance().shortShotgunPrice,
@@ -534,7 +1686,7 @@ public class RoleShopHandler {
     {
       // 滞时鬼（Delayer）商店：只可购买 刀（130）、枪（285）、短管霰弹枪（300）、疯狂模式（400）、监控失灵（40）、鞭炮（15）
       var SHOP = new ArrayList<ShopEntry>();
-      SHOP.add(new KillerKnifeShopEntry( 130));
+      SHOP.add(new KillerKnifeShopEntry(130));
       SHOP.add(new ShopEntry(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance(), 285,
           ShopEntry.Type.TOOL));
       SHOP.add(new ShopEntry(org.agmas.noellesroles.init.ModItems.SHORT_SHOTGUN.getDefaultInstance(), 300,
@@ -575,7 +1727,7 @@ public class RoleShopHandler {
     {
       // INITIATE的商店
       var SHOP = new ArrayList<ShopEntry>();
-      SHOP.add(new KillerKnifeShopEntry( 200));
+      SHOP.add(new KillerKnifeShopEntry(200));
       ShopContent.customEntries.put(SERoles.INITIATE.getIdentifier(), SHOP);
     }
     {
@@ -587,7 +1739,7 @@ public class RoleShopHandler {
     {
       // EXAMPLER的商店
       var SHOP = new ArrayList<ShopEntry>();
-      SHOP.add(new  KillerKnifeShopEntry(
+      SHOP.add(new KillerKnifeShopEntry(
 
           120));
       SHOP.add(new ShopEntry(
@@ -1584,7 +2736,7 @@ public class RoleShopHandler {
       // watcher
       var shop = new ArrayList<ShopEntry>();
       shop.add(
-          new KillerKnifeShopEntry( SREConfig.instance().knifePrice) {
+          new KillerKnifeShopEntry(SREConfig.instance().knifePrice) {
             @Override
             public boolean canDisplay(Player player) {
               return !WatcherPlayerComponent.KEY.get(player).isInCalmStance();
@@ -1714,6 +2866,24 @@ public class RoleShopHandler {
 
     // 葬仪商店
     {
+
+      ArrayList<ShopEntry> MORTICIAN_BODYMAKER_SHOP = new ArrayList<>();
+      // 葬仪商店
+      // 乘务员钥匙 - 100金币
+      MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
+          ModItems.MASTER_KEY_P.getDefaultInstance(),
+          100,
+          ShopEntry.Type.TOOL));
+      // 裹尸袋 - 150金币
+      MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
+          TMMItems.BODY_BAG.getDefaultInstance(),
+          150,
+          ShopEntry.Type.TOOL));
+      // 血瓶 - 75金币
+      MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
+          ModItems.BLOOD_BOTTLE.getDefaultInstance(),
+          75,
+          ShopEntry.Type.TOOL));
       ShopContent.customEntries.put(ModRoles.MORTICIAN_BODYMAKER_ID, MORTICIAN_BODYMAKER_SHOP);
     }
   }
@@ -1722,1247 +2892,6 @@ public class RoleShopHandler {
    * 初始化商店
    */
   public static void initShops() {
-    FRAMING_ROLES_SHOP.clear();
-    CONSPIRATOR_SHOP.clear();
-    柜子区的商店.clear();
-    SLIPPERY_GHOST_SHOP.clear();
-    ENGINEER_SHOP.clear();
-    BOXER_SHOP.clear();
-    PSYCHOLOGIST_SHOP.clear();
-    BOMBER_SHOP.clear();
-    DOCTOR_SHOP.clear();
-    SINGER_SHOP.clear();
-    ATTENDANT_SHOP.clear();
-    VETERAN_SHOP.clear();
-    PATROLLER_SHOP.clear();
-    NIAN_SHOU_SHOP.clear();
-    MAGICIAN_SHOP.clear();
-    BANDIT_SHOP.clear();
-    BLOOD_FEUDIST_SHOP.clear();
-    THIEF_SHOP.clear();
-    CLOCKMAKER_SHOP.clear();
-    WRITER_SHOP.clear();
-    RESCUER_SHOP.clear();
-    FIREFIGHTER_SHOP.clear();
-    ACCOUNTANT_SHOP.clear();
-    SWAST_SHOP.clear();
-    MARTIAL_ARTS_INSTRUCTOR_SHOP.clear();
-    SEA_KING_SHOP.clear();
-    WATER_GHOST_SHOP.clear();
-    CANDLE_BEARER_SHOP.clear();
-    PILOT_SHOP.clear();
-    SHADOW_FALCON_SHOP.clear();
-    INFECTED_SHOP.clear();
-    MORTICIAN_BODYMAKER_SHOP.clear();
 
-    柜子区的商店.add(new ShopEntry(
-        ModItems.BANDIT_REVOLVER.getDefaultInstance(),
-        130,
-        ShopEntry.Type.TOOL));
-    柜子区的商店.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), SREConfig.instance().firecrackerPrice,
-        ShopEntry.Type.TOOL));
-    柜子区的商店.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
-    柜子区的商店.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), SREConfig.instance().bodyBagPrice,
-        ShopEntry.Type.TOOL));
-    柜子区的商店.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-        ShopEntry.Type.TOOL) {
-      public boolean onBuy(@NotNull Player player) {
-
-        boolean triggered = SREPlayerShopComponent.useBlackout(player);
-        if (triggered) {
-          player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
-              Math.max(60 * 20, GameConstants.getBlackoutCooldownGlobal()));
-          return true;
-        }
-        return triggered;
-      }
-    });
-    // 监控失灵 - 60金币（刽子手专属）
-    柜子区的商店.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
-      }
-    });
-    {
-      // 射击狂热 - 275金币（魔改psycho，狂暴模式）
-      var 柜子区疯魔 = TMMItems.PSYCHO_MODE.getDefaultInstance();
-      柜子区疯魔.set(DataComponents.ITEM_NAME, Component.translatable("itemstack.executioner.psychoitem.item_name"));
-      var lore = new ItemLore(List.of(
-          Component.translatable("itemstack.executioner.psychoitem.item_lore.1")
-              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
-          Component.translatable("itemstack.executioner.psychoitem.item_lore.2")
-              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
-      柜子区疯魔.set(DataComponents.LORE, lore);
-      柜子区的商店.add(new ShopEntry(
-          柜子区疯魔,
-          325,
-          ShopEntry.Type.WEAPON) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          ShootingFrenzyPlayerComponent frenzyComponent = ShootingFrenzyPlayerComponent.KEY.get(player);
-          boolean success = frenzyComponent.startFrenzy();
-          if (success) {
-            player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE, 20 * 60);
-          }
-          return success;
-        }
-      });
-    }
-    {
-      // 切换目标 - 200金币
-      var 柜子区切换目标 = Items.PAPER.getDefaultInstance();
-      柜子区切换目标.set(DataComponents.ITEM_NAME, Component.translatable("itemstack.executioner.change_target.item_name"));
-      var lore = new ItemLore(List.of(
-          Component.translatable("itemstack.executioner.change_target.item_lore.1")
-              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY)),
-          Component.translatable("itemstack.executioner.change_target.item_lore.2")
-              .withStyle(style -> style.withItalic(false).withColor(ChatFormatting.GRAY))));
-      柜子区切换目标.set(DataComponents.LORE, lore);
-      柜子区的商店.add(new ShopEntry(
-          柜子区切换目标,
-          200,
-          ShopEntry.Type.WEAPON) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          boolean success = false;
-          var cca = ExecutionerPlayerComponent.KEY.get(player);
-          success = cca.assignRandomTarget(true);
-          if (success) {
-            player.getCooldowns().addCooldown(Items.PAPER, 20);
-          }
-          return success;
-        }
-      });
-    }
-    // 阴谋家商店
-    CONSPIRATOR_SHOP.add(new ShopEntry(
-        ModItems.CONSPIRACY_PAGE.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-
-    CONSPIRATOR_SHOP.add(new KillerKnifeShopEntry(
-
-        120));
-
-    CONSPIRATOR_SHOP.add(new ShopEntry(
-        io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance(),
-        200,
-        ShopEntry.Type.WEAPON));
-
-    CONSPIRATOR_SHOP.add(new ShopEntry(
-        io.wifi.starrailexpress.index.TMMItems.LOCKPICK.getDefaultInstance(),
-        50,
-        ShopEntry.Type.TOOL));
-
-    // 捣蛋鬼商店
-    // 空包弹 - 150金币
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(
-        ModItems.BLANK_CARTRIDGE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-
-    // 烟雾弹 - 150金币
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(
-        ModItems.SMOKE_GRENADE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-
-    // 撬锁器 - 50金币 (原版杀手商店物品)
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(
-        io.wifi.starrailexpress.index.TMMItems.LOCKPICK.getDefaultInstance(),
-        50,
-        ShopEntry.Type.TOOL));
-
-    // 闪光弹 - 175金币（捣蛋鬼专用）
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean canBuy(@NotNull Player player) {
-        return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
-      }
-    });
-
-    // 诱饵弹 - 25金币（捣蛋鬼专用）
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
-
-    // 监控失灵 - 50金币（捣蛋鬼专属）
-    SLIPPERY_GHOST_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
-      }
-    });
-
-    // 关灯 - 300金币 (原版杀手商店物品)
-    SLIPPERY_GHOST_SHOP.add(
-        new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-            ShopEntry.Type.TOOL) {
-          public boolean onBuy(@NotNull Player player) {
-            return SREPlayerShopComponent.useBlackout(player);
-          }
-        });
-
-    // 工程师商店
-    // 加固门 - 30金币
-    ENGINEER_SHOP.add(new ShopEntry(
-        ModItems.REINFORCEMENT.getDefaultInstance(),
-        30,
-        ShopEntry.Type.TOOL));
-
-    // 警报陷阱 - 15金币
-    ENGINEER_SHOP.add(new ShopEntry(
-        ModItems.ALARM_TRAP.getDefaultInstance(),
-        15,
-        ShopEntry.Type.TOOL));
-
-    ENGINEER_SHOP.add(new ShopEntry(
-        ModItems.MASTER_KEY_P.getDefaultInstance(),
-        90,
-        ShopEntry.Type.TOOL));
-
-    ENGINEER_SHOP.add(new ShopEntry(
-        ModItems.LOCK_ITEM.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-
-    // 年兽商店
-    // 关灯 - 200金币
-    NIAN_SHOU_SHOP.add(
-        new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
-          public boolean onBuy(@NotNull Player player) {
-            return SREPlayerShopComponent.useBlackout(player);
-          }
-        });
-
-    // 斗士商店
-    BOXER_SHOP.add(new ShopEntry(
-        ModItems.BOXING_GLOVE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.WEAPON));
-
-    // 心理学家商店
-    // 薄荷糖 - 75金币
-    PSYCHOLOGIST_SHOP.add(new ShopEntry(
-        ModItems.MINT_CANDIES.getDefaultInstance(),
-        75,
-        ShopEntry.Type.TOOL));
-    // 维生素 - 125金币
-    PSYCHOLOGIST_SHOP.add(new ShopEntry(
-        ModItems.ALCHEMIST_BUFF_POTION.getDefaultInstance(),
-        125,
-        ShopEntry.Type.TOOL));
-    // 炸弹客商店
-    BOMBER_SHOP.add(new ShopEntry(
-        TMMItems.GRENADE.getDefaultInstance(),
-        290,
-        ShopEntry.Type.WEAPON));
-    BOMBER_SHOP.add(new ShopEntry(
-        TMMItems.TIMED_GRENADE.getDefaultInstance(),
-        290, ShopEntry.Type.WEAPON));
-    BOMBER_SHOP.add(new ShopEntry(
-        TMMItems.STICKY_GRENADE.getDefaultInstance(),
-        290,
-        ShopEntry.Type.WEAPON));
-    BOMBER_SHOP.add(new ShopEntry(
-        TMMItems.FIRECRACKER.getDefaultInstance(),
-        25,
-        ShopEntry.Type.TOOL));
-
-    // 巡警商店
-    // 左轮手枪 - 325金币
-    PATROLLER_SHOP.add(new ShopEntry(
-        TMMItems.REVOLVER.getDefaultInstance(),
-        325,
-        ShopEntry.Type.WEAPON));
-    BOMBER_SHOP.add(new ShopEntry(
-        TMMItems.LOCKPICK.getDefaultInstance(),
-        80,
-        ShopEntry.Type.TOOL));
-    // 歌手商店
-    for (int i = 1; i <= 5; i++) {
-      ItemStack singer_shop_item = ModItems.SINGER_MUSIC_DISC.getDefaultInstance();
-      singer_shop_item.set(DataComponents.ITEM_NAME,
-          Component.translatable("item.noellesroles.shop.singer.display_name.root",
-              Component.translatable(
-                  "item.noellesroles.shop.singer.display_name."
-                      + i)
-                  .withStyle(ChatFormatting.GOLD))
-              .withStyle(ChatFormatting.AQUA));
-      var lores = new ArrayList<Component>();
-      lores.add(Component.translatable("item.noellesroles.shop.singer.lore",
-          Component.translatable("item.noellesroles.shop.singer.effect." + i)
-              .withStyle(ChatFormatting.YELLOW))
-          .withStyle(ChatFormatting.GRAY));
-      singer_shop_item.set(DataComponents.LORE, new ItemLore(lores));
-      final int idx = i;
-      // 第5张唱片(Lupinus)价格为500金币，其他为100金币
-      int price = (i == 5) ? 500 : 100;
-      SINGER_SHOP.add(new ShopEntry(singer_shop_item, price, ShopEntry.Type.TOOL) {
-        public boolean onBuy(@NotNull Player player) {
-          return SingerPlayerComponent.buyDisc(player, idx);
-        }
-      });
-    }
-
-    // 医生商店
-    DOCTOR_SHOP.add(new ShopEntry(
-        ModItems.ANTIDOTE_REAGENT.getDefaultInstance(),
-        50,
-        ShopEntry.Type.TOOL));
-    // 针管 - 75金币
-    DOCTOR_SHOP.add(new ShopEntry(
-        ModItems.ANTIDOTE.getDefaultInstance(),
-        75,
-        ShopEntry.Type.TOOL));
-    // 药丸 - 75金币
-    DOCTOR_SHOP.add(new ShopEntry(
-        ModItems.createPillStack(false),
-        75,
-        ShopEntry.Type.TOOL));
-    // 净化弹 - 300金币
-    DOCTOR_SHOP.add(new ShopEntry(
-        ModItems.PURIFY_BOMB.getDefaultInstance(),
-        300,
-        ShopEntry.Type.TOOL));
-
-    // 乘务员商店
-    // 乘务员钥匙 - 50金币
-    ATTENDANT_SHOP.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
-
-    // 铁门钥匙 - 75金币
-    ATTENDANT_SHOP
-        .add(new ShopEntry(
-            io.wifi.starrailexpress.index.TMMItems.IRON_DOOR_KEY
-                .getDefaultInstance(),
-            75, ShopEntry.Type.TOOL));
-    // 手电筒（moonlight_lamp） - 150金币
-    if (BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse("handheldmoon:moonlight_lamp"))) {
-      final var moonlightLampItem = BuiltInRegistries.ITEM
-          .get(ResourceLocation.parse("handheldmoon:moonlight_lamp"));
-      if (moonlightLampItem != null) {
-        final var defaultInstance = moonlightLampItem.getDefaultInstance();
-        ATTENDANT_SHOP.add(new ShopEntry(defaultInstance, 150, ShopEntry.Type.TOOL));
-      }
-    }
-
-    // 魔术师商店
-    // 假刀 - 50金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_KNIFE.getDefaultInstance(),
-        50,
-        ShopEntry.Type.WEAPON));
-
-    // 假撬棍 - 35金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_CROWBAR.getDefaultInstance(),
-        35,
-        ShopEntry.Type.WEAPON));
-
-    // 假开锁器 - 80金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_LOCKPICK.getDefaultInstance(),
-        80,
-        ShopEntry.Type.WEAPON));
-
-    // 鞭炮 - 30金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        TMMItems.FIRECRACKER.getDefaultInstance(),
-        30,
-        ShopEntry.Type.WEAPON));
-
-    // 假裹尸袋 - 100金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_BODY_BAG.getDefaultInstance(),
-        100,
-        ShopEntry.Type.WEAPON));
-
-    // 便签 - 100金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        TMMItems.NOTE.getDefaultInstance(),
-        100,
-        ShopEntry.Type.WEAPON));
-
-    // 假枪 - 175金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_REVOLVER.getDefaultInstance(),
-        175,
-        ShopEntry.Type.WEAPON));
-
-    // 假手雷 - 200金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_GRENADE.getDefaultInstance(),
-        200,
-        ShopEntry.Type.WEAPON));
-
-    // 假疯狂模式 - 325金币
-    MAGICIAN_SHOP.add(new ShopEntry(
-        ModItems.FAKE_PSYCHO_MODE.getDefaultInstance(),
-        325,
-        ShopEntry.Type.WEAPON) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        // 获得假球棒并启动假疯狂模式
-        var magicianComponent = org.agmas.noellesroles.component.ModComponents.MAGICIAN
-            .get(player);
-        if (magicianComponent != null) {
-          if (!magicianComponent.startFakePsycho()) {
-            return false;
-          }
-        }
-        return true;
-      }
-    });
-
-    // 强盗商店（已调整价格与条目）
-    BANDIT_SHOP.add(new KillerKnifeShopEntry(
-
-        200));
-
-    // 匪徒短管霰弹枪 - 450金币
-    BANDIT_SHOP.add(new ShopEntry(
-        ModItems.SHORT_SHOTGUN.getDefaultInstance(),
-        450,
-        ShopEntry.Type.WEAPON));
-
-    // 匪徒手枪 - 175金币
-    BANDIT_SHOP.add(new ShopEntry(
-        ModItems.BANDIT_REVOLVER.getDefaultInstance(),
-        180,
-        ShopEntry.Type.WEAPON));
-
-    // 手榴弹 - 600金币
-    BANDIT_SHOP.add(new ShopEntry(
-        TMMItems.TIMED_GRENADE.getDefaultInstance(),
-        600,
-        ShopEntry.Type.WEAPON));
-
-    // 关灯 - 配置价格 * 1.275 后取整
-    BANDIT_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), banditBlackoutPrice(),
-        ShopEntry.Type.TOOL) {
-      public boolean onBuy(@NotNull Player player) {
-        return SREPlayerShopComponent.useBlackout(player);
-      }
-    });
-
-    // 监控失灵 - 75金币（强盗专属）
-    BANDIT_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
-      }
-    });
-
-    // 闪光弹
-    BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 30, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean canBuy(@NotNull Player player) {
-        return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
-      }
-    });
-
-    // 诱饵弹 - 15金币
-    BANDIT_SHOP.add(new ShopEntry(ModItems.DECOY_GRENADE.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
-
-    {
-      // 保安商店：远程监控台 - 150金币
-      var GUARD_SHOP = new java.util.ArrayList<ShopEntry>();
-      GUARD_SHOP.add(new ShopEntry(ModItems.MONITORING_TERMINAL.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
-      ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
-    }
-
-    // 小偷商店
-    // 小偷的荣誉（金锭） - 根据人数动态计算价格
-    // ShopEntry THIEF_SHOP_ENTRY = new
-    // ShopEntry(Items.GOLD_INGOT.getDefaultInstance(),
-    // 0, // 价格在onBuy中动态计算
-    // ShopEntry.Type.TOOL) {
-    // @Override
-    // public int price() {
-    // return 0;
-    // }
-
-    // @Override
-    // public boolean onBuy(@NotNull Player player) {
-    // var tpc = ThiefPlayerComponent.KEY.get(player);
-    // int cost = tpc.honorCost;
-    // // 扣除金币并给予金锭
-    // shop.addToBalance(-cost);
-
-    // player.addItem(Items.GOLD_INGOT.getDefaultInstance().copy());
-    // player.displayClientMessage(
-    // Component.translatable("message.noellesroles.thief.honor_purchased", cost)
-    // .withStyle(ChatFormatting.GOLD),
-    // true);
-    // return true;
-    // }
-    // };
-    // THIEF_SHOP.add(THIEF_SHOP_ENTRY);
-
-    // 钟表匠商店
-    // 时钟（原版） - 100金币
-    CLOCKMAKER_SHOP.add(new ShopEntry(
-        Items.CLOCK.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-
-    // 怀表 - 150金币
-    CLOCKMAKER_SHOP.add(new ShopEntry(
-        ModItems.POCKET_WATCH.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-
-    // 作家商店
-    // 书与笔（原版） - 100金币
-    WRITER_SHOP.add(new ShopEntry(
-        Items.WRITABLE_BOOK.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-
-    // 搜救员商店
-    // 绳索 - 150金币
-    RESCUER_SHOP.add(new ShopEntry(
-        ModItems.ROPE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-
-    // 裹尸袋 - 75金币
-    RESCUER_SHOP.add(new ShopEntry(
-        TMMItems.BODY_BAG.getDefaultInstance(),
-        75,
-        ShopEntry.Type.TOOL));
-
-    // 消防员商店
-    // 消防斧 - 150金币
-    FIREFIGHTER_SHOP.add(new ShopEntry(
-        ModItems.FIRE_AXE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(Player player) {
-        if (SREItemUtils.countItem(player, Items.CHAIN_COMMAND_BLOCK) > 0) {
-          return false;
-        }
-        if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
-          player.getInventory().setItem(14, Items.CHAIN_COMMAND_BLOCK.getDefaultInstance());
-          return true;
-        }
-        return false;
-      }
-    });
-
-    // 灭火器 - 150金币
-    FIREFIGHTER_SHOP.add(new ShopEntry(
-        ModItems.EXTINGUISHER.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(Player player) {
-        if (SREItemUtils.countItem(player, Items.REPEATING_COMMAND_BLOCK) > 0) {
-          return false;
-        }
-        if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
-          player.getInventory().setItem(15, Items.REPEATING_COMMAND_BLOCK.getDefaultInstance());
-          return true;
-        }
-        return false;
-      }
-    });
-
-    // 会计商店
-    // 存折 - 100金币（只能购买1次）
-    ACCOUNTANT_SHOP.add(new ShopEntry(
-        ModItems.PASSBOOK.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(Player player) {
-        if (SREItemUtils.countItem(player, Items.COMMAND_BLOCK) > 0) {
-          return false;
-        }
-        if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
-          player.getInventory().setItem(16, Items.COMMAND_BLOCK.getDefaultInstance());
-          return true;
-        }
-        return false;
-      }
-    });
-
-    // 特警商店
-    // 马格南子弹 - 125金币
-    SWAST_SHOP.add(new ShopEntry(
-        TMMItems.MAGNUM_BULLET.getDefaultInstance(),
-        125,
-        ShopEntry.Type.WEAPON));
-
-    // 瞄准镜 - 25金币
-    SWAST_SHOP.add(new ShopEntry(
-        TMMItems.SCOPE.getDefaultInstance(),
-        25,
-        ShopEntry.Type.WEAPON));
-
-    // 铁门钥匙 - 75金币
-    SWAST_SHOP.add(new ShopEntry(
-        TMMItems.IRON_DOOR_KEY.getDefaultInstance(),
-        75,
-        ShopEntry.Type.TOOL));
-
-    // 狙击枪 - 400金币（已拥有狙击枪时无法购买）
-    SWAST_SHOP.add(new ShopEntry(
-        TMMItems.SNIPER_RIFLE.getDefaultInstance(),
-        400,
-        ShopEntry.Type.WEAPON) {
-      @Override
-      public boolean canBuy(@NotNull Player player) {
-        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.SNIPER_RIFLE);
-      }
-    });
-
-    // 武术教官商店
-    // 双节棍 - 400金币（已拥有双节棍时无法购买）
-    MARTIAL_ARTS_INSTRUCTOR_SHOP.add(new ShopEntry(
-        TMMItems.NUNCHUCK.getDefaultInstance(),
-        400,
-        ShopEntry.Type.WEAPON) {
-      @Override
-      public boolean canBuy(@NotNull Player player) {
-        return super.canBuy(player) && !SREItemUtils.hasItem(player, TMMItems.NUNCHUCK);
-      }
-    });
-
-    // 海王商店
-    // 普通三叉戟 - 150金币
-    var trident = Items.TRIDENT.getDefaultInstance();
-    trident.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
-    SEA_KING_SHOP.add(new ShopEntry(
-        trident,
-        150,
-        ShopEntry.Type.WEAPON));
-
-    // 水鬼商店
-    initializeWaterGhostShop();
-
-    // 秉烛人商店
-    // 撬锁器 - 75金币
-
-    CANDLE_BEARER_SHOP.add(new ShopEntry(
-        TMMItems.LOCKPICK.getDefaultInstance(),
-        75,
-        ShopEntry.Type.TOOL));
-
-    // 隐身机会 - 125金币（图标为药水，购买后隐身机会+1）
-    {
-      var invisItem = Items.POTION.getDefaultInstance();
-      invisItem.set(DataComponents.ITEM_NAME,
-          Component.translatable("item.noellesroles.candlebearer.shop.invisibility_charge")
-              .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
-      var invisLore = new ArrayList<Component>();
-      invisLore.add(Component.translatable("item.noellesroles.candlebearer.shop.invisibility_charge.lore1")
-          .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
-      invisItem.set(DataComponents.LORE, new ItemLore(invisLore));
-
-      CANDLE_BEARER_SHOP.add(new ShopEntry(invisItem, 125, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          var comp = CandleBearerPlayerComponent.KEY.get(player);
-          if (comp == null)
-            return false;
-          if (comp.invisibilityCharges >= CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES)
-            return false;
-          comp.invisibilityCharges++;
-          if (player instanceof ServerPlayer sp) {
-            sp.displayClientMessage(
-                Component.translatable("message.noellesroles.candlebearer.charge_gained",
-                    comp.invisibilityCharges, CandleBearerPlayerComponent.MAX_INVISIBILITY_CHARGES)
-                    .withStyle(ChatFormatting.GOLD),
-                true);
-          }
-          comp.sync();
-          return true;
-        }
-      });
-    }
-
-    // 蜡烛 - 50金币
-    {
-      var candleItem = Items.CANDLE.getDefaultInstance();
-      candleItem.set(DataComponents.ITEM_NAME,
-          Component.translatable("item.noellesroles.candlebearer.shop.candle").withStyle(ChatFormatting.YELLOW));
-      var candleLore = new ArrayList<Component>();
-      candleLore.add(Component.translatable("item.noellesroles.candlebearer.shop.candle.lore1")
-          .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
-      candleItem.set(DataComponents.LORE, new ItemLore(candleLore));
-
-      CANDLE_BEARER_SHOP.add(new ShopEntry(candleItem, 50, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          return RoleUtils.insertStackInFreeSlot(player, this.stack().copy());
-        }
-      });
-    }
-
-    // 超级亡命徒商店
-    // 飞刀
-    SUPER_LOOSE_END_SHOP.add(new ShopEntry(
-        ModItems.THROWING_KNIFE.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-    // 绳索（拉人）
-    SUPER_LOOSE_END_SHOP.add(new ShopEntry(
-        ModItems.ROPE.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-
-    // 飞行员商店
-    // 喷气背包 - 150金币
-    PILOT_SHOP.add(new ShopEntry(
-        ModItems.JETPACK.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-    // 鞘翅 - 400金币
-    PILOT_SHOP.add(new ShopEntry(
-        Items.ELYTRA.getDefaultInstance(),
-        400,
-        ShopEntry.Type.TOOL));
-    // 烟花火箭 - 75金币
-    PILOT_SHOP.add(new ShopEntry(
-        new ItemStack(Items.FIREWORK_ROCKET, 1),
-        75,
-        ShopEntry.Type.TOOL));
-
-    // 影隼商店
-    SHADOW_FALCON_SHOP.add(new KillerKnifeShopEntry(
-
-        130));
-    SHADOW_FALCON_SHOP.add(new ShopEntry(
-        ModItems.THROWING_KNIFE.getDefaultInstance(),
-        145,
-        ShopEntry.Type.TOOL));
-    SHADOW_FALCON_SHOP.add(new ShopEntry(
-        TMMItems.CROWBAR.getDefaultInstance(),
-        35,
-        ShopEntry.Type.TOOL));
-    SHADOW_FALCON_SHOP.add(new ShopEntry(
-        TMMItems.LOCKPICK.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-    SHADOW_FALCON_SHOP.add(new ShopEntry(
-        TMMItems.GRENADE.getDefaultInstance(),
-        350,
-        ShopEntry.Type.WEAPON));
-    // 跳跃提升2药水 - 100金币，购买后给予30秒效果（图标为poison）
-    {
-      ItemStack jumpBoostPotion = Items.SPLASH_POTION.getDefaultInstance();
-      jumpBoostPotion.set(DataComponents.ITEM_NAME,
-          Component.translatable("item.noellesroles.shadow_falcon.jump_boost")
-              .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
-      var jumpBoostLore = new ArrayList<Component>();
-      jumpBoostLore.add(Component.translatable("item.noellesroles.shadow_falcon.jump_boost.lore1")
-          .setStyle(Style.EMPTY.withItalic(false))
-          .withStyle(ChatFormatting.GRAY));
-      jumpBoostPotion.set(DataComponents.LORE, new ItemLore(jumpBoostLore));
-
-      SHADOW_FALCON_SHOP.add(new ShopEntry(jumpBoostPotion, 100, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          // 给予30秒跳跃提升2效果
-          player.addEffect(new MobEffectInstance(
-              MobEffects.JUMP,
-              30 * 20, // 30秒
-              1, // 等级1 = 跳跃提升2
-              false, // ambient
-              true, // showParticles
-              true // showIcon
-          ));
-          return true;
-        }
-      });
-    }
-    // 鞘翅 - 250金币，购买时额外给予10个烟花火箭
-    {
-      SHADOW_FALCON_SHOP.add(new ShopEntry(Items.ELYTRA.getDefaultInstance(), 250, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          // 给予鞘翅
-          if (!RoleUtils.insertStackInFreeSlot(player, Items.ELYTRA.getDefaultInstance().copy())) {
-            player.displayClientMessage(
-                Component.translatable("message.noellesroles.shadow_falcon.elytra_inventory_full"),
-                true);
-            return false;
-          }
-          // 额外给予10个烟花火箭
-          ItemStack fireworks = new ItemStack(Items.FIREWORK_ROCKET, 10);
-          if (!player.getInventory().add(fireworks)) {
-            // 背包满了就丢在地上
-            player.drop(fireworks, true);
-          }
-          return true;
-        }
-      });
-    }
-
-    // 葬仪商店
-    // 乘务员钥匙 - 100金币
-    MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
-        ModItems.MASTER_KEY_P.getDefaultInstance(),
-        100,
-        ShopEntry.Type.TOOL));
-    // 裹尸袋 - 150金币
-    MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
-        TMMItems.BODY_BAG.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-    // 血瓶 - 75金币
-    MORTICIAN_BODYMAKER_SHOP.add(new ShopEntry(
-        ModItems.BLOOD_BOTTLE.getDefaultInstance(),
-        75,
-        ShopEntry.Type.TOOL));
-
-    // ==================== 悍匪商店 ====================
-    // 刀 - 160金币
-    GANGSTERS_SHOP.add(new KillerKnifeShopEntry(
-
-        160));
-
-    // 短管霰弹枪 - 185金币
-    GANGSTERS_SHOP.add(new ShopEntry(
-        ModItems.SHORT_SHOTGUN.getDefaultInstance(),
-        185,
-        ShopEntry.Type.WEAPON));
-
-    // C4炸药 - 300金币
-    GANGSTERS_SHOP.add(new ShopEntry(
-        ModItems.C4.getDefaultInstance(),
-        300,
-        ShopEntry.Type.TOOL));
-
-    // 撬棍 - 25金币
-    GANGSTERS_SHOP.add(new ShopEntry(
-        TMMItems.CROWBAR.getDefaultInstance(),
-        25,
-        ShopEntry.Type.TOOL));
-
-    // 开锁器 - 80金币
-    GANGSTERS_SHOP.add(new ShopEntry(
-        TMMItems.LOCKPICK.getDefaultInstance(),
-        80,
-        ShopEntry.Type.TOOL));
-
-    // 关灯 - 使用配置价格
-    GANGSTERS_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-        ShopEntry.Type.TOOL) {
-      public boolean onBuy(@NotNull Player player) {
-        return SREPlayerShopComponent.useBlackout(player);
-      }
-    });
-
-    // ==================== 钳工商店 ====================
-    // 开灯 - 225金币（购买后立即结束关灯时间并清除全场黑暗与失明药水效果，未处于关灯时间无法购买）
-    FITTER_SHOP.add(new ShopEntry(ModItems.LIGHTUP.getDefaultInstance(), 225, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        SREWorldBlackoutComponent blackCCA = SREWorldBlackoutComponent.KEY.get(player.level());
-        if (blackCCA.blackOutRemainingTicks <= 0)
-          return false;
-        blackCCA.reset();
-        // 清除全场黑暗与失明药水效果
-        for (Player p : player.level().players()) {
-          p.removeEffect(MobEffects.BLINDNESS);
-          p.removeEffect(MobEffects.DARKNESS);
-        }
-        // 全场播放 block.smithing_table.use 音效
-        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-            SoundEvents.SMITHING_TABLE_USE, SoundSource.MASTER, 1.0F, 1.0F);
-        // 冷却与关灯一致
-        player.level().players().forEach(
-            p -> p.getCooldowns().addCooldown(ModItems.LIGHTUP, GameConstants.getBlackoutCooldownGlobal()));
-        player.getCooldowns().addCooldown(ModItems.LIGHTUP,
-            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.BLACKOUT, 0));
-        return true;
-      }
-    });
-
-    // 监控恢复 - 75金币（购买后立即结束监控失灵时间，未处于监控失灵期间无法购买）
-    FITTER_SHOP.add(new ShopEntry(ModItems.MONITOR_RECOVERY.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        SREMonitorWorldComponent monitorCCA = SREMonitorWorldComponent.KEY.get(player.level());
-        if (monitorCCA.brokenTime <= 0)
-          return false;
-        monitorCCA.reset();
-        // 全场播放 ui.loom.take_result 音效
-        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-            SoundEvents.UI_LOOM_TAKE_RESULT, SoundSource.MASTER, 1.0F, 1.0F);
-        // 冷却与监控失灵一致
-        player.level().players().forEach(
-            p -> p.getCooldowns().addCooldown(ModItems.MONITOR_RECOVERY,
-                GameConstants.getMonitorBrokenCooldownGlobal()));
-        player.getCooldowns().addCooldown(ModItems.MONITOR_RECOVERY,
-            GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
-        return true;
-      }
-    });
-
-    // ==================== 鹈鹕商店 ====================
-    // 开锁器 - 150金币
-    PELICAN_SHOP.add(new ShopEntry(
-        TMMItems.LOCKPICK.getDefaultInstance(),
-        150,
-        ShopEntry.Type.TOOL));
-
-    // ==================== 教父商店 ====================
-    // 开锁器 - 150金币
-    GODFATHER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
-    // 子弹 - 275金币（右键装填或购买时自动装填）
-    GODFATHER_SHOP.add(new ShopEntry(
-        ModItems.BULLET.getDefaultInstance(),
-        275,
-        ShopEntry.Type.WEAPON) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        return org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.tryLoadBullet((ServerPlayer) player);
-      }
-    });
-
-    // ==================== 家族教徒商店 ====================
-    // 刀 - 200金币
-    MAFIOSO_SHOP.add(new KillerKnifeShopEntry( 200));
-    // 左轮手枪 - 300金币
-    MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
-
-    // ==================== 家族侍卫商店 ====================
-    // 飞刀 - 225金币
-    JANITOR_SHOP.add(new ShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(), 225, ShopEntry.Type.WEAPON));
-    // 关灯 - 200金币
-    JANITOR_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 200, ShopEntry.Type.TOOL) {
-        public boolean onBuy(@NotNull Player player) {
-            return SREPlayerShopComponent.useBlackout(player);
-        }
-    });
-    // 短管霰弹枪 - 250金币
-    JANITOR_SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), 250, ShopEntry.Type.WEAPON));
-
-    // ==================== 家族保姆商店 ====================
-    // 护盾试剂 - 325金币
-    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.DEFENSE_VIAL.getDefaultInstance(), 325, ShopEntry.Type.WEAPON));
-    // 毒药试剂 - 200金币
-    NUTRITIONIST_SHOP.add(new ShopEntry(TMMItems.POISON_VIAL.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));
-    // 喷溅型速度3 - 275金币 (持续5秒)
-    {
-      var SPEED_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
-      var speedList = List.of(new MobEffectInstance(
-          MobEffects.MOVEMENT_SPEED,
-          5 * 20,
-          2,
-          false,
-          true,
-          true));
-      var speedContent = new PotionContents(Optional.empty(), Optional.of(53503),
-          speedList);
-      SPEED_SPLASH.set(DataComponents.POTION_CONTENTS, speedContent);
-      NUTRITIONIST_SHOP.add(new ShopEntry(SPEED_SPLASH, 275, ShopEntry.Type.WEAPON));
-    }
-    // 喷溅型禁止移动药水 - 275金币 (持续2.5秒)
-    {
-      var IMMOBILE_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
-      var immobileList = List.of(new MobEffectInstance(
-          ModEffects.MOVE_BANED,
-          50, // 2.5秒 = 50 ticks
-          0,
-          false,
-          true,
-          true));
-      var immobileContent = new PotionContents(Optional.empty(), Optional.of(0x8B0000),
-          immobileList);
-      IMMOBILE_SPLASH.set(DataComponents.POTION_CONTENTS, immobileContent);
-      NUTRITIONIST_SHOP.add(new ShopEntry(IMMOBILE_SPLASH, 275, ShopEntry.Type.WEAPON));
-    }
-    // 喷溅型无碰撞药水 - 175金币 (持续20秒)
-    {
-      var NOCLIP_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
-      var noclipList = List.of(new MobEffectInstance(
-          ModEffects.NO_COLLIDE,
-          20 * 20, // 20秒
-          0,
-          false,
-          true,
-          true));
-      var noclipContent = new PotionContents(Optional.empty(), Optional.of(0x00FF7F),
-          noclipList);
-      NOCLIP_SPLASH.set(DataComponents.POTION_CONTENTS, noclipContent);
-      NUTRITIONIST_SHOP.add(new ShopEntry(NOCLIP_SPLASH, 175, ShopEntry.Type.WEAPON));
-    }
-    // 喷溅型无限体力药水 - 200金币 (持续15秒)
-    {
-      var STAMINA_SPLASH = Items.SPLASH_POTION.getDefaultInstance();
-      var staminaList = List.of(new MobEffectInstance(
-          ModEffects.INFINITE_STAMINA,
-          15 * 20, // 15秒
-          0,
-          false,
-          true,
-          true));
-      var staminaContent = new PotionContents(Optional.empty(), Optional.of(0x00CED1),
-          staminaList);
-      STAMINA_SPLASH.set(DataComponents.POTION_CONTENTS, staminaContent);
-      NUTRITIONIST_SHOP.add(new ShopEntry(STAMINA_SPLASH, 200, ShopEntry.Type.WEAPON));
-    }
-
-    // ==================== 家族保护伞商店 ====================
-    // 手榴弹 - 450金币
-    PARASOL_SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 450, ShopEntry.Type.WEAPON));
-    // 烟雾弹 - 175金币
-    PARASOL_SHOP.add(new ShopEntry(ModItems.SMOKE_GRENADE.getDefaultInstance(), 175, ShopEntry.Type.WEAPON));
-    // 闪光弹 - 125金币
-    PARASOL_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 125, ShopEntry.Type.WEAPON));
-
-    // ==================== 咒法师商店 ====================
-    // 刀 - 130金币
-    WARLOCK_SHOP.add(new KillerKnifeShopEntry( 130));
-    // 撬棍 - 35金币
-    WARLOCK_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
-    // 开锁器 - 80金币
-    WARLOCK_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
-    // 疯狂模式 - 400金币（冷却与通用杀手商店一致）
-    WARLOCK_SHOP.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(), 400, ShopEntry.Type.WEAPON) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        return SREPlayerShopComponent.usePsychoMode(player);
-      }
-    });
-    // 关灯 - 使用配置价格
-    WARLOCK_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-        ShopEntry.Type.TOOL));
-    // 监控失灵 - 60金币
-    WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL));
-
-    // ==================== 嬉命人商店 ====================
-    // 开锁器 - 100金币
-    EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
-
-    {
-      ItemStack s = new ItemStack(Items.SCULK);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.wraith_assassin.energy_exchange"));
-      WRAITH_ASSASSIN_SHOP.add(new ShopEntry(s, 25, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          if (!(player instanceof ServerPlayer sp)) {
-            return false;
-          }
-          WraithAssassinPlayerComponent.KEY.get(sp).addEnergy(25);
-          WraithAssassinPlayerComponent.KEY.get(sp).playConversionCue(sp);
-          sp.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.energy_gain", 25)
-              .withStyle(ChatFormatting.DARK_AQUA), true);
-          return true;
-        }
-      });
-    }
-    WRAITH_ASSASSIN_SHOP.add(new ShopEntry(ModItems.INFERIOR_LOCKPICK.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
-    {
-      ItemStack s = new ItemStack(Items.ECHO_SHARD);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.wraith_assassin.san_drain"));
-      WRAITH_ASSASSIN_SHOP.add(new ShopEntry(s, 80, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player player) {
-          return player instanceof ServerPlayer sp && WraithAssassinPlayerComponent.KEY.get(sp).buyDrain(sp);
-        }
-      });
-    }
-
-    // ==================== 推理师商店 ====================
-    // 罗盘 - 100金币（游戏时间>=2分钟且没有罗盘时才能购买）
-    REASONER_SHOP.add(new ShopEntry(ModItems.REASONER_COMPASS.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
-      @Override
-      public boolean onBuy(@NotNull Player player) {
-        var timeComp = io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level());
-        int elapsed = timeComp.getResetTime() - timeComp.getTime();
-        if (elapsed < 2 * 60 * 20) {
-          player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.time_not_ready")
-              .withStyle(ChatFormatting.YELLOW), true);
-          return false;
-        }
-        for (ItemStack stack : player.getInventory().items) {
-          if (stack.is(ModItems.REASONER_COMPASS)) {
-            player.displayClientMessage(Component.translatable("message.noellesroles.reasoner.shop.already_has_compass")
-                .withStyle(ChatFormatting.YELLOW), true);
-            return false;
-          }
-        }
-        return true;
-      }
-    });
-
-    // ==================== 幻音师商店 ====================
-    // 出刀的声音 - 50金币, 冷却30秒
-    {
-      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.knife_sound"));
-      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player p) {
-          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
-          if (c.knifeSoundCooldown > 0)
-            return false;
-          c.knifeSoundCooldown = PhantomMusicianPlayerComponent.KNIFE_SOUND_COOLDOWN;
-          c.sync();
-          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_KNIFE_STAB, SoundSource.PLAYERS, 1F, 1F);
-          return true;
-        }
-      });
-    }
-    // 左轮手枪开火的声音 - 75金币, 冷却30秒
-    {
-      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.revolver_sound"));
-      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player p) {
-          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
-          if (c.revolverSoundCooldown > 0)
-            return false;
-          c.revolverSoundCooldown = PhantomMusicianPlayerComponent.REVOLVER_SOUND_COOLDOWN;
-          c.sync();
-          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 1F, 1F);
-          return true;
-        }
-      });
-    }
-    // 潜行者觉醒的声音 - 100金币, 冷却120秒, MASTER全场
-    {
-      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.stalker_sound"));
-      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player p) {
-          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
-          if (c.stalkerSoundCooldown > 0)
-            return false;
-          c.stalkerSoundCooldown = PhantomMusicianPlayerComponent.STALKER_SOUND_COOLDOWN;
-          c.sync();
-          if (p instanceof ServerPlayer sp)
-            for (var pp : sp.serverLevel().players())
-              if (pp != null)
-                pp.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1F, 1.5F);
-          return true;
-        }
-      });
-    }
-    // 疯狂模式的声音 - 350金币, 冷却5分钟, 持续播放30秒
-    {
-      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.psycho_sound"));
-      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 350, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player p) {
-          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
-          if (c.psychoSoundCooldown > 0)
-            return false;
-          c.psychoSoundCooldown = PhantomMusicianPlayerComponent.PSYCHO_SOUND_COOLDOWN;
-          c.psychoSoundPlayTimer = PhantomMusicianPlayerComponent.PSYCHO_SOUND_PLAY_DURATION;
-          c.sync();
-          return true;
-        }
-      });
-    }
-    // 撬棍撬门的声音 - 25金币, 冷却1分钟
-    {
-      ItemStack s = new ItemStack(Items.NOTE_BLOCK);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.crowbar_sound"));
-      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 25, ShopEntry.Type.TOOL) {
-        @Override
-        public boolean onBuy(@NotNull Player p) {
-          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
-          if (c.crowbarSoundCooldown > 0)
-            return false;
-          c.crowbarSoundCooldown = PhantomMusicianPlayerComponent.CROWBAR_SOUND_COOLDOWN;
-          c.sync();
-          p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_CROWBAR_PRY, SoundSource.PLAYERS, 1F, 1F);
-          return true;
-        }
-      });
-    }
-    // 随机播放音效 - 50金币, 冷却40秒, 图标为音乐唱片
-    {
-      ItemStack s = new ItemStack(Items.MUSIC_DISC_RELIC);
-      s.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.phantom_musician.random_sound"));
-      PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
-        private final java.util.List<Object> allSounds = java.util.List.of(
-            // === TMMSounds (starrailexpress) ===
-            TMMSounds.ITEM_KNIFE_STAB, TMMSounds.ITEM_KNIFE_PREPARE,
-            TMMSounds.ITEM_REVOLVER_SHOOT, TMMSounds.ITEM_REVOLVER_CLICK,
-            TMMSounds.ITEM_CROWBAR_PRY, TMMSounds.ITEM_SNIPER_RIFLE_SHOOT,
-            TMMSounds.ITEM_SNIPER_RIFLE_RELOAD, TMMSounds.ITEM_DERRINGER_RELOAD,
-            TMMSounds.ITEM_GRENADE_THROW, TMMSounds.ITEM_GRENADE_EXPLODE,
-            TMMSounds.ITEM_BAT_HIT, TMMSounds.ITEM_PSYCHO_ARMOUR,
-            TMMSounds.ITEM_SCOPE_ATTACH, TMMSounds.ITEM_SCOPE_DETACH,
-            TMMSounds.ITEM_LOCKPICK_DOOR, TMMSounds.ITEM_KEY_DOOR,
-            TMMSounds.BLOCK_DOOR_LOCKED, TMMSounds.BLOCK_DOOR_TOGGLE,
-            TMMSounds.BLOCK_CARGO_BOX_OPEN, TMMSounds.BLOCK_CARGO_BOX_CLOSE,
-            TMMSounds.BLOCK_LIGHT_TOGGLE, TMMSounds.BLOCK_SPRINKLER_RUN,
-            TMMSounds.BLOCK_PRIVACY_PANEL_TOGGLE, TMMSounds.BLOCK_SPACE_BUTTON_TOGGLE,
-            TMMSounds.BLOCK_BUTTON_TOGGLE_NO_POWER,
-            TMMSounds.UI_SHOP_BUY, TMMSounds.UI_SHOP_BUY_FAIL,
-            TMMSounds.UI_PIANO, TMMSounds.UI_PIANO_WIN,
-            TMMSounds.UI_PIANO_LOSE, TMMSounds.UI_PIANO_STINGER,
-            TMMSounds.UI_RISER,
-            TMMSounds.AMBIENT_TRAIN_HORN, TMMSounds.AMBIENT_TRAIN_INSIDE,
-            TMMSounds.AMBIENT_TRAIN_OUTSIDE, TMMSounds.AMBIENT_PSYCHO_DRONE,
-            TMMSounds.AMBIENT_BLACKOUT,
-            // === NRSounds (noellesroles) ===
-            NRSounds.SHOTGUN_FIRE, NRSounds.SHOTGUNU_COCK,
-            NRSounds.SHORT_CIRCUIT, NRSounds.BEEP, NRSounds.C4_BEEP,
-            NRSounds.SYRINGE_STAB, NRSounds.INFECTED_COUGH, NRSounds.INFECTED_INFECT,
-            NRSounds.MAFIA, NRSounds.PARTY_SKILL,
-            NRSounds.TIME_STOP, NRSounds.TIME_START, NRSounds.DIO_SPAWN,
-            NRSounds.WIND, NRSounds.GAMBER_DEATH, NRSounds.MUSIC_CLOCK,
-            NRSounds.GONGXI_FACAI, NRSounds.TO_BE_CONTINUED,
-            NRSounds.HARPY_WELCOME, NRSounds.JESTER_AMBIENT,
-            NRSounds.NYAN_CAT, NRSounds.THMUSIC_UN_OWEN, NRSounds.BAKA_BAKA,
-            // === Vanilla SoundEvents ===
-            SoundEvents.WITHER_SPAWN, SoundEvents.WITHER_DEATH,
-            SoundEvents.LIGHTNING_BOLT_THUNDER, SoundEvents.ENDER_DRAGON_GROWL,
-            SoundEvents.ENDER_DRAGON_DEATH, SoundEvents.EVOKER_PREPARE_SUMMON,
-            SoundEvents.EVOKER_CAST_SPELL, SoundEvents.GENERIC_EXPLODE,
-            SoundEvents.FIREWORK_ROCKET_LARGE_BLAST,
-            SoundEvents.WARDEN_ROAR, SoundEvents.WARDEN_HEARTBEAT,
-            SoundEvents.WARDEN_AGITATED, SoundEvents.GHAST_SCREAM,
-            SoundEvents.RAVAGER_ROAR, SoundEvents.ANVIL_DESTROY,
-            SoundEvents.ANVIL_PLACE, SoundEvents.ANVIL_USE,
-            SoundEvents.BEACON_POWER_SELECT, SoundEvents.CONDUIT_ATTACK_TARGET,
-            SoundEvents.TRIDENT_THROW, SoundEvents.TRIDENT_RETURN,
-            SoundEvents.SHIELD_BLOCK, SoundEvents.CHAIN_HIT,
-            SoundEvents.END_PORTAL_SPAWN, SoundEvents.IRON_GOLEM_REPAIR,
-            SoundEvents.SMITHING_TABLE_USE, SoundEvents.BELL_BLOCK,
-            SoundEvents.TOTEM_USE, SoundEvents.EXPERIENCE_ORB_PICKUP,
-            SoundEvents.PLAYER_BURP, SoundEvents.ITEM_BREAK,
-            SoundEvents.FLINTANDSTEEL_USE, SoundEvents.EGG_THROW,
-            SoundEvents.VILLAGER_YES, SoundEvents.TOTEM_USE,
-            SoundEvents.UI_BUTTON_CLICK, SoundEvents.UI_LOOM_TAKE_RESULT,
-            SoundEvents.NOTE_BLOCK_BELL, SoundEvents.NOTE_BLOCK_HARP,
-            SoundEvents.NOTE_BLOCK_BASEDRUM, SoundEvents.NOTE_BLOCK_PLING,
-            SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundEvents.GENERIC_DRINK,
-            SoundEvents.IRON_DOOR_OPEN, SoundEvents.PANDA_SNEEZE);
-
-        @Override
-        public boolean onBuy(@NotNull Player p) {
-          var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY.get(p);
-          if (c.randomSoundCooldown > 0)
-            return false;
-          c.randomSoundCooldown = PhantomMusicianPlayerComponent.RANDOM_SOUND_COOLDOWN;
-          c.sync();
-          Object obj = allSounds.get(new java.util.Random().nextInt(allSounds.size()));
-          net.minecraft.sounds.SoundEvent sound;
-          if (obj instanceof net.minecraft.sounds.SoundEvent se) {
-            sound = se;
-          } else if (obj instanceof net.minecraft.core.Holder<?> h
-              && h.value() instanceof net.minecraft.sounds.SoundEvent se2) {
-            sound = se2;
-          } else {
-            return false;
-          }
-          p.level().playSound(null, p.blockPosition(), sound, SoundSource.PLAYERS, 1F, 1F);
-          return true;
-        }
-      });
-    }
   }
 }

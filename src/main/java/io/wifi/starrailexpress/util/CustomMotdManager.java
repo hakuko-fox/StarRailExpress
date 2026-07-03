@@ -36,7 +36,7 @@ public class CustomMotdManager {
             return Component.literal(motdServer.getMotd());
         }
         if (cachedMotd == null) {
-            cachedMotd = updateCustomMotdCache(motdServer, cachedMotd);
+            cachedMotd = updateCustomMotdCache(motdServer, customMotd);
         }
         return cachedMotd;
     }
@@ -77,6 +77,8 @@ public class CustomMotdManager {
     }
 
     private static Component updateCustomMotdCache(MinecraftServer server, Component motd) {
+        if (motd == null)
+            return Component.empty();
         HashMap<String, String> replaceMap = new HashMap<>();
         replaceMap.put("%player_count%", server.getPlayerCount() + "");
         replaceMap.put("%max_player%", server.getMaxPlayers() + "");
@@ -84,6 +86,7 @@ public class CustomMotdManager {
         replaceMap.put("%sre_version%", SRE.MOD_VERSION);
         var motd2 = motd;
         try {
+
             motd2 = ComponentUtils.updateForEntity(
                     server.createCommandSourceStack(),
                     motd2,
