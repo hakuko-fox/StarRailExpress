@@ -271,6 +271,11 @@ public class RoleRotationScreen extends Screen {
         boolean hasSelected = RoleRotationCache.getSelectedRoles().containsKey(myUuid);
         boolean canChoose = RoleRotationCache.isSelecting() && RoleRotationCache.isMyTurn(myUuid) && !hasSelected;
 
+        // 未轮到自己且未选择 → 不显示右侧职业卡片和详情
+        if (!RoleRotationCache.isMyTurn(myUuid) && !hasSelected) {
+            return;
+        }
+
         List<String> candidates = RoleRotationCache.getCurrentCandidates();
         for (int i = 0; i < 4; i++) {
             int x = detailX + i * (cardW + GAP);
