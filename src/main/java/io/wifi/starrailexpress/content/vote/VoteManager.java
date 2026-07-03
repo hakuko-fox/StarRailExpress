@@ -162,11 +162,6 @@ public class VoteManager {
             player.displayClientMessage(Component.translatable("vote.not_allowed").withStyle(ChatFormatting.RED), true);
             return;
         }
-        if ("dnf_meeting_vote".equals(session.getTypeId())) {
-            player.displayClientMessage(Component.translatable("message.dnf.vote.must_be_near_meeting")
-                    .withStyle(ChatFormatting.YELLOW), true);
-            return;
-        }
         if (session.castVote(player.getUUID(), optionIndices)) {
             if (session.isShowResults())
                 broadcastUpdate();

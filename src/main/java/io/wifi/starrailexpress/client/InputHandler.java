@@ -109,14 +109,6 @@ public class InputHandler {
                 // 打开投票界面
                 client.setScreen(new MapSelectorScreen());
             } else if (ClientVoteCache.canReOpen() && !(client.screen instanceof VoteScreen)) {
-                if ("dnf_meeting_vote".equals(ClientVoteCache.getTypeId())
-                        ) {
-                    if (client.player != null) {
-                        client.player.displayClientMessage(
-                                Component.translatable("message.dnf.vote.must_be_near_meeting"), true);
-                    }
-                    return;
-                }
                 client.setScreen(new VoteScreen());
             }
         }

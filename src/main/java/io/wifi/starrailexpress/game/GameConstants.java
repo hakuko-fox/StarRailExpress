@@ -257,7 +257,6 @@ public class GameConstants {
         public static ResourceLocation FAIL_EXAM = Noellesroles.id("fail_exam");
         public static ResourceLocation BAKA = Noellesroles.id("baka");
         public static ResourceLocation WATCHER_CALM_KILL = Noellesroles.id("watcher_calm_kill");
-        public static ResourceLocation DNF_TENTACLE = Noellesroles.id("dnf_tentacle");
         public static ResourceLocation REPAIR_TRIAL_EXECUTION = Noellesroles.id("repair_trial_execution");
         public static ResourceLocation INFECTION = Noellesroles.id("infection");
         public static ResourceLocation UNDEAD_INFECTION = Noellesroles.id("undead_infection");

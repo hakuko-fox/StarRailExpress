@@ -46,7 +46,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -416,7 +415,6 @@ public class NoellesrolesClient implements ClientModInitializer {
         SaltedFishClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
         CommonClientHudRenderer.registerRenderersEvent();
-        MenuScreens.register(ModMenus.HOTBAR_STORAGE, HotbarStorageScreen::new);
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
         });

@@ -2743,7 +2743,7 @@
   "item.noellesroles.hunter_hammer.tooltip": "右鍵原地蓄力 0.75 秒後重擊，短距離範圍衝擊，擊退更強但冷卻更長。",
   "item.noellesroles.hunter_hook": "拖拽鉤鐮",
   "item.noellesroles.hunter_hook.tooltip": "右鍵原地蓄力 0.75 秒後狹長判定，命中會標記並輕微拉回目標。",
-  "block.noellesroles.dnf_hotbar_storage": "可搜索木桶櫃",
+  "block.noellesroles.repair_hotbar_storage": "可搜索木桶櫃",
   "item.noellesroles.repair_area_key": "區域鑰匙",
   "item.noellesroles.repair_area_key.tooltip": "用於打開地圖配置中的區域鎖門，默認會被消耗。",
   "item.noellesroles.repair_old_key": "舊鑰匙",

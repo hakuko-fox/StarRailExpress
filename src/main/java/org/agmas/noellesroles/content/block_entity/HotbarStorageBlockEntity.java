@@ -83,7 +83,7 @@ public class HotbarStorageBlockEntity extends BlockEntity implements Container, 
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.starrailexpress.dnf_hotbar_storage");
+        return Component.translatable("container.starrailexpress.repair_hotbar_storage");
     }
 
     @Override
