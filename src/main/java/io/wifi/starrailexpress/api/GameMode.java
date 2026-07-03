@@ -20,6 +20,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.stats.PlayerStats;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
+import io.wifi.starrailexpress.content.command.ListRoleInRoundCommand;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeath;
 import io.wifi.starrailexpress.event.AfterShieldAllowPlayerDeathWithKiller;
@@ -216,6 +217,13 @@ public abstract class GameMode {
                 SRE.LOGGER.info("-".repeat(20));
                 SRE.LOGGER.info("Game True Started after Safe Time!");
                 SRE.LOGGER.info("-".repeat(20));
+
+                if (SREConfig.instance().logGameEvent) {
+                    SRE.LOGGER.info("-".repeat(20));
+                    SRE.LOGGER.info(ListRoleInRoundCommand.generateRoleInRoundText(serverWorld).getString()
+                            .replaceAll("\n", "; "));
+                    SRE.LOGGER.info("-".repeat(20));
+                }
             }
         }
     }
