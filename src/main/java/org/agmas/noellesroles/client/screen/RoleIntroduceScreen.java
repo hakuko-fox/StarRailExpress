@@ -37,6 +37,7 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.init.RoleInitialItems;
+import org.agmas.noellesroles.utils.FlagUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.Matrix4f;
 
@@ -1365,7 +1366,7 @@ public class RoleIntroduceScreen extends Screen {
 
     private static MutableComponent getFlagText(SREAbstractInfoClass flagInfoable) {
         return ComponentUtils.formatList(flagInfoable.getFlags(), Component.literal(", "),
-                t -> Component.translatable("screen.roleintroduce.flag." + t));
+                t -> FlagUtils.getFlagName(t));
     }
 
     private String getObjectPath(Object it) {
@@ -2067,12 +2068,8 @@ public class RoleIntroduceScreen extends Screen {
         LinkedHashMap<String, Component> optionMap = new LinkedHashMap<>();
         optionMap.put("inner.enable", Component.translatable("screen.roleintroduce.flag.inner.enable"));
         optionMap.put("inner.disable", Component.translatable("screen.roleintroduce.flag.inner.disable"));
-        for (var it : TMMRoles.getAllFlags())
-            optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
-                    it.toUpperCase().replaceAll("_", " ")));
-        for (var it : HMLModifiers.getAllFlags())
-            optionMap.put(it, Component.translatableWithFallback("screen.roleintroduce.flag." + it,
-                    it.toUpperCase().replaceAll("_", " ")));
+        for (var it : FlagUtils.getAllFlagsSorted())
+            optionMap.put(it, FlagUtils.getFlagName(it));
         FilterSelectionScreen screen = FilterSelectionScreen.builder(this)
                 .title(Component.translatable("screen.filter_selection.title"))
                 .subtitle(Component.translatable("screen.filter_selection.tip"))
