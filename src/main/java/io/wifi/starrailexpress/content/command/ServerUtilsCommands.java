@@ -71,6 +71,7 @@ public class ServerUtilsCommands {
                                   BoolArgumentType.getBool(ctx, "bypassPlayerLimit"));
                             }))))))
         .then(Commands.literal("motd")
+            .executes((ctx) -> listServerInfo(ctx, true))
             .then(Commands.literal("get")
                 .executes((ctx) -> listServerInfo(ctx, true)))
             .then(Commands.literal("reset")
@@ -237,10 +238,15 @@ public class ServerUtilsCommands {
 
   public static int setCustomMotd(CommandContext<CommandSourceStack> context, Component motd) {
     CustomMotdManager.setCustomMotd(motd);
+    var displayAbleMotd = motd;
+    if (displayAbleMotd == null) {
+      displayAbleMotd = Component.empty();
+    }
+    final var d = displayAbleMotd;
     context.getSource()
         .sendSuccess(
             () -> Component.translatable("message.serverutils.motd.set",
-                Component.literal("").withStyle(ChatFormatting.WHITE).append(motd))
+                Component.literal("").withStyle(ChatFormatting.WHITE).append(d))
                 .withStyle(ChatFormatting.GREEN),
             true);
     return 1;
