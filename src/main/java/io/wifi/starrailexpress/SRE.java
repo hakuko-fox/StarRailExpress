@@ -25,6 +25,7 @@ import io.wifi.starrailexpress.register.SREEventRegister;
 import io.wifi.starrailexpress.register.SREPayloadRegister;
 import io.wifi.starrailexpress.register.SREReceiverRegister;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
+import io.wifi.starrailexpress.util.CustomMotdManager;
 import io.wifi.starrailexpress.util.Scheduler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -54,12 +55,12 @@ public class SRE extends StarRailExpressID implements ModInitializer {
     public static final Networking NETWORKING = new Networking();
     public static boolean isLobby = false;
     // 各类"列表式"注册点已按类别归一化至 io.wifi.starrailexpress.rules 包：
-    //   ChatHudRules        - canUseChatHud / canUseChatHudPlayer / cantUseChatHud
-    //   ReplayRules         - canSendReplay / cantSendReplay
-    //   CollisionRules      - canCollide / cantPushableBy / canCollideEntity
-    //   ArmorRules          - canStickArmor
-    //   DropRules           - canDropItem / canDrop
-    //   RoleVisibilityRules - canUseOtherPerson
+    // ChatHudRules - canUseChatHud / canUseChatHudPlayer / cantUseChatHud
+    // ReplayRules - canSendReplay / cantSendReplay
+    // CollisionRules - canCollide / cantPushableBy / canCollideEntity
+    // ArmorRules - canStickArmor
+    // DropRules - canDropItem / canDrop
+    // RoleVisibilityRules - canUseOtherPerson
 
     public static @NotNull ResourceLocation id(String name) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
@@ -78,6 +79,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        CustomMotdManager.init();
         initConfig();
         initConstants();
         initWaypoints();

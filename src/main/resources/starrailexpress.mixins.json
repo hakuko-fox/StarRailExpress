@@ -39,6 +39,7 @@
     "server.DedicatedPlayerManagerMixin",
     "server.MaxPlayerAccessor",
     "server.PlayerDiscard",
+    "server.MotdMixin",
     "util.EntitySelectorMixin",
     "whitelist.ServerHandshakePacketListenerImplMixin",
     "world.ChunkSerializerMixin",

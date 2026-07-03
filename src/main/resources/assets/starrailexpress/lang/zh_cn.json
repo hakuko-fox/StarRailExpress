@@ -2282,5 +2282,17 @@
     "world_time.midnight": "午夜",
     "world_time.night": "夜晚",
     "world_time.noon": "中午",
-    "world_time.sunset": "傍晚"
+    "world_time.sunset": "傍晚",
+    "message.serverutils.server_not_available": "服务器不可用。",
+    "message.serverutils.max_player.now": "当前服务器人数：%s / %s",
+    "message.serverutils.max_player.set.success": "已将最大服务器人数从 %s 改为 %s！",
+    "message.serverutils.max_player.set.failed": "设置最大人数失败！%s",
+    "message.serverutils.permission.get.success": "玩家 %s 的权限为 %s",
+    "message.serverutils.permission.allow_pass": "(允许满人超载进入)",
+    "message.serverutils.permission.set.success": "成功修改玩家 %s 的权限从 %s 到 %s！",
+    "message.serverutils.permission.set.failed": "设置玩家 %s 的权限失败！%s",
+    "message.serverutils.info": "服务器信息：\n人数：%s / %s\nMOTD：\n* 当前：\n---\n%s\n* 自定义样板：\n---\n%s\n===\n%s",
+    "message.serverutils.none": "无自定义MOTD样板",
+    "message.serverutils.motd.set": "已设置自定义MOTD为：\n---\n%s\n---",
+    "message.serverutils.motd.constant": "MOTD常量：\n%player_count% 玩家人数；%max_player% 最大玩家数；%sre_packet_version% 列车网络协议版本；%sre_version% 列车版本"
 }

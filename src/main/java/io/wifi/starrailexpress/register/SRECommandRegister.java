@@ -30,6 +30,7 @@ public class SRECommandRegister {
 
     public static void registerCommands() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
+            ServerUtilsCommands.register(dispatcher,registryAccess,environment);
 			ModWhitelistCommand.registerGlobal(dispatcher);
             SREHelpCommand.register(dispatcher);
             SREVoteCommand.register(dispatcher, registryAccess);
