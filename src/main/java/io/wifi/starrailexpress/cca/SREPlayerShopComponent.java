@@ -130,8 +130,10 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             }
         }
         // 动态价格：实际价格由玩家的 DynamicShopComponent 决定（折扣/减价等），默认等于基础价格。
-        // Dynamic price: the effective price is resolved by the player's DynamicShopComponent
-        // (discounts/reductions/etc.); it defaults to the base price when no modifier exists.
+        // Dynamic price: the effective price is resolved by the player's
+        // DynamicShopComponent
+        // (discounts/reductions/etc.); it defaults to the base price when no modifier
+        // exists.
         final int price = DynamicShopComponent.KEY.get(this.player).effectivePrice(entry);
         if (FabricLoader.getInstance().isDevelopmentEnvironment() && this.balance < price)
             this.balance = price * 10;
@@ -224,9 +226,11 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
 
             // 公共 Cooldown
             player.level().players().forEach(
-                    p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN, GameConstants.getMonitorBrokenCooldownGlobal()));
+                    p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
+                            GameConstants.getMonitorBrokenCooldownGlobal()));
 
-            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.MONITOR_BROKEN));
+            SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(),
+                    BuiltInRegistries.ITEM.getKey(TMMItems.MONITOR_BROKEN));
             player.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
                     GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.MONITOR_BROKEN, 0));
         }
@@ -248,14 +252,16 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
     public static boolean usePsychoMode(@NotNull Player player, double multtiplier, int armour) {
         player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
                 GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
-        player.level().players().forEach(
-                player1 -> {
-                    if (!player1.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)){
-                        player1.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
-                                SREConfig.instance().psychoGlobalCooldown);
-                    }
+        var gamecca = SREGameWorldComponent.getInstance(player);
+        for (var p : player.level().players()) {
+            if (GameUtils.isPlayerAliveAndSurvival(p) && gamecca.isKillerTeam(p)) {
+                if (!p.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE) && !p.getUUID().equals(player.getUUID())) {
+                    p.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
+                            SREConfig.instance().psychoGlobalCooldown * 20);
                 }
-        );
+            }
+        }
+
         boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho(multtiplier, armour);
         if (started) {
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.PSYCHO_MODE));
