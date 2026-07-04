@@ -20,9 +20,6 @@ public class SREConfig implements ConfigData {
     public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
             SREConfig.class);
 
-
-
-
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -65,6 +62,38 @@ public class SREConfig implements ConfigData {
     @Tooltip
     public boolean hideRandomRoleInRoleRotation = true;
     // 随机地图设置
+
+    @ConfigEntry.Category(value = "commands")
+    public int customRolePermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int startGameRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int stopGameRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int switchMapRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int changeRoleRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int changeModifierRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int forceModifierRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int forceRoleRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int forceTeamRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int spawnInfoConfigRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int gameKillRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int killRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int gameUtilsRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int forceResetRequiredPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int cooldownCommandsRequiredPermission = 2;
+
     @ConfigEntry.Category(value = "map")
     @Tooltip
     public int mapRandomCount = -1;
@@ -224,7 +253,7 @@ public class SREConfig implements ConfigData {
     public boolean enableBrokenGunDropWhenKillerShootsPlayer = false;
     @ConfigEntry.Category(value = "items")
     public int brokenGunDropChanceWhenKillerShootsPlayer = 60;
-    
+
     @ConfigSync(shouldSync = true)
     public boolean disablePlayerMountain = true;
 

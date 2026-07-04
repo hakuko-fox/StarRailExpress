@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.customrole;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -771,7 +772,7 @@ public class CustomRoleLoader {
         try {
             serverPlayer.getServer().getCommands().performPrefixedCommand(
                     serverPlayer.getServer().createCommandSourceStack()
-                            .withPermission(4)
+                            .withPermission(SREConfig.instance().customRolePermission)
                             .withSuppressedOutput()
                             .withEntity(serverPlayer)
                             .withLevel(serverPlayer.serverLevel())
