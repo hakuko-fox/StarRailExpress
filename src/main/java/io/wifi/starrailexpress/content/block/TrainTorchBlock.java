@@ -10,13 +10,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseTorchBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 
-public class TrainTorchBlock extends BaseTorchBlock implements LightBlockInterface {
+public class TrainTorchBlock extends BaseTorchBlock implements LightBlockInterface, SimpleWaterloggedBlock {
     public static SimpleParticleType flameParticle = ParticleTypes.FLAME;
 
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final MapCodec<TrainTorchBlock> CODEC = simpleCodec(TrainTorchBlock::new);
 
     public MapCodec<? extends TrainTorchBlock> codec() {
@@ -26,7 +30,7 @@ public class TrainTorchBlock extends BaseTorchBlock implements LightBlockInterfa
     public TrainTorchBlock(Properties properties) {
         super(properties.lightLevel(TrainTorchBlock::lightBlockSupplier));
         this.registerDefaultState(
-                this.stateDefinition.any().setValue(LIT, true).setValue(ACTIVE, true));
+                this.stateDefinition.any().setValue(LIT, true).setValue(ACTIVE, true).setValue(WATERLOGGED, false));
     }
 
     public static boolean isEnabled(BlockState state) {
@@ -44,7 +48,7 @@ public class TrainTorchBlock extends BaseTorchBlock implements LightBlockInterfa
 
     @Override
     public void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(new Property[] { LIT, ACTIVE });
+        builder.add(new Property[] { LIT, ACTIVE, WATERLOGGED });
     }
 
     protected boolean canSurvive(BlockState blockState, LevelReader levelReader, BlockPos blockPos) {
