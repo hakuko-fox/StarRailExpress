@@ -17,7 +17,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 
-public class StaminaDefaultRenderer {
+public class StaminaSplitStyleRenderer {
 
     private static float lastCooldown = 0f;
     private static boolean playedCooldownSound = false;
@@ -112,7 +112,7 @@ public class StaminaDefaultRenderer {
 
         context.pose().popPose();
 
-        // 绘制体力图标
+        // 绘制体力图标（仅在按住 Shift 时显示）
         if (!isChargingWeapon) {
             int barCenterY = context.guiHeight() - 35;
             int iconX = context.guiWidth() / 2 - BAR_WIDTH / 2 - ICON_SIZE - ICON_GAP;

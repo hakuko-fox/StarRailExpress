@@ -1,17 +1,16 @@
 package io.wifi.starrailexpress.client.render.hud.stamina;
 
-import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
 
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
 import io.wifi.starrailexpress.util.ProgressProvider;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
@@ -26,11 +25,6 @@ public class StaminaOldRenderer {
     private static float chargeDisplayValue = 0f; // 蓄力状态条平滑显示值（逐帧过渡用）
     public static StaminaBarRenderer view = new StaminaBarRenderer();
     public static float offsetDelta = 0f;
-
-    private static final ResourceLocation STAMINA_ICON = Noellesroles.id("stamina/stamina_icon");
-    private static final int BAR_WIDTH = 120;
-    private static final int ICON_SIZE = 9;
-    private static final int ICON_GAP = 4;
 
     private static final long FLASH_DURATION_MS = 250L; // 闪光持续时间（毫秒）
     // 添加刀蓄满力的视觉效果相关变量
@@ -67,10 +61,24 @@ public class StaminaOldRenderer {
 
         view.setTarget(staminaPercent);
 
-        // 体力条颜色 - 黄色，低于1/5时变红
-        int colour = staminaPercent < 0.2f
-                ? Mth.color(1f, 0.2f, 0.2f) | 0xFF000000 // 红色
-                : Mth.color(1f, 0.85f, 0.1f) | 0xFF000000; // 黄色
+        int colour = new java.awt.Color(53, 188, 122).getRGB();// 绿
+        if (isChargingWeapon) {
+            // 物品蓄力条
+            if (staminaPercent < 0.2f) {
+                colour = java.awt.Color.CYAN.getRGB();
+            } else if (staminaPercent < 0.6f) {
+                colour = ChatFormatting.AQUA.getColor() | 0xFF000000;
+            } else {
+                colour = java.awt.Color.BLUE.getRGB();
+            }
+        } else {
+            // 体力条颜色 - 黄色，低于1/5时变红
+            if (staminaPercent < 0.2f) {
+                colour = Mth.color(1f, 0.2f, 0.2f) | 0xFF000000; // 红
+            } else if (staminaPercent < 0.6f) {
+                colour = Mth.color(1f, 0.85f, 0.1f) | 0xFF000000;// 黄
+            }
+        }
 
         // 渲染主手物品冷却提示
         renderMainHandCooldown(context, player, delta);
@@ -110,14 +118,6 @@ public class StaminaOldRenderer {
         }
 
         context.pose().popPose();
-
-        // 绘制体力图标（仅在按住 Shift 时显示）
-        if (Minecraft.getInstance().options.keyShift.isDown()) {
-            int barCenterY = context.guiHeight() - 35;
-            int iconX = context.guiWidth() / 2 - BAR_WIDTH / 2 - ICON_SIZE - ICON_GAP;
-            int iconY = barCenterY - ICON_SIZE / 2;
-            context.blitSprite(STAMINA_ICON, iconX, iconY, ICON_SIZE, ICON_SIZE);
-        }
     }
 
     /**

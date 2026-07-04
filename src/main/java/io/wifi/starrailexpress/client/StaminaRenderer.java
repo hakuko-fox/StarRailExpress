@@ -3,7 +3,9 @@ package io.wifi.starrailexpress.client;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.StaminaDefaultRenderer;
+import io.wifi.starrailexpress.client.render.hud.stamina.StaminaMCStyleRenderer;
 import io.wifi.starrailexpress.client.render.hud.stamina.StaminaOldRenderer;
+import io.wifi.starrailexpress.client.render.hud.stamina.StaminaSplitStyleRenderer;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.StaminaProvider;
 import io.wifi.starrailexpress.util.ProgressProvider;
@@ -46,11 +48,11 @@ public class StaminaRenderer {
 					isChargingWeapon);
 			case OLD_STYLE -> StaminaOldRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
 					isChargingWeapon);
-			case BAMBOO_STYLE ->
-				StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
+			case SPLIT_STYLE ->
+				StaminaSplitStyleRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
 						isChargingWeapon);
 			case MINECRAFT_STYLE ->
-				StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
+				StaminaMCStyleRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
 						isChargingWeapon);
 			default -> {
 				/* 不渲染; */
@@ -73,8 +75,10 @@ public class StaminaRenderer {
 				StaminaOldRenderer.tick();
 				break;
 			case MINECRAFT_STYLE:
+				StaminaMCStyleRenderer.tick();
 				break;
-			case BAMBOO_STYLE:
+			case SPLIT_STYLE:
+				StaminaSplitStyleRenderer.tick();
 				break;
 			default:
 				break;
