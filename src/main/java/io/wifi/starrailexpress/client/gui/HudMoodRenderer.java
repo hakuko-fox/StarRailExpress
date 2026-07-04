@@ -155,6 +155,7 @@ public class HudMoodRenderer {
         }
         if (moodRender < 0)
             moodRender = 0;
+        
         context.blitSprite(mood, 5, 6, 14, 17);
         if (Math.abs(arrowProgress) > 0.01f) {
             boolean up = arrowProgress > 0;
