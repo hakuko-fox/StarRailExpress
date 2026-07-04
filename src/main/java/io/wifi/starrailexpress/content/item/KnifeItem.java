@@ -48,13 +48,13 @@ public class KnifeItem extends SkinableItem {
                 return InteractionResultHolder.fail(itemStack);
             }
         } else {
-            if (itemStack.getDamageValue() >= itemStack.getMaxDamage()) {
+            if (itemStack.getMaxDamage() > 0 && itemStack.getDamageValue() >= itemStack.getMaxDamage()) {
                 return InteractionResultHolder.fail(itemStack);
             }
+            user.playSound(TMMSounds.ITEM_KNIFE_PREPARE, 1.0f, 1.0f);
         }
 
         user.startUsingItem(hand);
-        user.playSound(TMMSounds.ITEM_KNIFE_PREPARE, 1.0f, 1.0f);
         return InteractionResultHolder.consume(itemStack);
     }
 

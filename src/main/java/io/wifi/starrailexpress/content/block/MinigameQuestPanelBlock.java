@@ -2,6 +2,8 @@ package io.wifi.starrailexpress.content.block;
 
 import com.google.common.collect.Maps;
 import com.mojang.serialization.MapCodec;
+
+import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import io.wifi.starrailexpress.content.block_entity.MinigameQuestBlockEntity;
 import io.wifi.starrailexpress.index.TMMBlockEntities;
@@ -202,8 +204,30 @@ public class MinigameQuestPanelBlock extends BaseEntityBlock
     @Override public int taskInstinctId() { return TASK_INSTINCT_ID; }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
-        Level level = player.level();
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
+        
+        // 小游戏任务点(14/15)：仅在玩家有待办小游戏任务、该点本局未被使用、
+        // 且该点的 minigameId 与玩家指派的目标类型匹配（或无指定目标）时才金色透视
+        boolean isMinigamePoint = level.getBlockEntity(pos) instanceof MinigameQuestBlockEntity questBe
+                && !questBe.isSabotageTrigger();
+        if (isMinigamePoint) {
+            var mgComp = SREPlayerMinigameTaskComponent.KEY.get(player);
+            if (mgComp != null && mgComp.hasPendingTask() && !mgComp.isBlockUsed(pos)) {
+                // 读取该方块的小游戏类型
+                boolean typeMatches = true;
+                if (level
+                        .getBlockEntity(pos) instanceof MinigameQuestBlockEntity questBe) {
+                    String blockMgId = questBe.getMinigameId();
+                    if (mgComp.targetMinigameId != null && !mgComp.targetMinigameId.isEmpty()
+                            && !mgComp.targetMinigameId.equals(blockMgId)) {
+                        typeMatches = false;
+                    }
+                }
+                if (typeMatches) {
+                    return true;
+                }
+            }
+        }
         if (level != null) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MinigameQuestBlockEntity questBe) {

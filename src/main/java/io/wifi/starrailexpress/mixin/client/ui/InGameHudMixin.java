@@ -44,11 +44,14 @@ public class InGameHudMixin {
 
     @Inject(method = "renderHotbarAndDecorations", at = @At("TAIL"))
     private void tmm$renderHud(GuiGraphics trueContext, DeltaTracker tickCounter, CallbackInfo ci) {
+
+        if (SREClient.isInLobby)
+            return;
+        if (SREClient.gameComponent == null)
+            return;
         if (!SREClient.shouldUseTrainHud()) {
             return;
         }
-        if (SREClient.gameComponent == null)
-            return;
         LocalPlayer player = this.minecraft.player;
         if (player == null)
             return;

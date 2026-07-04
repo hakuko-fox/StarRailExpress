@@ -59,7 +59,7 @@ public class TransportPointBlock extends Block {
             }
             if (SceneTaskManager.hasTransportTask(sp)) {
                 // 消耗一个运输物品
-                stack.shrink(1);
+                removeAllTransportPackages(sp);
                 SceneTaskManager.reportTransportDeliver(sp);
                 if (level instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 1.0,
@@ -94,6 +94,11 @@ public class TransportPointBlock extends Block {
                 SceneTaskManager.assign(sp, SceneTaskManager.Type.TRANSPORT);
             }
             if (SceneTaskManager.hasTransportTask(sp)) {
+                // 如果背包中已存在运输物品，不允许重复取货
+                if (hasTransportPackageInInventory(sp)) {
+                    sp.displayClientMessage(Component.translatable("message.noellesroles.scene_task.transport_already_has"), true);
+                    return InteractionResult.CONSUME;
+                }
                 SceneTaskManager.reportTransportPickup(sp);
                 // 给予运输物品
                 ItemStack pkg = new ItemStack(ModItems.TRANSPORT_PACKAGE);
@@ -116,5 +121,24 @@ public class TransportPointBlock extends Block {
     private static boolean hasTransportTaskInComponent(ServerPlayer sp) {
         SREPlayerTaskComponent comp = SREPlayerTaskComponent.KEY.get(sp);
         return comp != null && comp.tasks.containsKey(SREPlayerTaskComponent.Task.TRANSPORT);
+    }
+
+    private static boolean hasTransportPackageInInventory(Player player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(ModItems.TRANSPORT_PACKAGE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void removeAllTransportPackages(Player player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(ModItems.TRANSPORT_PACKAGE)) {
+                inventory.setItem(i, ItemStack.EMPTY);
+            }
+        }
     }
 }

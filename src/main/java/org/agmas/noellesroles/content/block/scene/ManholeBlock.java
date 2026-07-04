@@ -164,7 +164,7 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
         SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
         return SceneRoleAccess.canEnterRestricted(player, null)
                 || (role != null && role.canJumpManhole());

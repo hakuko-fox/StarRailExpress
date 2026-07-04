@@ -54,7 +54,8 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+    protected void createBlockStateDefinition(
+            StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(ACTIVE, CLOSED);
     }
@@ -81,8 +82,10 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state,
             BlockEntityType<T> type) {
-        if (world.isClientSide) return null;
-        if (type != ModSceneBlocks.WATER_VALVE_ENTITY) return null;
+        if (world.isClientSide)
+            return null;
+        if (type != ModSceneBlocks.WATER_VALVE_ENTITY)
+            return null;
         return (lvl, pos, s, be) -> {
             if (be instanceof WaterValveBlockEntity wv) {
                 WaterValveBlockEntity.serverTick(lvl, pos, s, wv);
@@ -98,7 +101,7 @@ public class WaterValveBlock extends PanelBlock implements EntityBlock, TaskInst
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
         return true;
     }
 

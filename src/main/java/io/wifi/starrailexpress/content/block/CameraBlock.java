@@ -123,8 +123,7 @@ public class CameraBlock extends BaseEntityBlock implements TaskInstinctShowable
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
-        Level level = player.level();
+    public boolean shouldRenderTaskInstinct(Level level,BlockState state, BlockPos pos, Player player) {
         var roleCCA = SRERoleWorldComponent.KEY.get(level);
         return roleCCA.isRole(player, ModRoles.DELAYER);
     }

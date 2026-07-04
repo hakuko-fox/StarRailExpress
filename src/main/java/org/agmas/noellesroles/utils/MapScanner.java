@@ -80,6 +80,8 @@ public class MapScanner {
                     if (blockState.is(ModBlocks.VENDING_MACHINES_BLOCK)
                             && blockState.getValue(VendingMachinesBlock.HALF).equals(DoubleBlockHalf.LOWER)) {
                         GameUtils.taskBlocks.put(blockPos6, 11);
+                    } else if (blockState.is(ModBlocks.LOTTERY_MACHINE_BLOCK)) {
+                        GameUtils.taskBlocks.put(blockPos6, 11);
                     } else if (blockState.is(ModBlocks.SUPPLY_CRATE_BLOCK)) {
                         GameUtils.taskBlocks.put(blockPos6, 12);
                     } else if (blockState.is(Blocks.NOTE_BLOCK)) {
@@ -174,12 +176,6 @@ public class MapScanner {
         areas.sync();
         SRE.LOGGER.info("Successed scanned task points! Total {}. Minigame types: {}. Sabotage minigame types: {}.",
                 GameUtils.taskBlocks.size(), collectedMinigameIds.size(), sabotageMinigameIds.size());
-        // Minecraft.getInstance().player.displayClientMessage(
-        // Component
-        // .translatable("msg.noellesroles.taskpoint.available",
-        // Component.keybind("key.noellesroles.taskinstinct"))
-        // .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
-        // true);服务端扫描点位
     }
 
 }

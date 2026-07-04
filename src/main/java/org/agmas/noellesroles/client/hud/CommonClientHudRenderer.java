@@ -120,6 +120,7 @@ public class CommonClientHudRenderer {
         guiGraphics.pose().translate(SREClientConfig.instance().moodLeftOffset,
             SREClientConfig.instance().moodTopOffset, 0);
         HudMoodRenderer.renderHud(player, font, guiGraphics, deltaTracker);
+        MiniGameHudRenderer.render(player, font, guiGraphics, trueDeltaTracker);
         guiGraphics.pose().popPose();
       }
       {
