@@ -3,11 +3,8 @@ package io.wifi.starrailexpress.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
-import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.client.render.hud.stamina.utils.StaminaProvider;
 import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.util.PlayerStaminaGetter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -15,11 +12,9 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
 
 public class StaminaRenderer {
@@ -53,62 +48,8 @@ public class StaminaRenderer {
 
 	private static float chargeDisplayValue = 0f; // 蓄力状态条平滑显示值（逐帧过渡用）
 
-	public interface StaminaProvider {
-		float getCurrentStamina(Player clientPlayerEntity);
-
-		float getMaxStamina(Player clientPlayerEntity);
-
-		float getStaminaPercentage(Player clientPlayerEntity); // 0.0到1.0之间的值
-	}
-
-	// 默认的体力提供者（临时使用）
-	private static StaminaProvider staminaProvider = new StaminaProvider() {
-
-		@Override
-		public float getCurrentStamina(Player clientPlayerEntity) {
-			if (!clientPlayerEntity.level().isClientSide
-					|| !(clientPlayerEntity instanceof PlayerStaminaGetter provider))
-				return 0;
-			if (!GameUtils.isGameRunning(clientPlayerEntity))
-				return 0;
-			if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(clientPlayerEntity))
-				return 0;
-			return provider.starrailexpress$getStamina();
-		}
-
-		@Override
-		public float getMaxStamina(Player clientPlayerEntity) {
-			if (!SREClient.gameComponent.isRunning()) {
-				return 0;
-			}
-			SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(clientPlayerEntity.level());
-			if (GameUtils.isPlayerAliveAndSurvival(clientPlayerEntity) && gameComponent != null) {
-				SRERole role = gameComponent.getRole(clientPlayerEntity);
-				if (role == null) {
-					return 0;
-				}
-				float baseMaxStamina = role.getMaxSprintTime(clientPlayerEntity);
-				if (baseMaxStamina == Integer.MAX_VALUE || ModEffects.hasInfiniteStamina(clientPlayerEntity)) {
-					return Integer.MAX_VALUE;
-				}
-				return baseMaxStamina * ModEffects.getStaminaCapacityMultiplier(clientPlayerEntity);
-			}
-			return 0;
-		}
-
-		@Override
-		public float getStaminaPercentage(Player clientPlayerEntity) {
-			float max = getMaxStamina(clientPlayerEntity);
-			if (max <= 0 || max == Integer.MAX_VALUE) {
-				return 1f;
-			}
-			return Mth.clamp(getCurrentStamina(clientPlayerEntity) / max, 0f, 1f);
-		}
-	};
-
-	public static void setStaminaProvider(StaminaProvider provider) {
-		staminaProvider = provider;
-	}
+	// 默认的体力条提供者
+	public static final StaminaProvider staminaProvider = new StaminaProvider();
 
 	public static void renderHud(@NotNull LocalPlayer player, @NotNull GuiGraphics context, float delta) {
 		if (staminaProvider == null)
@@ -116,13 +57,15 @@ public class StaminaRenderer {
 
 		float maxStamina = 0;
 		float staminaPercent = 0;
+		float maxItemCharge = 0;
+		float itemChargePercent = 0;
 		final var mainHandStack = player.getMainHandItem();
 		boolean isChargingWeapon = false;
 		// 检查是否是蓄力物品
 		if (ChargeableItemRegistry.isChargeableStack(mainHandStack)) {
 			ChargeableItemRegistry.ChargeInfo chargeInfo = ChargeableItemRegistry.getChargeInfo(mainHandStack, player);
 			if (chargeInfo != null) {
-				maxStamina = chargeInfo.maxStamina;
+				maxStamina = chargeInfo.maxCharge;
 				staminaPercent = chargeInfo.chargePercentage;
 				isChargingWeapon = true;
 
