@@ -43,6 +43,11 @@ import java.util.OptionalDouble;
 // 本类AI禁止修改
 // 本类AI禁止修改
 // 本类AI禁止修改
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
+// 本类请不要修改，请使用 interface TaskInstinctShowableInterface
 public class TaskBlockOverlayRenderer {
     // 创建带厚度的永远不被遮挡线框
     public static ArrayList<BlockPos> RoomDoorPositions = new ArrayList<>();
