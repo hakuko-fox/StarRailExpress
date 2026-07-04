@@ -72,6 +72,8 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "commands")
     public int switchMapRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
+    public int modifyEnableStatusRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
     public int changeRoleRequiredPermission = 3;
     @ConfigEntry.Category(value = "commands")
     public int changeModifierRequiredPermission = 3;
