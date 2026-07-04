@@ -219,6 +219,7 @@
   "message.noellesroles.diviner.unknown": "未知者",
   "message.noellesroles.diviner.insane_killer": "你的占卜揭穿了伪装——亡语杀手用刀刺死了自己！",
   "message.noellesroles.diviner.insane_killer.title": "§4伪装被揭穿！",
+  "death_reason.noellesroles.wraith_assault": "冤魂攻击",
   "effect.noellesroles.time_rewind_daze": "时空恍惚",
   "message.noellesroles.delayer.anchored": "时间锚点已设置，%s 秒后自动回溯……",
   "message.noellesroles.delayer.rewound": "时间回溯！你回到了锚点状态",

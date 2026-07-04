@@ -56,6 +56,8 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     public static final int WAIL_SAN_DAMAGE = 40;
     public static final int DRAIN_RADIUS = 8;
     public static final int DRAIN_SAN_AMOUNT = 30;
+    /** 单次吸收（被动或主动）最多获得的能量上限。 */
+    public static final int MAX_DRAIN_ENERGY_PER_EVENT = 30;
     public static final int DRAIN_COOLDOWN_TICKS = 30 * 20;
     public static final int PASSIVE_DRAIN_INTERVAL = 5 * 20;
     public static final int PASSIVE_DRAIN_AMOUNT = 5;
@@ -281,7 +283,7 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
             totalDrained += drained;
         }
         if (totalDrained > 0) {
-            addEnergy(totalDrained);
+            addEnergy(Math.min(totalDrained, MAX_DRAIN_ENERGY_PER_EVENT));
             sync();
         }
     }
@@ -335,8 +337,15 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
                 if (target == self || hit.contains(target.getUUID()) || !GameUtils.isPlayerAliveAndSurvival(target)) {
                     continue;
                 }
-                if (!isManifested() && SREGameWorldComponent.KEY.get(level).isKillerTeam(target)) {
-                    continue;
+                if (!isManifested()) {
+                    SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
+                    if (gw.isKillerTeam(target)) {
+                        continue;
+                    }
+                    // 未显现时突击只能命中 SAN < 20 的玩家
+                    if (getSan(target) >= LOW_SAN_BLUE) {
+                        continue;
+                    }
                 }
                 hit.add(target.getUUID());
                 assaultHit(self, target);
@@ -462,11 +471,11 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
                     .withStyle(ChatFormatting.RED), true);
             return false;
         }
-        addEnergy(totalDrained);
+        addEnergy(Math.min(totalDrained, MAX_DRAIN_ENERGY_PER_EVENT));
         drainCooldownTicks = DRAIN_COOLDOWN_TICKS;
         sync();
         self.displayClientMessage(Component.translatable("message.noellesroles.wraith_assassin.drain_area",
-                totalDrained, targetCount).withStyle(ChatFormatting.DARK_PURPLE), true);
+                Math.min(totalDrained, MAX_DRAIN_ENERGY_PER_EVENT), targetCount).withStyle(ChatFormatting.DARK_PURPLE), true);
         return true;
     }
 
@@ -552,10 +561,10 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
 
             SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(victim.level());
 
-            // 冤魂作为击杀者：在维度模式下不能直接击杀（漂浮处决走的是另一个路径）
+            // 冤魂作为击杀者：在维度模式下不能直接击杀（漂浮处决通过 DEATH_REASON 绕过）
             if (gw.isRole(killer, ModRoles.WRAITH_ASSASSIN)) {
                 var comp = KEY.maybeGet(killer).orElse(null);
-                if (comp != null && comp.isInDimension()) {
+                if (comp != null && comp.isInDimension() && !deathReason.equals(DEATH_REASON)) {
                     return false;
                 }
             }

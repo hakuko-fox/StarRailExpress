@@ -249,7 +249,7 @@ public class AbilityHandler {
             }
             return;
         }
-        if (gameWorldComponent.isRole(player, ModRoles.GHOST_EYE)
+        if (isGhostEyeRole(gameWorldComponent, player)
                 && abilityPlayerComponent.cooldown <= 0) {
             GhostEyePlayerComponent ghostEye = ModComponents.GHOST_EYE.get(player);
             if (ghostEye.deployDomain()) {
@@ -391,5 +391,11 @@ public class AbilityHandler {
             }
             return;
         }
+    }
+
+    private static boolean isGhostEyeRole(SREGameWorldComponent gameWorldComponent, Player player) {
+        if (gameWorldComponent == null || player == null) return false;
+        var role = gameWorldComponent.getRole(player);
+        return role != null && role.identifier().equals(ModRoles.GHOST_EYE_ID);
     }
 }

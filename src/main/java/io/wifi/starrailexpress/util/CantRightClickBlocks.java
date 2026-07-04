@@ -17,9 +17,10 @@ public class CantRightClickBlocks {
             "charta:wheat_beer_glass",
             "charta:sorghum_beer_glass",
             "supplementaries:safe",
+            "supplementaries:statue",
+            "handcrafted:yellow_crockery_combo",
             "supplementaries:fire_pit",
             "supplementaries:item_shelf",
-            "supplementaries:statue",
             "supplementaries:pedestal"));
     // 原版工作方块集合
     public static final Set<Block> ALLOWED_BLOCKS = new HashSet<>();

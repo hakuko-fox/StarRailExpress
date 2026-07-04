@@ -101,7 +101,7 @@ public class InstinctRenderer {
             if (!(target instanceof Player targetPlayer) || Minecraft.getInstance().player == null
                     || SREClient.gameComponent == null) return -1;
             var self = Minecraft.getInstance().player;
-            if (!SREClient.gameComponent.isRole(self, ModRoles.GHOST_EYE)) return -1;
+            if (!isGhostEyeRole(self)) return -1;
             if (!isGhostEyeScanActive(self)) return -1;
             if (targetPlayer == self || targetPlayer.isSpectator()) return -1;
             // 超出扫描范围的玩家不由此处理器控制，透传给后续处理器
@@ -1158,6 +1158,12 @@ public class InstinctRenderer {
             return false;
         }
         return self.level().getGameTime() % intervalTicks < GhostEyePlayerComponent.REVEAL_TICKS;
+    }
+
+    private static boolean isGhostEyeRole(Player self) {
+        if (self == null || SREClient.gameComponent == null) return false;
+        SRERole role = SREClient.gameComponent.getRole(self);
+        return role != null && role.identifier().equals(ModRoles.GHOST_EYE_ID);
     }
 
     private static boolean isKillerTeam(SRERole role) {
