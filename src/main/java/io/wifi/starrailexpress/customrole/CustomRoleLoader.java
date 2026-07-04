@@ -376,13 +376,7 @@ public class CustomRoleLoader {
 
                         // 执行即时指令（支持 @a @p @r @s 选择器）
                         for (String cmd : commands) {
-                            String processed = processCommandSelectors(cmd
-                                    .replace("<player>", player.getGameProfile().getName())
-                                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                            player.getX(), player.getY(), player.getZ())),
-                                    player);
-                            player.getServer().getCommands().performPrefixedCommand(
-                                    player.createCommandSourceStack(), processed);
+                            executeConfiguredCommand(cmd, player);
                         }
 
                         // 延迟执行指令
@@ -396,13 +390,7 @@ public class CustomRoleLoader {
                                                 || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(target))
                                             return;
                                         for (String cmd : delayedCommands) {
-                                            String processed = processCommandSelectors(cmd
-                                                    .replace("<player>", target.getGameProfile().getName())
-                                                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                                            target.getX(), target.getY(), target.getZ())),
-                                                    target);
-                                            target.getServer().getCommands().performPrefixedCommand(
-                                                    target.createCommandSourceStack(), processed);
+                                            executeConfiguredCommand(cmd, target);
                                         }
                                     }));
                         }
@@ -464,13 +452,7 @@ public class CustomRoleLoader {
             if (cmds == null)
                 continue;
             for (String cmd : cmds) {
-                String processed = processCommandSelectors(cmd
-                        .replace("<player>", player.getGameProfile().getName())
-                        .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                player.getX(), player.getY(), player.getZ())),
-                        player);
-                player.getServer().getCommands().performPrefixedCommand(
-                        player.createCommandSourceStack(), processed);
+                executeConfiguredCommand(cmd, player);
             }
         }
     }
@@ -754,16 +736,8 @@ public class CustomRoleLoader {
                             entries.add(new ShopEntry(display, entry.price, ShopEntry.Type.TOOL) {
                                 @Override
                                 public boolean onBuy(net.minecraft.world.entity.player.Player player) {
-                                    if (player.getServer() != null) {
-                                        for (String cmd : cmds) {
-                                            String processed = processCommandSelectors(cmd
-                                                    .replace("<player>", player.getGameProfile().getName())
-                                                    .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
-                                                            player.getX(), player.getY(), player.getZ())),
-                                                    player);
-                                            player.getServer().getCommands().performPrefixedCommand(
-                                                    player.createCommandSourceStack(), processed);
-                                        }
+                                    for (String cmd : cmds) {
+                                        executeConfiguredCommand(cmd, player);
                                     }
                                     // 冷却
                                     if (cooldownTicks > 0 && !display.isEmpty()
@@ -781,6 +755,32 @@ public class CustomRoleLoader {
             }
         }
         return entries;
+    }
+
+    private static void executeConfiguredCommand(String cmd, net.minecraft.world.entity.player.Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null || cmd == null
+                || cmd.isBlank()) {
+            return;
+        }
+
+        String processed = processCommandSelectors(cmd
+                .replace("<player>", serverPlayer.getGameProfile().getName())
+                .replace("~ ~ ~", String.format("%.1f %.1f %.1f",
+                        serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ())),
+                serverPlayer);
+        try {
+            serverPlayer.getServer().getCommands().performPrefixedCommand(
+                    serverPlayer.getServer().createCommandSourceStack()
+                            .withPermission(4)
+                            .withSuppressedOutput()
+                            .withEntity(serverPlayer)
+                            .withLevel(serverPlayer.serverLevel())
+                            .withPosition(serverPlayer.position())
+                            .withRotation(serverPlayer.getRotationVector()),
+                    processed);
+        } catch (Exception e) {
+            SRE.LOGGER.warn("[CustomRole] Failed to execute configured command '{}': {}", processed, e.getMessage());
+        }
     }
 
     /**
