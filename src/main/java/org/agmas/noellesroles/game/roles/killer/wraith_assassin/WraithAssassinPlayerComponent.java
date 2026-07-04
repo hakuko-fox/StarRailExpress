@@ -53,7 +53,8 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     public static final int MANIFEST_TICKS = 15 * 20;
     public static final int PANIC_TICKS = 8 * 20;
     public static final int WAIL_RADIUS = 12;
-    public static final int WAIL_SAN_DAMAGE = 40;
+    public static final int WAIL_SAN_DAMAGE = 28;
+    public static final int WAIL_SELF_STUN_TICKS = 10; // 0.5秒
     public static final int DRAIN_RADIUS = 8;
     public static final int DRAIN_SAN_AMOUNT = 30;
     /** 单次吸收（被动或主动）最多获得的能量上限。 */
@@ -201,7 +202,7 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
                     }
                     level.playSound(null, target.blockPosition(), SoundEvents.WARDEN_DEATH,
                             SoundSource.HOSTILE, 1.2f, 0.6f);
-                    GameUtils.killPlayer(target, true, self, DEATH_REASON);
+                    GameUtils.forceKillPlayer(target, true, self, DEATH_REASON);
                 }
                 it.remove();
             } else {
@@ -415,6 +416,17 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         }
         ServerLevel level = self.serverLevel();
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
+
+        // 自身定身 0.5 秒 + 粒子爆发
+        self.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, WAIL_SELF_STUN_TICKS, 0, false, false, false));
+        self.addEffect(new MobEffectInstance(ModEffects.USED_BANED, WAIL_SELF_STUN_TICKS, 0, false, false, false));
+        Vec3 selfPos = self.position().add(0, self.getBbHeight() / 2, 0);
+        for (int i = 0; i < 30; i++) {
+            double angle = Math.random() * Math.PI * 2;
+            double pitch = Math.acos(2 * Math.random() - 1);
+
+        }
+
         for (ServerPlayer target : level.players()) {
             if (target == self || !GameUtils.isPlayerAliveAndSurvival(target) || gw.isKillerTeam(target)
                     || target.distanceToSqr(self) > WAIL_RADIUS * WAIL_RADIUS) {
@@ -424,7 +436,6 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
             target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, PANIC_TICKS, 2, false, false, true));
             target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, PANIC_TICKS, 0, false, false, true));
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 4 * 20, 0, false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, PANIC_TICKS, 1, false, false, true));
             target.playNotifySound(SoundEvents.WARDEN_HEARTBEAT, SoundSource.HOSTILE, 1.0f, 0.55f);
         }
         level.playSound(null, self.blockPosition(), SoundEvents.WARDEN_ROAR, SoundSource.HOSTILE, 1.8f, 0.55f);
