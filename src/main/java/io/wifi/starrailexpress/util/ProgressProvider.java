@@ -6,7 +6,7 @@ public class ProgressProvider {
     float min = 0;
     float percent = 0;
 
-    public ProgressProvider(float max, float now) {
+    public ProgressProvider(float now, float max) {
         this.max = max;
         this.now = now;
         this.min = 0;
@@ -56,5 +56,13 @@ public class ProgressProvider {
 
     public float getPercent() {
         return this.percent;
+    }
+
+    public static ProgressProvider of(float min, float max, float now) {
+        return new ProgressProvider(min, max, now);
+    }
+
+    public static ProgressProvider of(float now, float max) {
+        return new ProgressProvider(now, max);
     }
 }

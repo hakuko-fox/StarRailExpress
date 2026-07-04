@@ -174,12 +174,6 @@ public class MapScanner {
         areas.sync();
         SRE.LOGGER.info("Successed scanned task points! Total {}. Minigame types: {}. Sabotage minigame types: {}.",
                 GameUtils.taskBlocks.size(), collectedMinigameIds.size(), sabotageMinigameIds.size());
-        // Minecraft.getInstance().player.displayClientMessage(
-        // Component
-        // .translatable("msg.noellesroles.taskpoint.available",
-        // Component.keybind("key.noellesroles.taskinstinct"))
-        // .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
-        // true);服务端扫描点位
     }
 
 }

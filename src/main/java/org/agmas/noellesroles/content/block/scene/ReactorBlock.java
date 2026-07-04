@@ -98,7 +98,7 @@ public class ReactorBlock extends BaseEntityBlock implements TaskInstinctShowabl
     }
 
     @Override
-    public boolean shouldRenderTaskInstinct(BlockState state, BlockPos pos, Player player) {
+    public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
         return true;
     }
 
