@@ -305,7 +305,7 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "presents")
     @Tooltip(count = 2)
-    public boolean enableRoundBasedAutoPreset = true;
+    public boolean enableRoundBasedAutoPreset = false;
 
     // 按游戏轮数自动切换预设配置
     @ConfigEntry.Category(value = "presents")
