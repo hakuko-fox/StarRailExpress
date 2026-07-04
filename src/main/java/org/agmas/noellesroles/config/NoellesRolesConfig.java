@@ -217,8 +217,10 @@ public class NoellesRolesConfig implements ConfigData {
      * Role - The chance of egg roles
      */
     @ConfigEntry.Category(value = "detail")
+    @ConfigEntry.Gui.Excluded
     public RoleSpawnInfoEntries roleDetails = RoleSpawnInfoEntries.createDefaultRoleInfo();
     @ConfigEntry.Category(value = "detail")
+    @ConfigEntry.Gui.Excluded
     public RoleSpawnInfoEntries modifierDetails = RoleSpawnInfoEntries.createDefaultModifierInfo();
 
     @ConfigEntry.Category(value = "detail")
