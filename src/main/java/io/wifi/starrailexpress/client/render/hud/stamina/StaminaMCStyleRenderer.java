@@ -124,16 +124,6 @@ public class StaminaMCStyleRenderer {
             }
             context.pose().popPose();
         }
-
-        context.pose().popPose();
-
-        // 绘制体力图标（仅在按住 Shift 时显示）
-        if (!isChargingWeapon) {
-            // int barCenterY = context.guiHeight() - 35;
-            // int iconX = context.guiWidth() / 2 - BAR_WIDTH / 2 - ICON_SIZE - ICON_GAP;
-            // int iconY = barCenterY - ICON_SIZE / 2;
-            // context.blitSprite(STAMINA_ICON, iconX, iconY, ICON_SIZE, ICON_SIZE);
-        }
     }
 
     /**
