@@ -101,15 +101,15 @@ public class ChargeableItemRegistry {
         public final int maxChargeTime;
         public final int currentTicksUsing;
         public final float chargePercentage;
-        public final float maxStamina;
+        public final float maxCharge;
         public final boolean hasSpecialVisualEffects;
 
         public ChargeInfo(int maxChargeTime, int currentTicksUsing, float chargePercentage, 
-                         float maxStamina, boolean hasSpecialVisualEffects) {
+                         float maxCharge, boolean hasSpecialVisualEffects) {
             this.maxChargeTime = maxChargeTime;
             this.currentTicksUsing = currentTicksUsing;
             this.chargePercentage = chargePercentage;
-            this.maxStamina = maxStamina;
+            this.maxCharge = maxCharge;
             this.hasSpecialVisualEffects = hasSpecialVisualEffects;
         }
     }
