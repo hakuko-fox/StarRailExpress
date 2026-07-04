@@ -87,7 +87,7 @@ public class StaminaRenderer {
 	}
 
 	public static void triggerScreenEdgeEffect(int edgeColor, long min, float max) {
-		RedScreenRenderer.triggerScreenEdgeEffect(edgeColor, edgeColor, min);
+		RedScreenRenderer.triggerScreenEdgeEffect(edgeColor, min, max);
 	}
 
 	public static void triggerScreenEdgeEffect(int rgb) {

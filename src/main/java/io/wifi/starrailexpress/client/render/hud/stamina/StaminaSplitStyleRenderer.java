@@ -125,8 +125,8 @@ public class StaminaSplitStyleRenderer {
             }
             context.pose().popPose();
         }
-        // 绘制体力图标（仅在按住 Shift 时显示）
-        if (!isChargingWeapon) {
+        // 绘制体力图标
+        {
             int barCenterY = context.guiHeight() - 35;
             int iconX = context.guiWidth() / 2 - BAR_WIDTH / 2 - ICON_SIZE - ICON_GAP;
             int iconY = barCenterY - ICON_SIZE / 2;
@@ -306,11 +306,11 @@ public class StaminaSplitStyleRenderer {
 
         public void renderItemCharge(@NotNull GuiGraphics context, int colour, float value) {
             // 体力条参数 - 更现代、更扁平的设计
-            int barWidth = 60; // 总宽度增加
+            int barWidth = 40; // 总宽度增加
             int barHeight = 6; // 高度减小变得更扁平
             int barBorder = 2; // 高度减小变得更扁平
             int halfWidth = barWidth / 2;
-            colour = colour | 0x88000000;
+            colour = colour & 0x88FFFFFF;
             // 绘制背景（更现代化的半透明黑色）
             int backgroundColor = 0x55000000; // 更透明的背景
             context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
