@@ -329,7 +329,6 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
         double distance = isManifested() ? 10.0D : 6.0D;
         double dashSpeed = isManifested() ? DASH_SPEED_MANIFEST : DASH_SPEED_NORMAL;
         Set<UUID> hit = new HashSet<>();
-        SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
 
         // 碰撞检测：冲刺路径上分段检测命中
         for (int i = 1; i <= 12; i++) {
@@ -339,13 +338,15 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
                 if (target == self || hit.contains(target.getUUID()) || !GameUtils.isPlayerAliveAndSurvival(target)) {
                     continue;
                 }
-                // 未显现时跳过杀手阵营
-                if (!isManifested() && gw.isKillerTeam(target)) {
-                    continue;
-                }
-                // 突击只命中 SAN < 20 的玩家（无论显现状态）
-                if (getSan(target) >= LOW_SAN_BLUE) {
-                    continue;
+                if (!isManifested()) {
+                    SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
+                    if (gw.isKillerTeam(target)) {
+                        continue;
+                    }
+                    // 未显现时突击只能命中 SAN < 20 的玩家
+                    if (getSan(target) >= LOW_SAN_BLUE) {
+                        continue;
+                    }
                 }
                 hit.add(target.getUUID());
                 assaultHit(self, target);
