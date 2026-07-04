@@ -34,7 +34,7 @@ public class KnifeChargeableItem implements ChargeableItem {
     @Override
     public void onFullyCharged(ItemStack stack, Player player) {
         // 触发屏幕边缘效果
-        StaminaRenderer.triggerScreenEdgeEffect(Color.RED.getRGB(), 300L, 0.5f);
+        StaminaRenderer.triggerScreenEdgeEffect(Color.WHITE.getRGB(), 300L, 0.5f);
         // 默认会触发
     }
 }
