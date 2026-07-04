@@ -305,7 +305,7 @@ public class StaminaOldRenderer {
 
             if (currentWidth > 0) {
                 // 绘制体力条（左侧固定，右侧随体力伸缩）
-                context.fill(-currentWidth, -barHeight / 2, currentWidth / 2, barHeight / 2, colour);
+                context.fill(-currentWidth / 2, -barHeight / 2, currentWidth / 2, barHeight / 2, colour);
             }
         }
 

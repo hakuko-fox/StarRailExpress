@@ -23,7 +23,7 @@
   "text.autoconfig.starrailexpress-client.option.staminaStyle.DEFAULT": "默认样式",
   "text.autoconfig.starrailexpress-client.option.staminaStyle.MINECRAFT_STYLE": "Minecraft 样式",
   "text.autoconfig.starrailexpress-client.option.staminaStyle.BAMBOO_STYLE": "样式2",
-  "text.autoconfig.starrailexpress-client.option.staminaStyle.OLD": "老款样式",
+  "text.autoconfig.starrailexpress-client.option.staminaStyle.OLD_STYLE": "老款样式",
   "text.autoconfig.starrailexpress-client.option.staminaStyle.NONE": "不渲染",
   "text.autoconfig.starrailexpress-client.option.moodLeftOffset": "心情&任务渲染X坐标偏移",
   "text.autoconfig.starrailexpress-client.option.moodTopOffset": "心情&任务渲染Y坐标偏移",
