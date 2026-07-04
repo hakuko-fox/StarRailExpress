@@ -19,7 +19,8 @@ public class CantRightClickBlocks {
             "supplementaries:safe",
             "supplementaries:fire_pit",
             "supplementaries:item_shelf",
-            "supplementaries:statue"));
+            "supplementaries:statue",
+            "supplementaries:pedestal"));
     // 原版工作方块集合
     public static final Set<Block> ALLOWED_BLOCKS = new HashSet<>();
 
@@ -68,8 +69,7 @@ public class CantRightClickBlocks {
             Blocks.CRAFTER));
     public static List<String> cantClickItems = new ArrayList<>(List.of(
             "supplementaries:item_shelf",
-            "supplementaries:notice_board",
-            "supplementaries:pedestal"));
+            "supplementaries:notice_board"));
 
     /**
      * 判断是否应该阻止与方块的交互
