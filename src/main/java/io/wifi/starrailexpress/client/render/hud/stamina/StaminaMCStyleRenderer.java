@@ -65,8 +65,6 @@ public class StaminaMCStyleRenderer {
 
         if (staminaPercent >= 0) {
             // 渲染体力条 - 移动到物品栏上方
-            context.pose().pushPose();
-            context.pose().translate(context.guiWidth() / 2f, context.guiHeight() - 35, 0); // 在物品栏上方显示
             // 1. 更新状态（每帧都传当前体力值）
             StaminaIconRenderer.update(staminaPercent);
             int heartX = context.guiWidth() / 2 - 91; // 第一颗心的 X 坐标
@@ -79,18 +77,12 @@ public class StaminaMCStyleRenderer {
             StaminaIconRenderer.render(context, staminaPercent);
 
             context.pose().popPose();
-            context.pose().popPose();
 
         }
 
         // 渲染主手物品冷却提示
         renderMainHandCooldown(context, player, delta);
 
-        // // 渲染体力条 - 移动到物品栏上方
-        // context.pose().pushPose();
-        // context.pose().translate(context.guiWidth() / 2f, context.guiHeight() - 35,
-        // 0); // 在物品栏上方显示
-        context.pose().popPose();
 
         {
             context.pose().pushPose();
