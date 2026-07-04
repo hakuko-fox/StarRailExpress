@@ -261,6 +261,7 @@ public class GameConstants {
         public static ResourceLocation HOAN_MEIRIN_LONELY = Noellesroles.id("hoan_meirin_lonely");
         public static ResourceLocation HOAN_MEIRIN_ATTACK = Noellesroles.id("hoan_meirin_attack");
         public static ResourceLocation DIO_FINAL_CARNIVAL_CANCEL = Noellesroles.id("dio_final_carnival_cancel");
+        public static ResourceLocation WRAITH_ASSAULT = Noellesroles.id("wraith_assault");
 
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");
         public static ResourceLocation FAILED_INITIATION = StupidExpress.id("failed_initiation");
