@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.StaminaDefaultRenderer;
 import io.wifi.starrailexpress.client.render.hud.stamina.StaminaOldRenderer;
+import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.StaminaProvider;
 import io.wifi.starrailexpress.util.ProgressProvider;
 import net.minecraft.client.gui.GuiGraphics;
@@ -57,19 +58,35 @@ public class StaminaRenderer {
 		}
 
 		// 渲染屏幕边缘红色效果
-		StaminaDefaultRenderer.renderScreenRedEffect(context, delta);
+		RedScreenRenderer.renderScreenRedEffect(context, delta);
 	}
 
 	public static void tick() {
 		// 红色效果渲染
-		StaminaDefaultRenderer.tick();
+		switch (CLIENT_CONFIG.staminaStyle) {
+			case DEFAULT:
+				// 残月新款：从左到右，不居中
+				StaminaDefaultRenderer.tick();
+				break;
+			case OLD_STYLE:
+				// 残月旧款：居中
+				StaminaOldRenderer.tick();
+				break;
+			case MINECRAFT_STYLE:
+				break;
+			case BAMBOO_STYLE:
+				break;
+			default:
+				break;
+
+		}
 	}
 
 	public static void triggerScreenEdgeEffect(int edgeColor, long min, float max) {
-		StaminaDefaultRenderer.triggerScreenEdgeEffect(edgeColor, edgeColor, min);
+		RedScreenRenderer.triggerScreenEdgeEffect(edgeColor, edgeColor, min);
 	}
 
 	public static void triggerScreenEdgeEffect(int rgb) {
-		StaminaDefaultRenderer.triggerScreenEdgeEffect(rgb);
+		RedScreenRenderer.triggerScreenEdgeEffect(rgb);
 	}
 }

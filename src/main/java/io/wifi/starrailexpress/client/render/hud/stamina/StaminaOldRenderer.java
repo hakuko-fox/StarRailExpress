@@ -1,31 +1,23 @@
 package io.wifi.starrailexpress.client.render.hud.stamina;
 
+import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
+import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
 import io.wifi.starrailexpress.util.ProgressProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 
 public class StaminaOldRenderer {
-
-    private static final long SCREEN_RED_EFFECT_DURATION_MS = 300L; // 屏幕红色效果持续时间（毫秒）
-    private static final float MAX_RED_INTENSITY = 0.5f; // 最大红色强度（0-1）
-
-    // 新增：通用屏幕边缘效果相关变量
-    private static long generalScreenEffectStartTime = 0L; // 通用屏幕效果开始时间（毫秒）
-    private static long GENERAL_SCREEN_EFFECT_DURATION_MS = 300L; // 通用屏幕效果持续时间（毫秒）
-    private static int generalScreenEffectColor = 0xFF0000; // 通用屏幕效果颜色，默认为红色
-    private static float generalScreenEffectIntensity = 0.5f; // 通用屏幕效果强度
 
     private static float lastCooldown = 0f;
     private static boolean playedCooldownSound = false;
@@ -35,10 +27,12 @@ public class StaminaOldRenderer {
     public static StaminaBarRenderer view = new StaminaBarRenderer();
     public static float offsetDelta = 0f;
 
-    private static final long FLASH_DURATION_MS = 250L; // 闪光持续时间（毫秒）
+    private static final ResourceLocation STAMINA_ICON = Noellesroles.id("stamina/stamina_icon");
+    private static final int BAR_WIDTH = 120;
+    private static final int ICON_SIZE = 9;
+    private static final int ICON_GAP = 4;
 
-    // 添加屏幕边缘红色效果相关变量
-    private static long screenRedEffectStartTime = 0L; // 屏幕红色效果开始时间（毫秒）
+    private static final long FLASH_DURATION_MS = 250L; // 闪光持续时间（毫秒）
     // 添加刀蓄满力的视觉效果相关变量
     private static boolean knifeFullyCharged = false;
     private static long flashStartTime = 0L; // 闪光开始时间（毫秒）
@@ -46,22 +40,25 @@ public class StaminaOldRenderer {
     public static void render(LocalPlayer player, ItemStack mainHandStack, GuiGraphics context, float delta,
             ProgressProvider staminaProvider,
             ProgressProvider itemChargeProvider, boolean isChargingWeapon) {
-        float staminaPercent = 0;
+        float staminaPercent = -1;
         if (isChargingWeapon) {
             // 处理蓄力完成效果
             if (itemChargeProvider.getPercent() >= 1.0f && !knifeFullyCharged) { // 重用knifeFullyCharged变量作为通用蓄力完成标志
                 knifeFullyCharged = true;
                 flashStartTime = System.currentTimeMillis(); // 开始闪光效果
-                screenRedEffectStartTime = System.currentTimeMillis(); // 触发屏幕红色效果
+                RedScreenRenderer.screenRedEffectStartTime = System.currentTimeMillis(); // 触发屏幕红色效果
                 // 调用蓄力完成回调
             } else if (itemChargeProvider.getPercent() < 1.0f) {
                 knifeFullyCharged = false;
             }
             staminaPercent = itemChargeProvider.getPercent();
         } else {
-            staminaPercent = staminaProvider.getPercent();
+            if (staminaProvider != null) {
+                staminaPercent = staminaProvider.getPercent();
+            }
         }
-
+        if (staminaPercent < 0) // 无体力条时
+            return;
         // 使用与TimeRenderer类似的颜色逻辑
         if (Math.abs(view.getTarget() - staminaPercent) > 0.1f) {
             offsetDelta = staminaPercent > view.getTarget() ? .6f : -.6f;
@@ -113,6 +110,14 @@ public class StaminaOldRenderer {
         }
 
         context.pose().popPose();
+
+        // 绘制体力图标（仅在按住 Shift 时显示）
+        if (Minecraft.getInstance().options.keyShift.isDown()) {
+            int barCenterY = context.guiHeight() - 35;
+            int iconX = context.guiWidth() / 2 - BAR_WIDTH / 2 - ICON_SIZE - ICON_GAP;
+            int iconY = barCenterY - ICON_SIZE / 2;
+            context.blitSprite(STAMINA_ICON, iconX, iconY, ICON_SIZE, ICON_SIZE);
+        }
     }
 
     /**
@@ -195,133 +200,6 @@ public class StaminaOldRenderer {
         }
     }
 
-    /**
-     * 渲染屏幕边缘红色效果（刀蓄力完毕时）
-     */
-    public static void renderScreenRedEffect(@NotNull GuiGraphics context, float delta) {
-        if (isScreenRedEffectActive()) {
-            renderScreenEdgeEffect(context, screenRedEffectStartTime, SCREEN_RED_EFFECT_DURATION_MS, 0xFF0000,
-                    MAX_RED_INTENSITY);
-        }
-
-        // 同时渲染通用屏幕边缘效果
-        if (isGeneralScreenEffectActive()) {
-            renderScreenEdgeEffect(context, generalScreenEffectStartTime, GENERAL_SCREEN_EFFECT_DURATION_MS,
-                    generalScreenEffectColor, generalScreenEffectIntensity);
-        }
-    }
-
-    /**
-     * 通用的屏幕边缘效果渲染方法
-     */
-    private static void renderScreenEdgeEffect(@NotNull GuiGraphics context, long effectStartTime,
-            long effectDurationMs, int color, float maxIntensity) {
-        long elapsed = System.currentTimeMillis() - effectStartTime;
-        float progress = Math.max(0.0f, 1.0f - (float) elapsed / effectDurationMs);
-        float intensity = maxIntensity * progress;
-        if (intensity <= 0f)
-            return;
-
-        int screenWidth = context.guiWidth();
-        int screenHeight = context.guiHeight();
-
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = color & 0xFF;
-        int edgeAlpha = (int) (intensity * 255);
-        int opaqueColor = (edgeAlpha << 24) | (r << 16) | (g << 8) | b;
-        int transparent = 0x00000000;
-
-        int edgeW = Math.max(1, (int) (screenWidth * 0.12f));
-        int edgeH = Math.max(1, (int) (screenHeight * 0.15f));
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        // 顶部（fillGradient 竖向渐变，1次 draw call）
-        context.fillGradient(0, 0, screenWidth, edgeH, opaqueColor, transparent);
-        // 底部（fillGradient 竖向渐变，1次 draw call）
-        context.fillGradient(0, screenHeight - edgeH, screenWidth, screenHeight, transparent, opaqueColor);
-        // 左侧（逐列，延伸全高，角落与上下边缘自然叠加不产生接缝）
-        for (int i = 0; i < edgeW; i++) {
-            float alpha = (1f - (float) i / edgeW) * intensity;
-            int col = (int) (alpha * 255) << 24 | (r << 16) | (g << 8) | b;
-            context.fill(i, 0, i + 1, screenHeight, col);
-        }
-        // 右侧（逐列，延伸全高）
-        for (int i = 0; i < edgeW; i++) {
-            float alpha = (1f - (float) i / edgeW) * intensity;
-            int col = (int) (alpha * 255) << 24 | (r << 16) | (g << 8) | b;
-            context.fill(screenWidth - i - 1, 0, screenWidth - i, screenHeight, col);
-        }
-
-        RenderSystem.disableBlend();
-    }
-
-    /**
-     * 检查屏幕红色效果是否仍然活跃
-     */
-    private static boolean isScreenRedEffectActive() {
-        if (screenRedEffectStartTime == 0L) {
-            return false;
-        }
-        long currentTime = System.currentTimeMillis();
-        return (currentTime - screenRedEffectStartTime) < SCREEN_RED_EFFECT_DURATION_MS;
-    }
-
-    /**
-     * 检查通用屏幕效果是否仍然活跃
-     */
-    private static boolean isGeneralScreenEffectActive() {
-        if (generalScreenEffectStartTime == 0L) {
-            return false;
-        }
-        long currentTime = System.currentTimeMillis();
-        return (currentTime - generalScreenEffectStartTime) < GENERAL_SCREEN_EFFECT_DURATION_MS;
-    }
-
-    /**
-     * 启动通用屏幕边缘效果
-     * 
-     * @param color      颜色值，例如 0xFF0000 为红色
-     * @param durationMs 效果持续时间（毫秒）
-     * @param intensity  最大强度（0.0-1.0）
-     */
-    public static void triggerScreenEdgeEffect(int color, long durationMs, float intensity) {
-        generalScreenEffectStartTime = System.currentTimeMillis();
-        generalScreenEffectColor = color;
-        generalScreenEffectIntensity = intensity;
-        GENERAL_SCREEN_EFFECT_DURATION_MS = (int) durationMs; // 注意：这里会修改常量，需要重构
-    }
-
-    /**
-     * 启动通用屏幕边缘效果（使用默认参数）
-     * 
-     * @param color 颜色值，例如 0xFF0000 为红色
-     */
-    public static void triggerScreenEdgeEffect(int color) {
-        triggerScreenEdgeEffect(color, 300L, 0.5f);
-    }
-
-    /**
-     * 启动通用屏幕边缘效果（使用默认红色和持续时间）
-     * 
-     * @param intensity 最大强度（0.0-1.0）
-     */
-    public static void triggerScreenEdgeEffect(float intensity) {
-        triggerScreenEdgeEffect(0xFF0000, 300L, intensity);
-    }
-
-    /**
-     * 启动通用屏幕边缘效果（使用指定颜色和持续时间）
-     * 
-     * @param color      颜色值，例如 0xFF0000 为红色
-     * @param durationMs 效果持续时间（毫秒）
-     */
-    public static void triggerScreenEdgeEffect(int color, long durationMs) {
-        triggerScreenEdgeEffect(color, durationMs, 0.5f);
-    }
-
     public static void tick() {
         view.update();
         // 如果不在使用蓄力物品，重置蓄力状态
@@ -332,7 +210,7 @@ public class StaminaOldRenderer {
             if (!ChargeableItemRegistry.isChargeableStack(mainHandStack)) {
                 knifeFullyCharged = false;
                 flashStartTime = 0L;
-                screenRedEffectStartTime = 0L;
+                RedScreenRenderer.screenRedEffectStartTime = 0L;
                 chargeDisplayValue = 0f; // 重置蓄力状态条平滑值，下次蓄力从 0 开始
             }
         }
@@ -407,8 +285,8 @@ public class StaminaOldRenderer {
             int currentWidth = Math.round(barWidth * value);
 
             if (currentWidth > 0) {
-                // 绘制体力条（左侧固定，右侧随体力伸缩）
-                context.fill(-halfWidth, -barHeight / 2, -halfWidth + currentWidth, barHeight / 2, colour);
+                // 绘制体力条，居中
+                context.fill(-currentWidth / 2, -barHeight / 2, currentWidth / 2, barHeight / 2, colour);
             }
         }
 
@@ -427,7 +305,7 @@ public class StaminaOldRenderer {
 
             if (currentWidth > 0) {
                 // 绘制体力条（左侧固定，右侧随体力伸缩）
-                context.fill(-halfWidth, -barHeight / 2, -halfWidth + currentWidth, barHeight / 2, colour);
+                context.fill(-currentWidth, -barHeight / 2, currentWidth / 2, barHeight / 2, colour);
             }
         }
 
