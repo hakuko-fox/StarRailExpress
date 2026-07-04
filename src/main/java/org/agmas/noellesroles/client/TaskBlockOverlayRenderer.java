@@ -398,12 +398,7 @@ public class TaskBlockOverlayRenderer {
                 case 18:
                     if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-<<<<<<< HEAD
-                                new Color(0, 255, 100), 1f, true, 0f);
-=======
-                                new Color(0, 150, 50), 1f, true, 0f,
-                                Component.translatable("hud.noellesroles.task_instinct.render.transport_start"));
->>>>>>> ca7ba07cae03ea58f7725ae2fa92621b8d245eb8
+                                new Color(0, 150, 50), 1f, true, 0f);
                     break;
                 case 19:
                     if (shouldDisplay[type])
