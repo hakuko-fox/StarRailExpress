@@ -46,13 +46,12 @@ public class WallTrainTorchBlock extends TrainTorchBlock {
     }
 
     public WallTrainTorchBlock(Properties properties) {
-        super( properties);
+        super(properties);
         properties.lightLevel(WallTrainTorchBlock::lightBlockSupplier);
         this.registerDefaultState(
                 this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(LIT, true).setValue(ACTIVE,
                         true));
     }
-
 
     public String getDescriptionId() {
         return this.asItem().getDescriptionId();
@@ -121,6 +120,7 @@ public class WallTrainTorchBlock extends TrainTorchBlock {
 
     @Override
     public void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(new Property[] { LIT, ACTIVE, FACING });
+        super.createBlockStateDefinition(builder);
+        builder.add(new Property[] { FACING });
     }
 }
