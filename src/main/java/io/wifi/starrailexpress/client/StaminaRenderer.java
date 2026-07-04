@@ -43,8 +43,18 @@ public class StaminaRenderer {
 			staminaPercent = staminaProvider.getStaminaPercentage(player);
 			stamina = ProgressProvider.of(staminaPercent * maxStamina, maxStamina);
 		}
-		if (CLIENT_CONFIG.staminaStyle.equals(StaminaStyle.DEFAULT)) {
-			StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge, isChargingWeapon);
+		switch (CLIENT_CONFIG.staminaStyle) {
+			case DEFAULT -> StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
+					isChargingWeapon);
+			case BAMBOO_STYLE ->
+				StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
+						isChargingWeapon);
+			case MINECRAFT_STYLE ->
+				StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
+						isChargingWeapon);
+			default -> {
+				/* 不渲染; */
+			}
 		}
 
 		// 渲染屏幕边缘红色效果
