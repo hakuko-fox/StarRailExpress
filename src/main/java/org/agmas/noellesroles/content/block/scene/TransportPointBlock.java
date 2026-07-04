@@ -59,7 +59,7 @@ public class TransportPointBlock extends Block {
             }
             if (SceneTaskManager.hasTransportTask(sp)) {
                 // 消耗一个运输物品
-                stack.shrink(1);
+                removeAllTransportPackages(sp);
                 SceneTaskManager.reportTransportDeliver(sp);
                 if (level instanceof ServerLevel serverLevel) {
                     serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 1.0,
@@ -96,7 +96,7 @@ public class TransportPointBlock extends Block {
             if (SceneTaskManager.hasTransportTask(sp)) {
                 SceneTaskManager.reportTransportPickup(sp);
                 // 给予运输物品
-                if (!hasTransportPackageInHotbar(sp)) {
+                if (!hasTransportPackageInInventory(sp)) {
                     ItemStack pkg = new ItemStack(ModItems.TRANSPORT_PACKAGE);
                     if (!sp.getInventory().add(pkg)) {
                         sp.drop(pkg, false);
@@ -120,13 +120,22 @@ public class TransportPointBlock extends Block {
         return comp != null && comp.tasks.containsKey(SREPlayerTaskComponent.Task.TRANSPORT);
     }
 
-    private static boolean hasTransportPackageInHotbar(Player player) {
+    private static boolean hasTransportPackageInInventory(Player player) {
         var inventory = player.getInventory();
-        for (int i = 0; i < 9 && i < inventory.getContainerSize(); i++) {
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
             if (inventory.getItem(i).is(ModItems.TRANSPORT_PACKAGE)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static void removeAllTransportPackages(Player player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(ModItems.TRANSPORT_PACKAGE)) {
+                inventory.setItem(i, ItemStack.EMPTY);
+            }
+        }
     }
 }
