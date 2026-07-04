@@ -31,7 +31,7 @@ public class ChargeableItemRegistry {
      * @return 是否支持蓄力
      */
     public static boolean isChargeable(Item item) {
-        return item instanceof ChargeableItem || CHARGEABLE_ITEMS.containsKey(item);
+        return CHARGEABLE_ITEMS.containsKey(item) || item instanceof ChargeableItem;
     }
 
     /**
@@ -83,6 +83,25 @@ public class ChargeableItemRegistry {
                 chargePercentage,
                 chargeable.getMaxStamina(stack, player),
                 chargeable.hasSpecialVisualEffects(stack, player));
+    }
+
+    /**
+     * 获取物品是否包含特殊渲染（如刀）
+     * 
+     * @param stack  物品堆栈
+     * @param player 玩家
+     * @return 蓄力信息，如果物品不支持蓄力则返回null
+     */
+    public static boolean hasSpecialVisualEffects(ItemStack stack, Player player) {
+        if (!isChargeableStack(stack)) {
+            return false;
+        }
+
+        ChargeableItem chargeable = getChargeable(stack.getItem());
+        if (chargeable == null) {
+            return false;
+        }
+        return chargeable.hasSpecialVisualEffects(stack, player);
     }
 
     /**

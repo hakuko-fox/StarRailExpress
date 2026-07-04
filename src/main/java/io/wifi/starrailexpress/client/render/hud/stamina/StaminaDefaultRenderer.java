@@ -7,7 +7,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
-import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ProgressProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -55,24 +54,19 @@ public class StaminaDefaultRenderer {
             ProgressProvider staminaProvider,
             ProgressProvider itemChargeProvider, boolean isChargingWeapon) {
         float staminaPercent = 0;
-        float maxStamina = 0;
-
-        // 处理蓄力完成效果
-        if (itemChargeProvider.getPercent() >= 1.0f && !knifeFullyCharged) { // 重用knifeFullyCharged变量作为通用蓄力完成标志
-            knifeFullyCharged = true;
-            flashStartTime = System.currentTimeMillis(); // 开始闪光效果
-            screenRedEffectStartTime = System.currentTimeMillis(); // 触发屏幕红色效果
-            // 调用蓄力完成回调
-            ChargeableItemRegistry.onFullyCharged(mainHandStack, player);
-        } else if (itemChargeProvider.getPercent() < 1.0f) {
-            knifeFullyCharged = false;
-        }
         if (isChargingWeapon) {
+            // 处理蓄力完成效果
+            if (itemChargeProvider.getPercent() >= 1.0f && !knifeFullyCharged) { // 重用knifeFullyCharged变量作为通用蓄力完成标志
+                knifeFullyCharged = true;
+                flashStartTime = System.currentTimeMillis(); // 开始闪光效果
+                screenRedEffectStartTime = System.currentTimeMillis(); // 触发屏幕红色效果
+                // 调用蓄力完成回调
+            } else if (itemChargeProvider.getPercent() < 1.0f) {
+                knifeFullyCharged = false;
+            }
             staminaPercent = itemChargeProvider.getPercent();
-            maxStamina = itemChargeProvider.getMax();
         } else {
             staminaPercent = staminaProvider.getPercent();
-            maxStamina = staminaProvider.getMax();
         }
 
         // 使用与TimeRenderer类似的颜色逻辑
@@ -113,7 +107,7 @@ public class StaminaDefaultRenderer {
                 displayValue = chargeDisplayValue;
             }
             // 如果是刀且完全蓄力，则添加特殊效果
-            if (mainHandStack.getItem() == TMMItems.KNIFE && knifeFullyCharged && isFlashActive()) {
+            if (ChargeableItemRegistry.hasSpecialVisualEffects(mainHandStack,player) && knifeFullyCharged && isFlashActive()) {
                 // 创建闪烁效果
                 int flashColour = getFlashColor(); // 红白交替闪烁
                 view.renderWithoutSmoothing(context, flashColour, displayValue);
@@ -138,7 +132,7 @@ public class StaminaDefaultRenderer {
     /**
      * 渲染主手物品冷却提示
      */
-    private static void renderMainHandCooldown(@NotNull GuiGraphics context, @NotNull LocalPlayer player, float delta) {
+    public static void renderMainHandCooldown(@NotNull GuiGraphics context, @NotNull LocalPlayer player, float delta) {
         ItemStack mainHandStack = player.getMainHandItem();
         ItemCooldowns cooldowns = player.getCooldowns();
         float cooldown = cooldowns.getCooldownPercent(mainHandStack.getItem(), delta);
@@ -348,8 +342,8 @@ public class StaminaDefaultRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null) {
             ItemStack mainHandStack = minecraft.player.getMainHandItem();
-            // 检查是否不是蓄力物品或不是原生的TMM刀
-            if (!ChargeableItemRegistry.isChargeableStack(mainHandStack) && mainHandStack.getItem() != TMMItems.KNIFE) {
+            // 检查是否不是蓄力物品
+            if (!ChargeableItemRegistry.isChargeableStack(mainHandStack)) {
                 knifeFullyCharged = false;
                 flashStartTime = 0L;
                 screenRedEffectStartTime = 0L;

@@ -26,10 +26,6 @@ public final class MapStatusBarHudRenderer {
         if (client.player == null || client.options.hideGui) {
             return;
         }
-        // 与体力条同步：仅在游戏运行时渲染
-        if (!SREClient.shouldUseTrainHud()) {
-            return;
-        }
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(client.player.level());
         if (gameComponent == null || !gameComponent.isRunning()) {
             return;

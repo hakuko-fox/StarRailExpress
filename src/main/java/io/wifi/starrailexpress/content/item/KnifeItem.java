@@ -48,7 +48,7 @@ public class KnifeItem extends SkinableItem {
                 return InteractionResultHolder.fail(itemStack);
             }
         } else {
-            if (itemStack.getDamageValue() >= itemStack.getMaxDamage()) {
+            if (itemStack.getMaxDamage() > 0 && itemStack.getDamageValue() >= itemStack.getMaxDamage()) {
                 return InteractionResultHolder.fail(itemStack);
             }
         }

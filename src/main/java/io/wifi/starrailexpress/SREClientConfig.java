@@ -28,8 +28,9 @@ public class SREClientConfig implements ConfigData {
      */
     public enum StaminaStyle {
         DEFAULT,
-        MINECRAFT_STYLE,
+        OLD_STYLE,
         BAMBOO_STYLE,
+        MINECRAFT_STYLE,
         NONE
     }
 

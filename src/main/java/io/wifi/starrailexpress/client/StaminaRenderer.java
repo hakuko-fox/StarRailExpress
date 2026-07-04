@@ -1,7 +1,6 @@
 package io.wifi.starrailexpress.client;
 
 import io.wifi.starrailexpress.SREClientConfig;
-import io.wifi.starrailexpress.SREClientConfig.StaminaStyle;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.StaminaDefaultRenderer;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.StaminaProvider;
@@ -18,7 +17,6 @@ public class StaminaRenderer {
 	public static void renderHud(@NotNull LocalPlayer player, @NotNull GuiGraphics context, float delta) {
 		if (staminaProvider == null)
 			return;
-
 		ProgressProvider stamina = null;
 		ProgressProvider itemCharge = null;
 		final var mainHandStack = player.getMainHandItem();
@@ -28,9 +26,10 @@ public class StaminaRenderer {
 			ChargeableItemRegistry.ChargeInfo chargeInfo = ChargeableItemRegistry.getChargeInfo(mainHandStack, player);
 			if (chargeInfo != null) {
 				isChargingWeapon = true;
-				itemCharge = ProgressProvider.of(chargeInfo.chargePercentage * chargeInfo.maxStamina,
-						chargeInfo.maxStamina);
-
+				itemCharge = ProgressProvider.of(chargeInfo.chargePercentage);
+				if (chargeInfo.chargePercentage >= 1.0f) {
+					ChargeableItemRegistry.onFullyCharged(mainHandStack, player);
+				}
 			}
 		}
 
@@ -41,7 +40,7 @@ public class StaminaRenderer {
 			if (maxStamina <= 0)
 				return;
 			staminaPercent = staminaProvider.getStaminaPercentage(player);
-			stamina = ProgressProvider.of(staminaPercent * maxStamina, maxStamina);
+			stamina = ProgressProvider.of(staminaPercent);
 		}
 		switch (CLIENT_CONFIG.staminaStyle) {
 			case DEFAULT -> StaminaDefaultRenderer.render(player, mainHandStack, context, delta, stamina, itemCharge,
@@ -62,6 +61,7 @@ public class StaminaRenderer {
 	}
 
 	public static void tick() {
+		// 红色效果渲染
 		StaminaDefaultRenderer.tick();
 	}
 

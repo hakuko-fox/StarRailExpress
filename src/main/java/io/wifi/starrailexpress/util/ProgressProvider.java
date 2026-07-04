@@ -65,4 +65,8 @@ public class ProgressProvider {
     public static ProgressProvider of(float now, float max) {
         return new ProgressProvider(now, max);
     }
+
+    public static ProgressProvider of(float progress) {
+        return new ProgressProvider(0, 1, progress);
+    }
 }
