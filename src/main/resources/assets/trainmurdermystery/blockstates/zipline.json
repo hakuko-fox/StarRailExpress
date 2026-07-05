@@ -1,8 +1,9 @@
 {
-  "variants": {
-    "facing=north": { "model": "trainmurdermystery:block/zipline" },
-    "facing=east":  { "model": "trainmurdermystery:block/zipline", "y": 90 },
-    "facing=south": { "model": "trainmurdermystery:block/zipline", "y": 180 },
-    "facing=west":  { "model": "trainmurdermystery:block/zipline", "y": 270 }
-  }
+  "multipart": [
+    { "apply": { "model": "trainmurdermystery:block/zipline" } },
+    { "when": { "north": "true" }, "apply": { "model": "trainmurdermystery:block/zipline_side" } },
+    { "when": { "east": "true" }, "apply": { "model": "trainmurdermystery:block/zipline_side", "y": 90 } },
+    { "when": { "south": "true" }, "apply": { "model": "trainmurdermystery:block/zipline_side", "y": 180 } },
+    { "when": { "west": "true" }, "apply": { "model": "trainmurdermystery:block/zipline_side", "y": 270 } }
+  ]
 }

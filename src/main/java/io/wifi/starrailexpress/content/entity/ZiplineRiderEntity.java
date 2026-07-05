@@ -1,6 +1,6 @@
 package io.wifi.starrailexpress.content.entity;
 
-import net.minecraft.client.player.LocalPlayer;
+import io.wifi.starrailexpress.content.block.ZiplineBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -9,8 +9,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 public class ZiplineRiderEntity extends Entity {
     private static final float RIDE_SPEED = 0.05f; // 滑动速度（每 tick 的比例，0~1）
     private static final double MAX_DISTANCE = 4.0; // 脱离距离阈值
+    private static final double RIDER_VERTICAL_OFFSET = -1.15;
 
     @Nullable
     private BlockPos startPos;
@@ -55,9 +56,7 @@ public class ZiplineRiderEntity extends Entity {
         this.startPos = start;
         this.endPos = end;
         this.progress = 0f;
-        // 初始位置设在起点
-        Vec3 startCenter = Vec3.atCenterOf(start).add(0, 0.5, 0);
-        this.setPos(startCenter);
+        this.setPos(ZiplineBlock.ropePoint(start, end, 0.0f));
     }
 
     @Override
@@ -98,16 +97,14 @@ public class ZiplineRiderEntity extends Entity {
         if (progress >= 1.0f) {
             progress = 1.0f;
             // 到达终点
-            Vec3 endCenter = Vec3.atCenterOf(endPos).add(0, 0.5, 0);
+            Vec3 endCenter = ZiplineBlock.ropePoint(startPos, endPos, 1.0f);
             this.setPos(endCenter);
             ejectAndDiscard();
             return;
         }
 
-        // 平滑计算当前位置
-        Vec3 startCenter = Vec3.atCenterOf(startPos).add(0, 0.5, 0);
-        Vec3 endCenter = Vec3.atCenterOf(endPos).add(0, 0.5, 0);
-        Vec3 currentPos = startCenter.lerp(endCenter, progress);
+        Vec3 endCenter = ZiplineBlock.ropePoint(startPos, endPos, 1.0f);
+        Vec3 currentPos = ZiplineBlock.ropePoint(startPos, endPos, progress);
         this.setPos(currentPos);
 
         // 让乘客看向终点
@@ -135,25 +132,27 @@ public class ZiplineRiderEntity extends Entity {
         }
 
         // 2. 距离检查 - 如果乘客距滑索路径超过 MAX_DISTANCE
-        Vec3 startCenter = Vec3.atCenterOf(startPos).add(0, 0.5, 0);
-        Vec3 endCenter = Vec3.atCenterOf(endPos).add(0, 0.5, 0);
-        Vec3 pathDir = endCenter.subtract(startCenter).normalize();
-
-        // 计算乘客到滑索路径的最短距离
         Vec3 passengerPos = passenger.position();
-        Vec3 toPassenger = passengerPos.subtract(startCenter);
-        double t = toPassenger.dot(pathDir);
-        double pathLength = endCenter.distanceTo(startCenter);
-        t = Math.max(0, Math.min(pathLength, t));
-
-        Vec3 closestPointOnPath = startCenter.add(pathDir.scale(t));
-        double distanceToPath = passengerPos.distanceTo(closestPointOnPath);
+        double distanceToPath = passengerPos.distanceTo(this.position().add(0, RIDER_VERTICAL_OFFSET, 0));
 
         if (distanceToPath > MAX_DISTANCE) {
             return true;
         }
 
         return false;
+    }
+
+    @Override
+    protected void positionRider(Entity passenger, MoveFunction moveFunction) {
+        if (this.hasPassenger(passenger)) {
+            Vec3 targetPos = this.position().add(0, RIDER_VERTICAL_OFFSET, 0);
+            moveFunction.accept(passenger, targetPos.x, targetPos.y, targetPos.z);
+        }
+    }
+
+    @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
+        return this.position().add(0, RIDER_VERTICAL_OFFSET, 0);
     }
 
     private void ejectAndDiscard() {
