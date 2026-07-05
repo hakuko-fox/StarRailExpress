@@ -3,6 +3,8 @@ package io.wifi.starrailexpress.client.render.hud.stamina;
 import org.agmas.noellesroles.Noellesroles;
 import org.jetbrains.annotations.NotNull;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import io.wifi.starrailexpress.client.render.hud.stamina.utils.RedScreenRenderer;
@@ -228,6 +230,8 @@ public class StaminaMCStyleRenderer {
     public static class ChargeBarRenderer {
 
         public void renderItemCharge(@NotNull GuiGraphics context, int colour, float value) {
+            RenderSystem.enableBlend();
+
             // 体力条参数 - 更现代、更扁平的设计
             int barWidth = 40; // 总宽度增加
             int barHeight = 6; // 高度减小变得更扁平
@@ -238,7 +242,7 @@ public class StaminaMCStyleRenderer {
             int backgroundColor = 0x55000000; // 更透明的背景
             if (value <= 0) {
                 renderOutline(context, -halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
-                        barHeight / 2 + barBorder, barBorder, backgroundColor);
+                        barHeight / 2 + barBorder, 1, backgroundColor);
             } else {
                 context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
                         barHeight / 2 + barBorder, backgroundColor);
@@ -251,6 +255,8 @@ public class StaminaMCStyleRenderer {
                 // 绘制体力条（左侧固定，右侧随体力伸缩）
                 context.fill(-halfWidth, -barHeight / 2, -halfWidth + currentWidth, barHeight / 2, colour);
             }
+            RenderSystem.disableBlend();
+
         }
 
         private void renderOutline(GuiGraphics context, int x1, int y1, int x2, int y2, int width,
