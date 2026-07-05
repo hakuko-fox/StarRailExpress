@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.replay.EmptyGameReplayManager;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
@@ -681,6 +682,7 @@ public class SREClient implements ClientModInitializer {
                             client.screen));
                 }));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            SRE.REPLAY_MANAGER = new EmptyGameReplayManager();
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
         });

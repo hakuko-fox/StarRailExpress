@@ -20,12 +20,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 
-public class ClientGameReplayManager extends GameReplayManager {
+public class EmptyGameReplayManager extends GameReplayManager {
 
     /**
      * 用于客户端，避免客户端调用后崩溃
      */
-    public ClientGameReplayManager() {
+    public EmptyGameReplayManager() {
         super();
     }
 
