@@ -11,6 +11,7 @@
     "chat.PlayerPrefixMixin",
     "command.ExecuteCommandInvoker",
     "entity.EntityMixin",
+    "entity.FallDamageCheckMixin",
     "entity.ItemFrameMixin",
     "entity.ProjectileUtilMixin",
     "entity.item.ItemEntityMixin",
