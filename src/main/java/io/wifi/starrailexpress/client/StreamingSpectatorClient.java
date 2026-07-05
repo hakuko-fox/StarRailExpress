@@ -15,6 +15,7 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 
 import java.util.ArrayList;
@@ -27,6 +28,15 @@ public final class StreamingSpectatorClient {
     private static UUID targetUuid;
     private static int cameraMode = StreamingSpectatorPayload.CAMERA_NONE;
     private static boolean cameraBound;
+    private static List<ItemStack> targetInventory = List.of();
+    private static final float DESCRIPTION_SCALE = 0.6F;
+    private static final float ITEM_SCALE = 0.75F;
+    private static final int SLOT_SIZE = 12;
+    private static final int SLOT_GAP = 2;
+    private static final int INVENTORY_COLUMNS = 9;
+    private static final int MAIN_INVENTORY_SLOTS = 36;
+    private static final int PANEL_FILL = 0x78141822;
+    private static final int PANEL_BORDER = 0x4A5F9FD7;
 
     private StreamingSpectatorClient() {
     }
@@ -44,6 +54,7 @@ public final class StreamingSpectatorClient {
         active = payload.active();
         targetUuid = payload.targetUuid();
         cameraMode = payload.cameraMode();
+        targetInventory = copyInventory(payload.inventory());
         if (!active || targetUuid == null) {
             clearCameraBinding(client);
         } else if (!targetUuid.equals(previousTarget)) {
@@ -87,33 +98,42 @@ public final class StreamingSpectatorClient {
         List<HudLine> lines = new ArrayList<>();
         Player target = targetUuid == null ? null : client.level.getPlayerByUUID(targetUuid);
         if (target == null) {
-            addWrapped(lines, font, Component.literal("挂播").withStyle(ChatFormatting.BOLD), wrapWidth,
-                    0xFFF3DEAD, 0);
-            addWrapped(lines, font, Component.literal("正在寻找可挂播目标..."), wrapWidth, 0xFFD6DCE5, 0);
+            addWrapped(lines, font,
+                    Component.translatable("hud.sre.streaming_spectator.title").withStyle(ChatFormatting.BOLD),
+                    wrapWidth, 0xFFF3DEAD, 0);
+            addWrapped(lines, font,
+                    Component.translatable("hud.sre.streaming_spectator.waiting"), wrapWidth, 0xFFD6DCE5, 0);
         } else {
             buildTargetLines(lines, font, wrapWidth, target);
         }
 
-        int maxLines = Math.max(3, (screenHeight - y - 24) / 11);
-        boolean truncated = lines.size() > maxLines;
-        int visibleLines = Math.min(lines.size(), maxLines);
-        int height = 18 + visibleLines * 11 + (truncated ? 12 : 0);
+        int inventoryHeight = target == null ? 0 : inventoryHeight(font);
+        int maxPanelHeight = Math.max(58, screenHeight - y - 24);
+        int maxTextHeight = Math.max(0, maxPanelHeight - 18 - inventoryHeight);
+        VisibleLines visible = collectVisibleLines(lines, maxTextHeight, font);
+        int ellipsisHeight = visible.truncated() ? lineHeight(font, 1.0F) : 0;
+        int height = 18 + visible.height() + ellipsisHeight + inventoryHeight;
 
-        drawPanel(guiGraphics, x, y, width, height, 0xC4141822, 0x665F9FD7);
+        drawPanel(guiGraphics, x, y, width, height, PANEL_FILL, PANEL_BORDER);
         int lineY = y + 10;
-        for (int i = 0; i < visibleLines; i++) {
+        for (int i = 0; i < visible.count(); i++) {
             HudLine line = lines.get(i);
-            guiGraphics.drawString(font, line.text(), x + 12 + line.indent(), lineY, line.color(), false);
-            lineY += 11;
+            drawLine(guiGraphics, font, line, x + 12 + line.indent(), lineY);
+            lineY += line.height();
         }
-        if (truncated) {
+        if (visible.truncated()) {
             guiGraphics.drawString(font, Component.literal("..."), x + 12, lineY, 0xFFB8C0CA, false);
+            lineY += ellipsisHeight;
+        }
+        if (target != null) {
+            renderInventory(guiGraphics, font, x + 12, lineY, wrapWidth);
         }
     }
 
     private static void buildTargetLines(List<HudLine> lines, Font font, int wrapWidth, Player target) {
         addWrapped(lines, font,
-                Component.literal("挂播: ").append(target.getDisplayName()).withStyle(ChatFormatting.BOLD),
+                Component.translatable("hud.sre.streaming_spectator.target", target.getDisplayName())
+                        .withStyle(ChatFormatting.BOLD),
                 wrapWidth, 0xFFF3DEAD, 0);
 
         SRERole role = SREClient.gameComponent == null ? null : SREClient.gameComponent.getRole(target);
@@ -121,20 +141,26 @@ public final class StreamingSpectatorClient {
             addWrapped(lines, font, role.getName().copy().withColor(role.color()), wrapWidth, 0xFFFFFFFF, 0);
             addDescription(lines, font, role.getSimpleDescription(), wrapWidth, 0xFFDDE3EA, 8);
         } else {
-            addWrapped(lines, font, Component.literal("职业未知"), wrapWidth, 0xFFFFB0A8, 0);
+            addWrapped(lines, font,
+                    Component.translatable("hud.sre.streaming_spectator.unknown_role"), wrapWidth, 0xFFFFB0A8, 0);
         }
 
         addSpacer(lines);
-        addWrapped(lines, font, Component.literal("修饰符").withStyle(ChatFormatting.BOLD), wrapWidth, 0xFFE4CAA1, 0);
+        addWrapped(lines, font,
+                Component.translatable("hud.sre.streaming_spectator.modifiers").withStyle(ChatFormatting.BOLD),
+                wrapWidth, 0xFFE4CAA1, 0);
         if (SREClient.modifierComponent == null) {
-            addWrapped(lines, font, Component.literal("暂无修饰符数据"), wrapWidth, 0xFFB8C0CA, 8);
+            addWrapped(lines, font,
+                    Component.translatable("hud.sre.streaming_spectator.modifiers_unavailable"),
+                    wrapWidth, 0xFFB8C0CA, 8);
             return;
         }
 
         List<SREModifier> modifiers = SREClient.modifierComponent.getDisplayableModifiers(target);
         modifiers.sort(Comparator.comparing(modifier -> modifier.identifier().toString()));
         if (modifiers.isEmpty()) {
-            addWrapped(lines, font, Component.literal("无"), wrapWidth, 0xFFB8C0CA, 8);
+            addWrapped(lines, font,
+                    Component.translatable("hud.sre.streaming_spectator.none"), wrapWidth, 0xFFB8C0CA, 8);
             return;
         }
 
@@ -146,6 +172,9 @@ public final class StreamingSpectatorClient {
 
     private static void addDescription(List<HudLine> lines, Font font, Component component, int wrapWidth, int color,
             int indent) {
+        if (component == null) {
+            return;
+        }
         String raw = component.getString();
         if (raw.isBlank()) {
             return;
@@ -154,20 +183,26 @@ public final class StreamingSpectatorClient {
             if (part.isBlank()) {
                 addSpacer(lines);
             } else {
-                addWrapped(lines, font, Component.literal(part), wrapWidth, color, indent);
+                addWrapped(lines, font, Component.literal(part), wrapWidth, color, indent, DESCRIPTION_SCALE);
             }
         }
     }
 
     private static void addWrapped(List<HudLine> lines, Font font, Component component, int width, int color,
             int indent) {
-        for (FormattedCharSequence sequence : font.split(component, Math.max(40, width - indent))) {
-            lines.add(new HudLine(sequence, color, indent));
+        addWrapped(lines, font, component, width, color, indent, 1.0F);
+    }
+
+    private static void addWrapped(List<HudLine> lines, Font font, Component component, int width, int color,
+            int indent, float scale) {
+        int scaledWidth = Math.max(40, Mth.floor((width - indent) / scale));
+        for (FormattedCharSequence sequence : font.split(component, scaledWidth)) {
+            lines.add(new HudLine(sequence, color, indent, scale, lineHeight(font, scale)));
         }
     }
 
     private static void addSpacer(List<HudLine> lines) {
-        lines.add(new HudLine(FormattedCharSequence.EMPTY, 0x00FFFFFF, 0));
+        lines.add(new HudLine(FormattedCharSequence.EMPTY, 0x00FFFFFF, 0, 1.0F, 5));
     }
 
     private static AllowOtherCameraType.ReturnCameraType getLockedCameraType() {
@@ -186,6 +221,7 @@ public final class StreamingSpectatorClient {
         active = false;
         targetUuid = null;
         cameraMode = StreamingSpectatorPayload.CAMERA_NONE;
+        targetInventory = List.of();
         clearCameraBinding(client);
     }
 
@@ -197,7 +233,7 @@ public final class StreamingSpectatorClient {
     }
 
     private static void drawPanel(GuiGraphics guiGraphics, int x, int y, int width, int height, int fill, int border) {
-        guiGraphics.fill(x + 2, y + 2, x + width + 2, y + height + 2, 0x44000000);
+        guiGraphics.fill(x + 2, y + 2, x + width + 2, y + height + 2, 0x22000000);
         guiGraphics.fill(x, y, x + width, y + height, fill);
         guiGraphics.fill(x, y, x + width, y + 1, border);
         guiGraphics.fill(x, y + height - 1, x + width, y + height, border);
@@ -205,6 +241,116 @@ public final class StreamingSpectatorClient {
         guiGraphics.fill(x + width - 1, y, x + width, y + height, border);
     }
 
-    private record HudLine(FormattedCharSequence text, int color, int indent) {
+    private static VisibleLines collectVisibleLines(List<HudLine> lines, int maxHeight, Font font) {
+        int count = 0;
+        int height = 0;
+        int ellipsisHeight = lineHeight(font, 1.0F);
+        for (int i = 0; i < lines.size(); i++) {
+            HudLine line = lines.get(i);
+            boolean hasMore = i < lines.size() - 1;
+            int reserve = hasMore ? ellipsisHeight : 0;
+            if (height + line.height() + reserve > maxHeight) {
+                return new VisibleLines(count, height, true);
+            }
+            count++;
+            height += line.height();
+        }
+        return new VisibleLines(count, height, false);
+    }
+
+    private static void drawLine(GuiGraphics guiGraphics, Font font, HudLine line, int x, int y) {
+        if (line.scale() == 1.0F) {
+            guiGraphics.drawString(font, line.text(), x, y, line.color(), false);
+            return;
+        }
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(x, y, 0.0F);
+        guiGraphics.pose().scale(line.scale(), line.scale(), 1.0F);
+        guiGraphics.drawString(font, line.text(), 0, 0, line.color(), false);
+        guiGraphics.pose().popPose();
+    }
+
+    private static int lineHeight(Font font, float scale) {
+        return Math.max(1, Mth.ceil(font.lineHeight * scale)) + 2;
+    }
+
+    private static int inventoryHeight(Font font) {
+        return 4 + font.lineHeight + 4
+                + (MAIN_INVENTORY_SLOTS / INVENTORY_COLUMNS) * (SLOT_SIZE + SLOT_GAP)
+                + 4 + SLOT_SIZE;
+    }
+
+    private static void renderInventory(GuiGraphics guiGraphics, Font font, int x, int y, int width) {
+        int cursorY = y + 4;
+        guiGraphics.drawString(font,
+                Component.translatable("hud.sre.streaming_spectator.inventory").withStyle(ChatFormatting.BOLD),
+                x, cursorY, 0xFFE4CAA1, false);
+        cursorY += font.lineHeight + 4;
+
+        int gridWidth = INVENTORY_COLUMNS * SLOT_SIZE + (INVENTORY_COLUMNS - 1) * SLOT_GAP;
+        int gridX = x + Math.max(0, (width - gridWidth) / 2);
+        for (int slot = 0; slot < MAIN_INVENTORY_SLOTS; slot++) {
+            int row = slot / INVENTORY_COLUMNS;
+            int col = slot % INVENTORY_COLUMNS;
+            int inventoryIndex = slot < 27 ? slot + 9 : slot - 27;
+            renderInventorySlot(guiGraphics, font, inventoryIndex,
+                    gridX + col * (SLOT_SIZE + SLOT_GAP),
+                    cursorY + row * (SLOT_SIZE + SLOT_GAP));
+        }
+
+        cursorY += (MAIN_INVENTORY_SLOTS / INVENTORY_COLUMNS) * (SLOT_SIZE + SLOT_GAP) + 4;
+        int[] equipmentSlots = {39, 38, 37, 36, 40};
+        int equipmentX = gridX + Math.max(0,
+                (gridWidth - equipmentSlots.length * SLOT_SIZE - (equipmentSlots.length - 1) * SLOT_GAP) / 2);
+        for (int i = 0; i < equipmentSlots.length; i++) {
+            renderInventorySlot(guiGraphics, font, equipmentSlots[i],
+                    equipmentX + i * (SLOT_SIZE + SLOT_GAP), cursorY);
+        }
+    }
+
+    private static void renderInventorySlot(GuiGraphics guiGraphics, Font font, int stackIndex, int x, int y) {
+        guiGraphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x55212935);
+        guiGraphics.fill(x, y, x + SLOT_SIZE, y + 1, 0x55D8E2EF);
+        guiGraphics.fill(x, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE, 0x552B3340);
+        guiGraphics.fill(x, y, x + 1, y + SLOT_SIZE, 0x55D8E2EF);
+        guiGraphics.fill(x + SLOT_SIZE - 1, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x552B3340);
+
+        ItemStack stack = getInventoryStack(stackIndex);
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(x, y, 0.0F);
+        guiGraphics.pose().scale(ITEM_SCALE, ITEM_SCALE, 1.0F);
+        guiGraphics.renderItem(stack, 0, 0);
+        guiGraphics.renderItemDecorations(font, stack, 0, 0);
+        guiGraphics.pose().popPose();
+    }
+
+    private static ItemStack getInventoryStack(int index) {
+        if (index < 0 || index >= targetInventory.size()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack stack = targetInventory.get(index);
+        return stack == null ? ItemStack.EMPTY : stack;
+    }
+
+    private static List<ItemStack> copyInventory(List<ItemStack> inventory) {
+        if (inventory == null || inventory.isEmpty()) {
+            return List.of();
+        }
+        List<ItemStack> copy = new ArrayList<>(inventory.size());
+        for (ItemStack stack : inventory) {
+            copy.add(stack == null ? ItemStack.EMPTY : stack.copy());
+        }
+        return copy;
+    }
+
+    private record HudLine(FormattedCharSequence text, int color, int indent, float scale, int height) {
+    }
+
+    private record VisibleLines(int count, int height, boolean truncated) {
     }
 }
