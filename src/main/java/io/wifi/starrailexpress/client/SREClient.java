@@ -1212,18 +1212,45 @@ public class SREClient implements ClientModInitializer {
         return cachedHighLightMap.getOrDefault(target.getUUID(), -1);
     }
 
+    /**
+     * 获取本人的死亡惩罚状态
+     * 
+     * @param self
+     * @return 0: 无; 1: 普通惩罚; 2: 限制更多
+     */
+    public static int getDeathPenaltyType(Player self) {
+        var deathPenalty = org.agmas.noellesroles.component.ModComponents.DEATH_PENALTY.get(self);
+        if (deathPenalty.hasPenalty()) {
+            if (!deathPenalty.chatEnabled)
+                return 2;
+            return 1;
+        }
+        return 0;// 无
+    }
+
     public static int getInstinctHighlight(Entity target) {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null || gameComponent == null) {
             return -1;
         }
-        int invokerColor = OnGetInstinctHighlight.EVENT.invoker().GetInstinctHighlight(target, isInstinctEnabled());
+        boolean instinctEnabled = isInstinctEnabled();
+        {
+            int deathPenaltyType = getDeathPenaltyType(client.player);
+            if (deathPenaltyType == 1) {
+                if (instinctEnabled)
+                    return new java.awt.Color(254, 254, 254).getRGB();
+                return -1;
+            } else if (deathPenaltyType == 2) {
+                return -1;
+            }
+        }
+        int invokerColor = OnGetInstinctHighlight.EVENT.invoker().GetInstinctHighlight(target, instinctEnabled);
         if (invokerColor != -1) {
             if (invokerColor == -2)
                 return -1;
             return invokerColor;
         }
-        if (!isInstinctEnabled()) {
+        if (!instinctEnabled) {
             return -1;
         }
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
