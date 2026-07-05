@@ -46,10 +46,9 @@ public class CrosshairRenderer {
             context.blitSprite(CROSSHAIR, 0, 0, 3, 3);
             context.pose().popPose();
             {
-                float totalCooldownTicks = player.getCurrentItemAttackStrengthDelay();
                 // 2. 攻击指示器（仅当蓄力中时显示）
                 float f = player.getAttackStrengthScale(0.0F); // 0~1
-                if (totalCooldownTicks < 4.0 && f < 1.0F) { // 非空手才显示
+                if (f < 1.0F) {
                     // 指示器位置（与原版一致）
                     int barX = context.guiWidth() / 2 - 8;
                     int barY = context.guiHeight() / 2 - 7 + 16;
