@@ -1,6 +1,5 @@
 package io.wifi.starrailexpress.client.render.hud.stamina.utils;
 
-import io.wifi.starrailexpress.api.ChargeableItemRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

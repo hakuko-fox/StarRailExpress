@@ -61,7 +61,7 @@ public class StaminaMCStyleRenderer {
             // 1. 更新状态（每帧都传当前体力值）
             StaminaIconRenderer.update(staminaPercent);
             int heartX = context.guiWidth() / 2 - 91; // 第一颗心的 X 坐标
-            int heartY = context.guiHeight() - 40; // 心的 Y 坐标（距底部 49 像素）
+            int heartY = context.guiHeight() - 36; // 心的 Y 坐标（距底部 49 像素）
             // 2. 将坐标系平移到您想要的左上角位置（例如 x=10, y=20）
             context.pose().pushPose();
             context.pose().translate(heartX, heartY, 0);
@@ -260,8 +260,8 @@ public class StaminaMCStyleRenderer {
             // 绘制背景（更现代化的半透明黑色）
             int backgroundColor = 0x55000000; // 更透明的背景
             if (value <= 0) {
-                context.renderOutline(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
-                        barHeight / 2 + barBorder, backgroundColor);
+                renderOutline(context, -halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
+                        barHeight / 2 + barBorder, barBorder, backgroundColor);
             } else {
                 context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
                         barHeight / 2 + barBorder, backgroundColor);
@@ -274,6 +274,28 @@ public class StaminaMCStyleRenderer {
                 // 绘制体力条（左侧固定，右侧随体力伸缩）
                 context.fill(-halfWidth, -barHeight / 2, -halfWidth + currentWidth, barHeight / 2, colour);
             }
+        }
+
+        private void renderOutline(GuiGraphics context, int x1, int y1, int x2, int y2, int width,
+                int backgroundColor) {
+            // 如果边框宽度 <= 0，则不绘制
+            if (width <= 0)
+                return;
+
+            // 规范化坐标，确保 left<right, top<bottom
+            int left = Math.min(x1, x2);
+            int right = Math.max(x1, x2);
+            int top = Math.min(y1, y2);
+            int bottom = Math.max(y1, y2);
+
+            // 1. 上边框
+            context.fill(left, top, right, top + width, backgroundColor);
+            // 2. 下边框
+            context.fill(left, bottom - width, right, bottom, backgroundColor);
+            // 3. 左边框（避开上下边框已占用的区域，防止重叠绘制造成的视觉问题）
+            context.fill(left, top + width, left + width, bottom - width, backgroundColor);
+            // 4. 右边框
+            context.fill(right - width, top + width, right, bottom - width, backgroundColor);
         }
 
         public float getTarget() {

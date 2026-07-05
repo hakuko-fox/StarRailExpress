@@ -221,6 +221,28 @@ public class StaminaSplitStyleRenderer {
             }
         }
 
+        private void renderOutline(GuiGraphics context, int x1, int y1, int x2, int y2, int width,
+                int backgroundColor) {
+            // 如果边框宽度 <= 0，则不绘制
+            if (width <= 0)
+                return;
+
+            // 规范化坐标，确保 left<right, top<bottom
+            int left = Math.min(x1, x2);
+            int right = Math.max(x1, x2);
+            int top = Math.min(y1, y2);
+            int bottom = Math.max(y1, y2);
+
+            // 1. 上边框
+            context.fill(left, top, right, top + width, backgroundColor);
+            // 2. 下边框
+            context.fill(left, bottom - width, right, bottom, backgroundColor);
+            // 3. 左边框（避开上下边框已占用的区域，防止重叠绘制造成的视觉问题）
+            context.fill(left, top + width, left + width, bottom - width, backgroundColor);
+            // 4. 右边框
+            context.fill(right - width, top + width, right, bottom - width, backgroundColor);
+        }
+
         public void renderItemCharge(@NotNull GuiGraphics context, int colour, float value) {
             // 体力条参数 - 更现代、更扁平的设计
             int barWidth = 40; // 总宽度增加
@@ -231,8 +253,8 @@ public class StaminaSplitStyleRenderer {
             // 绘制背景（更现代化的半透明黑色）
             int backgroundColor = 0x55000000; // 更透明的背景
             if (value <= 0) {
-                context.renderOutline(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
-                        barHeight / 2 + barBorder, backgroundColor);
+                renderOutline(context, -halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
+                        barHeight / 2 + barBorder, barBorder, backgroundColor);
             } else {
                 context.fill(-halfWidth - barBorder, -barHeight / 2 - barBorder, halfWidth + barBorder,
                         barHeight / 2 + barBorder, backgroundColor);
