@@ -24,7 +24,7 @@ public class StatusHudRenderer {
         Player player = client.gui.getCameraPlayer();
         if (player != null) {
 
-            int m = context.guiWidth() / 2 + 91;
+            int m = context.guiWidth() / 2 - 91;
             int n = context.guiHeight() - 39;
             int r = n - 10;
 
@@ -38,9 +38,9 @@ public class StatusHudRenderer {
 
                 for (int z = 0; z < x + y; ++z) {
                     if (z < x) {
-                        context.blitSprite(AIR_SPRITE, m - z * 8 - 9, r, 9, 9);
+                        context.blitSprite(AIR_SPRITE, m + z * 8 + 9, r, 9, 9);
                     } else {
-                        context.blitSprite(AIR_BURSTING_SPRITE, m - z * 8 - 9, r, 9, 9);
+                        context.blitSprite(AIR_BURSTING_SPRITE, m + z * 8 + 9, r, 9, 9);
                     }
                 }
 
