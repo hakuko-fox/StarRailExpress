@@ -51,7 +51,7 @@ public class RenderEffectMixin {
     @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
     private void tmm$hideStatusEffectWhenCameraEvent(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         // 运镜动画期间与原版 F1 一致，完全隐藏状态效果。
-        if (AdvancedCameraDirector.shouldOverride()) {
+        if (AdvancedCameraDirector.shouldHideHudForCamera()) {
             ci.cancel();
             return;
         }

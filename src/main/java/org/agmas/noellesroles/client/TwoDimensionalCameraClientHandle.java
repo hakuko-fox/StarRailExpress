@@ -14,6 +14,9 @@ public final class TwoDimensionalCameraClientHandle {
     private static final double CAMERA_HEIGHT = 6.0D;
     private static final double TOP_CAMERA_HEIGHT = 34.0D;
     private static final float CAMERA_FOV = 35.0F;
+    private static final float FOREGROUND_CLIP_DISTANCE = 3.0F;
+    private static volatile boolean active;
+    private static volatile Vec3 voiceListenerPosition;
 
     private TwoDimensionalCameraClientHandle() {
     }
@@ -25,16 +28,22 @@ public final class TwoDimensionalCameraClientHandle {
     private static void tick(Minecraft client) {
         LocalPlayer player = client.player;
         if (player == null || client.level == null) {
+            active = false;
+            voiceListenerPosition = null;
             AdvancedCameraDirector.clearFixedOverride();
             return;
         }
 
         MobEffectInstance effect = player.getEffect(ModEffects.TWO_DIMENSIONAL_CAMERA);
         if (effect == null) {
+            active = false;
+            voiceListenerPosition = null;
             AdvancedCameraDirector.clearFixedOverride();
             return;
         }
 
+        active = true;
+        voiceListenerPosition = player.getEyePosition(1.0F);
         Vec3 lookAt = player.getEyePosition(1.0F).add(0.0D, 0.5D, 0.0D);
         Vec3 cameraPos = cameraPosition(lookAt, effect.getAmplifier());
         Vec3 delta = lookAt.subtract(cameraPos);
@@ -58,5 +67,17 @@ public final class TwoDimensionalCameraClientHandle {
             case 2 -> new Vec3(0.0D, 0.0D, -1.0D); // 北边
             default -> new Vec3(0.0D, 0.0D, 1.0D); // 南边
         };
+    }
+
+    public static boolean isActive() {
+        return active;
+    }
+
+    public static Vec3 voiceListenerPosition() {
+        return active ? voiceListenerPosition : null;
+    }
+
+    public static float foregroundClipDistance() {
+        return active ? FOREGROUND_CLIP_DISTANCE : 0.05F;
     }
 }
