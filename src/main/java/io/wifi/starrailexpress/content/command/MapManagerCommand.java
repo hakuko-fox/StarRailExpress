@@ -190,6 +190,7 @@ public class MapManagerCommand {
                 .then(setSceneOffsetY())
                 .then(setSceneOffsetZ())
                 .then(setMustCopy())
+                .then(setFallToDeathHeight())
                 .then(setMapName())
                 .then(setDisabledTasks())
                 .then(setDisabledRoles())
@@ -215,6 +216,7 @@ public class MapManagerCommand {
                 .then(getPlayAreaOffset())
                 .then(getRoomCount())
                 .then(getRoomPositions())
+                .then(buildGetSimple("fallToDeathHeight", a -> String.valueOf(a.fallToDeathHeight)))
                 .then(buildGetSimple("canJump", a -> String.valueOf(a.canJump)))
                 .then(buildGetSimple("canSwim", a -> String.valueOf(a.canSwim)))
                 .then(buildGetSimple("enableOxygenDrowning", a -> String.valueOf(a.enableOxygenDrowning)))
@@ -245,6 +247,7 @@ public class MapManagerCommand {
                     a -> a.initialItems.isEmpty() ? "(none)" : String.join(", ", a.initialItems)))
                 .then(getDisabledTasks())
                 .then(getDisabledRoles())
+                .then(getDisabledModifiers())
                 .then(getEnableSceneTask()))
             .then(Commands.literal("remove")
                 .requires(source -> source.hasPermission(3))
@@ -445,6 +448,13 @@ public class MapManagerCommand {
     areas.canSwim = value;
     areas.sync();
     sendSetFeedback(source, "canSwim", String.valueOf(value));
+  }
+
+  private static void setFallToDeathHeight(CommandSourceStack source, int value) {
+    AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
+    areas.fallToDeathHeight = value;
+    areas.sync();
+    sendSetFeedback(source, "fallToDeathHeight", String.valueOf(value));
   }
 
   private static void setEnableOxygenDrowning(CommandSourceStack source, boolean value) {
@@ -711,6 +721,7 @@ public class MapManagerCommand {
     sb.append("canJump: ").append(areas.canJump).append("\n");
     sb.append("canSwim: ").append(areas.canSwim).append("\n");
     sb.append("enableOxygenDrowning: ").append(areas.enableOxygenDrowning).append("\n");
+    sb.append("fallToDeathHeight: ").append(areas.fallToDeathHeight).append("\n");
     sb.append("mapStatusBar: ").append(areas.mapStatusBar == null ? MapStatusBarType.NONE : areas.mapStatusBar)
         .append("\n");
     sb.append("noReset: ").append(areas.noReset).append("\n");
@@ -1125,6 +1136,15 @@ public class MapManagerCommand {
             }));
   }
 
+  private static LiteralArgumentBuilder<CommandSourceStack> setFallToDeathHeight() {
+    return Commands.literal("enableOxygenDrowning")
+        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+            .executes(ctx -> {
+              setFallToDeathHeight(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "value"));
+              return 1;
+            }));
+  }
+
   private static LiteralArgumentBuilder<CommandSourceStack> setEnableOxygenDrowning() {
     return Commands.literal("enableOxygenDrowning")
         .then(Commands.argument("value", BoolArgumentType.bool())
@@ -1501,6 +1521,23 @@ public class MapManagerCommand {
               AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
               boolean has = a.disabledRoles != null && a.disabledRoles.contains(roleId);
               sendGetFeedback(ctx.getSource(), "disabledRoles.contains(" + roleId + ")", String.valueOf(has));
+              return 1;
+            }));
+  }
+
+  private static LiteralArgumentBuilder<CommandSourceStack> getDisabledModifiers() {
+    return Commands.literal("disabledModifiers")
+        .executes(ctx -> {
+          AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
+          sendGetFeedback(ctx.getSource(), "disabledModifiers", formatDisabledTasks(a.disabledModifiers));
+          return 1;
+        })
+        .then(Commands.argument("roleId", StringArgumentType.string())
+            .executes(ctx -> {
+              String roleId = StringArgumentType.getString(ctx, "roleId");
+              AreasWorldComponent a = AreasWorldComponent.KEY.get(ctx.getSource().getLevel());
+              boolean has = a.disabledModifiers != null && a.disabledModifiers.contains(roleId);
+              sendGetFeedback(ctx.getSource(), "disabledModifiers.contains(" + roleId + ")", String.valueOf(has));
               return 1;
             }));
   }
