@@ -986,7 +986,7 @@ public class ModRoles {
     public static SRERole GHOST = TMMRoles
             .registerRole(new NormalRole(GHOST_ID, new Color(200, 200, 200).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), true))
-            .setDefaultMax(1);
+            .setDefaultMax(1).setHiddenForRoleRotation(true);
     public static SRERole DOCTOR = TMMRoles
             .registerRole(new NormalRole(DOCTOR_ID, new Color(30, 144, 255).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
