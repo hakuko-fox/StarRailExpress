@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "trainmurdermystery:block/zipline" },
+    "facing=east":  { "model": "trainmurdermystery:block/zipline", "y": 90 },
+    "facing=south": { "model": "trainmurdermystery:block/zipline", "y": 180 },
+    "facing=west":  { "model": "trainmurdermystery:block/zipline", "y": 270 }
+  }
+}

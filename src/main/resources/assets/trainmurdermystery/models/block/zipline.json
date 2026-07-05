@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "starrailexpress:block/zipline",
+    "down": "starrailexpress:block/zipline",
+    "up": "starrailexpress:block/zipline",
+    "north": "starrailexpress:block/zipline",
+    "south": "starrailexpress:block/zipline",
+    "west": "starrailexpress:block/zipline",
+    "east": "starrailexpress:block/zipline"
+  }
+}

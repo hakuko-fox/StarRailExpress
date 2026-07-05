@@ -923,10 +923,10 @@ public class InstinctRenderer {
                         && targetPlayer != self
                         && SREClient.isPlayerAliveAndInSurvival()) {
                     int san = Math.round(SREPlayerMoodComponent.KEY.get(targetPlayer).getMood() * 100.0f);
-                    if (san < 20) {
+                    if (san < 10) {
                         return 0x2C8DFF;
                     }
-                    if (san < 40) {
+                    if (san < 30) {
                         return 0xFFD84A;
                     }
                 }

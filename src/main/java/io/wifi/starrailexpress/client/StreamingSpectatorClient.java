@@ -31,7 +31,7 @@ public final class StreamingSpectatorClient {
     private static List<ItemStack> targetInventory = List.of();
     private static int selectedHotbarSlot = -1;
     private static final float ROLE_HUD_SCALE = 1.4F;
-    private static final float DESCRIPTION_SCALE = 0.6F;
+    private static final float DESCRIPTION_SCALE = 0.78F;
     private static final int PANEL_FILL = 0x7A3A2408;
     private static final int PANEL_BORDER = 0x99E2B654;
     private static final int PANEL_SHADOW = 0x26000000;
@@ -149,7 +149,7 @@ public final class StreamingSpectatorClient {
 
         int maxPanelHeight = Math.max(58, screenHeight / 3);
         PanelLayout layout = measurePanel(lines, maxPanelHeight, font);
-        int x = 10;
+        int x = Math.max(10, screenWidth - width - 10);
         int y = Math.max(34, screenHeight - layout.height() - 34);
         renderTextPanel(guiGraphics, font, x, y, width, lines, layout);
     }
