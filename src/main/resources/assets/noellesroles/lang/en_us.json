@@ -436,6 +436,8 @@
   "effect.noellesroles.vision_fog": "Vision Fog",
   "mob_effect.noellesroles.two_dimensional_camera": "2D Camera",
   "effect.noellesroles.two_dimensional_camera": "2D Camera",
+  "mob_effect.noellesroles.two_dimensional_camera_distance": "2D Camera Distance",
+  "effect.noellesroles.two_dimensional_camera_distance": "2D Camera Distance",
   "mob_effect.noellesroles.pointer": "Pointer",
   "effect.noellesroles.pointer": "Pointer",
   "mob_effect.noellesroles.skill_baned": "Skill Sealed",
