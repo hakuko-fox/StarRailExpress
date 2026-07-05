@@ -125,6 +125,7 @@
     "client.roles.swapper.SwapperScreenMixin",
     "client.roles.voodoo.VoodooScreenMixin",
     "client.roles.voodoo.LengxiaoScreenMixin",
+    "client.roles.shikieiki.ShikieikiScreenMixin",
     "client.roles.vulture.VultureEatenBodyMixin",
     "client.time_stop.CantControlMixin",
     "client.time_stop.EntityCantUpdatePositionMixin",

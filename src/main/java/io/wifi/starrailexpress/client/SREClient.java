@@ -1357,4 +1357,15 @@ public class SREClient implements ClientModInitializer {
             return true;
         return false;
     }
+
+    public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
+        if (player == null)
+            return null;
+        return SREAbilityPlayerComponent.KEY.get(player);
+    }
+
+    public static SREAbilityPlayerComponent getAbilityComponent() {
+        var player = Minecraft.getInstance().player;
+        return getAbilityComponent(player);
+    }
 }

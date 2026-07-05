@@ -417,6 +417,7 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         }
@@ -428,6 +429,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         if (!AllowPlayerDeathWithKiller.EVENT.invoker().allowDeath(victim, killer, deathReason))
@@ -438,6 +441,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         if (killer != null) {
@@ -462,8 +467,10 @@ public abstract class GameMode {
                             ServerPlayNetworking.send(spkiller,
                                     new BreakArmorPayload(victim.getX(), victim.getY(), victim.getZ()));
                             OnShieldBroken.EVENT.invoker().onShieldBroken(victim, killer);
-                            if (!forceDeath)
+                            if (!forceDeath) {
+                                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                                 return;
+                            }
                         }
                     }
                 }
@@ -492,8 +499,10 @@ public abstract class GameMode {
                 victim.displayClientMessage(Component.translatable("message.bartender.armor_broke_self")
                         .withStyle(ChatFormatting.YELLOW), true);
 
-                if (!forceDeath)
+                if (!forceDeath) {
+                    GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                     return;
+                }
             } else {
                 psychocca.stopPsycho();
                 psychocca.sync();
@@ -507,6 +516,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         }
@@ -518,6 +529,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
         if (!AfterShieldAllowPlayerDeathWithKiller.EVENT.invoker().allowDeath(victim, killer, deathReason))
@@ -528,6 +541,8 @@ public abstract class GameMode {
                             serverVictim,
                             deathReason);
                 }
+
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             } // --- 新增统计数据更新逻辑 (击杀者) ---
         if (killer instanceof ServerPlayer serverKiller) {
@@ -658,6 +673,7 @@ public abstract class GameMode {
                                     .withStyle(ChatFormatting.DARK_RED));
                 }
             } else {
+                GameUtils.recordPlayerKill(killer, victim, deathReason, false);
                 return;
             }
 
@@ -698,6 +714,7 @@ public abstract class GameMode {
             if (!TrainVoicePlugin.isVoiceChatMissing() && victim.isSpectator()) {
                 TrainVoicePlugin.addPlayer(victim.getUUID());
             }
+            GameUtils.recordPlayerKill(killer, victim, deathReason, true);
         }
     }
 

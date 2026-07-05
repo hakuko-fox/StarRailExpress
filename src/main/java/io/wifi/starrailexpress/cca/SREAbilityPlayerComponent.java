@@ -169,7 +169,7 @@ public class SREAbilityPlayerComponent
         return this.cooldown;
     }
 
-    public boolean isInDuration() {
+    public boolean hasDuration() {
         return this.duration > 0;
     }
 

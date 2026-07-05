@@ -872,7 +872,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     }
 
-    public static SREAbilityPlayerComponent getCooldownComponent(Player player) {
+    public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
         return SREAbilityPlayerComponent.KEY.get(player);
     }
 

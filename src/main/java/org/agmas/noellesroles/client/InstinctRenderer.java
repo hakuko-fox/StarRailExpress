@@ -66,7 +66,7 @@ import java.util.HashMap;
 
 public class InstinctRenderer {
     public static void registerInstinctEvents() {
-        
+        TouhouInstincts.registerEvents();
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) {
                 return -1;
@@ -87,28 +87,12 @@ public class InstinctRenderer {
             return -1;
         });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            if (!hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) {
+            if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null
+                    || SREClient.gameComponent == null)
                 return -1;
-            }
-            Player self = Minecraft.getInstance().player;
-            if (!isKillerTeam(SREClient.gameComponent.getRole(self))) {
-                return -1;
-            }
-            if (target instanceof SaltedFishBodyEntity) {
-                return -2;
-            }
-            if (target instanceof Player targetPlayer) {
-                SaltedFishPlayerComponent component = SaltedFishPlayerComponent.KEY.maybeGet(targetPlayer).orElse(null);
-                if (component != null && component.isActive()) {
-                    return -2;
-                }
-            }
-            return -1;
-        });
-        OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
-            if (!(target instanceof Player) || !hasInstinct || Minecraft.getInstance().player == null || SREClient.gameComponent == null) return -1;
             var self = Minecraft.getInstance().player;
-            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN)) return -1;
+            if (!SREClient.gameComponent.isRole(self, ModRoles.RAVEN))
+                return -1;
             var raven = ModComponents.RAVEN.get(self);
             if (raven.isHunting())
                 return Color.WHITE.getRGB();
@@ -119,13 +103,18 @@ public class InstinctRenderer {
         // 鬼眼·杨间 被动：扫描期间，周身范围内的所有玩家显示白色直觉轮廓
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
             if (!(target instanceof Player targetPlayer) || Minecraft.getInstance().player == null
-                    || SREClient.gameComponent == null) return -1;
+                    || SREClient.gameComponent == null)
+                return -1;
             var self = Minecraft.getInstance().player;
-            if (!isGhostEyeRole(self)) return -1;
-            if (!isGhostEyeScanActive(self)) return -1;
-            if (targetPlayer == self || targetPlayer.isSpectator()) return -1;
+            if (!isGhostEyeRole(self))
+                return -1;
+            if (!isGhostEyeScanActive(self))
+                return -1;
+            if (targetPlayer == self || targetPlayer.isSpectator())
+                return -1;
             // 超出扫描范围的玩家不由此处理器控制，透传给后续处理器
-            if (targetPlayer.distanceToSqr(self) > GhostEyePlayerComponent.SCAN_RADIUS * GhostEyePlayerComponent.SCAN_RADIUS)
+            if (targetPlayer.distanceToSqr(self) > GhostEyePlayerComponent.SCAN_RADIUS
+                    * GhostEyePlayerComponent.SCAN_RADIUS)
                 return -1;
             return Color.WHITE.getRGB();
         });
@@ -143,9 +132,9 @@ public class InstinctRenderer {
             if (!SREClient.isPlayerAliveAndInSurvivalIgnoreShitSplit()) {
                 return -1;
             }
-            
+
             Player localPlayer = Minecraft.getInstance().player;
-            
+
             // 检查目标玩家是否有鬼祟修饰符
             try {
                 WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(targetPlayer.level());
@@ -160,7 +149,7 @@ public class InstinctRenderer {
             } catch (Exception e) {
                 // 静默处理错误
             }
-            
+
             return -1;
         });
         OnGetInstinctHighlight.EVENT.register((target, hasInstinct) -> {
@@ -1004,7 +993,7 @@ public class InstinctRenderer {
                     }
                     // 超级亡命徒无法看到隐身的人
                     if (SREClient.gameComponent.isRole(self, SpecialGameModeRoles.SUPER_LOOSE_END) &&
-                        target_player.isInvisible()) {
+                            target_player.isInvisible()) {
                         return -2;
                     }
                     return (Color.PINK.getRGB());
@@ -1124,8 +1113,8 @@ public class InstinctRenderer {
                             return new Color(0, 0, 180).getRGB(); // 深蓝色
                         }
                     }
-                    
-                // 默认fallback
+
+                    // 默认fallback
                     if (target_role == null)
                         return Color.WHITE.getRGB();
                     if (target_role.canUseKiller()) {
@@ -1200,19 +1189,17 @@ public class InstinctRenderer {
     }
 
     private static boolean isGhostEyeRole(Player self) {
-        if (self == null || SREClient.gameComponent == null) return false;
+        if (self == null || SREClient.gameComponent == null)
+            return false;
         SRERole role = SREClient.gameComponent.getRole(self);
         return role != null && role.identifier().equals(ModRoles.GHOST_EYE_ID);
     }
 
     private static boolean isKillerTeam(SRERole role) {
-        if (role == null)
+        if (SREClient.gameComponent == null) {
             return false;
-        if (role.canUseKiller())
-            return true;
-        if (role.canUseInstinct() && role.isNeutralForKiller())
-            return true;
-        return false;
+        }
+        return SREClient.gameComponent.isKillerTeamRole(role);
     }
 
     /**
@@ -1220,12 +1207,13 @@ public class InstinctRenderer {
      * 包含：小透明、秉烛人、雇佣兵、捣蛋鬼、赌徒。
      */
     private static boolean isTargetInvisibleToInstinct(Player target) {
-        if (SREClient.gameComponent == null || target == null) return false;
+        if (SREClient.gameComponent == null || target == null)
+            return false;
         return SREClient.gameComponent.isRole(target, ModRoles.GHOST)
-            || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
-            || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
-            || SREClient.gameComponent.isRole(target, ModRoles.PRANKSTER)
-            || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
+                || SREClient.gameComponent.isRole(target, ModRoles.CANDLE_BEARER)
+                || SREClient.gameComponent.isRole(target, ModRoles.MERCENARY)
+                || SREClient.gameComponent.isRole(target, ModRoles.PRANKSTER)
+                || SREClient.gameComponent.isRole(target, ModRoles.GAMBLER);
     }
 
     private static final int[] GRADIENT_COLORS = {

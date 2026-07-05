@@ -104,9 +104,117 @@ public class GameUtils {
     public static ArrayList<BlockPos> resetPoints = new ArrayList<>();
     public static ArrayList<ServerTaskInfoClasses.ServerTaskInfo> serverTaskQueue = new ArrayList<>();
     public static ArrayList<ServerTaskInfoClasses.ServerTaskInfo> serverAsynTaskLists = new ArrayList<>();
+    // 通用击杀存储。
+    public static HashMap<UUID, PlayerKillInfo> serverCacheKillState = new HashMap<>();
     private static Set<UUID> forcedReadyPlayers;
     public static boolean isStartingGame = false;
     public static boolean isGameStarted = false;
+
+    /**
+     * 服务端侧记录
+     * 
+     * @param killer
+     * @param victim
+     * @param deathReason
+     * @param haveDead
+     */
+    public static void recordPlayerKill(Player killer, Player victim, ResourceLocation deathReason,
+            boolean haveDead) {
+        if (victim instanceof ServerPlayer svictim) {
+            if (killer == null) {
+                GameUtils.recordPlayerKillServer(null, svictim, deathReason, haveDead);
+            } else if (killer instanceof ServerPlayer skiller) {
+                GameUtils.recordPlayerKillServer(skiller, svictim, deathReason, haveDead);
+            }
+        }
+    }
+
+    /**
+     * 服务端侧记录
+     * 
+     * @param killer
+     * @param victim
+     * @param deathReason
+     * @param haveDead
+     */
+    public static void recordPlayerKillServer(ServerPlayer killer, ServerPlayer victim, ResourceLocation deathReason,
+            boolean haveDead) {
+        if (victim == null)
+            return;
+        if (killer != null)
+            serverCacheKillState.putIfAbsent(killer.getUUID(), new PlayerKillInfo());
+        serverCacheKillState.putIfAbsent(victim.getUUID(), new PlayerKillInfo());
+
+        PlayerKillInfo killerInfo = null;
+        if (killer != null)
+            killerInfo = serverCacheKillState.get(killer.getUUID());
+        final PlayerKillInfo victimInfo = serverCacheKillState.get(victim.getUUID());
+        var info = new PlayerKillResultInfo(victim.level().getGameTime(), haveDead,
+                killer == null ? null : killer.getUUID(), victim.getUUID(), deathReason);
+        if (killerInfo != null)
+            killerInfo.recordKill(info);
+        victimInfo.recordDeath(info);
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillInfo getPlayerKillsInfo(UUID player) {
+        if (player == null)
+            return null;
+        return serverCacheKillState.getOrDefault(player, null);
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillInfo getPlayerKillsInfo(Player player) {
+        if (player == null)
+            return null;
+        return serverCacheKillState.getOrDefault(player.getUUID(), null);
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastDeathInfo(UUID player) {
+        if (player == null)
+            return null;
+        var t = serverCacheKillState.getOrDefault(player, null);
+        if (t == null)
+            return null;
+        return t.getLastDeathInfo();
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastDeathInfo(Player player) {
+        if (player == null)
+            return null;
+        return getPlayerLastDeathInfo(player.getUUID());
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastKillInfo(UUID player) {
+        if (player == null)
+            return null;
+        var t = serverCacheKillState.getOrDefault(player, null);
+        if (t == null)
+            return null;
+        return t.getLastKillInfo();
+    }
+
+    /**
+     * 服务端侧记录
+     */
+    public static PlayerKillResultInfo getPlayerLastKillInfo(Player player) {
+        if (player == null)
+            return null;
+        return getPlayerLastKillInfo(player);
+    }
 
     public static void teleportBackToRoom(Player player) {
         if (player == null)
@@ -476,6 +584,7 @@ public class GameUtils {
         for (ServerPlayer player : readyPlayerList) {
             player.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
         }
+        serverCacheKillState.clear();
 
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化房间等
@@ -946,7 +1055,7 @@ public class GameUtils {
         world.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, world.getServer());
         world.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, world.getServer());
         gameComponent.getGameMode().finalizeGame(world, gameComponent);
-
+        serverCacheKillState.clear();
         OnGameEnd.EVENT.invoker().onGameEnd(world, gameComponent);
         SRE.REPLAY_MANAGER.finalizeReplay(roundEnd.getWinStatus(), roundEnd);
         // 对局结束后把完整回放时间线作为全局战绩异步保存到远端数据库（未开启 MySQL 同步时自动跳过）。
@@ -1502,6 +1611,7 @@ public class GameUtils {
         }
         return false;
     }
+
     public static boolean refillDerringer(Player player, boolean haveBullet) {
         for (List<ItemStack> list : player.getInventory().compartments) {
             for (int i = 0; i < list.size(); i++) {
@@ -1513,5 +1623,37 @@ public class GameUtils {
             }
         }
         return false;
+    }
+
+    public static record PlayerKillResultInfo(long time, boolean dead, UUID killer, UUID victim,
+            ResourceLocation deathReason) {
+    }
+
+    public static class PlayerKillInfo {
+        public PlayerKillInfo() {
+        }
+
+        public PlayerKillResultInfo getLastDeathInfo() {
+            if (deaths.isEmpty())
+                return null;
+            return deaths.getLast();
+        }
+
+        public ArrayList<PlayerKillResultInfo> deaths = new ArrayList<>();
+        public ArrayList<PlayerKillResultInfo> kills = new ArrayList<>();
+
+        public void recordDeath(PlayerKillResultInfo info) {
+            this.deaths.addLast(info);
+        }
+
+        public void recordKill(PlayerKillResultInfo info) {
+            this.kills.addLast(info);
+        }
+
+        public PlayerKillResultInfo getLastKillInfo() {
+            if (kills.isEmpty())
+                return null;
+            return kills.getLast();
+        }
     }
 }

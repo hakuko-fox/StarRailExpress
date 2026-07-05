@@ -217,6 +217,7 @@ public class ModRolesInitialEventRegister {
             }
             SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                     .get(player);
+            abilityPlayerComponent.init(false);
             abilityPlayerComponent.cooldown = NoellesRolesConfig.HANDLER.instance().generalCooldownTicks;
 
             if (role.equals(ModRoles.BROADCASTER)) {
@@ -224,8 +225,6 @@ public class ModRolesInitialEventRegister {
                 SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
                 playerShopComponent.setBalance(200);
                 playerShopComponent.sync();
-            } else {
-                abilityPlayerComponent.cooldown = NoellesRolesConfig.HANDLER.instance().generalCooldownTicks;
             }
             if (role.equals(ModRoles.EXECUTIONER)) {
                 ExecutionerPlayerComponent executionerPlayerComponent = (ExecutionerPlayerComponent) ExecutionerPlayerComponent.KEY
@@ -413,6 +412,8 @@ public class ModRolesInitialEventRegister {
                     }
                 }
             }
+            // 如果不拦截就同步
+            abilityPlayerComponent.sync();
         });
     }
 
@@ -992,7 +993,8 @@ public class ModRolesInitialEventRegister {
                         context -> WraithAssassinPlayerComponent.KEY.get(context.player()).useWail(context.player()))
                         .cooldownSeconds(50).showOnHud(true).announceToSelf(false).build(),
                 RoleSkill.skill(SRE.id("wraith_manifest"), "skill.noellesroles.wraith_assassin.manifest",
-                        context -> WraithAssassinPlayerComponent.KEY.get(context.player()).useManifest(context.player()))
+                        context -> WraithAssassinPlayerComponent.KEY.get(context.player())
+                                .useManifest(context.player()))
                         .cooldownSeconds(110).showOnHud(true).announceToSelf(false).build());
 
         RoleSkill.register(ModRoles.SALTED_FISH,

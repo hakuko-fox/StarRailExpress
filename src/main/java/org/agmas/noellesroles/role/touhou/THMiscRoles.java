@@ -22,8 +22,9 @@ public class THMiscRoles {
   public static SRERole SHIKIEIKI = TMMRoles
       .registerRole(new THShikieikiRole(SHIKIEIKI_ID, new java.awt.Color(87, 79, 117).getRGB(),
           true, false, SRERole.MoodType.FAKE,
-          TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false), "th_hell")
-      .setCanPickUpRevolver(false).setVigilanteTeam(true).setSpecialVigilante(true).setDefaultEnableNeededPlayerCount(24).setDefaultEnableChance(30);
+          TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true), "th_hell")
+      .setCanPickUpRevolver(false).setVigilanteTeam(true).setSpecialVigilante(true)
+      .setDefaultEnableNeededPlayerCount(24).setDefaultEnableChance(30);
   // 小野塚小町 Onozuka Komachi
   public static final ResourceLocation KOMACHI_ID = id("onozuka_komachi");
   public static SRERole KOMACHI = TMMRoles

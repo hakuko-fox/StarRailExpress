@@ -1,7 +1,6 @@
 package org.agmas.noellesroles.role.touhou.roles;
 
 import java.util.ArrayList;
-
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -10,7 +9,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-
 import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import net.minecraft.world.entity.player.Player;
