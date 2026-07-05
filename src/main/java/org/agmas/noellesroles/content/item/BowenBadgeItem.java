@@ -86,7 +86,7 @@ public class BowenBadgeItem extends Item implements AdventureUsable {
                     .normalize()
                     .scale(0.5);
             target.push(knockback.x, 0, knockback.z);
-
+            target.hurtMarked = true;
             // 被击退实体产生冲击波粒子
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
