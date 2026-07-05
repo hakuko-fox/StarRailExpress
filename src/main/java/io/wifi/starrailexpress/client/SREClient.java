@@ -453,6 +453,7 @@ public class SREClient implements ClientModInitializer {
 
         // 客户端接收器 (在客户端初始化中调用)
         VoteClientReceiver.register();
+        StreamingSpectatorClient.register();
         ClientPlayNetworking.registerGlobalReceiver(SecurityCameraModePayload.ID,
                 new SecurityCameraModePayload.ClientReceiver());
 
@@ -962,6 +963,7 @@ public class SREClient implements ClientModInitializer {
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
             net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
             FourthRoomTableHud.render(guiGraphics);
+            StreamingSpectatorClient.renderHud(guiGraphics);
 
             // Subtitle 字幕报幕
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.render(guiGraphics, deltaTick.getRealtimeDeltaTicks());
