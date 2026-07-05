@@ -45,8 +45,9 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     public static final ComponentKey<WraithAssassinPlayerComponent> KEY = ModComponents.WRAITH_ASSASSIN;
 
     public static final int MAX_ENERGY = 1000;
-    public static final int LOW_SAN_BLUE = 40;
-    public static final int LOW_SAN_YELLOW = 50;
+    public static final int LOW_SAN_BLUE = 20;
+    public static final int LOW_SAN_YELLOW = 30;
+    public static final int LOW_SAN_VISIBLE = 40;
     public static final int ASSAULT_COST = 40;
     public static final int WAIL_COST = 110;
     public static final int MANIFEST_COST = 320;
@@ -55,13 +56,13 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
     public static final int WAIL_RADIUS = 12;
     public static final int WAIL_SAN_DAMAGE = 25;
     public static final int WAIL_SELF_STUN_TICKS = 10; // 0.5秒
-    public static final int DRAIN_RADIUS = 8;
+    public static final int DRAIN_RADIUS = 7;
     public static final int DRAIN_SAN_AMOUNT = 20;
     /** 单次吸收（被动或主动）最多获得的能量上限。 */
     public static final int MAX_DRAIN_ENERGY_PER_EVENT = 25;
     public static final int DRAIN_COOLDOWN_TICKS = 30 * 20;
-    public static final int PASSIVE_DRAIN_INTERVAL = 5 * 20;
-    public static final int PASSIVE_DRAIN_AMOUNT = 5;
+    public static final int PASSIVE_DRAIN_INTERVAL = 10 * 20;
+    public static final int PASSIVE_DRAIN_AMOUNT = 6;
     public static final int FLOAT_DURATION = 40; // 2 seconds
     public static final double DASH_SPEED_NORMAL = 2.0;
     public static final double DASH_SPEED_MANIFEST = 3.5;
@@ -154,6 +155,7 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
             applyDimensionEffects();
         }
         applyLowSanNearbyPressure(sp);
+        applyVisibleParticles(sp);
         tickPassiveDrain(sp);
         heartbeatTimer++;
 
@@ -253,6 +255,34 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
             if (heartbeatTimer % 20 == 0) {
                 target.playNotifySound(SoundEvents.WARDEN_HEARTBEAT, SoundSource.HOSTILE, 0.8f, 0.8f);
             }
+        }
+    }
+
+    /** 当附近有 SAN < 40 的非杀手玩家时，在冤魂周围生成红色粒子，提示其可见。 */
+    private void applyVisibleParticles(ServerPlayer self) {
+        ServerLevel level = self.serverLevel();
+        boolean nearLowSan = false;
+        SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(level);
+        for (ServerPlayer p : level.players()) {
+            if (p == self || !GameUtils.isPlayerAliveAndSurvival(p) || gw.isKillerTeam(p)) {
+                continue;
+            }
+            if (p.distanceToSqr(self) > 12 * 12) {
+                continue;
+            }
+            if (getSan(p) < LOW_SAN_VISIBLE) {
+                nearLowSan = true;
+                break;
+            }
+        }
+        if (nearLowSan && level.getGameTime() % 4 == 0) {
+            double a = Math.random() * Math.PI * 2;
+            double r = 0.6 + Math.random() * 0.4;
+            level.sendParticles(DustParticleOptions.REDSTONE,
+                    self.getX() + Math.cos(a) * r,
+                    self.getY() + 0.1 + Math.random() * self.getBbHeight(),
+                    self.getZ() + Math.sin(a) * r,
+                    1, 0, 0, 0, 0.5d);
         }
     }
 
@@ -516,7 +546,7 @@ public class WraithAssassinPlayerComponent implements RoleComponent, ServerTicki
 
     public static boolean canPerceiveWraith(Player viewer) {
         SREGameWorldComponent gw = SREGameWorldComponent.KEY.get(viewer.level());
-        return gw.isKillerTeam(viewer) || getSan(viewer) < LOW_SAN_YELLOW;
+        return gw.isKillerTeam(viewer) || getSan(viewer) < LOW_SAN_VISIBLE;
     }
 
     /**

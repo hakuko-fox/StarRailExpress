@@ -237,6 +237,7 @@ public class SREClient implements ClientModInitializer {
         EntityRendererRegistry.register(TMMEntities.STICKY_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.TIMED_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.ZIPLINE_RIDER, NoopRenderer::new);
 
         // Register entity model layers
         TMMModelLayers.initialize();
@@ -347,6 +348,7 @@ public class SREClient implements ClientModInitializer {
                 ctx -> new UpSmallDoorBlockEntityRenderer(SRE.id("textures/item/doors/up_steel_door.png"), ctx));
         // OTHERS
         BlockEntityRenderers.register(TMMBlockEntities.HORN, HornBlockEntityRenderer::new);
+        BlockEntityRenderers.register(TMMBlockEntities.ZIPLINE, ZiplineBlockEntityRenderer::new);
         BlockEntityRenderers.register(TMMBlockEntities.FOURTH_ROOM_TABLE, FourthRoomTableBlockEntityRenderer::new);
 
         AmbienceUtil.registerBackgroundAmbience(
