@@ -1967,8 +1967,7 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             true // 隐藏计分板
     )).setComponentKey(RecorderPlayerComponent.KEY).setCanUseInstinct(true).setNeutrals(true)
-            .setDefaultEnableNeededPlayerCount(10)
-            .setHiddenForRoleRotation(true);
+            .setDefaultEnableNeededPlayerCount(10);
 
     /**
      * 故障机器人角色
