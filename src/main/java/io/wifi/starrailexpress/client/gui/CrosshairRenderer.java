@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
 import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wifi.starrailexpress.SRE;
+import net.minecraft.client.AttackIndicatorStatus;
 // import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -45,10 +46,12 @@ public class CrosshairRenderer {
             context.pose().translate(context.guiWidth() / 2f - 1.5f, context.guiHeight() / 2f - 1.5f, 0);
             context.blitSprite(CROSSHAIR, 0, 0, 3, 3);
             context.pose().popPose();
-            {
+
+            // 仅攻击指示器为crosshair下渲染蓄力条
+            if (client.options.attackIndicator().get() == AttackIndicatorStatus.CROSSHAIR) {
                 // 2. 攻击指示器（仅当蓄力中时显示）
                 float f = player.getAttackStrengthScale(0.0F); // 0~1
-                if (f < 1.0F) {
+                if (f < 1.0f) {
                     // 指示器位置（与原版一致）
                     int barX = context.guiWidth() / 2 - 8;
                     int barY = context.guiHeight() / 2 - 7 + 16;
@@ -56,13 +59,16 @@ public class CrosshairRenderer {
                     int barHeight = 2;
 
                     // 2.1 黑色半透明背景（50% 透明度）
-                    int bgColor = 0x80000000; // ARGB: 0x80 = 128/255 ≈ 50%
-                    context.fill(barX, barY, barX + barWidth, barY + barHeight, bgColor);
+                    // int bgColor = 0x40000000; // ARGB: 0x80 = 128/255 ≈ 50%
+                    // context.fill(barX, barY, barX + barWidth, barY + barHeight, bgColor);
 
                     // 2.2 白色半透明进度条（80% 不透明度）
-                    int progressWidth = (int) (f * barWidth);
+                    int progressWidth = (int) (f * (float) barWidth);
                     progressWidth = Math.max(progressWidth, 1); // 至少 1 像素，确保可见
-                    int progressColor = 0x80FFFFFF; // 0xCC ≈ 80% 不透明
+
+                    int bgColor = 0x80000000; // ARGB: 0x80 = 128/255 ≈ 50%
+                    context.fill(barX, barY, barX + progressWidth, barY + barHeight, bgColor);
+                    int progressColor = 0x80DDDDDD; // 0xCC ≈ 80% 不透明
                     context.fill(barX, barY, barX + progressWidth, barY + barHeight, progressColor);
                 }
                 // 当 f >= 1.0 时，不绘制任何指示器，符合“满蓄力不显示条”的要求

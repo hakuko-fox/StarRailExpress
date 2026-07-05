@@ -84,12 +84,11 @@ public class InGameHudMixin {
             original.call(context, tickCounter);
             return;
         }
+        // 因为wathe资源包的缘故，原版的攻击指示器基本上坏的
         LocalPlayer player = this.minecraft.player;
         if (player == null)
             return;
-        if (this.minecraft.options.getCameraType().isFirstPerson()) {
-            CrosshairRenderer.renderCrosshair(this.minecraft, player, context, tickCounter);
-        }
+        CrosshairRenderer.renderCrosshair(this.minecraft, player, context, tickCounter);
     }
 
     @WrapMethod(method = "renderPlayerHealth")
