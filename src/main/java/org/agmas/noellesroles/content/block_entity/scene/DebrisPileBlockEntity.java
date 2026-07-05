@@ -85,6 +85,7 @@ public class DebrisPileBlockEntity extends BlockEntity {
         boolean sabotage = SceneEventManager.isSabotageActive(serverLevel);
         SceneEventManager.checkAndHandleSabotageTimeout(serverLevel);
         if (sabotage) {
+            if (!state.getValue(DebrisPileBlock.CLOSED) && !state.getValue(DebrisPileBlock.ACTIVE)) {
                 serverLevel.setBlock(pos, state.setValue(DebrisPileBlock.ACTIVE, true), Block.UPDATE_ALL);
             }
             if (serverLevel.getGameTime() % 5 == 0 && state.getValue(DebrisPileBlock.ACTIVE)) {
