@@ -30,7 +30,7 @@ public class TouhouInstincts {
                 if (targetPlayer.distanceToSqr(self) <= 5 * 5) {
                     if (mainhandItem.getItem() instanceof BatItem || mainhandItem.getItem() instanceof KnifeItem
                             || mainhandItem.is(TMMItemTags.GUNS)) {
-                        return java.awt.Color.RED.getRGB();
+                        return java.awt.Color.ORANGE.getRGB();
                     }
                 }
                 var cca = SREAbilityPlayerComponent.KEY.get(self);

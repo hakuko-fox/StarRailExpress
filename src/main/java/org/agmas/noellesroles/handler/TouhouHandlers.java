@@ -118,6 +118,9 @@ public class TouhouHandlers {
   public static void registerSkills() {
     RoleSkill.register(THMiscRoles.SHIKIEIKI,
         RoleSkill.skill(SRE.id("shikieiki"), "skill.noellesroles.shikieiki.instinct", context -> {
+          final int GAP = 15 * 20;
+          final int TIME = 30 * 20;
+          final int COOLDOWN_TIME = 45 * 20;
           final var player = context.player();
           final var cca = SREAbilityPlayerComponent.KEY.get(player);
           if (cca.hasCooldown()) {
@@ -128,7 +131,19 @@ public class TouhouHandlers {
           final var target = player.level().getPlayerByUUID(context.target());
           if (target == null)
             return false;
-          GameUtils.getPlayerLastKillInfo(player);
+          cca.cooldown = COOLDOWN_TIME;
+          var killInfo = GameUtils.getPlayerLastKillInfo(target);
+          if (killInfo != null && player.level().getGameTime() - killInfo.time() <= GAP) {
+            player.displayClientMessage(
+                Component.translatable("message.shikieiki.skill.success").withStyle(ChatFormatting.GREEN), true);
+            cca.targetUUID = target.getUUID();
+            cca.duration = TIME;
+            cca.sync();
+            return true;
+          }
+          player.displayClientMessage(
+              Component.translatable("message.shikieiki.skill.failed").withStyle(ChatFormatting.RED), true);
+          cca.sync();
           return true;
         }).build());
     RoleSkill.register(THMiscRoles.KOMACHI_ID,
