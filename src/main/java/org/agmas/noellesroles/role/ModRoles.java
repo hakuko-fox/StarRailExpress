@@ -2177,7 +2177,9 @@ public class ModRoles {
     )).setCanPickUpRevolver(true).setCanSeeCoin(true)
             .setNeutralForKiller(true).setCanSeeTeammateKiller(false).setNeutrals(false)
             .setCanBeRandomedByOtherRoles(false)
-            .setDefaultEnableChance(2500).setDefaultEnableNeededPlayerCount(16);
+            .setDefaultEnableChance(2500)
+            .setDefaultEnableNeededPlayerCount(16)
+            .setHiddenForRoleRotation(true);
 
     /**
      * 钟表匠角色 - 好人阵营

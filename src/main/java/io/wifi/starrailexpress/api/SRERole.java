@@ -38,7 +38,6 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 //只要Color别的都不要
 import java.awt.Color;
 import java.util.*;
-import java.util.List;
 import java.util.function.*;
 
 public abstract class SRERole extends SREAbstractInfoClass {
@@ -1132,6 +1131,20 @@ public abstract class SRERole extends SREAbstractInfoClass {
         this.spawnInfo.minEnabledPlayer = count;
         return this;
     };
+
+    /**
+     * 修饰符普通玩家不可视
+     * 隐藏修饰符
+     * 
+     * @return
+     */
+    public SRERole setHiddenForRoleRotation(boolean flag) {
+        if (flag)
+            this.addFlag("inner.role_rotation.hidden");
+        else
+            this.removeFlag("inner.role_rotation.hidden");
+        return this;
+    }
 
     public SRERole setSpawnInfo(Function<SpawnInfo, SpawnInfo> func) {
         this.spawnInfo = func.apply(this.spawnInfo);
