@@ -170,6 +170,11 @@ public final class AdvancedCameraDirector {
         return (active != null || fixedOverride != null) && !SecurityMonitorBlock.isInSecurityMode();
     }
 
+    /** 只有高级运镜轨道播放时隐藏 HUD；固定镜头效果（如 2D 视角）保留玩家界面。 */
+    public static boolean shouldHideHudForCamera() {
+        return active != null && !SecurityMonitorBlock.isInSecurityMode();
+    }
+
     public static Vec3 getCameraPos(float partialTick) {
         Pose pose = currentPose(partialTick);
         return pose == null ? Vec3.ZERO : pose.pos;

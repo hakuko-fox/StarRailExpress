@@ -341,6 +341,14 @@ public class ModEffects {
     public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA = register("two_dimensional_camera",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
 
+    /**
+     * 指针视角
+     * - 中性效果
+     * - 客户端显示鼠标指针，并让玩家朝向指针射线命中的方块/实体。
+     */
+    public static final Holder<MobEffect> POINTER = register("pointer",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFE082));
+
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {
         return 2.0f + Math.max(0, amplifier) * 3.0f;

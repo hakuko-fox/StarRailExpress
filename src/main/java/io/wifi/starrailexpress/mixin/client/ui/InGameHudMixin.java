@@ -68,7 +68,7 @@ public class InGameHudMixin {
             Operation<Void> original) {
         // 高级运镜动画期间整体跳过物品栏与装饰（含血量 / 经验 / 选中物品名 / 自定义火车 HUD），
         // 呈现与原版 F1 一致的纯净运镜画面。
-        if (AdvancedCameraDirector.shouldOverride()) {
+        if (AdvancedCameraDirector.shouldHideHudForCamera()) {
             return;
         }
         original.call(context, tickCounter);
@@ -77,7 +77,7 @@ public class InGameHudMixin {
     @WrapMethod(method = "renderCrosshair")
     private void tmm$renderHud(GuiGraphics context, DeltaTracker tickCounter, Operation<Void> original) {
         // 运镜动画期间不绘制任何准星。
-        if (AdvancedCameraDirector.shouldOverride()) {
+        if (AdvancedCameraDirector.shouldHideHudForCamera()) {
             return;
         }
         if (SREClient.shouldRenderVanillaHud()) {
