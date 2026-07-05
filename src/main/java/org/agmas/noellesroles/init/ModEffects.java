@@ -342,6 +342,12 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
 
     /**
+     * 2D camera distance. Amplifier 0 keeps the legacy distance, each extra level moves farther away.
+     */
+    public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA_DISTANCE = register("two_dimensional_camera_distance",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xB3E5FC));
+
+    /**
      * 指针视角
      * - 中性效果
      * - 客户端显示鼠标指针，并让玩家朝向指针射线命中的方块/实体。
@@ -352,6 +358,11 @@ public class ModEffects {
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {
         return 2.0f + Math.max(0, amplifier) * 3.0f;
+    }
+
+    /** 2D camera distance by potion amplifier. Level I = 28 blocks, +6 blocks per level. */
+    public static float getTwoDimensionalCameraDistance(int amplifier) {
+        return Mth.clamp(28.0f + Math.max(0, amplifier) * 6.0f, 8.0f, 64.0f);
     }
 
     /**
