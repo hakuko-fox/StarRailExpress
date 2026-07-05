@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.util.PlayerStaminaGetter;
@@ -428,7 +429,7 @@ public class MorticianBodyMakerPlayerComponent extends SREAbilityPlayerComponent
                 bodyComponent.setOwnerName(target.getScoreboardName(), false);
                 ResourceLocation deathReasonLoc = deathReason != null && !deathReason.isEmpty()
                         ? ResourceLocation.parse(deathReason)
-                        : ResourceLocation.fromNamespaceAndPath("noellesroles", "mortician_bodymaker");
+                        : GameConstants.DeathReasons.MORTICIAN_BODYMAKER;
                 bodyComponent.setDeathReason(deathReasonLoc.toString(), true);
 
                 bodyComponent.playerRole = ModRoles.MORTICIAN_BODYMAKER.identifier();

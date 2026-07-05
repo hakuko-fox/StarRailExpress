@@ -233,6 +233,8 @@ public class GameConstants {
         public static ResourceLocation STALKER_EXECUTION = Noellesroles.id("stalker_execution");
         public static ResourceLocation BOMB_DEATH = Noellesroles.id("bomb_death");
         public static ResourceLocation PUPPETEER_PUPPET = Noellesroles.id("puppeteer_puppet");
+        public static ResourceLocation PUPPETEER_KNIFE = Noellesroles.id("knife_puppeteer");
+        public static ResourceLocation PUPPETEER_GUN = Noellesroles.id("gun_puppeteer");
         public static ResourceLocation RAVEN_BODY_DEATH = Noellesroles.id("raven_body_death");
         public static ResourceLocation RECORDER_MISTAKE = Noellesroles.id("recorder_mistake");
         public static ResourceLocation GAMBLE_SELF_KILL = Noellesroles.id("gamble_self_kill");
@@ -262,6 +264,7 @@ public class GameConstants {
         public static ResourceLocation HOAN_MEIRIN_ATTACK = Noellesroles.id("hoan_meirin_attack");
         public static ResourceLocation DIO_FINAL_CARNIVAL_CANCEL = Noellesroles.id("dio_final_carnival_cancel");
         public static ResourceLocation WRAITH_ASSAULT = Noellesroles.id("wraith_assault");
+        public static ResourceLocation MORTICIAN_BODYMAKER = Noellesroles.id("mortician_bodymaker");
 
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");
         public static ResourceLocation FAILED_INITIATION = StupidExpress.id("failed_initiation");
