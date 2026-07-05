@@ -17,6 +17,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.UUID;
 public final class StreamingSpectatorCommand {
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
     private static final Random RANDOM = new Random();
+    private static final int INVENTORY_SYNC_INTERVAL_TICKS = 20;
     private static boolean eventsRegistered;
 
     private StreamingSpectatorCommand() {
@@ -65,7 +67,7 @@ public final class StreamingSpectatorCommand {
         try {
             player = context.getSource().getPlayerOrException();
         } catch (Exception e) {
-            context.getSource().sendFailure(Component.literal("此命令只能由玩家执行"));
+            context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.player_only"));
             return 0;
         }
         if (SESSIONS.containsKey(player.getUUID())) {
@@ -79,18 +81,19 @@ public final class StreamingSpectatorCommand {
         try {
             player = context.getSource().getPlayerOrException();
         } catch (Exception e) {
-            context.getSource().sendFailure(Component.literal("此命令只能由玩家执行"));
+            context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.player_only"));
             return 0;
         }
 
         if (SESSIONS.containsKey(player.getUUID())) {
-            context.getSource().sendSuccess(() -> Component.literal("你已经在挂播模式中"), false);
+            context.getSource().sendSuccess(() ->
+                    Component.translatable("commands.sre.streaming_spectator.already_active"), false);
             return 1;
         }
 
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(player.level());
         if (!gameComponent.isRunning()) {
-            context.getSource().sendFailure(Component.literal("游戏运行中才能进入挂播模式"));
+            context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.game_not_running"));
             return 0;
         }
 
@@ -105,11 +108,12 @@ public final class StreamingSpectatorCommand {
             restoreOriginalRole(player, session);
             restoreOriginalGameMode(player, session);
             PacketTracker.sendToClient(player, StreamingSpectatorPayload.stop());
-            context.getSource().sendFailure(Component.literal("没有可挂播的存活目标"));
+            context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.no_target"));
             return 0;
         }
 
-        context.getSource().sendSuccess(() -> Component.literal("已进入挂播模式"), false);
+        context.getSource().sendSuccess(() ->
+                Component.translatable("commands.sre.streaming_spectator.started"), false);
         return 1;
     }
 
@@ -118,19 +122,20 @@ public final class StreamingSpectatorCommand {
         try {
             player = context.getSource().getPlayerOrException();
         } catch (Exception e) {
-            context.getSource().sendFailure(Component.literal("此命令只能由玩家执行"));
+            context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.player_only"));
             return 0;
         }
 
         Session session = SESSIONS.remove(player.getUUID());
         if (session == null) {
-            context.getSource().sendFailure(Component.literal("你当前不在挂播模式中"));
+            context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.not_active"));
             return 0;
         }
 
         restoreOriginalRole(player, session);
         PacketTracker.sendToClient(player, StreamingSpectatorPayload.stop());
-        context.getSource().sendSuccess(() -> Component.literal("已退出挂播模式"), false);
+        context.getSource().sendSuccess(() ->
+                Component.translatable("commands.sre.streaming_spectator.stopped"), false);
         return 1;
     }
 
@@ -169,9 +174,16 @@ public final class StreamingSpectatorCommand {
             }
 
             SRERole targetRole = gameComponent.getRole(target);
+            if (targetRole == null) {
+                attachToRandomTarget(player, session, session.targetUuid);
+                continue;
+            }
             SRERole currentRole = gameComponent.getRole(player);
             if (!sameRole(currentRole, targetRole)) {
                 changeRoleQuietly(player, targetRole);
+            }
+            if (--session.inventorySyncCooldown <= 0) {
+                sendWatchPayload(player, session, target);
             }
         }
 
@@ -188,10 +200,11 @@ public final class StreamingSpectatorCommand {
 
         if (candidates.isEmpty()) {
             session.targetUuid = null;
+            session.inventorySyncCooldown = 0;
             if (!session.waitingForTarget) {
                 restoreOriginalRole(player, session);
                 PacketTracker.sendToClient(player, StreamingSpectatorPayload.waiting());
-                player.displayClientMessage(Component.literal("挂播暂无可用目标，正在等待新的存活玩家"), true);
+                player.displayClientMessage(Component.translatable("commands.sre.streaming_spectator.waiting"), true);
                 session.waitingForTarget = true;
             }
             return false;
@@ -209,9 +222,25 @@ public final class StreamingSpectatorCommand {
                 : StreamingSpectatorPayload.CAMERA_THIRD_PERSON_BACK;
         session.waitingForTarget = false;
         changeRoleQuietly(player, targetRole);
-        PacketTracker.sendToClient(player, StreamingSpectatorPayload.watch(session.targetUuid, session.cameraMode));
-        player.displayClientMessage(Component.literal("挂播目标: " + target.getGameProfile().getName()), true);
+        sendWatchPayload(player, session, target);
+        player.displayClientMessage(Component.translatable(
+                "commands.sre.streaming_spectator.target", target.getGameProfile().getName()), true);
         return true;
+    }
+
+    private static void sendWatchPayload(ServerPlayer player, Session session, ServerPlayer target) {
+        PacketTracker.sendToClient(player,
+                StreamingSpectatorPayload.watch(session.targetUuid, session.cameraMode, hotbarSnapshot(target),
+                        target.getInventory().selected));
+        session.inventorySyncCooldown = INVENTORY_SYNC_INTERVAL_TICKS;
+    }
+
+    private static List<ItemStack> hotbarSnapshot(ServerPlayer target) {
+        List<ItemStack> stacks = new ArrayList<>(StreamingSpectatorPayload.HOTBAR_SLOTS);
+        for (int i = 0; i < StreamingSpectatorPayload.HOTBAR_SLOTS; i++) {
+            stacks.add(target.getInventory().items.get(i).copy());
+        }
+        return stacks;
     }
 
     private static List<ServerPlayer> findCandidates(ServerPlayer player, UUID excludedTarget) {
@@ -287,6 +316,7 @@ public final class StreamingSpectatorCommand {
         private UUID targetUuid;
         private int cameraMode = StreamingSpectatorPayload.CAMERA_FIRST_PERSON;
         private boolean waitingForTarget;
+        private int inventorySyncCooldown;
 
         private Session(SRERole originalRole, GameType originalGameType) {
             this.originalRole = originalRole;
