@@ -445,7 +445,7 @@ public class MapManager {
                 SRE.LOGGER.info("Loaded gravity modifier: " + areas.gravity);
             } else {
                 if (jsonObject.has("gravity")) {
-                    areas.gravity = jsonObject.get("gravityModifier").getAsDouble() - 0.08;
+                    areas.gravity = jsonObject.get("gravity").getAsDouble() - 0.08;
                     SRE.LOGGER.info("Loaded gravity modifier: " + areas.gravity);
                 } else {
                     areas.gravity = 0;
