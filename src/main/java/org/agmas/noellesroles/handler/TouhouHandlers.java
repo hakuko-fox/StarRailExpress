@@ -5,7 +5,9 @@ import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
+import io.wifi.starrailexpress.event.ShouldGiveKillerBalance;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +29,11 @@ public class TouhouHandlers {
     }
 
     public static void registerEvents() {
+        ShouldGiveKillerBalance.EVENT.register((victim, killer, deathReason) -> {
+            if (RoleUtils.isPlayerTheJob(killer, THMiscRoles.KOMACHI))
+                return TrueFalseResult.FALSE;
+            return TrueFalseResult.PASS;
+        });
         // 天子&小町
         OnPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
