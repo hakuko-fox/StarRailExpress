@@ -118,6 +118,9 @@ public class TouhouHandlers {
   public static void registerSkills() {
     RoleSkill.register(THMiscRoles.SHIKIEIKI,
         RoleSkill.skill(SRE.id("shikieiki"), "skill.noellesroles.shikieiki.instinct", context -> {
+          final int GAP = 15 * 20;
+          final int TIME = 30 * 20;
+          final int COOLDOWN_TIME = 45 * 20;
           final var player = context.player();
           final var cca = SREAbilityPlayerComponent.KEY.get(player);
           if (cca.hasCooldown()) {
@@ -128,10 +131,27 @@ public class TouhouHandlers {
           final var target = player.level().getPlayerByUUID(context.target());
           if (target == null)
             return false;
-          GameUtils.getPlayerLastKillInfo(player);
+          cca.cooldown = COOLDOWN_TIME;
+          var killInfo = GameUtils.getPlayerLastKillInfo(target);
+          if (killInfo != null && player.level().getGameTime() - killInfo.time() <= GAP) {
+            player.displayClientMessage(
+                Component.translatable("message.shikieiki.skill.success").withStyle(ChatFormatting.GREEN), true);
+            cca.targetUUID = target.getUUID();
+            cca.duration = TIME;
+            cca.sync();
+            return true;
+          }
+          player.displayClientMessage(
+              Component.translatable("message.shikieiki.skill.failed").withStyle(ChatFormatting.RED), true);
+          cca.sync();
           return true;
-        }).build());
+        }).announceToSelf(false).build());
     RoleSkill.register(THMiscRoles.KOMACHI_ID,
+        RoleSkill.skill(SRE.id("komachi_rush"), "skill.noellesroles.komachi_rush", context -> {
+          Player player = context.player();
+          BowenBadgeItem.fowardAndKnockbackPlayerNearby(player.level(), player, 2.5f);
+          return true;
+        }).announceToSelf(true).cooldownSeconds(60).showOnHud(true).shifted(false).build(),
         RoleSkill.skill(SRE.id("komachi_pull"), "skill.noellesroles.komachi_pull", context -> {
           Player player = context.player();
           var target = RopeItem.findTargetedPlayerInView(player.level(), player, 20);
@@ -141,12 +161,7 @@ public class TouhouHandlers {
           // 身前2格
           RopeItem.pullPlayer(player, target, 2);
           return true;
-        }).cooldownSeconds(90).showOnHud(true).shifted(true).build(),
-        RoleSkill.skill(SRE.id("komachi_rush"), "skill.noellesroles.komachi_rush", context -> {
-          Player player = context.player();
-          BowenBadgeItem.fowardAndKnockbackPlayerNearby(player.level(), player, 2.5f);
-          return true;
-        }).cooldownSeconds(60).showOnHud(true).shifted(false).build());
+        }).cooldownSeconds(90).announceToSelf(true).showOnHud(true).shifted(true).build());
     RoleSkill.register(MountainRoles.NITORI, RoleSkill.skill(SRE.id("nitori_exchange"),
         "skill.noellesroles.nitori_exchange",
         context -> {
@@ -184,6 +199,6 @@ public class TouhouHandlers {
             return true;
           }
           return false;
-        }).cooldownSeconds(30).build());
+        }).announceToSelf(false).cooldownSeconds(30).build());
   }
 }

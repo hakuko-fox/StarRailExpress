@@ -465,4 +465,22 @@ public class SREAbilityPlayerComponent
     public String getCooldownStr() {
         return String.format("%.1f", getCooldownSeconds());
     }
+
+    public void clearTarget() {
+        this.targetUUID = null;
+        sync();
+    }
+
+    public void setTarget(Player target) {
+        if (target != null)
+            this.targetUUID = target.getUUID();
+        else
+            this.targetUUID = null;
+        sync();
+    }
+
+    public void setTarget(UUID target) {
+        this.targetUUID = target;
+        sync();
+    }
 }

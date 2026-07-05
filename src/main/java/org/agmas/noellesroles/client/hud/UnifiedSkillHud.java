@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
@@ -134,7 +135,8 @@ public final class UnifiedSkillHud {
                     line = line.copy()
                             .append(Component.translatable("hud.sre.skill.shift_to_use",
                                     client.options.keyShift.getTranslatedKeyMessage(),
-                                    NoellesrolesClient.abilityBind.getTranslatedKeyMessage()));
+                                    NoellesrolesClient.abilityBind.getTranslatedKeyMessage()))
+                            .withStyle(ChatFormatting.GRAY);
                 }
 
                 lines[idx] = line;
