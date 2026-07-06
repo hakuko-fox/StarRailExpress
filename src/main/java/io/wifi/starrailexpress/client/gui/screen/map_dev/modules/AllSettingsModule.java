@@ -249,7 +249,7 @@ public class AllSettingsModule implements TabModule {
                 placements.add(new WidgetPlacement(disableBtn, y));
                 placements.add(new WidgetPlacement(viewBtn, y));
             } else if (type == String.class || isNumberType(type)) {
-                int inputWidth = Math.max(70, remainingWidth - 140);
+                int inputWidth = Math.max(70, remainingWidth - 120);
                 EditBox input = new EditBox(layout.font, rightEdge - inputWidth - 40 - 30 - gap * 2, y, inputWidth, 20,
                         Component.empty());
                 input.setValue(value != null ? value.toString() : "");
