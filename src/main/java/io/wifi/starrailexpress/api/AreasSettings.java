@@ -1,5 +1,9 @@
 package io.wifi.starrailexpress.api;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import com.google.gson.annotations.Expose;
 
 import io.wifi.ConfigCompact.annotation.Category;
@@ -53,6 +57,13 @@ public class AreasSettings {
         }
     }
 
+    public static class Test {
+        public HashSet<String> hashSet = new HashSet<>();
+        public ArrayList<String> arrayList = new ArrayList<>();
+        public HashMap<String, String> hashMap = new HashMap<>();
+        public StoreableBlockPos pos = new StoreableBlockPos(0, 0, 0);
+    }
+
     public static class StoreableVec3 {
         double x = 0, y = 0, z = 0;
 
@@ -91,7 +102,7 @@ public class AreasSettings {
     @Expose(serialize = false, deserialize = false)
     @ConfigSync(shouldSync = false)
     public boolean __isTest__ = true;
-    public StoreableVec3 testpos = new StoreableVec3(0, 0, 0);
+    public Test testpos = new Test();
     /** 是否可跳跃 */
     @Category("action")
     public boolean canJump = false;

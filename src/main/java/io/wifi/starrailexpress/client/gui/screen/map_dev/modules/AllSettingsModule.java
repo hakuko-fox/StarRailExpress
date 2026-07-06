@@ -302,7 +302,7 @@ public class AllSettingsModule implements TabModule {
                         int idx = selectedIndex[0];
                         int newIdx = (idx - 1 + constants.length) % constants.length;
                         String newName = ((Enum<?>) constants[newIdx]).name();
-                        ctx.sendOnly("sre:area_manager set " + entry.path + " " + newName);
+                        ctx.sendOnly("sre:area_manager set " + entry.path + " " + (newName));
                         selectedIndex[0] = newIdx;
                         displayLabel.setText(getDisplayName.apply(newIdx));
                     }).bounds(startX, y, arrowBtnW, 20).accentBar(AccentSide.LEFT).build();
@@ -338,7 +338,7 @@ public class AllSettingsModule implements TabModule {
                 ModernButton addBtn = ModernButton.builder(Component.translatable("sre.map_helper.add"), b -> {
                     String val = addInput.getValue().trim();
                     if (!val.isEmpty())
-                        ctx.sendOnly("sre:area_manager set " + entry.path + " add " + ctx.quoteCommandArgument(val));
+                        ctx.sendOnly("sre:area_manager add " + entry.path + " " + ctx.quoteCommandArgument(val));
                 }).bounds(x + inputWidth + gap, y, 35, 20).accentBar(AccentSide.LEFT).build();
                 placements.add(new WidgetPlacement(addBtn, y));
                 int x2 = x + inputWidth + gap + 35 + gap;
@@ -349,13 +349,13 @@ public class AllSettingsModule implements TabModule {
                 ModernButton removeBtn = ModernButton.builder(Component.translatable("sre.map_helper.remove"), b -> {
                     String val = removeInput.getValue().trim();
                     if (!val.isEmpty())
-                        ctx.sendOnly("sre:area_manager set " + entry.path + " remove " + ctx.quoteCommandArgument(val));
+                        ctx.sendOnly("sre:area_manager remove " + entry.path + " " + ctx.quoteCommandArgument(val));
                 }).bounds(x2 + removeInput.getWidth() + gap, y, 35, 20).accentBar(AccentSide.RIGHT).build();
                 placements.add(new WidgetPlacement(removeBtn, y));
                 int x3 = x2 + removeInput.getWidth() + gap + 35 + gap;
                 ModernButton clearBtn = ModernButton
                         .builder(Component.translatable("sre.map_helper.clear"),
-                                b -> ctx.sendOnly("sre:area_manager set " + entry.path + " clear"))
+                                b -> ctx.sendOnly("sre:area_manager clear " + entry.path + ""))
                         .bounds(x3, y, 35, 20).accentBar(AccentSide.BOTTOM).build();
                 placements.add(new WidgetPlacement(clearBtn, y));
                 ModernButton viewBtn = ModernButton
