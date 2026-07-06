@@ -90,6 +90,10 @@ public final class TwoDimensionalCameraClientHandle {
                     cameraDistance + (TOP_CAMERA_HEIGHT - DEFAULT_CAMERA_DISTANCE));
             return lookAt.add(0.0D, height, 0.0D);
         }
+        if (amplifier >= 5) {
+            // 5~8：东西南北平面视线 —— 相机与视点同高的纯侧视（无俯角），区别于 0~3 的 2.5D 俯视
+            return lookAt.add(sideVector(amplifier - 5).scale(cameraDistance));
+        }
         return lookAt.add(sideVector(amplifier).scale(cameraDistance)).add(0.0D, CAMERA_HEIGHT, 0.0D);
     }
 

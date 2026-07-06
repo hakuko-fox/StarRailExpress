@@ -101,6 +101,11 @@ public interface ModSceneBlocks {
     BlockEntityType<RollingStoneTriggerPlateEntity> ROLLING_STONE_TRIGGER_ENTITY = blockEntityRegistrar.create(
             "rolling_stone_trigger",
             BlockEntityType.Builder.of(RollingStoneTriggerPlateEntity::new, ROLLING_STONE_TRIGGER));
+    Block ROLLING_LOG_TRIGGER = registerBlock("rolling_log_trigger",
+            new RollingLogTriggerPlate(Properties.ofFullCopy(Blocks.OAK_LOG).noOcclusion()));
+    BlockEntityType<RollingLogTriggerPlateEntity> ROLLING_LOG_TRIGGER_ENTITY = blockEntityRegistrar.create(
+            "rolling_log_trigger",
+            BlockEntityType.Builder.of(RollingLogTriggerPlateEntity::new, ROLLING_LOG_TRIGGER));
 
     // ───────────────────────── 批次D：特殊机关 ─────────────────────────
 

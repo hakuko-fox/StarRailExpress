@@ -753,6 +753,7 @@
     "death_reason.starrailexpress.bat_hit": "钝器重击",
     "death_reason.starrailexpress.black_white": "黑白试炼失败",
     "death_reason.starrailexpress.boulder_crush": "滚石碾压",
+    "death_reason.starrailexpress.log_crush": "滚木碾压",
     "death_reason.starrailexpress.death_afk": "睡死了",
     "death_reason.starrailexpress.derringer_shot": "德林加手枪",
     "death_reason.starrailexpress.disconnected": "掉入了后室 - 断开连接",

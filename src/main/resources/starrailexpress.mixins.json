@@ -95,6 +95,7 @@
     "client.ui.RenderEffectMixin",
     "client.ui.SpectatorQuickGameMenu",
     "client.ui.TooltipBackgroundRendererMixin",
+    "compat.sodium.SodiumWorldRendererMixin",
     "compat.sodium_extra.SodiumExtraDisableOptionMixin",
     "compat.sodium_extra.SodiumExtraLoadedMixin",
     "compat.carpet.FixClientReturnCrash",

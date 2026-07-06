@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
@@ -361,6 +362,58 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole setCanIgnoreBlackout(Boolean bl) {
         this.canIgnoreBlackout = bl;
         return this;
+    }
+
+    // ───────────────────────── 任务刷新控制 / Task Refresh Control ─────────────────────────
+
+    /** 该职业不可刷出的任务类型（黑名单）。 */
+    private final Set<SREPlayerTaskComponent.Task> unrefreshableTasks = new HashSet<>();
+    /** 该职业仅可刷出的任务类型（白名单，为空表示不限制）。 */
+    private final Set<SREPlayerTaskComponent.Task> onlyRefreshableTasks = new HashSet<>();
+
+    /** 指定该职业不可刷出的任务类型（链式，可多次调用叠加）。 */
+    public SRERole addUnrefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        this.unrefreshableTasks.addAll(Arrays.asList(tasks));
+        return this;
+    }
+
+    /** 移除黑名单中的任务类型。 */
+    public SRERole removeUnrefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        Arrays.asList(tasks).forEach(this.unrefreshableTasks::remove);
+        return this;
+    }
+
+    /** 指定该职业仅可刷出的任务类型（白名单，链式，可多次调用叠加；白名单为空时不限制）。 */
+    public SRERole addOnlyRefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        this.onlyRefreshableTasks.addAll(Arrays.asList(tasks));
+        return this;
+    }
+
+    /** 移除白名单中的任务类型。 */
+    public SRERole removeOnlyRefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
+        Arrays.asList(tasks).forEach(this.onlyRefreshableTasks::remove);
+        return this;
+    }
+
+    /** 获取黑名单（只读）。 */
+    public Set<SREPlayerTaskComponent.Task> getUnrefreshableTasks() {
+        return Collections.unmodifiableSet(this.unrefreshableTasks);
+    }
+
+    /** 获取白名单（只读）。 */
+    public Set<SREPlayerTaskComponent.Task> getOnlyRefreshableTasks() {
+        return Collections.unmodifiableSet(this.onlyRefreshableTasks);
+    }
+
+    /**
+     * 判断该职业玩家能否刷出指定任务。任务生成时对随机池中的每个候选任务调用。
+     * 默认实现：白名单非空时只允许白名单内的任务，其余按黑名单排除；可重写实现动态逻辑。
+     */
+    public boolean canRefreshTask(Player player, SREPlayerTaskComponent.Task taskType) {
+        if (!this.onlyRefreshableTasks.isEmpty() && !this.onlyRefreshableTasks.contains(taskType)) {
+            return false;
+        }
+        return !this.unrefreshableTasks.contains(taskType);
     }
 
     public SRERole setCanSeeBodyItems(boolean flag) {

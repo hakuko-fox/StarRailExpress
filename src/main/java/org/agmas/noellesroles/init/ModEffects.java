@@ -335,8 +335,11 @@ public class ModEffects {
     /**
      * 2D 视角
      * - 中性效果
-     * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方。
+     * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方（0~3 为 2.5D 俯视侧视）；
+     *   5=西平面，6=东平面，7=北平面，8=南平面（与视点同高的纯平面视线，无俯角）。
      *   行为见 {@code TwoDimensionalCameraClientHandle}，最终通过 AdvancedCameraDirector 接管相机。
+     * - 拥有该效果时，客户端会渲染指向当前 SAN 任务点的指引箭头（手持钥匙时额外指向自己房门），
+     *   见 {@code TwoDimensionalTaskArrowRenderer}。
      */
     public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA = register("two_dimensional_camera",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
