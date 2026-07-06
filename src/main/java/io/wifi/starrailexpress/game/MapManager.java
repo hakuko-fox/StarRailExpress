@@ -359,7 +359,7 @@ public class MapManager {
             // 旧版格式兼容
 
             if (jsonObject.has("canSwim")) {
-                areas.areasSettings.canSwim = jsonObject.get("canSwim").getAsBoolean();
+                areas.areasSettings.canSimpleSwim = jsonObject.get("canSwim").getAsBoolean();
             }
             // 旧版格式兼容
             if (jsonObject.has("enableOxygenDrowning")) {
@@ -390,7 +390,9 @@ public class MapManager {
                 areas.areasSettings.fogEnd = jsonObject.get("fogEnd").getAsFloat();
             }
             if (jsonObject.has("fogShape")) {
-                areas.areasSettings.fogShape = jsonObject.get("fogShape").getAsString();
+                String fogShape = jsonObject.get("fogShape").getAsString();
+                fogShape = fogShape.toUpperCase();
+                areas.areasSettings.fogShape = AreasSettings.FogShape.valueOf(fogShape);
             }
 
             // 加载场景偏移配置（默认关闭）
@@ -445,19 +447,19 @@ public class MapManager {
             // 旧版兼容
             if (jsonObject.has("time")) {
                 areas.areasSettings.time = jsonObject.get("time").getAsLong();
-            } 
+            }
 
             // 加载昼夜循环配置（默认关闭）
             // 旧版兼容
             if (jsonObject.has("daylightCycle")) {
                 areas.areasSettings.daylightCycle = jsonObject.get("daylightCycle").getAsBoolean();
-            } 
+            }
 
             // 加载天气循环配置（默认关闭）
             // 旧版兼容
             if (jsonObject.has("weatherCycle")) {
                 areas.areasSettings.weatherCycle = jsonObject.get("weatherCycle").getAsBoolean();
-            } 
+            }
 
             // 加载小游戏任务系统开关（默认关闭）
             if (jsonObject.has("minigameQuestEnabled")) {

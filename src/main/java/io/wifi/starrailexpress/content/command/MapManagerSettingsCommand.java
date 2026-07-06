@@ -10,12 +10,15 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -34,17 +37,25 @@ public class MapManagerSettingsCommand {
             .then(Commands.literal("set")
                 .then(Commands.argument("path", StringArgumentType.string())
                     .suggests(PATH_SUGGESTIONS)
+                    // ----- clear 子命令 -----
+                    .then(Commands.literal("clear")
+                        .executes(ctx -> executeClear(ctx)))
+                    // ----- 原有 add / remove / insert / 直接赋值 -----
                     .then(Commands.literal("add")
                         .then(Commands.argument("value", StringArgumentType.greedyString())
+                            .suggests(VALUE_SUGGESTIONS)
                             .executes(ctx -> executeSetAdd(ctx))))
                     .then(Commands.literal("remove")
                         .then(Commands.argument("value", StringArgumentType.greedyString())
+                            .suggests(VALUE_SUGGESTIONS)
                             .executes(ctx -> executeSetRemove(ctx))))
                     .then(Commands.literal("insert")
                         .then(Commands.argument("index", IntegerArgumentType.integer())
                             .then(Commands.argument("value", StringArgumentType.greedyString())
+                                .suggests(VALUE_SUGGESTIONS)
                                 .executes(ctx -> executeSetInsert(ctx)))))
                     .then(Commands.argument("value", StringArgumentType.greedyString())
+                        .suggests(VALUE_SUGGESTIONS)
                         .executes(ctx -> executeSetDirect(ctx)))))
             .then(Commands.literal("get")
                 .then(Commands.argument("path", StringArgumentType.string())
@@ -228,6 +239,36 @@ public class MapManagerSettingsCommand {
                 .withStyle(style -> style.withColor(ChatFormatting.AQUA)),
             false);
       }
+      return 1;
+    } catch (Exception e) {
+      throw new SimpleCommandExceptionType(
+          Component.translatable("sre.area_manager.error.operation_failed", e.getMessage())).create();
+    }
+  }
+
+  // ============ 新增 clear 执行 ============
+  private static int executeClear(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    String path = StringArgumentType.getString(ctx, "path");
+    CommandSourceStack source = ctx.getSource();
+    ServerLevel level = getLevel(source);
+    AreasWorldComponent component = getComponent(level);
+    Object root = getRoot(component);
+
+    try {
+      String[] pathParts = path.split("\\.");
+      FieldAccess access = getFieldAccess(root, pathParts);
+      Object collectionObj = access.field.get(access.owner);
+      if (!(collectionObj instanceof Collection<?>)) {
+        throw new SimpleCommandExceptionType(Component.translatable("sre.area_manager.error.not_collection"))
+            .create();
+      }
+      Collection<?> coll = (Collection<?>) collectionObj;
+      coll.clear();
+      component.sync();
+      source.sendSuccess(
+          () -> Component.translatable("sre.area_manager.clear.success", path)
+              .withStyle(ChatFormatting.GREEN),
+          true);
       return 1;
     } catch (Exception e) {
       throw new SimpleCommandExceptionType(
@@ -431,4 +472,87 @@ public class MapManagerSettingsCommand {
     }
     return builder.buildFuture();
   };
+
+  // ============ 新增 value 参数补全 ============
+
+  private static final SuggestionProvider<CommandSourceStack> VALUE_SUGGESTIONS = (ctx, builder) -> {
+    CommandSourceStack source = ctx.getSource();
+    ServerLevel level;
+    try {
+      level = getLevel(source);
+    } catch (CommandSyntaxException e) {
+      return builder.buildFuture();
+    }
+    AreasWorldComponent component;
+    try {
+      component = getComponent(level);
+    } catch (CommandSyntaxException e) {
+      return builder.buildFuture();
+    }
+    Object root;
+    try {
+      root = getRoot(component);
+    } catch (CommandSyntaxException e) {
+      return builder.buildFuture();
+    }
+    String path;
+    try {
+      path = ctx.getArgument("path", String.class);
+    } catch (IllegalArgumentException e) {
+      return builder.buildFuture();
+    }
+
+    String[] pathParts = path.split("\\.");
+    try {
+      FieldAccess access = getFieldAccess(root, pathParts);
+      Field field = access.field;
+      Class<?> fieldType = field.getType();
+
+      if (Collection.class.isAssignableFrom(fieldType)) {
+        // 集合类型：建议 [] 以及元素类型的默认值
+        builder.suggest("[]");
+        Class<?> elementType = getCollectionElementType(field);
+        if (elementType == null) {
+          // 如果无法获取泛型，尝试从集合实例获取，但补全时可能为空，故用 Object
+          elementType = Object.class;
+        }
+        addDefaultSuggestions(builder, elementType);
+      } else {
+        // 非集合：直接根据字段类型建议
+        addDefaultSuggestions(builder, fieldType);
+      }
+    } catch (Exception ignored) {
+    }
+    return builder.buildFuture();
+  };
+
+  private static void addDefaultSuggestions(SuggestionsBuilder builder, Class<?> type) {
+    if (type.isEnum()) {
+      for (Object constant : type.getEnumConstants()) {
+        builder.suggest(((Enum<?>) constant).name());
+      }
+    } else if (type == String.class) {
+      builder.suggest("example");
+      builder.suggest("test");
+    } else if (type == Integer.class || type == int.class) {
+      builder.suggest("0");
+      builder.suggest("1");
+    } else if (type == Long.class || type == long.class) {
+      builder.suggest("0");
+      builder.suggest("1");
+    } else if (type == Double.class || type == double.class) {
+      builder.suggest("0.0");
+      builder.suggest("1.0");
+    } else if (type == Float.class || type == float.class) {
+      builder.suggest("0.0");
+      builder.suggest("1.0");
+    } else if (type == Boolean.class || type == boolean.class) {
+      builder.suggest("true");
+      builder.suggest("false");
+    } else {
+      // 复杂对象，建议 JSON 对象和数组
+      builder.suggest("{}");
+      builder.suggest("[]");
+    }
+  }
 }

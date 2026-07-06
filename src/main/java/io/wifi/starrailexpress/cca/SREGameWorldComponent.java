@@ -816,7 +816,34 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                             GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
                 }
             }
-            if (!areas.areasSettings.canSwim) {
+
+            if (!areas.areasSettings.canUnderWater) {
+                if (player.isUnderWater()) {
+                    GameUtils.killPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.CANNOT_SWIM);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && player.isUnderWater()) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.CANNOT_SWIM);
+                    }
+                }
+            }
+            if (!areas.areasSettings.allowInDeepWater) {
+                if (checkPlayerIsInDeepWater(player, areas)) {
+                    GameUtils.killPlayer(player, false,
+                            player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                            GameConstants.DeathReasons.CANNOT_SWIM);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && checkPlayerIsInDeepWater(player, areas)) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.CANNOT_SWIM);
+                    }
+                }
+            }
+            if (!areas.areasSettings.canSimpleSwim) {
                 if (checkPlayerIsSwiming(player, areas)) {
                     GameUtils.killPlayer(player, false,
                             player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
@@ -867,6 +894,21 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     private static boolean checkPlayerIsOutOfAreas(ServerPlayer player, AreasWorldComponent areas) {
         if (player.getY() < areas.playArea.minY) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean checkPlayerIsInDeepWater(ServerPlayer player, AreasWorldComponent areas) {
+        if (player.isUnderWater()) {
+            return true;
+        }
+        final var block = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
+        final var block1 = player.level()
+                .getBlockState(new BlockPos((int) player.getX(), (int) (player.getY() - 1), (int) player.getZ()))
+                .getBlock();
+        if (block == Blocks.WATER && block1 == Blocks.WATER) {
             return true;
         }
         return false;

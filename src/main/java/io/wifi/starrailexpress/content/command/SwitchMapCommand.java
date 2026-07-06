@@ -367,7 +367,7 @@ public class SwitchMapCommand {
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
-                () -> Component.literal("Can Swim: " + (areas.areasSettings.canSwim ? "Yes" : "No"))
+                () -> Component.literal("Can SimpleSwim: " + (areas.areasSettings.canSimpleSwim ? "Yes" : "No"))
                         .withStyle(style -> style.withColor(0x00FFFF)),
                 false);
         source.sendSuccess(
