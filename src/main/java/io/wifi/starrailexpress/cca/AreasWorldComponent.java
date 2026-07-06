@@ -4,20 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import io.wifi.ConfigCompact.ConfigClassHandler.SyncInfo;
-import io.wifi.ConfigCompact.annotation.ConfigSync;
-import io.wifi.ConfigCompact.network.SyncConfigPayload;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.util.NbtSerializer;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.TagNetworkSerialization;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
@@ -27,14 +22,11 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 import org.ladysnake.cca.api.v3.util.CheckEnvironment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -46,7 +38,6 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     public static final ComponentKey<AreasWorldComponent> KEY = ComponentRegistry.getOrCreate(SRE.id("areas"),
             AreasWorldComponent.class);
     private final Level world;
-    private static final Logger LOGGER = LoggerFactory.getLogger("AreasWorldComponent");
 
     public static enum ScrollAxis {
         X, Y, Z, NONE
