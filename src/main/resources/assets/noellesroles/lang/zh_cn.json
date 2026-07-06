@@ -1475,6 +1475,7 @@
   "gui.roleintroduce.right.warp": "【%s】%s",
   "gui.roleintroduce.card.display_name": "【%s】%s",
   "gui.roleintroduce.details.title": "%s %s 详细信息",
+  "screen.roleintroduce.role.cant_be_randomed": "无法在游戏中被赌徒、傀儡师、初学者、失忆患者等随机到此职业。",
   "screen.roleintroduce.click_to_select": "点击查看%s %s 详细信息\n%s\n点击查看全部",
   "gui.roleintroduce.select_role.title": "请选择一个项目获取介绍",
   "screen.roleintroduce.hint": "按 ESC 关闭",

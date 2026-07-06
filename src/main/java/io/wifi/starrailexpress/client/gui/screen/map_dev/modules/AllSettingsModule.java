@@ -26,6 +26,7 @@ public class AllSettingsModule implements TabModule {
     private static final Gson GSON = new Gson();
     private List<SettingsEntry> allSettingsEntries = new ArrayList<>();
     private int totalContentHeight = 0;
+    private boolean entriesBuilt = false; // 标记是否已构建条目树
 
     @Override
     public Component getTabTitle() {
@@ -34,30 +35,16 @@ public class AllSettingsModule implements TabModule {
 
     @Override
     public void init(LayoutContext layout, ModuleContext ctx, List<WidgetPlacement> placements) {
-        allSettingsEntries.clear();
-        AreasWorldComponent comp = SREClient.areaComponent;
-        if (comp == null) {
-            totalContentHeight = 0;
-            return;
-        }
-        Object settings = comp.areasSettings;
-        if (settings == null) {
-            totalContentHeight = 0;
-            return;
+        // 首次构建配置树，后续不再重建（保留 expanded 状态）
+        if (!entriesBuilt) {
+            buildEntryTree();
+            entriesBuilt = true;
         }
 
-        // Build root entries
-        Class<?> clazz = settings.getClass();
-        for (Field field : clazz.getDeclaredFields()) {
-            if (!shouldShowField(field))
-                continue;
-            SettingsEntry root = new SettingsEntry(field.getName(), field, settings, 0);
-            if (shouldExpandObject(root.currentValue))
-                expandObject(root);
-            allSettingsEntries.add(root);
-        }
-
-        // Create mixed list with category headers
+        // 每次刷新时根据已有树生成控件（不修改树结构和 expanded 状态）
+        // 注意：allSettingsEntries 及其 children、expanded 状态保持不变
+        // 但 currentValue 可能随时间变化，我们可以在生成控件前更新一下值（可选）
+        // 为了显示最新值，我们可以在遍历时调用 entry.updateValue()
         List<Object> flatList = new ArrayList<>();
         String lastCategory = null;
         for (SettingsEntry entry : allSettingsEntries) {
@@ -70,6 +57,27 @@ public class AllSettingsModule implements TabModule {
         }
 
         totalContentHeight = createWidgetsForMixedEntries(layout, ctx, placements, flatList, 0);
+
+    }
+
+    private void buildEntryTree() {
+        allSettingsEntries.clear();
+        AreasWorldComponent comp = SREClient.areaComponent;
+        if (comp == null)
+            return;
+        Object settings = comp.areasSettings;
+        if (settings == null)
+            return;
+
+        Class<?> clazz = settings.getClass();
+        for (Field field : clazz.getDeclaredFields()) {
+            if (!shouldShowField(field))
+                continue;
+            SettingsEntry root = new SettingsEntry(field.getName(), field, settings, 0);
+            if (shouldExpandObject(root.currentValue))
+                expandObject(root);
+            allSettingsEntries.add(root);
+        }
     }
 
     @Override
@@ -92,7 +100,7 @@ public class AllSettingsModule implements TabModule {
                 return field.getAnnotation(Category.class).value();
         } catch (Exception e) {
         }
-        return null;
+        return "default";
     }
 
     private String getCategoryDisplayName(String categoryId) {
@@ -236,7 +244,7 @@ public class AllSettingsModule implements TabModule {
                 placements.add(new WidgetPlacement(disableBtn, y));
                 placements.add(new WidgetPlacement(viewBtn, y));
             } else if (type == String.class || isNumberType(type)) {
-                int inputWidth = Math.max(70, remainingWidth - 40 - 30 - 6);
+                int inputWidth = Math.max(70, remainingWidth - 40 - 60 - 6);
                 EditBox input = new EditBox(layout.font, controlX, y, inputWidth, 20, Component.empty());
                 input.setValue(value != null ? value.toString() : "");
                 input.setMaxLength(50);
@@ -376,7 +384,7 @@ public class AllSettingsModule implements TabModule {
         } else {
             ModernButton toggleBtn = ModernButton.builder(Component.literal(entry.expanded ? "▾" : "▸"), b -> {
                 entry.expanded = !entry.expanded;
-                ctx.refreshScreen();
+                ctx.requestModuleRefresh();
             }).bounds(controlX, y, 20, 20).accentBar(AccentSide.BOTTOM).build();
             placements.add(new WidgetPlacement(toggleBtn, y));
         }

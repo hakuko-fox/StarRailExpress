@@ -32,4 +32,10 @@ public interface ModuleContext {
     void refreshScreen();
 
     String quoteCommandArgument(String value);
+
+    /**
+     * 请求仅刷新当前激活的模块（不重建整个屏幕）。
+     * 实现应重新初始化该模块并更新可滚动控件，同时保留固定控件和滚动偏移。
+     */
+    void requestModuleRefresh();
 }

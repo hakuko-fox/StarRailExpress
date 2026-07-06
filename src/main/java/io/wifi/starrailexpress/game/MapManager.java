@@ -389,7 +389,8 @@ public class MapManager {
             // 加载天气配置（默认晴天）
             // 旧版兼容
             if (jsonObject.has("weather")) {
-                areas.areasSettings.weather = jsonObject.get("weather").getAsString();
+                areas.areasSettings.weather = AreasSettings.MinecraftWeather
+                        .valueOf(jsonObject.get("weather").getAsString());
             }
 
             // 加载重力配置（默认0.08）

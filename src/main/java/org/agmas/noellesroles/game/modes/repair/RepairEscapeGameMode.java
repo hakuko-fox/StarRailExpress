@@ -80,10 +80,10 @@ public class RepairEscapeGameMode extends GameMode {
 
         // 应用地图天气配置
         switch (areas.areasSettings.weather) {
-            case "rain":
+            case rain:
                 serverWorld.setWeatherParameters(0, 120000, true, false);
                 break;
-            case "thunder":
+            case thunder:
                 serverWorld.setWeatherParameters(0, 120000, true, true);
                 break;
             default: // clear

@@ -17,6 +17,35 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class MapBuildHelperScreen extends Screen implements ModuleContext {
+    @Override
+    public void requestModuleRefresh() {
+        if (activeTab < 0 || activeTab >= modules.size())
+            return;
+
+        // 1. 移除当前所有可滚动控件（从屏幕的渲染列表、子控件列表、旁白列表中删除）
+        for (WidgetPlacement p : currentTabPlacements) {
+            removeWidget(p.widget); // Screen 方法，会从 renderables、children、narratables 中移除
+        }
+        currentTabPlacements.clear();
+
+        // 2. 重新初始化当前模块（注意：AllSettingsModule 会保留 entriesBuilt 状态）
+        TabModule module = modules.get(activeTab);
+        if (module != null) {
+            module.init(layoutCtx, this, currentTabPlacements);
+            contentHeight = module.getContentHeight();
+
+            // 3. 将新生成的控件加入屏幕
+            currentTabPlacements.forEach(p -> addRenderableWidget(p.widget));
+
+            // 4. 钳制滚动偏移，避免因内容高度变化导致偏移越界
+            int visibleH = visibleContentHeight();
+            if (contentHeight > visibleH) {
+                scrollOffset = Math.max(0, Math.min(scrollOffset, contentHeight - visibleH));
+            } else {
+                scrollOffset = 0;
+            }
+        }
+    }
 
     private static double offsetX = 0.5;
     private static double offsetY = 1;

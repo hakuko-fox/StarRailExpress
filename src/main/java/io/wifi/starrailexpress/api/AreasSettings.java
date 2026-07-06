@@ -36,6 +36,12 @@ public class AreasSettings {
     public static class StoreableBlockPos {
         int x = 0, y = 0, z = 0;
 
+        public StoreableBlockPos(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
         public StoreableBlockPos(BlockPos blockPos) {
             this.x = blockPos.getX();
             this.y = blockPos.getY();
@@ -54,6 +60,12 @@ public class AreasSettings {
             this.x = vec.x;
             this.y = vec.y;
             this.z = vec.z;
+        }
+
+        public StoreableVec3(double x, double y, double z) {
+            this.x = x;
+            this.z = z;
+            this.y = y;
         }
 
         public net.minecraft.world.phys.Vec3 toVec3() {
@@ -79,7 +91,7 @@ public class AreasSettings {
     @Expose(serialize = false, deserialize = false)
     @ConfigSync(shouldSync = false)
     public boolean __isTest__ = true;
-
+    public StoreableVec3 testpos = new StoreableVec3(0, 0, 0);
     /** 是否可跳跃 */
     @Category("action")
     public boolean canJump = false;
@@ -142,9 +154,13 @@ public class AreasSettings {
     @Category("visual")
     public FogShape fogShape = FogShape.SPHERE;
 
+    public static enum MinecraftWeather {
+        clear, rain, thunder
+    }
+
     // 天气配置（默认晴天）
     @Category("visual")
-    public String weather = "clear"; // clear, rain, thunder
+    public MinecraftWeather weather = MinecraftWeather.clear; // clear, rain, thunder
 
     // 重力modifier（默认0）
     @Category("action")
