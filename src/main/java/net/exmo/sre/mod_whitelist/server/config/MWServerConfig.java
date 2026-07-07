@@ -174,6 +174,8 @@ public class MWServerConfig {
 	public static final BoolConfigValue VERIFY_RESOURCE_PACK_HASHES = new BoolConfigValue("VERIFY_RESOURCE_PACK_HASHES", false);
 	public static final BoolConfigValue VERIFY_SHADER_PACK_HASHES = new BoolConfigValue("VERIFY_SHADER_PACK_HASHES", false);
 	public static final BoolConfigValue VERIFY_STARRAILEXPRESS_HASHES = new BoolConfigValue("VERIFY_STARRAILEXPRESS_HASHES", false);
+	/** JAR 密钥认证：要求客户端运行与服务端完全一致的、经 tools/sign_sre_jar.py 签名的 jar（默认关闭）。 */
+	public static final BoolConfigValue ENABLE_JAR_KEY_AUTH = new BoolConfigValue("ENABLE_JAR_KEY_AUTH", false);
 	public static final BoolConfigValue SKIP_VERIFICATION_FOR_OPS = new BoolConfigValue("SKIP_VERIFICATION_FOR_OPS", true);
 	public static final MOD_IDListConfigValue CLIENT_MOD_NECESSARY = new MOD_IDListConfigValue("CLIENT_MOD_NECESSARY", MOD_ID);
 	public static final MOD_IDListConfigValue STARRAILEXPRESS_HASH_MOD_IDS = new MOD_IDListConfigValue("STARRAILEXPRESS_HASH_MOD_IDS", MOD_ID);

@@ -796,6 +796,10 @@ public class SREClient implements ClientModInitializer {
             ModWhitelistClientNetworkHandler.handleModWhitelistConfigPayload(payload, context);
             ModWhitelistClientNetworkHandler.sendModWhitelistPayload();
         });
+        net.exmo.sre.mod_whitelist.client.network.JarAuthClientHandler.register();
+        // 紧急会议：客户端摄像机导演 + HUD
+        net.exmo.sre.meeting.client.MeetingClientHandler.register();
+        net.exmo.sre.meeting.client.MeetingHud.register();
 
         ClientPlayNetworking.registerGlobalReceiver(ShowSelectedMapUIPayload.ID, (payload, context) -> {
             var str = payload.serverConfig();

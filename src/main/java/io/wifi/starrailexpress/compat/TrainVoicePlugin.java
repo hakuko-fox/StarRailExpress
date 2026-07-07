@@ -63,6 +63,13 @@ public class TrainVoicePlugin implements VoicechatPlugin {
         registration.registerEvent(ClientVoicechatConnectionEvent.class, event -> {
             CLIENT_API = event.getVoicechat();
         });
+        // 会议系统：语音活动 → 标记发言者（镜头对准正在说话的人）
+        registration.registerEvent(de.maxhenkel.voicechat.api.events.MicrophonePacketEvent.class, event -> {
+            VoicechatConnection sender = event.getSenderConnection();
+            if (sender != null && sender.getPlayer() != null) {
+                net.exmo.sre.meeting.MeetingManager.onVoiceActivity(sender.getPlayer().getUuid());
+            }
+        });
     }
 
     @Override

@@ -49,8 +49,9 @@ public class UndeadLordRole extends EggRole {
             comp.releasePlagueFog(config().undeadLordFogSeconds * 20);
         }));
 
-        // 亡者召唤符：召唤 2 个临时亡灵（无需尸体）；60 秒冷却，且不超过亡灵上限
-        entries.add(conditionalEffectEntry(Items.WITHER_SKELETON_SKULL, 150, "summon_charm", comp ->
+        // 亡者召唤符：召唤 2 个临时亡灵（无需尸体）；有冷却，且不超过亡灵上限
+        entries.add(conditionalEffectEntry(Items.WITHER_SKELETON_SKULL, config().undeadLordCharmPrice,
+                "summon_charm", comp ->
                 comp.trySummonCharm(2, config().undeadLordCharmLifetimeSeconds * 20)));
 
         // 感染增幅器：接下来 60 秒内亡灵攻击感染翻倍

@@ -3050,20 +3050,17 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(TraitorAndModifiers.TRAITOR.identifier(), TRAITOR_SHOP);
         }
 
-        // 巫师商店（屏障商品）
+        // 巫师商店：法术快捷施法（金币恒为 0，实际消耗法力；便于不切法术轮盘直接施放）
         {
             var WIZARD_SHOP = new ArrayList<ShopEntry>();
-            WIZARD_SHOP.add(new ShopEntry(Items.BARRIER.getDefaultInstance(), Integer.MAX_VALUE, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean canDisplay(@NotNull Player player) {
-                    return false;
-                }
-
-                @Override
-                public boolean canBuy(@NotNull Player player) {
-                    return false;
-                }
-            });
+            WIZARD_SHOP.add(wizardSpellEntry(Items.SNOWBALL, "frost",
+                    org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent.Spell.FROST));
+            WIZARD_SHOP.add(wizardSpellEntry(Items.COAL, "shadow",
+                    org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent.Spell.SHADOW));
+            WIZARD_SHOP.add(wizardSpellEntry(Items.FIRE_CHARGE, "explosion",
+                    org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent.Spell.EXPLOSION));
+            WIZARD_SHOP.add(wizardSpellEntry(Items.ENDER_PEARL, "blink",
+                    org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent.Spell.BLINK));
             ShopContent.customEntries.put(ModRoles.WIZARD_ID, WIZARD_SHOP);
         }
 
@@ -3099,5 +3096,37 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.MORTICIAN_BODYMAKER_ID, MORTICIAN_BODYMAKER_SHOP);
         }
+    }
+
+    /**
+     * 巫师法术快捷施法条目：标价 0 金币（巫师的金币每 tick 会自动炼成法力，无法囤积），
+     * 点击后直接调用 {@code WizardPlayerComponent.quickCast} 施放法术 —— 法力不足 /
+     * 冷却中 / 前置条件不满足（如暗影需停电）时施放失败、购买取消。
+     */
+    private static ShopEntry wizardSpellEntry(net.minecraft.world.item.Item icon, String nameKey,
+            org.agmas.noellesroles.game.roles.killer.wizard.WizardPlayerComponent.Spell spell) {
+        ItemStack stack = new ItemStack(icon);
+        stack.set(DataComponents.CUSTOM_NAME,
+                Component.translatable("shop.noellesroles.wizard." + nameKey));
+        stack.set(DataComponents.LORE, new ItemLore(
+                java.util.List.of(Component.translatable("shop.noellesroles.wizard." + nameKey + ".desc")
+                        .withStyle(ChatFormatting.GRAY))));
+        return new ShopEntry(stack, 0, ShopEntry.Type.TOOL) {
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+                if (!(player instanceof ServerPlayer serverPlayer)) {
+                    return false;
+                }
+                SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+                if (!gameWorldComponent.isRole(player, ModRoles.WIZARD)) {
+                    return false;
+                }
+                var comp = org.agmas.noellesroles.component.ModComponents.WIZARD.maybeGet(serverPlayer).orElse(null);
+                if (comp == null) {
+                    return false;
+                }
+                return comp.quickCast(spell);
+            }
+        };
     }
 }

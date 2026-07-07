@@ -1839,6 +1839,62 @@ boolean eq = RoleUtils.compareRole(role1, role2);
 
 ---
 
+## 紧急会议系统 / Emergency Meeting System
+
+**包 / Package:** `net.exmo.sre.meeting`
+
+Among Us / 鹅鸭杀式会议：由**地图配置**启用（`AreasSettings.meetingEnabled` 等字段，
+可在地图配置 GUI 的「会议」标签页可视化编辑，或 `/sre:area_manager set meetingEnabled true`）。
+存活玩家**右键尸体**即召开会议：全体存活玩家被传送至会议地点，系统自动搜寻周围的椅子
+（`MountableBlock`）就座；开场环绕运镜 + 标题动画后进入狼人杀式讨论 —— 按发言键（默认 B）、
+在聊天栏发言、或使用 svc 语音说话都会被标记为「发言中」，镜头自动对准发言者（支持多人同时发言）。
+讨论期间禁止移动 / 攻击 / 技能且死亡一律否决；时间到后全员原路返回。
+
+### MeetingApi
+
+```java
+// 以「发现尸体」的名义召开会议（右键尸体的默认交互已内置）
+boolean ok = MeetingApi.reportBody(reporter, playerBodyEntity);
+
+// 紧急按钮式会议（无尸体）
+boolean ok2 = MeetingApi.startMeeting(serverLevel, reporter, null);
+
+// 立即结束当前会议
+MeetingApi.endMeeting();
+
+// 查询
+boolean active = MeetingApi.isMeetingActive();
+boolean joined = MeetingApi.isParticipant(playerUuid);
+```
+
+### 地图配置字段（AreasSettings，category = "meeting"）
+
+| 字段 | 默认 | 说明 |
+|---|---|---|
+| `meetingEnabled` | `false` | 是否启用会议系统 |
+| `meetingX/Y/Z` | `0` | 会议地点坐标 |
+| `meetingChairScanRadius` | `12` | 自动搜寻椅子的半径（上限 32） |
+| `meetingDiscussSeconds` | `60` | 讨论阶段时长（秒） |
+| `meetingCooldownSeconds` | `90` | 两次会议的最小间隔（秒） |
+
+> 网络包：`MeetingStateS2CPayload`（状态全量同步）、`MeetingSpeakC2SPayload`（发言开关）。
+> 客户端渲染 / 运镜见 `net.exmo.sre.meeting.client.MeetingClientHandler` 与 `MeetingHud`。
+
+---
+
+## 客户端 JAR 密钥认证 / Client JAR Key Authentication
+
+**包 / Package:** `net.exmo.sre.mod_whitelist`（默认**关闭**）
+
+发布者用外部工具 `tools/sign_sre_jar.py`（无 Python 的主机用等效的 `tools/sign_sre_jar.ps1`）
+把随机密钥嵌入最终 jar（`sre_auth_key.txt`），
+服务端与所有客户端运行**同一份签名 jar**。玩家入服时服务端下发一次性 nonce，双方各自计算
+`HMAC-SHA256(密钥, 自身jar摘要|nonce|版本)` 比对 —— jar 被修改 / 未签名 / 版本不符即被断开。
+在 `config/starrailexpress-config.json` 中设置 `"ENABLE_JAR_KEY_AUTH": true` 启用；
+可与既有的 `VERIFY_STARRAILEXPRESS_HASHES` 哈希白名单叠加。
+
+---
+
 ## 参考 / References
 
 - 角色系统源码：`src/main/java/io/wifi/starrailexpress/api/`

@@ -123,5 +123,17 @@
   "disabledRoles": [],
   "enableSceneTask": [],
 
-  "gameModes": []
+  "gameModes": [],
+
+  // settings（AreasSettings）中的紧急会议配置（可在地图配置 GUI 的「会议」标签页编辑，
+  // 或用 /sre:area_manager set meetingEnabled true 等命令修改）：
+  // "settings": {
+  //   "meetingEnabled": false,        // 是否启用（右键尸体召开会议）
+  //   "meetingX": 0.5,                // 会议地点坐标
+  //   "meetingY": 100,
+  //   "meetingZ": 0.5,
+  //   "meetingChairScanRadius": 12,   // 自动搜寻椅子(mountable)的半径
+  //   "meetingDiscussSeconds": 60,    // 讨论阶段时长（秒）
+  //   "meetingCooldownSeconds": 90    // 两次会议的最小间隔（秒）
+  // }
 }

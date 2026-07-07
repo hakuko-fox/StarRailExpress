@@ -358,6 +358,20 @@ public class ModEffects {
     public static final Holder<MobEffect> POINTER = register("pointer",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFE082));
 
+    /**
+     * 箱庭视野（{@link #TWO_DIMENSIONAL_CAMERA} 的扩展核心）
+     * - 中性效果
+     * - 客户端以玩家所在位置做泛洪扫描自动构筑「当前房间」的箱庭，并按当前视角
+     *   自动切割遮挡面：俯视（2D 效果 amplifier 4，或普通视角低头超过约 45°）时
+     *   屋顶整层被隐藏，可直接俯瞰自己的身体；2.5D / 平面侧视（amplifier 0~3 / 5~8）时
+     *   面向镜头一侧的墙体被切开。屋顶上的方块与实体一并被剔除 —— 只有玩家自己
+     *   走上屋顶（头顶见天，视为 outside）时才恢复完整渲染。
+     *   行为见 {@code HakoniwaVisionClientHandle}；区块网格级的方块剔除见
+     *   {@code mixin/client/hakoniwa} 与 sodium 兼容层 {@code mixin/compat/sodium}。
+     */
+    public static final Holder<MobEffect> HAKONIWA_VISION = register("hakoniwa_vision",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9CCFB8));
+
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {
         return 2.0f + Math.max(0, amplifier) * 3.0f;

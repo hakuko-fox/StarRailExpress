@@ -48,6 +48,14 @@ public class SREPayloadRegister {
                 net.exmo.sre.mod_whitelist.common.network.ModWhitelistConfigPayload.ID,
                 net.exmo.sre.mod_whitelist.common.network.ModWhitelistConfigPayload.CODEC);
 
+        // JAR 密钥认证（挑战-应答）
+        PayloadTypeRegistry.playS2C().register(
+                net.exmo.sre.mod_whitelist.common.network.JarAuthChallengePayload.ID,
+                net.exmo.sre.mod_whitelist.common.network.JarAuthChallengePayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                net.exmo.sre.mod_whitelist.common.network.JarAuthResponsePayload.ID,
+                net.exmo.sre.mod_whitelist.common.network.JarAuthResponsePayload.CODEC);
+
         PayloadTypeRegistry.playS2C().register(ModVersionPacket.ID, ModVersionPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ModVersionPacket.ID, ModVersionPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(CustomNarratorPacket.ID, CustomNarratorPacket.CODEC);
@@ -156,6 +164,12 @@ public class SREPayloadRegister {
         // Subtitle 字幕报幕
         PayloadTypeRegistry.playS2C().register(net.exmo.sre.subtitle.SubtitleS2CPayload.ID,
                 net.exmo.sre.subtitle.SubtitleS2CPayload.CODEC);
+
+        // 紧急会议系统
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingStateS2CPayload.ID,
+                net.exmo.sre.meeting.network.MeetingStateS2CPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.ID,
+                net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.CODEC);
 
         // Mailbox
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.ID,

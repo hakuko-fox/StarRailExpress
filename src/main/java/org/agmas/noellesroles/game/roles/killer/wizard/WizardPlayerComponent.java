@@ -43,7 +43,8 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         ARMOR,
         FROST,
         SHADOW,
-        EXPLOSION
+        EXPLOSION,
+        BLINK
     }
 
     private final Player player;
@@ -56,6 +57,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
     public int frostCooldownTicks = 0;
     public int shadowCooldownTicks = 0;
     public int explosionCooldownTicks = 0;
+    public int blinkCooldownTicks = 0;
 
     private boolean gaveStartingItems = false;
     private boolean potionKilledPlayer = false;
@@ -86,6 +88,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         this.frostCooldownTicks = 0;
         this.shadowCooldownTicks = 0;
         this.explosionCooldownTicks = 0;
+        this.blinkCooldownTicks = 0;
         this.gaveStartingItems = false;
         this.shieldExpiries.clear();
         this.fireArrowMarks.clear();
@@ -101,6 +104,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         this.frostCooldownTicks = 0;
         this.shadowCooldownTicks = 0;
         this.explosionCooldownTicks = 0;
+        this.blinkCooldownTicks = 0;
         this.gaveStartingItems = false;
         this.shieldExpiries.clear();
         this.fireArrowMarks.clear();
@@ -144,10 +148,12 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             }
         }
 
-        boolean anyCooldownActive = frostCooldownTicks > 0 || shadowCooldownTicks > 0 || explosionCooldownTicks > 0;
+        boolean anyCooldownActive = frostCooldownTicks > 0 || shadowCooldownTicks > 0 || explosionCooldownTicks > 0
+                || blinkCooldownTicks > 0;
         if (frostCooldownTicks > 0) frostCooldownTicks--;
         if (shadowCooldownTicks > 0) shadowCooldownTicks--;
         if (explosionCooldownTicks > 0) explosionCooldownTicks--;
+        if (blinkCooldownTicks > 0) blinkCooldownTicks--;
         // sync once per second while any cooldown is counting down
         if (anyCooldownActive && sp.level().getGameTime() % 20 == 0) {
             sync();
@@ -232,7 +238,22 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             case FROST -> castFrost(sp);
             case SHADOW -> castShadow(sp);
             case EXPLOSION -> castExplosion(sp);
+            case BLINK -> castBlink(sp);
         }
+    }
+
+    /** 商店快捷施法入口：跳过法术轮盘直接施放指定法术（自身法力/冷却校验不变）。 */
+    public boolean quickCast(Spell spell) {
+        if (!(player instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(sp)) {
+            return false;
+        }
+        return switch (spell) {
+            case ARMOR -> false; // 屏障需要指定队友，走原有背包头像交互
+            case FROST -> castFrost(sp);
+            case SHADOW -> castShadow(sp);
+            case EXPLOSION -> castExplosion(sp);
+            case BLINK -> castBlink(sp);
+        };
     }
 
     private void castArmorPrompt(ServerPlayer sp) {
@@ -270,15 +291,15 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         return true;
     }
 
-    private void castFrost(ServerPlayer sp) {
+    private boolean castFrost(ServerPlayer sp) {
         if (frostCooldownTicks > 0) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.spell_cooldown",
                     Math.max(1, (frostCooldownTicks + 19) / 20)).withStyle(ChatFormatting.RED), true);
-            return;
+            return false;
         }
         if (!hasMana(config().wizardFrostMinMana)) {
             notEnoughMana(sp);
-            return;
+            return false;
         }
         spendMana(mana / 2f);
         frostCooldownTicks = GameConstants.getInTicks(0, config().wizardFrostCooldownSeconds);
@@ -301,23 +322,24 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         castFx(sp, SoundEvents.GLASS_BREAK, ParticleTypes.SNOWFLAKE);
         sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.frost_cast", affected)
                 .withStyle(ChatFormatting.AQUA), true);
+        return true;
     }
 
-    private void castShadow(ServerPlayer sp) {
+    private boolean castShadow(ServerPlayer sp) {
         SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(sp.level());
         if (!blackout.isBlackoutActive()) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.shadow_blackout_only")
                     .withStyle(ChatFormatting.RED), true);
-            return;
+            return false;
         }
         if (shadowCooldownTicks > 0) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.spell_cooldown",
                     Math.max(1, (shadowCooldownTicks + 19) / 20)).withStyle(ChatFormatting.RED), true);
-            return;
+            return false;
         }
         if (!hasMana(config().wizardShadowCost)) {
             notEnoughMana(sp);
-            return;
+            return false;
         }
         spendMana(config().wizardShadowCost);
         shadowCooldownTicks = GameConstants.getInTicks(0, config().wizardShadowCooldownSeconds);
@@ -326,6 +348,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         castFx(sp, SoundEvents.WITHER_AMBIENT, ParticleTypes.SMOKE);
         sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.shadow_cast")
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
+        return true;
     }
 
     private void extendShadowDarkness(ServerPlayer sp, int extension) {
@@ -345,20 +368,20 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         }
     }
 
-    private void castExplosion(ServerPlayer sp) {
+    private boolean castExplosion(ServerPlayer sp) {
         if (explosionArmed) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.explosion_already")
                     .withStyle(ChatFormatting.GOLD), true);
-            return;
+            return false;
         }
         if (explosionCooldownTicks > 0) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.spell_cooldown",
                     Math.max(1, (explosionCooldownTicks + 19) / 20)).withStyle(ChatFormatting.RED), true);
-            return;
+            return false;
         }
         if (!hasMana(config().wizardExplosionMinMana)) {
             notEnoughMana(sp);
-            return;
+            return false;
         }
         spendMana(mana * Math.max(0, Math.min(100, config().wizardExplosionManaPercentCost)) / 100f);
         explosionArmed = true;
@@ -367,6 +390,57 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         castFx(sp, SoundEvents.FIRECHARGE_USE, ParticleTypes.LAVA);
         sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.explosion_armed")
                 .withStyle(ChatFormatting.RED), true);
+        return true;
+    }
+
+    /**
+     * 闪影步：向视线方向短距离瞬移（遇方块提前落点），留下一缕烟雾。
+     * 平价机动技，弥补巫师「只会开炮」的单一玩法。
+     */
+    private boolean castBlink(ServerPlayer sp) {
+        if (blinkCooldownTicks > 0) {
+            sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.spell_cooldown",
+                    Math.max(1, (blinkCooldownTicks + 19) / 20)).withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+        if (!hasMana(config().wizardBlinkCost)) {
+            notEnoughMana(sp);
+            return false;
+        }
+        if (!(sp.level() instanceof ServerLevel sl)) {
+            return false;
+        }
+
+        Vec3 eye = sp.getEyePosition();
+        Vec3 dir = sp.getLookAngle().normalize();
+        double maxDist = Math.max(2.0, config().wizardBlinkDistance);
+        Vec3 wanted = eye.add(dir.scale(maxDist));
+        var hit = sl.clip(new net.minecraft.world.level.ClipContext(eye, wanted,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, sp));
+        Vec3 target = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS
+                ? wanted
+                : hit.getLocation().subtract(dir.scale(0.6));
+        // 落点取脚部高度，并避免卡进方块
+        Vec3 feet = new Vec3(target.x, target.y - sp.getEyeHeight(), target.z);
+        if (feet.y < sp.getY() - 6) {
+            feet = new Vec3(feet.x, sp.getY(), feet.z);
+        }
+
+        spendMana(config().wizardBlinkCost);
+        blinkCooldownTicks = GameConstants.getInTicks(0, config().wizardBlinkCooldownSeconds);
+        sync();
+
+        Vec3 from = sp.position();
+        sp.teleportTo(sl, feet.x, feet.y, feet.z, Set.of(), sp.getYRot(), sp.getXRot());
+        sp.setDeltaMovement(Vec3.ZERO);
+        sp.fallDistance = 0.0F;
+        sl.sendParticles(ParticleTypes.LARGE_SMOKE, from.x, from.y + 1.0, from.z, 16, 0.3, 0.6, 0.3, 0.02);
+        sl.sendParticles(ParticleTypes.WITCH, feet.x, feet.y + 1.0, feet.z, 10, 0.3, 0.6, 0.3, 0.02);
+        sl.playSound(null, sp.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.7f, 1.3f);
+        sp.displayClientMessage(Component.translatable("message.noellesroles.wizard.blink_cast")
+                .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+        return true;
     }
 
     public void castStaff(ServerPlayer sp) {
@@ -543,6 +617,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         tag.putInt("frostCooldownTicks", this.frostCooldownTicks);
         tag.putInt("shadowCooldownTicks", this.shadowCooldownTicks);
         tag.putInt("explosionCooldownTicks", this.explosionCooldownTicks);
+        tag.putInt("blinkCooldownTicks", this.blinkCooldownTicks);
     }
 
     @Override
@@ -555,6 +630,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         this.frostCooldownTicks = tag.getInt("frostCooldownTicks");
         this.shadowCooldownTicks = tag.getInt("shadowCooldownTicks");
         this.explosionCooldownTicks = tag.getInt("explosionCooldownTicks");
+        this.blinkCooldownTicks = tag.getInt("blinkCooldownTicks");
     }
 
     @Override

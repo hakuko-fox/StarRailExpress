@@ -36,6 +36,7 @@ public final class PointerClientHandle {
     private static double pointerY;
     private static double lastMouseX;
     private static double lastMouseY;
+    private static PointerTarget currentTarget;
 
     private PointerClientHandle() {
     }
@@ -63,6 +64,7 @@ public final class PointerClientHandle {
         }
 
         PointerTarget target = findPointerTarget(client, player);
+        currentTarget = target;
         if (target == null) {
             return;
         }
@@ -140,6 +142,19 @@ public final class PointerClientHandle {
         active = false;
         pointerInitialized = false;
         hasMouseSample = false;
+        currentTarget = null;
+    }
+
+    /** 当前指针命中的实体（无则 null），供指引渲染（{@link PointerGuidanceRenderer}）读取。 */
+    public static Entity currentTargetEntity() {
+        PointerTarget target = currentTarget;
+        return target == null ? null : target.entity();
+    }
+
+    /** 当前指针命中结果（可能为 miss / null），供指引渲染读取。 */
+    public static HitResult currentHitResult() {
+        PointerTarget target = currentTarget;
+        return target == null ? null : target.hitResult();
     }
 
     private static void ensurePointerInitialized(Minecraft client) {

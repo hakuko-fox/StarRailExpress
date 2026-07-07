@@ -80,8 +80,8 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
     public MapBuildHelperScreen(BlockPos position, int initialTab) {
         super(Component.translatable("sre.map_helper.title"));
         this.position = position;
-        this.activeTab = Math.max(0, Math.min(7, initialTab));
         registerModules();
+        this.activeTab = Math.max(0, Math.min(modules.size() - 1, initialTab));
     }
 
     private void registerModules() {
@@ -92,7 +92,8 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
         modules.put(4, new EnvironmentModule());
         modules.put(5, new SceneModule());
         modules.put(6, new MapModule());
-        modules.put(7, new AllSettingsModule());
+        modules.put(7, new MeetingModule());
+        modules.put(8, new AllSettingsModule());
     }
 
     // ── ModuleContext implementation ─────────────────────────────────
@@ -266,12 +267,13 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
     }
 
     private void buildTabBar() {
-        int tabY = panelTopY + 90, tabH = 22, tabGap = 5;
-        int tabW = Math.min(42, (panelWidth - 12 - 7 * tabGap) / 8);
-        int totalTabW = tabW * 8 + tabGap * 7;
+        int tabCount = modules.size();
+        int tabY = panelTopY + 90, tabH = 22, tabGap = 4;
+        int tabW = Math.min(42, (panelWidth - 12 - (tabCount - 1) * tabGap) / tabCount);
+        int totalTabW = tabW * tabCount + tabGap * (tabCount - 1);
         int startX = panelLeftX + (panelWidth - totalTabW) / 2;
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < tabCount; i++) {
             final int idx = i;
             TabModule mod = modules.get(idx);
             Component title = mod != null ? mod.getTabTitle() : Component.literal("?");
@@ -370,9 +372,11 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
-        // 背景与顶部装饰线
-        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + panelWidth + 6, panelTopY + panelHeight + 3, 0xCC080C18);
-        g.fill(panelLeftX - 6, panelTopY - 3, panelLeftX + panelWidth + 6, panelTopY - 2, 0xFF5577CC);
+        // 背景与描边（docs/ui_style.md：深棕渐变 + 棕褐描边 + 顶部装饰线）
+        g.fillGradient(panelLeftX - 6, panelTopY - 3, panelLeftX + panelWidth + 6, panelTopY + panelHeight + 3,
+                0xF018120A, 0xF0061018);
+        g.renderOutline(panelLeftX - 6, panelTopY - 3, panelWidth + 12, panelHeight + 6, 0xFF8B6914);
+        g.fill(panelLeftX - 5, panelTopY - 2, panelLeftX + panelWidth + 5, panelTopY - 1, 0x33FFE8C0);
 
         // 1. 绘制固定控件（不受裁剪，且不会被 super.render 重复绘制）
         for (AbstractWidget w : fixedWidgets) {
@@ -404,15 +408,15 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
     private void drawFixedOverlays(GuiGraphics g) {
         int cx = panelLeftX + panelWidth / 2;
         g.drawCenteredString(font,
-                Component.translatable("sre.map_helper.title").withStyle(s -> s.withColor(0x55BBFF).withBold(true)), cx,
-                panelTopY + 10, 0xFFFFFF);
+                Component.translatable("sre.map_helper.title").withStyle(s -> s.withColor(0xD4AF37).withBold(true)),
+                cx, panelTopY + 10, 0xFFFFFF);
         g.drawCenteredString(font,
                 Component.translatable("sre.map_helper.source_pos", position.getX(), position.getY(), position.getZ())
-                        .withStyle(s -> s.withColor(0x778899)),
+                        .withStyle(s -> s.withColor(0x9E8B6E)),
                 cx, panelTopY + 22, 0xFFFFFF);
         boolean hasOffset = offsetX != 0 || offsetY != 0 || offsetZ != 0;
         g.drawCenteredString(font, Component.translatable("sre.map_helper.applied_pos", ax(), ay(), az())
-                .withStyle(s -> s.withColor(hasOffset ? 0x55DD88 : 0x445566)), cx, panelTopY + 32, 0xFFFFFF);
+                .withStyle(s -> s.withColor(hasOffset ? 0x72C17B : 0x5A4530)), cx, panelTopY + 32, 0xFFFFFF);
 
         // 偏移量标签
         final int oy = panelTopY + 68;
@@ -420,22 +424,23 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
         int groupW = labelW + smallGap + fieldW;
         int totalW = groupW * 3 + bigGap * 2 + resetW;
         int startX = panelLeftX + (panelWidth - totalW) / 2;
-        g.drawString(font, Component.translatable("sre.map_helper.dx"), startX, oy + 4, 0xAABBCC, false);
-        g.drawString(font, Component.translatable("sre.map_helper.dy"), startX + groupW + bigGap, oy + 4, 0xAABBCC,
+        g.drawString(font, Component.translatable("sre.map_helper.dx"), startX, oy + 4, 0xC8B898, false);
+        g.drawString(font, Component.translatable("sre.map_helper.dy"), startX + groupW + bigGap, oy + 4, 0xC8B898,
                 false);
         g.drawString(font, Component.translatable("sre.map_helper.dz"), startX + (groupW + bigGap) * 2, oy + 4,
-                0xAABBCC, false);
+                0xC8B898, false);
 
         // 分割线
-        g.fill(panelLeftX, panelTopY + 86, panelLeftX + panelWidth, panelTopY + 87, 0x33AABBCC);
-        g.fill(panelLeftX, panelTopY + 110, panelLeftX + panelWidth, panelTopY + 111, 0x33AABBCC);
+        g.fill(panelLeftX, panelTopY + 86, panelLeftX + panelWidth, panelTopY + 87, 0x20FFFFFF);
+        g.fill(panelLeftX, panelTopY + 110, panelLeftX + panelWidth, panelTopY + 111, 0x20FFFFFF);
 
         // 当前标签标题
         String[] tabTitlesKeys = { "spawn_offset", "aabb_areas", "boolean_settings", "rooms_config", "environment",
-                "scene", "map", "all" };
+                "scene", "map", "meeting", "all" };
         g.drawString(font,
-                Component.translatable("sre.map_helper.tab_title." + tabTitlesKeys[activeTab])
-                        .withStyle(Style.EMPTY.withColor(0x5577CC).withBold(true)),
+                Component.translatable("sre.map_helper.tab_title." + tabTitlesKeys[Math.min(activeTab,
+                        tabTitlesKeys.length - 1)])
+                        .withStyle(Style.EMPTY.withColor(0xD4AF37).withBold(true)),
                 panelLeftX + 6, panelTopY + 94, 0xFFFFFF, false);
     }
 
@@ -446,7 +451,7 @@ public class MapBuildHelperScreen extends Screen implements ModuleContext {
             int thumbH = Math.max(20, (int) ((float) visibleH / contentHeight * barH));
             int thumbY = barY + (int) ((float) scrollOffset / (contentHeight - visibleH) * (barH - thumbH));
             g.fill(barX, barY, barX + 4, barY + barH, 0x22FFFFFF);
-            g.fill(barX, thumbY, barX + 4, thumbY + thumbH, 0xCC5577CC);
+            g.fill(barX, thumbY, barX + 4, thumbY + thumbH, 0xFFD4AF37);
         }
     }
 

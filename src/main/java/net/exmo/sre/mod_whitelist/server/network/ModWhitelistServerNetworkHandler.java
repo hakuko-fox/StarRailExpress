@@ -46,27 +46,32 @@ public class ModWhitelistServerNetworkHandler {
 		ServerPlayNetworking.registerGlobalReceiver(ModWhitelistPayload.ID, ModWhitelistServerNetworkHandler::handleModWhitelistPayload);
 		ServerPlayNetworking.registerGlobalReceiver(ResourcePackWhitelistPayload.ID, ModWhitelistServerNetworkHandler::handleResourcePackWhitelistPayload);
 		ServerPlayNetworking.registerGlobalReceiver(ShaderPackWhitelistPayload.ID, ModWhitelistServerNetworkHandler::handleShaderPackWhitelistPayload);
-		
+		JarAuthServerHandler.initialize();
+
 		// Register player join event to start timeout tracking and send config
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ModWhitelistTimeoutTracker.registerPlayer(handler.player.getUUID());
 			// Clean up any previous state for this player
 			initiallyVerifiedPlayers.remove(handler.player.getUUID());
 			MWLogger.LOGGER.debug("Started mod whitelist verification timeout for player {}", handler.player.getName().getString());
-			
+
 			// Send configuration to client
 			boolean syncHashValues = shouldRequestHashValues();
 			ModWhitelistConfigPayload configPayload = new ModWhitelistConfigPayload(syncHashValues);
 			ServerPlayNetworking.send(handler.player, configPayload);
 			MWLogger.LOGGER.debug("Sent mod whitelist config to player {} (sync hashes: {})", handler.player.getName().getString(), syncHashValues);
+
+			// JAR 密钥认证挑战（默认关闭）
+			JarAuthServerHandler.onPlayerJoin(handler.player);
 		});
-		
+
 		// Register player disconnect event to clean up
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			ModWhitelistTimeoutTracker.removePlayer(handler.player.getUUID());
 			initiallyVerifiedPlayers.remove(handler.player.getUUID());
+			JarAuthServerHandler.onPlayerDisconnect(handler.player.getUUID());
 		});
-		
+
 		// Register server tick event to check for timeouts
 		ServerTickEvents.END_SERVER_TICK.register(ModWhitelistServerNetworkHandler::checkModWhitelistTimeouts);
 	}
@@ -77,6 +82,7 @@ public class ModWhitelistServerNetworkHandler {
 	 */
 	private static void checkModWhitelistTimeouts(MinecraftServer server) {
 		ModWhitelistTimeoutTracker.checkTimeouts(server.getPlayerList().getPlayers());
+		JarAuthServerHandler.checkTimeouts(server);
 	}
 
 	/**

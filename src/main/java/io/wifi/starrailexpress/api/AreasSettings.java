@@ -190,4 +190,29 @@ public class AreasSettings {
 
     @Category("sound")
     public BackgroundAmbienceSound sceneOutsideSound = BackgroundAmbienceSound.train;
+
+    // ==================== 紧急会议系统 / Emergency Meeting ====================
+    // 见 net.exmo.sre.meeting.MeetingManager；地图配置 GUI 的「会议」标签页可视化编辑。
+
+    /** 是否启用会议系统（右键尸体召开紧急会议）。 */
+    @Category("meeting")
+    public boolean meetingEnabled = false;
+    /** 会议地点 X 坐标。 */
+    @Category("meeting")
+    public double meetingX = 0;
+    /** 会议地点 Y 坐标。 */
+    @Category("meeting")
+    public double meetingY = 0;
+    /** 会议地点 Z 坐标。 */
+    @Category("meeting")
+    public double meetingZ = 0;
+    /** 以会议地点为中心自动搜寻椅子（MountableBlock）的半径。 */
+    @Category("meeting")
+    public double meetingChairScanRadius = 12;
+    /** 讨论阶段时长（秒）。 */
+    @Category("meeting")
+    public int meetingDiscussSeconds = 60;
+    /** 两次会议之间的冷却（秒）。 */
+    @Category("meeting")
+    public int meetingCooldownSeconds = 90;
 }

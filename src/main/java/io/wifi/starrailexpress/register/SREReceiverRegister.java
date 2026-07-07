@@ -30,6 +30,13 @@ public class SREReceiverRegister {
     public static void registerGlobalReceivers() {
         SceneAssetNetwork.registerServerReceivers();
 
+        // 紧急会议系统：服务端核心 + 发言请求
+        net.exmo.sre.meeting.MeetingManager.register();
+        ServerPlayNetworking.registerGlobalReceiver(net.exmo.sre.meeting.network.MeetingSpeakC2SPayload.ID,
+                (payload, context) -> context.server().execute(
+                        () -> net.exmo.sre.meeting.MeetingManager.setManualSpeaking(context.player(),
+                                payload.speaking())));
+
         UpdateSkinSelectedPayload.registerReceiver();
         UpdateNameTagSelectedPayload.registerReceiver();
         // 服务端处理客户端投票包

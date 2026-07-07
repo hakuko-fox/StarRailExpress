@@ -137,6 +137,17 @@ public class WizardHud {
                 }
                 return Component.translatable("hud.wizard.ready").withStyle(ChatFormatting.GREEN);
             }
+            case BLINK -> {
+                cdText = cooldownText(comp.blinkCooldownTicks);
+                if (cdText != null) {
+                    return Component.translatable("hud.wizard.cooldown", cdText).withStyle(ChatFormatting.RED);
+                }
+                if (mana < config.wizardBlinkCost) {
+                    return Component.translatable("hud.wizard.no_mana", config.wizardBlinkCost)
+                            .withStyle(ChatFormatting.RED);
+                }
+                return Component.translatable("hud.wizard.ready").withStyle(ChatFormatting.GREEN);
+            }
         }
         return null;
     }

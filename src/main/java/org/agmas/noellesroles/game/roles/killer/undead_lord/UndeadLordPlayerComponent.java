@@ -193,6 +193,9 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
             return;
         }
         infection.put(victim.getUUID(), next);
+        // 感染压迫：被注入感染的瞬间短暂迟缓，让骨杖/亡灵的压制有实感
+        victim.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 2 * 20, 0, false, false, false));
 
         int reward = config().undeadLordInfectionCoinReward;
         if (reward != 0 && player instanceof ServerPlayer lord) {
@@ -306,9 +309,17 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
 
         boolean dirty = false;
 
-        // 增幅计时
+        // 增幅计时（增幅期间亡灵同时获得迅捷，强化「全军突击」的定位）
         if (infectionAmpTicks > 0) {
             infectionAmpTicks--;
+            if (infectionAmpTicks % 20 == 0) {
+                for (UUID id : ownedUndead) {
+                    if (serverLevel.getEntity(id) instanceof UndeadEntity undead) {
+                        undead.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                                net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 40, 0, false, false, false));
+                    }
+                }
+            }
             if (infectionAmpTicks == 0) {
                 syncedAmpActive = false;
                 dirty = true;
@@ -380,6 +391,9 @@ public class UndeadLordPlayerComponent implements RoleComponent, ServerTickingCo
                     }
                     if (p.position().distanceToSqr(zone.center) <= radius * radius) {
                         addFogInfection(p, (float) config().undeadLordFogInfectPerSecond);
+                        // 区域压制：雾中乘客视线摇晃，明确「不该久留」的信号
+                        p.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                                net.minecraft.world.effect.MobEffects.CONFUSION, 4 * 20, 0, false, false, false));
                     }
                 }
             }

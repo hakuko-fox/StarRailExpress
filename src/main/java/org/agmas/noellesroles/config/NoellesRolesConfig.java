@@ -451,21 +451,27 @@ public class NoellesRolesConfig implements ConfigData {
     /** Wizard - Shadow spell cooldown in seconds */
     public int wizardShadowCooldownSeconds = 90;
     /** Wizard - Explosion! spell minimum mana to cast */
-    public int wizardExplosionMinMana = 350;
+    public int wizardExplosionMinMana = 400;
     /** Wizard - Percent of current mana spent by Explosion! */
-    public int wizardExplosionManaPercentCost = 80;
+    public int wizardExplosionManaPercentCost = 85;
     /** Wizard - Explosion! spell cooldown in seconds */
-    public int wizardExplosionCooldownSeconds = 150;
+    public int wizardExplosionCooldownSeconds = 180;
     /** Wizard - Nine-ring fireball max travel range in blocks */
     public double wizardFireballRange = 25.0;
     /** Wizard - Nine-ring fireball explosion radius in blocks */
-    public double wizardFireballRadius = 4.0;
+    public double wizardFireballRadius = 3.5;
     /** Wizard - Max players killed by one nine-ring fireball */
-    public int wizardFireballMaxKills = 8;
+    public int wizardFireballMaxKills = 3;
     /** Wizard - Mana gained from drinking a potion */
     public int wizardPotionManaGain = 150;
     /** Wizard - Potion attack-immunity window in seconds */
     public int wizardPotionImmuneSeconds = 60;
+    /** Wizard - Blink spell flat mana cost */
+    public int wizardBlinkCost = 80;
+    /** Wizard - Blink spell cooldown in seconds */
+    public int wizardBlinkCooldownSeconds = 15;
+    /** Wizard - Blink spell max distance in blocks */
+    public double wizardBlinkDistance = 8.0;
 
     // ==================== Undead Lord (亡灵之主) ====================
     /** Undead Lord - Raise-from-corpse skill cooldown in seconds */
@@ -479,19 +485,21 @@ public class NoellesRolesConfig implements ConfigData {
     /** Undead Lord - Delay (seconds) between reaching 100% infection and death */
     public int undeadLordInfectionDeathDelaySeconds = 3;
     /** Undead Lord - Plague Fog duration in seconds */
-    public int undeadLordFogSeconds = 10;
+    public int undeadLordFogSeconds = 15;
     /** Undead Lord - Plague Fog radius in blocks */
-    public double undeadLordFogRadius = 4.0;
+    public double undeadLordFogRadius = 5.0;
     /** Undead Lord - Plague Fog infection added per second to players inside */
-    public double undeadLordFogInfectPerSecond = 5.0;
+    public double undeadLordFogInfectPerSecond = 8.0;
     /** Undead Lord - Soul Summon Charm temporary undead lifetime in seconds */
     public int undeadLordCharmLifetimeSeconds = 45;
     /** Undead Lord - Soul Summon Charm cooldown in seconds */
-    public int undeadLordCharmCooldownSeconds = 60;
-    /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled) */
+    public int undeadLordCharmCooldownSeconds = 90;
+    /** Undead Lord - Soul Summon Charm shop price */
+    public int undeadLordCharmPrice = 200;
+    /** Undead Lord - Infection Amplifier duration in seconds (undead infection doubled + undead haste) */
     public int undeadLordAmpSeconds = 60;
     /** Undead Lord - Coins awarded each time infection is successfully injected (bone staff / undead attack); 0 disables */
-    public int undeadLordInfectionCoinReward = 100;
+    public int undeadLordInfectionCoinReward = 25;
     /** Undead Lord - Bone Staff durability (number of hits) */
     public int undeadLordBoneStaffDurability = 5;
     /** Undead Lord - Bone Staff recharge time in seconds after durability is depleted (refills to full, never breaks) */

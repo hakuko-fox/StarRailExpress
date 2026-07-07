@@ -553,32 +553,40 @@ public class ModRolesInitialEventRegister {
             }
         });
 
-        // 咒法师技能注册：标记目标玩家
-        RoleSkill.register(ModRoles.WARLOCK, context -> {
-            ServerPlayer player = context.player();
-            var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
-            if (comp == null)
-                return;
-            UUID targetUuid = context.target();
-            ServerPlayer target = null;
-            if (targetUuid != null) {
-                Player p = player.level().getPlayerByUUID(targetUuid);
-                if (p instanceof ServerPlayer sp && GameUtils.isPlayerAliveAndSurvival(sp)
-                        && player.distanceToSqr(sp) <= 4.0D * 4.0D) {
-                    target = sp;
-                }
-            }
-            if (target != null && comp.tryMark(target)) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.warlock.marked", target.getName().getString())
-                                .withStyle(ChatFormatting.LIGHT_PURPLE),
-                        true);
-            } else {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.warlock.mark_fail").withStyle(ChatFormatting.RED),
-                        true);
-            }
-        });
+        // 咒术师技能注册（重做版）：窃取发肤（G）/ 蚀骨之咒（V 切换）/ 领域展开（Shift+G）
+        org.agmas.noellesroles.game.roles.killer.warlock.WarlockDomainManager.register();
+        RoleSkill.register(ModRoles.WARLOCK,
+                RoleSkill.skill(SRE.id("warlock_steal"), "skill.noellesroles.warlock.steal", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+                    if (comp == null)
+                        return false;
+                    ServerPlayer target = context.target() != null
+                            && player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null;
+                    return comp.trySteal(target);
+                }).cooldownSeconds(18).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("warlock_curse"), "skill.noellesroles.warlock.curse", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+                    if (comp == null)
+                        return false;
+                    ServerPlayer target = context.target() != null
+                            && player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null;
+                    return comp.tryCurse(target);
+                }).cooldownSeconds(45).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("warlock_domain"), "skill.noellesroles.warlock.domain", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
+                    if (comp == null)
+                        return false;
+                    return comp.tryOpenDomain();
+                }).cooldownSeconds(240).shifted(true).showOnHud(true).announceToSelf(true).build());
 
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
         RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {

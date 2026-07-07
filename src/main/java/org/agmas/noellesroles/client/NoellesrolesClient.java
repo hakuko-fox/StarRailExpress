@@ -412,11 +412,13 @@ public class NoellesrolesClient implements ClientModInitializer {
         SaltedFishClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
+        HakoniwaVisionClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
+            PointerGuidanceRenderer.render(renderContext);
         });
         InstinctRenderer.registerInstinctEvents();
 

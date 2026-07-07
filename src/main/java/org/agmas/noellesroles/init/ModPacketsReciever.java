@@ -1336,51 +1336,6 @@ public class ModPacketsReciever {
       }
     });
 
-    // ==================== 咒法师网络包 ====================
-
-    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.WarlockKillC2SPacket.ID,
-        (payload, context) -> {
-          ServerPlayer player = context.player();
-          SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-          if (!gameWorld.isSkillAvailable)
-            return;
-          if (player.hasEffect(ModEffects.SAFE_TIME))
-            return;
-          if (!gameWorld.isRole(player, ModRoles.WARLOCK))
-            return;
-          if (!GameUtils.isPlayerAliveAndSurvival(player))
-            return;
-          var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
-          ServerPlayer victim = comp.tryHexKill();
-          if (victim != null) {
-            player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
-                io.wifi.starrailexpress.index.TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5.0F, 1.0F);
-            GameUtils.killPlayer(victim, true, player, GameConstants.DeathReasons.REVOLVER);
-            player.displayClientMessage(
-                Component.translatable("message.noellesroles.warlock.hex_killed", victim.getName().getString())
-                    .withStyle(ChatFormatting.DARK_PURPLE),
-                true);
-          } else {
-            // 检查是否因为距离太远而失败
-            if (comp.markedTarget != null) {
-              ServerPlayer marked = player.server.getPlayerList().getPlayer(comp.markedTarget);
-              if (marked != null && GameUtils.isPlayerAliveAndSurvival(marked)
-                  && player.distanceTo(
-                      marked) > org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.HEX_KILL_RANGE) {
-                player.displayClientMessage(Component.translatable("message.noellesroles.warlock.hex_too_far")
-                    .withStyle(ChatFormatting.RED), true);
-              } else {
-                player.displayClientMessage(
-                    Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED),
-                    true);
-              }
-            } else {
-              player.displayClientMessage(
-                  Component.translatable("message.noellesroles.warlock.hex_fail").withStyle(ChatFormatting.RED), true);
-            }
-          }
-        });
-
     // ==================== 嬉命人网络包 ====================
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.EmbalmerC2SPacket.ID,
         (payload, context) -> {
