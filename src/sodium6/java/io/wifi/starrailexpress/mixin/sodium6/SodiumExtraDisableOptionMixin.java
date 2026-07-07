@@ -1,4 +1,4 @@
-package io.wifi.starrailexpress.mixin.compat.sodium_extra;
+package io.wifi.starrailexpress.mixin.sodium6;
 
 import com.google.common.collect.ImmutableList;
 import io.wifi.starrailexpress.client.SREClient;
@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Sodium-extra 0.6 版选项页改造（遗留，运行时检测到 sodium-extra &lt; 0.8 时启用）。
+ * sodium-extra 0.9+ 已改用 sodium 0.8 的新 config API，此类不再适用；
+ * 新版本下的防作弊由 SodiumExtraLightOptionMixinBlocker 保证。
+ */
 @Mixin(value = SodiumExtraGameOptionPages.class, remap = false)
 public class SodiumExtraDisableOptionMixin {
     private static Component parseVanillaString(String key) {

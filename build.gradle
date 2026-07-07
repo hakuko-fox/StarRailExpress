@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.15.5'
+    id 'fabric-loom' version '1.16.3'
     id 'maven-publish'
 }
 
@@ -26,6 +26,23 @@ loom {
 fabricApi {
     configureDataGeneration {
         client = true
+    }
+}
+
+// sodium 0.6 遗留兼容 mixin：主源集针对 sodium 0.8 编译，
+// 此源集针对 sodium 0.6.13 编译，运行时由 SREMixinPlugin 按版本二选一。
+sourceSets {
+    sodium6
+}
+
+loom.createRemapConfigurations(sourceSets.sodium6)
+
+loom {
+    mods {
+        starrailexpress {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.sodium6
+        }
     }
 }
 
@@ -81,6 +98,8 @@ dependencies {
     // include(implementation("com.mysql:mysql-connector-j:8.4.0"))
     include(implementation("com.zaxxer:HikariCP:5.1.0"))
     include(implementation(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-fabric:0.3.7-beta.1")))
+    // @WrapOperation 等注入器的编译期依赖；运行时由 fabric-loader 自带的 MixinExtras 提供
+    compileOnly("io.github.llamalad7:mixinextras-fabric:0.4.1")
 
     include(implementation('com.github.promeg:tinypinyin:2.0.3'))
     // TinyPinyin核心包，约80KB
@@ -130,6 +149,17 @@ dependencies {
     modRuntimeOnly fileTree(dir: 'runtime_mods', include: '*.jar')
     modRuntimeOnly files("libs/ForgeConfigAPIPort-v21.1.6-1.21.1-Fabric.jar")
     modImplementation("io.github.douira:glsl-transformer:${glslTransformer_version}")
+
+    // sodium 0.6 遗留兼容源集：仅参与编译，运行时行为由 mixin 插件按版本启用
+    modSodium6CompileOnly "maven.modrinth:sodium:${project.sodium6_version}-fabric"
+    modSodium6CompileOnly "maven.modrinth:sodium-extra:${project.sodium_extra6_version}+fabric"
+    sodium6CompileOnly sourceSets.main.output
+}
+
+// 让遗留源集拿到 MC / loader / mixin 等公共依赖，但排除主源集的 sodium 0.8 系 jar，
+// 避免与其自身的 sodium 0.6 依赖冲突
+sourceSets.sodium6.compileClasspath += sourceSets.main.compileClasspath.filter { file ->
+    !file.name.toLowerCase().contains("sodium")
 }
 
 processResources {
@@ -172,6 +202,7 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}" }
     }
+    from sourceSets.sodium6.output
 }
 
 // configure the maven publication

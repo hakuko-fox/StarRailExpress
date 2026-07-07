@@ -245,6 +245,7 @@
     "harpymodloader.mixins.json",
     "starrailexpress.mixins.json",
     "starrailexpress_exmo.mixins.json",
+    "starrailexpress_sodium6.mixins.json",
     "wathe_blocker.mixins.json"
   ],
   "depends": {
