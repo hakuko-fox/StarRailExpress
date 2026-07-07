@@ -11,6 +11,7 @@ import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropRevolverWhenDead;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.DropWhenDead;
 import io.wifi.starrailexpress.event.*;
+import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
@@ -808,6 +809,13 @@ public class NRDeathEvents {
             handleGlitchRobotDeath(victim);
             handleCakeMakerDeath(victim);
         });
+
+        // 实体交互方块 DEATH 条件触发（无击杀者场景：摔出列车等）
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (victim instanceof ServerPlayer sp && victim.level() instanceof ServerLevel sl) {
+                EntityInteractionBlockEntity.onPlayerDeath(sl, sp, deathReason);
+            }
+        });
     }
 
     // --- OnPlayerDeathWithKiller ---
@@ -1010,6 +1018,13 @@ public class NRDeathEvents {
                 if (player instanceof ServerPlayer sp) {
                     org.agmas.noellesroles.commands.BroadcastCommand.BroadcastMessage(sp, deathMessage);
                 }
+            }
+        });
+
+        // 实体交互方块 DEATH 条件触发
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (victim instanceof ServerPlayer sp && victim.level() instanceof ServerLevel sl) {
+                EntityInteractionBlockEntity.onPlayerDeath(sl, sp, deathReason);
             }
         });
     }

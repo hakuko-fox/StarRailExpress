@@ -490,8 +490,8 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
         if (world instanceof ServerLevel serverWorld) {
             ServerPlayer player = serverWorld.getServer().getPlayerList().getPlayer(currentPlayerUuid);
             if (player != null) {
-                // 分配职业
-                assignRoleToPlayer(player, randomRole);
+                // 仅记录职业选择，所有选择结束后统一在 completeRoleSelection 阶段分配并通知
+                selectedRoles.put(player.getUUID(), randomRole);
 
                 // 发送超时提示
                 MutableComponent timeoutMsg = Component.translatable("gui.sre.role_rotation.selection_timeout",
@@ -655,8 +655,9 @@ public class RoleRotationWorldComponent implements AutoSyncedComponent {
             return;
         }
 
-        // 分配职业
-        assignRoleToPlayer(player, selectedRole);
+        // 仅记录职业选择，不发送个人提示消息
+        // 所有选择结束后统一在 completeRoleSelection 阶段分配并通知
+        selectedRoles.put(player.getUUID(), selectedRole);
 
         // 移除已选职业
         rolePool.remove(selectedRole);

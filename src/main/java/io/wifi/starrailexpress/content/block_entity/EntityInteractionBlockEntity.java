@@ -51,6 +51,11 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     private static final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>
             mapBlockCount = new java.util.concurrent.ConcurrentHashMap<>();
 
+    // 按地图名追踪所有 EntityInteractionBlockEntity 实例（用于外部事件触发 DEATH 等条件）
+    // 与 mapBlockCount 使用相同的 mapKey，仅扫描当前地图中 scan 到的方块
+    private static final java.util.concurrent.ConcurrentHashMap<String,
+            java.util.Set<BlockPos>> mapInstances = new java.util.concurrent.ConcurrentHashMap<>();
+
     private boolean tracked = false;
 
     private static String getMapKey(net.minecraft.world.level.Level level) {
@@ -75,6 +80,11 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                                 k -> new java.util.concurrent.atomic.AtomicInteger(0))
                         .incrementAndGet();
             }
+            // 注册到地图实例集，用于外部事件触发 DEATH 等条件（仅扫描当前地图中 scan 到的方块）
+            mapInstances
+                    .computeIfAbsent(key,
+                            k -> java.util.concurrent.ConcurrentHashMap.newKeySet())
+                    .add(worldPosition);
         }
     }
 
@@ -90,6 +100,11 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     if (counter != null) {
                         counter.decrementAndGet();
                     }
+                }
+                // 从地图实例集中注销
+                var set = mapInstances.get(key);
+                if (set != null) {
+                    set.remove(worldPosition);
                 }
             }
         }
@@ -552,6 +567,70 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             // 刷新方块状态，使红石信号更新
             serverWorld.updateNeighborsAt(pos, state.getBlock());
             serverWorld.updateNeighbourForOutputSignal(pos, state.getBlock());
+        }
+    }
+
+    /**
+     * 由外部死亡事件调用，检查当前地图中 scan 到的所有 EntityInteractionBlockEntity 的 DEATH 条件。
+     * 当玩家死亡时，扫描当前地图已注册的实体交互方块，
+     * 若有 DEATH 条件匹配死亡原因则触发对应的动作。
+     */
+    public static void onPlayerDeath(ServerLevel world, ServerPlayer victim,
+            net.minecraft.resources.ResourceLocation deathReason) {
+        if (world == null || victim == null) return;
+        String key = getMapKey(world);
+        if (key.isEmpty()) return;
+        var set = mapInstances.get(key);
+        if (set == null || set.isEmpty()) return;
+
+        for (BlockPos pos : set) {
+            if (world.getBlockEntity(pos) instanceof EntityInteractionBlockEntity entity) {
+                if (entity.isRemoved()) continue;
+                entity.handleDeathTrigger(victim, world, pos, deathReason);
+            }
+        }
+    }
+
+    /**
+     * 处理单个方块的 DEATH 条件触发
+     */
+    private void handleDeathTrigger(ServerPlayer player, ServerLevel world, BlockPos pos,
+            net.minecraft.resources.ResourceLocation deathReason) {
+        if (conditions.isEmpty()) return;
+
+        // 检查方块冷却
+        long currentGameTime;
+        try {
+            var timeComponent = SREGameTimeComponent.KEY.get(world);
+            currentGameTime = timeComponent.getResetTime() - timeComponent.getTime();
+        } catch (Exception e) {
+            return;
+        }
+        if (isInCooldown(currentGameTime)) return;
+
+        // 检查玩家冷却
+        long lastTrigger = lastTriggerTime.getOrDefault(player.getUUID(), 0L);
+        if (currentGameTime - lastTrigger < cooldownTicks) return;
+
+        // 遍历所有条件，检查是否有 DEATH 条件匹配
+        boolean triggered = false;
+        for (TriggerCondition condition : conditions) {
+            if (condition.type == ConditionType.DEATH) {
+                // DEATH 条件的 stringValue 为要匹配的死亡原因
+                String requiredReason = condition.stringValue;
+                if (requiredReason == null || requiredReason.isEmpty()
+                        || requiredReason.equals("*")
+                        || requiredReason.equals(deathReason.toString())
+                        || requiredReason.equals(deathReason.getPath())) {
+                    triggered = true;
+                    break;
+                }
+            }
+        }
+
+        if (triggered) {
+            executeActions(player, world, pos, currentGameTime);
+            lastTriggerTime.put(player.getUUID(), currentGameTime);
         }
     }
 

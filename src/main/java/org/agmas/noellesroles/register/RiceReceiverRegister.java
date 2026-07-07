@@ -928,7 +928,7 @@ public class RiceReceiverRegister {
         Vec3 current = player.getDeltaMovement();
         Vec3 dashMotion = new Vec3(
                 direction.x * VETERAN_DASH_SPEED,
-                Math.max(current.y, 0.08D),
+                current.y,
                 direction.z * VETERAN_DASH_SPEED);
         player.setDeltaMovement(dashMotion);
         player.hurtMarked = true;

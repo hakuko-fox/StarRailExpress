@@ -21,6 +21,7 @@ public class RoleRotationCache {
 
     // 已选择职业的玩家 (玩家UUID -> 职业名)
     private static final HashMap<UUID, String> selectedRoles = new HashMap<>();
+    private static final Set<UUID> selectedPlayers = new HashSet<>();
 
     // 当前候选职业
     private static final List<String> currentCandidates = new ArrayList<>();
@@ -52,6 +53,8 @@ public class RoleRotationCache {
         // 更新selectedRoles
         selectedRoles.clear();
         selectedRoles.putAll(packet.getSelectedRoles());
+        selectedPlayers.clear();
+        selectedPlayers.addAll(packet.getSelectedPlayers());
         
         // 更新currentCandidates
         currentCandidates.clear();
@@ -121,6 +124,10 @@ public class RoleRotationCache {
         return selectedRoles;
     }
 
+    public static Set<UUID> getSelectedPlayers() {
+        return selectedPlayers;
+    }
+
     public static List<String> getCurrentCandidates() {
         return currentCandidates;
     }
@@ -157,6 +164,11 @@ public class RoleRotationCache {
         selectedRoles.putAll(selected);
     }
 
+    public static void updateSelectedPlayers(Set<UUID> selected) {
+        selectedPlayers.clear();
+        selectedPlayers.addAll(selected);
+    }
+
     public static void updateCurrentCandidates(List<String> candidates) {
         currentCandidates.clear();
         currentCandidates.addAll(candidates);
@@ -170,6 +182,7 @@ public class RoleRotationCache {
         remainingTime = 0;
         rotationOrder.clear();
         selectedRoles.clear();
+        selectedPlayers.clear();
         currentCandidates.clear();
         randomChoosers.clear();
         myRotationIndex = -1;

@@ -231,6 +231,12 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             SRERole role = selectedRoles.get(p.getUUID());
             if (role != null) {
                 gameWorldComponent.addRole(p, role, false);
+                // 在此发送职业分配消息，而不是在选择时发送
+                p.displayClientMessage(
+                        Component.translatable("gui.sre.role_rotation.selected",
+                                RoleUtils.getRoleName(role).withColor(role.getColor()))
+                                .withStyle(ChatFormatting.GREEN),
+                        true);
             }
         }
 

@@ -38,6 +38,7 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
     private final HashMap<UUID, Integer> rotationOrder;
     // 已选职业
     private final HashMap<UUID, String> selectedRoles;
+    private final Set<UUID> selectedPlayers;
     // 候选职业
     private final List<String> currentCandidates;
     // 当前玩家自己的序号
@@ -70,6 +71,12 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
             String rolePath = buf.readUtf();
             selectedRoles.put(uuid, rolePath);
         }
+
+        int selectedPlayerSize = buf.readInt();
+        this.selectedPlayers = new HashSet<>();
+        for (int i = 0; i < selectedPlayerSize; i++) {
+            selectedPlayers.add(buf.readUUID());
+        }
         
         // 读取currentCandidates
         int candidatesSize = buf.readInt();
@@ -93,7 +100,7 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
     private RoleRotationSyncS2CPacket(boolean isSelecting, int currentIndex, int totalPlayers,
             int confirmCountdown, int finalPhaseThreshold, int remainingTime,
             HashMap<UUID, Integer> rotationOrder, HashMap<UUID, String> selectedRoles,
-            List<String> currentCandidates, int myRotationIndex, Set<UUID> randomChoosers) {
+            Set<UUID> selectedPlayers, List<String> currentCandidates, int myRotationIndex, Set<UUID> randomChoosers) {
         this.isSelecting = isSelecting;
         this.currentIndex = currentIndex;
         this.totalPlayers = totalPlayers;
@@ -102,6 +109,7 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
         this.remainingTime = remainingTime;
         this.rotationOrder = rotationOrder;
         this.selectedRoles = selectedRoles;
+        this.selectedPlayers = selectedPlayers;
         this.currentCandidates = currentCandidates;
         this.myRotationIndex = myRotationIndex;
         this.randomChoosers = randomChoosers;
@@ -127,6 +135,11 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
         for (Map.Entry<UUID, String> entry : selectedRoles.entrySet()) {
             buf.writeUUID(entry.getKey());
             buf.writeUtf(entry.getValue());
+        }
+
+        buf.writeInt(selectedPlayers.size());
+        for (UUID uuid : selectedPlayers) {
+            buf.writeUUID(uuid);
         }
         
         // 写入currentCandidates
@@ -176,9 +189,12 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
         
         // 构建已选职业map
         HashMap<UUID, String> selectedMap = new HashMap<>();
-        for (Map.Entry<UUID, SRERole> entry : rrwc.getSelectedRoles().entrySet()) {
-            selectedMap.put(entry.getKey(), entry.getValue().identifier().toString());
+        if (!rrwc.isSelecting()) {
+            for (Map.Entry<UUID, SRERole> entry : rrwc.getSelectedRoles().entrySet()) {
+                selectedMap.put(entry.getKey(), entry.getValue().identifier().toString());
+            }
         }
+        Set<UUID> selectedPlayers = new HashSet<>(rrwc.getSelectedRoles().keySet());
         
         // 构建候选职业列表
         List<String> candidatesList = new ArrayList<>();
@@ -195,6 +211,7 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
                 remainingTime,
                 orderMap,
                 selectedMap,
+                selectedPlayers,
                 candidatesList,
                 myIndex,
                 new HashSet<>(rrwc.getRandomChoosers())
@@ -210,6 +227,7 @@ public class RoleRotationSyncS2CPacket implements CustomPacketPayload {
     public int getRemainingTime() { return remainingTime; }
     public HashMap<UUID, Integer> getRotationOrder() { return rotationOrder; }
     public HashMap<UUID, String> getSelectedRoles() { return selectedRoles; }
+    public Set<UUID> getSelectedPlayers() { return selectedPlayers; }
     public List<String> getCurrentCandidates() { return currentCandidates; }
     public int getMyRotationIndex() { return myRotationIndex; }
     public Set<UUID> getRandomChoosers() { return randomChoosers; }
