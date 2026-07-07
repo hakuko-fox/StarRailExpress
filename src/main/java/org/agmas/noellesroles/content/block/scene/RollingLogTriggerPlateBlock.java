@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import com.mojang.serialization.MapCodec;
+
+import io.wifi.starrailexpress.content.block.CameraBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -31,19 +33,21 @@ import org.jetbrains.annotations.Nullable;
  * 滚木触发板：玩家踩上后朝 FACING 方向召唤滚木；破坏任务激活时也会周期性召唤滚木。
  * 使用原版橡木压力板外观，参考 {@link RollingStoneTriggerPlate} 实现。
  */
-public class RollingLogTriggerPlate extends BaseEntityBlock {
+public class RollingLogTriggerPlateBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    // 猪残月，xyz和普通facing都搞混了
+    public static final DirectionProperty FACING = BlockStateProperties.FACING;
     private static final VoxelShape SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 1.0, 16.0);
+    private static MapCodec<RollingLogTriggerPlateBlock> CODEC = simpleCodec(RollingLogTriggerPlateBlock::new);
 
-    public RollingLogTriggerPlate(Properties settings) {
+    public RollingLogTriggerPlateBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
+        return CODEC;
     }
 
     @Override
@@ -53,6 +57,7 @@ public class RollingLogTriggerPlate extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(FACING);
     }
 
