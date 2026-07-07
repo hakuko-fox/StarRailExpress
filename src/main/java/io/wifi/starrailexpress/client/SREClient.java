@@ -213,7 +213,6 @@ public class SREClient implements ClientModInitializer {
     public void onInitializeClient() {
         SceneAssetClient.initialize();
         SceneAssetNetwork.registerClientReceivers();
-        io.wifi.starrailexpress.compat.SodiumExtraCompat.forceLightUpdates();
         ClientScheduler.init();
         ClientSkinCache.init();
         ClientConfigEvents.register();
