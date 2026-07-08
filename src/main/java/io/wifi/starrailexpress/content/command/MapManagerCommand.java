@@ -452,7 +452,7 @@ public class MapManagerCommand {
     AreasWorldComponent areas = AreasWorldComponent.KEY.get(source.getLevel());
     StringBuilder sb = new StringBuilder();
     sb.append("\n=== 当前区域配置 ===\n");
-    sb.append("AreasSettings: ").append(MapManagerSettingsCommand.GSON.toJson(areas.getSpawnPos())).append("\n");
+    sb.append("AreasSettings: ").append(MapManagerSettingsCommand.GSON.toJson(areas.areasSettings)).append("\n");
     sb.append("spawnPos: ").append(formatPosWithOrientation(areas.getSpawnPos())).append("\n");
     sb.append("spectatorSpawnPos: ").append(formatPosWithOrientation(areas.getSpectatorSpawnPos())).append("\n");
     sb.append("readyArea: ").append(formatAABB(areas.getReadyArea())).append("\n");

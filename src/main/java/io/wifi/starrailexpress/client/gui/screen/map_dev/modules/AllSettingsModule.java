@@ -414,10 +414,13 @@ public class AllSettingsModule implements TabModule {
                 placements.add(new WidgetPlacement(viewBtn, y));
             }
         } else {
-            ModernButton toggleBtn = ModernButton.builder(Component.translatable(entry.expanded ? "sre.map_helper.expandable.expand" : "sre.map_helper.expandable.unexpand"), b -> {
-                entry.expanded = !entry.expanded;
-                ctx.requestModuleRefresh();
-            }).bounds(rightEdge - 50, y, 50, 20).accentBar().build();
+            ModernButton toggleBtn = ModernButton.builder(
+                    Component.translatable(
+                            !entry.expanded ? "sre.map_helper.expandable.expand" : "sre.map_helper.expandable.unexpand"),
+                    b -> {
+                        entry.expanded = !entry.expanded;
+                        ctx.requestModuleRefresh();
+                    }).bounds(rightEdge - 50, y, 50, 20).accentBar().build();
             placements.add(new WidgetPlacement(toggleBtn, y));
         }
         return usedHeight;
