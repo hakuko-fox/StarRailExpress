@@ -289,7 +289,12 @@
     "meetingZ": 0.5,
     "meetingChairScanRadius": 12.0,                            // 自动搜索椅子的半径(方块)            默认: 12
     "meetingDiscussSeconds": 60,                               // 讨论阶段时长(秒)                    默认: 60
-    "meetingCooldownSeconds": 90                               // 会议冷却时间(秒)                    默认: 90
+    "meetingCooldownSeconds": 90,                              // 会议冷却时间(秒)                    默认: 90
+
+    // --- 摇铃会议系统 (右键原版钟方块召开会议) ---
+    "bellMeetingEnabled": true,                                // 是否启用摇铃会议                    默认: false
+    "bellMeetingStartCooldown": 120,                           // 开局冷却(秒), 开局后多少秒才能摇铃   默认: 120
+    "bellMeetingCooldown": 120                                 // 摇铃冷却(秒), 两次摇铃间隔          默认: 120
   }
 }
 ```
@@ -324,6 +329,9 @@
   "sceneOutsideSound": "sand_storm",
   "mapStatusBar": "THIRST",
   "enableOxygenDrowning": true,
+  "bellMeetingEnabled": true,
+  "bellMeetingStartCooldown": 120,
+  "bellMeetingCooldown": 120,
   "effect": ["minecraft:speed,2", "minecraft:jump_boost,1"],
   "roomCount": 7,
   "roomPositions": {
