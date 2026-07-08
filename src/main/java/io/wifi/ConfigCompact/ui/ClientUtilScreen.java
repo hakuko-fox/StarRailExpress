@@ -17,6 +17,7 @@ public class ClientUtilScreen extends Screen {
 
     public ClientUtilScreen(Screen parent) {
         super(Component.translatable("screen.starrailexpress.client_utils"));
+        this.parent = parent;
     }
 
     static int WIDE_BUTTON_WIDTH = 204;

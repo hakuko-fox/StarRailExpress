@@ -102,10 +102,13 @@ public class SettingMenuScreen extends Screen {
                 Button.builder(Component.translatable("screen.starrailexpress.settings.introduction"), (button) -> {
                     this.minecraft.setScreen(new RoleIntroduceScreen(this));
                 }).width(WIDE_BUTTON_WIDTH).build(), COLUMN_COUNT, gridLayout.newCellSettings().paddingTop(50));
-
-        rowHelper.addChild(
-                this.openScreenButton(Component.translatable("screen.starrailexpress.settings.client"),
-                        () -> (SREClientConfig.HANDLER.generateGui().generateScreen(this))));
+        {
+            var bbtn = this.openScreenButton(Component.translatable("screen.starrailexpress.settings.client"),
+                    () -> (SREClientConfig.HANDLER.generateGui().generateScreen(this)));
+            bbtn.setWidth(WIDE_BUTTON_WIDTH);
+            rowHelper.addChild(
+                    bbtn, COLUMN_COUNT);
+        }
 
         rowHelper.addChild(
                 this.openScreenButton(Component.translatable("screen.starrailexpress.client_utils"),
@@ -196,7 +199,7 @@ public class SettingMenuScreen extends Screen {
             rowHelper.addChild(
                     Button.builder(Component.translatable("screen.starrailexpress.settings.backpausing"), (button) -> {
                         SREClientUtils.setScreenIgnoreMixins(this.minecraft, new PauseScreen(true));
-                    }).width(SMALL_BUTTON_WIDTH).build());
+                    }).width(WIDE_BUTTON_WIDTH).build(), COLUMN_COUNT);
         }
         // 返回
         rowHelper.addChild(Button.builder(Component.translatable("gui.back"), (button) -> {
