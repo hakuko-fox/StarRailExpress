@@ -26,7 +26,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -240,7 +239,7 @@ public final class MeetingManager {
         level = serverLevel;
         phase = PHASE_INTRO;
         phaseEndTick = now + INTRO_TICKS;
-        center = new Vec3(settings.meetingX, settings.meetingY, settings.meetingZ);
+        center = new Vec3(settings.meetingPosition.x, settings.meetingPosition.y, settings.meetingPosition.z);
         reporterName = reporter.getGameProfile().getName();
         victimName = victim == null ? "" : victim;
         participants.clear();
@@ -408,7 +407,7 @@ public final class MeetingManager {
     /** 搜寻会议点周围的椅子，按与中心的距离排序。 */
     private static List<BlockPos> scanChairs(ServerLevel serverLevel, AreasSettings settings) {
         int radius = (int) Math.min(MAX_SCAN_RADIUS, Math.max(1, settings.meetingChairScanRadius));
-        BlockPos centerPos = BlockPos.containing(settings.meetingX, settings.meetingY, settings.meetingZ);
+        BlockPos centerPos = BlockPos.containing(settings.meetingPosition.x, settings.meetingPosition.y, settings.meetingPosition.z);
         List<BlockPos> chairs = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(
                 centerPos.offset(-radius, -3, -radius), centerPos.offset(radius, 3, radius))) {

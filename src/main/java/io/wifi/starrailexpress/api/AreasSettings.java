@@ -41,7 +41,18 @@ import net.minecraft.world.phys.Vec3;
 public class AreasSettings {
 
     public static class StoreableBlockPos {
-        int x = 0, y = 0, z = 0;
+        public int x = 0, y = 0, z = 0;
+        public int x() {
+            return x;
+        }
+
+        public int y() {
+            return y;
+        }
+
+        public int z() {
+            return z;
+        }
 
         public StoreableBlockPos(int x, int y, int z) {
             this.x = x;
@@ -61,7 +72,19 @@ public class AreasSettings {
     }
 
     public static class StoreableVec3 {
-        double x = 0, y = 0, z = 0;
+        public double x = 0, y = 0, z = 0;
+
+        public double x() {
+            return x;
+        }
+
+        public double y() {
+            return y;
+        }
+
+        public double z() {
+            return z;
+        }
 
         public StoreableVec3(net.minecraft.world.phys.Vec3 vec) {
             this.x = vec.x;
@@ -206,15 +229,9 @@ public class AreasSettings {
     /** 是否启用会议系统（右键尸体召开紧急会议）。 */
     @Category("meeting")
     public boolean meetingEnabled = false;
-    /** 会议地点 X 坐标。 */
+    /** 这个class里有可以存储的Vec3不用的AI是真的逊。 */
     @Category("meeting")
-    public double meetingX = 0;
-    /** 会议地点 Y 坐标。 */
-    @Category("meeting")
-    public double meetingY = 0;
-    /** 会议地点 Z 坐标。 */
-    @Category("meeting")
-    public double meetingZ = 0;
+    public StoreableVec3 meetingPosition = new StoreableVec3(0, 0, 0);
     /** 以会议地点为中心自动搜寻椅子（MountableBlock）的半径。 */
     @Category("meeting")
     public double meetingChairScanRadius = 12;
