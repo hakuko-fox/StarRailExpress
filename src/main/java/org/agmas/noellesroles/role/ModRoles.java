@@ -906,7 +906,7 @@ public class ModRoles {
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanJumpManhole(true).setCanAcrossFog(true)
             .setComponentKey(AdventurerPlayerComponent.KEY).setDefaultEnableNeededPlayerCount(6)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.TRAP).setDefaultMax(0)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.TRAP).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false);
     // 红尘客
     public static SRERole WAYFARER = TMMRoles.registerRole(
