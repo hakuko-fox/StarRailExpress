@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+// 有一堆 events 在 OnRenderRoleName 里可以注册。请避免 mixin 和直接修改本类。
 public class RoleNameRenderer {
     private static TrainRole targetRoleType = TrainRole.BYSTANDER;
     private static SRERole targetRole;
