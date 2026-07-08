@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.game.roles.killer.manipulator;
 
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
@@ -102,6 +103,76 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
         this.inputFreshTicks = 5;
     }
 
+    /**
+     * 将被操控者弹回最近的安全落点并清零速度（回弹）。
+     * 供防虚空、危险液体（水/岩浆）、陷阱拦截等复用。
+     */
+    public void bounceToSafe() {
+        if (!(player instanceof ServerPlayer sp)) {
+            return;
+        }
+        verticalVelocity = 0;
+        sp.setDeltaMovement(0, 0, 0);
+        sp.fallDistance = 0;
+        if (hasSafePos) {
+            sp.teleportTo(safeX, safeY, safeZ);
+            sp.connection.teleport(safeX, safeY, safeZ, sp.getYRot(), sp.getXRot());
+        }
+    }
+
+    /**
+     * 若该玩家当前正被操纵师操控，则将其弹回安全落点并返回 {@code true}。
+     * 供陷阱等外部逻辑拦截：被操控者不触发/不受陷阱伤害，而是被弹回。
+     */
+    public static boolean bounceBackIfControlled(Player player) {
+        if (player == null) {
+            return false;
+        }
+        InControlCCA cca = KEY.maybeGet(player).orElse(null);
+        if (cca == null || !cca.isControlling) {
+            return false;
+        }
+        cca.bounceToSafe();
+        return true;
+    }
+
+    /**
+     * 注册操纵师操控的死亡限制（优先用 API 事件实现）：
+     * 被操控者因被拖入危险区/陷阱（水、岩浆、坠车/虚空、摔落）而死时，否决其死亡并弹回安全落点。
+     *
+     * <p>在否决监听器内先 {@link #bounceToSafe()} 把目标传送回干燥落点，因此即便随后的
+     * {@code forceKillPlayer} 会绕过否决事件，其"仍在水中/岩浆中"的二次判定也会因目标已被弹出而不成立，
+     * 从而彻底避免操纵师借环境把被操控者害死。
+     */
+    public static void registerEvents() {
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (!(victim instanceof ServerPlayer)) {
+                return true;
+            }
+            InControlCCA cca = KEY.maybeGet(victim).orElse(null);
+            if (cca == null || !cca.isControlling) {
+                return true;
+            }
+            if (!isHazardDeath(deathReason)) {
+                return true;
+            }
+            cca.bounceToSafe();
+            return false;
+        });
+    }
+
+    /** 判断是否为"被操控者不应因此致死"的环境/陷阱死因。 */
+    private static boolean isHazardDeath(ResourceLocation reason) {
+        if (reason == null) {
+            return false;
+        }
+        String path = reason.getPath();
+        return path.equals("cant_swim_drowned")
+                || path.equals("swim_in_lava")
+                || path.equals("fell_out_of_train")
+                || path.equals("fall_damage");
+    }
+
     @Override
     public void readFromSyncNbt(CompoundTag compoundTag, HolderLookup.Provider provider) {
         isControlling = compoundTag.getBoolean("isControlling");
@@ -186,8 +257,9 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
      * 由操纵师输入驱动目标移动；包含重力/跳跃与防虚空弹回。
      */
     private void driveMovement(ServerPlayer sp) {
-        // 记录最近安全落点（在地面且高于虚空阈值）
-        if (sp.onGround() && sp.getY() > sp.level().getMinBuildHeight() + 1) {
+        // 记录最近安全落点（在干燥地面、高于虚空阈值、且不在水/岩浆中）
+        if (sp.onGround() && sp.getY() > sp.level().getMinBuildHeight() + 1
+                && !sp.isInWater() && !sp.isUnderWater() && !sp.isInLava()) {
             hasSafePos = true;
             safeX = sp.getX();
             safeY = sp.getY();
@@ -245,6 +317,11 @@ public class InControlCCA implements RoleComponent, ServerTickingComponent {
         Vec3 delta = new Vec3(horizontal.x, verticalVelocity, horizontal.z);
         sp.move(MoverType.SELF, delta);
         sp.setDeltaMovement(horizontal.x, verticalVelocity, horizontal.z);
+
+        // 危险液体（水/岩浆）：把被拖入者弹回安全落点，避免操纵师借水/岩浆致死
+        if (sp.isInWater() || sp.isUnderWater() || sp.isInLava()) {
+            bounceToSafe();
+        }
 
         // 防虚空：越界则弹回上一个安全落点
         if (sp.getY() < sp.level().getMinBuildHeight() + 1 && hasSafePos) {

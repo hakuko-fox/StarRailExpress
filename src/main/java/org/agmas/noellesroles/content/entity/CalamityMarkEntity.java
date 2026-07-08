@@ -155,7 +155,12 @@ public class CalamityMarkEntity extends Entity {
                 if (gameWorld.isKillerTeam(player)) {
                     return false;
                 }
-                
+
+                // 被操纵师操控的玩家：弹回且不触发陷阱（不受陷阱伤害）
+                if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA.bounceBackIfControlled(player)) {
+                    return false;
+                }
+
                 return true;
             }
         );
