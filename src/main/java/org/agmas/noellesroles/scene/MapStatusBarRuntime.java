@@ -7,7 +7,7 @@ import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
-import io.wifi.starrailexpress.index.TMMBlockTags;
+import io.wifi.starrailexpress.index.tag.TMMBlockTags;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
