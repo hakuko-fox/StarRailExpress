@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.bawnorton.mixinsquared.TargetHandler;
 
 import io.wifi.utils.cca.CCAManager;
-@Mixin(value = net.minecraft.server.level.ServerLevel.class)
+@Mixin(value = net.minecraft.server.level.ServerLevel.class, priority = 1500)
 public class MixinServerWorldMixin {
     // 覆盖 CCA 的 tick 方法
     @TargetHandler(mixin = "org.ladysnake.cca.mixin.entity.common.MixinServerWorld", // 完整类名

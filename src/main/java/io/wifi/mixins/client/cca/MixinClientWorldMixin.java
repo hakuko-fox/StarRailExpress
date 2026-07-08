@@ -11,7 +11,7 @@ import com.bawnorton.mixinsquared.TargetHandler;
 
 import io.wifi.utils.cca.CCAManagerClient;
 
-@Mixin(value = net.minecraft.client.multiplayer.ClientLevel.class)
+@Mixin(value = net.minecraft.client.multiplayer.ClientLevel.class, priority = 1500)
 public class MixinClientWorldMixin {
     // 覆盖 CCA 的 tick 方法
     @TargetHandler(mixin = "org.ladysnake.cca.mixin.entity.client.MixinClientWorld", // 完整类名
