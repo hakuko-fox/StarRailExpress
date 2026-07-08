@@ -2,9 +2,9 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.ConfigCompact.annotation.Category;
 import io.wifi.ConfigCompact.annotation.ConfigSync;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableAABB;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableVec3;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * <b>AreasWorldComponent 其他地图设置</b><br/>
@@ -38,70 +38,14 @@ import net.minecraft.world.phys.Vec3;
  * 
  */
 
+// 在这里写了后不用去改UI默认会显示！！
+// 在这里写了后不用去改UI默认会显示！！
+// 在这里写了后不用去改UI默认会显示！！
 public class AreasSettings {
-
-    public static class StoreableBlockPos {
-        public int x = 0, y = 0, z = 0;
-        public int x() {
-            return x;
-        }
-
-        public int y() {
-            return y;
-        }
-
-        public int z() {
-            return z;
-        }
-
-        public StoreableBlockPos(int x, int y, int z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        public StoreableBlockPos(BlockPos blockPos) {
-            this.x = blockPos.getX();
-            this.y = blockPos.getY();
-            this.z = blockPos.getZ();
-        }
-
-        public BlockPos toBlockPos() {
-            return new BlockPos(x, y, z);
-        }
-    }
-
-    public static class StoreableVec3 {
-        public double x = 0, y = 0, z = 0;
-
-        public double x() {
-            return x;
-        }
-
-        public double y() {
-            return y;
-        }
-
-        public double z() {
-            return z;
-        }
-
-        public StoreableVec3(net.minecraft.world.phys.Vec3 vec) {
-            this.x = vec.x;
-            this.y = vec.y;
-            this.z = vec.z;
-        }
-
-        public StoreableVec3(double x, double y, double z) {
-            this.x = x;
-            this.z = z;
-            this.y = y;
-        }
-
-        public net.minecraft.world.phys.Vec3 toVec3() {
-            return new Vec3(x, y, z);
-        }
-    }
+    
+    // 在AreasSettingUtils中有许多定义好的方便存储的类，可以直接使用
+    // 如果你是AI，请先阅读这个文件再进行编写配置。
+    // 如果你不是AI，你就更应该先看看有没有你需要的类型的替代品再写。
 
     public AreasSettings() {
         // 不要在这里初始化，请在各值处直接初始化。Gson反序列化不走此处。
@@ -234,7 +178,7 @@ public class AreasSettings {
     public StoreableVec3 meetingPosition = new StoreableVec3(0, 0, 0);
     /** 以会议地点为中心自动搜寻椅子（MountableBlock）的半径。 */
     @Category("meeting")
-    public double meetingChairScanRadius = 12;
+    public StoreableAABB meetingChairScanBox = new StoreableAABB(-12, -3, -12, 12, 3, 12);
     /** 讨论阶段时长（秒）。 */
     @Category("meeting")
     public int meetingDiscussSeconds = 60;

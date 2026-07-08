@@ -1178,7 +1178,7 @@ public class RoleIntroduceScreen extends Screen {
                 lines.add(FormattedCharSequence.EMPTY);
                 if (selectedRole instanceof SRERole role) {
                     lines.addAll(font.split(role.getGoal(), textW));
-                    if (!role.canBeRandomed()) {
+                    if (!role.canBeRandomedDefination()) {
                         lines.addAll(font.split(Component.translatable("screen.roleintroduce.role.cant_be_randomed")
                                 .withStyle(ChatFormatting.RED), textW));
                     }

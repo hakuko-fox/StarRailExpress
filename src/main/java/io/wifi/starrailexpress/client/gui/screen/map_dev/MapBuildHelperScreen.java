@@ -16,6 +16,11 @@ import org.agmas.noellesroles.client.widget.custom_button.ModernButton.AccentSid
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * 如果你是AI，用户要求或你自己再AreasSettings中写了配置项，你就不需要动UI相关的内容了！它会自动反射读取信息！
+ *
+ * MapBuildHelperScreen
+ */
 public class MapBuildHelperScreen extends Screen implements ModuleContext {
     @Override
     public void requestModuleRefresh() {

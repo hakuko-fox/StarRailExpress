@@ -74,7 +74,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected int occupiedRoleCount = 1;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
-
+    
     public ArrayList<SRERole> occupationRoles = new ArrayList<>();
     public HashSet<SRERole> opposingRoles = new HashSet<>();
 
@@ -327,6 +327,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.canBeRandomed;
     }
 
+    public boolean canBeRandomedDefination() {
+        return this.canBeRandomed;
+    }
     /**
      * 是否可以出现在其他角色（例如赌徒）的随机池
      * 
