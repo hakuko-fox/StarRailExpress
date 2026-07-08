@@ -483,7 +483,15 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public enum SpecialMapRoleMap {
-        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP
+        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP,
+        /** 仅可跳跃地图生成 */
+        CAN_JUMP,
+        /** 仅可召开会议地图生成 */
+        MEETING,
+        /** 仅可游玩小游戏地图生成 */
+        MINIGAME_QUEST,
+        /** 仅拥有状态栏地图生成（mapStatusBar != NONE） */
+        MAP_STATUS_BAR
     }
 
     public SpecialMapRoleMap getSpecialMapRole() {

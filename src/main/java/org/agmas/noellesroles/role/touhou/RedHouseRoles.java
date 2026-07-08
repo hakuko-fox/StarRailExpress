@@ -99,7 +99,8 @@ public class RedHouseRoles {
           true, false, SRERole.MoodType.REAL,
           TMMRoles.CIVILIAN.getMaxSprintTime(), false),
       "th_redhouse")
-      .setVigilanteTeam(true).setSpecialVigilante(true).setCanSeeCoin(true);
+      .setVigilanteTeam(true).setSpecialVigilante(true).setCanSeeCoin(true)
+      .setSpecialMapRole(SRERole.SpecialMapRoleMap.CAN_JUMP);
   // 好人：帕秋莉 Patchouli Knowledge
   public static SRERole PACHURI = TMMRoles.registerRole(
       new TouhouRole(PACHURI_ID, new Color(184, 144, 182).getRGB(),
