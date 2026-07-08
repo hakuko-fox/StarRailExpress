@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -353,12 +354,6 @@ public class InitModRolesMax {
                 }
             }
 
-            // 获取地图是否可跳跃
-            boolean canJumpMap = false;
-            var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverLevel);
-            if (areas != null) {
-                canJumpMap = areas.areasSettings.canJump;
-            }
             {
                 // 杀手中立（只处理没有配置的职业：无概率 且 无显式 setMax）
                 var neutralRoles = new ArrayList<SRERole>(TMMRoles.ROLES.values());
@@ -416,11 +411,7 @@ public class InitModRolesMax {
                 Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.FURANDORU, 1);
-                if (canJumpMap) {
-                    Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 1);
-                } else {
-                    Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 0);
-                }
+                Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 1);
             } else {
                 isTouhouEnabled = false;
                 for (var a : TMMRoles.ROLES.values()) {
@@ -435,17 +426,17 @@ public class InitModRolesMax {
                 }
             }
 
-            applySpecialMapRoles(currentMap, config);
-            applySpecialVigilanteRoles(players_count, config, random, currentMap);
+            applySpecialMapRoles(serverLevel, currentMap, config);
+            applySpecialVigilanteRoles(serverLevel, players_count, config, random, currentMap);
         });
     }
 
-    private static void applySpecialMapRoles(String currentMap, NoellesRolesConfig config) {
+    private static void applySpecialMapRoles(ServerLevel serverLevel, String currentMap, NoellesRolesConfig config) {
         for (var role : TMMRoles.ROLES.values()) {
             if (!role.isSpecialMapRole()) {
                 continue;
             }
-            if (isSpecialMapRoleEnabled(role, currentMap, config)) {
+            if (isSpecialMapRoleEnabled(serverLevel, role, currentMap, config)) {
                 Harpymodloader.setRoleMaximum(role, Math.max(0, role.spawnInfo.maxSpawn));
             } else {
                 Harpymodloader.setRoleMaximum(role, 0);
@@ -453,7 +444,8 @@ public class InitModRolesMax {
         }
     }
 
-    private static void applySpecialVigilanteRoles(int playersCount, NoellesRolesConfig config, Random random,
+    private static void applySpecialVigilanteRoles(ServerLevel serverLevel, int playersCount,
+            NoellesRolesConfig config, Random random,
             String currentMap) {
         int limit = getSpecialVigilanteLimit(playersCount, config);
         ArrayList<SRERole> specialVigilantes = new ArrayList<>();
@@ -469,7 +461,7 @@ public class InitModRolesMax {
 
         ArrayList<SRERole> selected = new ArrayList<>();
         for (var role : specialVigilantes) {
-            if (!isSpecialMapRoleEnabled(role, currentMap, config)) {
+            if (!isSpecialMapRoleEnabled(serverLevel, role, currentMap, config)) {
                 continue;
             }
             int chance = role.spawnInfo.enableChance >= 0 ? role.spawnInfo.enableChance : role.defaultEnableChance;
@@ -511,7 +503,8 @@ public class InitModRolesMax {
         return 0;
     }
 
-    private static boolean isSpecialMapRoleEnabled(SRERole role, String currentMap, NoellesRolesConfig config) {
+    private static boolean isSpecialMapRoleEnabled(ServerLevel serverLevel, SRERole role, String currentMap,
+            NoellesRolesConfig config) {
         return switch (role.getSpecialMapRole()) {
             case ALL -> true;
             case QIYUCUN -> config.maChenXuMaps.contains(currentMap);
@@ -519,6 +512,22 @@ public class InitModRolesMax {
             case UNDERWATER -> config.underwaterRolesMaps.contains(currentMap);
             case FLY -> config.airRolesMaps.contains(currentMap);
             case TRAP -> config.trapRolesMaps.contains(currentMap);
+            case CAN_JUMP -> {
+                var areas = AreasWorldComponent.KEY.get(serverLevel);
+                yield areas != null && areas.areasSettings.canJump;
+            }
+            case MEETING -> {
+                var areas = AreasWorldComponent.KEY.get(serverLevel);
+                yield areas != null && areas.areasSettings.meetingEnabled;
+            }
+            case MINIGAME_QUEST -> {
+                var areas = AreasWorldComponent.KEY.get(serverLevel);
+                yield areas != null && areas.minigameQuestEnabled;
+            }
+            case MAP_STATUS_BAR -> {
+                var areas = AreasWorldComponent.KEY.get(serverLevel);
+                yield areas != null && areas.areasSettings.mapStatusBar != MapStatusBarType.NONE;
+            }
         };
     }
 

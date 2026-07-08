@@ -165,12 +165,11 @@ public class SREClientEvents {
             return TrueFalseResult.PASS;
         });
         {
-
             // 迷失杀手：杀手本能中不显示迷失杀手和杀手同伙信息
             RenderPlayerNameInterface lostKillerGeneral = (player, target, c, d, f) -> {
                 // 此处可以直接用 SREClient.gameComponent，如果是null不会执行此event。
                 if (SREClient.gameComponent.isRole(target, ModRoles.LOST_KILLER)) {
-                    TrueFalseAndCustomResult.disallow();
+                    return TrueFalseAndCustomResult.disallow();
                 }
                 return TrueFalseAndCustomResult.pass();
             };

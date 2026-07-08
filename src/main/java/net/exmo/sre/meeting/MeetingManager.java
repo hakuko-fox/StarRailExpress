@@ -11,8 +11,10 @@ import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.util.BlockTypeChecker;
 import net.exmo.sre.meeting.network.MeetingStateS2CPayload;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -25,8 +27,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
@@ -66,7 +69,6 @@ public final class MeetingManager {
     private static final int CHAT_SPEAK_TICKS = 80;
     /** 语音活动的“发言中”标记保持时长（tick）。 */
     private static final int VOICE_SPEAK_TICKS = 15;
-    private static final int MAX_SCAN_RADIUS = 32;
 
     public static final int PHASE_NONE = 0;
     public static final int PHASE_INTRO = 1;
@@ -87,6 +89,7 @@ public final class MeetingManager {
     private static final Map<UUID, Long> transientSpeakers = new HashMap<>();
     private static List<UUID> lastSyncedSpeakers = List.of();
     private static long cooldownUntilTick;
+    private static long bellCooldownUntilTick;
     private static final Set<UUID> reportedBodies = new HashSet<>();
     private static boolean registered;
 
@@ -111,11 +114,27 @@ public final class MeetingManager {
             return InteractionResult.PASS;
         });
 
+        // 右键钟方块 → 摇铃召开会议
+        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+            if (world.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
+            }
+            BlockState state = world.getBlockState(hitResult.getBlockPos());
+            if (!state.is(Blocks.BELL)) {
+                return InteractionResult.PASS;
+            }
+            if (tryBellMeeting(serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        });
+
         ServerTickEvents.END_SERVER_TICK.register(MeetingManager::tick);
         OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
             endMeeting(true);
             reportedBodies.clear();
             cooldownUntilTick = 0;
+            bellCooldownUntilTick = 0;
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID uuid = handler.player.getUUID();
@@ -174,6 +193,31 @@ public final class MeetingManager {
         return true;
     }
 
+    /** 右键钟方块摇铃：满足条件则召开会议。返回是否已消费该交互。 */
+    public static boolean tryBellMeeting(ServerPlayer ringer) {
+        ServerLevel serverLevel = ringer.serverLevel();
+        AreasSettings settings = settings(serverLevel);
+        if (settings == null || !settings.meetingEnabled || !settings.bellMeetingEnabled) {
+            return false;
+        }
+        if (!GameUtils.isPlayerAliveAndSurvival(ringer)) {
+            return false;
+        }
+        long now = serverLevel.getGameTime();
+        // 首次摇铃：设置开局冷却
+        if (bellCooldownUntilTick == 0) {
+            bellCooldownUntilTick = now + settings.bellMeetingStartCooldown * 20L;
+        }
+        if (now < bellCooldownUntilTick) {
+            return false;
+        }
+        if (!startMeeting(serverLevel, ringer, null)) {
+            return false;
+        }
+        bellCooldownUntilTick = now + settings.bellMeetingCooldown * 20L;
+        return true;
+    }
+
     /**
      * 召开会议。冷却中 / 已在会议中 / 未启用 / 游戏未运行时返回 false。
      *
@@ -196,7 +240,7 @@ public final class MeetingManager {
         level = serverLevel;
         phase = PHASE_INTRO;
         phaseEndTick = now + INTRO_TICKS;
-        center = new Vec3(settings.meetingX, settings.meetingY, settings.meetingZ);
+        center = new Vec3(settings.meetingPosition.x, settings.meetingPosition.y, settings.meetingPosition.z);
         reporterName = reporter.getGameProfile().getName();
         victimName = victim == null ? "" : victim;
         participants.clear();
@@ -363,13 +407,15 @@ public final class MeetingManager {
 
     /** 搜寻会议点周围的椅子，按与中心的距离排序。 */
     private static List<BlockPos> scanChairs(ServerLevel serverLevel, AreasSettings settings) {
-        int radius = (int) Math.min(MAX_SCAN_RADIUS, Math.max(1, settings.meetingChairScanRadius));
-        BlockPos centerPos = BlockPos.containing(settings.meetingX, settings.meetingY, settings.meetingZ);
+        AABB scanBox = settings.meetingChairScanBox.toAABB();
+        BlockPos centerPos = BlockPos.containing(settings.meetingPosition.x, settings.meetingPosition.y,
+                settings.meetingPosition.z);
         List<BlockPos> chairs = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(
-                centerPos.offset(-radius, -3, -radius), centerPos.offset(radius, 3, radius))) {
+                centerPos.offset((int) scanBox.minX, (int) scanBox.minY, (int) scanBox.minZ),
+                centerPos.offset((int) scanBox.maxX, (int) scanBox.maxY, (int) scanBox.maxZ))) {
             BlockState state = serverLevel.getBlockState(pos);
-            if (state.getBlock() instanceof MountableBlock) {
+            if (BlockTypeChecker.isSeatBlock(state.getBlock())) {
                 chairs.add(pos.immutable());
             }
         }

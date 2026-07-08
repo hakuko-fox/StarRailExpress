@@ -21,7 +21,8 @@ public class BlackoutItem extends Item {
             InteractionResultHolder.pass(item);
         }
         if (!user.isSpectator() && !world.isClientSide())
-            SREPlayerShopComponent.useBlackout(user);
+            if (!SREPlayerShopComponent.useBlackout(user))
+                return InteractionResultHolder.fail(item);
         if (user.isCreative()) {
             return InteractionResultHolder.consume(item);
         }

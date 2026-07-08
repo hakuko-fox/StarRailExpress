@@ -2,9 +2,9 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.ConfigCompact.annotation.Category;
 import io.wifi.ConfigCompact.annotation.ConfigSync;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableAABB;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableVec3;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * <b>AreasWorldComponent 其他地图设置</b><br/>
@@ -27,49 +27,25 @@ import net.minecraft.world.phys.Vec3;
  *  &#64;Category(value = "分类id")
  * </pre>
  * 
+ * <h3>记得写翻译键</h3>
+ * 位置：{@code starrailexpress:lang/zh_cn.json}<br/>
+ * 从 {@code "=== 地图设置开始 ===":""}，后面开始写，直到 {@code "== 地图设置末尾 END ==": ""}<br/>
+ * field的翻译：{@code "sre.map_helper.settings." + field名称}<br/>
+ * 分类的翻译：{@code "sre.map_helper.settings.category." + 分类名称}<br/>
+ * 如果有注释（可选）则写：{@code "sre.map_helper.settings." + field名称 + ".tooltip"}<br/>
+ * 枚举（Enum）则写：{@code "sre.map_helper.settings." + field名称 + "." + enum.name()}<br/>
+ * Enum的注释（可选）则写{@code "sre.map_helper.settings." + field名称 + "." + enum.name() + ".tooltip"}
+ * 
  */
 
+// 在这里写了后不用去改UI默认会显示！！
+// 在这里写了后不用去改UI默认会显示！！
+// 在这里写了后不用去改UI默认会显示！！
 public class AreasSettings {
-
-    public static class StoreableBlockPos {
-        int x = 0, y = 0, z = 0;
-
-        public StoreableBlockPos(int x, int y, int z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        public StoreableBlockPos(BlockPos blockPos) {
-            this.x = blockPos.getX();
-            this.y = blockPos.getY();
-            this.z = blockPos.getZ();
-        }
-
-        public BlockPos toBlockPos() {
-            return new BlockPos(x, y, z);
-        }
-    }
-
-    public static class StoreableVec3 {
-        double x = 0, y = 0, z = 0;
-
-        public StoreableVec3(net.minecraft.world.phys.Vec3 vec) {
-            this.x = vec.x;
-            this.y = vec.y;
-            this.z = vec.z;
-        }
-
-        public StoreableVec3(double x, double y, double z) {
-            this.x = x;
-            this.z = z;
-            this.y = y;
-        }
-
-        public net.minecraft.world.phys.Vec3 toVec3() {
-            return new Vec3(x, y, z);
-        }
-    }
+    
+    // 在AreasSettingUtils中有许多定义好的方便存储的类，可以直接使用
+    // 如果你是AI，请先阅读这个文件再进行编写配置。
+    // 如果你不是AI，你就更应该先看看有没有你需要的类型的替代品再写。
 
     public AreasSettings() {
         // 不要在这里初始化，请在各值处直接初始化。Gson反序列化不走此处。
@@ -197,22 +173,28 @@ public class AreasSettings {
     /** 是否启用会议系统（右键尸体召开紧急会议）。 */
     @Category("meeting")
     public boolean meetingEnabled = false;
-    /** 会议地点 X 坐标。 */
+    /** 这个class里有可以存储的Vec3不用的AI是真的逊。 */
     @Category("meeting")
-    public double meetingX = 0;
-    /** 会议地点 Y 坐标。 */
-    @Category("meeting")
-    public double meetingY = 0;
-    /** 会议地点 Z 坐标。 */
-    @Category("meeting")
-    public double meetingZ = 0;
+    public StoreableVec3 meetingPosition = new StoreableVec3(0, 0, 0);
     /** 以会议地点为中心自动搜寻椅子（MountableBlock）的半径。 */
     @Category("meeting")
-    public double meetingChairScanRadius = 12;
+    public StoreableAABB meetingChairScanBox = new StoreableAABB(-12, -3, -12, 12, 3, 12);
     /** 讨论阶段时长（秒）。 */
     @Category("meeting")
     public int meetingDiscussSeconds = 60;
     /** 两次会议之间的冷却（秒）。 */
     @Category("meeting")
     public int meetingCooldownSeconds = 90;
+
+    // ==================== 摇铃会议系统 / Bell Meeting ====================
+
+    /** 是否启用摇铃会议（右键原版钟方块召开紧急会议）。前提是 meetingEnabled 为 true。 */
+    @Category("meeting")
+    public boolean bellMeetingEnabled = false;
+    /** 摇铃开局冷却（秒）。开局后多少秒才能摇铃。 */
+    @Category("meeting")
+    public int bellMeetingStartCooldown = 120;
+    /** 摇铃冷却（秒）。摇铃后间隔多少秒才能再次摇铃。 */
+    @Category("meeting")
+    public int bellMeetingCooldown = 120;
 }
