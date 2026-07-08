@@ -10,6 +10,7 @@ import net.exmo.sre.repair.logic.RepairGameSetup;
 import net.exmo.sre.repair.logic.RepairHudSync;
 import net.exmo.sre.repair.logic.RepairRolePassives;
 import net.exmo.sre.repair.logic.RepairRoleSelection;
+import net.exmo.sre.repair.logic.RepairSanitySystem;
 import net.exmo.sre.repair.logic.RepairWinConditions;
 import net.exmo.sre.repair.role.RepairForcedRoleState;
 import net.exmo.sre.repair.state.RepairLockedDoorState;
@@ -42,6 +43,17 @@ public class RepairEscapeGameMode extends GameMode {
         return false;
     }
 
+    /** murder 融合：处决生成的尸体可被查看与搜刮，拿回死者遗留的工具。 */
+    @Override
+    public boolean canSeeBodyContent() {
+        return true;
+    }
+
+    @Override
+    public boolean canPickBodyContent() {
+        return true;
+    }
+
     @Override
     public void beforeInitializeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
@@ -64,6 +76,7 @@ public class RepairEscapeGameMode extends GameMode {
             RepairRolePassives.tick(serverWorld, gameWorldComponent);
             RepairEventSystem.tick(serverWorld);
             RepairSearchState.tick(serverWorld);
+            RepairSanitySystem.tick(serverWorld);
         }
         RepairCarrySystem.tick(serverWorld);
         RepairHudSync.tick(serverWorld, gameWorldComponent);
