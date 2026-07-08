@@ -38,6 +38,9 @@ import io.wifi.starrailexpress.game.data.MapStatusBarType;
  * 
  */
 
+// 在这里写了后不用去改UI默认会显示！！
+// 在这里写了后不用去改UI默认会显示！！
+// 在这里写了后不用去改UI默认会显示！！
 public class AreasSettings {
     
     // 在AreasSettingUtils中有许多定义好的方便存储的类，可以直接使用

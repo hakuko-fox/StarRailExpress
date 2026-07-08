@@ -44,17 +44,15 @@ public class MeetingModule implements TabModule {
         placements.add(new WidgetPlacement(
                 ModernButton.builder(Component.translatable("sre.map_helper.meeting.set_point"),
                         b -> {
-                            ctx.sendOnly(String.format("sre:area_manager set meetingX %f", ctx.ax()));
-                            ctx.sendOnly(String.format("sre:area_manager set meetingY %f", ctx.ay()));
-                            ctx.sendAndClose(String.format("sre:area_manager set meetingZ %f", ctx.az()));
+                            ctx.sendOnly(String.format("sre:area_manager set meetingPosition.x %f", ctx.ax()));
+                            ctx.sendOnly(String.format("sre:area_manager set meetingPosition.y %f", ctx.ay()));
+                            ctx.sendAndClose(String.format("sre:area_manager set meetingPosition.z %f", ctx.az()));
                         })
                         .bounds(leftX, y, fullW, bh).accentBar(AccentSide.BOTTOM).build(),
                 y));
         y += rowStep;
 
-        // 数值项：椅子搜寻半径 / 讨论时长（秒）/ 冷却（秒）
-        y = addNumberRow(placements, layout, ctx, y,
-                "sre.map_helper.meeting.chair_radius", "meetingChairScanRadius", "12");
+        // 数值项：椅子搜寻半径不再支持（因为是软定义的AABB，相对坐标的AABB） / 讨论时长（秒）/ 冷却（秒）
         y = addNumberRow(placements, layout, ctx, y,
                 "sre.map_helper.meeting.discuss_seconds", "meetingDiscussSeconds", "60");
         addNumberRow(placements, layout, ctx, y,

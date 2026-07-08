@@ -205,7 +205,7 @@ public class AllSettingsModule implements TabModule {
         int rightEdge = layout.panelLeftX + layout.panelWidth - layout.gutter;
 
         int leftX = layout.leftColumnX() + entry.depth * 12;
-        int labelWidth = Math.min(100, (layout.contentWidth() - entry.depth * 12) / 3);
+        int labelWidth = Math.min(140, (layout.contentWidth() - entry.depth * 12) / 3);
         int gap = 6;
         Class<?> type = entry.field.getType();
         Object value = entry.currentValue;
@@ -414,10 +414,10 @@ public class AllSettingsModule implements TabModule {
                 placements.add(new WidgetPlacement(viewBtn, y));
             }
         } else {
-            ModernButton toggleBtn = ModernButton.builder(Component.literal(entry.expanded ? "▾" : "▸"), b -> {
+            ModernButton toggleBtn = ModernButton.builder(Component.translatable(entry.expanded ? "sre.map_helper.expandable.expand" : "sre.map_helper.expandable.unexpand"), b -> {
                 entry.expanded = !entry.expanded;
                 ctx.requestModuleRefresh();
-            }).bounds(controlX, y, 20, 20).accentBar().build();
+            }).bounds(rightEdge - 50, y, 50, 20).accentBar().build();
             placements.add(new WidgetPlacement(toggleBtn, y));
         }
         return usedHeight;
