@@ -1,6 +1,8 @@
 package io.wifi.mixins.client.cca;
 
 import net.minecraft.world.entity.Entity;
+
+import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -9,6 +11,7 @@ import com.bawnorton.mixinsquared.TargetHandler;
 
 import io.wifi.utils.cca.CCAManagerClient;
 
+@Mixin(value = net.minecraft.client.multiplayer.ClientLevel.class)
 public class MixinClientWorldMixin {
     // 覆盖 CCA 的 tick 方法
     @TargetHandler(mixin = "org.ladysnake.cca.mixin.entity.client.MixinClientWorld", // 完整类名
