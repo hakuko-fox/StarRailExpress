@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public class TicketOfficeShopScreen extends Screen {
     private static final int PANEL_W = 220;
-    private static final int PANEL_H = 160;
+    private static final int PANEL_H = 176;
     private static final int HEADER_H = 24;
 
     private final BlockPos pos;

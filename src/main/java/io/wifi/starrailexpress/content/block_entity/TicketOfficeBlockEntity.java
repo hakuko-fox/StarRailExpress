@@ -5,8 +5,11 @@ import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class TicketOfficeBlockEntity extends SyncingBlockEntity {
@@ -14,7 +17,11 @@ public class TicketOfficeBlockEntity extends SyncingBlockEntity {
     private String ticketName = "";
     private ShopEntry.Currency currency = ShopEntry.Currency.MONEY;
     private int uses = 1;
+    /** 限购次数，-1 表示不限购（默认） */
+    private int maxPurchases = -1;
     private UUID ticketId = UUID.randomUUID();
+    /** 当前游戏内每个玩家的购买计数（不持久化，游戏结束时清空） */
+    private final Map<UUID, Integer> playerPurchaseCounts = new HashMap<>();
 
     public TicketOfficeBlockEntity(BlockPos pos, BlockState state) {
         super(TMMBlockEntities.TICKET_OFFICE, pos, state);
@@ -36,11 +43,38 @@ public class TicketOfficeBlockEntity extends SyncingBlockEntity {
         return uses;
     }
 
+    public int getMaxPurchases() {
+        return maxPurchases;
+    }
+
     public UUID getTicketId() {
         if (ticketId == null) {
             ticketId = UUID.randomUUID();
         }
         return ticketId;
+    }
+
+    /** 检查玩家是否还能购买 */
+    public boolean canPurchase(ServerPlayer player) {
+        if (maxPurchases < 0) return true;
+        return playerPurchaseCounts.getOrDefault(player.getUUID(), 0) < maxPurchases;
+    }
+
+    /** 返回剩余购买次数，-1 表示不限购 */
+    public int getRemainingPurchases(ServerPlayer player) {
+        if (maxPurchases < 0) return -1;
+        return Math.max(0, maxPurchases - playerPurchaseCounts.getOrDefault(player.getUUID(), 0));
+    }
+
+    /** 记录一次购买 */
+    public void recordPurchase(ServerPlayer player) {
+        if (maxPurchases < 0) return;
+        playerPurchaseCounts.merge(player.getUUID(), 1, Integer::sum);
+    }
+
+    /** 重置所有购买计数（游戏结束时调用） */
+    public void resetPurchaseCounts() {
+        playerPurchaseCounts.clear();
     }
 
     public CompoundTag toConfigTag() {
@@ -49,6 +83,7 @@ public class TicketOfficeBlockEntity extends SyncingBlockEntity {
         tag.putString("TicketName", getTicketName());
         tag.putString("Currency", getCurrency().serializedName());
         tag.putInt("Uses", uses);
+        tag.putInt("MaxPurchases", maxPurchases);
         tag.putString("TicketId", getTicketId().toString());
         return tag;
     }
@@ -58,6 +93,7 @@ public class TicketOfficeBlockEntity extends SyncingBlockEntity {
         this.ticketName = tag.getString("TicketName");
         this.currency = ShopEntry.Currency.fromSerializedName(tag.getString("Currency"));
         this.uses = tag.contains("Uses") ? tag.getInt("Uses") : 1;
+        this.maxPurchases = tag.contains("MaxPurchases") ? tag.getInt("MaxPurchases") : -1;
         String id = tag.getString("TicketId");
         if (!id.isBlank()) {
             try {
@@ -82,6 +118,7 @@ public class TicketOfficeBlockEntity extends SyncingBlockEntity {
         this.ticketName = tag.getString("TicketName");
         this.currency = ShopEntry.Currency.fromSerializedName(tag.getString("Currency"));
         this.uses = tag.contains("Uses") ? tag.getInt("Uses") : 1;
+        this.maxPurchases = tag.contains("MaxPurchases") ? tag.getInt("MaxPurchases") : -1;
         String id = tag.getString("TicketId");
         if (!id.isBlank()) {
             try {

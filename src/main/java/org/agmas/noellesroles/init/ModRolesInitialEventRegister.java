@@ -45,6 +45,7 @@ import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
@@ -80,6 +81,10 @@ public class ModRolesInitialEventRegister {
 
         // 初始化仇杀客事件
         BloodFeudistPlayerComponent.registerEvents();
+        // 初始化皮革噶的事件（疯魔推开致死→平民则小脑归因）
+        LeatherPigPlayerComponent.registerEvents();
+        // 初始化操纵师操控限制（被拖入水/岩浆/虚空/摔落致死时否决并弹回）
+        InControlCCA.registerEvents();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {

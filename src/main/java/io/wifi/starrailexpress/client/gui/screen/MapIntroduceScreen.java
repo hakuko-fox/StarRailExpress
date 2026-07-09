@@ -235,6 +235,12 @@ public class MapIntroduceScreen extends Screen {
         addTaskSet(json, "enableSceneTask", "map_intro.property.scene_tasks", true, wrapW);
         if (boolValue(json, "minigameQuestEnabled", false))
             addLine("map_intro.property.minigame_quest", wrapW);
+        if (meetingBoolValue(json, "meetingEnabled", false))
+            addLine("map_intro.property.meeting_enabled", wrapW);
+        if (meetingBoolValue(json, "meetingVoteEnabled", false))
+            addLine("map_intro.property.meeting_vote_enabled", wrapW);
+        if (meetingBoolValue(json, "bellMeetingEnabled", false))
+            addLine("map_intro.property.bell_meeting_enabled", wrapW);
         String status = stringValue(json, "mapStatusBar", "NONE");
         if (!status.equalsIgnoreCase("NONE") && !status.isBlank())
             addLine("map_intro.property.status_bar", statusName(status), wrapW);
@@ -735,6 +741,18 @@ public class MapIntroduceScreen extends Screen {
 
     private static String stringValue(JsonObject json, String key, String fallback) {
         return json.has(key) ? json.get(key).getAsString() : fallback;
+    }
+
+    /**
+     * 从 JSON 中读取布尔值，支持嵌套 settings 对象（会议相关字段在 settings 子对象中）。
+     */
+    private static boolean meetingBoolValue(JsonObject json, String key, boolean fallback) {
+        if (json.has(key)) return json.get(key).getAsBoolean();
+        if (json.has("settings") && json.get("settings").isJsonObject()) {
+            JsonObject settings = json.getAsJsonObject("settings");
+            if (settings.has(key)) return settings.get(key).getAsBoolean();
+        }
+        return fallback;
     }
 
     private static int parseInt(String value, int fallback) {
