@@ -107,6 +107,9 @@
     "input.MouseHandlerMixin",
     "whitelist.ClientLoginPacketMixin",
     "client.vc.BetterVoiceChatVolumeManageMixin",
-    "client.vc.DoubleConfigEntryMixin"
+    "client.vc.DoubleConfigEntryMixin",
+    "client.gui.ModifyWindowWidth",
+    "client.gui.MoveRenderArea",
+    "client.gui.MoveMouseHandlerMixin"
   ]
 }
