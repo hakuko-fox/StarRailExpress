@@ -161,7 +161,7 @@ public class TouhouHandlers {
             return false;
           }
           // 身前2格
-          RopeItem.pullPlayer(player, target, 2);
+          RopeItem.pullPlayer(player, target, 1);
           return true;
         }).cooldownSeconds(90).announceToSelf(true).showOnHud(true).shifted(true).build());
     RoleSkill.register(MountainRoles.NITORI, RoleSkill.skill(SRE.id("nitori_exchange"),
