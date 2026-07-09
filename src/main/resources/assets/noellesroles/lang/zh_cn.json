@@ -449,6 +449,7 @@
   "forensic.dir.sw": "西南",
   "hud.coroner.role_info": "身份为",
   "hud.coroner.body.killer": "杀手是%s",
+  "hud.coroner.body.no_killer": "没有杀手",
   "hud.coroner.body.conspirator_evidence": "现场物证指向阴谋家：%s",
   "hud.coroner.sanity_requirements": "使用能力需要 50%% 理智值",
   "hud.coroner.fake_body": "伪造的尸体",

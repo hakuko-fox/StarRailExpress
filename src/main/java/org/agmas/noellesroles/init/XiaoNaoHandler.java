@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.event.OnTeammateKilledTeammate;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.TeamKillViolationHandler;
 import net.minecraft.resources.ResourceLocation;
@@ -14,6 +15,8 @@ import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
  * 小脑惩罚
@@ -59,7 +62,15 @@ public class XiaoNaoHandler {
                     // 小脑(误杀)惩罚写这里
                     TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                     if (NoellesRolesConfig.HANDLER.instance().accidentalKillPunishment) {
-                        if (isXiaoNaoReason(deathReason)) {
+                        boolean isXiaonao = isXiaoNaoReason(deathReason);
+                        if (!isXiaonao) {
+                            if (deathReason.equals(GameConstants.DeathReasons.DERRINGER)) {
+                                if (RoleUtils.isPlayerTheJob(killer, THMiscRoles.SHIKIEIKI)) {
+                                    isXiaonao = true;
+                                }
+                            }
+                        }
+                        if (isXiaonao) {
                             GameUtils.killPlayer(killer, true, null, Noellesroles.id("shot_innocent"));
                             // 仇杀客事件：误杀发生时强化仇杀客
                             for (ServerPlayer player : victim.serverLevel().players()) {

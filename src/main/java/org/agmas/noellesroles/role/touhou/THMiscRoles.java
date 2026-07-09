@@ -21,7 +21,7 @@ public class THMiscRoles {
   public static final ResourceLocation SHIKIEIKI_ID = id("shikieiki");
   public static SRERole SHIKIEIKI = TMMRoles
       .registerRole(new THShikieikiRole(SHIKIEIKI_ID, new java.awt.Color(87, 79, 117).getRGB(),
-          true, false, SRERole.MoodType.FAKE,
+          true, false, SRERole.MoodType.REAL,
           TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true), "th_hell")
       .setCanPickUpRevolver(false).setVigilanteTeam(true).setSpecialVigilante(true)
       .setDefaultEnableNeededPlayerCount(24).setDefaultEnableChance(30);
