@@ -537,6 +537,8 @@
     "commands.sre.givekey.multiple": "已将房间 %s 的钥匙给予 %s 名玩家",
     "commands.sre.giveroomkey": "已给予房间 %s 的钥匙",
     "commands.sre.inventory.opened": "已打开 %s 的背包",
+    "commands.sre.streaming_spectator.need_spectator": "你需要旁观才能使用此功能",
+    "commands.sre.streaming_spectator.penalty":"你当前处于死亡惩罚中，无法使用。",
     "commands.sre.streaming_spectator.already_active": "你已经在挂播模式中",
     "commands.sre.streaming_spectator.game_not_running": "游戏运行中才能进入挂播模式",
     "commands.sre.streaming_spectator.no_target": "没有可挂播的存活目标",

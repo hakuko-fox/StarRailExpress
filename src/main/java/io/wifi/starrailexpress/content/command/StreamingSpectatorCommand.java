@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerAFKComponent;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.network.PacketTracker;
 import io.wifi.starrailexpress.network.StreamingSpectatorPayload;
@@ -18,6 +19,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.item.ItemStack;
+
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -49,6 +52,17 @@ public final class StreamingSpectatorCommand {
             }
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> SESSIONS.clear());
+        OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
+            final var server = serverLevel.getServer();
+            for (Map.Entry<UUID, Session> entry : SESSIONS.entrySet()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+                if (player == null) {
+                    continue;
+                }
+                stopStreamingMode(player);
+            }
+            SESSIONS.clear();
+        });
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -68,6 +82,17 @@ public final class StreamingSpectatorCommand {
             context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.player_only"));
             return 0;
         }
+
+        if (GameUtils.isPlayerAliveAndSurvival(player)) {
+            context.getSource().sendSuccess(
+                    () -> Component.translatable("commands.sre.streaming_spectator.need_spectator"), false);
+            return 0;
+        }
+        if (DeathPenaltyComponent.hasStrictPenalty(player)) {
+            context.getSource().sendSuccess(
+                    () -> Component.translatable("commands.sre.streaming_spectator.penalty"), false);
+            return 0;
+        }
         if (SESSIONS.containsKey(player.getUUID())) {
             return stop(context);
         }
@@ -82,7 +107,16 @@ public final class StreamingSpectatorCommand {
             context.getSource().sendFailure(Component.translatable("commands.sre.streaming_spectator.player_only"));
             return 0;
         }
-
+        if (GameUtils.isPlayerAliveAndSurvival(player)) {
+            context.getSource().sendSuccess(
+                    () -> Component.translatable("commands.sre.streaming_spectator.need_spectator"), false);
+            return 0;
+        }
+        if (DeathPenaltyComponent.hasStrictPenalty(player)) {
+            context.getSource().sendSuccess(
+                    () -> Component.translatable("commands.sre.streaming_spectator.penalty"), false);
+            return 0;
+        }
         if (SESSIONS.containsKey(player.getUUID())) {
             context.getSource().sendSuccess(
                     () -> Component.translatable("commands.sre.streaming_spectator.already_active"), false);
@@ -114,6 +148,19 @@ public final class StreamingSpectatorCommand {
         context.getSource().sendSuccess(() -> Component.translatable("commands.sre.streaming_spectator.started"),
                 false);
         return 1;
+    }
+
+    public static boolean stopStreamingMode(ServerPlayer player) {
+        Session session = SESSIONS.remove(player.getUUID());
+        if (session == null) {
+            return false;
+        }
+
+        restoreOriginalRole(player, session);
+        PacketTracker.sendToClient(player, StreamingSpectatorPayload.stop());
+        player.displayClientMessage(Component.translatable("commands.sre.streaming_spectator.stopped"),
+                false);
+        return true;
     }
 
     private static int stop(CommandContext<CommandSourceStack> context) {
