@@ -10,7 +10,6 @@ import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import org.agmas.noellesroles.Noellesroles;
 
 import java.util.UUID;
 
@@ -20,7 +19,7 @@ import java.util.UUID;
  */
 public class MissionaryPlayerComponent implements RoleComponent {
     public static final ComponentKey<MissionaryPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "missionary"),
+            ResourceLocation.fromNamespaceAndPath("meetingrole", "missionary"),
             MissionaryPlayerComponent.class);
 
     private final Player player;
