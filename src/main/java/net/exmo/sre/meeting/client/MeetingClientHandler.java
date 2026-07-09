@@ -66,6 +66,7 @@ public final class MeetingClientHandler {
     }
 
     public static void register() {
+        // 分号 [;/:] 键
         speakKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.starrailexpress.meeting_speak",
                 GLFW.GLFW_KEY_SEMICOLON,
