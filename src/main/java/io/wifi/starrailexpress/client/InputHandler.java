@@ -104,9 +104,7 @@ public class InputHandler {
 
         if (openVotingScreenKeybind.consumeClick()) {
             // 会议投票阶段：打开玩家投票界面
-            if (MeetingClientHandler.phase == 3
-                    && ClientVoteCache.getCurrentSession() != null
-                    && !ClientVoteCache.getCurrentSession().isEnded()) {
+            if (MeetingClientHandler.phase == 3 && ClientVoteCache.isActive()) {
                 client.setScreen(new VoteScreen());
                 return;
             }

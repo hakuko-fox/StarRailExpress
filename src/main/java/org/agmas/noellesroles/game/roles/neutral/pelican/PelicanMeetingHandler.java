@@ -27,9 +27,8 @@ public final class PelicanMeetingHandler {
                     ServerPlayer target = serverLevel.getServer().getPlayerList().getPlayer(targetId);
                     if (target != null) {
                         // 标记为鹈鹕吞噬死亡，Kill 但不留尸体
-                        io.wifi.starrailexpress.game.GameConstants.DeathReasons dl =
-                                io.wifi.starrailexpress.game.GameConstants.DeathReasons.PELICAN_EATEN;
-                        GameUtils.killPlayer(target, false, pelican, dl);
+                        GameUtils.forceKillPlayer(target, false, pelican,
+                                io.wifi.starrailexpress.game.GameConstants.DeathReasons.PELICAN_EATEN);
                         // 从肚中移除
                         PelicanManager.markStashedDead(targetId);
                         belly.remove(targetId);

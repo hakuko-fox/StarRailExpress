@@ -347,7 +347,7 @@ public class VoteManager {
 
         /** 批量添加选项 */
         public VoteBuilder options(List<VoteOption> opts) {
-            for (VoteOption opt : opts) this.option(opt);
+            for (VoteOption opt : opts) this.addOption(opt);
             return this;
         }
 
