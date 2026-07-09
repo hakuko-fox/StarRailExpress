@@ -25,6 +25,7 @@ import net.minecraft.world.item.Items;
 
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
 import org.agmas.noellesroles.content.item.RopeItem;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
@@ -149,6 +150,7 @@ public class TouhouHandlers {
     RoleSkill.register(THMiscRoles.KOMACHI_ID,
         RoleSkill.skill(SRE.id("komachi_rush"), "skill.noellesroles.komachi_rush", context -> {
           Player player = context.player();
+          player.addEffect(ModEffects.of(ModEffects.NO_COLLIDE, 20, 0, true, false, false));
           BowenBadgeItem.fowardAndKnockbackPlayerNearby(player.level(), player, 2.5f);
           return true;
         }).announceToSelf(true).cooldownSeconds(60).showOnHud(true).shifted(false).build(),

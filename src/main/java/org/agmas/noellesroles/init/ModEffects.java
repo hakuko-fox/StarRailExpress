@@ -66,14 +66,14 @@ public class ModEffects {
                 public boolean applyEffectTick(LivingEntity livingEntity, int amplifier) {
                     // 应该单独给而不是打包
                     // if (livingEntity.level().getGameTime() % 20 == 0)
-                    //     livingEntity.addEffect(new MobEffectInstance(
-                    //             ModEffects.SAFE_TIME,
-                    //             40, // 持续时间 30s（tick）
-                    //             5, // 等级（0 = 速度 I）
-                    //             true, // ambient（环境效果，如信标）
-                    //             false, // showParticles（显示粒子）
-                    //             false // showIcon（显示图标）
-                    //     ));
+                    // livingEntity.addEffect(new MobEffectInstance(
+                    // ModEffects.SAFE_TIME,
+                    // 40, // 持续时间 30s（tick）
+                    // 5, // 等级（0 = 速度 I）
+                    // true, // ambient（环境效果，如信标）
+                    // false, // showParticles（显示粒子）
+                    // false // showIcon（显示图标）
+                    // ));
                     return super.applyEffectTick(livingEntity, amplifier);
                 }
             });
@@ -81,8 +81,6 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> USED_BANED = register("used_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
-    public static final Holder<MobEffect> ONLY_NO_COLLIDE = register("only_no_collide",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
 
     /**
      * 时间停止效果
@@ -156,9 +154,10 @@ public class ModEffects {
      * 怀旧者·里世界状态标记
      * - 中性效果，灰白色
      * - 由 {@code NostalgistPlayerComponent} 在里世界期间每 tick 维持，驱动客户端独立的灰白滤镜
-     *   shader（{@code TimeStopShader} 的 {@code nostalgist_gray} pass）并隐藏手持物品
-     *   （{@code InvisbleHandItem}）。禁止说话/使用物品则由 {@link #CHAT_BAN} / {@link #VOICE_SILENCE}
-     *   / {@link #USED_BANED} 一并施加。
+     * shader（{@code TimeStopShader} 的 {@code nostalgist_gray} pass）并隐藏手持物品
+     * （{@code InvisbleHandItem}）。禁止说话/使用物品则由 {@link #CHAT_BAN} /
+     * {@link #VOICE_SILENCE}
+     * / {@link #USED_BANED} 一并施加。
      */
     public static final Holder<MobEffect> NOSTALGIST_BACKWORLD = register("nostalgist_backworld",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xBFBFBF));
@@ -173,9 +172,11 @@ public class ModEffects {
      * 脚步消失
      * - 中性效果，灰色
      * - 拥有者的脚步声不会被任何人听到、疾跑粒子不显示（行为见
-     *   {@code org.agmas.noellesroles.mixin.FootstepVanishMixin} 对 {@code playStepSound} /
-     *   {@code canSpawnSprintParticle} 的拦截）。由 {@code FootstepVanishEffectSync} 广播给所有客户端，
-     *   使其它玩家侧运行的拦截也能查到该效果，从而真正做到“别人听不到脚步”。
+     * {@code org.agmas.noellesroles.mixin.FootstepVanishMixin} 对
+     * {@code playStepSound} /
+     * {@code canSpawnSprintParticle} 的拦截）。由 {@code FootstepVanishEffectSync}
+     * 广播给所有客户端，
+     * 使其它玩家侧运行的拦截也能查到该效果，从而真正做到“别人听不到脚步”。
      */
     public static final Holder<MobEffect> FOOTSTEP_VANISH = register("footstep_vanish",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9E9E9E));
@@ -303,8 +304,8 @@ public class ModEffects {
      * 伪装效果
      * - 中性效果
      * - 持续期间客户端会把玩家皮肤替换为预留的伪装皮肤
-     *   （见 OnGettingPlayerSkin 监听器，皮肤资源位于
-     *   assets/starrailexpress/textures/entity/disguise/disguise_skin.png）
+     * （见 OnGettingPlayerSkin 监听器，皮肤资源位于
+     * assets/starrailexpress/textures/entity/disguise/disguise_skin.png）
      */
     public static final Holder<MobEffect> DISGUISE = register("disguise",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7B68EE));
@@ -319,7 +320,7 @@ public class ModEffects {
      * 诡域标记（鬼眼·杨间）。
      * - 有害效果，幽蓝色
      * - 标记处于诡域内的玩家；拥有此效果的玩家无法开启杀手透视
-     *   （客户端拦截见 {@code org.agmas.noellesroles.mixin.client.InstinctMixin}）。
+     * （客户端拦截见 {@code org.agmas.noellesroles.mixin.client.InstinctMixin}）。
      */
     public static final Holder<MobEffect> EERIE_DOMAIN = register("eerie_domain",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
@@ -328,8 +329,9 @@ public class ModEffects {
      * 视野迷雾
      * - 有害效果，灰蓝色
      * - 拥有者视野被浓雾笼罩；等级越高雾的距离越远（看得越远）。
-     *   1 级（amplifier 0）时雾仅 2 格。雾的渲染见
-     *   {@code org.agmas.noellesroles.mixin.client.VisionFogMixin}（注入 FogRenderer.setupFog）。
+     * 1 级（amplifier 0）时雾仅 2 格。雾的渲染见
+     * {@code org.agmas.noellesroles.mixin.client.VisionFogMixin}（注入
+     * FogRenderer.setupFog）。
      */
     public static final Holder<MobEffect> VISION_FOG = register("vision_fog",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x55667A));
@@ -338,16 +340,18 @@ public class ModEffects {
      * 2D 视角
      * - 中性效果
      * - 客户端固定侧视镜头。amplifier: 0=西边，1=东边，2=北边，3=南边，4=上方（0~3 为 2.5D 俯视侧视）；
-     *   5=西平面，6=东平面，7=北平面，8=南平面（与视点同高的纯平面视线，无俯角）。
-     *   行为见 {@code TwoDimensionalCameraClientHandle}，最终通过 AdvancedCameraDirector 接管相机。
+     * 5=西平面，6=东平面，7=北平面，8=南平面（与视点同高的纯平面视线，无俯角）。
+     * 行为见 {@code TwoDimensionalCameraClientHandle}，最终通过 AdvancedCameraDirector
+     * 接管相机。
      * - 拥有该效果时，客户端会渲染指向当前 SAN 任务点的指引箭头（手持钥匙时额外指向自己房门），
-     *   见 {@code TwoDimensionalTaskArrowRenderer}。
+     * 见 {@code TwoDimensionalTaskArrowRenderer}。
      */
     public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA = register("two_dimensional_camera",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x87CEFA));
 
     /**
-     * 2D camera distance. Amplifier 0 keeps the legacy distance, each extra level moves farther away.
+     * 2D camera distance. Amplifier 0 keeps the legacy distance, each extra level
+     * moves farther away.
      */
     public static final Holder<MobEffect> TWO_DIMENSIONAL_CAMERA_DISTANCE = register("two_dimensional_camera_distance",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xB3E5FC));
@@ -364,12 +368,12 @@ public class ModEffects {
      * 箱庭视野（{@link #TWO_DIMENSIONAL_CAMERA} 的扩展核心）
      * - 中性效果
      * - 客户端以玩家所在位置做泛洪扫描自动构筑「当前房间」的箱庭，并按当前视角
-     *   自动切割遮挡面：俯视（2D 效果 amplifier 4，或普通视角低头超过约 45°）时
-     *   屋顶整层被隐藏，可直接俯瞰自己的身体；2.5D / 平面侧视（amplifier 0~3 / 5~8）时
-     *   面向镜头一侧的墙体被切开。屋顶上的方块与实体一并被剔除 —— 只有玩家自己
-     *   走上屋顶（头顶见天，视为 outside）时才恢复完整渲染。
-     *   行为见 {@code HakoniwaVisionClientHandle}；区块网格级的方块剔除见
-     *   {@code mixin/client/hakoniwa} 与 sodium 兼容层 {@code mixin/compat/sodium}。
+     * 自动切割遮挡面：俯视（2D 效果 amplifier 4，或普通视角低头超过约 45°）时
+     * 屋顶整层被隐藏，可直接俯瞰自己的身体；2.5D / 平面侧视（amplifier 0~3 / 5~8）时
+     * 面向镜头一侧的墙体被切开。屋顶上的方块与实体一并被剔除 —— 只有玩家自己
+     * 走上屋顶（头顶见天，视为 outside）时才恢复完整渲染。
+     * 行为见 {@code HakoniwaVisionClientHandle}；区块网格级的方块剔除见
+     * {@code mixin/client/hakoniwa} 与 sodium 兼容层 {@code mixin/compat/sodium}。
      */
     public static final Holder<MobEffect> HAKONIWA_VISION = register("hakoniwa_vision",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9CCFB8));
@@ -379,7 +383,10 @@ public class ModEffects {
         return 2.0f + Math.max(0, amplifier) * 3.0f;
     }
 
-    /** 2D camera distance by potion amplifier. Level I = 28 blocks, +6 blocks per level. */
+    /**
+     * 2D camera distance by potion amplifier. Level I = 28 blocks, +6 blocks per
+     * level.
+     */
     public static float getTwoDimensionalCameraDistance(int amplifier) {
         return Mth.clamp(28.0f + Math.max(0, amplifier) * 6.0f, 8.0f, 64.0f);
     }
@@ -509,5 +516,28 @@ public class ModEffects {
             }
             return true;
         });
+    }
+
+    /**
+     * 获取一个药水效果的实例
+     * 
+     * @param holder        药水效果。(ModEffects.xxx/MobEffects.xxx)
+     * @param time          持续时间(ticks)。-1永久
+     * @param amplifier     等级。0为1级
+     * @param ambient       是否为环境效果，比如信标
+     * @param showParticles 是否显示粒子
+     * @param showIcon      是否显示图标
+     * @return
+     */
+    public static MobEffectInstance of(Holder<MobEffect> holder, int time, int amplifier, boolean ambient,
+            boolean showParticles, boolean showIcon) {
+        return new MobEffectInstance(new MobEffectInstance(
+                holder,
+                time, // 持续时间（tick）
+                amplifier, // 等级（0 = 速度 I）
+                ambient, // ambient（环境效果，如信标）
+                showParticles, // showParticles（显示粒子）
+                showIcon // showIcon（显示图标）
+        ));
     }
 }
