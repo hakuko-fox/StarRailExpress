@@ -176,7 +176,7 @@ public class AreasSettings {
 
     /** 背景音效类型：train/wind/sand_storm/snow_storm/circus。空字符串或未设置时默认 train。 */
     public static enum BackgroundAmbienceSound {
-        train, wind, sand_storm, snow_storm, circus
+        train, wind, sand_storm, snow_storm, circus, flower_sea, indoor_music
     }
 
     @Category("sound")
@@ -188,6 +188,9 @@ public class AreasSettings {
     /** 是否启用会议系统（右键尸体召开紧急会议）。 */
     @Category("meeting")
     public boolean meetingEnabled = false;
+    /** 是否启用会议投票（讨论结束后可投票出局）。前提是 meetingEnabled 为 true。 */
+    @Category("meeting")
+    public boolean meetingVoteEnabled = false;
     /** 这个class里有可以存储的Vec3不用的AI是真的逊。 */
     @Category("meeting")
     public StoreableVec3 meetingPosition = new StoreableVec3(0, 0, 0);

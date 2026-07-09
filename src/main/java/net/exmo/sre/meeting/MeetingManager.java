@@ -6,9 +6,15 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.block.MountableBlock;
 import io.wifi.starrailexpress.content.block.entity.SeatEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.content.vote.VoteManager;
+import io.wifi.starrailexpress.content.vote.VoteOption;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
+import io.wifi.starrailexpress.event.MeetingEndEvent;
+import io.wifi.starrailexpress.event.MeetingStartEvent;
+import io.wifi.starrailexpress.event.MeetingVoteOutEvent;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.util.BlockTypeChecker;
@@ -20,6 +26,7 @@ import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -73,6 +80,9 @@ public final class MeetingManager {
     public static final int PHASE_NONE = 0;
     public static final int PHASE_INTRO = 1;
     public static final int PHASE_DISCUSS = 2;
+    public static final int PHASE_VOTE = 3;
+    /** 投票阶段默认时长（秒） */
+    public static final int VOTE_DURATION_SECONDS = 30;
 
     private record ReturnPos(double x, double y, double z, float yaw, float pitch) {
     }
@@ -91,6 +101,8 @@ public final class MeetingManager {
     private static long cooldownUntilTick;
     private static long bellCooldownUntilTick;
     private static final Set<UUID> reportedBodies = new HashSet<>();
+    /** 投票权重：玩家 UUID → 其投票算几票 */
+    private static final Map<UUID, Integer> voteWeightOverrides = new HashMap<>();
     private static boolean registered;
 
     private MeetingManager() {
@@ -135,6 +147,7 @@ public final class MeetingManager {
             reportedBodies.clear();
             cooldownUntilTick = 0;
             bellCooldownUntilTick = 0;
+            resetAllVoteWeights();
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID uuid = handler.player.getUUID();
@@ -289,6 +302,7 @@ public final class MeetingManager {
             player.playNotifySound(SoundEvents.BELL_BLOCK, SoundSource.MASTER, 1.0F, 0.8F);
         }
         broadcastState(serverLevel);
+        MeetingStartEvent.EVENT.invoker().onMeetingStart(serverLevel, reporter);
         return true;
     }
 
@@ -339,6 +353,7 @@ public final class MeetingManager {
             }
         }
         broadcastState(serverLevel);
+        MeetingEndEvent.EVENT.invoker().onMeetingEnd(serverLevel);
         level = null;
     }
 
@@ -388,6 +403,16 @@ public final class MeetingManager {
                 broadcastState(serverLevel);
             }
             if (now >= phaseEndTick) {
+                AreasSettings s = settings(serverLevel);
+                if (s != null && s.meetingVoteEnabled) {
+                    startVotingPhase(serverLevel);
+                } else {
+                    endMeeting(false);
+                }
+            }
+        }
+        if (phase == PHASE_VOTE) {
+            if (VoteManager.getCurrentSession() == null && now >= phaseEndTick) {
                 endMeeting(false);
             }
         }
@@ -465,5 +490,101 @@ public final class MeetingManager {
     private static AreasSettings settings(ServerLevel serverLevel) {
         AreasWorldComponent component = AreasWorldComponent.KEY.get(serverLevel);
         return component == null ? null : component.areasSettings;
+    }
+
+    // ==================== 投票阶段 ====================
+
+    /** 开始投票阶段：创建玩家投票 Session，投票结束时处理出局。 */
+    private static void startVotingPhase(ServerLevel serverLevel) {
+        phase = PHASE_VOTE;
+        phaseEndTick = serverLevel.getGameTime() + VOTE_DURATION_SECONDS * 20L;
+        List<ServerPlayer> alive = serverLevel.players().stream()
+                .filter(GameUtils::isPlayerAliveAndSurvival)
+                .toList();
+        if (alive.size() <= 1) {
+            endMeeting(false);
+            return;
+        }
+        List<VoteOption> options = new ArrayList<>();
+        for (ServerPlayer p : alive) {
+            options.add(new VoteOption.PlayerOption(p.getName(), p.getUUID()));
+        }
+        Set<UUID> targetPlayers = new HashSet<>();
+        for (ServerPlayer p : alive) targetPlayers.add(p.getUUID());
+        VoteManager.builder(Component.translatable("meeting.vote.title"))
+                .options(options).duration(VOTE_DURATION_SECONDS * 20).allowReVote(true)
+                .showResults(false).syncInterval(20).targetPlayerUUIDs(targetPlayers)
+                .maxSelect(1).type("meeting").start();
+        // 投票结束时处理结果
+        VoteManager.addEndCallback(session -> {
+            var topOpt = session.getTopResult();
+            if (topOpt != null && topOpt.getValue().count() > 0) {
+                String resultId = topOpt.getKey();
+                for (VoteOption opt : session.getOptions()) {
+                    if (opt.resultId().equals(resultId) && opt instanceof VoteOption.PlayerOption po) {
+                        UUID votedOut = po.uuid();
+                        ServerPlayer target = serverLevel.getServer().getPlayerList().getPlayer(votedOut);
+                        if (target != null && GameUtils.isPlayerAliveAndSurvival(target)) {
+                            if (MeetingVoteOutEvent.EVENT.invoker().onVoteOut(serverLevel, target)) {
+                                GameUtils.forceKillPlayer(target, false, null,
+                                        GameConstants.DeathReasons.VOTED_OUT);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            // 稍微延迟让 kill 处理完再结束
+            endMeeting(false);
+        });
+        broadcastState(serverLevel);
+    }
+
+    // ==================== 投票权重 ====================
+
+    /** 设置指定玩家的投票权重（覆盖）。默认权重为 1。 */
+    public static void setVoteWeight(ServerPlayer player, int weight) {
+        voteWeightOverrides.put(player.getUUID(), weight);
+    }
+
+    /** 为指定玩家增加投票权重（加算）。如传教士给政客 2 票加成 → 2+2=4。 */
+    public static void addVoteWeight(ServerPlayer player, int addedWeight) {
+        addVoterWeight(player.getUUID(), addedWeight);
+    }
+
+    /** UUID 版加算投票权重。传教士切换目标时用负数恢复旧目标权重。 */
+    public static void addVoterWeight(UUID uuid, int addedWeight) {
+        int current = voteWeightOverrides.getOrDefault(uuid, 1);
+        voteWeightOverrides.put(uuid, current + addedWeight);
+    }
+
+    /** 获取指定玩家的投票权重（含存活人数规则）。无覆盖时返回 1。 */
+    public static int getVoteWeight(ServerPlayer player) {
+        return getVoterWeight(player.getUUID());
+    }
+
+    /** UUID 版：获取投票权重（无覆盖返回 1，含存活人数规则）。 */
+    public static int getVoterWeight(UUID uuid) {
+        int weight = voteWeightOverrides.getOrDefault(uuid, 1);
+        if (weight >= 2 && level != null) {
+            long alive = level.players().stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
+            if (alive > 24) weight = Math.max(weight, 3);
+        }
+        return weight;
+    }
+
+    /** 重置指定玩家的投票权重。 */
+    public static void resetVoteWeight(ServerPlayer player) {
+        voteWeightOverrides.remove(player.getUUID());
+    }
+
+    /** UUID 版：重置投票权重。 */
+    public static void resetVoterWeight(UUID uuid) {
+        voteWeightOverrides.remove(uuid);
+    }
+
+    /** 重置所有投票权重（游戏结束时调用）。 */
+    public static void resetAllVoteWeights() {
+        voteWeightOverrides.clear();
     }
 }
