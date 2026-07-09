@@ -388,7 +388,7 @@ public class ModEffects {
      * level.
      */
     public static float getTwoDimensionalCameraDistance(int amplifier) {
-        return Mth.clamp(28.0f + Math.max(0, amplifier) * 6.0f, 8.0f, 64.0f);
+        return Mth.clamp(2.0f + Math.max(0, amplifier) * 3.0f, 8.0f, 64.0f);
     }
 
     /**

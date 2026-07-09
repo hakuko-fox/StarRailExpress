@@ -15,6 +15,8 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.init.ModEffects;
 
 public final class TwoDimensionalCameraClientHandle {
+    /** 正上方俯视：相机在玩家头顶垂直下望（pitch = 90°），区别于 0~3 的 2.5D 俯视与 5~8 的纯侧视。 */
+    public static final int TOP_VIEW_AMPLIFIER = 4;
     private static final double DEFAULT_CAMERA_DISTANCE = 28.0D;
     private static final double CAMERA_HEIGHT = 6.0D;
     private static final double TOP_CAMERA_HEIGHT = 34.0D;
@@ -28,6 +30,8 @@ public final class TwoDimensionalCameraClientHandle {
     private static volatile float foregroundClipDistance = DEFAULT_FOREGROUND_CLIP_DISTANCE;
     private static volatile Vec3 voiceListenerPosition;
     private static volatile float cameraYaw;
+    private static volatile boolean topView;
+    private static volatile Vec3 cameraPosition;
 
     private TwoDimensionalCameraClientHandle() {
     }
@@ -58,9 +62,11 @@ public final class TwoDimensionalCameraClientHandle {
         }
 
         active = true;
+        topView = effect.getAmplifier() == TOP_VIEW_AMPLIFIER;
         voiceListenerPosition = player.getEyePosition(1.0F);
         Vec3 lookAt = player.getEyePosition(1.0F).add(0.0D, 0.5D, 0.0D);
         Vec3 cameraPos = cameraPosition(lookAt, effect.getAmplifier(), cameraDistance(player));
+        cameraPosition = cameraPos;
         foregroundClipDistance = smartForegroundClipDistance(client, player, cameraPos, lookAt);
         Vec3 delta = lookAt.subtract(cameraPos);
         double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
@@ -72,8 +78,10 @@ public final class TwoDimensionalCameraClientHandle {
 
     private static void deactivate() {
         active = false;
+        topView = false;
         foregroundClipDistance = DEFAULT_FOREGROUND_CLIP_DISTANCE;
         voiceListenerPosition = null;
+        cameraPosition = null;
     }
 
     private static boolean isLocalTwoDimensionalActive(LocalPlayer localPlayer) {
@@ -89,7 +97,7 @@ public final class TwoDimensionalCameraClientHandle {
     }
 
     private static Vec3 cameraPosition(Vec3 lookAt, int amplifier, double cameraDistance) {
-        if (amplifier == 4) {
+        if (amplifier == TOP_VIEW_AMPLIFIER) {
             double height = Math.max(CAMERA_HEIGHT + 2.0D,
                     cameraDistance + (TOP_CAMERA_HEIGHT - DEFAULT_CAMERA_DISTANCE));
             return lookAt.add(0.0D, height, 0.0D);
@@ -237,6 +245,16 @@ public final class TwoDimensionalCameraClientHandle {
      */
     public static float cameraYaw() {
         return cameraYaw;
+    }
+
+    /** 当前是否为正上方俯视（amplifier {@value #TOP_VIEW_AMPLIFIER}）。 */
+    public static boolean isTopView() {
+        return active && topView;
+    }
+
+    /** 当前二维相机的世界坐标；未激活时为 null。 */
+    public static Vec3 cameraPosition() {
+        return active ? cameraPosition : null;
     }
 
     public static Vec3 voiceListenerPosition() {

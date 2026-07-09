@@ -85,6 +85,7 @@
     "client.general.MobEffectKeyMixin",
     "client.general.MobEffectMouseHandleSuppressMixin",
     "client.general.PointerMovementYawMixin",
+    "client.general.PointerSprintDirectionMixin",
     "client.general.PointerSprintJumpYawMixin",
     "client.general.PlayerIsolationClientMixin",
     "client.general.PlayerIsolationSoundMixin",
