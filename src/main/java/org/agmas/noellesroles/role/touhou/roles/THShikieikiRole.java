@@ -9,10 +9,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
 import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
 import io.wifi.starrailexpress.util.ShopEntry;
 
@@ -34,6 +36,9 @@ public class THShikieikiRole extends TouhouRole {
             // "itemstack.shikieiki.bullet.item_name"
             var t = TMMItems.MAGNUM_BULLET.getDefaultInstance();
             t.set(DataComponents.ITEM_NAME, Component.translatable("itemstack.shikieiki.bullet.item_name"));
+            
+            t.set(DataComponents.LORE, new ItemLore(
+                    List.of()));
             SHOP.add(new ShopEntry(t,
                     250, ShopEntry.Type.WEAPON) {
                 @Override
@@ -53,10 +58,10 @@ public class THShikieikiRole extends TouhouRole {
         }
         {
             // "itemstack.shikieiki.bullet.item_name"
-            var t = TMMItems.MAGNUM_BULLET.getDefaultInstance();
+            var t = Items.BOOK.getDefaultInstance();
             t.set(DataComponents.ITEM_NAME, Component.translatable("itemstack.shikieiki.alive_or_dead_book.item_name"));
             t.set(DataComponents.LORE, new ItemLore(
-                    List.of(Component.translatable("itemstack.shikieiki.alive_or_dead_book.item_lore.1"))));
+                    List.of(Component.translatable("itemstack.shikieiki.alive_or_dead_book.item_lore.1").withStyle(style->style.withBold(false).withItalic(false).withColor(ChatFormatting.GRAY)))));
             SHOP.add(new ShopEntry(t,
                     400, ShopEntry.Type.WEAPON) {
                 @Override

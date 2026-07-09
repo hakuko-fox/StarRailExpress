@@ -237,7 +237,7 @@ public class PlayerBodyHud {
                 }
                 boolean showBodyKiller = (SREClient.isPlayerSpectatingOrCreative() || selfrole.canSeeBodyKiller());
                 if (showBodyKiller && !hasPenalty) {
-                    var killerName = Component.translatable("sre.general.unknown");
+                    Component killerName = Component.translatable("sre.general.unknown");
                     UUID killerId = targetBody.getKillerUuid();
                     if (killerId != null) {
                         var b = ClientSkinCache.getCachedPlayerInfo(killerId);
@@ -245,8 +245,14 @@ public class PlayerBodyHud {
                             killerName = Component.literal(b.getProfile().getName());
                         }
                     }
-                    Component roleInfo = Component.translatable("hud.coroner.body.killer", killerName)
-                            .withColor(CommonColors.RED);
+                    Component roleInfo;
+                    if (killerId != null) {
+                        roleInfo = Component.translatable("hud.coroner.body.killer", killerName)
+                                .withColor(CommonColors.RED);
+                    } else {
+                        roleInfo = Component.translatable("hud.coroner.body.no_killer") 
+                                .withColor(CommonColors.RED);
+                    }
                     context.drawString(renderer, roleInfo, -renderer.width(roleInfo) / 2, 64, CommonColors.WHITE);
                 }
                 UUID conspiratorEvidenceId = bodyDeathReasonComponent.getConspiratorEvidenceUuid();

@@ -686,7 +686,7 @@ public abstract class GameMode {
             }
             if (killer != null) {
                 if (shouldReloadDerringer(victim, killer, deathReason)) {
-                    GameUtils.refillDerringer(victim, true);
+                    GameUtils.refillDerringer(killer, true);
                 }
             }
 

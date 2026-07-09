@@ -232,6 +232,27 @@ public class SREAbilityPlayerComponent
         }
     }
 
+    public void addSkillCharges(RoleSkill.Definition definition, int count) {
+        SkillState state = getSkillState(definition.id());
+        state.cooldown = definition.cooldownTicks();
+        if (state.maxCharges == -1 && definition.maxCharges() > 0) {
+            state.maxCharges = definition.maxCharges();
+            state.charges = definition.maxCharges();
+        }
+        state.charges += count;
+        if (state.charges > state.maxCharges) {
+            state.charges = state.maxCharges;
+        }
+        state.castCount++;
+        castingSkill = definition.continuous() ? definition.id() : null;
+        if (!definition.noCastCCA()) {
+            cooldown = state.cooldown;
+            charges = state.charges;
+            maxCharges = state.maxCharges;
+        }
+        sync();
+    }
+
     public void markSkillUsed(RoleSkill.Definition definition) {
         SkillState state = getSkillState(definition.id());
         state.cooldown = definition.cooldownTicks();
@@ -244,9 +265,11 @@ public class SREAbilityPlayerComponent
         }
         state.castCount++;
         castingSkill = definition.continuous() ? definition.id() : null;
-        cooldown = state.cooldown;
-        charges = state.charges;
-        maxCharges = state.maxCharges;
+        if (!definition.noCastCCA()) {
+            cooldown = state.cooldown;
+            charges = state.charges;
+            maxCharges = state.maxCharges;
+        }
         sync();
     }
 
@@ -283,7 +306,12 @@ public class SREAbilityPlayerComponent
         if (definitions.isEmpty()) {
             return;
         }
-        SkillState state = getSkillState(definitions.get(selectedSkill).id());
+        var definition = definitions.get(selectedSkill);
+        if (definition.noCastCCA()) {
+            return;
+        }
+        SkillState state = getSkillState(definition.id());
+
         cooldown = state.cooldown;
         charges = state.charges;
         maxCharges = state.maxCharges;

@@ -214,7 +214,7 @@ public class GameUtils {
     public static PlayerKillResultInfo getPlayerLastKillInfo(Player player) {
         if (player == null)
             return null;
-        return getPlayerLastKillInfo(player);
+        return getPlayerLastKillInfo(player.getUUID());
     }
 
     public static void teleportBackToRoom(Player player) {

@@ -1,7 +1,10 @@
 package io.wifi.starrailexpress.api;
 
+import io.wifi.starrailexpress.api.RoleSkill.AnnounceInfo.AnnounceContext;
+import io.wifi.starrailexpress.api.RoleSkill.AnnounceInfo.AnnounceType;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
+import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.SkillState;
 import io.wifi.starrailexpress.event.OnRoleSkillUse;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -13,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Unified role skill registry.
@@ -33,15 +37,107 @@ public final class RoleSkill {
             @Nullable UUID target,
             ResourceLocation skillId,
             Phase phase,
-            boolean skillReady) {
+            boolean skillReady, Definition definition, SREAbilityPlayerComponent abilityCCA) {
         public RoleSkillContext(ServerPlayer player, @Nullable UUID target) {
-            this(player, target, ResourceLocation.withDefaultNamespace("legacy"), Phase.PRESS, true);
+            this(player, target, ResourceLocation.withDefaultNamespace("legacy"), Phase.PRESS, true, null,
+                    SREAbilityPlayerComponent.KEY.get(player));
+        }
+
+        public void setSkillCooldown(int ticks) {
+            if (definition == null)
+                return;
+            abilityCCA.setSkillCooldown(definition.id(), ticks);
+        }
+
+        public void addCharges(int charges) {
+            if (definition == null)
+                return;
+            abilityCCA.addSkillCharges(definition, charges);
+        }
+
+        /**
+         * 技能的冷却、charges、使用次数等信息
+         * 
+         * @return
+         */
+        public SkillState skillState() {
+            if (definition == null)
+                return null;
+            return abilityCCA.getSkillState(definition.id());
         }
     }
 
     @FunctionalInterface
     public interface Handler {
         boolean use(RoleSkillContext context);
+    }
+
+    public static class AnnounceInfo {
+        public AnnounceType type;
+        public Function<AnnounceContext, Component> suppilier = (ctx) -> {
+            MutableComponent stateLabel;
+            if (ctx.definition.toggleable() && !ctx.skillReady) {
+                stateLabel = Component.translatable("message.sre.skill.toggled_off",
+                        Component.translatable(ctx.definition.nameKey()));
+            } else {
+                stateLabel = Component.translatable("message.sre.skill.cast",
+                        Component.translatable(ctx.definition.nameKey()),
+                        ctx.skillState.castCount);
+            }
+            return stateLabel.withStyle(ChatFormatting.AQUA);
+        };
+        public Consumer<AnnounceContext> consumer;
+
+        public static enum AnnounceType {
+            ANNOUNCE_TO_SELF,
+            CUSTOM_CONSUMER,
+            NONE
+        }
+
+        public static record AnnounceContext(ServerPlayer player, Definition definition, SkillState skillState,
+                boolean skillReady) {
+        }
+
+        public Component getMessage(AnnounceContext context) {
+            return suppilier.apply(context);
+        }
+
+        public static AnnounceInfo none() {
+            return new AnnounceInfo(AnnounceType.NONE);
+        }
+
+        public static AnnounceInfo announceToSelf() {
+            return new AnnounceInfo(AnnounceType.ANNOUNCE_TO_SELF);
+        }
+
+        public AnnounceInfo(AnnounceType type) {
+            this.type = type;
+        }
+
+        public AnnounceInfo(AnnounceType type, Function<AnnounceContext, Component> suppilier) {
+            this.type = type;
+            this.suppilier = suppilier;
+        }
+
+        public void doAnnounce(ServerPlayer player, Definition definition, SkillState skillState, boolean skillReady) {
+            if (type == AnnounceType.NONE)
+                return;
+            final var ctx = new AnnounceContext(player, definition, skillState, skillReady);
+            if (type == AnnounceType.CUSTOM_CONSUMER) {
+                if (this.consumer != null) {
+                    this.consumer.accept(ctx);
+                } else {
+                    throw new IllegalArgumentException("No announcement consumer provided!");
+                }
+            } else {
+                if (suppilier == null) {
+                    throw new IllegalArgumentException("No announcement suppilier provided!");
+                }
+                if (type == AnnounceType.ANNOUNCE_TO_SELF) {
+                    player.displayClientMessage(getMessage(ctx), true);
+                }
+            }
+        }
     }
 
     public record Definition(
@@ -51,7 +147,8 @@ public final class RoleSkill {
             int maxCharges,
             boolean continuous,
             int holdIntervalTicks,
-            boolean announceToSelf,
+            boolean noCastCCA,
+            AnnounceInfo announceInfo,
             boolean toggleable,
             boolean shifted,
             boolean showOnHud,
@@ -77,10 +174,11 @@ public final class RoleSkill {
         private final String nameKey;
         private final Handler handler;
         private int cooldownTicks;
+        private boolean noCastCCA = false;
         private int maxCharges = -1;
         private boolean continuous;
         private int holdIntervalTicks = 1;
-        private boolean announceToSelf = false;
+        private AnnounceInfo announceInfo = AnnounceInfo.none();
         private boolean toggleable;
         private boolean shifted;
         private boolean showOnHud = false;
@@ -93,6 +191,11 @@ public final class RoleSkill {
 
         public Builder cooldownTicks(int ticks) {
             this.cooldownTicks = ticks;
+            return this;
+        }
+
+        public Builder noCastCCA(boolean flag) {
+            noCastCCA = flag;
             return this;
         }
 
@@ -111,8 +214,45 @@ public final class RoleSkill {
             return this;
         }
 
+        public Builder customAnnounce(Function<AnnounceContext, Component> suppilier) {
+            this.announceInfo.suppilier = suppilier;
+            this.announceInfo.type = AnnounceType.ANNOUNCE_TO_SELF;
+            return this;
+        }
+
+        public Builder customAnnounce(Consumer<AnnounceContext> consumer) {
+            this.announceInfo.consumer = consumer;
+            this.announceInfo.type = AnnounceType.CUSTOM_CONSUMER;
+            return this;
+        }
+
+        public Builder announceInfo(AnnounceInfo announceInfo) {
+            this.announceInfo = announceInfo;
+            return this;
+        }
+
+        public Builder announcement(AnnounceType type) {
+            this.announceInfo.type = type;
+            return this;
+        }
+
+        public Builder noAnnouncement() {
+            this.announceInfo.type = AnnounceType.NONE;
+            return this;
+        }
+
+        public Builder announceToSelf() {
+            this.announceInfo.type = AnnounceType.ANNOUNCE_TO_SELF;
+
+            return this;
+        }
+
         public Builder announceToSelf(boolean announce) {
-            this.announceToSelf = announce;
+            if (announce) {
+                this.announceInfo.type = AnnounceType.ANNOUNCE_TO_SELF;
+            } else {
+                this.announceInfo.type = AnnounceType.NONE;
+            }
             return this;
         }
 
@@ -145,7 +285,7 @@ public final class RoleSkill {
 
         public Definition build() {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
-                    holdIntervalTicks, announceToSelf, toggleable, shifted, showOnHud, handler);
+                    holdIntervalTicks, noCastCCA, announceInfo, toggleable, shifted, showOnHud, handler);
         }
     }
 
@@ -370,7 +510,7 @@ public final class RoleSkill {
         }
 
         boolean used = definition.handler().use(
-                new RoleSkillContext(player, target, definition.id(), phase, skillReady));
+                new RoleSkillContext(player, target, definition.id(), phase, skillReady, definition, ability));
 
         if (!used) {
             return false;
@@ -383,18 +523,8 @@ public final class RoleSkill {
             // Toggleable deactivation: just stop casting if applicable
             ability.stopCasting(definition.id());
         }
-        if (definition.announceToSelf()) {
-            MutableComponent stateLabel;
-            if (definition.toggleable() && !skillReady) {
-                stateLabel = Component.translatable("message.sre.skill.toggled_off",
-                        Component.translatable(definition.nameKey()));
-            } else {
-                stateLabel = Component.translatable("message.sre.skill.cast",
-                        Component.translatable(definition.nameKey()),
-                        ability.getCastCount(definition.id()));
-            }
-            player.displayClientMessage(stateLabel.withStyle(ChatFormatting.AQUA), true);
-        }
+        definition.announceInfo().doAnnounce(player, definition, ability.getSkillState(definition.id()),
+                skillReady);
         afterUse(player, role);
         return true;
     }

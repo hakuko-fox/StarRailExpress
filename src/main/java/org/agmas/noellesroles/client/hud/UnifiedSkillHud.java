@@ -4,11 +4,12 @@ import io.wifi.starrailexpress.api.RolePassive;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+
+import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 
 import java.util.List;
@@ -117,7 +118,8 @@ public final class UnifiedSkillHud {
                     stateColor = MUTED;
                 } else {
                     stateText = skill.shifted()
-                            ? Component.translatable("hud.sre.skill.ready_shift")
+                            ? Component.translatable("hud.sre.skill.ready_shift", client.options.keyShift,
+                                    NoellesrolesClient.abilityBind)
                             : Component.translatable("hud.sre.skill.ready");
                     stateColor = GREEN;
                 }
