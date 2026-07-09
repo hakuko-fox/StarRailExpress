@@ -526,7 +526,7 @@ public final class MeetingManager {
                         ServerPlayer target = serverLevel.getServer().getPlayerList().getPlayer(votedOut);
                         if (target != null && GameUtils.isPlayerAliveAndSurvival(target)) {
                             if (MeetingVoteOutEvent.EVENT.invoker().onVoteOut(serverLevel, target)) {
-                                GameUtils.killPlayer(target, false, null,
+                                GameUtils.forceKillPlayer(target, false, null,
                                         GameConstants.DeathReasons.VOTED_OUT);
                             }
                         }
