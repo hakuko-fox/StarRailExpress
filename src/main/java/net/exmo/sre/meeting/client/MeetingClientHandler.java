@@ -37,11 +37,11 @@ import java.util.UUID;
 @Environment(EnvType.CLIENT)
 public final class MeetingClientHandler {
 
-        // 分号 [;/:] 键
-    public static KeyMapping speakKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.starrailexpress.meeting_speak",
-                GLFW.GLFW_KEY_SEMICOLON,
-                "category.starrailexpress.general"));;
+    // 分号 [;/:] 键
+    public static final KeyMapping speakKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.starrailexpress.meeting_speak",
+            GLFW.GLFW_KEY_SEMICOLON,
+            "category.starrailexpress.general"));;
 
     // ── 同步状态（来自 MeetingStateS2CPayload）───────────────────
     public static int phase = MeetingManager.PHASE_NONE;
