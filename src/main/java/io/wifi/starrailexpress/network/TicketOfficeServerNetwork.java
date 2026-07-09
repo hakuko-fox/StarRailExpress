@@ -1,7 +1,9 @@
 package io.wifi.starrailexpress.network;
 
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.content.block_entity.TicketOfficeBlockEntity;
 import io.wifi.starrailexpress.content.item.AdmissionTicketItem;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,10 +12,37 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TicketOfficeServerNetwork {
+    private static boolean registered;
+
     public static void register() {
+        if (registered) return;
+        registered = true;
         ServerPlayNetworking.registerGlobalReceiver(TicketPayload.SaveOfficeConfig.TYPE,
                 TicketOfficeServerNetwork::handleSave);
         ServerPlayNetworking.registerGlobalReceiver(TicketPayload.BuyTicket.TYPE, TicketOfficeServerNetwork::handleBuy);
+
+        // 游戏结束时重置所有售票处的购买计数
+        OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
+            var playArea = AreasWorldComponent.KEY.get(serverLevel).getPlayArea();
+            int minChunkX = ((int) playArea.minX) >> 4;
+            int maxChunkX = ((int) playArea.maxX) >> 4;
+            int minChunkZ = ((int) playArea.minZ) >> 4;
+            int maxChunkZ = ((int) playArea.maxZ) >> 4;
+            var chunkSource = serverLevel.getChunkSource();
+            for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+                for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                    var chunk = chunkSource.getChunkNow(cx, cz);
+                    if (chunk != null) {
+                        for (var be : chunk.getBlockEntities().values()) {
+                            if (be instanceof TicketOfficeBlockEntity office
+                                    && playArea.contains(office.getBlockPos().getCenter())) {
+                                office.resetPurchaseCounts();
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     private static void handleSave(TicketPayload.SaveOfficeConfig payload, ServerPlayNetworking.Context context) {
@@ -37,6 +66,11 @@ public class TicketOfficeServerNetwork {
             if (!(be instanceof TicketOfficeBlockEntity office)) {
                 return;
             }
+            if (!office.canPurchase(player)) {
+                player.displayClientMessage(
+                        Component.translatable("message.starrailexpress.ticket_office.purchase_limit"), true);
+                return;
+            }
             if (office.getCurrency().getBalance(player) < office.getPrice()) {
                 player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_office.no_money"), true);
                 return;
@@ -47,6 +81,7 @@ public class TicketOfficeServerNetwork {
                 return;
             }
             office.getCurrency().add(player, -office.getPrice());
+            office.recordPurchase(player);
             player.displayClientMessage(Component.translatable("message.starrailexpress.ticket_office.bought"), true);
         });
     }

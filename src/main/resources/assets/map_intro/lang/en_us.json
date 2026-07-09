@@ -9,5 +9,7 @@
   "map_intro.tab.quest_blocks": "Quest Blocks",
   "map_intro.tab.mechanics": "Map Mechanics",
   "map_intro.property.disabled_roles": "Disabled roles: %s",
+  "map_intro.property.meeting_enabled": "Voting meeting enabled",
+  "map_intro.property.bell_meeting_enabled": "Bell meeting enabled",
   "map_intro.status.pollution": "Pollution"
 }

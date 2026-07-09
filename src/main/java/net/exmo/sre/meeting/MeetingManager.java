@@ -8,6 +8,8 @@ import io.wifi.starrailexpress.content.block.entity.SeatEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
+import io.wifi.starrailexpress.event.MeetingEndEvent;
+import io.wifi.starrailexpress.event.MeetingStartEvent;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
@@ -91,6 +93,8 @@ public final class MeetingManager {
     private static long cooldownUntilTick;
     private static long bellCooldownUntilTick;
     private static final Set<UUID> reportedBodies = new HashSet<>();
+    /** 投票权重：玩家 UUID → 其投票算几票 */
+    private static final Map<UUID, Integer> voteWeightOverrides = new HashMap<>();
     private static boolean registered;
 
     private MeetingManager() {
@@ -135,6 +139,7 @@ public final class MeetingManager {
             reportedBodies.clear();
             cooldownUntilTick = 0;
             bellCooldownUntilTick = 0;
+            resetAllVoteWeights();
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID uuid = handler.player.getUUID();
@@ -289,6 +294,7 @@ public final class MeetingManager {
             player.playNotifySound(SoundEvents.BELL_BLOCK, SoundSource.MASTER, 1.0F, 0.8F);
         }
         broadcastState(serverLevel);
+        MeetingStartEvent.EVENT.invoker().onMeetingStart(serverLevel, reporter);
         return true;
     }
 
@@ -339,6 +345,7 @@ public final class MeetingManager {
             }
         }
         broadcastState(serverLevel);
+        MeetingEndEvent.EVENT.invoker().onMeetingEnd(serverLevel);
         level = null;
     }
 
@@ -465,5 +472,27 @@ public final class MeetingManager {
     private static AreasSettings settings(ServerLevel serverLevel) {
         AreasWorldComponent component = AreasWorldComponent.KEY.get(serverLevel);
         return component == null ? null : component.areasSettings;
+    }
+
+    // ==================== 投票权重 ====================
+
+    /** 设置指定玩家的投票权重（该玩家的投票算几票）。默认权重为 1。 */
+    public static void setVoteWeight(ServerPlayer player, int weight) {
+        voteWeightOverrides.put(player.getUUID(), weight);
+    }
+
+    /** 获取指定玩家的投票权重。无覆盖时返回 1。 */
+    public static int getVoteWeight(ServerPlayer player) {
+        return voteWeightOverrides.getOrDefault(player.getUUID(), 1);
+    }
+
+    /** 重置指定玩家的投票权重。 */
+    public static void resetVoteWeight(ServerPlayer player) {
+        voteWeightOverrides.remove(player.getUUID());
+    }
+
+    /** 重置所有投票权重（游戏结束时调用）。 */
+    public static void resetAllVoteWeights() {
+        voteWeightOverrides.clear();
     }
 }
