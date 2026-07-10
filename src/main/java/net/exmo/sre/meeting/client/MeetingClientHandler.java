@@ -16,6 +16,7 @@ import net.minecraft.Util;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -94,6 +95,7 @@ public final class MeetingClientHandler {
                 voteResultExpelledName = payload.expelledPlayerName();
                 voteResultEntries = payload.voteEntries();
                 voteResultReceiveMillis = Util.getMillis();
+                showNativeVoteResultTitle(payload);
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(MeetingSkipStateS2CPayload.ID, (payload, context) -> {
@@ -134,6 +136,46 @@ public final class MeetingClientHandler {
             // 新会议开始：重置本地跳过投票状态
             skipVoted = false;
         }
+    }
+
+    // ── 原生 Title 展示投票结果 ──────────────────────────────
+
+    /** 会议投票结束后，用 Minecraft 原生 Title 屏向本地玩家展示结果。 */
+    private static void showNativeVoteResultTitle(MeetingVoteResultS2CPayload payload) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.gui == null) {
+            return;
+        }
+        String expelled = payload.expelledPlayerName();
+        Component title = expelled.isEmpty()
+                ? Component.translatable("meeting.vote.result.none_expelled")
+                : Component.translatable("meeting.vote.result.expelled", expelled);
+        Component subtitle = buildVoteSummary(payload.voteEntries());
+        // fadeIn / stay / fadeOut（tick）
+        client.gui.setTimes(10, 120, 20);
+        client.gui.setSubtitle(subtitle);
+        client.gui.setTitle(title);
+    }
+
+    /** 把票数按降序拼成一行紧凑摘要，用于 Title 副标题。 */
+    private static Component buildVoteSummary(List<MeetingVoteResultS2CPayload.VoteEntry> entries) {
+        if (entries.isEmpty()) {
+            return Component.empty();
+        }
+        List<MeetingVoteResultS2CPayload.VoteEntry> sorted = new ArrayList<>(entries);
+        sorted.sort((a, b) -> Integer.compare(b.voteCount(), a.voteCount()));
+        int max = Math.min(sorted.size(), 6);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < max; i++) {
+            if (i > 0) {
+                sb.append("    ");
+            }
+            sb.append(sorted.get(i).playerName()).append(':').append(sorted.get(i).voteCount());
+        }
+        if (sorted.size() > max) {
+            sb.append("  …");
+        }
+        return Component.literal(sb.toString());
     }
 
     public static boolean isSpeakingToggled() {
