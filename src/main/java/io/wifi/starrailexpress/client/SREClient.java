@@ -8,6 +8,7 @@ import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
@@ -499,6 +500,12 @@ public class SREClient implements ClientModInitializer {
         ClientHeldItemSwitchEvent.EVENT.register((player, mainHand, offHand) -> {
             hideLocalMainHandItemInLayer = isHandHiddenByEvent(player, mainHand, true);
             hideLocalOffHandItemInLayer = isHandHiddenByEvent(player, offHand, false);
+        });
+        AllowOtherCameraType.EVENT.register((original, localplayer) -> {
+            if (SREClient.gameComponent!=null&&SREClient.gameComponent.gameMode== SREGameModes.CHAMELEON_MODE){
+                return AllowOtherCameraType.ReturnCameraType.THIRD_PERSON_BACK;
+            }
+            return AllowOtherCameraType.ReturnCameraType.NO_CHANGE;
         });
         ItemTooltipCallback.EVENT.register(
                 (itemStack, tooltipContext, tooltipFlag, list) -> {
