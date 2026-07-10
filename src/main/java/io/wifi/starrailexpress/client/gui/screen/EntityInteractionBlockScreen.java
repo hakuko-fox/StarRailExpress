@@ -365,6 +365,8 @@ public class EntityInteractionBlockScreen extends Screen {
             case REDSTONE_SIGNAL -> Component.translatable("condition.redstone_signal").getString();
             case HAS_MODIFIER -> Component.translatable("condition.has_modifier",
                     condition.stringValue != null ? condition.stringValue : "?").getString();
+            case FAKE_POISONED -> Component.translatable("condition.fake_poisoned").getString();
+            case HAS_WEAK_ARMOR -> Component.translatable("condition.has_weak_armor").getString();
         };
 
         return logicPrefix + conditionText;
@@ -474,6 +476,11 @@ public class EntityInteractionBlockScreen extends Screen {
             case SEND_WELCOME -> Component.translatable("action.send_welcome").getString();
             case TRIGGER_SABOTAGE -> Component.translatable("action.trigger_sabotage",
                     action.sabotageDuration).getString();
+            case SET_TIMED_SHIELD -> Component.translatable("action.set_timed_shield", (int) action.value).getString();
+            case SET_WEAK_SHIELD -> Component.translatable("action.set_weak_shield", (int) action.value,
+                    action.stringValue != null ? action.stringValue : "*").getString();
+            case TRIGGER_FAKE_POISON -> Component.translatable("action.trigger_fake_poison",
+                    (int) action.value).getString();
         };
 
         return baseText + teleportSuffix + teamSuffix;
@@ -1096,6 +1103,9 @@ public class EntityInteractionBlockScreen extends Screen {
                     addRenderableWidget(Button.builder(
                             Component.translatable(descKey), b -> {})
                             .bounds(centerX - 100, y, 200, 30).build());
+                }
+                case FAKE_POISONED, HAS_WEAK_ARMOR -> {
+                    // 无需输入
                 }
                 // PASS_THROUGH 不需要输入
             }
@@ -1781,6 +1791,66 @@ public class EntityInteractionBlockScreen extends Screen {
                     y += 22;
                     addRenderableWidget(Button.builder(
                             Component.translatable("gui.entity_interaction_block.modifier_id_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
+                }
+                case SET_TIMED_SHIELD -> {
+                    // 限时护盾持续时间（秒）
+                    addRenderableWidget(new EditBox(this.font, centerX - 50, y, 100, 20,
+                            Component.translatable("gui.entity_interaction_block.timed_shield_hint")));
+                    valueInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.timed_shield_hint"));
+                    if (valueInput != null) {
+                        valueInput.setFilter(s -> s.matches("[0-9.]*"));
+                        valueInput.setValue("30");
+                    }
+                    addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.seconds"), b -> {}).bounds(centerX + 55, y, 30, 20).build());
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.timed_shield_desc"), b -> {})
+                            .bounds(centerX - 100, y, 200, 15).build());
+                }
+                case SET_WEAK_SHIELD -> {
+                    // 弱效护盾持续时间（秒）
+                    addRenderableWidget(new EditBox(this.font, centerX - 50, y, 100, 20,
+                            Component.translatable("gui.entity_interaction_block.weak_shield_hint")));
+                    valueInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.weak_shield_hint"));
+                    if (valueInput != null) {
+                        valueInput.setFilter(s -> s.matches("[0-9.]*"));
+                        valueInput.setValue("30");
+                    }
+                    addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.seconds"), b -> {}).bounds(centerX + 55, y, 30, 20).build());
+                    y += 30;
+                    // 死亡原因选择（预设 + 自定义输入）
+                    addRenderableWidget(CycleButton.<String>builder(reason ->
+                                    Component.literal(reason.equals("*") ?
+                                            Component.translatable("gui.entity_interaction_block.death_reason_any").getString() : reason))
+                            .withValues(getDeathReasonOptions())
+                            .withInitialValue("*")
+                            .create(centerX - 100, y, 200, 20,
+                                    Component.translatable("gui.entity_interaction_block.weak_shield_death_reason"),
+                                    (b, reason) -> {
+                                        if (stringInput == null) {
+                                            stringInput = new EditBox(font, 0, 0, 0, 0, Component.empty());
+                                        }
+                                        stringInput.setValue(reason);
+                                    }));
+                    y += 30;
+                    addRenderableWidget(new EditBox(this.font, centerX - 100, y, 200, 20,
+                            Component.translatable("gui.entity_interaction_block.death_custom_input")));
+                    stringInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.death_custom_input"));
+                }
+                case TRIGGER_FAKE_POISON -> {
+                    // 假毒时长（tick）
+                    addRenderableWidget(new EditBox(this.font, centerX - 50, y, 100, 20,
+                            Component.translatable("gui.entity_interaction_block.fake_poison_hint")));
+                    valueInput = findAndAttachInput(Component.translatable("gui.entity_interaction_block.fake_poison_hint"));
+                    if (valueInput != null) {
+                        valueInput.setFilter(s -> s.matches("[0-9]*"));
+                        valueInput.setValue("600");
+                    }
+                    addRenderableWidget(Button.builder(Component.translatable("gui.entity_interaction_block.ticks"), b -> {}).bounds(centerX + 55, y, 30, 20).build());
+                    y += 22;
+                    addRenderableWidget(Button.builder(
+                            Component.translatable("gui.entity_interaction_block.fake_poison_desc"), b -> {})
                             .bounds(centerX - 100, y, 200, 15).build());
                 }
                 // 其他类型不需要输入

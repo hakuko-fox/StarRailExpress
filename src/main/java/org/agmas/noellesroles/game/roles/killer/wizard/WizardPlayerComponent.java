@@ -249,7 +249,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         spendMana(mana);
         armorUsed = true;
         io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(target).addTimedArmor(
-                GameConstants.getInTicks(0, config().wizardShieldDurationSeconds), false);
+                1, GameConstants.getInTicks(0, config().wizardShieldDurationSeconds), false);
         spawnAura(target, ParticleTypes.ENCHANT);
         target.level().playSound(null, target.blockPosition(), SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.6f, 1.6f);
         caster.displayClientMessage(Component.translatable("message.noellesroles.wizard.armor_done",
