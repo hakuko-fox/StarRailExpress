@@ -226,7 +226,7 @@ public final class MeetingManager {
         if (now < bellCooldownUntilTick) {
             return false;
         }
-        if (!startMeeting(serverLevel, ringer, null)) {
+        if (!startMeeting(serverLevel, ringer, null, true)) {
             return false;
         }
         bellCooldownUntilTick = now + settings.bellMeetingCooldown * 20L;
@@ -635,7 +635,7 @@ public final class MeetingManager {
         for (ServerPlayer p : alive) targetPlayers.add(p.getUUID());
         VoteManager.builder(Component.translatable("meeting.vote.title"))
                 .options(options).duration(VOTE_DURATION_SECONDS * 20).allowReVote(true)
-                .showResults(false).syncInterval(20).targetPlayerUUIDs(targetPlayers)
+                .showResults(true).syncInterval(20).targetPlayerUUIDs(targetPlayers)
                 .maxSelect(1).type("meeting").start();
 
         // ==================== 投票结束时按新规则处理 ====================

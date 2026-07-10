@@ -41,6 +41,11 @@ public class VoteScreen extends Screen {
     private static final int CONFIRM_W = 126;
     private static final int CONFIRM_H = 24;
 
+    // 弃票按钮：固定在屏幕左下角，贴边显示（与玩家列表分离）
+    private static final int ABSTAIN_W = 124;
+    private static final int ABSTAIN_H = 28;
+    private static final int ABSTAIN_MARGIN = 6;
+
     private static final int COL_OVERLAY_TOP = 0xB8120C06;
     private static final int COL_OVERLAY_BOT = 0xE0080603;
 
@@ -107,6 +112,8 @@ public class VoteScreen extends Screen {
     private int maxScroll;
 
     private final List<WidgetButton> buttons = new ArrayList<>();
+    // 文本选项（如"跳过/弃票"）单独放在左下角，不进入滚动列表
+    private final List<Integer> abstainIndices = new ArrayList<>();
     private boolean hasVoted;
 
     private final Set<Integer> selectedIndices = new LinkedHashSet<>();
@@ -172,9 +179,16 @@ public class VoteScreen extends Screen {
 
     public void rebuildWidgets() {
         buttons.clear();
+        abstainIndices.clear();
         List<VoteOption> options = ClientVoteCache.getOptions();
         for (int i = 0; i < options.size(); i++) {
-            buttons.add(new WidgetButton(i));
+            VoteOption opt = options.get(i);
+            if (opt instanceof VoteOption.TextOption) {
+                // 文本选项（弃票/跳过）单独显示在左下角
+                abstainIndices.add(i);
+            } else {
+                buttons.add(new WidgetButton(i));
+            }
         }
         if (SREClientConfig.instance().autoSortVotes) {
             sortButtons();
@@ -232,12 +246,49 @@ public class VoteScreen extends Screen {
             drawConfirmButton(g, mouseX, mouseY, scrollH);
         }
 
+        if (!abstainIndices.isEmpty()) {
+            drawAbstainButton(g, mouseX, mouseY);
+        }
+
         if (hasVoted && ClientVoteCache.isAllowReVote()) {
             Component revote = Component.translatable("vote.can_revote");
             drawStatusPill(g, revote.getString(), panelY + panelH - 26, COL_GREEN);
         }
 
         renderOptionTooltip(g, mouseX, mouseY);
+    }
+
+    private void drawAbstainButton(GuiGraphics g, int mouseX, int mouseY) {
+        int bx = ABSTAIN_MARGIN;
+        int by = height - ABSTAIN_MARGIN - ABSTAIN_H;
+        boolean hovered = mouseX >= bx && mouseX < bx + ABSTAIN_W && mouseY >= by && mouseY < by + ABSTAIN_H;
+        int idx = abstainIndices.get(0);
+        boolean selected = selectedIndices.contains(idx);
+
+        g.fill(bx - 1, by - 1, bx + ABSTAIN_W + 1, by + ABSTAIN_H + 1, 0x33000000);
+        g.fillGradient(bx, by, bx + ABSTAIN_W, by + ABSTAIN_H,
+                selected ? COL_BTN_SEL_TOP : (hovered ? COL_BTN_HOV_TOP : COL_BTN_TOP),
+                selected ? COL_BTN_SEL_BOT : (hovered ? COL_BTN_HOV_BOT : COL_BTN_BOT));
+        g.renderOutline(bx, by, ABSTAIN_W, ABSTAIN_H,
+                selected ? COL_BTN_BOR_SEL : (hovered ? COL_BTN_BOR_HOV : COL_BTN_BOR));
+        g.fill(bx + 1, by + 1, bx + ABSTAIN_W - 1, by + 2, hovered || selected ? 0x44FFD47A : 0x18FFD47A);
+
+        VoteOption opt = ClientVoteCache.getOptions().get(idx);
+        String label = clipText(opt.display().getString(), ABSTAIN_W - 16);
+        int textColor = selected ? COL_TEXT_SELECTED : (hovered ? COL_TEXT_HOVER : COL_TEXT_NORMAL);
+        g.drawString(font, label, bx + 10, by + 6, textColor);
+
+        // 已选标记
+        if (selected) {
+            g.drawCenteredString(font, "✓", bx + ABSTAIN_W - 9, by + 6, COL_BRASS_LIGHT);
+        }
+        // 实时弃票计数
+        if (ClientVoteCache.isShowResults()) {
+            int votes = ClientVoteCache.getResults().getOrDefault(idx, 0);
+            String voteStr = String.valueOf(votes);
+            g.drawString(font, voteStr, bx + ABSTAIN_W - (selected ? 22 : 12) - font.width(voteStr), by + 6,
+                    COL_TEXT_MUTED);
+        }
     }
 
     private void drawBackdrop(GuiGraphics g) {
@@ -435,6 +486,15 @@ public class VoteScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!abstainIndices.isEmpty()) {
+            int bx = ABSTAIN_MARGIN;
+            int by = height - ABSTAIN_MARGIN - ABSTAIN_H;
+            if (mouseX >= bx && mouseX < bx + ABSTAIN_W && mouseY >= by && mouseY < by + ABSTAIN_H) {
+                handleOptionClick(abstainIndices.get(0));
+                return true;
+            }
+        }
+
         if (showConfirmButton()) {
             int scrollH = scrollAreaH();
             int bx = contentX + (BUTTON_WIDTH - CONFIRM_W) / 2;
