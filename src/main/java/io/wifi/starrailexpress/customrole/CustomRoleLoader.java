@@ -400,8 +400,8 @@ public class CustomRoleLoader {
                     "skill.sre.custom_role.ability",
                     context -> {
                         ServerPlayer player = context.player();
-                        // 死亡/旁观者不能使用技能
-                        if (player.isSpectator()) {
+                        // 死亡/旁观者不能使用技能；若角色设置了 canUseSkillWhileSpectator 则允许旁观者释放
+                        if (player.isSpectator() && !role.canUseSkillWhileSpectator()) {
                             return false;
                         }
                         SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
