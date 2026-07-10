@@ -34,10 +34,19 @@ public final class RepairStartCommand {
             source.sendFailure(Component.translatable("game.start_error.game_running"));
             return 0;
         }
+        if (!SREConfig.instance().enableRepairMode) {
+            source.sendFailure(Component.translatable("game.start_error.disabled_gamemode", SREGameModes.REPAIR_ESCAPE_MODE.getName(),
+                    Component.translatable("text.autoconfig.starrailexpress.option.enableRepairMode"),
+                    "enableRepairMode",
+                    "true"));
+            return -1;
+        }
         int resolved = minutes >= 0 ? minutes : SREGameModes.REPAIR_ESCAPE_MODE.defaultStartTime;
         GameUtils.startGame(source.getLevel(), SREGameModes.REPAIR_ESCAPE_MODE, GameConstants.getInTicks(resolved, 0));
-        source.sendSuccess(() -> Component.translatable("commands.sre.start", SREGameModes.REPAIR_ESCAPE_MODE.toString(), resolved)
-                .withStyle(ChatFormatting.GREEN), true);
+        source.sendSuccess(
+                () -> Component.translatable("commands.sre.start", SREGameModes.REPAIR_ESCAPE_MODE.toString(), resolved)
+                        .withStyle(ChatFormatting.GREEN),
+                true);
         return 1;
     }
 }
