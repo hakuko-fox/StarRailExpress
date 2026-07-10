@@ -9,6 +9,7 @@ import net.exmo.sre.meeting.MeetingApi;
 import net.exmo.sre.meeting.MeetingManager;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.utils.RoleUtils;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 /**
  * 会议角色事件钩子注册（静态初始化触发）。
@@ -26,6 +27,8 @@ public class ModMeetingRoleEvents {
             var game = SREGameWorldComponent.KEY.get(sp.serverLevel());
             if (game == null || !game.isRunning()) return;
             if (!game.isRole(sp, ModMeetingRoles.CANADA_GOOSE)) return;
+            // 亡命徒期间（难民触发）：加拿大鹅不强制启用/发起会议
+            if (RefugeeComponent.KEY.get(sp.serverLevel()).isAnyRevivals) return;
             ServerPlayer reporter = killer instanceof ServerPlayer kp ? kp : sp;
             // 紧急会议：绕过开局冷却与会议间冷却，确保加拿大鹅死亡必定触发会议
             MeetingApi.startMeeting(sp.serverLevel(), reporter, sp.getGameProfile().getName(), true);

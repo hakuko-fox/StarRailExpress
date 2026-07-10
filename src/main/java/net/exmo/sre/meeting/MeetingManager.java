@@ -42,6 +42,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -247,6 +248,10 @@ public final class MeetingManager {
      */
     public static boolean startMeeting(ServerLevel serverLevel, ServerPlayer reporter, @Nullable String victim,
             boolean emergency) {
+        // 亡命徒期间（难民触发）：无论如何都无法启用/发起会议
+        if (RefugeeComponent.KEY.get(serverLevel).isAnyRevivals) {
+            return false;
+        }
         AreasSettings settings = settings(serverLevel);
         if (settings == null || !settings.meetingEnabled || isActive()) {
             return false;
