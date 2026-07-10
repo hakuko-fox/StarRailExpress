@@ -350,7 +350,7 @@ public abstract class GameMode {
         {
             var c = OnKillPlayerTriggered.EVENT.invoker().onKillPlayerTriggered(victim, spawnBody, killer, deathReason,
                     forceDeath);
-            if (c != null && c.isFalse())
+            if (c != null && c.isFalse() && (!forceDeath))
                 return;
         }
         SREPlayerPsychoComponent psychocca = SREPlayerPsychoComponent.KEY.get(victim);
