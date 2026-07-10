@@ -1350,6 +1350,7 @@ public class ModRoles {
     public static SRERole POISONER = TMMRoles
             .registerRole(new NormalRole(POISONER_ID, (new Color(115, 0, 57)).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanBePoisoned(false)
             .setDefaultEnableChance(5500).setDefaultEnableNeededPlayerCount(12);
 
     // 疫使与毒师互斥生成
@@ -2009,6 +2010,7 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime() * 2, // 双倍体力上限
             false // 不隐藏计分板
     ), "slay_the_spire").setComponentKey(GlitchRobotPlayerComponent.KEY).setCanSeeCoin(true)
+            .setCanBePoisoned(false)
             .setDefaultMax(1);
 
     /**
