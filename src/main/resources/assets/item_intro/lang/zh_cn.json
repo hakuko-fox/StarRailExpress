@@ -68,7 +68,7 @@
   "item.noellesroles.fake_lockpick.desc": "假撬锁工具，外观像真的但无法使用。",
   "item.noellesroles.fake_crowbar.desc": "假撬棍，外观像真的但无法使用。",
   "item.noellesroles.fake_body_bag.desc": "假裹尸袋，外观像真的但无法装尸体。",
-  "item.noellesroles.delusion_vial.desc": "俗称：假毒，小丑职业的商店中可购买致幻药剂，可以使玩家觉得自己中毒了，但无法致死。",
+  "item.noellesroles.delusion_vial.desc": "俗称：假毒，玩家会觉得自己中毒了，无法致死，但是可以被催化剂催化致死。",
   "item.noellesroles.defibrillator.desc": "除颤器，医生职业专属物品，长按右键对玩家使用，如果该玩家在120秒内死亡，则他会在30秒后复活。",
   "item.noellesroles.boxing_glove.desc": "拳击手套，斗士职业专属物品，长按右键举起拳套，右键将人击退、眩晕并使身上的所有物品进入冷却。",
   "item.noellesroles.antidote_reagent.desc": "长按右键对玩家使用，可以查看这个玩家是否中毒，有使用次数",
