@@ -23,6 +23,7 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
 
     public static ArrayList<String> canSyncedRolePaths = new ArrayList<>();
     public int armor = 0;
+    public int timedArmorTicks = 0;
 
     public int getArmor() {
         return armor;
@@ -30,6 +31,21 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
 
     public void addArmor() {
         ++this.armor;
+        this.sync();
+    }
+
+    /**
+     * 限时护盾：给玩家添加限时护盾，持续指定 tick 数，时间到后自动移除。
+     * @param ticks 护盾持续 tick 数
+     * @param stackArmor true=重置计时器并叠加护盾层数；false=仅重置计时器，不叠加护盾层数
+     */
+    public void addTimedArmor(int ticks, boolean stackArmor) {
+        if (stackArmor) {
+            this.addArmor();
+        } else if (this.armor < 1) {
+            this.armor = 1;
+        }
+        this.timedArmorTicks = ticks;
         this.sync();
     }
 
@@ -44,8 +60,8 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     public void init() {
-
         this.armor = 0;
+        this.timedArmorTicks = 0;
         this.sync();
     }
 
@@ -95,6 +111,7 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     public void clientTick() {
         if (!checkIsGameRunning()) {
             this.armor = 0;
+            this.timedArmorTicks = 0;
             return;
         }
     }
@@ -102,6 +119,20 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     public static int tick_ = 0;
 
     public void serverTick() {
+        if (!checkIsGameRunning()) {
+            if (this.timedArmorTicks > 0) {
+                this.timedArmorTicks = 0;
+                this.armor = 0;
+            }
+            return;
+        }
+        if (this.timedArmorTicks > 0) {
+            this.timedArmorTicks--;
+            if (this.timedArmorTicks == 0 && this.armor > 0) {
+                this.armor = 0;
+                this.sync();
+            }
+        }
     }
 
     public boolean giveArmor() {
@@ -115,15 +146,19 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         if (this.armor > 0)
             tag.putInt("armor", this.armor);
+        if (this.timedArmorTicks > 0)
+            tag.putInt("timedArmorTicks", this.timedArmorTicks);
     }
 
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.armor = tag.contains("armor") ? tag.getInt("armor") : 0;
+        this.timedArmorTicks = tag.contains("timedArmorTicks") ? tag.getInt("timedArmorTicks") : 0;
     }
 
     @Override
     public void clear() {
         this.armor = 0;
+        this.timedArmorTicks = 0;
         this.sync();
     }
 

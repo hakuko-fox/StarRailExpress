@@ -61,7 +61,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
 
     private boolean gaveStartingItems = false;
     private boolean potionKilledPlayer = false;
-    private final List<ShieldExpiry> shieldExpiries = new ArrayList<>();
     private final Map<UUID, FireArrowMark> fireArrowMarks = new HashMap<>();
 
     public WizardPlayerComponent(Player player) {
@@ -90,7 +89,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         this.explosionCooldownTicks = 0;
         this.blinkCooldownTicks = 0;
         this.gaveStartingItems = false;
-        this.shieldExpiries.clear();
         this.fireArrowMarks.clear();
         sync();
     }
@@ -106,7 +104,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         this.explosionCooldownTicks = 0;
         this.blinkCooldownTicks = 0;
         this.gaveStartingItems = false;
-        this.shieldExpiries.clear();
         this.fireArrowMarks.clear();
         sync();
     }
@@ -167,33 +164,7 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
             clearCoins(sp);
         }
 
-        tickShieldExpiries(sp);
         tickFireArrowMarks(sp);
-    }
-
-    private void tickShieldExpiries(ServerPlayer sp) {
-        if (shieldExpiries.isEmpty()) {
-            return;
-        }
-        Iterator<ShieldExpiry> it = shieldExpiries.iterator();
-        while (it.hasNext()) {
-            ShieldExpiry se = it.next();
-            se.ticksLeft--;
-            Player target = sp.level().getPlayerByUUID(se.targetUuid);
-            if (target == null || !GameUtils.isPlayerAliveAndSurvival(target)) {
-                it.remove();
-                continue;
-            }
-            if (se.ticksLeft <= 0) {
-                io.wifi.starrailexpress.cca.SREArmorPlayerComponent armorComp =
-                        io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(target);
-                if (armorComp.getArmor() > 0) {
-                    armorComp.removeArmor();
-                    spawnAura(target, ParticleTypes.SMOKE);
-                }
-                it.remove();
-            }
-        }
     }
 
     public void addMana(float amount) {
@@ -277,10 +248,8 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
         }
         spendMana(mana);
         armorUsed = true;
-        io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(target).giveArmor();
-        shieldExpiries.removeIf(se -> se.targetUuid.equals(target.getUUID()));
-        shieldExpiries.add(new ShieldExpiry(target.getUUID(),
-                GameConstants.getInTicks(0, config().wizardShieldDurationSeconds)));
+        io.wifi.starrailexpress.cca.SREArmorPlayerComponent.KEY.get(target).addTimedArmor(
+                GameConstants.getInTicks(0, config().wizardShieldDurationSeconds), false);
         spawnAura(target, ParticleTypes.ENCHANT);
         target.level().playSound(null, target.blockPosition(), SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.6f, 1.6f);
         caster.displayClientMessage(Component.translatable("message.noellesroles.wizard.armor_done",
@@ -639,16 +608,6 @@ public class WizardPlayerComponent implements RoleComponent, ServerTickingCompon
 
     @Override
     public void readFromNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
-    }
-
-    private static final class ShieldExpiry {
-        final UUID targetUuid;
-        int ticksLeft;
-
-        ShieldExpiry(UUID targetUuid, int ticksLeft) {
-            this.targetUuid = targetUuid;
-            this.ticksLeft = ticksLeft;
-        }
     }
 
     private static final class FireArrowMark {
