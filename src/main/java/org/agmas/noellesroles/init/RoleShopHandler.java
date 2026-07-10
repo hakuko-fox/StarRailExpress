@@ -66,10 +66,13 @@ import java.util.List;
 import java.util.Optional;
 
 public class RoleShopHandler {
+    
     private static final String OLDMAN_EASTER_EGG_TAG = "sre_oldman_easter_egg";
     private static final String OLDMAN_EASTER_EGG_USED_TAG = "sre_oldman_easter_egg_used";
     public static final String OLDMAN_EASTER_EGG_PIG_NO_STEP_TAG = "sre_oldman_easter_egg_pig_no_step";
     private static boolean oldmanEasterEggTriggeredInRound = false;
+
+    public static boolean haveRegistered = false;
 
     private static int banditBlackoutPrice() {
         return (int) (SREConfig.instance().blackoutPrice * 1.275);
@@ -337,6 +340,7 @@ public class RoleShopHandler {
     }
 
     public static void shopRegister() {
+        haveRegistered = true;
         ShopContent.customEntries.clear();
         ShopContent.register();
         // 初始化其他角色商店

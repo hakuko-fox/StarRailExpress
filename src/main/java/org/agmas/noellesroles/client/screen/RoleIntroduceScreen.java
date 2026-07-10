@@ -38,6 +38,7 @@ import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.init.RoleInitialItems;
+import org.agmas.noellesroles.init.RoleShopHandler;
 import org.agmas.noellesroles.utils.FlagUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.joml.Matrix4f;
@@ -216,6 +217,9 @@ public class RoleIntroduceScreen extends Screen {
         super(Component.translatable("gui.roleintroduce.select_role.title"));
         availableRoles.addAll(Noellesroles.getAllRolesSorted(true));
         filterFlags.clear();
+        if(!RoleShopHandler.haveRegistered){
+            RoleShopHandler.shopRegister();
+        }
     }
 
     public RoleIntroduceScreen(Screen parent) {
