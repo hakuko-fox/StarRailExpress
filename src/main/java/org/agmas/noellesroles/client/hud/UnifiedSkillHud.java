@@ -119,8 +119,8 @@ public final class UnifiedSkillHud {
                     stateColor = MUTED;
                 } else {
                     stateText = skill.shifted()
-                            ? Component.translatable("hud.sre.skill.ready_shift", client.options.keyShift,
-                                    NoellesrolesClient.abilityBind)
+                            ? Component.translatable("hud.sre.skill.ready_shift", client.options.keyShift.getTranslatedKeyMessage(),
+                                    NoellesrolesClient.abilityBind.getTranslatedKeyMessage())
                             : Component.translatable("hud.sre.skill.ready");
                     stateColor = GREEN;
                 }
