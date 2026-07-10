@@ -954,9 +954,11 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 yield infected != null && infected.infectedTicks > 0;
             }
             case ARMOR_AMOUNT -> {
-                // 护盾值
+                // 护盾值（普通护盾 + 限时护盾 + 弱效护盾叠加层数）
                 SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
-                yield compareValue(armor.getArmor(), condition.value, condition.comparison);
+                SREWeakArmorPlayerComponent weakArmor = SREWeakArmorPlayerComponent.KEY.get(player);
+                int totalShield = armor.getArmor() + weakArmor.getWeakArmor();
+                yield compareValue(totalShield, condition.value, condition.comparison);
             }
             case HAS_TASK -> {
                 // 是否有任务
@@ -1055,6 +1057,16 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 }
                 yield modifierComponent.isModifier(player.getUUID(), targetModifier);
             }
+            case FAKE_POISONED -> {
+                // 玩家是否触发了假毒
+                SREPlayerPoisonComponent poison = SREPlayerPoisonComponent.KEY.get(player);
+                yield poison.fakePoison;
+            }
+            case HAS_WEAK_ARMOR -> {
+                // 玩家是否拥有弱效护盾
+                SREWeakArmorPlayerComponent weakArmor = SREWeakArmorPlayerComponent.KEY.get(player);
+                yield weakArmor.getWeakArmor() > 0;
+            }
         };
     }
 
@@ -1102,7 +1114,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 ActionType.CLEAR_TASKS, ActionType.COMPLETE_TASK, ActionType.ADD_CUSTOM_TASK, ActionType.ADD_EXTRA_TASK,
                 ActionType.COMPLETE_CUSTOM_TASK, ActionType.NARRATOR, ActionType.INFECT,
                 ActionType.ADD_MODIFIER, ActionType.REMOVE_MODIFIER,
-                ActionType.SEND_WELCOME);
+                ActionType.SEND_WELCOME, ActionType.SET_TIMED_SHIELD, ActionType.SET_WEAK_SHIELD,
+                ActionType.TRIGGER_FAKE_POISON);
 
         // 特殊处理的动作类型（已有自己的玩家过滤逻辑）
         Set<ActionType> specialActions = Set.of(
@@ -1412,6 +1425,31 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             case TRIGGER_SABOTAGE -> {
                 int duration = action.sabotageDuration > 0 ? action.sabotageDuration : 60;
                 org.agmas.noellesroles.scene.SceneEventManager.startSabotage(world, duration * 20);
+            }
+            case SET_TIMED_SHIELD -> {
+                // 给予限时护盾：叠加 1 层，重置计时器
+                SREArmorPlayerComponent armor = SREArmorPlayerComponent.KEY.get(player);
+                int timedTicks = (int) (action.value * 20);
+                armor.addTimedArmor(1, Math.max(0, timedTicks), true);
+            }
+            case SET_WEAK_SHIELD -> {
+                // 给予弱效护盾：叠加 1 层，按所选死亡原因抵挡
+                SREWeakArmorPlayerComponent weakArmor = SREWeakArmorPlayerComponent.KEY.get(player);
+                int weakTicks = (int) (action.value * 20);
+                if (action.stringValue == null || action.stringValue.isEmpty() || action.stringValue.equals("*")) {
+                    weakArmor.giveWeakArmor(weakTicks, java.util.Set.of(), true);
+                } else {
+                    ResourceLocation reason = ResourceLocation.tryParse(action.stringValue);
+                    java.util.Set<ResourceLocation> reasons = reason != null ? java.util.Set.of(reason)
+                            : java.util.Set.of();
+                    weakArmor.giveWeakArmor(weakTicks, reasons, false);
+                }
+            }
+            case TRIGGER_FAKE_POISON -> {
+                // 触发假毒：设置假毒 tick
+                SREPlayerPoisonComponent poison = SREPlayerPoisonComponent.KEY.get(player);
+                int fakeTicks = (int) action.value;
+                poison.setFakePoisonTicks(Math.max(1, fakeTicks), null);
             }
         }
     }
@@ -1896,7 +1934,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         PLAYER_DAMAGED_BY_NON_PLAYER, // 玩家受到非玩家来源的原版伤害
         ELAPSED_TIME, // 游戏经过的时间
         REDSTONE_SIGNAL, // 接收到红石信号
-        HAS_MODIFIER // 玩家拥有某个修饰符
+        HAS_MODIFIER, // 玩家拥有某个修饰符
+        FAKE_POISONED, // 玩家是否触发了假毒
+        HAS_WEAK_ARMOR // 玩家是否拥有弱效护盾
     }
 
     // 世界时间类型枚举
@@ -1980,7 +2020,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         REMOVE_MODIFIER, // 为玩家移除修饰符
         ROLE_CUSTOM_WIN, // 带绑定职业的自定义获胜
         SEND_WELCOME, // 发送欢迎报幕
-        TRIGGER_SABOTAGE // 触发破坏任务
+        TRIGGER_SABOTAGE, // 触发破坏任务
+        SET_TIMED_SHIELD, // 给予限时护盾
+        SET_WEAK_SHIELD, // 给予弱效护盾
+        TRIGGER_FAKE_POISON // 触发假毒
     }
 
     // 条件数据类

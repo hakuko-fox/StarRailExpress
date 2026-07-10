@@ -36,16 +36,28 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
 
     /**
      * 限时护盾：给玩家添加限时护盾，持续指定 tick 数，时间到后自动移除。
+     * @param layers 叠加的护盾层数
      * @param ticks 护盾持续 tick 数
-     * @param stackArmor true=重置计时器并叠加护盾层数；false=仅重置计时器，不叠加护盾层数
+     * @param stackArmor true=重置计时器并叠加护盾层数；false=仅重置计时器，不叠加护盾层数（但保证至少有 1 层）
      */
-    public void addTimedArmor(int ticks, boolean stackArmor) {
+    public void addTimedArmor(int layers, int ticks, boolean stackArmor) {
         if (stackArmor) {
-            this.addArmor();
+            this.armor += Math.max(0, layers);
         } else if (this.armor < 1) {
             this.armor = 1;
         }
         this.timedArmorTicks = ticks;
+        this.sync();
+    }
+
+    /**
+     * 限时护盾：直接设置护盾层数与持续时间（非叠加）。
+     * @param layers 护盾层数（0 表示清除限时护盾）
+     * @param ticks 护盾持续 tick 数
+     */
+    public void setTimedArmor(int layers, int ticks) {
+        this.armor = Math.max(0, layers);
+        this.timedArmorTicks = this.armor > 0 ? ticks : 0;
         this.sync();
     }
 

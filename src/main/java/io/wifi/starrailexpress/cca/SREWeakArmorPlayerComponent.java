@@ -17,16 +17,15 @@ import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
  * 弱效护盾组件
  * - 弱效护盾是限时的
- * - 只能抵挡一次来自特定伤害类型的伤害（默认为刀）
- * - 抵挡完伤害后弱效护盾立即消失
+ * - 只能抵挡一次来自特定死亡类型的伤害（默认刀）
+ * - 抵挡完一次伤害后弱效护盾层数减 1（支持叠加层数）
+ * - blockAllDeathReasons 为 true 时，可抵挡任意死亡原因
  */
 public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
     public static final ComponentKey<SREWeakArmorPlayerComponent> KEY = ComponentRegistry.getOrCreate(
@@ -35,12 +34,14 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
     private final Player player;
     private SREGameWorldComponent gameWorldComponent = null;
 
-    /** 弱效护盾层数（0 或 1） */
+    /** 弱效护盾层数（0 表示没有） */
     public int weakArmor = 0;
     /** 弱效护盾剩余时间（ticks），-1 表示没有激活 */
     public int weakArmorTicks = -1;
     /** 弱效护盾可以抵挡的死亡原因列表 */
     public Set<ResourceLocation> blockedDeathReasons = new HashSet<>();
+    /** 是否抵挡任意死亡原因（true 时忽略 blockedDeathReasons） */
+    public boolean blockAllDeathReasons = false;
 
     /** 弱效护盾默认持续时间（ticks），默认 1 分钟 */
     public static final int DEFAULT_WEAK_ARMOR_DURATION = GameConstants.getInTicks(1, 0);
@@ -59,19 +60,58 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
     }
 
     /**
-     * 给予弱效护盾
+     * 给予一层弱效护盾（叠加），使用指定的持续时间与可抵挡的死亡原因。
      * @param durationTicks 持续时间（ticks）
      * @param blockedReasons 可以抵挡的死亡原因列表
      */
     public void giveWeakArmor(int durationTicks, Set<ResourceLocation> blockedReasons) {
-        this.weakArmor = 1;
-        this.weakArmorTicks = durationTicks;
-        this.blockedDeathReasons = new HashSet<>(blockedReasons);
+        giveWeakArmor(durationTicks, blockedReasons, false);
+    }
+
+    /**
+     * 给予一层弱效护盾（叠加）。
+     * @param durationTicks 持续时间（ticks）
+     * @param blockedReasons 可以抵挡的死亡原因列表
+     * @param blockAll 是否抵挡任意死亡原因（true 时忽略 blockedReasons）
+     */
+    public void giveWeakArmor(int durationTicks, Set<ResourceLocation> blockedReasons, boolean blockAll) {
+        this.weakArmor += 1;
+        if (this.weakArmor == 1) {
+            // 第一层：设置持续时间、死亡原因与 blockAll 标记
+            this.weakArmorTicks = durationTicks;
+            this.blockAllDeathReasons = blockAll;
+            this.blockedDeathReasons = new HashSet<>(blockedReasons);
+        } else {
+            // 叠加层：合并死亡原因，保留已有的 blockAll 标记
+            if (!blockAll) {
+                this.blockedDeathReasons.addAll(blockedReasons);
+            }
+        }
         this.sync();
     }
 
     /**
-     * 给予弱效护盾，使用默认持续时间
+     * 直接设置弱效护盾层数（非叠加）。
+     * @param layers 层数（0 表示清除）
+     * @param durationTicks 持续时间（ticks）
+     * @param blockedReasons 可以抵挡的死亡原因列表
+     * @param blockAll 是否抵挡任意死亡原因
+     */
+    public void setWeakArmor(int layers, int durationTicks, Set<ResourceLocation> blockedReasons, boolean blockAll) {
+        this.weakArmor = Math.max(0, layers);
+        this.blockAllDeathReasons = blockAll;
+        if (this.weakArmor > 0) {
+            this.weakArmorTicks = durationTicks;
+            this.blockedDeathReasons = new HashSet<>(blockedReasons);
+        } else {
+            this.weakArmorTicks = -1;
+            this.blockedDeathReasons.clear();
+        }
+        this.sync();
+    }
+
+    /**
+     * 给予弱效护盾，使用默认持续时间与默认死亡原因（刀）
      */
     public void giveWeakArmor() {
         Set<ResourceLocation> defaultBlocked = new HashSet<>();
@@ -83,21 +123,60 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
      * 检查给定的死亡原因是否可以被弱效护盾抵挡
      */
     public boolean canBlockDeathReason(ResourceLocation deathReason) {
-        return weakArmor > 0 && blockedDeathReasons.contains(deathReason);
+        if (this.weakArmor <= 0)
+            return false;
+        if (this.blockAllDeathReasons)
+            return true;
+        return blockedDeathReasons.contains(deathReason);
     }
 
     /**
-     * 消耗弱效护盾（抵挡一次伤害后调用）
+     * 消耗一层弱效护盾（抵挡一次伤害后调用）
      */
     public void consumeWeakArmor() {
-        this.weakArmor = 0;
-        this.weakArmorTicks = -1;
-        this.blockedDeathReasons.clear();
+        this.weakArmor = Math.max(0, this.weakArmor - 1);
+        if (this.weakArmor == 0) {
+            this.weakArmorTicks = -1;
+            this.blockedDeathReasons.clear();
+            this.blockAllDeathReasons = false;
+        }
         this.sync();
     }
 
     public void removeWeakArmor() {
         consumeWeakArmor();
+    }
+
+    /**
+     * 增加弱效护盾层数（仅在已存在弱效护盾时生效，保留原有的持续时间与抵挡规则）。
+     * @param layers 要增加的层数（>0）
+     */
+    public void increaseWeakArmor(int layers) {
+        if (this.weakArmor <= 0 || layers <= 0)
+            return;
+        this.weakArmor += layers;
+        this.sync();
+    }
+
+    /**
+     * 减少弱效护盾层数（最小到 0）；减到 0 时一并清除持续时间与抵挡规则。
+     * @param layers 要减少的层数（>0）
+     */
+    public void decreaseWeakArmor(int layers) {
+        if (layers <= 0)
+            return;
+        this.weakArmor = Math.max(0, this.weakArmor - layers);
+        if (this.weakArmor == 0) {
+            this.weakArmorTicks = -1;
+            this.blockedDeathReasons.clear();
+            this.blockAllDeathReasons = false;
+        }
+        this.sync();
+    }
+
+    /** 减少指定层数的弱效护盾（与 decreaseWeakArmor 等价）。 */
+    public void removeWeakArmor(int amount) {
+        decreaseWeakArmor(amount);
     }
 
     @Override
@@ -138,6 +217,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
         if (!checkIsGameRunning()) {
             this.weakArmor = 0;
             this.weakArmorTicks = -1;
+            this.blockAllDeathReasons = false;
             return;
         }
     }
@@ -147,6 +227,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
         if (!checkIsGameRunning()) {
             this.weakArmor = 0;
             this.weakArmorTicks = -1;
+            this.blockAllDeathReasons = false;
             return;
         }
         if (this.weakArmorTicks > 0) {
@@ -163,6 +244,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
         this.weakArmor = 0;
         this.weakArmorTicks = -1;
         this.blockedDeathReasons.clear();
+        this.blockAllDeathReasons = false;
         this.sync();
     }
 
@@ -171,6 +253,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
         this.weakArmor = 0;
         this.weakArmorTicks = -1;
         this.blockedDeathReasons.clear();
+        this.blockAllDeathReasons = false;
         this.sync();
     }
 
@@ -182,6 +265,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
         if (this.weakArmorTicks >= 0) {
             tag.putInt("weakArmorTicks", this.weakArmorTicks);
         }
+        tag.putBoolean("blockAllDeathReasons", this.blockAllDeathReasons);
         if (!this.blockedDeathReasons.isEmpty()) {
             ListTag list = new ListTag();
             for (ResourceLocation rl : this.blockedDeathReasons) {
@@ -195,6 +279,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         this.weakArmor = tag.contains("weakArmor") ? tag.getInt("weakArmor") : 0;
         this.weakArmorTicks = tag.contains("weakArmorTicks") ? tag.getInt("weakArmorTicks") : -1;
+        this.blockAllDeathReasons = tag.contains("blockAllDeathReasons") && tag.getBoolean("blockAllDeathReasons");
         this.blockedDeathReasons.clear();
         if (tag.contains("blockedDeathReasons")) {
             ListTag list = tag.getList("blockedDeathReasons", Tag.TAG_STRING);
