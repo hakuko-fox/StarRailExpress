@@ -175,6 +175,8 @@ public class RepairRolePlayerComponent implements RoleComponent {
 
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
+        if (!SREConfig.instance().enableRepairMode)
+            return;
         writeData(tag, true);
     }
 
