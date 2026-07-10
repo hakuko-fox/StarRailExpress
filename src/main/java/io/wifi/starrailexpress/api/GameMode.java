@@ -377,6 +377,12 @@ public abstract class GameMode {
             // them
             return;
         }
+
+        if (killer != null) {
+            if (shouldReloadDerringer(victim, killer, deathReason)) {
+                GameUtils.refillDerringer(killer, true);
+            }
+        }
         if (killer != null) {
             if (killer instanceof ServerPlayer spkiller) {
                 if (victim instanceof ServerPlayer spvictim) {
@@ -716,11 +722,6 @@ public abstract class GameMode {
                 int gift = OnGiveKillerBalance.EVENT.invoker().onGiveKillerBalance(victim, killer, deathReason);
                 gift += GameConstants.getMoneyPerKill();
                 SREPlayerShopComponent.KEY.get(killer).addToBalance(gift);
-            }
-            if (killer != null) {
-                if (shouldReloadDerringer(victim, killer, deathReason)) {
-                    GameUtils.refillDerringer(killer, true);
-                }
             }
 
             SREPlayerMoodComponent.KEY.get(victim).init();

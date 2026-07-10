@@ -33,7 +33,7 @@ public abstract class TrueDarknessLightmapTextureManagerMixin {
         }
         if (client.player != null && world != null) {
             if (client.player.isSpectator()) {
-                return original.call(instance, new Vector3f(.8f, .8f, .8f), 0.5f);
+                return original.call(instance, new Vector3f(.8f, .8f, .8f), 0.75f);
             } else
                 return original.call(instance, new Vector3f(.8f, .8f, .8f),
                         Mth.lerp(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false),
