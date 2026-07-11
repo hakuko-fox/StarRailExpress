@@ -874,7 +874,7 @@ public class AllSettingsModule implements TabModule {
                             if (onSuccess != null)
                                 onSuccess.run();
                         }
-                        Minecraft.getInstance().setScreen(null);
+                        onClose();
                     })
                     .bounds(centerX - 105, centerY + 10, 100, 20)
                     .accentBar(AccentSide.LEFT).build();
@@ -882,7 +882,7 @@ public class AllSettingsModule implements TabModule {
 
             cancelBtn = ModernButton.builder(
                     Component.translatable("sre.map_helper.cancel"),
-                    b -> Minecraft.getInstance().setScreen(null))
+                    b -> onClose())
                     .bounds(centerX + 5, centerY + 10, 100, 20)
                     .accentBar(AccentSide.RIGHT).build();
             addRenderableWidget(cancelBtn);
@@ -928,7 +928,8 @@ public class AllSettingsModule implements TabModule {
         }
 
         public FormAddScreen(String path, ModuleContext ctx, Class<?> elementType, Runnable onSuccess, Screen parent) {
-            super(Component.translatableWithFallback("sre.map_helper.form.title", "Add " + elementType.getSimpleName()));
+            super(Component.translatableWithFallback("sre.map_helper.form.title",
+                    "Add " + elementType.getSimpleName()));
             this.path = path;
             this.ctx = ctx;
             this.elementType = elementType;
@@ -941,14 +942,15 @@ public class AllSettingsModule implements TabModule {
             super.init();
             fieldRows.clear();
             int y = 35;
-            int labelWidth = Math.min(100, width / 4);
+            int labelWidth = Math.min(200, Math.max(100, width / 4));
             int fieldStartX = 10 + labelWidth + 5;
             int fieldWidth = width - fieldStartX - 10;
             Font font = this.font;
 
             Field[] fields = elementType.getDeclaredFields();
             for (Field f : fields) {
-                if (!shouldShowFieldStatic(f)) continue;
+                if (!shouldShowFieldStatic(f))
+                    continue;
                 f.setAccessible(true);
                 String fieldName = Component.translatableWithFallback(
                         "sre.map_helper.settings.class." + elementType.getSimpleName() + "." + f.getName(),
@@ -967,13 +969,14 @@ public class AllSettingsModule implements TabModule {
                 } else if (type.isEnum()) {
                     Object[] constants = type.getEnumConstants();
                     if (constants != null && constants.length > 0) {
-                        final int[] idx = {0};
-                        ModernButton enumBtn = ModernButton.builder(Component.literal(((Enum<?>)constants[0]).name()), b -> {
-                            idx[0] = (idx[0] + 1) % constants.length;
-                            b.setMessage(Component.literal(((Enum<?>)constants[idx[0]]).name()));
-                        }).bounds(fieldStartX, y, Math.min(120, fieldWidth), 20).accentBar().build();
+                        final int[] idx = { 0 };
+                        ModernButton enumBtn = ModernButton
+                                .builder(Component.literal(((Enum<?>) constants[0]).name()), b -> {
+                                    idx[0] = (idx[0] + 1) % constants.length;
+                                    b.setMessage(Component.literal(((Enum<?>) constants[idx[0]]).name()));
+                                }).bounds(fieldStartX, y, Math.min(120, fieldWidth), 20).accentBar().build();
                         row.widget = enumBtn;
-                        row.valueSupplier = () -> new JsonPrimitive(((Enum<?>)constants[idx[0]]).name());
+                        row.valueSupplier = () -> new JsonPrimitive(((Enum<?>) constants[idx[0]]).name());
                     } else {
                         EditBox edit = new EditBox(font, fieldStartX, y, fieldWidth, 20, Component.empty());
                         edit.setValue("");
@@ -986,15 +989,21 @@ public class AllSettingsModule implements TabModule {
                     row.widget = edit;
                     row.valueSupplier = () -> {
                         String val = edit.getValue().trim();
-                        if (type == String.class) return new JsonPrimitive(val);
+                        if (type == String.class)
+                            return new JsonPrimitive(val);
                         try {
-                            if (type == int.class || type == Integer.class) return new JsonPrimitive(Integer.parseInt(val));
-                            if (type == long.class || type == Long.class) return new JsonPrimitive(Long.parseLong(val));
-                            if (type == double.class || type == Double.class) return new JsonPrimitive(Double.parseDouble(val));
-                            if (type == float.class || type == Float.class) return new JsonPrimitive(Float.parseFloat(val));
+                            if (type == int.class || type == Integer.class)
+                                return new JsonPrimitive(Integer.parseInt(val));
+                            if (type == long.class || type == Long.class)
+                                return new JsonPrimitive(Long.parseLong(val));
+                            if (type == double.class || type == Double.class)
+                                return new JsonPrimitive(Double.parseDouble(val));
+                            if (type == float.class || type == Float.class)
+                                return new JsonPrimitive(Float.parseFloat(val));
                             if (Number.class.isAssignableFrom(type))
                                 return new JsonPrimitive(new com.google.gson.internal.LazilyParsedNumber(val));
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                        }
                         return new JsonPrimitive(val);
                     };
                 } else {
@@ -1028,7 +1037,8 @@ public class AllSettingsModule implements TabModule {
                 }
                 String jsonStr = json.toString();
                 ctx.sendOnly("sre:area_manager add " + path + " " + ctx.quoteCommandArgument(jsonStr));
-                if (onSuccess != null) onSuccess.run();
+                if (onSuccess != null)
+                    onSuccess.run();
                 Minecraft.getInstance().setScreen(null);
             }).bounds(width / 2 - 105, btnY, 100, 20).accentBar(AccentSide.LEFT).build();
             addRenderableWidget(confirmBtn);
