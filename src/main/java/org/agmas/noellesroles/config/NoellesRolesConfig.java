@@ -406,14 +406,70 @@ public class NoellesRolesConfig implements ConfigData {
     public double photographerFrameMaxYDistance = 12.0;
 
     // ==================== Delayer (滞时鬼) ====================
-    /** Delayer - Rewind skill: seconds between anchoring and the automatic rewind */
-    public int delayerRewindDelaySeconds = 8;
+    /** Delayer - Rewind skill: seconds the time anchor lasts before the automatic rewind */
+    public int delayerRewindDelaySeconds = 20;
     /** Delayer - Rewind skill cooldown in seconds */
     public int delayerRewindCooldown = 120;
     /** Delayer - Rewind skill coin cost */
     public int delayerRewindCost = 75;
-    /** Delayer - Duration (seconds) of the daze/shader filter applied to everyone on rewind */
+    /** Delayer - Duration (seconds) of the daze/shader filter applied to everyone else on rewind */
     public int delayerDazeSeconds = 1;
+    /** Delayer - Path sampling interval (seconds) while anchored, used to trace the rewind route */
+    public int delayerPathSampleSeconds = 2;
+    /** Delayer - Rolling path buffer length (seconds); older samples are dropped */
+    public int delayerPathRecordSeconds = 30;
+    /** Delayer - Ticks spent smoothly traversing each recorded path segment during the rewind */
+    public int delayerReturnSegmentTicks = 6;
+    /** Delayer - Prone + immobilize duration (seconds) when hit while the anchor is still active */
+    public int delayerDownedSeconds = 30;
+
+    // ==================== Dream (梦魇) ====================
+    /** Dream - 全员虚拟血量上限（Dream 斧头攻击扣此血量，归零死亡） */
+    public int dreamMaxHealth = 20;
+    /** Dream - 脱战多少秒后开始缓慢回血 */
+    public int dreamHealthRegenDelaySeconds = 30;
+    /** Dream - 铁斧平A伤害 */
+    public int dreamAxeDamage = 9;
+    /** Dream - 铁斧跳劈伤害 */
+    public int dreamAxeCritDamage = 12;
+    /** Dream - 狂暴时铁斧平A伤害 */
+    public int dreamAxeBerserkDamage = 12;
+    /** Dream - 狂暴时铁斧跳劈伤害 */
+    public int dreamAxeBerserkCritDamage = 20;
+    /** Dream - 铁斧命中眩晕秒数（狂暴时翻倍见 dreamBerserkStunSeconds） */
+    public double dreamAxeStunSeconds = 1.0;
+    /** Dream - 狂暴时铁斧命中眩晕秒数 */
+    public double dreamBerserkStunSeconds = 2.0;
+    /** Dream - 巨幕面具冷却秒数（狂暴时长跟随疯魔 Psycho 计时器） */
+    public int dreamMaskCooldownSeconds = 120;
+    /** Dream - 狂暴时"看到 Dream"的最大判定距离（格），受障碍物遮挡影响 */
+    public double dreamFearSightDistance = 30.0;
+    /** Dream - "看到 Dream"的视线容错半径（格）：Dream 到玩家视线射线的垂距在此范围内即算看到 */
+    public double dreamFearSightRadius = 4.0;
+    /** Dream - 制酒技能冷却秒数 */
+    public int dreamBrewCooldownSeconds = 90;
+    /** Dream - 酒的隐身持续秒数（期间无法攻击、无法受伤） */
+    public int dreamWineDurationSeconds = 10;
+    /** Dream - 船强制乘坐半径（格） */
+    public double dreamBoatRadius = 3.0;
+    /** Dream - 船存在秒数 */
+    public int dreamBoatDurationSeconds = 10;
+    /** Dream - 船使用冷却秒数 */
+    public int dreamBoatCooldownSeconds = 60;
+    /** Dream - 范围关灯半径（格） */
+    public int dreamBlackoutRadius = 30;
+    /** Dream - 杀死皮革噶的获得的金币（"十万美金"） */
+    public int dreamLeatherPigReward = 300;
+    /** Dream - 铁斧价格 */
+    public int dreamAxePrice = 135;
+    /** Dream - 巨幕面具价格 */
+    public int dreamMaskPrice = 350;
+    /** Dream - 钻石镐价格 */
+    public int dreamPickaxePrice = 90;
+    /** Dream - 船价格 */
+    public int dreamBoatPrice = 100;
+    /** Dream - 范围关灯价格 */
+    public int dreamBlackoutPrice = 150;
 
     // ==================== Wizard (巫师) ====================
     /** Wizard - Max mana (魔素) capacity */

@@ -594,6 +594,31 @@ public class ModRolesInitialEventRegister {
                     return comp.tryOpenDomain();
                 }).cooldownSeconds(240).shifted(true).showOnHud(true).announceToSelf(true).build());
 
+        // Dream（梦魇）技能注册：制酒 —— 酿一瓶酒，喝下隐身10s（期间无法攻击/无法受伤）
+        RoleSkill.register(ModRoles.DREAM,
+                RoleSkill.skill(SRE.id("dream_brew"), "skill.noellesroles.dream.brew", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    if (!io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(player))
+                        return false;
+                    if (!io.wifi.starrailexpress.util.SREItemUtils.insertStackInFreeSlot(player,
+                            ModItems.DREAM_WINE.getDefaultInstance())) {
+                        player.displayClientMessage(net.minecraft.network.chat.Component
+                                .translatable("message.noellesroles.dream.brew_no_space")
+                                .withStyle(net.minecraft.ChatFormatting.RED), true);
+                        return false;
+                    }
+                    player.level().playSound(null, player.blockPosition(),
+                            net.minecraft.sounds.SoundEvents.BREWING_STAND_BREW,
+                            net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+                    player.displayClientMessage(net.minecraft.network.chat.Component
+                            .translatable("message.noellesroles.dream.brew_done")
+                            .withStyle(net.minecraft.ChatFormatting.GREEN), true);
+                    return true;
+                }).cooldownSeconds(NoellesRolesConfig.instance().dreamBrewCooldownSeconds)
+                        .showOnHud(true).announceToSelf(true).build());
+
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
         RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {
             ServerPlayer player = context.player();

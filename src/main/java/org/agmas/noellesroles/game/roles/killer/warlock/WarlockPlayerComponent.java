@@ -21,6 +21,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,7 +55,7 @@ public class WarlockPlayerComponent implements RoleComponent, ServerTickingCompo
             WarlockPlayerComponent.class);
 
     /** 窃取发肤的最大距离。 */
-    public static final double STEAL_RANGE = 4.0D;
+    public static final double STEAL_RANGE = 8.0D;
     /** 蚀骨之咒持续时间（tick）。 */
     public static final int CURSE_DURATION_TICKS = 45 * 20;
     /** 蚀咒目标自动搜索半径（未瞄准咒物主人时取最近者）。 */
@@ -202,6 +203,8 @@ public class WarlockPlayerComponent implements RoleComponent, ServerTickingCompo
 
         target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, CURSE_DURATION_TICKS, 0, false, false, false));
         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 8 * 20, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(ModEffects.NEXT_SKILL_BANED, 8 * 20, 0, false, false, false));
+        target.addEffect(new MobEffectInstance(ModEffects.VISION_FOG, 8 * 20, 2, false, false, false));
         target.serverLevel().playSound(null, target.blockPosition(), SoundEvents.WARDEN_HEARTBEAT,
                 SoundSource.PLAYERS, 1.2F, 0.7F);
         target.displayClientMessage(Component

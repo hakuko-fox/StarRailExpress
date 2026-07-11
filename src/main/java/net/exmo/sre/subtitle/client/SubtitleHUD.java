@@ -35,6 +35,11 @@ public class SubtitleHUD {
     private static final int TYPEWRITER_SPEED       = 2;
     private static final Component TYPEWRITER_CURSOR = Component.literal("|");
 
+    // MC 的 Font.drawInBatch 会先跑 adjustColor：(color & 0xFC000000) == 0（即 alpha 字节 < 4，包含 0）时
+    // 强行 |= 0xFF000000 变成完全不透明。渐出到极低透明度时，文字会突然“全亮”再消失，非常突兀。
+    // 所以只要文字 alpha 字节低于此阈值就直接不绘制——最后这 ~1.5% 的淡出肉眼不可见，远好过闪一下。
+    private static final int MIN_TEXT_ALPHA = 4;
+
     private static final int PANEL_TOP = 0xC0101218;
     private static final int PANEL_BOTTOM = 0xA006080D;
     private static final int PANEL_BORDER = 0x55FFFFFF;
@@ -147,7 +152,8 @@ public class SubtitleHUD {
         float settle = Math.min(intro, outro);
 
         float alpha = intro * outro;
-        if (alpha <= 0.004f) return;
+        // 主 alpha 字节低于安全阈值时，整条字幕（含面板）都已几乎不可见，直接收尾，避免触发 Font 的强制不透明。
+        if (alpha * 255f < MIN_TEXT_ALPHA) return;
 
         // 打字机逐字变宽会让底衬一格一格地跳，所以布局一律按完整文本量，宽度全程恒定。
         Component mainMeasureText = current.mainText != null ? current.mainText : Component.empty();
@@ -225,7 +231,7 @@ public class SubtitleHUD {
 
         // 居中偏移放在 scale 之后用浮点 translate 做，避免 -width/2 的整数除法在文本宽度奇偶变化时抖半像素。
         // 光标不参与居中，否则每次闪烁整行都要左右挪半个光标宽。
-        if (hasMain || showCursor) {
+        if ((hasMain || showCursor) && textVisible(mainColor)) {
             int typedWidth = hasMain ? font.width(mainDisplayText) : 0;
             pose.pushPose();
             pose.scale(mainScale, mainScale, 1f);
@@ -239,7 +245,7 @@ public class SubtitleHUD {
             pose.popPose();
         }
 
-        if (hasSub) {
+        if (hasSub && textVisible(subColor)) {
             pose.pushPose();
             pose.translate(0, mainHeight + gap, 0);
             pose.scale(subScale, subScale, 1f);
@@ -273,6 +279,11 @@ public class SubtitleHUD {
 
         String full = current.mainText.getString();
         return Component.literal(full.substring(0, Math.min(visibleChars, full.length())));
+    }
+
+    /** 文字 alpha 字节 ≥ MIN_TEXT_ALPHA 才可安全绘制，否则会被 Font.adjustColor 强制变成完全不透明。 */
+    private static boolean textVisible(int color) {
+        return ((color >> 24) & 0xFF) >= MIN_TEXT_ALPHA;
     }
 
     private static int applyAlpha(int color, float alpha) {

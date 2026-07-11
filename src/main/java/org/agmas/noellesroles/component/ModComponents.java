@@ -204,6 +204,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "embalmer"),
       org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent.class);
 
+  /** Dream（梦魇）：狂暴 / 面具冷却 / 船。 */
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent> DREAM = org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent.KEY;
+  /** Dream（梦魇）：全员虚拟血量（默认 20 滴血，只被 Dream 铁斧扣除）。 */
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent> DREAM_HEALTH = org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent.KEY;
+
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent> SKINCRAWLER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "skincrawler"),
       org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent.class);
@@ -954,6 +959,15 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, EMBALMER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerPlayerComponent::new);
+
+    // 注册 Dream（梦魇）组件
+    registry.beginRegistration(Player.class, DREAM)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent::new);
+    // Dream 虚拟血量：挂在所有玩家身上
+    registry.beginRegistration(Player.class, DREAM_HEALTH)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent::new);
 
     // 注册窃皮者组件
     registry.beginRegistration(Player.class, SKINCRAWLER)

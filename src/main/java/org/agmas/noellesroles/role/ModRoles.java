@@ -277,6 +277,7 @@ public class ModRoles {
     public static final ResourceLocation THIEF_ID = Noellesroles.id("thief");
     public static final ResourceLocation MERCENARY_ID = Noellesroles.id("mercenary");
     public static final ResourceLocation WARLOCK_ID = Noellesroles.id("warlock");
+    public static final ResourceLocation DREAM_ID = Noellesroles.id("dream");
     public static final ResourceLocation EMBALMER_ID = Noellesroles.id("embalmer");
     public static final ResourceLocation SKINCRAWLER_ID = Noellesroles.id("skincrawler");
     public static final ResourceLocation CANDLE_BEARER_ID = Noellesroles.id("candlebearer");
@@ -2417,6 +2418,29 @@ public class ModRoles {
             WARLOCK_ID, new java.awt.Color(139, 0, 139).getRGB(), false,
             true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
             .setComponentKey(org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY))
+            .setCanUseKiller(true).setCanSeeTeammateKiller(true).setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true);
+
+    // ==================== Dream（梦魇）====================
+    // "噢，皮革噶的，i want to 和你蹦蹦蹦。"
+    public static SRERole DREAM = TMMRoles.registerRole(new NormalRole(
+            DREAM_ID, new java.awt.Color(0, 168, 107).getRGB(), false,
+            true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
+        @Override
+        public boolean onPsychoGiveItem(net.minecraft.world.entity.player.Player player,
+                io.wifi.starrailexpress.cca.SREPlayerPsychoComponent psychoComponent) {
+            // 巨幕面具狂暴走 Psycho 逻辑，但不发球棒/面具到手上
+            return true;
+        }
+
+        @Override
+        public net.minecraft.world.item.Item getPsychoItem() {
+            // 疯魔结束时的清理目标：面具从不入包，等于什么都不清理（避免误清球棒）
+            return org.agmas.noellesroles.init.ModItems.DREAM_MASK;
+        }
+    }
+            .setComponentKey(org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent.KEY))
             .setCanUseKiller(true).setCanSeeTeammateKiller(true).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1)
             .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true);

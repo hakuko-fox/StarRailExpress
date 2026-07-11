@@ -72,7 +72,8 @@ public class TimeStopShader {
 
         // 时间停止着色器
         m_post.addSinglePassEntry("timestop", pass -> processPlayer(mc.player, () -> {
-            if (!mc.player.hasEffect(ModEffects.TIME_STOP))
+            // 真·时停 或 纯视觉的时停滤镜（滞时鬼回溯）任一存在都渲染同款灰白滤镜
+            if (!mc.player.hasEffect(ModEffects.TIME_STOP) && !mc.player.hasEffect(ModEffects.TIME_STOP_FILTER))
                 return false;
             var effect = pass.getEffect();
             if (effect == null)
@@ -82,6 +83,9 @@ public class TimeStopShader {
             totalTime += 0.016f;
 
             MobEffectInstance timeStopEffect = mc.player.getEffect(ModEffects.TIME_STOP);
+            if (timeStopEffect == null) {
+                timeStopEffect = mc.player.getEffect(ModEffects.TIME_STOP_FILTER);
+            }
             boolean hasTimeStop = timeStopEffect != null;
             int currentDuration = hasTimeStop ? timeStopEffect.getDuration() : 0;
 

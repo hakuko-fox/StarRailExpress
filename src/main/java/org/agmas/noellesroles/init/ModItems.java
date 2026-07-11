@@ -737,6 +737,55 @@ public class ModItems {
     public static final Item THROWING_KNIFE = register(
             new ThrowingKnife((new Item.Properties()).stacksTo(1)), "throwing_knife",
             WEAPONS_GROUP);
+
+    // ==================== Dream（梦魇）专属 ====================
+    /**
+     * Dream 的铁斧
+     * - 12点耐久，命中消耗1点；商店第二次购买半价
+     * - 左键：蓄力条满才能攻击，扣虚拟血量（平A 9 / 跳劈 12；狂暴 12 / 20），命中眩晕
+     * - 右键：原地跳跃（0.2s冷却）
+     */
+    public static final Item DREAM_AXE = register(
+            new org.agmas.noellesroles.content.item.DreamAxeItem(
+                    new Item.Properties().stacksTo(1).durability(12)
+                            // 斧头攻速：蓄力条 ~1.1 秒充满（伤害走虚拟血量，原版攻击力无效）
+                            .attributes(AxeItem.createAttributes(Tiers.IRON, 0.0F, -3.1F))),
+            "dream_axe", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    /**
+     * 巨幕面具
+     * - 右键：Dream 进入狂暴状态（120s冷却）；购买时附赠一层护盾
+     */
+    public static final Item DREAM_MASK = register(
+            new org.agmas.noellesroles.content.item.DreamMaskItem(new Item.Properties().stacksTo(1)),
+            "dream_mask", ROLE_ITEMS_GROUP);
+    /**
+     * Dream 的钻石镐
+     * - 潜行+右键：撬开门（无法锁门），破坏动静很大（额外响亮破坏声）
+     */
+    public static final Item DREAM_PICKAXE = register(
+            new org.agmas.noellesroles.content.item.DreamPickaxeItem(new Item.Properties().stacksTo(1)),
+            "dream_pickaxe", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+    /**
+     * Dream 的船
+     * - 对地面使用：放置一条船，强制周围玩家乘坐，10s后消失；60s冷却
+     */
+    public static final Item DREAM_BOAT = register(
+            new org.agmas.noellesroles.content.item.DreamBoatItem(new Item.Properties().stacksTo(1)),
+            "dream_boat", ROLE_ITEMS_GROUP);
+    /**
+     * Dream 的范围关灯
+     * - 右键：熄灭半径30格内的灯（一次性）
+     */
+    public static final Item DREAM_BLACKOUT = register(
+            new org.agmas.noellesroles.content.item.DreamBlackoutItem(new Item.Properties().stacksTo(1)),
+            "dream_blackout", ROLE_ITEMS_GROUP);
+    /**
+     * Dream 酿的酒
+     * - 制酒技能产物；喝下隐身10s，期间无法攻击、无法受伤
+     */
+    public static final Item DREAM_WINE = register(
+            new org.agmas.noellesroles.content.item.DreamWineItem(new Item.Properties().stacksTo(1)),
+            "dream_wine", ROLE_ITEMS_GROUP, CONSUMABLES_GROUP);
     /**
      * 绳索
      * - 2点耐久

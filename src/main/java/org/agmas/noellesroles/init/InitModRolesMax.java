@@ -145,6 +145,9 @@ public class InitModRolesMax {
         // 咒法师每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.WARLOCK_ID, 1);
 
+        // Dream（梦魇）每局只能有 1 个
+        Harpymodloader.setRoleMaximum(ModRoles.DREAM_ID, 1);
+
         // 嬉命人每局只能有 1 个
         Harpymodloader.setRoleMaximum(ModRoles.EMBALMER_ID, 1);
 

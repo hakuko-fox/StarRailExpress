@@ -73,5 +73,15 @@ public class NoellesrolesClientAmbientSounds {
               return false;
             },
             0.8f, 10, 10));
+    // Dream（梦魇）狂暴：MANHUNT_CHASE 追杀音乐，狂暴期间全程循环
+    AmbienceUtil.registerBackgroundAmbience(
+        new MyBackgroundAmbience(NRSounds.MANHUNT_CHASE, SoundSource.MUSIC,
+            player -> {
+              if (SREClient.gameComponent == null || !SREClient.gameComponent.isRunning())
+                return false;
+              return org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler
+                  .isAnyDreamBerserk();
+            },
+            0.9f, 10, 20));
   }
 }

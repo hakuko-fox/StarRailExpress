@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.event.EarlyKillPlayer;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -65,7 +66,7 @@ public class LeatherPigPlayerComponent implements RoleComponent, ServerTickingCo
     private static final int DISGUISE_RESYNC_INTERVAL = 20;
 
     /** 疯魔模式期间推开路径上玩家的判定范围（格） */
-    private static final double PUSH_RANGE = 2.6;
+    private static final double PUSH_RANGE = 2;
     /** 推开力度（水平） */
     private static final double PUSH_STRENGTH = 0.9;
     /** 推开后的死亡归因窗口（tick）：被推玩家在此窗口内因环境死亡则归因给皮革噶的 */
@@ -159,7 +160,7 @@ public class LeatherPigPlayerComponent implements RoleComponent, ServerTickingCo
         frenzyTicks = FRENZY_TICKS;
         sync();
         // 神秘追杀音效：自定义追杀 BGM（资源包提供）+ 原版守卫者诅咒兜底
-        sp.serverLevel().playSound(null, sp.blockPosition(), NRSounds.MANHUNT_CHASE, SoundSource.PLAYERS, 1.5f, 1.0f);
+
         sp.serverLevel().playSound(null, sp.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.PLAYERS,
                 0.7f, 0.8f);
         sp.displayClientMessage(Component.translatable("message.noellesroles.leather_pig.frenzy_start")
@@ -207,6 +208,7 @@ public class LeatherPigPlayerComponent implements RoleComponent, ServerTickingCo
                     1.0f, 1.1f);
         }
 
+        sp.serverLevel().sendParticles(ParticleTypes.CLOUD, sp.getX(), sp.getY() + 0.25, sp.getZ(), 2, 0.1, 0.1, 0.1,0.1);
         if (frenzyTicks == 0) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.leather_pig.frenzy_end")
                     .withStyle(ChatFormatting.AQUA), true);

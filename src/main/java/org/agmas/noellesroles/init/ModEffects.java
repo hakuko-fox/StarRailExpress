@@ -328,6 +328,14 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8A6BFF));
 
     /**
+     * 时停滤镜（纯视觉）：驱动与 {@link #TIME_STOP} 完全相同的客户端灰白滤镜 shader，
+     * 但不附带任何时停玩法副作用（不冻结世界/不封控/不静音）。
+     * 滞时鬼回溯期间施加给回溯者本人，让其屏幕呈现时停同款滤镜。
+     */
+    public static final Holder<MobEffect> TIME_STOP_FILTER = register("time_stop_filter",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
+
+    /**
      * 诡域标记（鬼眼·杨间）。
      * - 有害效果，幽蓝色
      * - 标记处于诡域内的玩家；拥有此效果的玩家无法开启杀手透视
@@ -389,6 +397,17 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> HAKONIWA_VISION = register("hakoniwa_vision",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9CCFB8));
+
+    /**
+     * 颤抖
+     * - 有害效果，暗红色
+     * - 拥有者因恐惧而双手发抖：客户端准星/视角会缓慢随机漂移。
+     * 漂移逻辑见 {@code org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler}
+     * （客户端 tick，纯本地视角偏移，不发包）。
+     * Dream（梦魇）狂暴时被"看到"的玩家会获得此效果。
+     */
+    public static final Holder<MobEffect> TREMBLE = register("tremble",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B1A1A));
 
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {

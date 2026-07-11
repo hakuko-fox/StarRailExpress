@@ -38,6 +38,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.component.*;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.item.ToxinShopEntry;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -389,6 +390,7 @@ public class RoleShopHandler {
         ArrayList<ShopEntry> NUTRITIONIST_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> PARASOL_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> WARLOCK_SHOP = new ArrayList<>();
+        ArrayList<ShopEntry> DREAM_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> EMBALMER_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> PHANTOM_MUSICIAN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> WRAITH_ASSASSIN_SHOP = new ArrayList<>();
@@ -1442,6 +1444,82 @@ public class RoleShopHandler {
         {
             // 开锁器 - 100金币
             EMBALMER_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+        }
+
+        // ==================== Dream（梦魇）商店 ====================
+        {
+            var dreamConfig = NoellesRolesConfig.HANDLER.instance();
+            // 铁斧 - 135金币，12耐久，第二次购买半价（动态价格，同杀手刀首购折扣）
+            DREAM_SHOP.add(new ShopEntry(ModItems.DREAM_AXE.getDefaultInstance(),
+                    dreamConfig.dreamAxePrice, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    if (!SREItemUtils.insertStackInFreeSlot(player, this.stack().copy())) {
+                        return false;
+                    }
+                    DynamicShopComponent dynamicShop = DynamicShopComponent.KEY.get(player);
+                    ResourceLocation axeId = BuiltInRegistries.ITEM.getKey(ModItems.DREAM_AXE);
+                    if (dynamicShop.getPurchaseCount(axeId) == 0) {
+                        // 首购后挂 -50%：从第二把起半价
+                        dynamicShop.setPercentDiscount(axeId, 50);
+                    }
+                    dynamicShop.recordPurchase(axeId);
+                    return true;
+                }
+            });
+            // 巨幕面具 - 350金币：购买即进入狂暴（Psycho 逻辑，不给球棒/面具），冷却挂在面具物品上
+            ItemStack maskDisplay = ModItems.DREAM_MASK.getDefaultInstance();
+            var maskLore = new ArrayList<Component>();
+            maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore1")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore2")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore3")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            maskDisplay.set(DataComponents.LORE, new ItemLore(maskLore));
+            DREAM_SHOP.add(new ShopEntry(maskDisplay, dreamConfig.dreamMaskPrice, ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    if (!(player instanceof net.minecraft.server.level.ServerPlayer sp)) {
+                        return false;
+                    }
+                    return org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent
+                            .activateMaskBerserk(sp);
+                }
+            });
+            // 钻石镐 - 90金币（右键像开锁器一样开门；shift撬门50s冷却；无法锁门）
+            DREAM_SHOP.add(new ShopEntry(ModItems.DREAM_PICKAXE.getDefaultInstance(),
+                    dreamConfig.dreamPickaxePrice, ShopEntry.Type.TOOL));
+            // 船 - 100金币（强制乘坐陷阱，60s冷却）
+            DREAM_SHOP.add(new ShopEntry(ModItems.DREAM_BOAT.getDefaultInstance(),
+                    dreamConfig.dreamBoatPrice, ShopEntry.Type.TOOL));
+            // 范围关灯 - 150金币：购买即以自己为中心熄灭半径30格的灯，冷却与普通关灯一致
+            ItemStack blackoutDisplay = ModItems.DREAM_BLACKOUT.getDefaultInstance();
+            var blackoutLore = new ArrayList<Component>();
+            blackoutLore.add(Component.translatable("item.noellesroles.dream_blackout.lore1")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            blackoutLore.add(Component.translatable("item.noellesroles.dream_blackout.lore2")
+                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
+            blackoutDisplay.set(DataComponents.LORE, new ItemLore(blackoutLore));
+            DREAM_SHOP.add(new ShopEntry(blackoutDisplay, dreamConfig.dreamBlackoutPrice, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    if (player.getCooldowns().isOnCooldown(ModItems.DREAM_BLACKOUT)) {
+                        return false;
+                    }
+                    SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(player.level());
+                    if (blackout.isBlackoutActive()) {
+                        return false;
+                    }
+                    blackout.triggerBlackout(player.blockPosition(),
+                            NoellesRolesConfig.HANDLER.instance().dreamBlackoutRadius, true,
+                            SREWorldBlackoutComponent.getMaxDuration(player.level()));
+                    // 冷却与普通关灯一致
+                    player.getCooldowns().addCooldown(ModItems.DREAM_BLACKOUT,
+                            Math.max(60 * 20, GameConstants.getBlackoutCooldownGlobal()));
+                    return true;
+                }
+            });
         }
 
         // ==================== 影杀者商店（WRAITH_ASSASSIN） ====================
@@ -2705,6 +2783,12 @@ public class RoleShopHandler {
         {
             ShopContent.customEntries.put(
                     ModRoles.WARLOCK_ID, WARLOCK_SHOP);
+        }
+
+        // Dream（梦魇）商店
+        {
+            ShopContent.customEntries.put(
+                    ModRoles.DREAM_ID, DREAM_SHOP);
         }
 
         // 嬉命人商店
