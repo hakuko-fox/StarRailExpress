@@ -8,7 +8,7 @@ import net.minecraft.world.entity.Entity;
 public class CCAManager {
     public static boolean shouldBlockEntityCCAServerTick(Entity entity){
         if(entity instanceof ServerPlayer sp){
-            if(sp.hasEffect(ModEffects.SKILL_FREEZED)){
+            if(sp.hasEffect(ModEffects.SKILL_FREEZED) || sp.hasEffect(ModEffects.CCA_FREEZED)){
                 return true;
             }
         }
