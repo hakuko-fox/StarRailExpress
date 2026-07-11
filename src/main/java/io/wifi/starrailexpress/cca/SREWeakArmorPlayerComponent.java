@@ -11,6 +11,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -228,6 +229,10 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
             this.weakArmor = 0;
             this.weakArmorTicks = -1;
             this.blockAllDeathReasons = false;
+            return;
+        }
+        // CCA冷冻：仅禁止CCA/职业执行tick，因此冻结弱效护盾的倒计时（不再减少、不超时消失）
+        if (this.player.hasEffect(ModEffects.CCA_FREEZED)) {
             return;
         }
         if (this.weakArmorTicks > 0) {

@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -136,6 +137,10 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
                 this.timedArmorTicks = 0;
                 this.armor = 0;
             }
+            return;
+        }
+        // CCA冷冻：仅禁止CCA/职业执行tick，因此冻结限时护盾的倒计时（不再减少）
+        if (this.player.hasEffect(ModEffects.CCA_FREEZED)) {
             return;
         }
         if (this.timedArmorTicks > 0) {
