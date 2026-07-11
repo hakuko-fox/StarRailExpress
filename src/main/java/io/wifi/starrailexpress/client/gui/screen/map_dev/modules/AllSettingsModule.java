@@ -870,7 +870,7 @@ public class AllSettingsModule implements TabModule {
                     b -> {
                         String json = jsonInput.getValue().trim();
                         if (!json.isEmpty()) {
-                            ctx.sendOnly("sre:area_manager add " + path + " " + ctx.quoteCommandArgument(json));
+                            ctx.sendOnly("sre:area_manager add " + path + " " + (json));
                             if (onSuccess != null)
                                 onSuccess.run();
                         }
@@ -1039,7 +1039,7 @@ public class AllSettingsModule implements TabModule {
                     json.add(row.field.getName(), row.valueSupplier.get());
                 }
                 String jsonStr = json.toString();
-                ctx.sendOnly("sre:area_manager add " + path + " " + ctx.quoteCommandArgument(jsonStr));
+                ctx.sendOnly("sre:area_manager add " + path + " " + (jsonStr));
                 if (onSuccess != null)
                     onSuccess.run();
                 Minecraft.getInstance().setScreen(null);
