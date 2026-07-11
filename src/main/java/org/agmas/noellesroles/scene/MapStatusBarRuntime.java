@@ -257,7 +257,9 @@ public final class MapStatusBarRuntime {
     private static void tickPollution(ServerLevel level, ServerPlayer player, State state) {
         // 污染值从0开始，逐渐增长（与口渴/保暖值方向相反）
         boolean inWater = player.isInWater() || player.isUnderWater();
-        boolean inRain = level.isRaining() && level.canSeeSky(player.blockPosition());
+        // 下雨时：列车内部也有顶棚，canSeeSky 会恒为 false 导致雨天污染从不增加，
+        // 因此这里只判断世界是否处于下雨状态，让雨天污染正常累积。
+        boolean inRain = level.isRaining();
 
         // 泡在水中: 每15秒增加1点
         if (inWater) {

@@ -392,9 +392,14 @@ public class TaskBlockOverlayRenderer {
                             true, 0f);
                     break;
                 case 23:
-                    TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                            new Color(147, 112, 219), 1f,
-                            true, 0f);
+                    if (block.getBlock() instanceof TaskInstinctShowableInterface it
+                            && it.shouldRenderTaskInstinct(renderContext.world(), block, pos, player)) {
+                        java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
+                        float alpha = c.getAlpha() / 255f;
+                        TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                c, alpha,
+                                true, 0f);
+                    }
                     break;
                 case 16:
                     if (shouldDisplay[type])

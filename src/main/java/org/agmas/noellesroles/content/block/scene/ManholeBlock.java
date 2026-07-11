@@ -166,8 +166,12 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
     @Override
     public boolean shouldRenderTaskInstinct(Level level, BlockState state, BlockPos pos, Player player) {
         SRERole role = SRERoleWorldComponent.KEY.get(player.level()).getRole(player);
-        return SceneRoleAccess.canEnterRestricted(player, null)
-                || (role != null && role.canJumpManhole());
+        if (role == null) {
+            return false;
+        }
+        // 中立/杀手阵营可见；可跳井盖的职业（含平民阵营中的此类职业）也可透视；
+        // 其余纯平民玩家看不到井盖任务点透视。
+        return SceneRoleAccess.canEnterRestricted(player, null) || role.canJumpManhole();
     }
 
     @Override
