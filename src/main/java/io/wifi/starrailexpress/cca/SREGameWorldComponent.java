@@ -946,12 +946,15 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         final String blockId3 = getBlockId(blockState3);
         PlayerBannedBlockTimeInfo nowInfo = gameCCA.playerBannedBlockTime.getOrDefault(player.getUUID(), null);
         for (var info : areas.areasSettings.bannedBlock) {
-            if (info.blockId().equalsIgnoreCase(blockId1) || info.blockId().equalsIgnoreCase(blockId2)
-                    || info.blockId().equalsIgnoreCase(blockId3)) {
+            var res = ResourceLocation.tryParse(info.blockId());
+            if(res==null) continue;
+            var infoBlockId = res.toString();
+            if (infoBlockId.equalsIgnoreCase(blockId1) || infoBlockId.equalsIgnoreCase(blockId2)
+                    || infoBlockId.equalsIgnoreCase(blockId3)) {
                 if (nowInfo == null || nowInfo.standonTick <= 0) {
                     gameCCA.playerBannedBlockTime.put(player.getUUID(),
-                            new PlayerBannedBlockTimeInfo(info.blockId(), level.getGameTime()));
-                } else if (nowInfo.blockId.equalsIgnoreCase(info.blockId())) {
+                            new PlayerBannedBlockTimeInfo(infoBlockId, level.getGameTime()));
+                } else if (nowInfo.blockId.equalsIgnoreCase(infoBlockId)) {
                     if (SREGameWorldComponent.isKillerTeamRoleStatic(role)) {
                         if (level.getGameTime() - nowInfo.standonTick > info.deathTimeForKillers()) {
                             GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.TOUCH_INCORRECT);
@@ -968,7 +971,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
                 } else {
                     gameCCA.playerBannedBlockTime.put(player.getUUID(),
-                            new PlayerBannedBlockTimeInfo(info.blockId(), level.getGameTime()));
+                            new PlayerBannedBlockTimeInfo(infoBlockId, level.getGameTime()));
                 }
                 return;
             }
