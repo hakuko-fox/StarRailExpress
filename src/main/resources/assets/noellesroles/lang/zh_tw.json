@@ -2054,6 +2054,8 @@
   "item.noellesroles.guest_ghost.stop_raining": "淨雨符",
   "item.noellesroles.guest_ghost.stop_raining.tooltip1": "立刻關閉裏世界且全圖好人恢復 20 SAN",
   "item.noellesroles.guest_ghost.taomuding": "桃木釘",
+  "item.noellesroles.taomuding": "桃木釘",
+
   "item.noellesroles.guest_ghost.taomuding.tooltip1": "讓鬼的鬼術進入冷卻，持續 30 秒",
   "==================== 布袋鬼（詭舍·縛靈）角色 ====================": "",
   "announcement.role.ma_chen_xu": "布袋鬼",
