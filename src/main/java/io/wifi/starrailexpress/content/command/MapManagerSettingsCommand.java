@@ -118,32 +118,104 @@ public class MapManagerSettingsCommand {
       Object value = getFieldValue(field, obj);
       boolean isLast = (i == fields.size() - 1);
 
-      // 构建树形前缀
       String indent = "  ".repeat(depth);
       String prefix = indent + (isLast ? "└─ " : "├─ ");
 
-      // 字段显示名（翻译键，若缺失则回退为字段名）
       String displayNameKey = getDisplayNameKey(field, obj, isRoot);
       Component nameComponent = Component.translatableWithFallback(displayNameKey, field.getName());
-
-      // 字段值
       Component valueComponent = formatValueComponent(field, value);
 
-      // 拼装一行：前缀 + 名称 + ": " + 值 + 换行
       MutableComponent line = Component.literal(prefix)
           .append(nameComponent)
           .append(": ")
           .append(valueComponent)
           .append("\n");
-
       result.append(line);
 
-      // 如果值是自定义对象，递归展开
-      if (shouldExpandObject(value)) {
+      // 处理 Collection 且元素为自定义类型：展开每个元素
+      if (value instanceof Collection<?> col) {
+        Class<?> elemType = getElementType(field);
+        if (elemType != null && !isBuiltinType(elemType)) {
+          int idx = 0;
+          for (Object item : col) {
+            boolean itemLast = (idx == col.size() - 1);
+            String itemIndent = "  ".repeat(depth + 1);
+            String itemPrefix = itemIndent + (itemLast ? "└─ " : "├─ ") + "[" + idx + "] ";
+            result.append(Component.literal(itemPrefix)
+                .append(formatSimpleValue(item))
+                .append("\n"));
+            if (shouldExpandObject(item)) {
+              result.append(buildDescriptionComponent(item, false, depth + 2));
+            }
+            idx++;
+          }
+        }
+      } else if (shouldExpandObject(value)) {
+        // 普通自定义对象，递归展开子字段
         result.append(buildDescriptionComponent(value, false, depth + 1));
       }
     }
     return result;
+  }
+
+  // 修改后的值格式化，添加字段参数
+  private static Component formatValueComponent(Field field, Object value) {
+    if (value == null)
+      return Component.literal("null");
+
+    if (value instanceof Collection<?> col) {
+      Class<?> elemType = getElementType(field);
+      int size = col.size();
+      if (elemType != null && !isBuiltinType(elemType)) {
+        // 自定义元素：仅显示类型+数量，具体内容由调用方展开
+        return Component.literal("Collection<" + elemType.getSimpleName() + ">[" + size + "]");
+      } else {
+        // 内置元素：显示内容摘要
+        if (size == 0)
+          return Component.literal("[]");
+        MutableComponent list = Component.literal("[");
+        int limit = Math.min(size, 5);
+        int i = 0;
+        for (Object item : col) {
+          if (i >= limit)
+            break;
+          if (i > 0)
+            list.append(", ");
+          list.append(formatSimpleValue(item));
+          i++;
+        }
+        if (size > limit)
+          list.append(", ...");
+        list.append("]");
+        return list;
+      }
+    }
+
+    if (shouldExpandObject(value)) {
+      return Component.literal("{" + value.getClass().getSimpleName() + "}");
+    }
+
+    if (value instanceof Map)
+      return Component.literal("Map[" + ((Map<?, ?>) value).size() + "]");
+    if (value instanceof String)
+      return Component.literal("\"" + value + "\"");
+    if (value instanceof Enum<?> e) {
+      String enumKey = "sre.map_helper.settings." + e.getDeclaringClass().getSimpleName() + "." + e.name();
+      return Component.translatableWithFallback(enumKey, e.name());
+    }
+    return Component.literal(value.toString());
+  }
+
+  private static Component formatSimpleValue(Object value) {
+    if (value == null)
+      return Component.literal("null");
+    if (value instanceof String)
+      return Component.literal("\"" + value + "\"");
+    if (value instanceof Enum<?> e)
+      return Component.literal(e.name());
+    if (shouldExpandObject(value))
+      return Component.literal("{" + value.getClass().getSimpleName() + "}");
+    return Component.literal(value.toString());
   }
 
   // ═══════════════════════ 辅助方法（与 AllSettingsModule 一致） ═══════════════════════
@@ -200,87 +272,6 @@ public class MapManagerSettingsCommand {
         && clazz != String.class
         && !Number.class.isAssignableFrom(clazz)
         && !Boolean.class.isAssignableFrom(clazz);
-  }
-
-  /**
-   * 将字段值格式化为可显示的 Component。
-   * - 自定义对象（应展开）只显示简短提示（不调用 toString）
-   * - Collection 根据元素类型展示不同摘要（内置类型显示内容，自定义类型显示类型+数量）
-   * - 其他类型（String、Enum、Number 等）正常显示
-   */
-  private static Component formatValueComponent(Field field, Object value) {
-    if (value == null)
-      return Component.literal("null");
-
-    // 可展开的自定义 POJO —— 不显示具体内容，只标出类型提示
-    if (shouldExpandObject(value)) {
-      return Component.literal("{" + value.getClass().getSimpleName() + "}");
-    }
-
-    // 集合
-    if (value instanceof Collection<?> col) {
-      int size = col.size();
-      Class<?> elemType = getElementType(field);
-
-      if (elemType != null && !isBuiltinType(elemType)) {
-        // 自定义元素类型
-        return Component.literal("Collection<" + elemType.getSimpleName() + ">[" + size + "]");
-      } else {
-        // 内置元素类型：显示前几个元素的内容
-        if (size == 0)
-          return Component.literal("[]");
-        List<Component> items = new ArrayList<>();
-        int limit = Math.min(size, 5);
-        int i = 0;
-        for (Object item : col) {
-          if (i >= limit)
-            break;
-          // 使用无字段信息的简化格式化（元素无对应字段，所以传 null）
-          items.add(formatSimpleValue(item));
-          i++;
-        }
-        MutableComponent list = Component.literal("[");
-        for (int j = 0; j < items.size(); j++) {
-          if (j > 0)
-            list.append(", ");
-          list.append(items.get(j));
-        }
-        if (size > limit)
-          list.append(", ...");
-        list.append("]");
-        return list;
-      }
-    }
-
-    // 映射
-    if (value instanceof Map) {
-      return Component.literal("Map[" + ((Map<?, ?>) value).size() + "]");
-    }
-
-    // 字符串
-    if (value instanceof String) {
-      return Component.literal("\"" + value + "\"");
-    }
-
-    // 枚举（使用翻译键，若无则回退到枚举名）
-    if (value instanceof Enum<?> e) {
-      String enumKey = "sre.map_helper.settings." + e.getDeclaringClass().getSimpleName() + "." + e.name();
-      return Component.translatableWithFallback(enumKey, e.name());
-    }
-
-    // 数字、布尔等
-    return Component.literal(value.toString());
-  }
-
-  /** 用于集合内元素的简单格式化（无字段上下文） */
-  private static Component formatSimpleValue(Object value) {
-    if (value == null)
-      return Component.literal("null");
-    if (value instanceof String)
-      return Component.literal("\"" + value + "\"");
-    if (value instanceof Enum<?> e)
-      return Component.literal(e.name());
-    return Component.literal(value.toString());
   }
 
   // 新增依赖方法：判断是否为内置类型（照搬 AllSettingsModule 逻辑）

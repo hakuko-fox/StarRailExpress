@@ -1042,12 +1042,12 @@ public class AllSettingsModule implements TabModule {
                 ctx.sendOnly("sre:area_manager add " + path + " " + (jsonStr));
                 if (onSuccess != null)
                     onSuccess.run();
-                Minecraft.getInstance().setScreen(null);
+                onClose();
             }).bounds(width / 2 - 105, btnY, 100, 20).accentBar(AccentSide.LEFT).build();
             addRenderableWidget(confirmBtn);
 
             ModernButton cancelBtn = ModernButton.builder(Component.translatable("sre.map_helper.cancel"), b -> {
-                Minecraft.getInstance().setScreen(parent);
+                onClose();
             }).bounds(width / 2 + 5, btnY, 100, 20).accentBar(AccentSide.RIGHT).build();
             addRenderableWidget(cancelBtn);
         }
