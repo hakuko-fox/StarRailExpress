@@ -137,7 +137,8 @@ public final class MapStatusBarHudRenderer {
             warningVisible = false;
             lastWarnedTime = 0;
             if (client.player != null) {
-                client.player.displayClientMessage(Component.empty(), true);
+                // 直接修改
+                client.gui.overlayMessageString = Component.empty();
             }
         } else if (critical) {
             warningVisible = true;
