@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -17,7 +18,9 @@ import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.stats.PlayerStats;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -526,6 +529,14 @@ public class RoleUtils extends MCItemsUtils {
     public static ResourceLocation getRoleOrModifierOrItemIdentifier(Object selectedRole) {
         if (selectedRole instanceof Item it) {
             return BuiltInRegistries.ITEM.getKey(it);
+        } else if (selectedRole instanceof AreasSettings) {
+            if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)) {
+                String a = SREClient.areaComponent.mapName;
+                if (a == null)
+                    a = "null";
+                return ResourceLocation.fromNamespaceAndPath("areas", a);
+            }
+            return ResourceLocation.fromNamespaceAndPath("areas", "areas_settings");
         } else {
             return getRoleOrModifierIdentifier(selectedRole);
         }
