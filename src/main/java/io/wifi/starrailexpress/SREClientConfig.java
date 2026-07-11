@@ -48,7 +48,7 @@ public class SREClientConfig implements ConfigData {
 
     @Category("style")
     @ConfigEntry.Gui.Tooltip
-    public boolean showInfoLinesInHud = true; // 金币下方的信息行改为在物品栏界面中显示，不再显示在HUD上
+    public boolean showInfoLinesInHud = true; // 显示在HUD上
     
     @Category("style")
     @ConfigEntry.Gui.Tooltip
