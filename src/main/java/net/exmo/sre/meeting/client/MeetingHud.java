@@ -39,10 +39,6 @@ public final class MeetingHud {
 
     private static final long INTRO_TITLE_MS = 650;
     private static final long FADE_OUT_MS = 400;
-    /** 投票结果展示时长（毫秒）。 */
-    private static final long VOTE_RESULT_DISPLAY_MS = 6000;
-    /** 投票结果淡出时长（毫秒）。 */
-    private static final long VOTE_RESULT_FADE_MS = 500;
 
     private MeetingHud() {
     }
@@ -58,22 +54,6 @@ public final class MeetingHud {
         }
         int phase = MeetingClientHandler.phase;
         long sincePhase = Util.getMillis() - MeetingClientHandler.phaseChangeMillis;
-
-        // 投票结果展示（优先于其他阶段）
-        if (MeetingClientHandler.showVoteResult) {
-            long sinceResult = Util.getMillis() - MeetingClientHandler.voteResultReceiveMillis;
-            if (sinceResult < VOTE_RESULT_DISPLAY_MS + VOTE_RESULT_FADE_MS) {
-                float fade = 1.0F;
-                if (sinceResult > VOTE_RESULT_DISPLAY_MS) {
-                    fade = 1.0F - (sinceResult - VOTE_RESULT_DISPLAY_MS) / (float) VOTE_RESULT_FADE_MS;
-                }
-                renderVoteResult(g, client, fade);
-            } else {
-                MeetingClientHandler.showVoteResult = false;
-            }
-            // 投票结果展示期间不显示其他 HUD
-            return;
-        }
 
         if (phase == MeetingManager.PHASE_INTRO) {
             renderIntro(g, client, sincePhase);
@@ -182,13 +162,14 @@ public final class MeetingHud {
         }
 
         // 发言者名牌（面板正下方横排，金框脉冲）
-        renderSpeakers(g, client, py + panelH + 4);
+        int speakersY = py + panelH + 4;
+        renderSpeakers(g, client, speakersY);
 
-        // 报告信息（面板上方）
+        // 报告信息（发言人名牌下方；过宽时自动缩放，避免溢出屏幕）
         if (!MeetingClientHandler.victimName.isEmpty()) {
             Component reportInfo = Component.translatable("meeting.sre.subtitle.body",
                     MeetingClientHandler.reporterName, MeetingClientHandler.victimName);
-            g.drawCenteredString(font, reportInfo, w / 2, py - 14, TEXT);
+            drawReportInfo(g, client, reportInfo, w / 2, speakersY + 18, TEXT, w - 20);
         }
 
         // 底部：发言键提示 / 自己发言中的状态
@@ -208,6 +189,51 @@ public final class MeetingHud {
             }
             g.drawCenteredString(font, hint, w / 2, g.guiHeight() - 44, color);
         }
+
+        // 跳过会议按钮（物品栏正上方）
+        renderSkipButton(g, client);
+    }
+
+    // ==================== 跳过会议按钮 ====================
+
+    private static void renderSkipButton(GuiGraphics g, Minecraft client) {
+        int[] r = MeetingClientHandler.skipButtonRect();
+        int bx = r[0], by = r[1], bw = r[2], bh = r[3];
+        boolean voted = MeetingClientHandler.skipVoted;
+
+        // 按钮底色与边框
+        int fill = voted ? 0xAA3A2A12 : 0xAA1A1008;
+        g.fill(bx, by, bx + bw, by + bh, fill);
+        g.renderOutline(bx, by, bw, bh, voted ? GREEN : BORDER);
+
+        var font = client.font;
+        Component label = Component.translatable(voted ? "meeting.sre.skip_button_voted"
+                : "meeting.sre.skip_button");
+        g.drawCenteredString(font, label, bx + bw / 2, by + (bh - font.lineHeight) / 2,
+                voted ? GREEN : TEXT);
+
+        // 进度：按钮旁边显示「已有多少人跳过会议」（超过存活玩家二分之一即跳过）
+        int alive = MeetingClientHandler.skipAliveCount;
+        int need = alive / 2 + 1;
+        Component progress = Component.translatable("meeting.sre.skip_progress",
+                MeetingClientHandler.skipCount, need);
+        g.drawString(font, progress, bx + bw + 6, by + (bh - font.lineHeight) / 2, MUTED);
+    }
+
+    /** 居中绘制报告信息：文本过宽时按 maxWidth 等比缩小，避免溢出屏幕。 */
+    private static void drawReportInfo(GuiGraphics g, Minecraft client, Component text, int cx, int y,
+            int color, int maxWidth) {
+        var font = client.font;
+        int textW = font.width(text);
+        float scale = 1.0F;
+        if (textW > maxWidth && textW > 0) {
+            scale = (float) maxWidth / textW;
+        }
+        g.pose().pushPose();
+        g.pose().translate(cx, y, 0);
+        g.pose().scale(scale, scale, 1.0F);
+        g.drawCenteredString(font, text, 0, 0, color);
+        g.pose().popPose();
     }
 
     private static void renderSpeakers(GuiGraphics g, Minecraft client, int y) {
@@ -243,129 +269,6 @@ public final class MeetingHud {
         }
     }
 
-    // ==================== 投票结果展示 ====================
 
-    private static void renderVoteResult(GuiGraphics g, Minecraft client, float fade) {
-        int w = g.guiWidth();
-        int h = g.guiHeight();
-        var font = client.font;
-
-        // 半透明遮罩
-        int overlayAlpha = (int) (0xD0 * fade);
-        g.fill(0, 0, w, h, (overlayAlpha << 24) | 0x100A05);
-
-        // 上方 / 下方遮幅
-        int barH = (int) (h * 0.12F);
-        g.fillGradient(0, 0, w, barH, (int) (0xF0 * fade) << 24 | (0x100A05 & 0xFFFFFF),
-                (int) (0xA0 * fade) << 24 | (0x100A05 & 0xFFFFFF));
-        g.fillGradient(0, h - barH, w, h, (int) (0xA0 * fade) << 24 | (0x100A05 & 0xFFFFFF),
-                (int) (0xF0 * fade) << 24 | (0x100A05 & 0xFFFFFF));
-
-        // 标题：无人被驱逐 / XXX被驱逐了
-        String expelledName = MeetingClientHandler.voteResultExpelledName;
-        Component title;
-        int titleColor;
-        if (expelledName.isEmpty()) {
-            title = Component.translatable("meeting.vote.result.none_expelled");
-            titleColor = GOLD;
-        } else {
-            title = Component.translatable("meeting.vote.result.expelled", expelledName);
-            titleColor = RED;
-        }
-
-        // 标题冲击式入场（0~400ms）
-        long sinceResult = Util.getMillis() - MeetingClientHandler.voteResultReceiveMillis;
-        float titleT = Mth.clamp(sinceResult / 400.0F, 0.0F, 1.0F);
-        float eased = MeetingClientHandler.easeOutCubic(titleT);
-        float scale = 2.2F - eased * 1.0F;
-        int titleAlpha = (int) (255 * fade * Mth.clamp(sinceResult / 150.0F, 0.0F, 1.0F));
-
-        g.pose().pushPose();
-        g.pose().translate(w / 2.0F, h * 0.22F, 0);
-        g.pose().scale(scale, scale, 1.0F);
-        int titleW = font.width(title);
-        g.drawString(font, title, -titleW / 2, -font.lineHeight / 2, (titleAlpha << 24) | (titleColor & 0xFFFFFF), true);
-        g.pose().popPose();
-
-        // 金色装饰线
-        if (titleT > 0.3F) {
-            float lineT = Mth.clamp((titleT - 0.3F) / 0.7F, 0.0F, 1.0F);
-            int lineHalf = (int) (w * 0.16F * lineT);
-            int ly = (int) (h * 0.22F) + 14;
-            int lineAlpha = (int) (255 * fade);
-            g.fill(w / 2 - lineHalf, ly, w / 2 + lineHalf, ly + 1, (lineAlpha << 24) | (GOLD & 0xFFFFFF));
-            g.fill(w / 2 - lineHalf / 2, ly + 3, w / 2 + lineHalf / 2, ly + 4,
-                    (int) (lineAlpha * 0.53) << 24 | (GOLD & 0xFFFFFF));
-        }
-
-        // 投票结果列表（500ms 后渐显）
-        if (sinceResult > 500) {
-            var entries = MeetingClientHandler.voteResultEntries;
-            if (!entries.isEmpty()) {
-                // 按票数降序排序
-                var sorted = new java.util.ArrayList<>(entries);
-                sorted.sort((a, b) -> Integer.compare(b.voteCount(), a.voteCount()));
-
-                int maxVotes = sorted.isEmpty() ? 1 : sorted.get(0).voteCount();
-
-                int entryH = 18;
-                int entryGap = 4;
-                int maxVisible = Math.min(sorted.size(), 12);
-                int listH = maxVisible * (entryH + entryGap);
-                int listY = (int) (h * 0.22F) + 42;
-                int listX = w / 2 - 160;
-                int listW = 320;
-
-                // 列表背景
-                g.fillGradient(listX - 8, listY - 6, listX + listW + 8, listY + listH + 6,
-                        (int) (0xA0 * fade) << 24 | (0x100A05 & 0xFFFFFF),
-                        (int) (0x60 * fade) << 24 | (0x100A05 & 0xFFFFFF));
-
-                // 表头
-                Component headerVotes = Component.translatable("meeting.vote.result.header_votes");
-                Component headerName = Component.translatable("meeting.vote.result.header_name");
-                int headerAlpha = (int) (180 * fade);
-                g.drawString(font, headerName, listX, listY - 12, (headerAlpha << 24) | (MUTED & 0xFFFFFF), false);
-                g.drawString(font, headerVotes, listX + listW - font.width(headerVotes), listY - 12,
-                        (headerAlpha << 24) | (MUTED & 0xFFFFFF), false);
-
-                for (int i = 0; i < maxVisible; i++) {
-                    var entry = sorted.get(i);
-                    int ey = listY + i * (entryH + entryGap);
-
-                    // 行背景
-                    if (i % 2 == 0) {
-                        g.fill(listX - 4, ey, listX + listW + 4, ey + entryH,
-                                (int) (0x22 * fade) << 24 | 0xFFFFFF);
-                    }
-
-                    // 被驱逐的玩家高亮
-                    boolean isExpelled = entry.playerName().equals(expelledName);
-                    int nameColor = isExpelled ? RED : TEXT;
-                    int nameAlpha = (int) (255 * fade);
-                    g.drawString(font, entry.playerName(), listX, ey + 3, (nameAlpha << 24) | (nameColor & 0xFFFFFF),
-                            false);
-
-                    // 票数 + 进度条
-                    String voteStr = String.valueOf(entry.voteCount());
-                    int barW = 100;
-                    int barFill = maxVotes > 0 ? (int) (barW * (float) entry.voteCount() / maxVotes) : 0;
-                    int barX = listX + listW - barW - font.width(voteStr) - 8;
-                    int barY = ey + 8;
-
-                    g.drawString(font, voteStr, listX + listW - font.width(voteStr), ey + 3,
-                            (nameAlpha << 24) | (isExpelled ? RED : MUTED) & 0xFFFFFF, false);
-
-                    g.fill(barX, barY, barX + barW, barY + 3,
-                            (int) (0x40 * fade) << 24 | 0xFFFFFF);
-                    if (barFill > 0) {
-                        int barColor = isExpelled ? RED : GOLD;
-                        g.fill(barX, barY, barX + barFill, barY + 3,
-                                (int) (220 * fade) << 24 | (barColor & 0xFFFFFF));
-                    }
-                }
-            }
-        }
-    }
 
 }

@@ -1,5 +1,10 @@
 {
   "unknown": "Unknown",
+  "status_bar.warn.warmth": "You need to go back indoors to warm up immediately",
+  "status_bar.warn.thirst": "You need to drink water immediately",
+  "status_bar.warn.hunger": "You need to find something to eat immediately",
+  "status_bar.warn.pollution": "You need to take a shower under the sprinkler immediately",
+
   "sre.general.unknown": "Unknown",
   "commands.loot.error.execute_fail": "Execution failed, reason:\n %s",
   "commands.loot.success.add_or_degree_chance": "Successfully added %s draw attempts to player %s. Total attempts: %s",
@@ -363,6 +368,7 @@
   "announcement.star.win.the_insane_damned_paranoid_killer": "Killers win!",
   "death_reason.noellesroles.baka": "Died of stupidity",
   "death_reason.noellesroles.voodoo": "Voodoo magic",
+  "death_reason.noellesroles.voted_out": "Voted Out",
   "death_reason.noellesroles.dry_death": "Died of dehydration",
   "death_reason.noellesroles.shot_innocent": "Killed an innocent",
   "death_reason.noellesroles.insane_killer_death": "Could not reach that place",
@@ -2030,6 +2036,8 @@
   "item.noellesroles.guest_ghost.stop_raining": "Clear Rain Talisman",
   "item.noellesroles.guest_ghost.stop_raining.tooltip1": "Immediately end Underworld, all Good players recover 20 SAN",
   "item.noellesroles.guest_ghost.taomuding": "Peachwood Nails",
+  "item.noellesroles.taomuding": "Peachwood Nails",
+
   "item.noellesroles.guest_ghost.taomuding.tooltip1": "Put the ghost's Ghost Arts on cooldown for 30 seconds",
   "==================== 布袋鬼（诡舍·缚灵）角色 ====================": "",
   "announcement.role.ma_chen_xu": "Ma Chen Xu",
@@ -3248,7 +3256,7 @@
   "hud.sre.skill.charges": "  %s/%s",
   "hud.sre.skill.charges_remaining": "%s left",
   "hud.sre.skill.cast_count": "  Used %s",
-  "hud.sre.skill.ready_shift": "Ready (潜行+技能键)",
+  "hud.sre.skill.ready_shift": "Ready (%s+%s)",
   "hud.sre.passives": "Passives:",
   "hud.sre.passive_label": "Passive ",
   "item.noellesroles.wreath": "Wreath",

@@ -1,5 +1,10 @@
 {
   "unknown": "未知",
+  "status_bar.warn.warmth": "你需要立即回到室內取暖",
+  "status_bar.warn.thirst": "你需要立刻喝水",
+  "status_bar.warn.hunger": "你需要立刻找東西吃",
+  "status_bar.warn.pollution": "你需要立即去淋浴頭下洗澡",
+
   "sre.general.unknown": "未知",
   "commands.loot.error.execute_fail": "執行失敗, 原因:\n %s",
   "commands.loot.success.add_or_degree_chance": "成功為玩家 %s 添加 %s 次抽獎次數. 當前總次數: %s",
@@ -377,6 +382,7 @@
   "death_reason.noellesroles.baka": "笨死了",
   "death_reason.noellesroles.god_command": "神權",
   "death_reason.noellesroles.voodoo": "巫毒魔法",
+  "death_reason.noellesroles.voted_out": "投票出局",
   "death_reason.noellesroles.dry_death": "乾涸而死",
   "death_reason.noellesroles.shot_innocent": "誤殺平民而亡",
   "death_reason.noellesroles.insane_killer_death": "到達不了那個地方",
@@ -2048,6 +2054,8 @@
   "item.noellesroles.guest_ghost.stop_raining": "淨雨符",
   "item.noellesroles.guest_ghost.stop_raining.tooltip1": "立刻關閉裏世界且全圖好人恢復 20 SAN",
   "item.noellesroles.guest_ghost.taomuding": "桃木釘",
+  "item.noellesroles.taomuding": "桃木釘",
+
   "item.noellesroles.guest_ghost.taomuding.tooltip1": "讓鬼的鬼術進入冷卻，持續 30 秒",
   "==================== 布袋鬼（詭舍·縛靈）角色 ====================": "",
   "announcement.role.ma_chen_xu": "布袋鬼",
@@ -3140,7 +3148,7 @@
   "hud.sre.skill.charges": "  %s/%s次",
   "hud.sre.skill.charges_remaining": "還可使用%s次",
   "hud.sre.skill.cast_count": "  已釋放%s次",
-  "hud.sre.skill.ready_shift": "就緒 (潜行+技能键)",
+  "hud.sre.skill.ready_shift": "就緒 (%s+%s)",
   "hud.sre.passives": "被動：",
   "hud.sre.passive_label": "被動 ",
   "message.sre.skill.cast": "釋放 %s（本局第 %s 次）",

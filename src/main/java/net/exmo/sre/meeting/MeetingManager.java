@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.util.BlockTypeChecker;
+import net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload;
 import net.exmo.sre.meeting.network.MeetingStateS2CPayload;
 import net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -42,6 +43,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -108,6 +110,8 @@ public final class MeetingManager {
     private static long cooldownUntilTick;
     private static long bellCooldownUntilTick;
     private static final Set<UUID> reportedBodies = new HashSet<>();
+    /** 投票跳过会议的存活玩家（讨论/开场阶段可投）。 */
+    private static final Set<UUID> skipVoters = new HashSet<>();
     /** 投票权重：玩家 UUID → 其投票算几票 */
     private static final Map<UUID, Integer> voteWeightOverrides = new HashMap<>();
     private static boolean registered;
@@ -214,7 +218,7 @@ public final class MeetingManager {
         if (!GameUtils.isPlayerAliveAndSurvival(ringer)) {
             return false;
         }
-        long now = serverLevel.getGameTime();
+        long now = matchElapsedTicks(serverLevel);
         // 首次摇铃：设置开局冷却
         if (bellCooldownUntilTick == 0) {
             bellCooldownUntilTick = now + settings.bellMeetingStartCooldown * 20L;
@@ -222,7 +226,7 @@ public final class MeetingManager {
         if (now < bellCooldownUntilTick) {
             return false;
         }
-        if (!startMeeting(serverLevel, ringer, null)) {
+        if (!startMeeting(serverLevel, ringer, null, true)) {
             return false;
         }
         bellCooldownUntilTick = now + settings.bellMeetingCooldown * 20L;
@@ -235,6 +239,23 @@ public final class MeetingManager {
      * @param victim 被发现的尸体主人名，紧急按钮式会议传 null
      */
     public static boolean startMeeting(ServerLevel serverLevel, ServerPlayer reporter, @Nullable String victim) {
+        return startMeeting(serverLevel, reporter, victim, false);
+    }
+
+    /**
+     * 召开会议（可指定为紧急会议）。
+     *
+     * @param victim    被发现的尸体主人名，紧急按钮式会议传 null
+     * @param emergency 紧急会议（如加拿大鹅死亡触发）：绕过开局冷却与会议间冷却，
+     *                  确保由死亡触发的会议必定能召开
+     */
+    public static boolean startMeeting(ServerLevel serverLevel, ServerPlayer reporter, @Nullable String victim,
+            boolean emergency) {
+        // 亡命徒期间（难民触发）：无论如何都无法启用/发起会议
+        if (RefugeeComponent.KEY.get(serverLevel).isAnyRevivals) {
+            return false;
+        }
+        skipVoters.clear();
         AreasSettings settings = settings(serverLevel);
         if (settings == null || !settings.meetingEnabled || isActive()) {
             return false;
@@ -244,15 +265,16 @@ public final class MeetingManager {
             return false;
         }
         long now = serverLevel.getGameTime();
-        if (now < cooldownUntilTick) {
+        long matchNow = matchElapsedTicks(serverLevel);
+        if (!emergency && matchNow < cooldownUntilTick) {
             return false;
         }
-        // 开局冷却：游戏开始后一段时间内不能召开会议。
+        // 开局冷却：游戏开始后一段时间内不能召开会议（紧急会议绕过）。
         if (settings.meetingStartCooldown > 0) {
             SREGameTimeComponent timeComponent = SREGameTimeComponent.KEY.get(serverLevel);
             if (timeComponent != null) {
                 long elapsed = Math.max(0, timeComponent.getResetTime() - timeComponent.getTime());
-                if (elapsed < settings.meetingStartCooldown * 20L) {
+                if (!emergency && elapsed < settings.meetingStartCooldown * 20L) {
                     return false;
                 }
             }
@@ -310,6 +332,7 @@ public final class MeetingManager {
             player.playNotifySound(SoundEvents.BELL_BLOCK, SoundSource.MASTER, 1.0F, 0.8F);
         }
         broadcastState(serverLevel);
+        broadcastSkipState(serverLevel);
         MeetingStartEvent.EVENT.invoker().onMeetingStart(serverLevel, reporter);
         return true;
     }
@@ -322,7 +345,7 @@ public final class MeetingManager {
         ServerLevel serverLevel = level;
         phase = PHASE_NONE;
         AreasSettings settings = settings(serverLevel);
-        cooldownUntilTick = serverLevel.getGameTime()
+        cooldownUntilTick = matchElapsedTicks(serverLevel)
                 + (settings != null ? settings.meetingCooldownSeconds : 60) * 20L;
 
         for (Map.Entry<UUID, ReturnPos> entry : participants.entrySet()) {
@@ -353,6 +376,7 @@ public final class MeetingManager {
         participants.clear();
         seatEntityIds.clear();
         manualSpeakers.clear();
+        skipVoters.clear();
         lastSyncedSpeakers = List.of();
         if (!silent) {
             for (ServerPlayer player : serverLevel.players()) {
@@ -362,6 +386,59 @@ public final class MeetingManager {
         broadcastState(serverLevel);
         MeetingEndEvent.EVENT.invoker().onMeetingEnd(serverLevel);
         level = null;
+    }
+
+
+    // ==================== 跳过会议 ====================
+
+    /**
+     * 客户端「跳过会议」按钮点击（可再次点击取消）。
+     * 仅会议进行中（开场 / 讨论阶段）且为参会者时生效；达到「超过半数存活玩家」阈值则跳过会议。
+     */
+    public static void setSkipVote(ServerPlayer player, boolean skip) {
+        if (!isActive() || level == null) {
+            return;
+        }
+        // 仅开场 / 讨论阶段可投跳过；投票阶段已不可跳过
+        if (phase != PHASE_INTRO && phase != PHASE_DISCUSS) {
+            return;
+        }
+        UUID uuid = player.getUUID();
+        if (!participants.containsKey(uuid)) {
+            return;
+        }
+        if (skip) {
+            skipVoters.add(uuid);
+        } else {
+            skipVoters.remove(uuid);
+        }
+        ServerLevel serverLevel = level;
+        broadcastSkipState(serverLevel);
+        // 超过二分之一的存活玩家投了跳过 → 跳过会议（有投票则直接进入投票阶段）
+        long alive = serverLevel.players().stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
+        if (alive > 0 && skipVoters.size() > alive / 2) {
+            skipMeeting(serverLevel);
+        }
+    }
+
+    /** 跳过会议：直接进入投票阶段（若地图启用投票），否则直接结束会议。 */
+    private static void skipMeeting(ServerLevel serverLevel) {
+        skipVoters.clear();
+        AreasSettings settings = settings(serverLevel);
+        if (settings != null && settings.meetingVoteEnabled) {
+            startVotingPhase(serverLevel);
+        } else {
+            endMeeting(false);
+        }
+    }
+
+    /** 向全体玩家同步跳过计票状态。 */
+    private static void broadcastSkipState(ServerLevel serverLevel) {
+        long alive = serverLevel.players().stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
+        MeetingSkipStateS2CPayload payload = new MeetingSkipStateS2CPayload(skipVoters.size(), (int) alive);
+        for (ServerPlayer player : serverLevel.players()) {
+            ServerPlayNetworking.send(player, payload);
+        }
     }
 
     // ==================== 发言 ====================
@@ -531,6 +608,15 @@ public final class MeetingManager {
         return component == null ? null : component.areasSettings;
     }
 
+    /** 本局比赛已进行的时长（tick）。仅在比赛运行时推进，暂停/未开始时为 0。 */
+    private static long matchElapsedTicks(ServerLevel serverLevel) {
+        SREGameTimeComponent timeComponent = SREGameTimeComponent.KEY.get(serverLevel);
+        if (timeComponent == null) {
+            return 0;
+        }
+        return Math.max(0L, (long) timeComponent.getResetTime() - timeComponent.getTime());
+    }
+
     // ==================== 投票阶段 ====================
 
     /** "跳过"选项的 resultId 常量。 */
@@ -559,7 +645,7 @@ public final class MeetingManager {
         for (ServerPlayer p : alive) targetPlayers.add(p.getUUID());
         VoteManager.builder(Component.translatable("meeting.vote.title"))
                 .options(options).duration(VOTE_DURATION_SECONDS * 20).allowReVote(true)
-                .showResults(false).syncInterval(20).targetPlayerUUIDs(targetPlayers)
+                .showResults(true).syncInterval(20).targetPlayerUUIDs(targetPlayers)
                 .maxSelect(1).type("meeting").start();
 
         // ==================== 投票结束时按新规则处理 ====================

@@ -1,6 +1,10 @@
 ﻿{
   "unknown": "未知",
   "unknown_role": "未知职业",
+  "status_bar.warn.warmth": "你需要立即回到室内取暖",
+  "status_bar.warn.thirst": "你需要立刻找水或饮料喝",
+  "status_bar.warn.hunger": "你需要立刻找东西吃",
+  "status_bar.warn.pollution": "你需要立即去淋浴头下洗澡",
   "sre.command.permission_denied": "你没有权限做这件事！",
   "sre.command.not_enabled": "未启用Roster功能。请在配置文件中启用后重启服务器！",
   "sre.general.unknown": "未知",
@@ -406,6 +410,7 @@
   "death_reason.noellesroles.baka": "笨死了",
   "death_reason.noellesroles.god_command": "神权",
   "death_reason.noellesroles.voodoo": "巫毒魔法",
+  "death_reason.noellesroles.voted_out": "投票出局",
   "death_reason.noellesroles.dry_death": "干涸而死",
   "death_reason.noellesroles.shot_innocent": "误杀平民而亡",
   "death_reason.noellesroles.insane_killer_death": "到达不了那个地方",
@@ -2134,6 +2139,8 @@
   "item.noellesroles.guest_ghost.stop_raining": "净雨符",
   "item.noellesroles.guest_ghost.stop_raining.tooltip1": "立刻关闭里世界且全图好人恢复 20 SAN",
   "item.noellesroles.guest_ghost.taomuding": "桃木钉",
+  "item.noellesroles.taomuding": "桃木钉",
+
   "item.noellesroles.guest_ghost.taomuding.tooltip1": "让鬼的鬼术进入冷却，持续 30 秒",
   "==================== 布袋鬼（诡舍·缚灵）角色 ====================": "",
   "announcement.role.ma_chen_xu": "布袋鬼",

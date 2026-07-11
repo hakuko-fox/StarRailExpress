@@ -2488,6 +2488,9 @@ public class ModRoles {
         // 设置迷失杀手与魔术师互斥
         ModRoles.LOST_KILLER.addTwoWayOpposingRole(ModRoles.MAGICIAN);
 
+        // 设置皮猪与阴谋家互斥生成
+        ModRoles.LEATHER_PIG.addTwoWayOpposingRole(ModRoles.CONSPIRATOR);
+
         // 设置鹈鹕与纵火犯互斥
         ModRoles.PELICAN.addTwoWayOpposingRole(SERoles.ARSONIST);
         // 设置鹈鹕与秉烛人互斥
