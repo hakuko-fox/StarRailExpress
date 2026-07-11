@@ -12,6 +12,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.AbilityHandler;
+import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -440,7 +441,9 @@ public final class RoleSkill {
         if (blockForSpectator(player)) {
             return false;
         }
-
+        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.SKILL_FREEZED)) {
+            return false;
+        }
         List<Definition> definitions = getDefinitions(role);
         if (!definitions.isEmpty()) {
             return useUnified(player, role, definitions, target, requestedSlot, phase, shifted);

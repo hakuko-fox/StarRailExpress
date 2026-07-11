@@ -1,8 +1,6 @@
 package org.agmas.noellesroles.client;
 
-import net.exmo.sre.repair.content.item.*;
 import net.exmo.sre.repair.network.*;
-import net.exmo.sre.repair.client.screen.*;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.doctor4t.ratatouille.util.TextUtils;
@@ -1571,7 +1569,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         OnMessageBelowMoneyRenderer.EVENT.register((minecraft, guiGraphics, deltaTracker) -> {
             if (SREClient.gameComponent != null) {
                 if (SREClient.gameComponent.isRunning()) {
-                    if (minecraft.player != null && minecraft.player.hasEffect(ModEffects.SKILL_BANED)) {
+                    if (minecraft.player != null && (minecraft.player.hasEffect(ModEffects.SKILL_BANED)
+                            || minecraft.player.hasEffect(ModEffects.SKILL_FREEZED))) {
 
                         return new MutableComponentResult(
                                 Component
