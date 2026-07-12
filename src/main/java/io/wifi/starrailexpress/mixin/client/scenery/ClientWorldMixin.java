@@ -21,6 +21,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.WritableLevelData;
 import net.minecraft.world.phys.Vec3;
+
+import org.agmas.noellesroles.init.ModBlocks;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -69,6 +71,8 @@ public abstract class ClientWorldMixin extends Level {
         MARKER_PARTICLE_ITEMS.add(TMMBlocks.BARRIER_PANEL.asItem());
         MARKER_PARTICLE_ITEMS.add(SREBlocks.TRAIN_LIGHT.asItem());
         MARKER_PARTICLE_ITEMS.add(SREBlocks.REMOTE_REDSTONE.asItem());
+        MARKER_PARTICLE_ITEMS.add(ModBlocks.KILL_BLOCK.asItem());
+        MARKER_PARTICLE_ITEMS.add(ModBlocks.KILL_BLOCK_PANEL.asItem());
         MARKER_PARTICLE_ITEMS.add(TMMBlocks.LIGHT_BARRIER.asItem());
         // 手持实体交互方块/镶板时显示屏障粒子
         MARKER_PARTICLE_ITEMS.add(TMMBlocks.ENTITY_INTERACTION_BLOCK.asItem());
