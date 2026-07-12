@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
@@ -193,10 +192,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         // 客户端进度预测（咳嗽音效已移至服务端）
-        // CCA冷冻：与服务端一致暂停感染进度预测
-        if (this.player.hasEffect(ModEffects.CCA_FREEZED)) {
-            return;
-        }
+        // 上游已冻结
         this.infectedTicks++;
     }
 
@@ -255,9 +251,7 @@ public class InfectedPlayerComponent implements RoleComponent, ServerTickingComp
         }
 
         // CCA冷冻：仅禁止CCA/职业执行tick，因此暂停感染进度且不再传播
-        if (this.player.hasEffect(ModEffects.CCA_FREEZED)) {
-            return;
-        }
+        // 上游已冻结
 
         // 增加感染时间
         this.infectedTicks++;

@@ -645,7 +645,7 @@ public class ModRoles {
      * 皮革噶的 - 平民阵营
      * - 被动：模型变成一头猪
      * - 技能（G）：消耗 150 金币进入疯魔模式 30 秒，开启直觉并获得速度 III，
-     *   期间播放神秘追杀音效（Dream带带带！）
+     * 期间播放神秘追杀音效（Dream带带带！）
      */
     public static SRERole LEATHER_PIG = TMMRoles.registerRole(
             new NormalRole(LEATHER_PIG_ID, new Color(255, 158, 170).getRGB(),
@@ -918,7 +918,8 @@ public class ModRoles {
                     false, false, SRERole.MoodType.FAKE,
                     Integer.MAX_VALUE, false))
             .setCanSeeCoin(true).setNeutrals(true).setCanPickUpRevolver(false)
-            .setComponentKey(ModComponents.WAYFARER).setCanUseInstinctAndNightVision(false).setCanSeeBodyDeathReason(true)
+            .setComponentKey(ModComponents.WAYFARER).setCanUseInstinctAndNightVision(false)
+            .setCanSeeBodyDeathReason(true)
             .setDefaultEnableChance(2500).setDefaultEnableNeededPlayerCount(10);
     public static final ResourceLocation CUCKOO_ID = Noellesroles.id("cuckoo");
 
@@ -2424,8 +2425,8 @@ public class ModRoles {
 
     // ==================== Dream（梦魇）====================
     // "噢，皮革噶的，i want to 和你蹦蹦蹦。"
-    public static SRERole DREAM = TMMRoles.registerRole(new NormalRole(
-            DREAM_ID, new java.awt.Color(0, 168, 107).getRGB(), false,
+    public static SRERole DREAM = TMMRoles.registerRole(new EggRole(
+            DREAM_ID, new Color(0, 168, 107).getRGB(), false,
             true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
         @Override
         public boolean onPsychoGiveItem(net.minecraft.world.entity.player.Player player,
@@ -2439,8 +2440,7 @@ public class ModRoles {
             // 疯魔结束时的清理目标：面具从不入包，等于什么都不清理（避免误清球棒）
             return org.agmas.noellesroles.init.ModItems.DREAM_MASK;
         }
-    }
-            .setComponentKey(org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent.KEY))
+    }).setComponentKey(org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent.KEY)
             .setCanUseKiller(true).setCanSeeTeammateKiller(true).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1)
             .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true);
