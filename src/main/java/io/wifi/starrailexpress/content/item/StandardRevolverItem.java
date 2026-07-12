@@ -23,6 +23,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.content.entity.RainbowHorseEntity;
+import org.agmas.noellesroles.content.entity.CanyuesaHorseEntity;
+import org.agmas.noellesroles.content.entity.SuperPigHorseEntity;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -101,7 +104,10 @@ public class StandardRevolverItem extends SkinableItem {
                 entity -> {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             || entity instanceof PuppeteerBodyEntity
-                            || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity;
+                            || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity
+                            || entity instanceof RainbowHorseEntity
+                            || entity instanceof CanyuesaHorseEntity
+                            || entity instanceof SuperPigHorseEntity;
                 }, 20f);
     }
 

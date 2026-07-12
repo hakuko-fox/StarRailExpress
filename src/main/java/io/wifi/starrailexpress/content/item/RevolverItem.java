@@ -23,6 +23,9 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.content.entity.RainbowHorseEntity;
+import org.agmas.noellesroles.content.entity.CanyuesaHorseEntity;
+import org.agmas.noellesroles.content.entity.SuperPigHorseEntity;
 import org.jetbrains.annotations.NotNull;
 
 public class RevolverItem extends SkinableItem implements HeldLikeRevolver {
@@ -94,7 +97,10 @@ public class RevolverItem extends SkinableItem implements HeldLikeRevolver {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             || entity instanceof PuppeteerBodyEntity
                             || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity
-                            || entity instanceof org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity;
+                            || entity instanceof org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity
+                            || entity instanceof RainbowHorseEntity
+                            || entity instanceof CanyuesaHorseEntity
+                            || entity instanceof SuperPigHorseEntity;
                 }, 20f);
     }
 

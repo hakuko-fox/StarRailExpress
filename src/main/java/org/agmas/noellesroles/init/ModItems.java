@@ -534,6 +534,12 @@ public class ModItems {
             new ShilijiaItem(new Item.Properties().stacksTo(16)),
             "shilijia", CONSUMABLES_GROUP);
     /**
+     * 前人留下的马铠 - 装备到残月萨马/彩虹马时提升移动速度与生命上限
+     */
+    public static final Item PREDECESSOR_HORSE_ARMOR = register(
+            new PredecessorHorseArmorItem(new Item.Properties().stacksTo(1)),
+            "predecessor_horse_armor", FUNNY_ITEMS_GROUP);
+    /**
      * 花圈
      * - 穿戴在头部时持续恢复san值
      * - 提供 MOOD_REGENERATION 效果

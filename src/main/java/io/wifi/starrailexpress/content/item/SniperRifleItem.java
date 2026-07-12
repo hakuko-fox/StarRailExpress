@@ -25,6 +25,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import org.agmas.noellesroles.content.entity.RainbowHorseEntity;
+import org.agmas.noellesroles.content.entity.CanyuesaHorseEntity;
+import org.agmas.noellesroles.content.entity.SuperPigHorseEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -165,7 +168,10 @@ public class SniperRifleItem extends Item implements HeldLikeRevolver {
 
     public static HitResult getGunTarget(Player user) {
         return SniperProjectileUtil.getSniperHitResult(user,
-                entity -> entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player), 200F);
+                entity -> entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player)
+                        || entity instanceof RainbowHorseEntity
+                        || entity instanceof CanyuesaHorseEntity
+                        || entity instanceof SuperPigHorseEntity, 200F);
     }
 
     // 倍镜相关方法

@@ -27,9 +27,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.content.entity.CanyuesaHorseEntity;
+import org.agmas.noellesroles.content.entity.RainbowHorseEntity;
+import org.agmas.noellesroles.content.entity.SuperPigHorseEntity;
 import org.agmas.noellesroles.content.item.SheriffRevolverItem;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
@@ -78,8 +83,9 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                     mainHandStack.set(SREDataComponentTypes.USED, true);
                 }
             }
+            Entity hitEntity = player.serverLevel().getEntity(payload.target());
             if (mainHandStack.is(TMMItemTags.GUNS)
-                    && player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target
+                    && hitEntity instanceof ServerPlayer target
                     && target.distanceToSqr(player) < 30 * 30) {
                 SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
                 Item revolver = TMMItems.REVOLVER;
@@ -153,6 +159,11 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
 
             } else {
                 OnRevolverUsed.EVENT.invoker().onPlayerShoot(player, null);
+                // 命中三种马时扣除 8 点血（狙击枪在 SniperShootPayload 中扣除 20 点）
+                if ((hitEntity instanceof RainbowHorseEntity || hitEntity instanceof CanyuesaHorseEntity || hitEntity instanceof SuperPigHorseEntity)
+                        && hitEntity.distanceToSqr(player) < 30 * 30) {
+                    ((Horse) hitEntity).hurt(hitEntity.damageSources().generic(), 8.0F);
+                }
             }
 
             player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),

@@ -399,6 +399,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.renderer.RainbowHorseRenderer::new);
         EntityRendererRegistry.register(ModEntities.CANYUESA_HORSE,
                 org.agmas.noellesroles.client.renderer.CanyuesaHorseRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SUPER_PIG_HORSE,
+                org.agmas.noellesroles.client.renderer.SuperPigHorseRenderer::new);
 
         EntityModelLayerRegistry.registerModelLayer(WheelchairEntityModel.LAYER_LOCATION,
                 WheelchairEntityModel::createBodyLayer);

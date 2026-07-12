@@ -399,6 +399,17 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
+    /** 超级猪马实体 - 超级猪马蹄铁召唤的三人坐骑，120 秒后消失，属性更优 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<SuperPigHorseEntity> SUPER_PIG_HORSE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("super_pig_horse"),
+            FabricEntityTypeBuilder.<SuperPigHorseEntity>create(MobCategory.MISC, SuperPigHorseEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.8F, 2.0F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(2)
+                    .build());
+
     /** 移动平台实体 - 可站立、往返移动 */
     @SuppressWarnings("deprecation")
     public static final EntityType<MovingPlatformEntity> MOVING_PLATFORM = Registry.register(
@@ -430,5 +441,6 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(MORPHLING_KNIFE_DUMMY, MorphlingKnifeDummyEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(RAINBOW_HORSE, RainbowHorseEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(CANYUESA_HORSE, CanyuesaHorseEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(SUPER_PIG_HORSE, SuperPigHorseEntity.createAttributes());
     }
 }

@@ -12,6 +12,7 @@ import org.agmas.noellesroles.content.item.CanyuesaHorseshoeItem;
 import org.agmas.noellesroles.content.item.HotPotatoItem;
 import org.agmas.noellesroles.content.item.ProblemSetItem;
 import org.agmas.noellesroles.content.item.RainbowHorseshoeItem;
+import org.agmas.noellesroles.content.item.SuperPigHorseshoeItem;
 import org.agmas.noellesroles.content.item.ShisiyeItem;
 
 public class FunnyItems {
@@ -38,6 +39,10 @@ public class FunnyItems {
   public static final Item CANYUESA_HORSESHOE = register(
       new CanyuesaHorseshoeItem(new Item.Properties().stacksTo(1)),
       "canyuesa_horseshoe");
+  // 超级猪马蹄铁 - 召唤超级猪马从天而降
+  public static final Item SUPER_PIG_HORSESHOE = register(
+      new SuperPigHorseshoeItem(new Item.Properties().stacksTo(1)),
+      "super_pig_horseshoe");
 
   @SuppressWarnings("unchecked")
   public static Item register(Item item, String id) {

@@ -16,9 +16,14 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
+import org.agmas.noellesroles.content.entity.CanyuesaHorseEntity;
+import org.agmas.noellesroles.content.entity.RainbowHorseEntity;
+import org.agmas.noellesroles.content.entity.SuperPigHorseEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,8 +104,8 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                     }
 
                     // 处理实体命中
-                    if (player.serverLevel().getEntity(payload.targetOrShooterId()) instanceof Player target
-                            && target.distanceTo(player) < 200.0) {
+                    Entity hitEntity = player.serverLevel().getEntity(payload.targetOrShooterId());
+                    if (hitEntity instanceof Player target && target.distanceTo(player) < 200.0) {
                         var game = SREGameWorldComponent.KEY.get(player.level());
 
                         final var role = game.getRole(player);
@@ -133,6 +138,10 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         }
 
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
+                    } else if ((hitEntity instanceof RainbowHorseEntity || hitEntity instanceof CanyuesaHorseEntity || hitEntity instanceof SuperPigHorseEntity)
+                            && hitEntity.distanceTo(player) < 200.0) {
+                        // 命中三种马时直接扣除 20 点血
+                        ((Horse) hitEntity).hurt(hitEntity.damageSources().generic(), 20.0F);
                     }
                 }
                 case RELOAD -> {

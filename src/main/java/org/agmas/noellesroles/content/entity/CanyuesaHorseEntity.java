@@ -14,8 +14,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.AnimalArmorItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.content.item.PredecessorHorseArmorItem;
 
 /**
  * 残月萨马 - 残月萨马蹄铁召唤的临时坐骑。
@@ -36,9 +39,23 @@ public class CanyuesaHorseEntity extends Horse {
 
     public static AttributeSupplier.Builder createAttributes() {
         return createBaseHorseAttributes()
-                .add(Attributes.MAX_HEALTH, 40.0)
+                .add(Attributes.MAX_HEALTH, 6.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.JUMP_STRENGTH, 0.8);
+    }
+
+    /** 基础生命上限（滴血）。装备前人留下的马铠后额外 +4 */
+    public static final double BASE_MAX_HEALTH = 6.0;
+    /** 基础移动速度 */
+    public static final double BASE_MOVEMENT_SPEED = 0.3;
+
+    /** 根据是否装备前人留下的马铠刷新属性 */
+    private void updateArmorAttributes() {
+        boolean armored = this.getBodyArmorItem().getItem() instanceof PredecessorHorseArmorItem;
+        double maxHealth = armored ? BASE_MAX_HEALTH + 4.0 : BASE_MAX_HEALTH;
+        double speed = armored ? BASE_MOVEMENT_SPEED * 1.12 : BASE_MOVEMENT_SPEED;
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
     }
 
     // ===== 骑乘：无需鞍即可控制，最多两名乘客 =====
@@ -72,6 +89,20 @@ public class CanyuesaHorseEntity extends Horse {
 
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        // 手持马铠时优先装备到马身上
+        ItemStack handItem = player.getItemInHand(hand);
+        if (handItem.getItem() instanceof AnimalArmorItem) {
+            if (!this.level().isClientSide) {
+                ItemStack old = this.getBodyArmorItem();
+                this.setBodyArmorItem(handItem.copyWithCount(1));
+                handItem.shrink(1);
+                if (!old.isEmpty()) {
+                    player.getInventory().add(old);
+                }
+                updateArmorAttributes();
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
         // 替换原版马交互（喂食/驯服/打开背包），右键直接上马
         if (!player.isPassenger() && this.getPassengers().size() < 2) {
             if (!this.level().isClientSide) {
@@ -148,5 +179,6 @@ public class CanyuesaHorseEntity extends Horse {
         super.readAdditionalSaveData(compoundTag);
         this.lifeTicks = compoundTag.getInt("CanyuesaLifeTicks");
         this.landed = compoundTag.getBoolean("CanyuesaLanded");
+        updateArmorAttributes();
     }
 }
