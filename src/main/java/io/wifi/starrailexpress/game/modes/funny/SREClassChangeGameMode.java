@@ -26,6 +26,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.item.LetterItem;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -420,6 +421,7 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
     private void clearInventoryExceptKeysAndLetters(ServerPlayer player) {
         SREItemUtils.clearItem(player, (stack) -> !stack.is(TMMItems.KEY)
                 && !stack.is(TMMItems.LETTER)
+                && !stack.is(ModItems.AREA_MAP)
                 && !(stack.getItem() instanceof LetterItem));
     }
 
