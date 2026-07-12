@@ -1019,7 +1019,7 @@ public class SREClient implements ClientModInitializer {
             }
         });
         ClientTickEvents.END_WORLD_TICK.register((world)->{
-            SREClientBannedBlockTickEvents.tick(world);
+            SREClientWarningTickEvents.tick(world);
         });
         // Register client tick event for stats keybind
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

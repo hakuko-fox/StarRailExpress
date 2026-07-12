@@ -19,6 +19,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -930,6 +931,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             final var level = player.level();
             if (SREWorldBlackoutComponent.KEY.get(level).isBlackoutActive())
                 return;
+            var role = RoleUtils.getPlayerRole(player);
+            if (role == null || role.isKillerTeam()) {
+                return;
+            }
             if (level.getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition())) < 3
                     && level.getBrightness(LightLayer.SKY,
                             BlockPos.containing(player.getEyePosition())) < 10) {
@@ -982,7 +987,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 continue;
             var infoBlockId = res.toString();
             if (infoBlockId.equalsIgnoreCase(blockId1) || infoBlockId.equalsIgnoreCase(blockId2)
-                    || infoBlockId.equalsIgnoreCase(blockId3)) {
+                    || (blockState2.is(BlockTags.AIR) && infoBlockId.equalsIgnoreCase(blockId3))) {
                 if (nowInfo == null || nowInfo.standonTick <= 0) {
                     gameCCA.playerBannedBlockTime.put(player.getUUID(),
                             new PlayerBannedBlockTimeInfo(infoBlockId, level.getGameTime()));

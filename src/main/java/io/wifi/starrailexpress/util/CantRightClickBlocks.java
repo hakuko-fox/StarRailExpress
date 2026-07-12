@@ -18,7 +18,6 @@ public class CantRightClickBlocks {
             "charta:sorghum_beer_glass",
             "supplementaries:safe",
             "supplementaries:statue",
-            "handcrafted:yellow_crockery_combo",
             "supplementaries:fire_pit",
             "supplementaries:item_shelf",
             "supplementaries:pedestal"));
@@ -116,6 +115,8 @@ public class CantRightClickBlocks {
             if (player.isShiftKeyDown()) {
                 return false;
             }
+            if (keys.getPath().contains("crockery_combo"))
+                return false;
             if (keys.getPath().contains("counter")) {
                 return false;
             }

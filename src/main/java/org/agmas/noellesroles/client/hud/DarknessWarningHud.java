@@ -2,9 +2,8 @@ package org.agmas.noellesroles.client.hud;
 
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.client.SREClientBannedBlockTickEvents;
+import io.wifi.starrailexpress.client.SREClientWarningTickEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -12,7 +11,7 @@ import net.minecraft.network.chat.Component;
 /**
  * BannedBlockWarrningHud
  */
-public class BannedBlockWarrningHud {
+public class DarknessWarningHud {
 
     public static void register() {
         CommonHudRenderCallback.EVENT.register((ctx, delta) -> {
@@ -20,34 +19,32 @@ public class BannedBlockWarrningHud {
             final var client = Minecraft.getInstance();
             if (role == null || client.player == null || client.level == null)
                 return;
-
-            final var level = client.level;
-            if (SREClientBannedBlockTickEvents.bannedBlockPlayerInfo == null ||
-                    SREClientBannedBlockTickEvents.bannedBlockInfo == null)
+            if (SREClient.areaComponent == null)
                 return;
-            final long leftTime;
-            if (SREGameWorldComponent.isKillerTeamRoleStatic(role)) {
-                leftTime = SREClientBannedBlockTickEvents.bannedBlockInfo.deathTimeForKillers() - (level.getGameTime()
-                        - SREClientBannedBlockTickEvents.bannedBlockPlayerInfo.standonTick);
-
-            } else {
-                leftTime = SREClientBannedBlockTickEvents.bannedBlockInfo.deathTimeForInnocent() - (level.getGameTime()
-                        - SREClientBannedBlockTickEvents.bannedBlockPlayerInfo.standonTick);
+            if (role.isKillerTeam()) {
+                return;
             }
-            
+            if (SREClientWarningTickEvents.darknessTime <= 0)
+                return;
+            int limit = SREClient.areaComponent.areasSettings.deadInDarknessTime;
+            if (limit <= 0)
+                return;
+            int leftTime = limit - SREClientWarningTickEvents.darknessTime;
+
             if (leftTime <= -100) {
                 return;
             }
-            
+
             {
                 ctx.pose().pushPose();
                 ctx.pose().translate((float) (ctx.guiWidth() / 2),
-                        (float) (ctx.guiHeight() - 78), 0.0F);
-                final var text = Component.translatable("message.starrailexpress.banned_blocks.warning",
+                        (float) (ctx.guiHeight() - 78 - OtherRolesRegister.warningOffset), 0.0F);
+                final var text = Component.translatable("message.starrailexpress.darkness_warn.warning",
                         Component.literal("" + (int) (leftTime / 20)).withStyle(ChatFormatting.GOLD))
                         .withStyle(ChatFormatting.RED);
                 ctx.drawCenteredString(client.font, text, 0, -4, 0xffffffff);
                 ctx.pose().popPose();
+                OtherRolesRegister.warningOffset += 12;
             }
         });
     }

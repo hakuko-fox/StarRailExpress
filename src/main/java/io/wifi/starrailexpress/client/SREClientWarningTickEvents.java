@@ -4,15 +4,44 @@ import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent.PlayerBannedBlockTimeInfo;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.LightLayer;
 
-public class SREClientBannedBlockTickEvents {
+public class SREClientWarningTickEvents {
     public static PlayerBannedBlockTimeInfo bannedBlockPlayerInfo = null;
     public static AreasSettings.MapBlockedBlockSetting bannedBlockInfo = null;
+    public static int darknessTime = 0;
 
     public static void tick(ClientLevel world) {
+        if (SREClient.areaComponent == null)
+            return;
         if (SREClient.cached_player != null) {
             checkPlayerBannedBlocksClientAndWarns(world, SREClient.cached_player);
+            checkPlayerDarkness(world, SREClient.cached_player);
+        }
+    }
+
+    private static void checkPlayerDarkness(ClientLevel level, Player player) {
+        int limit = SREClient.areaComponent.areasSettings.deadInDarknessTime;
+        if (limit <= 0)
+            return;
+        var role = SREClient.getCachedPlayerRole();
+        if (role == null) {
+            darknessTime = 0;
+            return;
+        }
+        if (role.isKillerTeam()) {
+            darknessTime = 0;
+            return;
+        }
+        if (level.getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition())) < 3
+                && level.getBrightness(LightLayer.SKY,
+                        BlockPos.containing(player.getEyePosition())) < 10) {
+            darknessTime++;
+        } else {
+            darknessTime = 0;
         }
     }
 
@@ -26,8 +55,11 @@ public class SREClientBannedBlockTickEvents {
         }
         final var areas = SREClient.areaComponent;
         if (areas == null || areas.areasSettings == null || areas.areasSettings.bannedBlock == null
-                || areas.areasSettings.bannedBlock.isEmpty())
+                || areas.areasSettings.bannedBlock.isEmpty()) {
+            bannedBlockPlayerInfo = null;
+            bannedBlockInfo = null;
             return;
+        }
         var role = SREClient.getCachedPlayerRole();
         if (role == null) {
             return;
@@ -46,7 +78,7 @@ public class SREClientBannedBlockTickEvents {
             if (info.blockId() == null)
                 continue;
             if (info.blockId().equalsIgnoreCase(blockId1) || info.blockId().equalsIgnoreCase(blockId2)
-                    || info.blockId().equalsIgnoreCase(blockId3)) {
+                    || (blockState2.is(BlockTags.AIR) && info.blockId().equalsIgnoreCase(blockId3))) {
 
                 bannedBlockInfo = info;
                 if (bannedBlockPlayerInfo == null || bannedBlockPlayerInfo.standonTick <= 0) {

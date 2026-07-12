@@ -7,9 +7,11 @@ import org.agmas.noellesroles.client.hud.modifiers.ShitSplitHud;
 import org.agmas.noellesroles.client.hud.roles.*;
 
 public class OtherRolesRegister {
-
+    public static int warningOffset = 0;
     public static void registerSons() {
-        BannedBlockWarrningHud.register();
+        warningOffset = 0;
+        DarknessWarningHud.register();
+        BannedBlockWarningHud.register();
         CuckooHud.register();
         ShitSplitHud.register();
         VoteHud.register();
