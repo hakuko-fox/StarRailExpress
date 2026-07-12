@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.ThrownTrident;
@@ -37,7 +38,7 @@ public class EntityClearUtils {
     }
 
     /** 换图 / 清场时应当被清除的游戏残留实体（上一局的尸体、掉落物、投掷物、彩虹马等）。 */
-    public static boolean shouldClearOnReset(net.minecraft.world.entity.Entity entity) {
+    public static boolean shouldClearOnReset(Entity entity) {
         if (entity instanceof LockEntity ||
                 entity instanceof Pig ||
                 entity instanceof CanyuesaHorseEntity ||
@@ -69,16 +70,19 @@ public class EntityClearUtils {
                 entity instanceof DevilRouletteTableEntity.TableItemDisplay ||
                 (entity instanceof net.minecraft.world.entity.Display.BlockDisplay bd
                         && (bd.getTags().contains(CakeMakerComponent.SMOKER_ENTITY_TAG)
-                            || bd.getTags().contains(CakeMakerComponent.CAKE_ENTITY_TAG))) ||
+                                || bd.getTags().contains(CakeMakerComponent.CAKE_ENTITY_TAG)))
+                ||
                 (entity instanceof net.minecraft.world.entity.Interaction inter
                         && (inter.getTags().contains(CakeMakerComponent.SMOKER_ENTITY_TAG)
-                            || inter.getTags().contains(CakeMakerComponent.CAKE_ENTITY_TAG)))) {
+                                || inter.getTags().contains(CakeMakerComponent.CAKE_ENTITY_TAG)))) {
             return true;
         }
         // 仅清理摄影师放置的照片框
-        return entity instanceof io.github.mortuusars.exposure.world.entity.PhotographFrameEntity
+        if (entity instanceof io.github.mortuusars.exposure.world.entity.PhotographFrameEntity
                 && entity instanceof org.agmas.noellesroles.game.roles.innocence.photographer.SrePhotographerFrame frame
-                && frame.sre$isPhotographerPlaced();
+                && frame.sre$isPhotographerPlaced())
+            return true;
+        return false;
     }
 
     public static void clearAllEntities(ServerLevel world) {
