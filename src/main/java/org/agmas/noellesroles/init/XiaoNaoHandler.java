@@ -97,6 +97,8 @@ public class XiaoNaoHandler {
                 || deathReason.getPath().equals("sniper_rifle")
                 || deathReason.getPath().equals("nunchuck_hit")
                 || deathReason.getPath().equals("bat_hit")
+                || deathReason.getPath().equals("touch_incorrect")
+                || deathReason.getPath().equals("death_in_darkness")
                 || deathReason.getPath().equals("scarlet_perception_sword")
                 || deathReason.getPath().equals("gun_shot")
                 || deathReason.getPath().equals("hoan_meirin_attack")

@@ -125,7 +125,7 @@ public class SREClientEvents {
                 return TrueFalseResult.FALSE;
             // 亡命徒也是
             if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
-                    && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
+                && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
                 return TrueFalseResult.FALSE;
             }
             // 鹈鹕肚内玩家不能通过准星查看玩家身份

@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -55,6 +56,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     // 本局击杀数统计（按玩家UUID存储）
     private HashMap<UUID, Integer> perPlayerKills = new HashMap<>();
+    public static HashMap<UUID, Integer> perPlayerDarknessTime = new HashMap<>();
 
     // 画板系统：本局已画出的物品类别（每个物品只能被画出一次）
     private Set<Integer> drawnCategories = new HashSet<>();
@@ -839,6 +841,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             return;
         if (!(player.getZ() >= 19000)) {
             checkPlayerBannedBlocks(player, areas, gameCCA);
+            checkPlayerDarkness(player, areas, gameCCA);
             if (checkPlayerIsOutOfAreas(player, areas)) {
                 GameUtils.killPlayer(player, false,
                         player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
@@ -919,6 +922,32 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     }
 
+    private static void checkPlayerDarkness(ServerPlayer player, AreasWorldComponent areas,
+            SREGameWorldComponent gameCCA) {
+        if (player.isSpectator() || player.isCreative())
+            return;
+        if (areas.areasSettings.deadInDarknessTime > 0) {
+            final var level = player.level();
+            if (SREWorldBlackoutComponent.KEY.get(level).isBlackoutActive())
+                return;
+            if (level.getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition())) < 3
+                    && level.getBrightness(LightLayer.SKY,
+                            BlockPos.containing(player.getEyePosition())) < 10) {
+                int time = perPlayerDarknessTime.getOrDefault(player.getUUID(), 0);
+
+                if (time > areas.areasSettings.deadInDarknessTime) {
+                    GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.DEATH_IN_DARKNESS);
+                    perPlayerDarknessTime.remove(player.getUUID());
+                } else {
+                    perPlayerDarknessTime.put(player.getUUID(), time + 1);
+                }
+            } else {
+                if (perPlayerDarknessTime.containsKey(player.getUUID()))
+                    perPlayerDarknessTime.remove(player.getUUID());
+            }
+        }
+    }
+
     private static void checkPlayerBannedBlocks(ServerPlayer player, AreasWorldComponent areas,
             SREGameWorldComponent gameCCA) {
         final var level = player.level();
@@ -960,7 +989,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 } else if (infoBlockId.equalsIgnoreCase(infoBlockId)) {
                     if (isKillerTeamRoleStatic(role)) {
                         if (level.getGameTime() - nowInfo.standonTick > info.deathTimeForKillers()) {
-                            GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.TOUCH_INCORRECT);
+                            GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.TOUCH_INCORRECT);
                             if (gameCCA.playerBannedBlockTime.containsKey(player.getUUID()))
                                 gameCCA.playerBannedBlockTime.remove(player.getUUID());
                         }

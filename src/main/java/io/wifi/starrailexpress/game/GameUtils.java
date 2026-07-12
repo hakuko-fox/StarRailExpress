@@ -795,6 +795,8 @@ public class GameUtils {
         gameComponent.resetDrawnCategories();
         serverWorld.setDayTime(areas.areasSettings.time);
         serverWorld.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true, serverWorld.getServer());
+        SREGameWorldComponent.perPlayerDarknessTime.clear();
+
         // 天气循环配置 - 默认关闭
         serverWorld.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(areas.areasSettings.weatherCycle,
                 serverWorld.getServer());
@@ -1102,6 +1104,7 @@ public class GameUtils {
         SREGameTimeComponent.KEY.get(world).reset();
         gameComponent.clearRoleMap(false);
         gameComponent.resetPerPlayerKills(); // 重置本局击杀数
+        SREGameWorldComponent.perPlayerDarknessTime.clear();
         gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
         trainComponent.setTime(0);
         gameComponent.roleWorldComponent.sync();

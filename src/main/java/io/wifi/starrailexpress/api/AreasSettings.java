@@ -94,6 +94,9 @@ public class AreasSettings {
     }
 
     @Category("action")
+    public int deadInDarknessTime = 0;
+    
+    @Category("action")
     public ArrayList<MapBlockedBlockSetting> bannedBlock = new ArrayList<>();
     /**
      * 水下检测，设置为false则需要玩家位置：
