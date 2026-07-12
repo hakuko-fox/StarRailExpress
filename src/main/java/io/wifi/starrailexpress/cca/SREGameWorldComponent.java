@@ -937,7 +937,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             }
             if (level.getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition())) < 3
                     && level.getBrightness(LightLayer.SKY,
-                            BlockPos.containing(player.getEyePosition())) < 10) {
+                            BlockPos.containing(player.getEyePosition())) < 10
+                    || !level.isDay()) {
                 int time = perPlayerDarknessTime.getOrDefault(player.getUUID(), 0);
 
                 if (time > areas.areasSettings.deadInDarknessTime) {

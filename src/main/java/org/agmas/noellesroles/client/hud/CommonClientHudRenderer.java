@@ -197,6 +197,7 @@ public class CommonClientHudRenderer {
         BroadcasterHud.renderBroadcast(guiGraphics, deltaTracker);
       }
 
+      OtherRolesRegister.warningOffset = 0;
       var consumer1 = CommonHudRenderCallback.EVENT.getConsumer();
       if (consumer1 != null && !consumer1.isEmpty()) {
         consumer1.forEach((c) -> {
