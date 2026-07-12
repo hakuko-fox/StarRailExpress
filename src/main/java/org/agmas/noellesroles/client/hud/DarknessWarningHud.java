@@ -34,7 +34,8 @@ public class DarknessWarningHud {
             if (leftTime <= -100) {
                 return;
             }
-
+            if (leftTime < 0)
+                leftTime = 0;
             {
                 ctx.pose().pushPose();
                 ctx.pose().translate((float) (ctx.guiWidth() / 2),

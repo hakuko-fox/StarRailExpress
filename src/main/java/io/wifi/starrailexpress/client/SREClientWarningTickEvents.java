@@ -25,8 +25,10 @@ public class SREClientWarningTickEvents {
 
     private static void checkPlayerDarkness(ClientLevel level, Player player) {
         int limit = SREClient.areaComponent.areasSettings.deadInDarknessTime;
-        if (limit <= 0)
+        if (limit <= 0){
+            darknessTime = 0;
             return;
+        }
         var role = SREClient.getCachedPlayerRole();
         if (role == null) {
             darknessTime = 0;

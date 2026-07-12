@@ -25,7 +25,7 @@ public class BannedBlockWarningHud {
             if (SREClientWarningTickEvents.bannedBlockPlayerInfo == null ||
                     SREClientWarningTickEvents.bannedBlockInfo == null)
                 return;
-            final long leftTime;
+            long leftTime;
             if (SREGameWorldComponent.isKillerTeamRoleStatic(role)) {
                 leftTime = SREClientWarningTickEvents.bannedBlockInfo.deathTimeForKillers() - (level.getGameTime()
                         - SREClientWarningTickEvents.bannedBlockPlayerInfo.standonTick);
@@ -34,11 +34,13 @@ public class BannedBlockWarningHud {
                 leftTime = SREClientWarningTickEvents.bannedBlockInfo.deathTimeForInnocent() - (level.getGameTime()
                         - SREClientWarningTickEvents.bannedBlockPlayerInfo.standonTick);
             }
-            
+
             if (leftTime <= -100) {
                 return;
             }
-            
+            if (leftTime < 0)
+                leftTime = 0;
+
             {
                 ctx.pose().pushPose();
                 ctx.pose().translate((float) (ctx.guiWidth() / 2),
