@@ -24,6 +24,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
+import org.agmas.harpymodloader.modifiers.SREModifier;
 
 import java.util.*;
 
@@ -64,6 +66,14 @@ public class CustomRoleLoader {
                 RoleSkill.unregister(entry.getKey());
                 // 清除 INITIAL_ITEMS_MAP 中的条目
                 org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
+            }
+        }
+        // 在移除旧自定义职业前，先清理其它职业/修饰符对它的关联引用，
+        // 否则重载后旧 SRERole 实例会残留在 relatedRoles/opposingRoles/occupationRoles 中，
+        // 导致 postInit 重新绑定时出现重复，表现为“其它相关职业”出现两个相同的自定义职业。
+        for (var entry : TMMRoles.ROLES.entrySet()) {
+            if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
+                removeRoleReferences(entry.getValue());
             }
         }
         for (String key : toRemove) {
@@ -114,9 +124,11 @@ public class CustomRoleLoader {
     public static void reloadClient() {
         // 清除旧的客户端注册的自定义职业（包括技能注册，避免 re-register 抛异常）
         List<String> toRemove = new ArrayList<>();
+        List<SRERole> removedRoles = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
             if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
                 toRemove.add(entry.getKey().toString());
+                removedRoles.add(entry.getValue());
                 RoleSkill.unregister(entry.getKey());
                 org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
             }
@@ -125,6 +137,12 @@ public class CustomRoleLoader {
         for (var entry : registeredRoles.entrySet()) {
             ResourceLocation roleId = ResourceLocation.fromNamespaceAndPath("customrole", entry.getKey());
             RoleSkill.unregister(roleId);
+        }
+        // 在移除旧自定义职业前，先清理其它职业/修饰符对它的关联引用，
+        // 否则重载后旧 SRERole 实例会残留在 relatedRoles/opposingRoles/occupationRoles 中，
+        // 导致 postInit 重新绑定时出现重复，表现为“其它相关职业”出现两个相同的自定义职业。
+        for (SRERole oldRole : removedRoles) {
+            removeRoleReferences(oldRole);
         }
         toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
         registeredRoles.clear();
@@ -158,6 +176,26 @@ public class CustomRoleLoader {
 
         postInit();
         SRE.LOGGER.info("[CustomRole-Client] Reloaded {} custom roles from local config", config.roles.size());
+    }
+
+    /**
+     * 从所有其它职业与修饰符的关联集合中移除指定（即将被卸载的）职业引用。
+     * <p>
+     * 自定义职业重载时会创建新的 {@link SRERole} 实例，而旧实例此前可能已被加入其它职业的
+     * {@code relatedRoles}/{@code opposingRoles}/{@code occupationRoles}（例如通过
+     * {@code bindWithRoles}/{@code twoWayOpposingJobs} 在 {@link #postInit()} 中建立绑定）。
+     * 若只从 {@link TMMRoles#ROLES} 移除旧实例而不清理这些引用，重载后旧实例仍会残留，
+     * 导致职业介绍的“其它相关职业”中出现两个相同的自定义职业。
+     */
+    private static void removeRoleReferences(SRERole oldRole) {
+        for (SRERole other : TMMRoles.ROLES.values()) {
+            other.relatedRoles.remove(oldRole);
+            other.opposingRoles.remove(oldRole);
+            other.occupationRoles.remove(oldRole);
+        }
+        for (SREModifier modifier : HMLModifiers.MODIFIERS) {
+            modifier.relatedRoles.remove(oldRole);
+        }
     }
 
     public static CustomRoleData getCustomRoleData(String englishId) {

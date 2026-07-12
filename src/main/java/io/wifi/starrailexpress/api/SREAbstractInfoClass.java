@@ -60,8 +60,11 @@ public abstract class SREAbstractInfoClass {
      */
     public Set<SRERole> getRelatedRoles() {
         Set<SRERole> result = new HashSet<>();
+        Set<ResourceLocation> seen = new HashSet<>();
         for (var i : relatedRoles) {
-            result.add(i);
+            if (seen.add(i.identifier())) {
+                result.add(i);
+            }
         }
         return result;
     }
@@ -73,8 +76,11 @@ public abstract class SREAbstractInfoClass {
      */
     public Set<SREModifier> getRelatedModifiers() {
         Set<SREModifier> result = new HashSet<>();
+        Set<ResourceLocation> seen = new HashSet<>();
         for (var r : relatedModifiers) {
-            result.add(r);
+            if (seen.add(r.identifier())) {
+                result.add(r);
+            }
         }
         return result;
     }
