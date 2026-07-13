@@ -107,14 +107,30 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        if (!state.getValue(BROKEN)) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.getShape(world, pos, context);
+            }
+        }
         return state.getValue(BROKEN)
                 ? (context.isHoldingItem(ModSceneBlocks.BREAKING_BRIDGE.asItem()) ? Shapes.block() : Shapes.empty())
                 : super.getShape(state, world, pos, context);
     }
 
     @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(BROKEN) ? Shapes.empty() : super.getCollisionShape(state, world, pos, context);
+    public VoxelShape getCollisionShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos,
+            CollisionContext context) {
+        if (!blockState.getValue(BROKEN)) {
+            BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.getCollisionShape(blockGetter, blockPos, context);
+            }
+        }
+        return blockState.getValue(BROKEN) ? Shapes.empty()
+                : super.getCollisionShape(blockState, blockGetter, blockPos, context);
     }
 
     @Override
