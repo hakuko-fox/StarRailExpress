@@ -54,38 +54,62 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
         return CODEC;
     }
 
+    public boolean securityLock = false;
+
     protected VoxelShape getVisualShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos,
             CollisionContext collisionContext) {
-
+        if (securityLock)
+            return Shapes.empty();
+        securityLock = true;
         if (!blockState.getValue(BROKEN)) {
             BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
             if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
-                if (bbbe.displayState != null)
-                    return bbbe.displayState.getVisualShape(blockGetter, blockPos, collisionContext);
+                if (bbbe.displayState != null) {
+                    var result = bbbe.displayState.getVisualShape(blockGetter, blockPos, collisionContext);
+                    securityLock = false;
+                    return result;
+                }
             }
         }
+        securityLock = false;
         return Shapes.empty();
     }
 
     protected float getShadeBrightness(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos) {
+
+        if (securityLock)
+            return 1F;
+        securityLock = true;
         if (!blockState.getValue(BROKEN)) {
             BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
             if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
-                if (bbbe.displayState != null)
-                    return bbbe.displayState.getShadeBrightness(blockGetter, blockPos);
+                if (bbbe.displayState != null) {
+                    var result = bbbe.displayState.getShadeBrightness(blockGetter, blockPos);
+                    securityLock = false;
+                    return result;
+                }
             }
         }
+        securityLock = false;
+
         return 1.0F;
     }
 
     protected boolean propagatesSkylightDown(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos) {
+        if (securityLock)
+            return true;
+        securityLock = true;
         if (!blockState.getValue(BROKEN)) {
             BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
             if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
-                if (bbbe.displayState != null)
-                    return bbbe.displayState.propagatesSkylightDown(blockGetter, blockPos);
+                if (bbbe.displayState != null) {
+                    var result = bbbe.displayState.propagatesSkylightDown(blockGetter, blockPos);
+                    securityLock = false;
+                    return result;
+                }
             }
         }
+        securityLock = false;
         return true;
     }
 
@@ -107,14 +131,30 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        if (!state.getValue(BROKEN)) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.getShape(world, pos, context);
+            }
+        }
         return state.getValue(BROKEN)
                 ? (context.isHoldingItem(ModSceneBlocks.BREAKING_BRIDGE.asItem()) ? Shapes.block() : Shapes.empty())
                 : super.getShape(state, world, pos, context);
     }
 
     @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(BROKEN) ? Shapes.empty() : super.getCollisionShape(state, world, pos, context);
+    public VoxelShape getCollisionShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos,
+            CollisionContext context) {
+        if (!blockState.getValue(BROKEN)) {
+            BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.getCollisionShape(blockGetter, blockPos, context);
+            }
+        }
+        return blockState.getValue(BROKEN) ? Shapes.empty()
+                : super.getCollisionShape(blockState, blockGetter, blockPos, context);
     }
 
     @Override
@@ -187,7 +227,8 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
             return super.useItemOn(itemStack, blockState, level, blockPos, player, interactionHand, blockHitResult);
         if (level.isClientSide)
             return ItemInteractionResult.SUCCESS;
-        if (itemStack.is(ModSceneBlocks.BREAKING_BRIDGE.asItem()))
+        if (itemStack.is(ModSceneBlocks.BREAKING_BRIDGE.asItem())
+                || itemStack.is(ModSceneBlocks.FAKE_BLOCK.asItem()))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!itemStack.isEmpty()) {
             var diState = getBlockStateFromItem(itemStack, blockState.getOptionalValue(TYPE));

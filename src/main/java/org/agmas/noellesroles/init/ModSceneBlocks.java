@@ -45,7 +45,7 @@ public interface ModSceneBlocks {
                     3600000.0F)));
     Block BREAKING_BRIDGE = registerBlock("breaking_bridge",
             new BreakingBridgeBlock(Properties.ofFullCopy(Blocks.OAK_PLANKS).noOcclusion()));
-    Block FAKE_BLOCK = registerBlock("breaking_bridge",
+    Block FAKE_BLOCK = registerBlock("fake_block",
             new FakeRenderBlock(Properties.ofFullCopy(BREAKING_BRIDGE).noOcclusion()));
     Block SABOTAGE_BRIDGE = registerBlock("sabotage_bridge",
             new SabotageBridgeBlock(Properties.ofFullCopy(Blocks.OAK_PLANKS).noOcclusion()));
@@ -69,7 +69,7 @@ public interface ModSceneBlocks {
             new CellarBlock(Properties.ofFullCopy(Blocks.SPRUCE_PLANKS)));
     BlockEntityType<BreakingBridgeBlockEntity> BREAKING_BRIDGE_ENTITY = blockEntityRegistrar.create(
             "breaking_bridge",
-            BlockEntityType.Builder.of(BreakingBridgeBlockEntity::new, BREAKING_BRIDGE));
+            BlockEntityType.Builder.of(BreakingBridgeBlockEntity::new, BREAKING_BRIDGE, FAKE_BLOCK));
     BlockEntityType<FogZoneBlockEntity> FOG_ZONE_ENTITY = blockEntityRegistrar.create("fog_zone",
             BlockEntityType.Builder.of(FogZoneBlockEntity::new, FOG_ZONE));
     BlockEntityType<ManholeBlockEntity> MANHOLE_ENTITY = blockEntityRegistrar.create("manhole",
