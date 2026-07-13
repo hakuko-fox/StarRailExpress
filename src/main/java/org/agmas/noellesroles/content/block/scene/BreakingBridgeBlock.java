@@ -2,7 +2,6 @@ package org.agmas.noellesroles.content.block.scene;
 
 import java.util.Optional;
 
-import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.block_entity.scene.BreakingBridgeBlockEntity;
 
 import com.mojang.serialization.MapCodec;
@@ -113,7 +112,7 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new VendingMachinesBlockEntity(pos, state);
+        return new BreakingBridgeBlockEntity(pos, state);
     }
 
     @Override
