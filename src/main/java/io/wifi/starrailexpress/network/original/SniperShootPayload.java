@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.network.PacketTracker;
+import io.wifi.starrailexpress.util.HorseDamageUtil;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -138,10 +139,9 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         }
 
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
-                    } else if ((hitEntity instanceof RainbowHorseEntity || hitEntity instanceof CanyuesaHorseEntity || hitEntity instanceof SuperPigHorseEntity)
-                            && hitEntity.distanceTo(player) < 200.0) {
-                        // 命中三种马时直接扣除 20 点血
-                        ((Horse) hitEntity).hurt(hitEntity.damageSources().generic(), 20.0F);
+                    } else {
+                        // 通用马匹伤害处理
+                        HorseDamageUtil.tryDamageHorse(hitEntity, player, 20.0F, 200.0);
                     }
                 }
                 case RELOAD -> {

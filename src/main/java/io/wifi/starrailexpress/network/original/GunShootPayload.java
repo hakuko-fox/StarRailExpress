@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.event.OnRevolverUsed;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
+import io.wifi.starrailexpress.util.HorseDamageUtil;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
@@ -159,11 +160,8 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
 
             } else {
                 OnRevolverUsed.EVENT.invoker().onPlayerShoot(player, null);
-                // 命中三种马时扣除 8 点血（狙击枪在 SniperShootPayload 中扣除 20 点）
-                if ((hitEntity instanceof RainbowHorseEntity || hitEntity instanceof CanyuesaHorseEntity || hitEntity instanceof SuperPigHorseEntity)
-                        && hitEntity.distanceToSqr(player) < 30 * 30) {
-                    ((Horse) hitEntity).hurt(hitEntity.damageSources().generic(), 8.0F);
-                }
+                // 通用马匹伤害处理
+                HorseDamageUtil.tryDamageHorse(hitEntity, player, 8.0F, 30.0);
             }
 
             player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(),

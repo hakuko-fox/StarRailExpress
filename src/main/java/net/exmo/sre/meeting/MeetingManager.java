@@ -125,15 +125,8 @@ public final class MeetingManager {
         }
         registered = true;
 
-        // 右键尸体 → 召开会议（优先于打开尸体物品栏）
+        // 【已禁用】右键尸体 → 召开会议（改用分号键上报），始终返回 PASS 避免干扰其他交互
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClientSide() || !(entity instanceof PlayerBodyEntity body)
-                    || !(player instanceof ServerPlayer reporter)) {
-                return InteractionResult.PASS;
-            }
-            if (tryReportBody(reporter, body)) {
-                return InteractionResult.SUCCESS;
-            }
             return InteractionResult.PASS;
         });
 

@@ -190,8 +190,7 @@ public final class MeetingHud {
             g.drawCenteredString(font, hint, w / 2, g.guiHeight() - 44, color);
         }
 
-        // 跳过会议按钮（物品栏正上方）
-        renderSkipButton(g, client);
+        // 跳过会议已迁移至分号键，不再渲染按钮
     }
 
     // ==================== 跳过会议按钮 ====================

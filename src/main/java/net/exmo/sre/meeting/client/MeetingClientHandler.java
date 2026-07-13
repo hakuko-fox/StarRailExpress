@@ -190,29 +190,32 @@ public final class MeetingClientHandler {
         }
         boolean participant = participants.contains(player.getUUID());
 
-        // 发言键（仅讨论阶段的参会者）
+        // 分号键 — 会议中：发言（讨论阶段）或跳过（开场/讨论阶段）；会议外：上报尸体
         while (speakKey.consumeClick()) {
-            if (phase == MeetingManager.PHASE_DISCUSS && participant) {
+            if (phase == MeetingManager.PHASE_NONE) {
+                // 会议外 → 上报尸体
+                var body = MeetingReportClientHandler.targetedBody(client);
+                if (body != null && MeetingReportClientHandler.canPrompt(client)
+                        && MeetingReportClientHandler.cooldownRemainingTicks(client) <= 0) {
+                    ClientPlayNetworking.send(
+                            new net.exmo.sre.meeting.network.MeetingReportC2SPayload(body.getId()));
+                }
+                break;
+            }
+            if (!participant) {
+                break;
+            }
+            if (phase == MeetingManager.PHASE_DISCUSS) {
+                // 讨论阶段：切换发言/静音
                 speakingToggled = !speakingToggled;
                 ClientPlayNetworking.send(new MeetingSpeakC2SPayload(speakingToggled));
             }
-        }
-
-        // 跳过会议按钮（开场 / 讨论阶段的参会者，左键点击切换）
-        boolean canSkip = participant
-                && (phase == MeetingManager.PHASE_INTRO || phase == MeetingManager.PHASE_DISCUSS);
-        boolean leftDown = org.lwjgl.glfw.GLFW.glfwGetMouseButton(
-                client.getWindow().getWindow(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-        if (canSkip && leftDown && !wasLeftDownSkip) {
-            int[] r = skipButtonRect();
-            double mx = client.mouseHandler.xpos();
-            double my = client.mouseHandler.ypos();
-            if (mx >= r[0] && mx <= r[0] + r[2] && my >= r[1] && my <= r[1] + r[3]) {
+            // 开场或讨论阶段：切换跳过投票
+            if (phase == MeetingManager.PHASE_INTRO || phase == MeetingManager.PHASE_DISCUSS) {
                 skipVoted = !skipVoted;
                 ClientPlayNetworking.send(new MeetingSkipC2SPayload(skipVoted));
             }
         }
-        wasLeftDownSkip = leftDown;
 
         if (!participant) {
             stopOverride();

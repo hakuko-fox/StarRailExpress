@@ -33,10 +33,11 @@ import java.util.UUID;
 @Environment(EnvType.CLIENT)
 public final class MeetingReportClientHandler {
 
-    // 小键盘 [-] 键（主键盘 - 已被地图介绍键占用）
+    // 已废弃：上报功能统一由 MeetingClientHandler 中的分号键处理
+    // 保留 KeyMapping 注册以避免配置报错，但不再用于 consumeClick
     public static final KeyMapping reportKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.starrailexpress.meeting_report",
-            GLFW.GLFW_KEY_KP_SUBTRACT,
+            GLFW.GLFW_KEY_SEMICOLON,
             "category.starrailexpress.general"));
 
     // 配色对齐 MeetingHud 的复古车票风格
@@ -66,17 +67,7 @@ public final class MeetingReportClientHandler {
     }
 
     private static void tick(Minecraft client) {
-        while (reportKey.consumeClick()) {
-            if (!canPrompt(client)) {
-                continue;
-            }
-            PlayerBodyEntity body = targetedBody(client);
-            if (body == null || reportedBodies.contains(body.getUUID())
-                    || cooldownRemainingTicks(client) > 0) {
-                continue;
-            }
-            ClientPlayNetworking.send(new MeetingReportC2SPayload(body.getId()));
-        }
+        // 上报逻辑已迁移到 MeetingClientHandler.tick() 中由分号键统一处理
     }
 
     private static void renderHint(GuiGraphics g, DeltaTracker deltaTracker) {
@@ -109,7 +100,7 @@ public final class MeetingReportClientHandler {
     }
 
     /** 地图启用会议 + 游戏运行中 + 当前无会议 + 本人非旁观。 */
-    private static boolean canPrompt(Minecraft client) {
+    public static boolean canPrompt(Minecraft client) {
         if (client.player == null || client.level == null || client.player.isSpectator()) {
             return false;
         }
@@ -124,7 +115,7 @@ public final class MeetingReportClientHandler {
         return game != null && game.isRunning();
     }
 
-    private static PlayerBodyEntity targetedBody(Minecraft client) {
+    public static PlayerBodyEntity targetedBody(Minecraft client) {
         if (client.hitResult instanceof EntityHitResult hit
                 && hit.getEntity() instanceof PlayerBodyEntity body && body.isAlive()) {
             return body;
@@ -133,7 +124,7 @@ public final class MeetingReportClientHandler {
     }
 
     /** 剩余冷却 tick：取「会议间冷却」与「开局冷却」的较大者。 */
-    private static long cooldownRemainingTicks(Minecraft client) {
+    public static long cooldownRemainingTicks(Minecraft client) {
         long remain = Math.max(0, cooldownEndGameTime - client.level.getGameTime());
         AreasWorldComponent areas = AreasWorldComponent.KEY.getNullable(client.level);
         if (areas != null && areas.areasSettings.meetingStartCooldown > 0) {
