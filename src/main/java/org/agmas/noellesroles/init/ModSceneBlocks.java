@@ -45,6 +45,8 @@ public interface ModSceneBlocks {
                     3600000.0F)));
     Block BREAKING_BRIDGE = registerBlock("breaking_bridge",
             new BreakingBridgeBlock(Properties.ofFullCopy(Blocks.OAK_PLANKS).noOcclusion()));
+    Block FAKE_BLOCK = registerBlock("breaking_bridge",
+            new FakeRenderBlock(Properties.ofFullCopy(BREAKING_BRIDGE).noOcclusion()));
     Block SABOTAGE_BRIDGE = registerBlock("sabotage_bridge",
             new SabotageBridgeBlock(Properties.ofFullCopy(Blocks.OAK_PLANKS).noOcclusion()));
     Block DRIPPING_STALACTITE = registerBlock("dripping_stalactite",
