@@ -15,6 +15,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -58,7 +59,7 @@ public class FakeRenderBlock extends BreakingBridgeBlock {
 
     public FakeRenderBlock(Properties settings) {
         super(settings);
-        this.registerDefaultState(this.defaultBlockState().setValue(TYPE, SlabType.BOTTOM).setValue(LIT, false));
+        this.registerDefaultState(this.defaultBlockState().setValue(TYPE, SlabType.DOUBLE).setValue(LIT, false));
     }
 
     @Override
@@ -233,8 +234,11 @@ public class FakeRenderBlock extends BreakingBridgeBlock {
         var entity = level.getBlockEntity(blockPos);
         if (!(entity instanceof BreakingBridgeBlockEntity bbbe))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (bbbe.displayState != null)
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (bbbe.displayState != null) {
+            if (!player.getOffhandItem().is(Items.DEBUG_STICK)) {
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            }
+        }
         if (level.isClientSide)
             return ItemInteractionResult.SUCCESS;
         if (itemStack.is(ModSceneBlocks.FAKE_BLOCK.asItem()) || itemStack.is(ModSceneBlocks.BREAKING_BRIDGE.asItem()))
@@ -245,7 +249,6 @@ public class FakeRenderBlock extends BreakingBridgeBlock {
             if (diState == null) {
                 return ItemInteractionResult.FAIL;
             }
-
             bbbe.setDisplayState(diState);
             player.displayClientMessage(Component.translatable("block.noellesroles.breaking_bridge.set_to",
                     diState.getBlock().getName()), true);

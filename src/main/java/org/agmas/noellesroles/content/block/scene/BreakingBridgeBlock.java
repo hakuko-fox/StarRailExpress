@@ -26,6 +26,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -46,6 +47,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -163,6 +165,13 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
     // -------- 形状与碰撞（保留原有逻辑，仅微调）--------
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        if (context instanceof EntityCollisionContext ecc) {
+            if (ecc.getEntity() instanceof Player player) {
+                if (player.isCreative()) {
+                    return super.getShape(state, world, pos, context);
+                }
+            }
+        }
         if (recursionLock.get()) {
             return state.getValue(BROKEN)
                     ? (context.isHoldingItem(ModSceneBlocks.BREAKING_BRIDGE.asItem()) ? Shapes.block() : Shapes.empty())
@@ -353,8 +362,10 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
         var entity = level.getBlockEntity(blockPos);
         if (!(entity instanceof BreakingBridgeBlockEntity bbbe))
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (bbbe.displayState != null)
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (bbbe.displayState != null) {
+            if (!player.getOffhandItem().is(Items.DEBUG_STICK))
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         if (level.isClientSide)
             return ItemInteractionResult.SUCCESS;
         if (!itemStack.isEmpty()) {
