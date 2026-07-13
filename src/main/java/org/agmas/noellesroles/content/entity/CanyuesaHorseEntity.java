@@ -100,6 +100,11 @@ public class CanyuesaHorseEntity extends Horse {
                     player.getInventory().add(old);
                 }
                 updateArmorAttributes();
+                // 装备前人留下的马铠时给予10秒生命恢复I
+                if (handItem.getItem() instanceof org.agmas.noellesroles.content.item.PredecessorHorseArmorItem) {
+                    this.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                            net.minecraft.world.effect.MobEffects.REGENERATION, 200, 0, false, false, true));
+                }
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
