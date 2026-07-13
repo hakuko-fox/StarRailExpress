@@ -69,7 +69,7 @@ public interface ModSceneBlocks {
             new CellarBlock(Properties.ofFullCopy(Blocks.SPRUCE_PLANKS)));
     BlockEntityType<BreakingBridgeBlockEntity> BREAKING_BRIDGE_ENTITY = blockEntityRegistrar.create(
             "breaking_bridge",
-            BlockEntityType.Builder.of(BreakingBridgeBlockEntity::new, BREAKING_BRIDGE));
+            BlockEntityType.Builder.of(BreakingBridgeBlockEntity::new, BREAKING_BRIDGE, FAKE_BLOCK));
     BlockEntityType<FogZoneBlockEntity> FOG_ZONE_ENTITY = blockEntityRegistrar.create("fog_zone",
             BlockEntityType.Builder.of(FogZoneBlockEntity::new, FOG_ZONE));
     BlockEntityType<ManholeBlockEntity> MANHOLE_ENTITY = blockEntityRegistrar.create("manhole",
