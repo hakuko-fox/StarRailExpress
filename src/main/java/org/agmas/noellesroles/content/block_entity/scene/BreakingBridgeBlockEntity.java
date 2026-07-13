@@ -91,7 +91,7 @@ public class BreakingBridgeBlockEntity extends BlockEntity {
 
     public void addBreakingStage() {
         this.breakingStage++;
-        if (breakingStage > 10)
+        if (breakingStage >= 10)
             breakingStage = 0;
         sync();
     }
