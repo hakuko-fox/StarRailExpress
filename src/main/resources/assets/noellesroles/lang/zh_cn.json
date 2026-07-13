@@ -1702,6 +1702,7 @@
   "item_group.noellesroles.scene": "SRE场景方块",
   "item_group.noellesroles.quest": "SRE任务点方块",
   "block.noellesroles.poison_zone": "有毒区域",
+  "block.noellesroles.fake_block": "假方块",
   "block.noellesroles.breaking_bridge": "断桥方块",
   "block.noellesroles.breaking_bridge.tip": "当前裂缝显示：%s",
   "block.noellesroles.breaking_bridge.set_to": "设定方块为 %s",

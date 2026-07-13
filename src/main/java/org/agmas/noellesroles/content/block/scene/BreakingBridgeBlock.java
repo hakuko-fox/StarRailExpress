@@ -56,14 +56,36 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
 
     protected VoxelShape getVisualShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos,
             CollisionContext collisionContext) {
+
+        if (!blockState.getValue(BROKEN)) {
+            BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.getVisualShape(blockGetter, blockPos, collisionContext);
+            }
+        }
         return Shapes.empty();
     }
 
     protected float getShadeBrightness(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos) {
+        if (!blockState.getValue(BROKEN)) {
+            BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.getShadeBrightness(blockGetter, blockPos);
+            }
+        }
         return 1.0F;
     }
 
     protected boolean propagatesSkylightDown(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos) {
+        if (!blockState.getValue(BROKEN)) {
+            BlockEntity blockEntity = blockGetter.getBlockEntity(blockPos);
+            if (blockEntity instanceof BreakingBridgeBlockEntity bbbe) {
+                if (bbbe.displayState != null)
+                    return bbbe.displayState.propagatesSkylightDown(blockGetter, blockPos);
+            }
+        }
         return true;
     }
 

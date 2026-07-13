@@ -28,6 +28,7 @@ public interface TMMModelLayers {
 
     static void initialize() {
         BlockRenderLayerMap.INSTANCE.putBlock(ModSceneBlocks.BREAKING_BRIDGE, RenderType.translucent());
+        BlockRenderLayerMap.INSTANCE.putBlock(ModSceneBlocks.FAKE_BLOCK, RenderType.translucent());
         BlockRenderLayerMap.INSTANCE.putBlock(SREBlocks.TRAIN_TORCH, RenderType.cutout());
         BlockRenderLayerMap.INSTANCE.putBlock(SREBlocks.TRAIN_SOUL_LANTERN, RenderType.cutout());
         BlockRenderLayerMap.INSTANCE.putBlock(SREBlocks.TRAIN_VANILLA_LANTERN, RenderType.cutout());

@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "broken=false,type=double": {
+      "model": "noellesroles:block/breaking_bridge"
+    },
+    "broken=false,type=top": {
+      "model": "noellesroles:block/breaking_bridge"
+    },
+    "broken=false,type=bottom": {
+      "model": "noellesroles:block/breaking_bridge"
+    },
+    "broken=true,type=double": {
+      "model": "noellesroles:block/breaking_bridge_broken"
+    },
+    "broken=true,type=top": {
+      "model": "noellesroles:block/breaking_bridge_broken"
+    },
+    "broken=true,type=bottom": {
+      "model": "noellesroles:block/breaking_bridge_broken"
+    }
+  }
+}
