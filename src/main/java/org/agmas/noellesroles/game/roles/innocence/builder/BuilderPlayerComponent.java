@@ -248,8 +248,8 @@ public class BuilderPlayerComponent implements RoleComponent, ServerTickingCompo
         // 获取玩家的水平朝向（最近的4个方向之一）
         Direction facing = player.getDirection();
 
-        // 玩家脚下方块位置
-        BlockPos basePos = player.blockPosition();
+        // 玩家脚下方块位置（向前偏移一格）
+        BlockPos basePos = player.blockPosition().relative(facing);
 
         // 计算墙的法线方向（与朝向垂直）
         Direction wallNormal = facing;
