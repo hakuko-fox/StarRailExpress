@@ -785,7 +785,7 @@ public class ModRolesInitialEventRegister {
                     return comp.useAbility();
                 }).cooldownSeconds(20).build());
 
-        // 点灯人技能注册：隐身，消耗1次效果，最多5次
+        // 点灯人技能注册：隐身（无统一充数限制，次数由组件内部管理）
         RoleSkill.register(ModRoles.CANDLE_BEARER, RoleSkill.skill(
                 SRE.id("candlebearer_invisibility"),
                 "skill.noellesroles.candlebearer.invisibility",
@@ -795,7 +795,7 @@ public class ModRolesInitialEventRegister {
                     if (comp == null)
                         return false;
                     return comp.useAbility();
-                }).charges(5).build());
+                }).build());
 
         // 破魔师技能注册：沉默50格外非杀手玩家，冷却130秒
         RoleSkill.register(ModRoles.SPELLBREAKER, RoleSkill.skill(
