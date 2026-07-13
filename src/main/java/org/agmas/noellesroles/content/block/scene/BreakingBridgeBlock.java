@@ -85,7 +85,9 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        return state.getValue(BROKEN) ? Shapes.empty() : super.getShape(state, world, pos, context);
+        return state.getValue(BROKEN)
+                ? (context.isHoldingItem(ModSceneBlocks.BREAKING_BRIDGE.asItem()) ? Shapes.block() : Shapes.empty())
+                : super.getShape(state, world, pos, context);
     }
 
     @Override
