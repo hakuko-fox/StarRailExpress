@@ -1,21 +1,14 @@
 package org.agmas.noellesroles.content.block.scene;
 
 import org.agmas.noellesroles.content.block_entity.scene.BreakingBridgeBlockEntity;
-import org.agmas.noellesroles.init.ModSceneBlocks;
-
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -29,7 +22,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.SlabType;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -229,36 +221,6 @@ public class FakeRenderBlock extends BreakingBridgeBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;
-    }
-
-    @Override
-    public ItemInteractionResult useItemOn(ItemStack itemStack, BlockState blockState, Level level, BlockPos blockPos,
-            Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        if (!player.isCreative() || itemStack.isEmpty())
-            return super.useItemOn(itemStack, blockState, level, blockPos, player, interactionHand, blockHitResult);
-        var entity = level.getBlockEntity(blockPos);
-        if (!(entity instanceof BreakingBridgeBlockEntity bbbe))
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (bbbe.displayState != null) {
-            if (!player.getOffhandItem().is(Items.DEBUG_STICK)) {
-                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-            }
-        }
-        if (level.isClientSide)
-            return ItemInteractionResult.SUCCESS;
-        if (itemStack.is(ModSceneBlocks.FAKE_BLOCK.asItem()) || itemStack.is(ModSceneBlocks.BREAKING_BRIDGE.asItem()))
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (!itemStack.isEmpty()) {
-            var diState = getBlockStateFromItem(player, interactionHand, blockHitResult, itemStack,
-                    blockState.getOptionalValue(TYPE));
-            if (diState == null) {
-                return ItemInteractionResult.FAIL;
-            }
-            bbbe.setDisplayState(diState);
-            player.displayClientMessage(Component.translatable("block.noellesroles.breaking_bridge.set_to",
-                    diState.getBlock().getName()), true);
-        }
-        return ItemInteractionResult.SUCCESS;
     }
 
     @Override

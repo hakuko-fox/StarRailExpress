@@ -36,7 +36,9 @@ public final class BreakingAndFakeBlockCommand {
                         bbbe.breakingStage = IntegerArgumentType.getInteger(ctx, "breaking_stage");
                         bbbe.sync();
                         final int b = bbbe.breakingStage;
-                        source.sendSuccess(() -> Component.translatable("block.noellesroles.breaking_bridge.tip", b),
+                        source.sendSuccess(
+                            () -> Component.translatable("block.noellesroles.breaking_bridge.tip",
+                                bbbe.getBlockState().getBlock().getName(), b),
                             true);
                         return 1;
                       }

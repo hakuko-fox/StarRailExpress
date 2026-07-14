@@ -400,7 +400,7 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
                             bbbe.addBreakingStage();
                             int b = bbbe.breakingStage;
                             player.displayClientMessage(
-                                    Component.translatable("block.noellesroles.breaking_bridge.tip", b),
+                                    Component.translatable("block.noellesroles.breaking_bridge.tip", getName(),b),
                                     true);
                             return InteractionResult.SUCCESS;
                         }
@@ -408,7 +408,7 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
                         BlockEntity entity = level.getBlockEntity(blockPos);
                         if (entity instanceof BreakingBridgeBlockEntity bbbe) {
                             player.displayClientMessage(
-                                    Component.translatable("block.noellesroles.breaking_bridge.info",
+                                    Component.translatable("block.noellesroles.breaking_bridge.info_tool",getName(),
                                             bbbe.displayState == null ? getName()
                                                     : bbbe.displayState.getBlock().getName(),
                                             bbbe.breakingStage, bbbe.breakingTime, bbbe.restoringTime),
