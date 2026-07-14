@@ -2,9 +2,13 @@ package org.agmas.noellesroles.handler;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.SRERole.MoodType;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMinigameTaskComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.content.item.BatItem;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
@@ -28,6 +32,7 @@ import org.agmas.noellesroles.content.item.RopeItem;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -117,6 +122,59 @@ public class TouhouHandlers {
   }
 
   public static void registerSkills() {
+    RoleSkill.register(RedHouseRoles.KOAKUMA,
+        RoleSkill.skill(SRE.id("daiyouse"), "skill.noellesroles.koakuma", context -> {
+          var targetId = context.target();
+          if (targetId == null)
+            return false;
+          final var player = context.player();
+          final var level = player.serverLevel();
+          final var target = level.getPlayerByUUID(targetId);
+          if (target == null)
+            return false;
+          if (target.isSpectator() || target.isCreative())
+            return false;
+          var abilityCCA = SREAbilityPlayerComponent.KEY.get(player);
+          abilityCCA.targetUUID = target.getUUID();
+          // 不需要同步因为客户端不显示东西。
+          return true;
+        }).announceToSelf().showOnHud(true).cooldownTicks(20 * 120).build());
+    RoleSkill.register(RedHouseRoles.DAIYOUSEI,
+        RoleSkill.skill(SRE.id("daiyouse"), "skill.noellesroles.daiyouse", context -> {
+          var targetId = context.target();
+          if (targetId == null)
+            return false;
+          final var player = context.player();
+          final var level = player.serverLevel();
+          final var target = level.getPlayerByUUID(targetId);
+          if (target == null)
+            return false;
+          if (target.isSpectator() || target.isCreative())
+            return false;
+          var targetRole = RoleUtils.getPlayerRole(target);
+          if (targetRole == null)
+            return false;
+          if (targetRole.getMoodType().equals(MoodType.REAL)) {
+            var taskcca = SREPlayerTaskComponent.KEY.get(target);
+            var moodcca = SREPlayerMoodComponent.KEY.get(target);
+            var minigameComponent = SREPlayerMinigameTaskComponent.KEY.get(target);
+            if (!taskcca.tasks.isEmpty()) {
+              taskcca.tasks.clear();
+              taskcca.parallelTaskTypes.clear();
+              taskcca.parallelTaskGenerated = false;
+              taskcca.nextTaskTimer = 20;
+              taskcca.currentTaskAge = 0;
+              taskcca.sync();
+            } else if (minigameComponent.pendingMinigameTasks > 0) {
+              minigameComponent.pendingMinigameTasks = 0;
+              minigameComponent.targetMinigameId = null;
+              minigameComponent.sync();
+            }
+            moodcca.addMood(0.1f);
+            return true;
+          }
+          return false;
+        }).announceToSelf().showOnHud(true).cooldownTicks(20 * 60).build());
     RoleSkill.register(THMiscRoles.SHIKIEIKI,
         RoleSkill.skill(SRE.id("shikieiki"), "skill.noellesroles.shikieiki.instinct", context -> {
           final int GAP = 15 * 20;

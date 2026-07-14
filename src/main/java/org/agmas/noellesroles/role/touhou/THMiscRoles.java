@@ -15,7 +15,7 @@ public class THMiscRoles {
   public static ResourceLocation id(String path) {
     return ResourceLocation.fromNamespaceAndPath(NAMESPACE, path);
   }
-
+  
   // 四季映姬·夜摩仙那度 Shikieiki（有点像判官）
   // 四季映姬曾经是地藏，后来全国各地的地藏联名上书请求分担阎魔大人的工作，她也成为了阎魔。
   public static final ResourceLocation SHIKIEIKI_ID = id("shikieiki");

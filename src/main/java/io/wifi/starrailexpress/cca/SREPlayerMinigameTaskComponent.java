@@ -106,7 +106,8 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
 
     /** 获取当前指派的目标小游戏（HUD 显示用），可能为 null。 */
     public QuestMinigame getTargetMinigame() {
-        if (this.targetMinigameId == null || this.targetMinigameId.isEmpty()) return null;
+        if (this.targetMinigameId == null || this.targetMinigameId.isEmpty())
+            return null;
         return QuestMinigames.get(this.targetMinigameId);
     }
 
@@ -115,7 +116,8 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     }
 
     public QuestMinigame getSabotageMinigame() {
-        if (!hasSabotageTask()) return null;
+        if (!hasSabotageTask())
+            return null;
         return QuestMinigames.get(this.sabotageMinigameId);
     }
 
@@ -290,11 +292,12 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
      * 完成某个小游戏方块时调用：若玩家有待办小游戏任务则兑现一个任务并发放代币。
      * 复用冷却已在打开任务点（{@link #startBlockCooldown}）时开始，此处不再处理。
      * <p>
-     * 仅当该任务点的 minigameId 与 {@link #targetMinigameId} 匹配（或 targetMinigameId 为空/任意）时才发放奖励。
+     * 仅当该任务点的 minigameId 与 {@link #targetMinigameId} 匹配（或 targetMinigameId
+     * 为空/任意）时才发放奖励。
      *
-     * @param sp           玩家
-     * @param pos          任务点位置
-     * @param reward       基础奖励
+     * @param sp              玩家
+     * @param pos             任务点位置
+     * @param reward          基础奖励
      * @param blockMinigameId 该任务点方块的 minigameId
      * @return 是否发放了奖励
      */

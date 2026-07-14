@@ -151,7 +151,8 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             boolean minigameDispatched = false;
             SREPlayerMinigameTaskComponent minigameComponent = null;
             boolean rotationActive = false;
-            if (this.player instanceof ServerPlayer sp && sp.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
+            if (this.player instanceof ServerPlayer sp
+                    && sp.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
                     && SREPlayerMinigameTaskComponent.isRotationModeActive(serverLevel)) {
                 rotationActive = true;
                 minigameComponent = SREPlayerMinigameTaskComponent.KEY.get(sp);
@@ -226,7 +227,8 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
                             if (role != null && role.getMoodType() != SRERole.MoodType.NONE) {
                                 Component taskTitle = Component.translatable("task." + parallelTask.getName());
                                 Component taskSub = Component.translatable("subtitle.task.parallel");
-                                net.exmo.sre.subtitle.SubtitleCommand.sendToPlayerTop(sp, taskTitle, taskSub, 75, false);
+                                net.exmo.sre.subtitle.SubtitleCommand.sendToPlayerTop(sp, taskTitle, taskSub, 75,
+                                        false);
                             }
                         }
                         shouldSync = true;
@@ -348,7 +350,8 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         if (gameWorld != null) {
             for (Player nearby : completingPlayer.level().players()) {
                 if (nearby != completingPlayer
-                        && nearby.distanceToSqr(completingPlayer) <= RavenPlayerComponent.CHARGE_RADIUS * RavenPlayerComponent.CHARGE_RADIUS
+                        && nearby.distanceToSqr(completingPlayer) <= RavenPlayerComponent.CHARGE_RADIUS
+                                * RavenPlayerComponent.CHARGE_RADIUS
                         && nearby instanceof ServerPlayer nearbySp
                         && GameUtils.isPlayerAliveAndSurvival(nearbySp)
                         && gameWorld.isRole(nearbySp, ModRoles.RAVEN)) {
@@ -623,31 +626,33 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         HARVEST_CROP(nbt -> new SceneTriggeredTask("harvest_crop"), TaskCategory.ACTIVE), // 活动筋骨
 
         // ───────── 不可刷新任务 ─────────
-        CUSTOM(nbt -> new CustomTask(nbt.getString("customName"), nbt.getString("customId")), TaskCategory.NON_REFRESHABLE),
+        CUSTOM(nbt -> new CustomTask(nbt.getString("customName"), nbt.getString("customId")),
+                TaskCategory.NON_REFRESHABLE),
         MANIC(nbt -> new ManicTask(), TaskCategory.NON_REFRESHABLE);
 
         /**
          * 任务种类：用于任务生成时的权重调整。
          * 安抚性任务 —— 情绪低落时权重翻倍
          * 活跃性任务 —— 情绪亢奋时权重提升，情绪低落时降低
-         * 静态任务   —— 情绪亢奋时权重降低
+         * 静态任务 —— 情绪亢奋时权重降低
          * 不可刷新任务 —— 不参与随机任务池（如狂躁症任务、自定义任务）
          */
         public enum TaskCategory {
-            SOOTHING,       // 安抚性
-            ACTIVE,         // 活跃性
-            STATIC,         // 静态
+            SOOTHING, // 安抚性
+            ACTIVE, // 活跃性
+            STATIC, // 静态
             NON_REFRESHABLE // 不可刷新
         }
 
         /**
          * 场景任务标记：
          * 非场景任务 —— 在所有地图中都会出现。
-         * 场景任务   —— 只有在地图配置中设置了才会出现。
+         * 场景任务 —— 只有在地图配置中设置了才会出现。
          * 任务种类为不可刷新的任务始终视为场景任务。
          */
         public boolean isSceneTask() {
-            if (this.category == TaskCategory.NON_REFRESHABLE) return true;
+            if (this.category == TaskCategory.NON_REFRESHABLE)
+                return true;
             return switch (this) {
                 case BREATHE, LIGHT_STOVE, CLEAN_DUST, TRANSPORT, PRAY, PRUNE_BUSH, HARVEST_CROP -> true;
                 default -> false;
@@ -1223,7 +1228,6 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         }
     }
 
-
     /**
      * 场景触发任务：通过 SceneTaskManager 回调触发完成。
      * 任务本身不自行检测完成条件，而是等待外部调用 setFulfilled()。
@@ -1347,6 +1351,8 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
     }
 
     public interface TrainTask {
+        public boolean finishByOther = false;
+
         default void tick(@NotNull Player player) {
         }
 

@@ -13,14 +13,15 @@ import java.util.*;
 
 public class TMMRoles {
     public static final Map<ResourceLocation, SRERole> ROLES = new HashMap<>();
+    public static final int CIVILIAN_MAX_SPRINT_TICKS = GameConstants.getInTicks(0, 10);
     public static final List<ComponentKey<? extends RoleComponent>> COMPONENT_KEYS = new ArrayList<>();
     public static final SRERole DISCOVERY_CIVILIAN = registerRole(
             new OriginalRole(SRE.id("discovery_civilian"), 0x5CFF4A, false, false, SRERole.MoodType.NONE, -1, true))
             .setCanPickUpRevolver(false).setNeutrals(true).setCanBeRandomedByOtherRoles(false).setOtherModeRole(true);
     public static final SRERole CIVILIAN = registerRole(new OriginalRole(SRE.id("civilian"), 0x36E51B, true, false,
-            SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false));
+            SRERole.MoodType.REAL, CIVILIAN_MAX_SPRINT_TICKS, false));
     public static final SRERole VIGILANTE = registerRole(new OriginalRole(SRE.id("vigilante"), 0x1B8AE5, true, false,
-            SRERole.MoodType.REAL, GameConstants.getInTicks(0, 10), false) {
+            SRERole.MoodType.REAL, CIVILIAN_MAX_SPRINT_TICKS, false) {
         @Override
         public List<ItemStack> getDefaultItems() {
             return List.of(new ItemStack(TMMItems.REVOLVER).copy());

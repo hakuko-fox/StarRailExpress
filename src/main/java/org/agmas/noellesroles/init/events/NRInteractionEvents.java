@@ -38,6 +38,7 @@ import org.agmas.noellesroles.game.roles.neutral.cupid.CupidPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent;
 import org.agmas.noellesroles.TrueKillerFinder;
 import org.agmas.noellesroles.game.roles.neutral.mafia.GodfatherComponent;
+import org.agmas.noellesroles.handler.THEventHandler;
 import org.agmas.noellesroles.ModDataComponentTypes;
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.role.ModRoles;

@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.init;
+package org.agmas.noellesroles.handler;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;

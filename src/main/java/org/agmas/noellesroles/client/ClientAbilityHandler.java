@@ -1,6 +1,5 @@
 package org.agmas.noellesroles.client;
 
-import net.exmo.sre.repair.component.*;
 import net.exmo.sre.repair.network.*;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SREGameModes;
@@ -52,7 +51,8 @@ public class ClientAbilityHandler {
         var currentRole = gameWorldComponent.getRole(client.player);
 
         // 模仿者客户端前置逻辑：复制模式无目标→提示，消息技能→打开界面
-        if (currentRole != null && gameWorldComponent.isRole(client.player, org.agmas.noellesroles.role.ModRoles.IMITATOR)) {
+        if (currentRole != null
+                && gameWorldComponent.isRole(client.player, org.agmas.noellesroles.role.ModRoles.IMITATOR)) {
             var comp = org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent.KEY.get(client.player);
             if (comp.isCopyMode) {
                 var hitResult = client.hitResult;
@@ -70,12 +70,14 @@ public class ClientAbilityHandler {
                 }
                 // 复制模式无目标 → 提示
                 client.player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                        "message.noellesroles.imitator.copy_mode_hint").withStyle(net.minecraft.ChatFormatting.YELLOW), true);
+                        "message.noellesroles.imitator.copy_mode_hint").withStyle(net.minecraft.ChatFormatting.YELLOW),
+                        true);
                 return;
             }
             // 非复制模式：检查当前能力是否是消息技能
             var currentAbility = comp.getCurrentAbilityRoleId();
-            if (currentAbility != null && org.agmas.noellesroles.game.roles.killer.imitator.ImitatorSkillRegistry.isMessageSkill(currentAbility)) {
+            if (currentAbility != null && org.agmas.noellesroles.game.roles.killer.imitator.ImitatorSkillRegistry
+                    .isMessageSkill(currentAbility)) {
                 int cd = comp.getCurrentSkillCooldown();
                 if (cd > 0) {
                     client.player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
@@ -84,9 +86,11 @@ public class ClientAbilityHandler {
                     return;
                 }
                 if (currentAbility.equals(org.agmas.noellesroles.role.BounsRoles.TELEGRAPHER_ID)) {
-                    client.execute(() -> client.setScreen(new org.agmas.noellesroles.client.screen.TelegrapherScreen()));
+                    client.execute(
+                            () -> client.setScreen(new org.agmas.noellesroles.client.screen.TelegrapherScreen()));
                 } else if (currentAbility.equals(org.agmas.noellesroles.role.ModRoles.BROADCASTER_ID)) {
-                    client.execute(() -> client.setScreen(new org.agmas.noellesroles.client.screen.BroadcasterScreen()));
+                    client.execute(
+                            () -> client.setScreen(new org.agmas.noellesroles.client.screen.BroadcasterScreen()));
                 }
                 return;
             }
@@ -121,7 +125,11 @@ public class ClientAbilityHandler {
         if (GKeyRoleSkill.trigger(client, gameWorldComponent, false)) {
             return;
         }
-        ClientPlayNetworking.send(new AbilityC2SPacket());
+        if (NoellesrolesClient.targetPlayer != null) {
+            ClientPlayNetworking.send(new AbilityWithTargetC2SPacket(NoellesrolesClient.targetPlayer));
+        } else {
+            ClientPlayNetworking.send(new AbilityC2SPacket());
+        }
     }
 
     public static void tickContinuousInput(Minecraft client) {

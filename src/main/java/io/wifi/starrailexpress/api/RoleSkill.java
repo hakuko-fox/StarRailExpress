@@ -81,9 +81,15 @@ public final class RoleSkill {
                 stateLabel = Component.translatable("message.sre.skill.toggled_off",
                         Component.translatable(ctx.definition.nameKey()));
             } else {
-                stateLabel = Component.translatable("message.sre.skill.cast",
-                        Component.translatable(ctx.definition.nameKey()),
-                        ctx.skillState.castCount);
+                if (ctx.target() != null) {
+                    stateLabel = Component.translatable("message.sre.skill.cast_with_target", ctx.target().getName(),
+                            Component.translatable(ctx.definition.nameKey()),
+                            ctx.skillState.castCount);
+                } else {
+                    stateLabel = Component.translatable("message.sre.skill.cast",
+                            Component.translatable(ctx.definition.nameKey()),
+                            ctx.skillState.castCount);
+                }
             }
             return stateLabel.withStyle(ChatFormatting.AQUA);
         };
@@ -96,7 +102,7 @@ public final class RoleSkill {
         }
 
         public static record AnnounceContext(ServerPlayer player, Definition definition, SkillState skillState,
-                boolean skillReady) {
+                boolean skillReady, @Nullable ServerPlayer target) {
         }
 
         public Component getMessage(AnnounceContext context) {
@@ -120,10 +126,13 @@ public final class RoleSkill {
             this.suppilier = suppilier;
         }
 
-        public void doAnnounce(ServerPlayer player, Definition definition, SkillState skillState, boolean skillReady) {
+        public void doAnnounce(ServerPlayer player, Definition definition, SkillState skillState, boolean skillReady,
+                UUID targetUid) {
             if (type == AnnounceType.NONE)
                 return;
-            final var ctx = new AnnounceContext(player, definition, skillState, skillReady);
+            final var level = player.serverLevel();
+            final var target = targetUid != null ? level.getServer().getPlayerList().getPlayer(targetUid) : null;
+            final var ctx = new AnnounceContext(player, definition, skillState, skillReady, target);
             if (type == AnnounceType.CUSTOM_CONSUMER) {
                 if (this.consumer != null) {
                     this.consumer.accept(ctx);
@@ -547,7 +556,7 @@ public final class RoleSkill {
             ability.stopCasting(definition.id());
         }
         definition.announceInfo().doAnnounce(player, definition, ability.getSkillState(definition.id()),
-                skillReady);
+                skillReady, target);
         afterUse(player, role);
         return true;
     }

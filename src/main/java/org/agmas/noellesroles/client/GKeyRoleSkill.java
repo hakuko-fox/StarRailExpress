@@ -218,7 +218,6 @@ public final class GKeyRoleSkill {
         });
 
         // 咒术师：技能已迁移至统一技能系统（窃取/蚀咒/领域），走默认 G 键管线自动携带准星目标
-
         // 嬉命人：按技能键发动变装（冷却80秒）
         register(ModRoles.EMBALMER, true, (client, gameWorld) -> {
             if (!GameUtils.isPlayerAliveAndSurvival(client.player))

@@ -67,7 +67,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class RoleShopHandler {
-    
+
     private static final String OLDMAN_EASTER_EGG_TAG = "sre_oldman_easter_egg";
     private static final String OLDMAN_EASTER_EGG_USED_TAG = "sre_oldman_easter_egg_used";
     public static final String OLDMAN_EASTER_EGG_PIG_NO_STEP_TAG = "sre_oldman_easter_egg_pig_no_step";
@@ -871,12 +871,15 @@ public class RoleShopHandler {
                     return RoleUtils.insertStackInFreeSlot(player, horse);
                 }
             });
-            TAMER_SHOP.add(new ShopEntry(ModItems.PREDECESSOR_HORSE_ARMOR.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
-            TAMER_SHOP.add(new ShopEntry(FunnyItems.SUPER_PIG_HORSESHOE.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            TAMER_SHOP.add(
+                    new ShopEntry(ModItems.PREDECESSOR_HORSE_ARMOR.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            TAMER_SHOP
+                    .add(new ShopEntry(FunnyItems.SUPER_PIG_HORSESHOE.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.TAMER.getIdentifier(), TAMER_SHOP);
         }
 
-        // 猎人商店：随机马(40%彩虹/40%残月萨/20%超级猪) - 50金币；前人留下的马铠 - 185金币；毒箭 - 90金币；关灯 - 配置价格；监控失灵 - 配置价格
+        // 猎人商店：随机马(40%彩虹/40%残月萨/20%超级猪) - 50金币；前人留下的马铠 - 185金币；毒箭 - 90金币；关灯 - 配置价格；监控失灵
+        // - 配置价格
         {
             var HUNTER_SHOP = new java.util.ArrayList<ShopEntry>();
             // 原本的马匹相关商品
@@ -885,13 +888,17 @@ public class RoleShopHandler {
                 public boolean onBuy(Player player) {
                     int r = player.getRandom().nextInt(100);
                     ItemStack horse;
-                    if (r < 40) horse = FunnyItems.RAINBOW_HORSESHOE.getDefaultInstance();
-                    else if (r < 80) horse = FunnyItems.CANYUESA_HORSESHOE.getDefaultInstance();
-                    else horse = FunnyItems.SUPER_PIG_HORSESHOE.getDefaultInstance();
+                    if (r < 40)
+                        horse = FunnyItems.RAINBOW_HORSESHOE.getDefaultInstance();
+                    else if (r < 80)
+                        horse = FunnyItems.CANYUESA_HORSESHOE.getDefaultInstance();
+                    else
+                        horse = FunnyItems.SUPER_PIG_HORSESHOE.getDefaultInstance();
                     return RoleUtils.insertStackInFreeSlot(player, horse);
                 }
             });
-            HUNTER_SHOP.add(new ShopEntry(ModItems.PREDECESSOR_HORSE_ARMOR.getDefaultInstance(), 185, ShopEntry.Type.TOOL));
+            HUNTER_SHOP.add(
+                    new ShopEntry(ModItems.PREDECESSOR_HORSE_ARMOR.getDefaultInstance(), 185, ShopEntry.Type.TOOL));
 
             // 毒箭 - 90金币，参考游侠毒箭模式
             final var PoisonArrow = Items.TIPPED_ARROW.getDefaultInstance();
@@ -905,7 +912,8 @@ public class RoleShopHandler {
                     int itemCount = SREItemUtils.countItem(player, Items.TIPPED_ARROW);
                     if (itemCount >= 2) {
                         if (player instanceof ServerPlayer sp) {
-                            sp.sendSystemMessage(Component.translatable("message.noellesroles.shop.max_poison_arrow"), true);
+                            sp.sendSystemMessage(Component.translatable("message.noellesroles.shop.max_poison_arrow"),
+                                    true);
                         }
                         return false;
                     }
@@ -914,7 +922,8 @@ public class RoleShopHandler {
             });
 
             // 关灯 - 配置价格
-            HUNTER_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
+            HUNTER_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
+                    ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(Player player) {
                     return SREPlayerShopComponent.useBlackout(player);
@@ -922,10 +931,12 @@ public class RoleShopHandler {
             });
 
             // 监控失灵 - 配置价格
-            HUNTER_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), SREConfig.instance().monitorBrokenPrice, ShopEntry.Type.TOOL) {
+            HUNTER_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(),
+                    SREConfig.instance().monitorBrokenPrice, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(Player player) {
-                    return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
+                    return SREPlayerShopComponent.useMonitorBroken(player,
+                            SREConfig.instance().monitorBrokenDuration * 20);
                 }
             });
 
@@ -2012,13 +2023,26 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.DELAYER.getIdentifier(), SHOP);
         }
 
-        // BAKA的商店 (Superstar)
+        // 大明星的商店 (Superstar)
         {
             var SHOP = new ArrayList<ShopEntry>();
             SHOP.add(new ShopEntry(ModItems.SIGNATURE_PAPER.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.SUPERSTAR.getIdentifier(), SHOP);
         }
 
+        // 小恶魔的商店。继承捣蛋鬼
+        {
+            var SHOP = new ArrayList<ShopEntry>();
+            SHOP.addAll(SLIPPERY_GHOST_SHOP);
+            ShopContent.customEntries.put(RedHouseRoles.DAIYOUSEI_ID, SHOP);
+        }
+        // 大妖精的商店
+        {
+            var SHOP = new ArrayList<ShopEntry>();
+            SHOP.add(new ShopEntry(ModItems.CALMING_TEA.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.SHILIJIA.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(RedHouseRoles.DAIYOUSEI_ID, SHOP);
+        }
         // INITIATE的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
@@ -2584,11 +2608,29 @@ public class RoleShopHandler {
                 @Override
                 public boolean onBuy(Player player) {
                     var itemStack = ModItems.NEWSPAPER.getDefaultInstance();
-                    var players = new ArrayList<>(player.level().players());
+                    var players = new ArrayList<Player>(player.level().players());
                     var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+
                     players.removeIf((p) -> {
                         return gameWorldComponent.getRole(p) == null || p.isSpectator();
                     });
+                    var koakumaOptional = players.stream()
+                            .filter((p) -> gameWorldComponent.isRole(p, RedHouseRoles.KOAKUMA))
+                            .findAny();
+                    if (koakumaOptional.isPresent()) {
+                        Player koakumaPlayer = koakumaOptional.get();
+                        var koakumaCCA = SREAbilityPlayerComponent.KEY.get(koakumaPlayer);
+                        if (koakumaCCA.targetUUID != null) {
+                            players.removeIf((p) -> {
+                                return p.getUUID() != koakumaCCA.targetUUID;
+                            });
+                            if (players.isEmpty()) {
+                                players.add(koakumaPlayer);
+                            }
+                            koakumaCCA.targetUUID = null;
+                            // 不需要同步因为客户端不显示东西。
+                        }
+                    }
                     Collections.shuffle(players);
                     int count = 1;
                     var contents = new ArrayList<Filterable<Component>>();

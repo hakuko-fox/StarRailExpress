@@ -15,10 +15,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
+import org.agmas.noellesroles.handler.THEventHandler;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.init.THEventHandler;
+import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
 
 import java.awt.*;
 import java.util.List;
@@ -30,13 +33,32 @@ public class RedHouseRoles {
     return ResourceLocation.fromNamespaceAndPath(NAMESPACE, path);
   }
 
+  public static final ResourceLocation KOAKUMA_ID = id("koakuma");
+  public static final ResourceLocation DAIYOUSEI_ID = id("daiyousei");
   public static final ResourceLocation FURANDORU_ID = id("furandoru");
   public static final ResourceLocation REMILIA_ID = id("remilia");
   public static final ResourceLocation BAKA_ID = id("baka");
   public static final ResourceLocation PACHURI_ID = id("pachuri");
   public static final ResourceLocation MAID_SAKUYA_ID = id("maid_sakuya");
   public static final ResourceLocation HOAN_MEIRIN_ID = id("hoan_meirin");
-
+  // 小恶魔
+  public static SRERole KOAKUMA = TMMRoles.registerRole(
+      new TouhouRole(KOAKUMA_ID, new Color(175,94,83).getRGB(),
+          false, false, SRERole.MoodType.FAKE,
+          Integer.MAX_VALUE, true),
+      "th_redhouse").setNeutralForKiller(true).addTwoWayOpposingRole(ModRoles.PRANKSTER);
+  // 大妖精
+  public static SRERole DAIYOUSEI = TMMRoles.registerRole(
+      new TouhouRole(DAIYOUSEI_ID, new Color(171, 216, 167).getRGB(),
+          true, false, SRERole.MoodType.FAKE,
+         TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, true) {
+        @Override
+        public InteractionResult onDropItem(Player player, ItemStack item) {
+          if (item.is(ModItems.CALMING_TEA))
+            return InteractionResult.SUCCESS;
+          return InteractionResult.PASS;
+        }
+      }, "th_redhouse").setCanAcrossFog(true);
   // 杀手：蕾米莉亚
   public static SRERole REMILIA = TMMRoles.registerRole(
       new TouhouRole(REMILIA_ID, new Color(113, 98, 121).getRGB(),
@@ -147,7 +169,7 @@ public class RedHouseRoles {
           }
         }
       }, "th_redhouse")
-        .setHiddenForRoleRotation(true).setCanSeeCoin(true);
+      .setHiddenForRoleRotation(true).setCanSeeCoin(true);
 
   public static void init() {
   }
