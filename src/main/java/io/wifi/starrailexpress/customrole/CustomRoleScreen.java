@@ -370,6 +370,7 @@ public class CustomRoleScreen extends Screen {
         r++;
         addBoolBtn(tabWidgets2, r++, "sre.custom_role.instinct_same_color", data.instinctSameColorFrame, v -> data.instinctSameColorFrame = v, false);
         makeLabeledHintBox(tabWidgets2, tabLabels2, r++, 80, "sre.custom_role.label.instinct_range", data.instinctMaxRange, "* = 不限", v -> data.instinctMaxRange = v);
+        addBoolBtn(tabWidgets2, r++, "sre.custom_role.instinct_unlimited_teammate", data.instinctUnlimitedTeammate, v -> data.instinctUnlimitedTeammate = v, false);
         addBoolBtn(tabWidgets2, r++, "sre.custom_role.enable_ability", data.enableAbility, v -> data.enableAbility = v, true);
         if (data.enableAbility) {
             if (data.abilitySkillCommands.isEmpty()) data.abilitySkillCommands.add("");

@@ -2037,6 +2037,7 @@
     "sre.custom_role.enable_ability": "启用职业技能",
     "sre.custom_role.infinite_sprint": "无限体力",
     "sre.custom_role.instinct_same_color": "透视看所有人同色框",
+    "sre.custom_role.instinct_unlimited_teammate": "是否能无限制透视杀手队友",
     "sre.custom_role.is_innocent": "是否为平民 §7(中立/杀手填false)",
     "sre.custom_role.label.ability_commands": "技能执行指令",
     "sre.custom_role.label.ability_cooldown": "技能冷却(秒)",

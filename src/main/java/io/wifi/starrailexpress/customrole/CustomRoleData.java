@@ -151,6 +151,9 @@ public class CustomRoleData {
     @SerializedName("instinctMaxRange")
     public String instinctMaxRange = "*";
 
+    @SerializedName("instinctUnlimitedTeammate")
+    public boolean instinctUnlimitedTeammate = false;
+
     @SerializedName("instinctNightVision")
     public Boolean instinctNightVision = null;
 

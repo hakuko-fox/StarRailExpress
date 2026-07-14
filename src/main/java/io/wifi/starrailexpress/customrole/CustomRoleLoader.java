@@ -40,6 +40,7 @@ public class CustomRoleLoader {
     // 自定义职业的本能透视配置
     private static final Map<String, Integer> instinctMaxRanges = new HashMap<>(); // englishId -> maxBlocksSquared
     private static final Map<String, Boolean> instinctSameColor = new HashMap<>(); // englishId -> sameColorFrame
+    private static final Map<String, Boolean> instinctUnlimitedTeammate = new HashMap<>(); // englishId -> unlimitedTeammate
     // 技能初始冷却配置：roleIdentifier -> initialCooldownTicks
     private static final Map<ResourceLocation, Integer> initialCooldownMap = new HashMap<>();
     private static boolean mapRestrictionHandlerRegistered = false;
@@ -302,6 +303,7 @@ public class CustomRoleLoader {
                 }
             }
             instinctSameColor.put(data.englishId, data.instinctSameColorFrame);
+            instinctUnlimitedTeammate.put(data.englishId, data.instinctUnlimitedTeammate);
         } else {
             role.setCanUseInstinctAndNightVision(false);
         }
@@ -712,11 +714,30 @@ public class CustomRoleLoader {
 
                         String englishId = role.identifier().getPath();
 
-                        Integer maxRangeSq = instinctMaxRanges.get(englishId);
-                        if (maxRangeSq != null) {
-                            double distSq = client.player.distanceToSqr(targetPlayer);
-                            if (distSq > maxRangeSq)
-                                return TrueFalseAndCustomResult.no();
+                        // 无限制透视队友：对同阵营玩家无视范围限制
+                        Boolean unlimitedTeammate = instinctUnlimitedTeammate.get(englishId);
+                        boolean isSameTeam = false;
+                        if (unlimitedTeammate != null && unlimitedTeammate) {
+                            SRERole targetRole = gameWorld.getRole(targetPlayer);
+                            if (targetRole != null) {
+                                boolean selfKiller = gameWorld.isKillerTeamRole(role);
+                                boolean targetKiller = gameWorld.isKillerTeamRole(targetRole);
+                                boolean selfInno = gameWorld.isInnocentTeamRole(role);
+                                boolean targetInno = gameWorld.isInnocentTeamRole(targetRole);
+                                // 同阵营：同为杀手方或同为平民方
+                                if ((selfKiller && targetKiller) || (selfInno && targetInno)) {
+                                    isSameTeam = true;
+                                }
+                            }
+                        }
+
+                        if (!isSameTeam) {
+                            Integer maxRangeSq = instinctMaxRanges.get(englishId);
+                            if (maxRangeSq != null) {
+                                double distSq = client.player.distanceToSqr(targetPlayer);
+                                if (distSq > maxRangeSq)
+                                    return TrueFalseAndCustomResult.no();
+                            }
                         }
 
                         Boolean sameColor = instinctSameColor.get(englishId);

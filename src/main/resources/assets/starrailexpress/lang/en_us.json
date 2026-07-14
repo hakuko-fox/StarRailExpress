@@ -171,6 +171,7 @@
     "sre.custom_role.can_see_body_death_reason": "See Body Death Reason",
     "sre.custom_role.can_see_body_killer": "See Body Killer",
     "sre.custom_role.instinct_same_color": "Instinct: Same Color Frame",
+    "sre.custom_role.instinct_unlimited_teammate": "Instinct: Unlimited Teammate View",
     "sre.custom_role.enable_ability": "Enable Ability",
     "sre.custom_role.use_percent_chance": "Use Percent Chance",
     "sre.custom_role.use_rare_chance": "Use 1/10000 Chance",

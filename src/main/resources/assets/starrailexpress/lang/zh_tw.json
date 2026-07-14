@@ -189,6 +189,7 @@
     "sre.custom_role.can_see_body_death_reason":  "看到屍體死亡原因",
     "sre.custom_role.can_see_body_killer":  "看到屍體兇手",
     "sre.custom_role.instinct_same_color":  "透視看所有人同色框",
+    "sre.custom_role.instinct_unlimited_teammate":  "是否能無限制透視殺手隊友",
     "sre.custom_role.enable_ability":  "啟用職業技能",
     "sre.custom_role.use_percent_chance":  "使用百分比概率",
     "sre.custom_role.use_rare_chance":  "使用萬分比概率",
