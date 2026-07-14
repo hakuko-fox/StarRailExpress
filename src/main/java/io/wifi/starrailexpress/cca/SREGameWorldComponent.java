@@ -938,7 +938,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             if (level.getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition())) < 3
                     && (level.getBrightness(LightLayer.SKY,
                             BlockPos.containing(player.getEyePosition())) < 10
-                    || level.getDayTime() > 13000)) {
+                            || level.getDayTime() > 13000)) {
                 int time = perPlayerDarknessTime.getOrDefault(player.getUUID(), 0);
 
                 if (time > areas.areasSettings.deadInDarknessTime) {
@@ -1264,5 +1264,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     public static SREGameWorldComponent getInstance(Level level) {
         return KEY.get(level);
+    }
+
+    public boolean isInnocentTeamRole(SRERole role) {
+        if (role == null)
+            return false;
+        return role.isInnocent();
     }
 }
