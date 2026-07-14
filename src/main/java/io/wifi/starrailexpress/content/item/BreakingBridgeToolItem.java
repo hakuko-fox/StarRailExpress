@@ -10,6 +10,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.SlabType;
 
 public class BreakingBridgeToolItem extends Item {
     private Block block = null;
@@ -61,7 +62,8 @@ public class BreakingBridgeToolItem extends Item {
             if (targetState == null) {
                 return InteractionResult.FAIL;
             }
-            level.setBlockAndUpdate(pos, block.getStateForPlacement(new BlockPlaceContext(useOnContext)));
+            level.setBlockAndUpdate(pos, block.getStateForPlacement(new BlockPlaceContext(useOnContext))
+                    .setValue(BreakingBridgeBlock.TYPE, SlabType.DOUBLE));
             if (level.getBlockEntity(pos) instanceof BreakingBridgeBlockEntity bbbe) {
                 bbbe.displayState = targetState;
                 bbbe.sync();

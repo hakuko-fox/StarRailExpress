@@ -55,10 +55,12 @@ public final class BreakingAndFakeBlockCommand {
                             bbbe.breakingTime = IntegerArgumentType.getInteger(ctx, "breaking_time");
                             bbbe.restoringTime = IntegerArgumentType.getInteger(ctx, "restoring_time");
                             bbbe.sync();
-                            source.sendSuccess(() -> Component.translatable("block.noellesroles.breaking_bridge.info",
-                                bbbe.displayState == null ? Component.literal("Default")
-                                    : bbbe.displayState.getBlock().getName(),
-                                bbbe.breakingStage, bbbe.breakingTime, bbbe.restoringTime),
+                            source.sendSuccess(
+                                () -> Component.translatable("block.noellesroles.breaking_bridge.info_tool",
+                                    bbbe.getBlockState().getBlock().getName(),
+                                    bbbe.displayState == null ? Component.literal("Default")
+                                        : bbbe.displayState.getBlock().getName(),
+                                    bbbe.breakingStage, bbbe.breakingTime, bbbe.restoringTime),
                                 true);
                           }
                           return 1;
@@ -116,7 +118,8 @@ public final class BreakingAndFakeBlockCommand {
               if (state.getBlock() instanceof BreakingBridgeBlock b) {
                 BlockEntity entity = level.getBlockEntity(blockPos);
                 if (entity instanceof BreakingBridgeBlockEntity bbbe) {
-                  source.sendSuccess(() -> Component.translatable("block.noellesroles.breaking_bridge.info",
+                  source.sendSuccess(() -> Component.translatable("block.noellesroles.breaking_bridge.info_tool",
+                      bbbe.getBlockState().getBlock().getName(),
                       bbbe.displayState == null ? b.getName()
                           : bbbe.displayState.getBlock().getName(),
                       bbbe.breakingStage, bbbe.breakingTime, bbbe.restoringTime),
