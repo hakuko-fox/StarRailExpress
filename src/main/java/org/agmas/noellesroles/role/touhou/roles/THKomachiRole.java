@@ -25,7 +25,7 @@ public class THKomachiRole extends TouhouRole {
         ArrayList<ShopEntry> SHOP = new ArrayList<>();
         SHOP.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
         SHOP.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(),
-                900, ShopEntry.Type.WEAPON) {
+                600, ShopEntry.Type.WEAPON) {
             @Override
             public boolean canBuy(@NotNull Player player) {
                 if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
