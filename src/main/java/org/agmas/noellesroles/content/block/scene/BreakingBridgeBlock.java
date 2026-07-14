@@ -262,7 +262,7 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
                     int dist = distQueue.poll();
 
                     BlockState currentState = level.getBlockState(current);
-                    if (currentState.getBlock() instanceof BreakingBridgeBlock) {
+                    if (currentState.is(ModSceneBlocks.BREAKING_BRIDGE)) {
                         // 设置 POWERED 为 true（上升沿标记）
                         level.setBlock(current, currentState.setValue(POWERED, true), Block.UPDATE_CLIENTS);
                         // 触发断裂（如果尚未断裂或正在恢复）
@@ -279,7 +279,7 @@ public class BreakingBridgeBlock extends SlabBlock implements EntityBlock {
                         if (visited.contains(neighbor))
                             continue;
                         BlockState neighborState = level.getBlockState(neighbor);
-                        if (neighborState.getBlock() instanceof BreakingBridgeBlock) {
+                        if (neighborState.is(ModSceneBlocks.BREAKING_BRIDGE)) {
                             visited.add(neighbor);
                             posQueue.add(neighbor);
                             distQueue.add(dist + 1);
