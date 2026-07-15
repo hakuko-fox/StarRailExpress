@@ -1765,7 +1765,7 @@
   "scene_task.noellesroles.transport": "运输点任务",
   "scene_task.noellesroles.pray": "祷告",
   "scene_task.noellesroles.prune_bush": "修剪灌木",
-  "scene_task.noellesroles.harvest_crop": "收割作物",
+  "scene_task.noellesroles.harvest_crop": "在草垫上蹦跶",
   "message.noellesroles.scene_task.assigned": "新场景任务：%s",
   "message.noellesroles.scene_task.complete": "场景任务完成！",
   "message.noellesroles.scene_task.transport_pickup": "已拿起货物，运往终点",
