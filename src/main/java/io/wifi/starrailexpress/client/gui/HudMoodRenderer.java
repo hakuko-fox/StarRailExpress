@@ -191,6 +191,9 @@ public class HudMoodRenderer {
         } else if (role.isNeutrals() && role.isNeutralForKiller()) {
             // 中立阵营 (setNeutrals=true 且 setNeutralForKiller=true)
             moodIcon = MOOD_JESTER;
+        } else if (role.isInnocent()) {
+            // 平民阵营 + 假心情 → 显示平民图标
+            moodIcon = MOOD_HAPPY;
         }
         // 其他情况默认使用 MOOD_KILLER
         
