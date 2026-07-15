@@ -58,6 +58,7 @@ public class FlyingAxeEntity extends AbstractArrow {
         this.it = ModItems.THROWING_AXE.getDefaultInstance();
         this.setNoGravity(true);
         this.setBaseDamage(0);
+        this.pickup = AbstractArrow.Pickup.DISALLOWED; // 不可被拾取
     }
 
     public FlyingAxeEntity(EntityType<? extends AbstractArrow> entityType, LivingEntity livingEntity, Level level,
@@ -66,6 +67,7 @@ public class FlyingAxeEntity extends AbstractArrow {
         this.it = itemStack.copy();
         this.setNoGravity(true);
         this.setBaseDamage(0);
+        this.pickup = AbstractArrow.Pickup.DISALLOWED; // 不可被拾取
     }
 
     @Override

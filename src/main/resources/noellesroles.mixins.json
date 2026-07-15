@@ -61,6 +61,7 @@
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
     "roles.adventurer.AdventurerDeathImmunityMixin",
+    "roles.warlock.WarlockDomainDeathImmunityMixin",
     "roles.raven.RavenKnifeLeftClickMixin",
     "roles.traitor.DesperateFaithKnifeCooldownMixin",
     "roles.thief.DelayedCoinDisplayMixin",
