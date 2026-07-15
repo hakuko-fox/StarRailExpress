@@ -20,7 +20,8 @@ public class CantRightClickBlocks {
             "supplementaries:statue",
             "supplementaries:fire_pit",
             "supplementaries:item_shelf",
-            "supplementaries:pedestal"));
+            "supplementaries:pedestal",
+            "supplementaries:lunch_basket"));
     // 原版工作方块集合
     public static final Set<Block> ALLOWED_BLOCKS = new HashSet<>();
 

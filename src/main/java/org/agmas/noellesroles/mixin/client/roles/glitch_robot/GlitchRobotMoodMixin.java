@@ -7,12 +7,9 @@ import io.wifi.starrailexpress.client.gui.HudMoodRenderer;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.resources.ResourceLocation;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -35,10 +32,9 @@ public class GlitchRobotMoodMixin {
     public static float moodAlpha;
     @Shadow
     public static Random random;
-    // 使用小丑的心情纹理
+    // 使用平民的心情纹理（直接引用 HudMoodRenderer 的常量）
     @Unique
-    private static final ResourceLocation JESTER_MOOD = ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID,
-            "hud/mood_jester");
+    private static final ResourceLocation CIVILIAN_MOOD = HudMoodRenderer.MOOD_HAPPY;
 
     @Inject(method = "renderKiller", at = @At("HEAD"), cancellable = true)
     private static void glitchRobotMood(Font textRenderer, FakeGuiGraphics context, int color, SRERole role, CallbackInfo ci) {
@@ -47,7 +43,7 @@ public class GlitchRobotMoodMixin {
         if (gameWorldComponent.isRole(Minecraft.getInstance().player, ModRoles.GLITCH_ROBOT)) {
             context.pose().pushPose();
             context.pose().translate(0.0F, 3.0F * moodOffset, 0.0F);
-            context.blitSprite(JESTER_MOOD, 5, 6, 14, 17);
+            context.blitSprite(CIVILIAN_MOOD, 5, 6, 14, 17);
             context.pose().popPose();
             context.pose().pushPose();
             context.pose().translate(0.0F, 10.0F * moodOffset, 0.0F);
