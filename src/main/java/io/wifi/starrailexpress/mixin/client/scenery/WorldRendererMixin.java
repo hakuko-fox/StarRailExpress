@@ -47,7 +47,7 @@ public abstract class WorldRendererMixin {
             return;
         }
         {
-            if (SREClient.isPlayerAliveAndInSurvival() && SREClient.trainComponent != null
+            if (SREClient.isPlayerAliveAndInSurvival() && SREClient.isGameRunning() && SREClient.trainComponent != null
                     && SREClient.trainComponent.isFoggy()
                     && SREClient.areaComponent != null && SREClient.areaComponent.areasSettings.fogEnabled
                     && SREClient.isTrainMoving()) {

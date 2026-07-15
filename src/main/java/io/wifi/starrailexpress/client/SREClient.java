@@ -1018,7 +1018,7 @@ public class SREClient implements ClientModInitializer {
                         TMMSounds.ITEM_PSYCHO_ARMOUR, SoundSource.MASTER, 5.0F, 1.0F, false);
             }
         });
-        ClientTickEvents.END_WORLD_TICK.register((world)->{
+        ClientTickEvents.END_WORLD_TICK.register((world) -> {
             SREClientWarningTickEvents.tick(world);
         });
         // Register client tick event for stats keybind
@@ -1455,5 +1455,11 @@ public class SREClient implements ClientModInitializer {
     public static SREAbilityPlayerComponent getAbilityComponent() {
         var player = Minecraft.getInstance().player;
         return getAbilityComponent(player);
+    }
+
+    public static boolean isGameRunning() {
+        if (gameComponent != null)
+            return gameComponent.isRunning();
+        return false;
     }
 }
