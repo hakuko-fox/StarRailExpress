@@ -184,7 +184,7 @@ public class VoteScreen extends Screen {
         for (int i = 0; i < options.size(); i++) {
             VoteOption opt = options.get(i);
             if (abstainIndices.isEmpty() && opt instanceof VoteOption.TextOption to
-                    && (to.id().toString().equals("inner:cancel") || to.id().toString().equals("inner:skip"))) {
+                    && (to.resultId().equals("inner.cancel") || to.resultId().equals("inner.skip"))) {
                 // 文本选项（弃票/跳过）单独显示在左下角
                 abstainIndices.add(i);
             } else {
