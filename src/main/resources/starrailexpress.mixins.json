@@ -104,6 +104,7 @@
     "compat.sodium.HakoniwaLevelSliceMixin",
     "compat.sodium.SodiumWorldRendererMixin",
     "compat.sodium_extra.SodiumExtraLoadedMixin",
+    "compat.sodium_extra.SodiumExtraDisableOptionMixin",
     "entity.player.LocalPlayerMixin",
     "gui.ScreenDrawableGetMixin",
     "input.KeyboardHandlerMixin",

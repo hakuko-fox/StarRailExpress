@@ -263,10 +263,15 @@
   },
   "recommends": {
     "exposure_polaroid": "*",
-    "sodium": "*",
+    "sodium": ">=0.8.2",
     "sodium-extra": "*"
   },
   "conflicts": {
     "customskinloader": "*"
+  },
+  "breaks": {
+    "sodiumoptionsapi": "*",
+    "sodiumextras": "*",
+    "sodium": "<0.8.2"
   }
 }

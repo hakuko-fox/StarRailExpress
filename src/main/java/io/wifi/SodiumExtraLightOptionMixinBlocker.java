@@ -10,13 +10,12 @@ public class SodiumExtraLightOptionMixinBlocker implements MixinCanceller {
     @Override
     public boolean shouldCancel(List<String> targetClassNames, String mixinClassName) {
         List<String> bannedMixins = List.of(
-                "me.flashyreese.mods.sodiumextra.mixin.light_updates.MixinLevelLightEngine", // 光照
-                "me.flashyreese.mods.sodiumextra.mixin.render.entity.MixinItemFrameEntityRenderer", // 物品展示框
-                "me.flashyreese.mods.sodiumextra.mixin.render.entity.MixinLivingEntityRenderer", // 盔甲架
-                "me.flashyreese.mods.sodiumextra.mixin.render.entity.MixinPaintingEntityRenderer" // 画
+                "me.flashyreese.mods.sodiumextra.mixin.light_updates.MixinLevelLightEngine" // 光照
         );
         // ItemFrameRenderer
-        if (bannedMixins.contains(mixinClassName)) {
+        if (bannedMixins.contains(mixinClassName)
+                || mixinClassName.contains("me.flashyreese.mods.sodiumextra.mixin.fog")
+                || mixinClassName.contains("me.flashyreese.mods.sodiumextra.mixin.render.entity")) {
             SRE.LOGGER.info("Blocked sodium-extra mixin: [" + mixinClassName + "]");
             return true;
         }
