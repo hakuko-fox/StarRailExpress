@@ -2661,6 +2661,8 @@
     "sre.map_helper.settings.daylightCycle.@tooltip": "启用后时间会自然流逝",
     "sre.map_helper.settings.weatherCycle": "天气循环",
     "sre.map_helper.settings.weatherCycle.@tooltip": "启用后天气会自然变化",
+    "sre.map_helper.settings.initialItems": "初始物品",
+    "sre.map_helper.settings.initialItems.@tooltip": "格式：物品ID;物品数量",
     "sre.map_helper.settings.fallToDeathHeight": "致死跌落高度",
     "sre.map_helper.settings.fallToDeathHeight.@tooltip": "玩家从多高的地方摔落后会死亡（0 表示禁用此致死条件）",
     "sre.map_helper.settings.mapStatusBar": "地图状态栏类型",
