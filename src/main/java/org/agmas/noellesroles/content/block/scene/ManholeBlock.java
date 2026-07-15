@@ -104,6 +104,7 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
             if (cooldownUntil != null && serverLevel.getGameTime() < cooldownUntil) {
                 long remainingSec = (cooldownUntil - serverLevel.getGameTime()) / 20;
                 sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.cooldown", remainingSec), true);
+                serverLevel.playSound(null, pos, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.6F, 0.7F);
                 return InteractionResult.CONSUME;
             }
             if (cooldownUntil != null) {
@@ -113,6 +114,7 @@ public class ManholeBlock extends BaseEntityBlock implements TaskInstinctShowabl
         BlockPos target = ManholeRegistry.findInLookDirection(serverLevel, player, pos, TRAVEL_RANGE);
         if (target == null) {
             sp.displayClientMessage(Component.translatable("message.noellesroles.manhole.no_exit"), true);
+            serverLevel.playSound(null, pos, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.6F, 0.7F);
             return InteractionResult.CONSUME;
         }
 
