@@ -404,7 +404,7 @@ public class SREMurderGameMode extends GameMode {
             int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles) {
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, 5);
+                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, 10);
     }
 
     /**
