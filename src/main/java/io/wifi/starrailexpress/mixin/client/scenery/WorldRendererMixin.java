@@ -46,32 +46,35 @@ public abstract class WorldRendererMixin {
             tmm$doFog(start, end);
             return;
         }
-        if (SREClient.trainComponent != null && SREClient.trainComponent.isFoggy()
-                && SREClient.areaComponent != null && SREClient.areaComponent.areasSettings.fogEnabled
-                && SREClient.isTrainMoving()) {
+        {
+            if (SREClient.isPlayerAliveAndInSurvival() && SREClient.trainComponent != null
+                    && SREClient.trainComponent.isFoggy()
+                    && SREClient.areaComponent != null && SREClient.areaComponent.areasSettings.fogEnabled
+                    && SREClient.isTrainMoving()) {
 
-            if (player.hasEffect(ModEffects.OTHERWORLD_AURA)) {
-                if (SREClient.gameComponent == null || !SREClient.gameComponent.canUseKillerFeatures(player)) {
-                    tmm$doFog(0, 17);
+                if (player.hasEffect(ModEffects.OTHERWORLD_AURA)) {
+                    if (SREClient.gameComponent == null || !SREClient.gameComponent.canUseKillerFeatures(player)) {
+                        tmm$doFog(0, 17);
+                        return;
+                    }
+                }
+                if (player.hasEffect(MobEffects.BLINDNESS)) {
+                    if (player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
+                        tmm$doFog(0, 20);
+                        return;
+                    }
+                    tmm$doFog(0, 7);
                     return;
                 }
+                // 如果地图未自定义 fogEnd（仍是默认200），则使用原默认值100
+                tmm$doFog(0,
+                        SREClient.areaComponent.areasSettings.fogEnd != 200.0f
+                                ? SREClient.areaComponent.areasSettings.fogEnd
+                                : 100,
+                        SREClient.areaComponent.areasSettings.fogShape);
+            } else {
+                original.call(camera, fogType, viewDistance, thickFog, tickDelta);
             }
-            if (player.hasEffect(MobEffects.BLINDNESS)) {
-                if (player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
-                    tmm$doFog(0, 20);
-                    return;
-                }
-                tmm$doFog(0, 7);
-                return;
-            }
-            // 如果地图未自定义 fogEnd（仍是默认200），则使用原默认值100
-            tmm$doFog(0,
-                    SREClient.areaComponent.areasSettings.fogEnd != 200.0f
-                            ? SREClient.areaComponent.areasSettings.fogEnd
-                            : 100,
-                    SREClient.areaComponent.areasSettings.fogShape);
-        } else {
-            original.call(camera, fogType, viewDistance, thickFog, tickDelta);
         }
     }
 
