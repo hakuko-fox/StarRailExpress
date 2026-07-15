@@ -135,7 +135,7 @@ public class VoteScreen extends Screen {
 
         updateLayout();
         restoreStateFromCache();
-        rebuildWidgets();
+        rebuildWidgets(true);
     }
 
     private void restoreStateFromCache() {
@@ -177,13 +177,14 @@ public class VoteScreen extends Screen {
         rebuildWidgets();
     }
 
-    public void rebuildWidgets() {
+    public void rebuildWidgets(boolean init) {
         buttons.clear();
         abstainIndices.clear();
         List<VoteOption> options = ClientVoteCache.getOptions();
         for (int i = 0; i < options.size(); i++) {
             VoteOption opt = options.get(i);
-            if (opt instanceof VoteOption.TextOption) {
+            if (abstainIndices.isEmpty() && opt instanceof VoteOption.TextOption to
+                    && (to.id().toString().equals("inner:cancel") || to.id().toString().equals("inner:skip"))) {
                 // 文本选项（弃票/跳过）单独显示在左下角
                 abstainIndices.add(i);
             } else {
