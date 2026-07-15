@@ -326,6 +326,8 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public boolean canBeRandomed() {
+        if (SREDisableManager.isRoleDisabled(this))
+            return false;
         return this.canBeRandomed;
     }
 
