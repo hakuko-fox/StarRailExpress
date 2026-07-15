@@ -9,6 +9,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.SREPlayerUtils;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -19,7 +20,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -27,6 +27,9 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
+
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -970,15 +973,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 gameCCA.playerBannedBlockTime.remove(player.getUUID());
             return;
         }
-        final var pos1 = player.blockPosition();
-        final var pos2 = pos1.below();
-        final var pos3 = pos2.below();
+        final var pos1 = SREGameWorldComponent.findNearestSupportBelow(player, 3);
+        if (pos1 == null)
+            return;
         final var blockState1 = level.getBlockState(pos1);
-        final var blockState2 = level.getBlockState(pos2);
-        final var blockState3 = level.getBlockState(pos3);
         final String blockId1 = getBlockId(blockState1);
-        final String blockId2 = getBlockId(blockState2);
-        final String blockId3 = getBlockId(blockState3);
         PlayerBannedBlockTimeInfo nowInfo = gameCCA.playerBannedBlockTime.getOrDefault(player.getUUID(), null);
         for (var info : areas.areasSettings.bannedBlock) {
             if (info.blockId() == null)
@@ -987,8 +986,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             if (res == null)
                 continue;
             var infoBlockId = res.toString();
-            if (infoBlockId.equalsIgnoreCase(blockId1) || infoBlockId.equalsIgnoreCase(blockId2)
-                    || (blockState2.is(BlockTags.AIR) && infoBlockId.equalsIgnoreCase(blockId3))) {
+            if (info.blockId().equalsIgnoreCase(blockId1)) {
                 if (nowInfo == null || nowInfo.standonTick <= 0) {
                     gameCCA.playerBannedBlockTime.put(player.getUUID(),
                             new PlayerBannedBlockTimeInfo(infoBlockId, level.getGameTime()));
@@ -1270,5 +1268,43 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (role == null)
             return false;
         return role.isInnocent();
+    }
+
+    public static BlockPos findNearestSupportBelow(Player player, int maxDistance) {
+        Level level = player.level();
+        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+
+        // 玩家脚部的实际世界坐标（浮点数）
+        double feetY = player.getY();
+
+        for (int i = 0; i < maxDistance; i++) {
+            // 关键修正：从玩家脚部所在的方块层开始（i=0），依次往下（i=1, 2...）
+            mutablePos.set(
+                    player.blockPosition().getX(),
+                    player.blockPosition().getY() - i, // 注意这里是 -i，不是 -1 - i
+                    player.blockPosition().getZ());
+
+            BlockState state = level.getBlockState(mutablePos);
+            if (state.isAir()) {
+                continue;
+            }
+
+            // 获取针对玩家的碰撞箱（注意 CollisionContext.of(player) 很重要）
+            VoxelShape shape = state.getCollisionShape(level, mutablePos, CollisionContext.of(player));
+            if (shape.isEmpty()) {
+                continue;
+            }
+
+            // 获取这个方块碰撞箱在世界中的最高点 Y 值
+            double topY = mutablePos.getY() + shape.max(Direction.Axis.Y);
+
+            // 判定条件：
+            // 1. 碰撞箱顶部必须 <= 玩家脚底高度（在脚下，不能把玩家顶起来）
+            // 2. 脚底到方块顶部的垂直距离必须小于 1.2 格（约等于跳跃高度，防止隔着几格空气站上去）
+            if (topY <= feetY && (feetY - topY) < 1.2) {
+                return mutablePos.immutable();
+            }
+        }
+        return null;
     }
 }

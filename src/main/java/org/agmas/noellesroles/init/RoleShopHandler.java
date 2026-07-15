@@ -2026,13 +2026,6 @@ public class RoleShopHandler {
             SHOP.add(new ShopEntry(ModItems.SIGNATURE_PAPER.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.SUPERSTAR.getIdentifier(), SHOP);
         }
-
-        // 小恶魔的商店。继承捣蛋鬼
-        {
-            var SHOP = new ArrayList<ShopEntry>();
-            SHOP.addAll(SLIPPERY_GHOST_SHOP);
-            ShopContent.customEntries.put(RedHouseRoles.DAIYOUSEI_ID, SHOP);
-        }
         // 大妖精的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
@@ -2587,6 +2580,13 @@ public class RoleShopHandler {
         {
             ShopContent.customEntries.put(
                     ModRoles.PRANKSTER_ID, SLIPPERY_GHOST_SHOP);
+
+            // 小恶魔的商店。继承捣蛋鬼
+            {
+                var SHOP = new ArrayList<ShopEntry>();
+                SHOP.addAll(SLIPPERY_GHOST_SHOP);
+                ShopContent.customEntries.put(RedHouseRoles.KOAKUMA_ID, SHOP);
+            }
         }
 
         // PACHURI 商店

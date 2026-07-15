@@ -5,7 +5,6 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent.PlayerBannedBlockTimeInfo;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LightLayer;
 
@@ -67,21 +66,16 @@ public class SREClientWarningTickEvents {
         if (role == null) {
             return;
         }
-        final var pos1 = player.blockPosition();
-        final var pos2 = pos1.below();
-        final var pos3 = pos2.below();
+        final var pos1 = SREGameWorldComponent.findNearestSupportBelow(player, 3);
+        if (pos1 == null)
+            return;
         final var blockState1 = level.getBlockState(pos1);
-        final var blockState2 = level.getBlockState(pos2);
-        final var blockState3 = level.getBlockState(pos3);
         final String blockId1 = SREGameWorldComponent.getBlockId(blockState1);
-        final String blockId2 = SREGameWorldComponent.getBlockId(blockState2);
-        final String blockId3 = SREGameWorldComponent.getBlockId(blockState3);
 
         for (var info : areas.areasSettings.bannedBlock) {
             if (info.blockId() == null)
                 continue;
-            if (info.blockId().equalsIgnoreCase(blockId1) || info.blockId().equalsIgnoreCase(blockId2)
-                    || (blockState2.is(BlockTags.AIR) && info.blockId().equalsIgnoreCase(blockId3))) {
+            if (info.blockId().equalsIgnoreCase(blockId1)) {
 
                 bannedBlockInfo = info;
                 if (bannedBlockPlayerInfo == null || bannedBlockPlayerInfo.standonTick <= 0) {
