@@ -91,9 +91,7 @@ public class RoleRotationCache {
      * 个人剩余选择时间（tick）
      * 使用客户端 level 的游戏时间与服务端 roundStartTime 之差。
      */
-    public static int getMyRemainingTime() {
-        if (localPlayerUuid == null || !roundCandidates.containsKey(localPlayerUuid))
-            return 0;
+    public static int getRemainingTime() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null)
             return 0;
@@ -101,14 +99,18 @@ public class RoleRotationCache {
         return (int) Math.max(0, perPlayerTimeLimit - elapsed);
     }
 
-    public static int getMyRemainingSeconds() {
-        return getMyRemainingTime() / 20;
+    public static int getRemainingSeconds() {
+        return getRemainingTime() / 20;
     }
 
     // 当前选角阶段剩余秒数（用于显示）
     public static int getDisplaySeconds() {
-        if (isSelecting && isMyTurn() && !hasSelected()) {
-            return getMyRemainingSeconds();
+        if (isSelecting && isMyTurn()) {
+            if (!hasSelected())
+                return getRemainingSeconds();
+            return 0;
+        } else if (isSelecting) {
+            return getRemainingSeconds();
         } else if (confirmCountdown > 0) {
             return confirmCountdown / 20;
         }
