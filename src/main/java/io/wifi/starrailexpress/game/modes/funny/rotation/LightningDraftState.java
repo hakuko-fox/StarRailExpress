@@ -320,10 +320,7 @@ public class LightningDraftState {
                             .withStyle(ChatFormatting.GREEN),
                     true);
         }
-        for (ServerPlayer p : world.players()) {
-            world.playSound(null, p.getX(), p.getY(), p.getZ(),
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
-        }
+        RoleUtils.playSound(player, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
 
         if (roundCandidates.isEmpty()) {
             finishRound(world);
@@ -349,8 +346,7 @@ public class LightningDraftState {
 
     private void playSoundToAll(ServerLevel world, SoundEvent sound, float volume, float pitch) {
         for (ServerPlayer p : world.players()) {
-            world.playSound(null, p.getX(), p.getY(), p.getZ(),
-                    sound, SoundSource.MASTER, volume, pitch);
+            RoleUtils.playSound(p, sound, SoundSource.MASTER, volume, pitch);
         }
     }
 
