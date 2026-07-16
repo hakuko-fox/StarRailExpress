@@ -17,6 +17,12 @@ public class ServerManager {
         return data;
     }
 
+    public static void main(String[] args) {
+        if (args.length <= 0)
+            return;
+        System.out.print(args[args.length - 1]+"="+onlineCheck(args[args.length - 1]));
+    }
+
     public static String bytesToHex(byte[] bytes) {
         return HexFormat.of().formatHex(bytes);
     }

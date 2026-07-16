@@ -8,6 +8,8 @@ import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
 import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
 import io.wifi.starrailexpress.network.packet.ModVersionPacket;
+import io.wifi.starrailexpress.network.packet.RoleRotationSelectC2SPacket;
+import io.wifi.starrailexpress.network.packet.RoleRotationSyncS2CPacket;
 import io.wifi.starrailexpress.network.packet.SyncRoomToPlayerPayload;
 import io.wifi.starrailexpress.scenery.network.SceneAssetNetwork;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;

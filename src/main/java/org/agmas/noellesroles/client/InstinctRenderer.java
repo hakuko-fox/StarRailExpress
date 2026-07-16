@@ -72,6 +72,15 @@ public class InstinctRenderer {
         // 否则自定义职业设置的本能透视范围(instinctMaxRange)会被通用处理器忽略。
         CustomRoleLoader.registerClientInstinctHandler();
         TouhouInstincts.registerEvents();
+        OnGetInstinctHighlight.SPECTATOR_EVENT.register((self, target, hasInstinct) -> {
+            if (hasInstinct)
+                return TrueFalseAndCustomResult.pass();
+            if (!(target instanceof Player player))
+                return TrueFalseAndCustomResult.pass();
+            if (RoleUtils.isPlayerTheModifier(player, SpecialGameModeModifiers.TNT_TAGGED))
+                return TrueFalseAndCustomResult.custom(Color.RED.getRGB());
+            return TrueFalseAndCustomResult.pass();
+        });
         OnGetInstinctHighlight.ALIVE_EVENT.register((self, target, hasInstinct) -> {
             if (!hasInstinct || SREClient.gameComponent == null) {
                 return TrueFalseAndCustomResult.pass();
@@ -619,7 +628,8 @@ public class InstinctRenderer {
                 if (SREClient.gameComponent.isRole(self, ModRoles.BARTENDER)) {
                     if (self.hasEffect(ModEffects.SAFE_TIME))
                         return TrueFalseAndCustomResult.pass();
-                    var weakArmorComponent = io.wifi.starrailexpress.cca.SREWeakArmorPlayerComponent.KEY.get(target_player);
+                    var weakArmorComponent = io.wifi.starrailexpress.cca.SREWeakArmorPlayerComponent.KEY
+                            .get(target_player);
                     boolean hasWeakArmor = weakArmorComponent != null && weakArmorComponent.getWeakArmor() > 0;
                     if (armorPlayerComponent.getArmor() > 0 && playerPoisonComponent.poisonTicks > 0) {
                         return TrueFalseAndCustomResult.custom(new Color(186, 255, 65).getRGB());

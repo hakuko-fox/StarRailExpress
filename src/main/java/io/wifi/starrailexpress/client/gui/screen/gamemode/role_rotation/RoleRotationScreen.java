@@ -4,7 +4,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.gui.screen.WithParentScreenPauseScreen;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
-import io.wifi.starrailexpress.network.RoleRotationSelectC2SPacket;
+import io.wifi.starrailexpress.network.packet.RoleRotationSelectC2SPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -18,11 +18,7 @@ import net.minecraft.util.Mth;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.utils.RoleUtils;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class RoleRotationScreen extends Screen {
     private static final int PAD = 12;
@@ -45,19 +41,9 @@ public class RoleRotationScreen extends Screen {
     private static final int GREEN = 0xFF72C17B;
     private static final int RED = 0xFFE06B65;
 
-    private int leftX;
-    private int leftY;
-    private int leftW;
-    private int panelH;
-    private int rightX;
-    private int rightY;
-    private int rightW;
-    private int cardW;
-    private int cardY;
-    private int detailX;
-    private int detailY;
-    private int detailW;
-    private int detailH;
+    private int leftX, leftY, leftW, panelH;
+    private int rightX, rightY, rightW, cardW, cardY;
+    private int detailX, detailY, detailW, detailH;
 
     private int tickCounter;
     private int playerListScroll;
@@ -107,7 +93,7 @@ public class RoleRotationScreen extends Screen {
     public void tick() {
         super.tick();
         tickCounter++;
-        RoleRotationCache.tickTimers();
+        RoleRotationCache.tickTimers(); // 客户端本地倒计时 tick
     }
 
     @Override
@@ -126,7 +112,6 @@ public class RoleRotationScreen extends Screen {
         drawTurnInfo(g);
         drawRoleArea(g, mouseX, mouseY);
         drawFooter(g);
-
     }
 
     @Override
@@ -137,8 +122,9 @@ public class RoleRotationScreen extends Screen {
 
     private void drawTitleBar(GuiGraphics g) {
         g.drawString(font, title, PAD, 10, GOLD, false);
-        Component turn = Component.translatable("gui.sre.role_rotation.current_turn",
-                RoleRotationCache.getCurrentIndex(), RoleRotationCache.getTotalPlayers());
+        // 显示当前轮次，而不是“当前玩家序号”
+        Component turn = Component.translatable("gui.sre.role_rotation.current_round",
+                RoleRotationCache.getCurrentRoundIndex());
         g.drawString(font, turn, width - PAD - font.width(turn), 10, TEXT, false);
     }
 
@@ -160,6 +146,9 @@ public class RoleRotationScreen extends Screen {
         List<Map.Entry<UUID, Integer>> players = new ArrayList<>(RoleRotationCache.getRotationOrder().entrySet());
         players.sort(Comparator.comparingInt(Map.Entry::getValue));
 
+        // 获取本轮参与的玩家 UUID 集合
+        Set<UUID> roundPlayers = RoleRotationCache.getRoundCandidates().keySet();
+
         g.enableScissor(x, y, x + w, y + h);
         int drawY = y - playerListScroll;
         for (int i = 0; i < players.size(); i++) {
@@ -169,14 +158,14 @@ public class RoleRotationScreen extends Screen {
             if (rowY + PLAYER_ROW_H < y || rowY > y + h) {
                 continue;
             }
-            boolean current = entry.getValue() == RoleRotationCache.getCurrentIndex();
-            int bg = current ? 0x552A5A42 : 0x331A1008;
+            // 高亮：该玩家正在本轮选择中
+            boolean inThisRound = roundPlayers.contains(uuid);
+            int bg = inThisRound ? 0x552A5A42 : 0x331A1008;
             g.fillGradient(x, rowY, x + w, rowY + PLAYER_ROW_H - 3, bg, 0x33120A04);
-            g.renderOutline(x, rowY, w, PLAYER_ROW_H - 3, current ? GREEN : 0x665A4530);
+            g.renderOutline(x, rowY, w, PLAYER_ROW_H - 3, inThisRound ? GREEN : 0x665A4530);
 
-            // 左侧仅显示序号，不显示玩家名字
             String index = "#" + entry.getValue();
-            g.drawString(font, index, x + 6, rowY + 8, current ? GREEN : MUTED, false);
+            g.drawString(font, index, x + 6, rowY + 8, inThisRound ? GREEN : MUTED, false);
 
             Component roleName = selectedRoleText(uuid);
             g.drawString(font, trim(roleName.getString(), Math.max(30, w - 104)), x + w - 58, rowY + 8,
@@ -198,95 +187,86 @@ public class RoleRotationScreen extends Screen {
         if (rolePath == null) {
             return Component.literal("?").withStyle(ChatFormatting.DARK_GRAY);
         }
-        // 玩家选择了随机 → 始终显示"随机"，不暴露具体职业
         if (RoleRotationCache.getRandomChoosers().contains(uuid)) {
             return Component.translatable("gui.sre.role_rotation.random").withStyle(ChatFormatting.GOLD);
         }
-        // 魔术师在左侧列表中显示为"随机"，隐藏真实身份
         SRERole role = getRoleByPath(rolePath);
-
         if (role == null) {
             return Component.literal(rolePath).withStyle(ChatFormatting.AQUA);
         }
         if (role.isFlag("inner.role_rotation.hidden")) {
             return Component.translatable("gui.sre.role_rotation.random").withStyle(ChatFormatting.GOLD);
         }
-        // 阵营着色：杀手=红，平民=绿，中立=金
         int factionColor = getFactionColor(role);
         return RoleUtils.getRoleName(role).withStyle(style -> style.withColor(factionColor));
     }
 
-    /**
-     * 根据职业阵营返回对应的显示颜色
-     */
     private int getFactionColor(SRERole role) {
-        if (role.canUseKiller()) {
+        if (role.canUseKiller())
             return RED;
-        }
-        if (role.isInnocent()) {
+        if (role.isInnocent())
             return GREEN;
-        }
-        // 中立相关阵营
-        if (role.isNeutrals() || role.isNeutralForKiller() || role.isVigilanteTeam()) {
+        if (role.isNeutrals() || role.isNeutralForKiller() || role.isVigilanteTeam())
             return GOLD;
-        }
         return BLUE;
     }
 
     private void drawTurnInfo(GuiGraphics g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (mc.player == null)
             return;
-        }
         int x = rightX + PAD;
         int y = rightY + PAD;
-        int seconds = RoleRotationCache.isSelecting()
-                ? RoleRotationCache.getRemainingSeconds()
-                : Math.max(0, RoleRotationCache.getConfirmCountdown() / 20);
+
+        // 个人剩余时间或确认倒计时
+        int seconds = RoleRotationCache.getDisplaySeconds();
         int color = seconds <= 10 ? (tickCounter % 20 < 10 ? RED : 0xFFFFA0A0) : seconds <= 30 ? 0xFFFFAA33 : BLUE;
         String time = String.format("%d:%02d", Math.max(0, seconds) / 60, Math.max(0, seconds) % 60);
         Component timer = Component.literal(time).withStyle(style -> style.withColor(color).withBold(true));
         g.drawString(font, timer, x, y, color, false);
 
-        // 轮到自己选时不再显示"选择你的职业"（右侧卡片已自明）
         if (!RoleRotationCache.isSelecting()) {
             Component phase = Component.translatable("gui.sre.role_rotation.adjust_phase");
             g.drawString(font, phase, x + 54, y, TEXT, false);
         }
 
+        // 显示玩家自己的序号（靠右）
         int myIndex = RoleRotationCache.getMyRotationIndex();
         if (myIndex > 0) {
             Component mine = Component.translatable("gui.sre.role_rotation.your_index", myIndex)
                     .withStyle(ChatFormatting.AQUA);
-            g.drawString(font, mine, rightX + rightW - PAD - font.width(mine), y, BLUE, false);
+            int textW = font.width(mine);
+            g.drawString(font, mine, rightX + rightW - PAD - textW, y, BLUE, false);
         }
     }
 
     private void drawRoleArea(GuiGraphics g, int mouseX, int mouseY) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (mc.player == null)
             return;
-        }
         UUID myUuid = mc.player.getUUID();
         boolean hasSelected = RoleRotationCache.getSelectedRoles().containsKey(myUuid);
-        boolean canChoose = RoleRotationCache.isSelecting() && RoleRotationCache.isMyTurn(myUuid) && !hasSelected;
+        boolean isMyTurn = RoleRotationCache.isMyTurn();
+        boolean canChoose = isMyTurn && !hasSelected && RoleRotationCache.isSelecting();
 
-        // 未轮到自己且未选择 → 中央显示等待提示
-        if (!RoleRotationCache.isMyTurn(myUuid) && !hasSelected) {
+        // 自己不在本轮且未选择 → 等待画面
+        if (!isMyTurn && !hasSelected) {
             drawWaitingText(g);
             return;
         }
 
-        List<String> candidates = RoleRotationCache.getCurrentCandidates();
+        // 获取自己的候选职业列表
+        List<String> myCandidates = RoleRotationCache.getMyCandidates();
 
-        // 已选完职业 → 只显示职业介绍，不显示卡片
+        // 已选完职业 → 只显示详情
         if (hasSelected) {
             String selectedPath = RoleRotationCache.getSelectedRoles().get(myUuid);
-            hoveredDetailIndex = detailIndexForSelected(selectedPath, candidates);
-            drawDetail(g, selectedPath, candidates);
+            hoveredDetailIndex = detailIndexForSelected(selectedPath, myCandidates);
+            drawDetail(g, selectedPath, myCandidates);
             return;
         }
 
+        // 绘制 3 个候选卡片 + 随机卡片
         for (int i = 0; i < 4; i++) {
             int x = detailX + i * (cardW + GAP);
             boolean hover = canChoose && inside(mouseX, mouseY, x, cardY, cardW, CARD_H);
@@ -294,12 +274,12 @@ public class RoleRotationScreen extends Screen {
                 hoveredCardIndex = i;
                 hoveredDetailIndex = i;
             }
-            drawRoleCard(g, x, cardY, cardW, CARD_H, i, candidates, hover, canChoose);
+            drawRoleCard(g, x, cardY, cardW, CARD_H, i, myCandidates, hover, canChoose);
         }
 
-        // 未选择时的详情（悬停预览）
+        // 悬停预览详情
         String selectedPath = null;
-        drawDetail(g, selectedPath, candidates);
+        drawDetail(g, selectedPath, myCandidates);
     }
 
     private void drawRoleCard(GuiGraphics g, int x, int y, int w, int h, int index, List<String> candidates,
@@ -403,9 +383,8 @@ public class RoleRotationScreen extends Screen {
 
     private int detailIndexForSelected(String selectedPath, List<String> candidates) {
         for (int i = 0; i < Math.min(3, candidates.size()); i++) {
-            if (selectedPath.equals(candidates.get(i))) {
+            if (selectedPath.equals(candidates.get(i)))
                 return i;
-            }
         }
         return RoleRotationCache.getRandomChoosers().contains(Minecraft.getInstance().player.getUUID()) ? 3 : -1;
     }
@@ -422,18 +401,13 @@ public class RoleRotationScreen extends Screen {
         }
     }
 
-    /**
-     * 中央显示"请等待其它玩家选择职业"，文字根据面板宽度自动缩放。
-     */
     private void drawWaitingText(GuiGraphics g) {
         Component waiting = Component.translatable("gui.sre.role_rotation.wait_for_others");
         int textW = font.width(waiting);
         int availW = rightW - PAD * 2;
-
         float scale = Math.min(1.0f, (float) availW / Math.max(1, textW));
         int centerX = rightX + rightW / 2;
         int centerY = rightY + panelH / 2;
-
         g.pose().pushPose();
         g.pose().translate(centerX, centerY, 0);
         g.pose().scale(scale, scale, 1.0f);
@@ -472,15 +446,15 @@ public class RoleRotationScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         return mc.player != null
                 && RoleRotationCache.isSelecting()
-                && RoleRotationCache.isMyTurn(mc.player.getUUID())
+                && RoleRotationCache.isMyTurn()
                 && !RoleRotationCache.getSelectedRoles().containsKey(mc.player.getUUID());
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (inside(mouseX, mouseY, leftX, leftY, leftW, panelH) && maxPlayerListScroll > 0) {
-            playerListScroll = Mth.clamp(playerListScroll - (int) Math.signum(scrollY) * PLAYER_ROW_H,
-                    0, maxPlayerListScroll);
+            playerListScroll = Mth.clamp(playerListScroll - (int) Math.signum(scrollY) * PLAYER_ROW_H, 0,
+                    maxPlayerListScroll);
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -489,7 +463,7 @@ public class RoleRotationScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256) {
-            minecraft.setScreen(new WithParentScreenPauseScreen(this));
+            minecraft.setScreen(new WithParentScreenPauseScreen(this, true));
             return true;
         }
         if (NoellesrolesClient.roleIntroClientBind.matches(keyCode, scanCode)) {
@@ -520,36 +494,21 @@ public class RoleRotationScreen extends Screen {
         calculateScroll();
     }
 
-    // private String getPlayerName(UUID uuid) {
-    //     Minecraft mc = Minecraft.getInstance();
-    //     if (mc.getConnection() != null) {
-    //         var playerInfo = mc.getConnection().getPlayerInfo(uuid);
-    //         if (playerInfo != null) {
-    //             return playerInfo.getProfile().getName();
-    //         }
-    //     }
-    //     return uuid.toString().substring(0, 8);
-    // }
-
     private SRERole getRoleByPath(String path) {
-        if (path == null || path.isBlank()) {
+        if (path == null || path.isBlank())
             return null;
-        }
         ResourceLocation id = ResourceLocation.tryParse(path);
         if (id != null) {
             SRERole role = TMMRoles.ROLES.get(id);
-            if (role != null) {
+            if (role != null)
                 return role;
-            }
         }
-        if (path.contains(":")) {
+        if (path.contains(":"))
             return null;
-        }
         for (String namespace : List.of("noellesroles", "starrailexpress", "trainmurdermystery")) {
             SRERole role = TMMRoles.ROLES.get(ResourceLocation.fromNamespaceAndPath(namespace, path));
-            if (role != null) {
+            if (role != null)
                 return role;
-            }
         }
         return null;
     }

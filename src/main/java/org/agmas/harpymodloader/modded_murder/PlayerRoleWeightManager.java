@@ -1,6 +1,7 @@
 package org.agmas.harpymodloader.modded_murder;
 
 import io.wifi.starrailexpress.api.SRERole;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
@@ -130,7 +131,7 @@ public class PlayerRoleWeightManager {
      * Get Role type(int) for a role
      * 
      * @param role
-     * @return - -1: Unknown 
+     * @return - -1: Unknown
      *         - 1: Innocent
      *         - 2: Neturals but not for killer
      *         - 3: Neturals for killer
@@ -392,6 +393,14 @@ public class PlayerRoleWeightManager {
             PlayerRoleWeightManager.playerWeights.put(player, weightManager);
         }
         weightManager.incrementKillerSideFailureBoost();
+    }
+
+    public static int getMaxWeight(ServerPlayer player) {
+        int weight = 0;
+        for (int i = 1; i <= 5; i++) {
+            weight = Math.max(weight, getWeight(player, i));
+        }
+        return weight;
     }
 
 }

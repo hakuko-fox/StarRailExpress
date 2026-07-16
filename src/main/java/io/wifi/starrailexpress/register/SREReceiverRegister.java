@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.compat.TrainVoicePlugin;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
 import io.wifi.starrailexpress.network.packet.ModVersionPacket;
@@ -109,7 +110,7 @@ public class SREReceiverRegister {
                 new UseAssassinationItemPayload.Receiver());
 
         // Role Rotation receivers
-        RoleRotationSelectC2SPacket.registerServerReceiver();
+        SRERoleRotationGameMode.registerServerPacketRecievers();
 
         // 职业轮换系统：管理员编辑名单
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
