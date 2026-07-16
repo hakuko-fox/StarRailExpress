@@ -504,6 +504,14 @@ public final class RoleSkill {
         List<Definition> applicable = definitions.stream()
                 .filter(d -> d.shifted() == shifted)
                 .toList();
+        // 当蹲下时没有匹配的 shifted 技能，回退到非 shifted 技能。
+        // 某些角色（如布袋鬼）在 handler 内部自行判断蹲下以触发大招，
+        // 依赖 RoleSkill 统一入口把调用分发到 handler。
+        if (applicable.isEmpty() && shifted) {
+            applicable = definitions.stream()
+                    .filter(d -> !d.shifted() && !d.modeSwitch())
+                    .toList();
+        }
         if (applicable.isEmpty()) {
             return false;
         }
