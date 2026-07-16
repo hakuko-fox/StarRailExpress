@@ -24,11 +24,12 @@ public class VolunteerDraftState {
     private final List<ServerPlayer> players;
     private final int volunteerCount;
     private final Map<UUID, List<SRERole>> candidatePool = new HashMap<>();
-    private final Map<UUID, List<Integer>> submittedPreferences = new HashMap<>();
+    public final Map<UUID, List<Integer>> submittedPreferences = new HashMap<>();
     private final Map<UUID, SRERole> finalAssignment = new LinkedHashMap<>();
     public final Set<UUID> submittedPlayers = new HashSet<>();
     private final List<SRERole> globalRolePool = new ArrayList<>();
-
+    // 记录哪些玩家是手动提交的（通过客户端提交）
+    public final Set<UUID> manuallySubmitted = new HashSet<>();
     public Phase phase = Phase.WAITING;
     public long phaseStartTime;
     private int commitTimeLimit = 60 * 20;
@@ -113,13 +114,64 @@ public class VolunteerDraftState {
     }
 
     private void generateCandidates() {
-        for (ServerPlayer player : players) {
-            List<SRERole> factionPool = getFactionPool(player);
-            if (factionPool.size() < volunteerCount) {
-                factionPool = new ArrayList<>(globalRolePool);
+        int maxPerRole = volunteerCount; // 每个角色最多出现在候选列表中的次数
+        Map<String, Integer> roleUsage = new HashMap<>(); // 记录角色已被选入候选的次数
+
+        // 玩家处理顺序随机化
+        List<ServerPlayer> shuffledPlayers = new ArrayList<>(players);
+        Collections.shuffle(shuffledPlayers, random);
+
+        for (ServerPlayer player : shuffledPlayers) {
+            UUID pid = player.getUUID();
+            List<SRERole> factionPool = getFactionPool(player); // 该玩家可选的阵营池
+
+            // 分离：未达上限的角色 vs 已达上限的角色
+            List<SRERole> underLimit = new ArrayList<>();
+            List<SRERole> overLimit = new ArrayList<>();
+            for (SRERole role : factionPool) {
+                String id = role.identifier().toString();
+                int used = roleUsage.getOrDefault(id, 0);
+                if (used < maxPerRole) {
+                    underLimit.add(role);
+                } else {
+                    overLimit.add(role);
+                }
             }
-            Collections.shuffle(factionPool, random);
-            candidatePool.put(player.getUUID(), new ArrayList<>(factionPool.subList(0, volunteerCount)));
+
+            List<SRERole> chosen = new ArrayList<>();
+            // 先从 underLimit 中随机选择，至多 volunteerCount 个
+            Collections.shuffle(underLimit, random);
+            int takeFromUnder = Math.min(volunteerCount, underLimit.size());
+            for (int i = 0; i < takeFromUnder; i++) {
+                SRERole r = underLimit.get(i);
+                chosen.add(r);
+                roleUsage.merge(r.identifier().toString(), 1, Integer::sum);
+            }
+
+            // 如果还不够 volunteerCount，从 overLimit（已达上限）中补足
+            int remaining = volunteerCount - chosen.size();
+            if (remaining > 0) {
+                Collections.shuffle(overLimit, random);
+                for (int i = 0; i < remaining && i < overLimit.size(); i++) {
+                    SRERole r = overLimit.get(i);
+                    chosen.add(r);
+                    roleUsage.merge(r.identifier().toString(), 1, Integer::sum); // 允许超出上限
+                }
+            }
+
+            // 极端情况：阵营池本身不足 volunteerCount，用全局池补足（保留原 fallback 逻辑）
+            if (chosen.size() < volunteerCount) {
+                List<SRERole> globalPool = new ArrayList<>(globalRolePool);
+                globalPool.removeAll(chosen);
+                Collections.shuffle(globalPool, random);
+                while (chosen.size() < volunteerCount && !globalPool.isEmpty()) {
+                    SRERole r = globalPool.remove(0);
+                    chosen.add(r);
+                    roleUsage.merge(r.identifier().toString(), 1, Integer::sum);
+                }
+            }
+
+            candidatePool.put(pid, chosen);
         }
     }
 
@@ -156,7 +208,7 @@ public class VolunteerDraftState {
         }
         submittedPreferences.put(playerId, new ArrayList<>(orderedPreferences));
         submittedPlayers.add(playerId);
-
+        manuallySubmitted.add(playerId); // 标记手动提交
         if (submittedPlayers.size() >= players.size()) {
             phase = Phase.ADJUST;
             phaseStartTime = world.getGameTime();
@@ -166,96 +218,83 @@ public class VolunteerDraftState {
     }
 
     public void runAssignment() {
-        List<UUID> remaining = new ArrayList<>(submittedPlayers);
-        Map<String, Integer> capacity = new HashMap<>(); // 改用 String ID
+        Map<String, Integer> capacity = new HashMap<>();
         for (SRERole role : globalRolePool) {
             capacity.merge(role.identifier().toString(), 1, Integer::sum);
         }
 
-        int maxRounds = submittedPreferences.values().stream()
-                .mapToInt(List::size).max().orElse(0);
+        // --- 第一阶段：手动提交者按权重平行志愿分配 ---
+        List<UUID> manualPlayers = new ArrayList<>(manuallySubmitted);
+        manualPlayers.sort((a, b) -> {
+            int wA = candidatePool.getOrDefault(a, List.of()).stream()
+                    .mapToInt(r -> getWeight(a, r)).max().orElse(0);
+            int wB = candidatePool.getOrDefault(b, List.of()).stream()
+                    .mapToInt(r -> getWeight(b, r)).max().orElse(0);
+            if (wA != wB)
+                return Integer.compare(wB, wA);
+            return Integer.compare(Objects.hash(a, random.nextInt()), Objects.hash(b, random.nextInt()));
+        });
 
-        for (int round = 0; round < maxRounds; round++) {
-            if (remaining.isEmpty())
-                break;
-
-            // 本轮玩家及其志愿
-            Map<UUID, Integer> roundChoices = new HashMap<>();
-            for (UUID pid : new ArrayList<>(remaining)) {
-                List<Integer> prefs = submittedPreferences.get(pid);
-                if (prefs != null && round < prefs.size()) {
-                    roundChoices.put(pid, prefs.get(round));
-                }
-            }
-
-            // 分离具体志愿与随机志愿
-            Map<String, List<UUID>> byRole = new LinkedHashMap<>(); // key: role ID
-            List<UUID> randomPickPlayers = new ArrayList<>();
-            for (UUID pid : roundChoices.keySet()) {
-                int choice = roundChoices.get(pid);
-                if (choice == -1) {
-                    randomPickPlayers.add(pid);
-                } else {
-                    SRERole target = candidatePool.get(pid).get(choice);
+        List<UUID> remainingManual = new ArrayList<>();
+        for (UUID pid : manualPlayers) {
+            List<Integer> prefs = submittedPreferences.get(pid);
+            List<SRERole> candidates = candidatePool.get(pid);
+            boolean assigned = false;
+            if (prefs != null && candidates != null) {
+                for (int choice : prefs) {
+                    if (choice == -1)
+                        continue;
+                    if (choice < 0 || choice >= candidates.size())
+                        continue;
+                    SRERole target = candidates.get(choice);
                     String rid = target.identifier().toString();
-                    byRole.computeIfAbsent(rid, k -> new ArrayList<>()).add(pid);
-                }
-            }
-
-            // 先分配具体志愿
-            for (Map.Entry<String, List<UUID>> entry : byRole.entrySet()) {
-                String rid = entry.getKey();
-                List<UUID> applicants = entry.getValue();
-                // 按权重排序
-                applicants.sort((a, b) -> {
-                    SRERole roleA = candidatePool.get(a).stream()
-                            .filter(r -> r.identifier().toString().equals(rid)).findFirst().orElse(null);
-                    SRERole roleB = candidatePool.get(b).stream()
-                            .filter(r -> r.identifier().toString().equals(rid)).findFirst().orElse(null);
-                    int w1 = roleA != null ? getWeight(a, roleA) : 0;
-                    int w2 = roleB != null ? getWeight(b, roleB) : 0;
-                    if (w1 != w2)
-                        return Integer.compare(w2, w1);
-                    return Integer.compare(Objects.hash(a, random.nextInt()), Objects.hash(b, random.nextInt()));
-                });
-
-                int slots = capacity.getOrDefault(rid, 0);
-                Iterator<UUID> iter = applicants.iterator();
-                while (slots > 0 && iter.hasNext()) {
-                    UUID winner = iter.next();
-                    SRERole winnerRole = candidatePool.get(winner).stream()
-                            .filter(r -> r.identifier().toString().equals(rid)).findFirst().orElse(null);
-                    if (winnerRole != null) {
-                        finalAssignment.put(winner, winnerRole);
+                    if (capacity.getOrDefault(rid, 0) > 0) {
+                        finalAssignment.put(pid, target);
                         capacity.merge(rid, -1, Integer::sum);
-                        remaining.remove(winner);
-                        slots--;
+                        assigned = true;
+                        break;
                     }
                 }
             }
-
-            // 再处理随机志愿
-            for (UUID pid : randomPickPlayers) {
-                if (finalAssignment.containsKey(pid))
-                    continue;
-                List<SRERole> available = getAvailableRolesForPlayer(pid, capacity);
-                if (!available.isEmpty()) {
-                    SRERole picked = available.get(random.nextInt(available.size()));
-                    finalAssignment.put(pid, picked);
-                    capacity.merge(picked.identifier().toString(), -1, Integer::sum);
-                    remaining.remove(pid);
-                }
-            }
+            if (!assigned)
+                remainingManual.add(pid);
         }
 
-        // 最终兜底
-        for (UUID pid : new ArrayList<>(remaining)) {
+        // 处理手动玩家中带有 -1 随机意愿的
+        List<UUID> finalManualRemaining = new ArrayList<>();
+        for (UUID pid : remainingManual) {
+            List<Integer> prefs = submittedPreferences.get(pid);
+            if (prefs != null && prefs.contains(-1)) {
+                List<SRERole> available = getAvailableRolesForPlayer(pid, capacity);
+                if (!available.isEmpty()) {
+                    available.sort(Comparator.comparingInt(r -> -getWeight(pid, r)));
+                    finalAssignment.put(pid, available.get(0));
+                    capacity.merge(available.get(0).identifier().toString(), -1, Integer::sum);
+                    continue;
+                }
+            }
+            finalManualRemaining.add(pid);
+        }
+        // 兜底
+        for (UUID pid : finalManualRemaining) {
             List<SRERole> available = getAvailableRolesForPlayer(pid, capacity);
             if (!available.isEmpty()) {
                 available.sort(Comparator.comparingInt(r -> -getWeight(pid, r)));
-                SRERole chosen = available.get(0);
-                finalAssignment.put(pid, chosen);
-                capacity.merge(chosen.identifier().toString(), -1, Integer::sum);
+                finalAssignment.put(pid, available.get(0));
+            } else {
+                finalAssignment.put(pid, TMMRoles.CIVILIAN);
+            }
+        }
+
+        // --- 第二阶段：自动提交者从剩余容量中分配 ---
+        List<UUID> autoPlayers = new ArrayList<>(submittedPlayers);
+        autoPlayers.removeAll(manuallySubmitted);
+        for (UUID pid : autoPlayers) {
+            List<SRERole> available = getAvailableRolesForPlayer(pid, capacity);
+            if (!available.isEmpty()) {
+                available.sort(Comparator.comparingInt(r -> -getWeight(pid, r)));
+                finalAssignment.put(pid, available.get(0));
+                capacity.merge(available.get(0).identifier().toString(), -1, Integer::sum);
             } else {
                 finalAssignment.put(pid, TMMRoles.CIVILIAN);
             }
@@ -344,6 +383,8 @@ public class VolunteerDraftState {
     // 玩家退出处理：移除该玩家所有数据，若剩余玩家均已提交则直接进入 ADJUST
     public boolean removePlayer(UUID playerId) {
         candidatePool.remove(playerId);
+
+        manuallySubmitted.remove(playerId);
         submittedPreferences.remove(playerId);
         submittedPlayers.remove(playerId);
         players.removeIf(p -> p.getUUID().equals(playerId));

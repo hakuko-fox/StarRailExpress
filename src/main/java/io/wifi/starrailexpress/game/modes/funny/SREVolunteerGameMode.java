@@ -202,7 +202,8 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
             indices.add(i);
         Collections.shuffle(indices);
         // 不加入随机志愿，直接提交具体顺序
-        draftState.submitPreference(player.getUUID(), indices);
+        draftState.submittedPreferences.put(player.getUUID(), indices);
+        draftState.submittedPlayers.add(player.getUUID());
     }
 
     private void forceFinishDraft(ServerLevel world, SREGameWorldComponent gameComp) {

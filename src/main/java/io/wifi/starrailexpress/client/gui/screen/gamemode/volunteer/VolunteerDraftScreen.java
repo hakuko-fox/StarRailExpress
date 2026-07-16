@@ -1,5 +1,12 @@
 package io.wifi.starrailexpress.client.gui.screen.gamemode.volunteer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.agmas.noellesroles.client.NoellesrolesClient;
+import org.agmas.noellesroles.utils.RoleUtils;
+
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.client.gui.screen.WithParentScreenPauseScreen;
@@ -12,14 +19,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
-import org.agmas.noellesroles.client.NoellesrolesClient;
-import org.agmas.noellesroles.utils.RoleUtils;
-import java.util.*;
+import net.minecraft.util.Mth;
 
 public class VolunteerDraftScreen extends Screen {
 
@@ -27,9 +31,12 @@ public class VolunteerDraftScreen extends Screen {
     private static final int GAP = 8;
     private static final int CARD_W = 160;
     private static final int CARD_H = 48;
-    private static final int ARROW_BTN_SIZE = 16;
-    private static final int VIEWPORT_TOP = 70; // 卡片可视区域顶部 Y
-    private static final int VIEWPORT_BOTTOM_PAD = 70; // 提交按钮上方保留空间
+    private static final int ARROW_BTN_SIZE = 14;
+    private static final int RANDOM_BTN_SIZE = 14;
+    private static final int SCROLL_BAR_WIDTH = 4;
+
+    private static final int VIEWPORT_TOP = 64;
+    private static final int VIEWPORT_BOTTOM_RESERVE = 50;
 
     private static final int BG_TOP = 0xF018120A;
     private static final int BG_BOTTOM = 0xF0061018;
@@ -40,24 +47,23 @@ public class VolunteerDraftScreen extends Screen {
     private static final int TEXT = 0xFFFFF4DC;
     private static final int MUTED = 0xFF9E8B6E;
     private static final int BLUE = 0xFF5EB7D8;
+    private static final int GREEN = 0xFF72C17B;
     private static final int RED = 0xFFE06B65;
 
     private List<String> currentOrder;
     private int volunteerCount;
-    private Button[][] moveButtons;
     private Button submitButton;
 
-    // 拖拽状态
     private int draggingIndex = -1;
     private int dragOffsetX, dragOffsetY;
     private boolean submitted = false;
 
-    // 滚动状态
     private double scrollY = 0;
     private double maxScrollY = 0;
 
-    // 结果阶段数据
-    private Map<UUID, String> finalRoles = Map.of();
+    private boolean scrolling = false;
+    private double scrollBarClickOffset = 0;
+
     private String myFinalRoleId = "";
 
     public VolunteerDraftScreen() {
@@ -82,87 +88,37 @@ public class VolunteerDraftScreen extends Screen {
     }
 
     private void buildCommitWidgets() {
-        moveButtons = new Button[volunteerCount][3];
-        for (int i = 0; i < volunteerCount; i++) {
-            final int idx = i;
-            moveButtons[i][0] = Button.builder(Component.literal("↑"), btn -> moveUp(idx))
-                    .bounds(0, 0, ARROW_BTN_SIZE, ARROW_BTN_SIZE).build();
-            moveButtons[i][1] = Button.builder(Component.literal("↓"), btn -> moveDown(idx))
-                    .bounds(0, 0, ARROW_BTN_SIZE, ARROW_BTN_SIZE).build();
-            moveButtons[i][2] = Button.builder(Component.literal("?"), btn -> toggleRandom(idx))
-                    .bounds(0, 0, ARROW_BTN_SIZE, ARROW_BTN_SIZE)
-                    .tooltip(Tooltip.create(Component.translatable("gui.sre.volunteer.random_tip")))
-                    .build();
-            addRenderableWidget(moveButtons[i][0]);
-            addRenderableWidget(moveButtons[i][1]);
-            addRenderableWidget(moveButtons[i][2]);
-        }
         submitButton = Button.builder(Component.translatable("gui.sre.volunteer.submit"), btn -> onSubmit())
-                .bounds(width / 2 - 50, height - 40, 100, 20).build();
+                .bounds(width / 2 - 50, height - 36, 100, 20)
+                .build();
         addRenderableWidget(submitButton);
-
-        // 如果已经提交过，保持按钮禁用状态
-        if (submitted) {
+        if (submitted)
             submitButton.active = false;
-            for (Button[] row : moveButtons) {
-                for (Button btn : row)
-                    btn.active = false;
-            }
-        }
     }
 
     private void updateScrollLimits() {
         int contentHeight = volunteerCount * (CARD_H + GAP);
-        int viewportHeight = height - VIEWPORT_TOP - VIEWPORT_BOTTOM_PAD;
+        int viewportHeight = height - VIEWPORT_TOP - VIEWPORT_BOTTOM_RESERVE;
         maxScrollY = Math.max(0, contentHeight - viewportHeight);
-        scrollY = Math.max(0, Math.min(scrollY, maxScrollY));
-    }
-
-    private void updateButtonPositions() {
-        if (moveButtons == null)
-            return;
-        int startX = width / 2 - CARD_W / 2;
-        for (int i = 0; i < volunteerCount; i++) {
-            int y = VIEWPORT_TOP + i * (CARD_H + GAP) - (int) scrollY;
-            moveButtons[i][0].setPosition(startX + CARD_W + 4, y);
-            moveButtons[i][0].visible = i > 0;
-            moveButtons[i][1].setPosition(startX + CARD_W + 4, y + CARD_H - ARROW_BTN_SIZE);
-            moveButtons[i][1].visible = i < volunteerCount - 1;
-            moveButtons[i][2].setPosition(startX - 24, y + (CARD_H - ARROW_BTN_SIZE) / 2);
-        }
-        if (submitButton != null) {
-            submitButton.setPosition(width / 2 - 50, height - 40);
-        }
-    }
-
-    public void updateResult() {
-        if (VolunteerCache.getPhase() == Phase.RESULT) {
-            this.clearWidgets();
-            updateScrollLimits();
-            finalRoles = VolunteerCache.getFinalRoles();
-            myFinalRoleId = VolunteerCache.getMyFinalRole();
-        }
+        scrollY = Mth.clamp(scrollY, 0, maxScrollY);
     }
 
     @Override
     public void tick() {
         super.tick();
         if (VolunteerCache.getPhase() == Phase.COMMIT) {
-            updateButtonPositions();
             updateScrollLimits();
-            // 拖拽自动滚动
-            if (draggingIndex >= 0) {
-                int mouseY = (int) Minecraft.getInstance().mouseHandler.ypos() * height
-                        / Minecraft.getInstance().getWindow().getHeight();
-                int scrollThreshold = 30;
-                if (mouseY < VIEWPORT_TOP + scrollThreshold) {
-                    scrollY = Math.max(0, scrollY - 5);
-                } else if (mouseY > height - VIEWPORT_BOTTOM_PAD - scrollThreshold) {
-                    scrollY = Math.min(maxScrollY, scrollY + 5);
-                }
+            if (submitButton != null) {
+                submitButton.setPosition(width / 2 - 50, height - 36);
             }
-        } else if (VolunteerCache.getPhase() == Phase.RESULT && finalRoles.isEmpty()) {
+        } else if (VolunteerCache.getPhase() == Phase.RESULT && myFinalRoleId.isEmpty()) {
             updateResult();
+        }
+    }
+
+    public void updateResult() {
+        if (VolunteerCache.getPhase() == Phase.RESULT) {
+            myFinalRoleId = VolunteerCache.getMyFinalRole();
         }
     }
 
@@ -172,32 +128,29 @@ public class VolunteerDraftScreen extends Screen {
         List<Integer> prefs = new ArrayList<>();
         List<String> originals = VolunteerCache.getMyCandidates();
         for (String id : currentOrder) {
-            if (id.equals("random")) {
+            if (id.equals("random"))
                 prefs.add(-1);
-            } else {
+            else {
                 int idx = originals.indexOf(id);
                 prefs.add(idx >= 0 ? idx : -1);
             }
         }
         ClientPlayNetworking.send(new VolunteerCommitC2SPacket(prefs));
         submitted = true;
-        submitButton.active = false;
-        if (moveButtons != null) {
-            for (Button[] row : moveButtons) {
-                for (Button btn : row)
-                    btn.active = false;
-            }
-        }
+        if (submitButton != null)
+            submitButton.active = false;
     }
 
     private void moveUp(int index) {
-        if (index > 0 && !submitted)
+        if (!submitted && index > 0 && index < volunteerCount) {
             Collections.swap(currentOrder, index, index - 1);
+        }
     }
 
     private void moveDown(int index) {
-        if (index < volunteerCount - 1 && !submitted)
+        if (!submitted && index < volunteerCount - 1) {
             Collections.swap(currentOrder, index, index + 1);
+        }
     }
 
     private void toggleRandom(int index) {
@@ -213,16 +166,8 @@ public class VolunteerDraftScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int i, int j, float f) {
-        g.fillGradient(0, 0, width, height, BG_TOP, BG_BOTTOM);
-        g.fillGradient(0, 0, width, 34, 0xAA000000, 0x22000000);
-        // guiGraphics.fill(0, 0, width, height, java.awt.Color.black.getRGB());
-
-    }
-
-    // ========== 渲染 ==========
-    @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+
         super.render(g, mouseX, mouseY, partialTick);
         drawTitleBar(g);
 
@@ -236,8 +181,9 @@ public class VolunteerDraftScreen extends Screen {
         } else if (phase == Phase.ADJUST) {
             drawWaiting(g);
         } else if (phase == Phase.RESULT) {
-            drawResult(g, mouseX, mouseY);
+            drawResult(g);
         }
+
     }
 
     private void drawTitleBar(GuiGraphics g) {
@@ -252,39 +198,48 @@ public class VolunteerDraftScreen extends Screen {
         String timeStr = String.format("%d:%02d", seconds / 60, seconds % 60);
         int color = seconds <= 10 ? RED : seconds <= 30 ? 0xFFFFAA33 : BLUE;
         Component timer = Component.literal(timeStr).withStyle(style -> style.withColor(color).withBold(true));
-        g.drawCenteredString(font, timer, width / 2, VIEWPORT_TOP - 32, color);
+        g.drawCenteredString(font, timer, width / 2, VIEWPORT_TOP - 30, color);
     }
 
     private void drawCardsInViewport(GuiGraphics g, int mouseX, int mouseY) {
-        int startX = width / 2 - CARD_W / 2;
+        int cardStartX = width / 2 - CARD_W / 2;
         int viewportTop = VIEWPORT_TOP;
-        int viewportBottom = height - VIEWPORT_BOTTOM_PAD;
-        g.enableScissor(0, viewportTop, width, viewportBottom - viewportTop);
+        int viewportBottom = height - VIEWPORT_BOTTOM_RESERVE;
+        g.enableScissor(0, viewportTop, width, viewportBottom);
         for (int i = 0; i < volunteerCount; i++) {
             int y = viewportTop + i * (CARD_H + GAP) - (int) scrollY;
             if (y + CARD_H < viewportTop || y > viewportBottom)
                 continue;
             if (i == draggingIndex) {
-                drawCard(g, startX, y, CARD_W, CARD_H, i, false, true);
+                drawCard(g, cardStartX, y, CARD_W, CARD_H, i, false, true);
             } else {
-                boolean hover = inside(mouseX, mouseY, startX, y, CARD_W, CARD_H) && !submitted;
-                drawCard(g, startX, y, CARD_W, CARD_H, i, hover, false);
+                boolean hoverCard = inside(mouseX, mouseY, cardStartX, y, CARD_W, CARD_H) && !submitted;
+                drawCard(g, cardStartX, y, CARD_W, CARD_H, i, hoverCard, false);
             }
+
+            int btnX = cardStartX + CARD_W + 4;
+            int btnY = y;
+            if (i > 0 && !submitted) {
+                boolean hoverUp = inside(mouseX, mouseY, btnX, btnY, ARROW_BTN_SIZE, ARROW_BTN_SIZE);
+                drawArrowButton(g, btnX, btnY, true, hoverUp);
+            }
+            if (i < volunteerCount - 1 && !submitted) {
+                boolean hoverDown = inside(mouseX, mouseY, btnX, btnY + CARD_H - ARROW_BTN_SIZE,
+                        ARROW_BTN_SIZE, ARROW_BTN_SIZE);
+                drawArrowButton(g, btnX, btnY + CARD_H - ARROW_BTN_SIZE, false, hoverDown);
+            }
+            int randomX = cardStartX - RANDOM_BTN_SIZE - 4;
+            boolean hoverRandom = inside(mouseX, mouseY, randomX, btnY + (CARD_H - RANDOM_BTN_SIZE) / 2,
+                    RANDOM_BTN_SIZE, RANDOM_BTN_SIZE) && !submitted;
+            drawRandomButton(g, randomX, btnY + (CARD_H - RANDOM_BTN_SIZE) / 2, hoverRandom);
         }
         g.disableScissor();
     }
 
     private void drawCard(GuiGraphics g, int x, int y, int w, int h, int index, boolean hover, boolean ghost) {
-        int border, bgTop, bgBottom;
-        if (ghost) {
-            border = 0x88FFFFFF;
-            bgTop = 0x442B2112;
-            bgBottom = 0x44112536;
-        } else {
-            border = hover ? GOLD : 0xFF5A4530;
-            bgTop = hover ? 0xFF2B2112 : 0xFF1A1008;
-            bgBottom = hover ? 0xFF112536 : 0xFF0B1722;
-        }
+        int border = ghost ? 0x88FFFFFF : (hover ? GOLD : 0xFF5A4530);
+        int bgTop = ghost ? 0x442B2112 : (hover ? 0xFF2B2112 : 0xFF1A1008);
+        int bgBottom = ghost ? 0x44112536 : (hover ? 0xFF112536 : 0xFF0B1722);
         g.fillGradient(x, y, x + w, y + h, bgTop, bgBottom);
         g.renderOutline(x, y, w, h, border);
         if (!ghost) {
@@ -292,7 +247,7 @@ public class VolunteerDraftScreen extends Screen {
         }
 
         String roleId = currentOrder.get(index);
-        if (roleId.equals("random")) {
+        if ("random".equals(roleId)) {
             int color = ghost ? (GOLD & 0x00FFFFFF) | 0x88000000 : GOLD;
             g.drawCenteredString(font, Component.translatable("gui.sre.volunteer.random"), x + w / 2, y + h / 2 - 4,
                     color);
@@ -303,9 +258,9 @@ public class VolunteerDraftScreen extends Screen {
                 Component name = RoleUtils.getRoleName(role).withColor(role.getColor());
                 g.drawCenteredString(font, name, x + w / 2, y + 8, nameColor);
                 Component faction = getFactionText(role);
-                int factionColor = ghost ? (faction.getStyle().getColor().getValue() & 0x00FFFFFF) | 0x88000000
+                int fColor = ghost ? (faction.getStyle().getColor().getValue() & 0x00FFFFFF) | 0x88000000
                         : faction.getStyle().getColor().getValue();
-                g.drawCenteredString(font, faction, x + w / 2, y + 24, factionColor);
+                g.drawCenteredString(font, faction, x + w / 2, y + 24, fColor);
             } else {
                 int color = ghost ? (TEXT & 0x00FFFFFF) | 0x88000000 : TEXT;
                 g.drawCenteredString(font, roleId, x + w / 2, y + h / 2 - 4, color);
@@ -313,6 +268,23 @@ public class VolunteerDraftScreen extends Screen {
         }
         Component pos = Component.literal("#" + (index + 1)).withStyle(ChatFormatting.GRAY);
         g.drawString(font, pos, x + 4, y + 4, ghost ? MUTED : GOLD);
+    }
+
+    private void drawArrowButton(GuiGraphics g, int x, int y, boolean up, boolean hover) {
+        int color = hover ? GOLD : MUTED;
+        int size = ARROW_BTN_SIZE;
+        g.fill(x, y, x + size, y + size, hover ? 0x552A5A42 : 0x331A1008);
+        g.renderOutline(x, y, size, size, color);
+        String arrow = up ? "▲" : "▼";
+        g.drawCenteredString(font, arrow, x + size / 2, y + size / 2 - 4, color);
+    }
+
+    private void drawRandomButton(GuiGraphics g, int x, int y, boolean hover) {
+        int color = hover ? GOLD : MUTED;
+        int size = RANDOM_BTN_SIZE;
+        g.fill(x, y, x + size, y + size, hover ? 0x552A5A42 : 0x331A1008);
+        g.renderOutline(x, y, size, size, color);
+        g.drawCenteredString(font, "?", x + size / 2, y + size / 2 - 4, color);
     }
 
     private void drawDraggedCard(GuiGraphics g, int mouseX, int mouseY) {
@@ -324,14 +296,13 @@ public class VolunteerDraftScreen extends Screen {
     private void drawScrollbar(GuiGraphics g) {
         if (maxScrollY <= 0)
             return;
-        int barX = width / 2 + CARD_W / 2 + 10;
+        int barX = width / 2 + CARD_W / 2 + ARROW_BTN_SIZE + 8;
         int barY = VIEWPORT_TOP;
-        int barH = (height - VIEWPORT_TOP - VIEWPORT_BOTTOM_PAD);
-        int barW = 4;
-        int thumbH = Math.max(18, (int) (barH * barH / (float) (maxScrollY + barH)));
+        int barH = height - VIEWPORT_TOP - VIEWPORT_BOTTOM_RESERVE;
+        int thumbH = Math.max(20, (int) (barH * barH / (double) (maxScrollY + barH)));
         int thumbY = barY + (int) ((barH - thumbH) * (scrollY / maxScrollY));
-        g.fill(barX, barY, barX + barW, barY + barH, 0x661A1008);
-        g.fill(barX, thumbY, barX + barW, thumbY + thumbH, GOLD);
+        g.fill(barX, barY, barX + SCROLL_BAR_WIDTH, barY + barH, 0x661A1008);
+        g.fill(barX, thumbY, barX + SCROLL_BAR_WIDTH, thumbY + thumbH, GOLD);
     }
 
     private void drawWaiting(GuiGraphics g) {
@@ -343,15 +314,13 @@ public class VolunteerDraftScreen extends Screen {
         g.drawCenteredString(font, time, width / 2, height / 2 + 16, GOLD);
     }
 
-    private void drawResult(GuiGraphics g, int mouseX, int mouseY) {
+    private void drawResult(GuiGraphics g) {
         SRERole myRole = getRoleByPath(myFinalRoleId);
         if (myRole == null) {
             g.drawCenteredString(font, Component.translatable("gui.sre.volunteer.waiting"), width / 2, height / 2,
                     TEXT);
             return;
         }
-
-        // 面板占据中央偏右的大部分区域（可根据需要调整）
         int panelX = width / 4;
         int panelY = 40;
         int panelW = width / 2;
@@ -359,17 +328,15 @@ public class VolunteerDraftScreen extends Screen {
         g.fillGradient(panelX, panelY, panelX + panelW, panelY + panelH, PANEL_BG_TOP, PANEL_BG_BOTTOM);
         g.renderOutline(panelX, panelY, panelW, panelH, BORDER);
 
-        // 职业名称与阵营
         Component name = RoleUtils.getRoleName(myRole).withColor(myRole.getColor());
         g.drawCenteredString(font, name, panelX + panelW / 2, panelY + 15, myRole.getColor() | 0xFF000000);
         Component faction = getFactionText(myRole);
         g.drawCenteredString(font, faction, panelX + panelW / 2, panelY + 30,
                 faction.getStyle().getColor() != null ? faction.getStyle().getColor().getValue() : TEXT);
 
-        // 介绍文本（带剪裁，防止过长溢出）
         int descY = panelY + 48;
         int descW = panelW - PAD * 2;
-        List<FormattedCharSequence> lines = getRoleIntroLines(myRole, descW);
+        List<FormattedCharSequence> lines = font.split(RoleUtils.getRoleDescription(myRole), descW);
         g.enableScissor(panelX + PAD, descY, panelX + panelW - PAD, panelY + panelH - PAD);
         for (int i = 0; i < lines.size(); i++) {
             int lineY = descY + i * 12;
@@ -379,41 +346,69 @@ public class VolunteerDraftScreen extends Screen {
         }
         g.disableScissor();
 
-        // 底部提示
         Component hint = Component.translatable("gui.sre.volunteer.result_hint").withStyle(ChatFormatting.GRAY);
         g.drawCenteredString(font, hint, width / 2, height - 20, MUTED);
     }
 
-    private List<FormattedCharSequence> getRoleIntroLines(SRERole role, int wrapW) {
-        return font.split(RoleUtils.getRoleDescription(role), wrapW);
-    }
-
-    // ========== 鼠标事件 ==========
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        if (submitted)
+        if (button != 0 || submitted)
             return super.mouseClicked(mx, my, button);
-        if (button == 0 && VolunteerCache.getPhase() == Phase.COMMIT) {
-            int startX = width / 2 - CARD_W / 2;
-            for (int i = 0; i < volunteerCount; i++) {
-                int y = VIEWPORT_TOP + i * (CARD_H + GAP) - (int) scrollY;
-                if (inside(mx, my, startX, y, CARD_W, CARD_H)) {
-                    draggingIndex = i;
-                    dragOffsetX = (int) (mx - startX);
-                    dragOffsetY = (int) (my - y);
+        if (VolunteerCache.getPhase() != Phase.COMMIT)
+            return super.mouseClicked(mx, my, button);
+
+        if (maxScrollY > 0) {
+            int barX = width / 2 + CARD_W / 2 + ARROW_BTN_SIZE + 8;
+            int barY = VIEWPORT_TOP;
+            int barH = height - VIEWPORT_TOP - VIEWPORT_BOTTOM_RESERVE;
+            if (mx >= barX && mx <= barX + SCROLL_BAR_WIDTH && my >= barY && my <= barY + barH) {
+                int thumbH = Math.max(20, (int) (barH * barH / (double) (maxScrollY + barH)));
+                int thumbY = barY + (int) ((barH - thumbH) * (scrollY / maxScrollY));
+                if (my >= thumbY && my <= thumbY + thumbH) {
+                    scrolling = true;
+                    scrollBarClickOffset = my - thumbY;
+                } else {
+                    float ratio = (float) ((my - barY) / barH);
+                    scrollY = Mth.clamp(ratio * maxScrollY, 0, maxScrollY);
+                }
+                return true;
+            }
+        }
+
+        int cardStartX = width / 2 - CARD_W / 2;
+        for (int i = 0; i < volunteerCount; i++) {
+            int y = VIEWPORT_TOP + i * (CARD_H + GAP) - (int) scrollY;
+            if (y + CARD_H < VIEWPORT_TOP || y > height - VIEWPORT_BOTTOM_RESERVE)
+                continue;
+
+            if (i > 0) {
+                int btnX = cardStartX + CARD_W + 4;
+                if (inside(mx, my, btnX, y, ARROW_BTN_SIZE, ARROW_BTN_SIZE)) {
+                    moveUp(i);
                     return true;
                 }
             }
-            // 滚动条拖拽
-            if (maxScrollY > 0) {
-                int barX = width / 2 + CARD_W / 2 + 10;
-                int barY = VIEWPORT_TOP;
-                int barH = (height - VIEWPORT_TOP - VIEWPORT_BOTTOM_PAD);
-                if (inside(mx, my, barX, barY, 8, barH)) {
-                    float ratio = (float) ((my - barY) / barH);
-                    scrollY = Math.max(0, Math.min(maxScrollY, ratio * maxScrollY));
+            if (i < volunteerCount - 1) {
+                int btnX = cardStartX + CARD_W + 4;
+                if (inside(mx, my, btnX, y + CARD_H - ARROW_BTN_SIZE, ARROW_BTN_SIZE, ARROW_BTN_SIZE)) {
+                    moveDown(i);
                     return true;
                 }
+            }
+            int randomX = cardStartX - RANDOM_BTN_SIZE - 4;
+            if (inside(mx, my, randomX, y + (CARD_H - RANDOM_BTN_SIZE) / 2, RANDOM_BTN_SIZE, RANDOM_BTN_SIZE)) {
+                toggleRandom(i);
+                return true;
+            }
+        }
+
+        for (int i = 0; i < volunteerCount; i++) {
+            int y = VIEWPORT_TOP + i * (CARD_H + GAP) - (int) scrollY;
+            if (inside(mx, my, cardStartX, y, CARD_W, CARD_H)) {
+                draggingIndex = i;
+                dragOffsetX = (int) (mx - cardStartX);
+                dragOffsetY = (int) (my - y);
+                return true;
             }
         }
         return super.mouseClicked(mx, my, button);
@@ -421,13 +416,17 @@ public class VolunteerDraftScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mx, double my, int button) {
+        if (scrolling) {
+            scrolling = false;
+            return true;
+        }
         if (draggingIndex >= 0) {
-            int startX = width / 2 - CARD_W / 2;
+            int cardStartX = width / 2 - CARD_W / 2;
             int targetIndex = -1;
             double minDist = Double.MAX_VALUE;
             for (int i = 0; i < volunteerCount; i++) {
                 int y = VIEWPORT_TOP + i * (CARD_H + GAP) - (int) scrollY;
-                double cx = startX + CARD_W / 2.0;
+                double cx = cardStartX + CARD_W / 2.0;
                 double cy = y + CARD_H / 2.0;
                 double dist = Math.sqrt(Math.pow(mx - cx, 2) + Math.pow(my - cy, 2));
                 if (dist < minDist && i != draggingIndex) {
@@ -435,9 +434,8 @@ public class VolunteerDraftScreen extends Screen {
                     targetIndex = i;
                 }
             }
-            if (targetIndex >= 0) {
+            if (targetIndex >= 0)
                 Collections.swap(currentOrder, draggingIndex, targetIndex);
-            }
             draggingIndex = -1;
             return true;
         }
@@ -446,13 +444,30 @@ public class VolunteerDraftScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int btn, double dx, double dy) {
-        return draggingIndex >= 0 || super.mouseDragged(mx, my, btn, dx, dy);
+        if (scrolling) {
+            int barY = VIEWPORT_TOP;
+            int barH = height - VIEWPORT_TOP - VIEWPORT_BOTTOM_RESERVE;
+            int thumbH = Math.max(20, (int) (barH * barH / (double) (maxScrollY + barH)));
+            float trackLength = barH - thumbH;
+            float pos = Mth.clamp((float) (my - barY - scrollBarClickOffset), 0, trackLength);
+            scrollY = (pos / trackLength) * maxScrollY;
+            return true;
+        }
+        if (draggingIndex >= 0 && maxScrollY > 0) {
+            int scrollThreshold = 30;
+            if (my < VIEWPORT_TOP + scrollThreshold)
+                scrollY = Math.max(0, scrollY - 5);
+            else if (my > height - VIEWPORT_BOTTOM_RESERVE - scrollThreshold)
+                scrollY = Math.min(maxScrollY, scrollY + 5);
+            return true;
+        }
+        return super.mouseDragged(mx, my, btn, dx, dy);
     }
 
     @Override
     public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
         if (VolunteerCache.getPhase() == Phase.COMMIT && maxScrollY > 0) {
-            scrollY = Math.max(0, Math.min(maxScrollY, scrollY - scrollY * 10));
+            this.scrollY = Mth.clamp(this.scrollY - scrollY * 10, 0, maxScrollY);
             return true;
         }
         return super.mouseScrolled(mx, my, scrollX, scrollY);
@@ -462,7 +477,6 @@ public class VolunteerDraftScreen extends Screen {
         return mx >= x && mx < x + w && my >= y && my < y + h;
     }
 
-    // ========== 辅助方法 ==========
     private Component getFactionText(SRERole role) {
         if (role.isInnocent())
             return Component.translatable("display.type.role.innocent").withStyle(s -> s.withColor(0xFF44BB66));

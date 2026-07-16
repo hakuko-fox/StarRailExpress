@@ -491,12 +491,9 @@ public class RoleRotationScreen extends Screen {
             if (role != null)
                 return role;
         }
-        if (path.contains(":"))
-            return null;
-        for (String namespace : List.of("noellesroles", "starrailexpress", "trainmurdermystery")) {
-            SRERole role = TMMRoles.ROLES.get(ResourceLocation.fromNamespaceAndPath(namespace, path));
-            if (role != null)
-                return role;
+        for (var role : TMMRoles.ROLES.entrySet()) {
+            if (role.getKey().getPath().equals(path))
+                return role.getValue();
         }
         return null;
     }
