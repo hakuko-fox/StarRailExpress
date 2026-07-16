@@ -136,8 +136,10 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
 
     @Override
     public void tickServerGameLoop(ServerLevel world, SREGameWorldComponent gameComp) {
-        if (!isInDraftPhase || draftState == null)
+        if (!isInDraftPhase || draftState == null) {
+            super.tickServerGameLoop(world, gameComp);
             return;
+        }
         // 处理玩家退出
         boolean phaseChanged = false;
         for (ServerPlayer p : new ArrayList<>(world.players())) {
@@ -190,8 +192,6 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
                 broadcastSync(world);
             }
         }
-
-        super.tickServerGameLoop(world, gameComp);
     }
 
     // 为提交超时自动生成随机志愿的工具方法

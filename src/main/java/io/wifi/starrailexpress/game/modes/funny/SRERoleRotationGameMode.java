@@ -129,8 +129,10 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
 
     @Override
     public void tickServerGameLoop(ServerLevel world, SREGameWorldComponent gameComp) {
-        if (!isInRotationPhase || draftState == null)
+        if (!isInRotationPhase || draftState == null) {
+            super.tickServerGameLoop(world, gameComp);
             return;
+        }
         // ★ 处理离线玩家
         if (draftState.handleOfflinePlayers(world)) {
             // 状态有变动，广播同步
@@ -170,8 +172,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
                 broadcastSync(world);
             }
         }
-
-        super.tickServerGameLoop(world, gameComp);
     }
 
     private void forceFinishRotation(ServerLevel world, SREGameWorldComponent gameComp) {
