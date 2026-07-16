@@ -91,9 +91,10 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
             }
         }
         draftState = new VolunteerDraftState(new ArrayList<>(players), world);
+        draftState.startCommitPhase(world.getGameTime()); // 立刻进入志愿提交阶段
         isInDraftPhase = true;
         draftTimeout = world.getGameTime() + ROTATION_SAFE_TIME;
-        broadcastSync(world);
+        broadcastSync(world); // 发送 COMMIT 状态给所有客户端
     }
 
     private void broadcastSync(ServerLevel world) {
@@ -137,7 +138,6 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
     public void tickServerGameLoop(ServerLevel world, SREGameWorldComponent gameComp) {
         if (!isInDraftPhase || draftState == null)
             return;
-
         // 处理玩家退出
         boolean phaseChanged = false;
         for (ServerPlayer p : new ArrayList<>(world.players())) {

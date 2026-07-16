@@ -200,6 +200,7 @@
   "text.autoconfig.starrailexpress.option.enableNoLimitLoversInLoverMode": "恋人模式：不限制单个人的恋人数量（允许多重链子存在）",
   "text.autoconfig.starrailexpress.option.loverModeLoversPercent": "恋人模式：恋人词条占总玩家数数量占比。（最大为1）",
   "text.autoconfig.starrailexpress.option.volunteerModeVolunteerCount": "阳光志愿模式志愿数量",
+  "text.autoconfig.starrailexpress.option.volunteerModeSelectionTime": "阳光志愿模式志愿选择时长（秒）",
   "text.autoconfig.starrailexpress.option.refugeeModeRefugeePercent": "难民模式：难民词条占总玩家数数量占比。（最大为1）",
   "text.autoconfig.starrailexpress.option.gamblerModeGamblerPercent": "赌徒模式：赌徒词条占总玩家数数量占比。（最大为1）",
   "text.autoconfig.starrailexpress.option.gamblerModeGamblerKillTime": "赌徒模式：未变身的赌徒的死亡时间。（单位：秒）",

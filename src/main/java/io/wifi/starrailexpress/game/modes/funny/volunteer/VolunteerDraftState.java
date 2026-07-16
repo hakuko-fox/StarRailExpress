@@ -37,6 +37,12 @@ public class VolunteerDraftState {
     private final Random random;
     private final ServerLevel world;
 
+    public void startCommitPhase(long gameTime) {
+        this.commitTimeLimit = SREConfig.instance().volunteerModeSelectionTime * 20;
+        this.phase = Phase.COMMIT;
+        this.phaseStartTime = gameTime;
+    }
+
     public VolunteerDraftState(List<ServerPlayer> players, ServerLevel world) {
         this.players = new ArrayList<>(players);
         this.world = world;

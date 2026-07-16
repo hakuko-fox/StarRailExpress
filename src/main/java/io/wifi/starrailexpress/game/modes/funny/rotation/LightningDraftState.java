@@ -10,7 +10,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import org.agmas.harpymodloader.Harpymodloader;
@@ -29,6 +28,9 @@ public class LightningDraftState {
 
     public final List<ServerPlayer> allPlayers;
     public final int totalPlayers;
+
+    // 锁定本轮分配给玩家的候选职业，防止随机选择抢走
+    private final Set<SRERole> lockedCandidates = new HashSet<>();
 
     // ===== 职业池与结果 =====
     public final ArrayList<SRERole> rolePool = new ArrayList<>();
@@ -53,8 +55,6 @@ public class LightningDraftState {
     private final Map<Integer, Integer> cardMaxPerType = new HashMap<>();
     private final Set<UUID> cardReturnedPlayers = new HashSet<>();
 
-    // ===== 特殊平民与最后阶段 =====
-
     public LightningDraftState(List<ServerPlayer> players) {
         this.allPlayers = new ArrayList<>(players);
         this.totalPlayers = players.size();
@@ -63,9 +63,6 @@ public class LightningDraftState {
 
     /**
      * 处理已离线的、尚未选择职业的玩家。
-     * 
-     * @param world 当前世界
-     * @return 是否实际处理了任何离线玩家（用于决定是否重新广播）
      */
     public boolean handleOfflinePlayers(ServerLevel world) {
         List<UUID> offlineUnselected = new ArrayList<>();
@@ -81,17 +78,14 @@ public class LightningDraftState {
             return false;
 
         for (UUID uuid : offlineUnselected) {
-            // 若该离线玩家还在本轮候选人中，直接移除
-            roundCandidates.remove(uuid);
-
+            roundCandidates.remove(uuid); // 从本轮候选移除
             SRERole randomRole = selectRandomRole(world);
             selectedRoles.put(uuid, randomRole);
             rolePool.remove(randomRole);
             remainingRoles--;
-            randomChoosers.add(uuid); // 视为随机
+            randomChoosers.add(uuid);
         }
 
-        // 如果当前正在选择阶段，且本轮所有候选人都已完成（可能是因为移除了离线玩家后列表为空）
         if (isSelecting && roundCandidates.isEmpty()) {
             finishRound(world);
         }
@@ -142,6 +136,7 @@ public class LightningDraftState {
             Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
         }
 
+        // 职业池总数 = 总玩家数 + 2
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
                 killerCount, vigilanteCount, neutralsCount,
                 totalPlayers + 2, 0,
@@ -201,7 +196,7 @@ public class LightningDraftState {
         };
     }
 
-    // ---------- 玩家顺序：按最大权重降序，同权重随机 ----------
+    // ---------- 玩家顺序 ----------
     public void assignRotationOrder() {
         List<ServerPlayer> sorted = new ArrayList<>(allPlayers);
         final Random random = new Random();
@@ -209,7 +204,7 @@ public class LightningDraftState {
             double w1 = PlayerRoleWeightManager.getMaxWeight(a);
             double w2 = PlayerRoleWeightManager.getMaxWeight(b);
             if (w1 != w2)
-                return Double.compare(w2, w1); // 降序
+                return Double.compare(w2, w1);
             int aa = random.nextInt(), bb = random.nextInt();
             return aa > bb ? 1 : (aa == bb ? 0 : -1);
         });
@@ -219,7 +214,7 @@ public class LightningDraftState {
         }
     }
 
-    // ---------- 轮次计算（首轮增加3秒缓冲）----------
+    // ---------- 轮次计算 ----------
     public void startNextRound(ServerLevel world) {
         if (remainingRoles <= 0) {
             startConfirmCountdown();
@@ -230,7 +225,6 @@ public class LightningDraftState {
         int b = Math.max(1, n / 3);
         playersInThisRound = b;
 
-        // 按顺序选取尚未选择的玩家
         List<UUID> roundPlayers = new ArrayList<>();
         for (UUID uuid : playerOrder) {
             if (!selectedRoles.containsKey(uuid)) {
@@ -240,14 +234,13 @@ public class LightningDraftState {
             }
         }
 
-        // 从池中随机抽取 need 个职业
         int need = Math.min(n, b * 3);
         List<SRERole> drawn = new ArrayList<>(rolePool);
         Collections.shuffle(drawn, new Random(world.getGameTime()));
         drawn = new ArrayList<>(drawn.subList(0, need));
 
-        // 平均分配：每人最多3个
         roundCandidates.clear();
+        lockedCandidates.clear(); // 清空锁定集
         int idx = 0;
         for (UUID playerId : roundPlayers) {
             int count = Math.min(3, need - idx);
@@ -255,18 +248,17 @@ public class LightningDraftState {
                 break;
             List<SRERole> candidates = new ArrayList<>(drawn.subList(idx, idx + count));
             roundCandidates.put(playerId, candidates);
+            lockedCandidates.addAll(candidates); // 锁定本轮候选
             idx += count;
         }
 
         currentRoundIndex++;
         roundStartTime = world.getGameTime();
 
-        // 计算基础时限：最大选项数 × 3秒
         int baseTime = roundCandidates.values().stream()
                 .mapToInt(List::size).max().orElse(0) * 3 * 20;
-        // 第一轮额外增加 3 秒（60 tick）缓冲时间
         if (currentRoundIndex == 1) {
-            perPlayerTimeLimit = baseTime + 60; // 例如 3个选项 → 9+3=12秒
+            perPlayerTimeLimit = baseTime + 60; // 第一轮多3秒缓冲
         } else {
             perPlayerTimeLimit = baseTime;
         }
@@ -284,8 +276,9 @@ public class LightningDraftState {
         SRERole chosen = null;
         if (choiceIndex >= 0 && choiceIndex < candidates.size()) {
             chosen = candidates.get(choiceIndex);
+            lockedCandidates.remove(chosen); // 从锁定集移除
         } else if (choiceIndex == 3) { // 随机
-            chosen = selectRandomRole(world);
+            chosen = selectRandomRole(world); // 排除锁定职业
             randomChoosers.add(playerUuid);
         }
         if (chosen == null)
@@ -305,7 +298,7 @@ public class LightningDraftState {
                             .withStyle(ChatFormatting.GREEN),
                     true);
         }
-        RoleUtils.playSound(player, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
+        world.playSound(null, player, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1.0f, 1.2f);
 
         if (roundCandidates.isEmpty()) {
             finishRound(world);
@@ -315,11 +308,20 @@ public class LightningDraftState {
 
     private void finishRound(ServerLevel world) {
         isSelecting = false;
+        lockedCandidates.clear();
         if (remainingRoles > 0) {
-            playSoundToAll(world, SoundEvents.NOTE_BLOCK_BELL.value(), 1.0f, 1.5f);
-            startNextRound(world); // 立刻开始下一轮
+            // 一轮结束，新轮提示音
+            for (ServerPlayer p : world.players()) {
+                world.playSound(null, p.getX(), p.getY(), p.getZ(),
+                        SoundEvents.NOTE_BLOCK_BELL, SoundSource.MASTER, 1.0f, 1.5f);
+            }
+            startNextRound(world);
         } else {
-            playSoundToAll(world, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+            // 全部结束提示音
+            for (ServerPlayer p : world.players()) {
+                world.playSound(null, p.getX(), p.getY(), p.getZ(),
+                        SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0f, 1.0f);
+            }
             startConfirmCountdown();
         }
     }
@@ -329,16 +331,12 @@ public class LightningDraftState {
         confirmCountdown = 6 * 20;
     }
 
-    private void playSoundToAll(ServerLevel world, SoundEvent sound, float volume, float pitch) {
-        for (ServerPlayer p : world.players()) {
-            RoleUtils.playSound(p, sound, SoundSource.MASTER, volume, pitch);
-        }
-    }
-
     private SRERole selectRandomRole(ServerLevel world) {
-        if (rolePool.isEmpty())
+        List<SRERole> available = new ArrayList<>(rolePool);
+        available.removeAll(lockedCandidates);
+        if (available.isEmpty())
             return TMMRoles.CIVILIAN;
-        return rolePool.get(new Random(world.getGameTime()).nextInt(rolePool.size()));
+        return available.get(new Random(world.getGameTime()).nextInt(available.size()));
     }
 
     public void timeoutUnfinishedPlayers(ServerLevel world) {
@@ -357,16 +355,17 @@ public class LightningDraftState {
                         Component.literal("选择超时，已随机分配职业").withStyle(ChatFormatting.RED),
                         true);
             }
+            List<SRERole> oldCandidates = roundCandidates.remove(uuid);
+            if (oldCandidates != null)
+                lockedCandidates.removeAll(oldCandidates);
         }
-        roundCandidates.clear();
         finishRound(world);
     }
 
-    // ---------- 调整剩余职业 ----------
     public void adjustRemainingRoles(ServerLevel serverWorld) {
+        // 不做任何替换
     }
 
-    // ---------- 供同步包使用的转换 ----------
     public Map<UUID, List<String>> getRoundCandidatesAsStrings() {
         return roundCandidates.entrySet().stream()
                 .collect(Collectors.toMap(
