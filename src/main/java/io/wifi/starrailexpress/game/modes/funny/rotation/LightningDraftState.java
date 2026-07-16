@@ -8,7 +8,6 @@ import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -20,7 +19,6 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import net.exmo.sre.repair.role.RepairRole;
 
@@ -56,14 +54,6 @@ public class LightningDraftState {
     private final Set<UUID> cardReturnedPlayers = new HashSet<>();
 
     // ===== 特殊平民与最后阶段 =====
-    private int finalPhaseThreshold = 6;
-    private static final Set<SRERole> SPECIAL_CIVILIAN_ROLES = Set.of(
-            ModRoles.DIVER,
-            ModRoles.DOCTOR,
-            ModRoles.PILOT,
-            RedHouseRoles.BAKA,
-            RedHouseRoles.PACHURI,
-            ModRoles.FITTER);
 
     public LightningDraftState(List<ServerPlayer> players) {
         this.allPlayers = new ArrayList<>(players);
@@ -111,13 +101,6 @@ public class LightningDraftState {
     // ---------- 初始化角色池 ----------
     public void initializeRolePool(ServerLevel world) {
         rolePool.clear();
-        if (totalPlayers <= 12) {
-            finalPhaseThreshold = 6;
-        } else if (totalPlayers < 24) {
-            finalPhaseThreshold = (int) Math.ceil(totalPlayers / 2.0);
-        } else {
-            finalPhaseThreshold = (int) Math.floor(totalPlayers / 2.0 + totalPlayers / 7.0);
-        }
 
         int killerCount = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
         int vigilanteCount = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
@@ -221,12 +204,14 @@ public class LightningDraftState {
     // ---------- 玩家顺序：按最大权重降序，同权重随机 ----------
     public void assignRotationOrder() {
         List<ServerPlayer> sorted = new ArrayList<>(allPlayers);
+        final Random random = new Random();
         sorted.sort((a, b) -> {
             double w1 = PlayerRoleWeightManager.getMaxWeight(a);
             double w2 = PlayerRoleWeightManager.getMaxWeight(b);
             if (w1 != w2)
                 return Double.compare(w2, w1); // 降序
-            return Integer.compare(a.getUUID().hashCode(), b.getUUID().hashCode());
+            int aa = random.nextInt(), bb = random.nextInt();
+            return aa > bb ? 1 : (aa == bb ? 0 : -1);
         });
         playerOrder.clear();
         for (ServerPlayer p : sorted) {
@@ -379,116 +364,6 @@ public class LightningDraftState {
 
     // ---------- 调整剩余职业 ----------
     public void adjustRemainingRoles(ServerLevel serverWorld) {
-        List<SRERole> remainingPool = new ArrayList<>(rolePool);
-        List<SRERole> remainingKillers = new ArrayList<>();
-        List<SRERole> remainingVigilantes = new ArrayList<>();
-        List<SRERole> remainingNeutrals = new ArrayList<>();
-        List<SRERole> remainingSpecialCivilians = new ArrayList<>();
-
-        for (SRERole role : remainingPool) {
-            int roleType = PlayerRoleWeightManager.getRoleType(role);
-            if (roleType == 4)
-                remainingKillers.add(role);
-            else if (roleType == 5)
-                remainingVigilantes.add(role);
-            else if (roleType == 2 || roleType == 3)
-                remainingNeutrals.add(role);
-            else if (isSpecialCivilianRole(role))
-                remainingSpecialCivilians.add(role);
-        }
-
-        int selectedKillers = 0, selectedVigilantes = 0, selectedNeutrals = 0, selectedSpecialCivilians = 0;
-        for (ServerPlayer player : serverWorld.players()) {
-            SRERole role = selectedRoles.get(player.getUUID());
-            if (role == null)
-                continue;
-            int roleType = PlayerRoleWeightManager.getRoleType(role);
-            if (roleType == 4)
-                selectedKillers++;
-            else if (roleType == 5)
-                selectedVigilantes++;
-            else if (roleType == 2 || roleType == 3)
-                selectedNeutrals++;
-            else if (isSpecialCivilianRole(role))
-                selectedSpecialCivilians++;
-        }
-
-        int targetKillers = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
-        int targetVigilantes = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
-        int targetNeutrals = Math.max(0, RoleCountManager.getNeutralCount(totalPlayers));
-
-        int neededKillers = Math.max(0, targetKillers - selectedKillers);
-        int neededVigilantes = Math.max(0, targetVigilantes - selectedVigilantes);
-        int neededNeutrals = Math.max(0, targetNeutrals - selectedNeutrals);
-        int neededSpecialCivilians = remainingSpecialCivilians.size();
-
-        int totalNeeded = neededKillers + neededVigilantes + neededNeutrals + neededSpecialCivilians;
-        if (totalNeeded <= 0)
-            return;
-
-        List<ServerPlayer> civilianPlayers = new ArrayList<>();
-        for (ServerPlayer player : serverWorld.players()) {
-            SRERole role = selectedRoles.get(player.getUUID());
-            if (role != null && role.isInnocent() && !role.canUseKiller() &&
-                    !role.isVigilanteTeam() && !role.isNeutrals() && !isSpecialCivilianRole(role)) {
-                civilianPlayers.add(player);
-            }
-        }
-        if (civilianPlayers.isEmpty())
-            return;
-
-        Random random = new Random(serverWorld.getGameTime());
-        List<SRERole> toAssign = new ArrayList<>();
-        for (int i = 0; i < neededKillers && i < remainingKillers.size(); i++)
-            toAssign.add(remainingKillers.get(i));
-        for (int i = 0; i < neededVigilantes && i < remainingVigilantes.size(); i++)
-            toAssign.add(remainingVigilantes.get(i));
-        for (int i = 0; i < neededNeutrals && i < remainingNeutrals.size(); i++)
-            toAssign.add(remainingNeutrals.get(i));
-        for (int i = 0; i < neededSpecialCivilians && i < remainingSpecialCivilians.size(); i++)
-            toAssign.add(remainingSpecialCivilians.get(i));
-
-        for (SRERole priorityRole : toAssign) {
-            if (civilianPlayers.isEmpty())
-                break;
-            ServerPlayer targetPlayer = civilianPlayers.remove(random.nextInt(civilianPlayers.size()));
-            UUID targetUuid = targetPlayer.getUUID();
-
-            SRERole oldRole = selectedRoles.get(targetUuid);
-            if (oldRole != null && !isRoleInPool(oldRole)) {
-                rolePool.add(oldRole);
-            }
-            selectedRoles.put(targetUuid, priorityRole);
-            rolePool.remove(priorityRole);
-
-            targetPlayer.displayClientMessage(
-                    Component.translatable("gui.sre.role_rotation.role_adjusted",
-                            RoleUtils.getRoleName(priorityRole).withColor(priorityRole.getColor()))
-                            .withStyle(ChatFormatting.GOLD),
-                    true);
-        }
-    }
-
-    private boolean isSpecialCivilianRole(SRERole role) {
-        if (role == null)
-            return false;
-        ResourceLocation id = role.identifier();
-        for (SRERole special : SPECIAL_CIVILIAN_ROLES) {
-            if (id.equals(special.identifier()))
-                return true;
-        }
-        return role.isInnocent() && !role.canBeRandomed();
-    }
-
-    private boolean isRoleInPool(SRERole role) {
-        if (role == null)
-            return false;
-        ResourceLocation id = role.identifier();
-        for (SRERole r : rolePool) {
-            if (id.equals(r.identifier()))
-                return true;
-        }
-        return false;
     }
 
     // ---------- 供同步包使用的转换 ----------
