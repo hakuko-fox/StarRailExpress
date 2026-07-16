@@ -1035,6 +1035,9 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientRoleRosterCache.clear();
             VolunteerCache.clear();
             RoleRotationCache.clear();
+            ClientEmbalmerState.clear();
+            ClientAmonState.clearAll();
+            ClientSkincrawlerState.clearAll();
         });
         // 监听客户端断开连接：清空卡池配置信息
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {

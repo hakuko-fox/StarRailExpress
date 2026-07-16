@@ -12,38 +12,52 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientEmbalmerState {
     private static final Map<UUID, UUID> swaps = new ConcurrentHashMap<>();
     private static final Map<UUID, Float> pitches = new ConcurrentHashMap<>();
-    private static long expiresAt;
+    private static long expiresAt = 0;
 
     public static void register() {
-        ClientPlayNetworking.registerGlobalReceiver(EmbalmerSkinSwapS2CPacket.ID, (payload, ctx) ->
-            ctx.client().execute(() -> {
-                if (payload.durationTicks() <= 0 || payload.swaps().isEmpty()) {
-                    clear();
-                    return;
-                }
-                swaps.clear(); swaps.putAll(payload.swaps());
-                pitches.clear(); pitches.putAll(payload.pitches());
-                var client = Minecraft.getInstance();
-                expiresAt = client.level != null ? client.level.getGameTime() + payload.durationTicks() : 0;
-            }));
+        ClientPlayNetworking.registerGlobalReceiver(EmbalmerSkinSwapS2CPacket.ID,
+                (payload, ctx) -> ctx.client().execute(() -> {
+                    if (payload.durationTicks() <= 0 || payload.swaps().isEmpty()) {
+                        clear();
+                        return;
+                    }
+                    swaps.clear();
+                    swaps.putAll(payload.swaps());
+                    pitches.clear();
+                    pitches.putAll(payload.pitches());
+                    var client = Minecraft.getInstance();
+                    expiresAt = client.level != null ? client.level.getGameTime() + payload.durationTicks() : 0;
+                }));
     }
 
     public static UUID replacement(UUID id) {
-        if (!isActive() || id == null) return null;
+        if (!isActive() || id == null)
+            return null;
         return swaps.get(id);
     }
 
     public static float pitch(UUID id) {
-        if (!isActive() || id == null) return 1.0F;
+        if (!isActive() || id == null)
+            return 1.0F;
         return pitches.getOrDefault(id, 1.0F);
     }
 
     public static boolean isActive() {
         var client = Minecraft.getInstance();
-        if (client == null || client.level == null || swaps.isEmpty()) { clear(); return false; }
-        if (client.level.getGameTime() >= expiresAt) { clear(); return false; }
+        if (client == null || client.level == null || swaps.isEmpty()) {
+            clear();
+            return false;
+        }
+        if (client.level.getGameTime() >= expiresAt) {
+            clear();
+            return false;
+        }
         return true;
     }
 
-    private static void clear() { swaps.clear(); pitches.clear(); expiresAt = 0; }
+    public static void clear() {
+        swaps.clear();
+        pitches.clear();
+        expiresAt = 0;
+    }
 }
