@@ -93,7 +93,8 @@ public final class MapStatusBarHudRenderer {
                 }
                 long nowTime = client.level.getGameTime();
                 if (lastWarnedTime <= 0 || nowTime - lastWarnedTime >= warnGap) {
-                    StaminaRenderer.triggerScreenEdgeEffect(POLLUTION_EDGE_COLOR, 100, intensity);
+                    // 持续时间覆盖整个 warnGap 间隔，避免效果结束后频繁重触发导致闪烁
+                    StaminaRenderer.triggerScreenEdgeEffect(POLLUTION_EDGE_COLOR, Math.max(warnGap * 50L, 200L), intensity);
                     showStatusWarning(client, type);
                     lastWarnedTime = nowTime;
                 }
@@ -126,7 +127,8 @@ public final class MapStatusBarHudRenderer {
                     case HUNGER -> HUNGER_EDGE_COLOR;
                     default -> 0xFFFFFFFF;
                 };
-                StaminaRenderer.triggerScreenEdgeEffect(edgeColor, 100, intensity);
+                // 持续时间覆盖整个 warnGap 间隔，避免效果结束后频繁重触发导致闪烁
+                StaminaRenderer.triggerScreenEdgeEffect(edgeColor, Math.max(warnGap * 50L, 200L), intensity);
                 showStatusWarning(client, type);
                 lastWarnedTime = nowTime;
             }

@@ -204,7 +204,9 @@ public class RoleRotationScreen extends Screen {
             return RED;
         if (role.isInnocent())
             return GREEN;
-        if (role.isNeutrals() || role.isNeutralForKiller() || role.isVigilanteTeam())
+        if (role.isVigilanteTeam())
+            return BLUE;
+        if (role.isNeutrals() || role.isNeutralForKiller())
             return GOLD;
         return BLUE;
     }
@@ -416,7 +418,7 @@ public class RoleRotationScreen extends Screen {
                     .withStyle(style -> style.withColor(0xFFCCAA22));
         } else if (role.isVigilanteTeam()) {
             return Component.translatable("display.type.role.vigilante")
-                    .withStyle(style -> style.withColor(0xFF22BBCC));
+                    .withStyle(style -> style.withColor(0xFF1B8AE5));
         }
         return Component.literal("Unknown").withStyle(ChatFormatting.GRAY);
     }
