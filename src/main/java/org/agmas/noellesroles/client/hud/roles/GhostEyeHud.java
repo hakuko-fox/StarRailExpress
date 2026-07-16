@@ -18,7 +18,8 @@ public class GhostEyeHud {
     public static void register() {
         RoleHudRenderCallback.EVENT.register(ModRoles.GHOST_EYE_ID, (context, tickCounter) -> {
             Minecraft client = Minecraft.getInstance();
-            if (SREClient.isPlayerSpectator()) return;
+            if (SREClient.isPlayerSpectator())
+                return;
 
             Font font = client.font;
             GhostEyePlayerComponent ghostComp = GhostEyePlayerComponent.KEY.get(client.player);
@@ -29,10 +30,10 @@ public class GhostEyeHud {
             MutableComponent scanLine;
             if (ghostComp.revealTicks > 0) {
                 scanLine = Component.translatable("hud.ghost_eye.scanning",
-                        ghostComp.revealTicks / 20.0);
+                        String.format("%.1f", ghostComp.revealTicks / 20.0));
             } else {
                 scanLine = Component.translatable("hud.ghost_eye.scan_countdown",
-                        ghostComp.scanCountdown / 20);
+                        String.format("%s", ghostComp.scanCountdown / 20));
             }
             int y = context.guiHeight() - 20 - font.lineHeight - 2;
             context.drawString(font, scanLine, x - font.width(scanLine), y, color);
