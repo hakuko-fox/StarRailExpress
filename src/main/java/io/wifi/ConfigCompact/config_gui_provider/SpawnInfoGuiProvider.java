@@ -11,8 +11,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import org.agmas.noellesroles.config.NoellesRolesConfig.RoleSpawnInfoEntries;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig.RoleSpawnInfoEntries;
+import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.lang.reflect.Field;

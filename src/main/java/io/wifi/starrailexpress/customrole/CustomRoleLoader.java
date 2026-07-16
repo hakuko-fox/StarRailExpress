@@ -378,7 +378,7 @@ public class CustomRoleLoader {
 
         // 自定义职业直接设置 spawnInfo 并禁止配置覆盖，确保工具设置的值始终生效
         role.setCanSetSpawnInfoInConfig(false);
-        org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo customSpawn = new org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo();
+        org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo customSpawn = new org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo();
         customSpawn.setMax(role.defaultMaxCount);
         if (role.defaultEnableNeedPlayerCount >= 0)
             customSpawn.setMinEnabledPlayer(role.defaultEnableNeedPlayerCount);

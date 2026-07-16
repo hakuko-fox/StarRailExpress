@@ -11,7 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.SREDisableManager;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 
 import java.util.*;
 import java.util.function.Consumer;

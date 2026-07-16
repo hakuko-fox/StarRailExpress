@@ -22,7 +22,8 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.harpymodloader.modifiers.TouhouModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig;
+import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -581,7 +582,7 @@ public class InitModRolesMax {
      * 从配置应用角色概率设置
      */
     private static void applyRoleChanceFromConfig() {
-        NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
+        SpawnInfoConfig config = SpawnInfoConfig.instance();
 
         for (var entry : HMLModifiers.MODIFIERS) {
             SpawnInfo spinfo = config.modifierDetails.getSpawnInfo(entry);

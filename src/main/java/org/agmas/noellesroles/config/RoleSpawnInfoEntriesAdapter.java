@@ -3,8 +3,8 @@ package org.agmas.noellesroles.config;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.resources.ResourceLocation;
-import org.agmas.noellesroles.config.NoellesRolesConfig.RoleSpawnInfoEntries;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig.RoleSpawnInfoEntries;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

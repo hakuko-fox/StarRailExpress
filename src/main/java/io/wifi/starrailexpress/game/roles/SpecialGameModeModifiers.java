@@ -3,7 +3,7 @@ package io.wifi.starrailexpress.game.roles;
 import io.wifi.starrailexpress.SRE;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 
 import java.awt.*;
 import java.util.HashSet;

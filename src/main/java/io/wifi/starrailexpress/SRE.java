@@ -42,6 +42,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.config.SpawnInfoConfig;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -126,6 +127,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         SREConfig.HANDLER.nothing();
         HarpyModLoaderConfig.HANDLER.nothing();
         NoellesRolesConfig.HANDLER.nothing();
+        SpawnInfoConfig.HANDLER.nothing();
         StupidExpressConfig.HANDLER.nothing();
     }
 

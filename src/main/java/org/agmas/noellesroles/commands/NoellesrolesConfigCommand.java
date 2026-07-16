@@ -14,7 +14,8 @@ import org.agmas.harpymodloader.commands.argument.ModifierArgumentType;
 import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.config.NoellesRolesConfig.SpawnInfo;
+import org.agmas.noellesroles.config.SpawnInfoConfig;
+import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public class NoellesrolesConfigCommand {
                         }
                         // %s
                         // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                        SpawnInfo spinfo = NoellesRolesConfig.instance().roleDetails
+                        SpawnInfo spinfo = SpawnInfoConfig.instance().roleDetails
                             .getSpawnInfo(role);
                         Component msg = Component
                             .translatable("cmd.config.noellesroles.spawn.info",
@@ -76,7 +77,7 @@ public class NoellesrolesConfigCommand {
                             }
                             // %s
                             // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                            SpawnInfo spinfo = NoellesRolesConfig.instance().roleDetails
+                            SpawnInfo spinfo = SpawnInfoConfig.instance().roleDetails
                                 .getSpawnInfo(role);
                             spinfo.setEnableChance(role.defaultEnableChance)
                                 .setMaps(new ArrayList<>(role.defaultSpawnMaps))
@@ -115,7 +116,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().roleDetails
                                         .getSpawnInfo(role);
                                     spinfo.setEnableChance(num);
@@ -155,7 +156,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().roleDetails
                                         .getSpawnInfo(role);
                                     spinfo.setMax(num);
@@ -195,7 +196,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().roleDetails
                                         .getSpawnInfo(role);
                                     spinfo.setMinEnabledPlayer(num);
@@ -235,7 +236,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().roleDetails
                                         .getSpawnInfo(role);
                                     spinfo.setMaxEnabledPlayer(num);
@@ -273,7 +274,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().roleDetails
                                         .getSpawnInfo(role);
                                     spinfo.map.clear();
@@ -314,7 +315,7 @@ public class NoellesrolesConfigCommand {
                                         }
                                         // %s
                                         // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                        SpawnInfo spinfo = NoellesRolesConfig
+                                        SpawnInfo spinfo = SpawnInfoConfig
                                             .instance().roleDetails
                                             .getSpawnInfo(role);
                                         spinfo.map.add(num);
@@ -356,7 +357,7 @@ public class NoellesrolesConfigCommand {
                                         }
                                         // %s
                                         // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                        SpawnInfo spinfo = NoellesRolesConfig
+                                        SpawnInfo spinfo = SpawnInfoConfig
                                             .instance().roleDetails
                                             .getSpawnInfo(role);
                                         spinfo.map.remove(num);
@@ -393,7 +394,7 @@ public class NoellesrolesConfigCommand {
                         }
                         // %s
                         // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                        SpawnInfo spinfo = NoellesRolesConfig.instance().modifierDetails
+                        SpawnInfo spinfo = SpawnInfoConfig.instance().modifierDetails
                             .getSpawnInfo(role);
                         Component msg = Component
                             .translatable("cmd.config.noellesroles.spawn.info",
@@ -429,7 +430,7 @@ public class NoellesrolesConfigCommand {
                             }
                             // %s
                             // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                            SpawnInfo spinfo = NoellesRolesConfig.instance().modifierDetails
+                            SpawnInfo spinfo = SpawnInfoConfig.instance().modifierDetails
                                 .getSpawnInfo(role);
                             spinfo.setEnableChance(role.defaultEnableChance)
                                 .setMaps(new ArrayList<>(role.defaultSpawnMaps))
@@ -471,7 +472,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().modifierDetails
                                         .getSpawnInfo(role);
                                     spinfo.setEnableChance(num);
@@ -511,7 +512,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().modifierDetails
                                         .getSpawnInfo(role);
                                     spinfo.setMax(num);
@@ -551,7 +552,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().modifierDetails
                                         .getSpawnInfo(role);
                                     spinfo.setMinEnabledPlayer(num);
@@ -591,7 +592,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().modifierDetails
                                         .getSpawnInfo(role);
                                     spinfo.setMaxEnabledPlayer(num);
@@ -629,7 +630,7 @@ public class NoellesrolesConfigCommand {
                                     }
                                     // %s
                                     // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                    SpawnInfo spinfo = NoellesRolesConfig
+                                    SpawnInfo spinfo = SpawnInfoConfig
                                         .instance().modifierDetails
                                         .getSpawnInfo(role);
                                     spinfo.map.clear();
@@ -670,7 +671,7 @@ public class NoellesrolesConfigCommand {
                                         }
                                         // %s
                                         // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                        SpawnInfo spinfo = NoellesRolesConfig
+                                        SpawnInfo spinfo = SpawnInfoConfig
                                             .instance().modifierDetails
                                             .getSpawnInfo(role);
                                         spinfo.map.add(num);
@@ -712,7 +713,7 @@ public class NoellesrolesConfigCommand {
                                         }
                                         // %s
                                         // 生成信息（-1为禁用）：\n最小启用玩家数：%s\n最大启用玩家数：%s\n启用概率：%s/10000\n最大生成数量：%s\n启用地图：%s
-                                        SpawnInfo spinfo = NoellesRolesConfig
+                                        SpawnInfo spinfo = SpawnInfoConfig
                                             .instance().modifierDetails
                                             .getSpawnInfo(role);
                                         spinfo.map.remove(num);
@@ -741,7 +742,7 @@ public class NoellesrolesConfigCommand {
           .then(Commands.literal("noellesroles")
               .then(Commands.literal("reload")
                   .executes(context -> {
-                    NoellesRolesConfig.HANDLER.load();
+                    SpawnInfoConfig.HANDLER.load();
                     context.getSource().sendSystemMessage(
                         Component.literal("NoellesRoles configuration reloaded successfully"));
                     return 1;
@@ -749,16 +750,16 @@ public class NoellesrolesConfigCommand {
               .then(Commands.literal("reset")
                   .executes(context -> {
                     // 创建默认配置实例
-                    NoellesRolesConfig.HANDLER.reset();
+                    SpawnInfoConfig.HANDLER.reset();
                     return 1;
                   }))
               .then(Commands.literal("accidentalKillPunishment")
                   .then(Commands.argument("value", BoolArgumentType.bool())
                       .executes(context -> {
                         boolean value = BoolArgumentType.getBool(context, "value");
-                        NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
+                        NoellesRolesConfig config = NoellesRolesConfig.instance();
                         config.accidentalKillPunishment = value;
-                        NoellesRolesConfig.HANDLER.save();
+                        SpawnInfoConfig.HANDLER.save();
 
                         String statusText = value ? "Enabled" : "Disabled";
                         context.getSource().sendSystemMessage(
@@ -774,7 +775,7 @@ public class NoellesrolesConfigCommand {
                         boolean value = BoolArgumentType.getBool(context, "value");
                         NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
                         config.skillEchoEventEnabled = value;
-                        NoellesRolesConfig.HANDLER.save();
+                        SpawnInfoConfig.HANDLER.save();
                         context.getSource().sendSystemMessage(
                             Component.literal("Skill Echo Event "
                                 + (value ? "Enabled" : "Disabled"))
@@ -787,7 +788,7 @@ public class NoellesrolesConfigCommand {
                         boolean value = BoolArgumentType.getBool(context, "value");
                         NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
                         config.skillEchoRandomBroadcastEnabled = value;
-                        NoellesRolesConfig.HANDLER.save();
+                        SpawnInfoConfig.HANDLER.save();
                         context.getSource().sendSystemMessage(
                             Component.literal("Skill Echo Random Broadcast "
                                 + (value ? "Enabled" : "Disabled"))
