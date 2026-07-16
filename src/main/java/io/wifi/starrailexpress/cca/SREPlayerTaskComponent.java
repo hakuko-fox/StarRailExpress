@@ -2,7 +2,6 @@ package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.block.ToiletBlock;
@@ -141,8 +140,6 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         }
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         if (!gameWorldComponent.isRunning() || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(this.player))
-            return;
-        if (gameWorldComponent.getGameMode().identifier.equals(SREGameModes.DAY_NIGHT_FIGHT_ID))
             return;
         boolean shouldSync = false;
         this.nextTaskTimer--;

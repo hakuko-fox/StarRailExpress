@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode;
+import io.wifi.starrailexpress.game.modes.funny.SREVolunteerGameMode;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
 import io.wifi.starrailexpress.network.packet.ModVersionPacket;
@@ -111,6 +112,7 @@ public class SREReceiverRegister {
 
         // Role Rotation receivers
         SRERoleRotationGameMode.registerServerPacketRecievers();
+        SREVolunteerGameMode.registerServerPacketRecievers();
 
         // 职业轮换系统：管理员编辑名单
         ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterUpdatePayload.ID,
@@ -118,11 +120,14 @@ public class SREReceiverRegister {
                     ServerPlayer player = context.player();
                     context.server().execute(() -> {
                         if (!player.hasPermissions(2)) {
-                            player.displayClientMessage(Component.translatable("sre.command.permission_denied").withStyle(ChatFormatting.RED), false);
+                            player.displayClientMessage(Component.translatable("sre.command.permission_denied")
+                                    .withStyle(ChatFormatting.RED), false);
                             return;
                         }
-                        if(!SREConfig.instance().enableRoster){
-                            player.displayClientMessage(Component.translatable("sre.command.not_enabled").withStyle(ChatFormatting.RED), false);
+                        if (!SREConfig.instance().enableRoster) {
+                            player.displayClientMessage(
+                                    Component.translatable("sre.command.not_enabled").withStyle(ChatFormatting.RED),
+                                    false);
                             return;
                         }
                         switch (payload.action()) {
@@ -148,10 +153,10 @@ public class SREReceiverRegister {
                                     .withStyle(ChatFormatting.RED), false);
                             return;
                         }
-                        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
-                                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(player.server);
-                        io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry =
-                                mapConfig.getMapById(payload.mapId());
+                        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig = io.wifi.starrailexpress.game.data.ServerMapConfig
+                                .getInstance(player.server);
+                        io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry = mapConfig
+                                .getMapById(payload.mapId());
                         if (entry == null) {
                             return;
                         }
@@ -215,8 +220,8 @@ public class SREReceiverRegister {
 
     /** 把全部地图的启用状态广播给所有在线玩家（比重发 MapIntroSyncPayload 便宜得多）。 */
     private static void broadcastMapRotation(net.minecraft.server.MinecraftServer server) {
-        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
-                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(server);
+        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig = io.wifi.starrailexpress.game.data.ServerMapConfig
+                .getInstance(server);
         if (mapConfig.getMaps() == null) {
             return;
         }
@@ -227,8 +232,8 @@ public class SREReceiverRegister {
             }
             entries.add(new io.wifi.starrailexpress.network.MapRotationSyncPayload.Entry(entry.id, entry.canSelect));
         }
-        io.wifi.starrailexpress.network.MapRotationSyncPayload payload =
-                new io.wifi.starrailexpress.network.MapRotationSyncPayload(entries);
+        io.wifi.starrailexpress.network.MapRotationSyncPayload payload = new io.wifi.starrailexpress.network.MapRotationSyncPayload(
+                entries);
         for (ServerPlayer online : server.getPlayerList().getPlayers()) {
             ServerPlayNetworking.send(online, payload);
         }
@@ -254,8 +259,8 @@ public class SREReceiverRegister {
                 SRE.LOGGER.warn("Failed to read map intro json for {}", mapId, e);
             }
         }
-        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig =
-                io.wifi.starrailexpress.game.data.ServerMapConfig.getInstance(player.server);
+        io.wifi.starrailexpress.game.data.ServerMapConfig mapConfig = io.wifi.starrailexpress.game.data.ServerMapConfig
+                .getInstance(player.server);
         if (mapConfig.getMaps() != null) {
             for (io.wifi.starrailexpress.game.data.MapConfig.MapEntry entry : mapConfig.getMaps()) {
                 if (entry == null || entry.id == null || entry.id.isBlank()) {
@@ -270,8 +275,8 @@ public class SREReceiverRegister {
                         entry.gameModes == null ? java.util.List.of() : entry.gameModes));
             }
         }
-        org.agmas.noellesroles.config.NoellesRolesConfig config =
-                org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance();
+        org.agmas.noellesroles.config.NoellesRolesConfig config = org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER
+                .instance();
         ServerPlayNetworking.send(player, new io.wifi.starrailexpress.network.MapIntroSyncPayload(
                 maps,
                 voteMaps,

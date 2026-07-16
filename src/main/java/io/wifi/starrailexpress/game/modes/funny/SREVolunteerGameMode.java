@@ -13,11 +13,11 @@ import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
-import io.wifi.starrailexpress.game.modes.funny.rotation.LightningDraftState;
+import io.wifi.starrailexpress.game.modes.funny.volunteer.VolunteerDraftState;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
-import io.wifi.starrailexpress.network.packet.RoleRotationSelectC2SPacket;
-import io.wifi.starrailexpress.network.packet.RoleRotationSyncS2CPacket;
 import io.wifi.starrailexpress.network.CloseUiPayload;
+import io.wifi.starrailexpress.network.packet.VolunteerCommitC2SPacket;
+import io.wifi.starrailexpress.network.packet.VolunteerDraftSyncS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -26,8 +26,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-
-import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
@@ -36,26 +34,28 @@ import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.*;
 
-public class SRERoleRotationGameMode extends SREMurderGameMode {
+public class SREVolunteerGameMode extends SREMurderGameMode {
 
     private static final int ROTATION_SAFE_TIME = 5 * 60 * 20;
-    private boolean isInRotationPhase = false;
-    private long rotationTimeout = -1;
-    private LightningDraftState draftState;
+    private boolean isInDraftPhase = false;
+    private long draftTimeout = -1;
+    private VolunteerDraftState draftState;
 
-    public SRERoleRotationGameMode(ResourceLocation identifier) {
+    public static final ResourceLocation TNT_TAG_MODE_ID = ResourceLocation.fromNamespaceAndPath(SRE.MOD_ID,
+            "volunteer");
+
+    public SREVolunteerGameMode(ResourceLocation identifier) {
         super(identifier, 10, 3);
     }
 
-    // 静态注册网络接收器
     public static void registerServerPacketRecievers() {
-        ServerPlayNetworking.registerGlobalReceiver(RoleRotationSelectC2SPacket.TYPE, (packet, context) -> {
+        ServerPlayNetworking.registerGlobalReceiver(VolunteerCommitC2SPacket.TYPE, (packet, context) -> {
             context.player().server.execute(() -> {
                 ServerPlayer player = context.player();
                 if (player.level() instanceof ServerLevel serverLevel) {
                     var gameMode = SREGameWorldComponent.getInstance(serverLevel).getGameMode();
-                    if (gameMode instanceof SRERoleRotationGameMode rotationMode) {
-                        rotationMode.handlePlayerSelection(player, packet.choiceIndex());
+                    if (gameMode instanceof SREVolunteerGameMode mode) {
+                        mode.handlePlayerCommit(player, packet.preferences());
                     }
                 }
             });
@@ -75,7 +75,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             p.addEffect(new MobEffectInstance(ModEffects.CCA_FREEZED, 40, 10, true, false, false));
             RoleUtils.sendWelcomeAnnouncement(p);
         }
-
         // 保底
         final var random = new Random(world.getGameTime());
         for (var p : players) {
@@ -91,139 +90,163 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
                 }
             }
         }
-        // 初始化闪电轮抽
-        draftState = new LightningDraftState(new ArrayList<>(players));
-        draftState.initializeRolePool(world);
-        draftState.assignRotationOrder();
-        draftState.startNextRound(world);
-
-        isInRotationPhase = true;
-        rotationTimeout = world.getGameTime() + ROTATION_SAFE_TIME;
+        draftState = new VolunteerDraftState(new ArrayList<>(players), world);
+        isInDraftPhase = true;
+        draftTimeout = world.getGameTime() + ROTATION_SAFE_TIME;
         broadcastSync(world);
     }
 
     private void broadcastSync(ServerLevel world) {
-        RoleRotationSyncS2CPacket packet = new RoleRotationSyncS2CPacket(
-                draftState.isSelecting,
-                draftState.currentRoundIndex,
-                draftState.totalPlayers,
-                draftState.confirmCountdown,
-                draftState.perPlayerTimeLimit,
-                draftState.roundStartTime,
-                draftState.playerOrder,
-                draftState.getSelectedRolesAsStrings(),
-                draftState.randomChoosers,
-                draftState.getRoundCandidatesAsStrings());
+
         for (ServerPlayer p : world.players()) {
+            UUID pid = p.getUUID();
+            VolunteerDraftState.Phase phase = draftState.getPhase();
+            int remaining = 0;
+            if (draftState.getPhase() == VolunteerDraftState.Phase.COMMIT) {
+                long elapsed = world.getGameTime() - draftState.getPhaseStartTime();
+                remaining = (int) Math.max(0, draftState.getCommitTimeLimit() - elapsed);
+            } else if (draftState.getPhase() == VolunteerDraftState.Phase.ADJUST) {
+                long elapsed = world.getGameTime() - draftState.getPhaseStartTime();
+                remaining = (int) Math.max(0, draftState.getAdjustTimeLimit() - elapsed);
+            }
+            VolunteerDraftSyncS2CPacket packet = new VolunteerDraftSyncS2CPacket(
+                    phase,
+                    remaining,
+                    draftState.getMyCandidateIds(pid),
+                    draftState.getPhase() == VolunteerDraftState.Phase.RESULT ? draftState.getFinalRolesAsStrings()
+                            : Map.of(),
+                    draftState.getPhase() == VolunteerDraftState.Phase.RESULT ? draftState.getMyFinalRoleId(pid) : "",
+                    draftState.getVolunteerCount());
             ServerPlayNetworking.send(p, packet);
         }
     }
 
-    private void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
-        if (!isInRotationPhase || draftState == null)
+    private void handlePlayerCommit(ServerPlayer player, List<Integer> preferences) {
+        if (!isInDraftPhase || draftState == null)
             return;
-        if (draftState.processSelection(player.serverLevel(), player.getUUID(), choiceIndex)) {
-            broadcastSync(player.serverLevel());
+        boolean phaseChanged = draftState.submitPreference(player.getUUID(), preferences);
+        if (phaseChanged) {
+            broadcastSync(player.serverLevel()); // 仅阶段变化时广播
+        } else {
+            // 仅告知提交者本人：禁用按钮（客户端收到同一个 phase 的包后会保持状态）
+            // 不需要额外发包，因为客户端提交后已经本地禁用。
         }
     }
 
     @Override
     public void tickServerGameLoop(ServerLevel world, SREGameWorldComponent gameComp) {
-        if (!isInRotationPhase || draftState == null)
+        if (!isInDraftPhase || draftState == null)
             return;
-        // ★ 处理离线玩家
-        if (draftState.handleOfflinePlayers(world)) {
-            // 状态有变动，广播同步
-            broadcastSync(world);
 
-            // 如果所有玩家都已获得职业（包括离线自动分配的），直接结束轮选
-            if (draftState.selectedRoles.size() >= draftState.totalPlayers) {
-                draftState.adjustRemainingRoles(world);
-                finishRotationPhase(world, gameComp);
-                return;
+        // 处理玩家退出
+        boolean phaseChanged = false;
+        for (ServerPlayer p : new ArrayList<>(world.players())) {
+            if (p.isRemoved()) {
+                if (draftState.removePlayer(p.getUUID())) {
+                    phaseChanged = true;
+                }
             }
+        }
+        if (phaseChanged) {
+            broadcastSync(world);
         }
 
         // 总超时
-        if (world.getGameTime() >= rotationTimeout) {
-            forceFinishRotation(world, gameComp);
+        if (world.getGameTime() >= draftTimeout) {
+            forceFinishDraft(world, gameComp);
             return;
         }
 
-        // 确认倒计时
-        if (!draftState.isSelecting && draftState.confirmCountdown > 0) {
-            draftState.confirmCountdown--;
-            if (draftState.confirmCountdown % 20 == 0)
+        // 提交超时 → 自动提交并强制进入 ADJUST
+        if (draftState.getPhase() == VolunteerDraftState.Phase.COMMIT) {
+            long elapsed = world.getGameTime() - draftState.getPhaseStartTime();
+            if (elapsed >= draftState.getCommitTimeLimit()) {
+                for (ServerPlayer p : world.players()) {
+                    if (!draftState.submittedPlayers.contains(p.getUUID())) {
+                        autoSubmitRandom(p);
+                    }
+                }
+                // 手动切换阶段并广播
+                draftState.setPhase(VolunteerDraftState.Phase.ADJUST); // 需要添加 setter
+                draftState.setPhaseStartTime(world.getGameTime());
                 broadcastSync(world);
-            if (draftState.confirmCountdown <= 0) {
-                draftState.adjustRemainingRoles(world);
-                finishRotationPhase(world, gameComp);
-                return;
             }
         }
 
-        // 轮选超时
-        if (draftState.isSelecting) {
-            long elapsed = world.getGameTime() - draftState.roundStartTime;
-            if (elapsed >= draftState.perPlayerTimeLimit) {
-                draftState.timeoutUnfinishedPlayers(world);
+        // ADJUST 阶段：仅在结束时广播
+        if (draftState.getPhase() == VolunteerDraftState.Phase.ADJUST) {
+            long elapsed = world.getGameTime() - draftState.getPhaseStartTime();
+            if (elapsed >= draftState.getAdjustTimeLimit()) {
+                draftState.runAssignment();
+                // runAssignment 内部会设置 phase = RESULT
                 broadcastSync(world);
             }
+            // 不再有定时广播
+        }
+
+        // RESULT 阶段
+        if (draftState.getPhase() == VolunteerDraftState.Phase.RESULT) {
+            completeDraft(world, gameComp);
         }
 
         super.tickServerGameLoop(world, gameComp);
     }
 
-    private void forceFinishRotation(ServerLevel world, SREGameWorldComponent gameComp) {
-        for (UUID uuid : draftState.playerOrder) {
-            if (!draftState.selectedRoles.containsKey(uuid)) {
-                SRERole role = draftState.rolePool.isEmpty() ? TMMRoles.CIVILIAN : draftState.rolePool.remove(0);
-                draftState.selectedRoles.put(uuid, role);
+    // 为提交超时自动生成随机志愿的工具方法
+    private void autoSubmitRandom(ServerPlayer player) {
+        int count = draftState.getVolunteerCount();
+        List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < count; i++)
+            indices.add(i);
+        Collections.shuffle(indices);
+        // 可选：随机插入 -1 随机志愿
+        if (player.getRandom().nextBoolean()) {
+            indices.add(player.getRandom().nextInt(indices.size() + 1), -1);
+        }
+        draftState.submitPreference(player.getUUID(), indices);
+    }
+
+    private void forceFinishDraft(ServerLevel world, SREGameWorldComponent gameComp) {
+        for (ServerPlayer p : world.players()) {
+            if (!draftState.submittedPlayers.contains(p.getUUID())) {
+                int count = draftState.getVolunteerCount();
+                List<Integer> indices = new ArrayList<>();
+                for (int i = 0; i < count; i++)
+                    indices.add(i);
+                Collections.shuffle(indices);
+                draftState.submitPreference(p.getUUID(), indices);
             }
         }
-        draftState.remainingRoles = 0;
-        finishRotationPhase(world, gameComp);
+        completeDraft(world, gameComp);
     }
 
-    private void finishRotationPhase(ServerLevel world, SREGameWorldComponent gameComp) {
-        Map<UUID, SRERole> finalRoles = new HashMap<>(draftState.selectedRoles);
-        isInRotationPhase = false;
+    private void completeDraft(ServerLevel world, SREGameWorldComponent gameComp) {
+        if (!isInDraftPhase)
+            return;
+        isInDraftPhase = false;
+
+        Map<UUID, SRERole> finalRoles = new HashMap<>(draftState.getFinalAssignment());
         draftState = null;
 
-        completeRoleSelection(world, gameComp, finalRoles);
-
-        world.players().forEach(p -> {
-            SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(p);
-            mood.setMood(1);
-            mood.sync();
-        });
-        OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(world);
-
-        Harpymodloader.FORCED_MODDED_ROLE.clear();
-        Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
-        Harpymodloader.FORCED_MODDED_MODIFIER.clear();
-        PlayerRoleWeightManager.ForcePlayerTeam.clear();
-    }
-
-    private void completeRoleSelection(ServerLevel world, SREGameWorldComponent gameComp,
-            Map<UUID, SRERole> selectedRoles) {
         SRERoleWorldComponent roleComp = SRERoleWorldComponent.KEY.get(world);
         for (ServerPlayer p : world.players()) {
-            SRERole role = selectedRoles.get(p.getUUID());
+            SRERole role = finalRoles.get(p.getUUID());
             if (role != null) {
                 gameComp.addRole(p, role, false);
                 p.displayClientMessage(
-                        Component.translatable("gui.sre.role_rotation.selected",
+                        Component.translatable("gui.sre.volunteer.selected",
                                 RoleUtils.getRoleName(role).withColor(role.getColor()))
                                 .withStyle(ChatFormatting.GREEN),
                         true);
+            } else {
+                gameComp.addRole(p, TMMRoles.CIVILIAN, false);
             }
         }
         roleComp.sync();
 
         List<ServerPlayer> alive = world.getPlayers(GameUtils::isPlayerAliveAndSurvivalIgnoreShitSplit);
         for (ServerPlayer p : alive) {
-            var role = gameComp.getRole(p);
+            SRERole role = roleComp.getRole(p);
             var roleType = PlayerRoleWeightManager.getRoleType(role);
             PlayerRoleWeightManager.addWeight(p, roleType, 1);
             p.removeEffect(ModEffects.SKILL_BANED);
@@ -231,7 +254,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             p.removeEffect(ModEffects.MOVE_BANED);
             p.removeEffect(MobEffects.INVISIBILITY);
             p.removeEffect(ModEffects.CCA_FREEZED);
-
             if (role != null) {
                 RoleUtils.sendWelcomeAnnouncement(p);
                 if (role.canUseKiller()) {
@@ -252,13 +274,20 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         assignModifiers(modifierCount, world, gameComp, alive);
         GameUtils.recordPlayerStats(world, gameComp, new ArrayList<>(world.players()));
         SRE.REPLAY_MANAGER.updateReplayInitialRoles(alive, gameComp.getRoles());
+
+        world.players().forEach(p -> {
+            SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(p);
+            mood.setMood(1);
+            mood.sync();
+        });
+        OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(world);
     }
 
     @Override
     public void finalizeGame(ServerLevel world, SREGameWorldComponent gameComp) {
         super.finalizeGame(world, gameComp);
-        isInRotationPhase = false;
-        rotationTimeout = -1;
+        isInDraftPhase = false;
+        draftTimeout = -1;
         draftState = null;
     }
 
@@ -270,7 +299,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
     @Override
     public GameUtils.WinStatus allowGameEnd(ServerLevel world, GameUtils.WinStatus winStatus, boolean looseEnds,
             SREGameWorldComponent gameComp) {
-        if (isInRotationPhase)
+        if (isInDraftPhase)
             return GameUtils.WinStatus.NONE;
         return AllowGameEnd.EVENT.invoker().allowGameEnd(world, winStatus, false);
     }

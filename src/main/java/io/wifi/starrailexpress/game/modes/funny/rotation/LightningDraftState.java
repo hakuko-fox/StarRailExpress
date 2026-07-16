@@ -71,6 +71,43 @@ public class LightningDraftState {
         this.remainingRoles = totalPlayers;
     }
 
+    /**
+     * 处理已离线的、尚未选择职业的玩家。
+     * 
+     * @param world 当前世界
+     * @return 是否实际处理了任何离线玩家（用于决定是否重新广播）
+     */
+    public boolean handleOfflinePlayers(ServerLevel world) {
+        List<UUID> offlineUnselected = new ArrayList<>();
+        for (UUID uuid : playerOrder) {
+            if (!selectedRoles.containsKey(uuid)) {
+                ServerPlayer player = world.getServer().getPlayerList().getPlayer(uuid);
+                if (player == null || player.isRemoved()) {
+                    offlineUnselected.add(uuid);
+                }
+            }
+        }
+        if (offlineUnselected.isEmpty())
+            return false;
+
+        for (UUID uuid : offlineUnselected) {
+            // 若该离线玩家还在本轮候选人中，直接移除
+            roundCandidates.remove(uuid);
+
+            SRERole randomRole = selectRandomRole(world);
+            selectedRoles.put(uuid, randomRole);
+            rolePool.remove(randomRole);
+            remainingRoles--;
+            randomChoosers.add(uuid); // 视为随机
+        }
+
+        // 如果当前正在选择阶段，且本轮所有候选人都已完成（可能是因为移除了离线玩家后列表为空）
+        if (isSelecting && roundCandidates.isEmpty()) {
+            finishRound(world);
+        }
+        return true;
+    }
+
     // ---------- 初始化角色池 ----------
     public void initializeRolePool(ServerLevel world) {
         rolePool.clear();
@@ -185,10 +222,10 @@ public class LightningDraftState {
     public void assignRotationOrder() {
         List<ServerPlayer> sorted = new ArrayList<>(allPlayers);
         sorted.sort((a, b) -> {
-            int w1 = PlayerRoleWeightManager.getMaxWeight(a);
-            int w2 = PlayerRoleWeightManager.getMaxWeight(b);
+            double w1 = PlayerRoleWeightManager.getMaxWeight(a);
+            double w2 = PlayerRoleWeightManager.getMaxWeight(b);
             if (w1 != w2)
-                return Integer.compare(w2, w1); // 降序
+                return Double.compare(w2, w1); // 降序
             return Integer.compare(a.getUUID().hashCode(), b.getUUID().hashCode());
         });
         playerOrder.clear();

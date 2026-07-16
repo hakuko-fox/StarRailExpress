@@ -29,6 +29,8 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "gamemodes")
     public boolean enableNoLimitLoversInLoverMode = false;
     @ConfigEntry.Category(value = "gamemodes")
+    public int volunteerModeVolunteerCount = 3;
+    @ConfigEntry.Category(value = "gamemodes")
     public float loverModeLoversPercent = 1f;
     @ConfigEntry.Category(value = "gamemodes")
     public float refugeeModeRefugeePercent = 0.5f;

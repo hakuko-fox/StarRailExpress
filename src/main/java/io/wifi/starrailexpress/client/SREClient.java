@@ -40,6 +40,7 @@ import io.wifi.starrailexpress.content.item.GrenadeItem;
 import io.wifi.starrailexpress.content.item.KnifeItem;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationClientReceiver;
+import io.wifi.starrailexpress.content.vote.client.VolunteerModeClientReceiver;
 import io.wifi.starrailexpress.content.vote.client.VoteClientReceiver;
 import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.event.AllowOtherCameraType;
@@ -903,7 +904,7 @@ public class SREClient implements ClientModInitializer {
 
         // 注册职业轮选网络包
         RoleRotationClientReceiver.register();
-
+        VolunteerModeClientReceiver.register();
         // Chat Dialogue
         ClientPlayNetworking.registerGlobalReceiver(
                 net.exmo.sre.client.chat.OpenChatDialoguePayload.ID, (payload, context) -> {

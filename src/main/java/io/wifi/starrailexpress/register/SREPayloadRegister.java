@@ -11,6 +11,8 @@ import io.wifi.starrailexpress.network.packet.ModVersionPacket;
 import io.wifi.starrailexpress.network.packet.RoleRotationSelectC2SPacket;
 import io.wifi.starrailexpress.network.packet.RoleRotationSyncS2CPacket;
 import io.wifi.starrailexpress.network.packet.SyncRoomToPlayerPayload;
+import io.wifi.starrailexpress.network.packet.VolunteerCommitC2SPacket;
+import io.wifi.starrailexpress.network.packet.VolunteerDraftSyncS2CPacket;
 import io.wifi.starrailexpress.scenery.network.SceneAssetNetwork;
 import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -228,6 +230,10 @@ public class SREPayloadRegister {
                 EffectGeneratorPayload.OpenConfig.CODEC);
         PayloadTypeRegistry.playC2S().register(EffectGeneratorPayload.SaveConfig.TYPE,
                 EffectGeneratorPayload.SaveConfig.CODEC);
+
+        // VOLUNTEER轮选数据包
+        PayloadTypeRegistry.playC2S().register(VolunteerCommitC2SPacket.TYPE, VolunteerCommitC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(VolunteerDraftSyncS2CPacket.TYPE, VolunteerDraftSyncS2CPacket.CODEC);
 
         // 职业轮选数据包
         PayloadTypeRegistry.playC2S().register(RoleRotationSelectC2SPacket.TYPE, RoleRotationSelectC2SPacket.CODEC);

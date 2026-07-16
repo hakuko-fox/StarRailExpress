@@ -395,10 +395,10 @@ public class PlayerRoleWeightManager {
         weightManager.incrementKillerSideFailureBoost();
     }
 
-    public static int getMaxWeight(ServerPlayer player) {
-        int weight = 0;
+    public static double getMaxWeight(ServerPlayer player) {
+        double weight = 0;
         for (int i = 1; i <= 5; i++) {
-            weight = Math.max(weight, getWeight(player, i));
+            weight = Math.max(weight, getRoleWeightPercent(player, i));
         }
         return weight;
     }

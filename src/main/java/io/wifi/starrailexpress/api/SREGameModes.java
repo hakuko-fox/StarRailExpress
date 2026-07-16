@@ -28,7 +28,7 @@ public class SREGameModes {
     public static final ResourceLocation REFUGEE_LOVER_MODE_ID = SRE.wifiId("refugee_lover");
     public static final ResourceLocation HIDE_AND_SEEK_MODE_ID = SRE.wifiId("hide_and_seek");
     public static final ResourceLocation TNT_TAG_MODE_ID = SRE.wifiId("tnt_tag");
-    public static final ResourceLocation DAY_NIGHT_FIGHT_ID = SRE.shortId("day_night_fight");
+    public static final ResourceLocation VOLUNTEER_MODE_ID = SRE.shortId("volunteer");
 
     // Author: canyuesama (catmoon233)
     public static final ResourceLocation REPAIR_ESCAPE_ID = SRE.canyueId("repair_escape");
@@ -70,6 +70,7 @@ public class SREGameModes {
     public static final GameMode HIDE_AND_SEEK_MODE = registerGameMode(
             new SREHideAndSeekGameMode(HIDE_AND_SEEK_MODE_ID));
     public static final GameMode TNT_TAG_MODE = registerGameMode(new SRETNTTagGameMode(TNT_TAG_MODE_ID));
+    public static final GameMode VOLUNTEER_MODE = registerGameMode(new SREVolunteerGameMode(VOLUNTEER_MODE_ID));
     //
     // written by canyuesama
     public static final GameMode FOURTH_ROOM = registerGameMode(new FourthRoomGameMode(FOURTH_ROOM_ID));
