@@ -33,7 +33,7 @@ public class VolunteerDraftState {
     public long phaseStartTime;
     private int commitTimeLimit = 60 * 20;
     // 新增字段
-    private int resultTimeLimit = 10 * 20; // 结果展示 10 秒
+    private int resultTimeLimit = 5 * 20; // 结果展示 10 秒
     private int adjustTimeLimit = 5; // 5tick
     private final Random random;
     private final ServerLevel world;
