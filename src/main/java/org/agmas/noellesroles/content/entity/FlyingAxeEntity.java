@@ -122,6 +122,9 @@ public class FlyingAxeEntity extends AbstractArrow {
         if (this.killedPlayers < MAX_PIERCE && this.getOwner() instanceof ServerPlayer owner) {
             this.killedPlayers++;
 
+            // 飞斧杀人后进入 20 秒原版冷却，防止连续投掷
+            owner.getCooldowns().addCooldown(ModItems.THROWING_AXE, 20 * 20);
+
             Vec3 location = entityHitResult.getLocation();
             ServerLevel serverLevel = target.serverLevel();
             serverLevel.sendParticles(ParticleTypes.CRIT, location.x, location.y + 1.0f, location.z, 12, 0.3, 0.3,
