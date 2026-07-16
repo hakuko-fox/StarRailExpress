@@ -1,5 +1,7 @@
 package org.agmas.noellesroles.mixin.client;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult;
 import net.minecraft.client.Minecraft;
@@ -15,6 +17,10 @@ public abstract class AbstractClientPlayerSkinMixin {
 
     @Inject(method = "getSkin", at = @At("HEAD"), cancellable = true)
     private void applySkinSwap(CallbackInfoReturnable<PlayerSkin> cir) {
+        if (SRE.isLobby)
+            return;
+        if (SREClient.isInLobby)
+            return;
         AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.level == null)
