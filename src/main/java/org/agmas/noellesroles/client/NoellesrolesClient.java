@@ -22,6 +22,8 @@ import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
+import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
+import io.wifi.starrailexpress.content.vote.client.VolunteerCache;
 import io.wifi.starrailexpress.event.AllowNameRender;
 import io.wifi.starrailexpress.event.OnRoundStartWelcomeTimmer;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -1031,6 +1033,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             RoleManageConfigUI.RoleEnableStatus.clear();
             RoleManageConfigUI.ModifierEnableStatus.clear();
             ClientRoleRosterCache.clear();
+            VolunteerCache.clear();
+            RoleRotationCache.clear();
         });
         // 监听客户端断开连接：清空卡池配置信息
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {

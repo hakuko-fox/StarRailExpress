@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.content.vote.client;
 
+import io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleRotationScreen;
 import io.wifi.starrailexpress.network.packet.RoleRotationSyncS2CPacket;
 import net.minecraft.client.Minecraft;
 import java.util.*;
@@ -184,6 +185,10 @@ public class RoleRotationCache {
         roundCandidates.clear();
         localPlayerUuid = null;
         wasMyTurn = false;
+        final var mc = Minecraft.getInstance();
+        if (mc.screen instanceof RoleRotationScreen) {
+            mc.setScreen(null);
+        }
     }
 
     public static void updateBaseState(boolean selecting, int index, int total, int countdown) {

@@ -1,5 +1,6 @@
 package io.wifi.starrailexpress.content.vote.client;
 
+import io.wifi.starrailexpress.client.gui.screen.gamemode.volunteer.VolunteerDraftScreen;
 import io.wifi.starrailexpress.game.modes.funny.volunteer.VolunteerDraftState.Phase;
 import io.wifi.starrailexpress.network.packet.VolunteerDraftSyncS2CPacket;
 import net.minecraft.client.Minecraft;
@@ -54,5 +55,19 @@ public class VolunteerCache {
 
     public static String getMyFinalRole() {
         return myFinalRole;
+    }
+
+    public static void clear() {
+        phase = Phase.WAITING;
+        serverRemainingTime = 0;
+        syncWorldTime = 0;
+        myCandidates = List.of();
+        volunteerCount = 3;
+        finalRoles = Map.of();
+        myFinalRole = "";
+        final var mc = Minecraft.getInstance();
+        if (mc.screen instanceof VolunteerDraftScreen) {
+            mc.setScreen(null);
+        }
     }
 }
