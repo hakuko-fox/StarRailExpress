@@ -32,6 +32,7 @@ public class ClientSkinCache {
                     var id = playerinfo.getProfile().getId();
                     if (Minecraft.getInstance().player == null || id == Minecraft.getInstance().player.getUUID())
                         return;
+                    // SRE.LOGGER.info("texture {}", playerinfo.getSkin().texture().toString());
                     PLAYER_ENTRIES_CACHE.put(id,
                             playerinfo);
                 }

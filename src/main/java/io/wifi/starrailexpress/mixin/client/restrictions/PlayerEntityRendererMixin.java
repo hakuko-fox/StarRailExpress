@@ -6,7 +6,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -14,6 +13,7 @@ import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -35,20 +35,10 @@ public class PlayerEntityRendererMixin {
             AbstractClientPlayer abstractClientPlayerEntity, CallbackInfoReturnable<ResourceLocation> cir) {
         if (SREClient.gameComponent == null)
             return;
-        var result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(abstractClientPlayerEntity);
-        if (result == OnGettingPlayerSkin.PlayerSkinResult.DEFAULT) {
-            return;
-        } else if (result != null && result != OnGettingPlayerSkin.PlayerSkinResult.SKIP) {
-            if (result.type == 2 && result.playerSkin != null) {
-                cir.setReturnValue(result.playerSkin.texture());
-            } else if (result.texture != null) {
-                cir.setReturnValue(result.texture);
-            }
-            return;
-        }
+
         // 获取普通状态下职业皮肤
         SRERole role = SREClient.gameComponent.getRole(abstractClientPlayerEntity.getUUID());
-        PlayerSkin.Model model = abstractClientPlayerEntity.getSkin().model();
+        PlayerSkin.Model model = (abstractClientPlayerEntity.getSkin()).model();
         boolean isSLIM = (model == PlayerSkin.Model.SLIM);
         if (role != null) {
             ResourceLocation rolenormalskinresult = role.getNormalSkin(abstractClientPlayerEntity, isSLIM);
@@ -79,16 +69,6 @@ public class PlayerEntityRendererMixin {
         if (client.player != null && SREClient.localPlayerPsychoActive) {
             if (SREClient.gameComponent == null)
                 return skinTexture;
-            var result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(client.player);
-            if (result == OnGettingPlayerSkin.PlayerSkinResult.DEFAULT) {
-                return skinTexture;
-            } else if (result != null && result != OnGettingPlayerSkin.PlayerSkinResult.SKIP) {
-                if (result.type == 2 && result.playerSkin != null) {
-                    return (result.playerSkin.texture());
-                } else {
-                    return result.texture;
-                }
-            }
             // 获取普通状态下职业皮肤
             SRERole role = SREClient.gameComponent.getRole(client.player.getUUID());
             PlayerSkin.Model model = client.player.getSkin().model();
