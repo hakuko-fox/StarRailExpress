@@ -137,6 +137,8 @@ public class VolunteerDraftScreen extends Screen {
 
     public void updateResult() {
         if (VolunteerCache.getPhase() == Phase.RESULT) {
+            this.clearWidgets();
+            updateScrollLimits();
             finalRoles = VolunteerCache.getFinalRoles();
             myFinalRoleId = VolunteerCache.getMyFinalRole();
         }
