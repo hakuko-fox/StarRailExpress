@@ -28,7 +28,7 @@ public class ClientAmonState {
     private static final long FINALE_DURATION_MS = 80_000L;
 
     public static void register() {
-        OnGettingPlayerSkin.EVENT.register((player) -> {
+        OnGettingPlayerSkin.EVENT.register((player, originalSkin) -> {
             UUID targetId = disguiseTargetFor(player.getUUID());
             if (targetId == null || targetId.equals(player.getUUID())) {
                 return PlayerSkinResult.SKIP;

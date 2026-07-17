@@ -48,6 +48,7 @@ public interface OnGettingPlayerSkin {
 
         /**
          * 替换玩家的皮肤（不更换模型，只更换材质）
+         * 
          * @param playerSkin
          * @return
          */
@@ -57,6 +58,7 @@ public interface OnGettingPlayerSkin {
 
         /**
          * 替换玩家的皮肤（包括wide/slim模型）
+         * 
          * @param playerSkin
          * @return
          */
@@ -66,6 +68,7 @@ public interface OnGettingPlayerSkin {
 
         /**
          * 替换玩家的皮肤（包括wide/slim模型）
+         * 
          * @param playerSkin
          * @return
          */
@@ -106,9 +109,9 @@ public interface OnGettingPlayerSkin {
      * 替代方案：请使用 {@link SREClientUtils#getPlayerOriginalSkin} 来获取玩家的原始皮肤！
      */
     Event<OnGettingPlayerSkin> EVENT = createArrayBacked(OnGettingPlayerSkin.class,
-            listeners -> (player) -> {
+            listeners -> (player, originalSkin) -> {
                 for (OnGettingPlayerSkin listener : listeners) {
-                    var a = listener.onGetSkin(player);
+                    var a = listener.onGetSkin(player, originalSkin);
                     if (a != null && a != PlayerSkinResult.SKIP) {
                         return a;
                     }
@@ -116,5 +119,5 @@ public interface OnGettingPlayerSkin {
                 return null;
             });
 
-    PlayerSkinResult onGetSkin(AbstractClientPlayer abstractClientPlayerEntity);
+    PlayerSkinResult onGetSkin(AbstractClientPlayer abstractClientPlayerEntity, PlayerSkin originalSkin);
 }

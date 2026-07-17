@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(AbstractClientPlayer.class)
 public abstract class AbstractClientPlayerSkinMixin {
 
-    @Inject(method = "getSkin", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getSkin", at = @At("RETURN"), cancellable = true)
     private void applySkinSwap(CallbackInfoReturnable<PlayerSkin> cir) {
         if (SRE.isLobby)
             return;
@@ -25,7 +25,7 @@ public abstract class AbstractClientPlayerSkinMixin {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.level == null)
             return;
-        PlayerSkinResult result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(self);
+        PlayerSkinResult result = OnGettingPlayerSkin.EVENT.invoker().onGetSkin(self, cir.getReturnValue());
         if (result == null || result.type == 0 || result.type == -1) {
             return;
         }

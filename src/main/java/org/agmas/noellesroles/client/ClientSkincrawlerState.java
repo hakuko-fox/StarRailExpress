@@ -20,7 +20,7 @@ public class ClientSkincrawlerState {
     private static final Map<UUID, UUID> skins = new ConcurrentHashMap<>();
 
     public static void register() {
-        OnGettingPlayerSkin.EVENT.register((player) -> {
+        OnGettingPlayerSkin.EVENT.register((player, originalSkin) -> {
             java.util.UUID targetId = ClientEmbalmerState.replacement(player.getUUID());
             if (targetId == null)
                 targetId = ClientSkincrawlerState.stolenSkinFor(player.getUUID());
