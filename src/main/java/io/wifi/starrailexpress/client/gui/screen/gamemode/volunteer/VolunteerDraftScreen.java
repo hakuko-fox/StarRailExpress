@@ -168,6 +168,11 @@ public class VolunteerDraftScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics guiGraphics, int i, int j, float f) {
+        guiGraphics.fill(0, 0, width, height, 0xaa000000);
+    }
+
+    @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
 
         super.render(g, mouseX, mouseY, partialTick);

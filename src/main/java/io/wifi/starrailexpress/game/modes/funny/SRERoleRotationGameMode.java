@@ -136,13 +136,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         if (draftState.handleOfflinePlayers(world)) {
             // 状态有变动，广播同步
             broadcastSync(world);
-
-            // 如果所有玩家都已获得职业（包括离线自动分配的），直接结束轮选
-            if (draftState.selectedRoles.size() >= draftState.totalPlayers) {
-
-                finishRotationPhase(world, gameComp);
-                return;
-            }
         }
 
         // 总超时

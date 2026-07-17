@@ -1,9 +1,11 @@
 package io.wifi.starrailexpress.game.modes.funny.rotation;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
@@ -35,6 +37,7 @@ public class LightningDraftState {
     private final Set<SRERole> lockedCandidates = new HashSet<>();
 
     // ===== 职业池与结果 =====
+    public final ArrayList<SRERole> canReplaceRole = new ArrayList<>();
     public final ArrayList<SRERole> rolePool = new ArrayList<>();
     public final Map<UUID, SRERole> selectedRoles = new LinkedHashMap<>();
     public final Set<UUID> randomChoosers = new HashSet<>();
@@ -97,6 +100,7 @@ public class LightningDraftState {
     // ---------- 初始化角色池 ----------
     public void initializeRolePool(ServerLevel world) {
         rolePool.clear();
+        canReplaceRole.clear();
 
         int killerCount = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
         int vigilanteCount = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
@@ -133,20 +137,20 @@ public class LightningDraftState {
                         !role.isNeutrals() &&
                         role.isInnocent() &&
                         (enableCivilianInPool || role != TMMRoles.CIVILIAN));
-
         // 职业池总数 = 总玩家数
         // 最后几人不允许选
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
                 killerCount, vigilanteCount, neutralsCount,
                 totalPlayers, 0,
                 killerPool, neutralsPool, vigilantePool, civilianPool, true);
+
         for (RoleInstance inst : baseRoles) {
             if (inst.role() != null) {
                 rolePool.add(inst.role());
             }
         }
-        rolePool.add(TMMRoles.CIVILIAN);
-        rolePool.add(TMMRoles.CIVILIAN);
+        canReplaceRole.addAll(civilianPool.selectRoles(2));
+        rolePool.addAll(canReplaceRole);
         initializeCardTracking();
     }
 
@@ -366,8 +370,7 @@ public class LightningDraftState {
         } else {
             // 全部结束提示音
             for (ServerPlayer p : world.players()) {
-                world.playSound(null, p.getX(), p.getY(), p.getZ(),
-                        SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0f, 1.0f);
+                RoleUtils.playSound(p, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1f, 1f);
             }
 
             adjustRoles(world);
@@ -415,24 +418,23 @@ public class LightningDraftState {
         // 不做任何替换
         var canReplacePlayers = new ArrayList<UUID>();
         for (Entry<UUID, SRERole> entrySet : selectedRoles.entrySet()) {
-            if (entrySet.getValue().equals(TMMRoles.CIVILIAN)) {
-                canReplacePlayers.add(entrySet.getKey());
+            if (canReplaceRole.contains(entrySet.getValue())) {
+                canReplacePlayers.addFirst(entrySet.getKey());
             }
         }
-
-        for (Entry<UUID, SRERole> entrySet : selectedRoles.entrySet()) {
-            if (!entrySet.getValue().equals(TMMRoles.CIVILIAN) && entrySet.getValue().isInnocent()) {
-                canReplacePlayers.add(entrySet.getKey());
-            }
-        }
-        boolean enableCivilianInPool = HarpyModLoaderConfig.instance().enableCivilianInPool;
         var needToReplaceRole = new ArrayList<SRERole>();
+        boolean roleRotationForceRoleSettings = SREConfig.instance().roleRotationForceRoleSettings;
         for (SRERole role : rolePool) {
-            if (enableCivilianInPool && role.isInnocent() || role.equals(TMMRoles.CIVILIAN)) {
+            if (canReplaceRole.contains(role)) {
+                continue;
+            }
+            if (!roleRotationForceRoleSettings && role.isInnocent()) {
                 continue;
             }
             needToReplaceRole.add(role);
         }
+        if (needToReplaceRole.isEmpty())
+            return;
         Collections.shuffle(needToReplaceRole);
         int t = 0;
         for (var r : needToReplaceRole) {
@@ -441,7 +443,12 @@ public class LightningDraftState {
                 break;
             }
             var p = canReplacePlayers.getFirst();
+            var old = selectedRoles.getOrDefault(p, SpecialGameModeRoles.CUSTOM_PENDING);
             selectedRoles.put(p, r);
+            var pp = serverWorld.getPlayerByUUID(p);
+            SRE.LOGGER.info("Replace {} ({})'s role with new role {} (old {})",
+                    pp == null ? "null" : pp.getName().getString(), p, r.getName().getString(),
+                    old.getName().getString());
             t++;
         }
     }
