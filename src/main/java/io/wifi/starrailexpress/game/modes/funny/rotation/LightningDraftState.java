@@ -23,6 +23,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import net.exmo.sre.repair.role.RepairRole;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class LightningDraftState {
@@ -133,22 +134,19 @@ public class LightningDraftState {
                         role.isInnocent() &&
                         (enableCivilianInPool || role != TMMRoles.CIVILIAN));
 
-        if (enableCivilianInPool) {
-            Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
-        }
-
-        // 职业池总数 = 总玩家数 + 2
+        // 职业池总数 = 总玩家数
+        // 最后几人不允许选
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
                 killerCount, vigilanteCount, neutralsCount,
-                totalPlayers + 2, 0,
+                totalPlayers, 0,
                 killerPool, neutralsPool, vigilantePool, civilianPool, true);
         for (RoleInstance inst : baseRoles) {
             if (inst.role() != null) {
                 rolePool.add(inst.role());
-                SRE.LOGGER.info("add {} to rotation", inst.role().getName().getString());
             }
         }
-
+        rolePool.add(TMMRoles.CIVILIAN);
+        rolePool.add(TMMRoles.CIVILIAN);
         initializeCardTracking();
     }
 
@@ -191,6 +189,10 @@ public class LightningDraftState {
         }
     }
 
+    private boolean roleMatchesFaction(SRERole role, int type) {
+        return role == null ? false : (normalizeCardType(role.getRoleType()) == type);
+    }
+
     private static int normalizeCardType(int rawType) {
         return switch (rawType) {
             case 5 -> 1;
@@ -202,15 +204,7 @@ public class LightningDraftState {
     // ---------- 玩家顺序 ----------
     public void assignRotationOrder() {
         List<ServerPlayer> sorted = new ArrayList<>(allPlayers);
-        final Random random = new Random();
-        sorted.sort((a, b) -> {
-            double w1 = PlayerRoleWeightManager.getMaxWeight(a);
-            double w2 = PlayerRoleWeightManager.getMaxWeight(b);
-            if (w1 != w2)
-                return Double.compare(w2, w1);
-            int aa = random.nextInt(), bb = random.nextInt();
-            return aa > bb ? 1 : (aa == bb ? 0 : -1);
-        });
+        Collections.shuffle(sorted);
         playerOrder.clear();
         for (ServerPlayer p : sorted) {
             playerOrder.add(p.getUUID());
@@ -242,14 +236,61 @@ public class LightningDraftState {
         Collections.shuffle(drawn, new Random(world.getGameTime()));
         drawn = new ArrayList<>(drawn.subList(0, need));
 
+        // 预分配：为有强制阵营的玩家准备一个匹配职业
+        Map<UUID, SRERole> preAssigned = new LinkedHashMap<>();
+        Set<SRERole> usedInThisRound = new HashSet<>();
+        for (UUID playerId : roundPlayers) {
+            Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(playerId);
+            if (forcedType == null || forcedType < 1 || forcedType > 5)
+                continue;
+
+            int type = normalizeCardType(forcedType);
+            // 尝试从剩余职业池中寻找匹配职业（排除已锁定和本轮已占用的）
+            SRERole match = null;
+            for (SRERole role : rolePool) {
+                if (!lockedCandidates.contains(role) && !usedInThisRound.contains(role)
+                        && roleMatchesFaction(role, type)) {
+                    match = role;
+                    break;
+                }
+            }
+
+            if (match != null) {
+                preAssigned.put(playerId, match);
+                usedInThisRound.add(match);
+            } else {
+                // 无法提供匹配职业，移除强制要求，退还卡片
+                PlayerRoleWeightManager.ForcePlayerTeam.remove(playerId);
+                ServerPlayer sp = world.getServer().getPlayerList().getPlayer(playerId);
+                if (sp != null) {
+                    FactionCardType cardType = FactionCardType.fromInt(type);
+                    if (cardType != FactionCardType.NONE) {
+                        ProgressionDataManager.addFactionCard(sp, cardType, 1);
+                        sp.displayClientMessage(Component.translatable("message.sre.role_rotation.faction_fallback")
+                                .withStyle(ChatFormatting.RED), false);
+                    }
+                }
+            }
+        }
+        drawn.removeAll(usedInThisRound);
         roundCandidates.clear();
         lockedCandidates.clear(); // 清空锁定集
         int idx = 0;
         for (UUID playerId : roundPlayers) {
+            var preRole = preAssigned.getOrDefault(playerId, null);
             int count = Math.min(3, need - idx);
-            if (count <= 0)
+            if (preRole != null) {
+                count--;
+            }
+            if (count <= 0 && preRole == null)
                 break;
-            List<SRERole> candidates = new ArrayList<>(drawn.subList(idx, idx + count));
+            List<SRERole> candidates = new ArrayList<>();
+            if (count > 0) {
+                candidates.addAll(drawn.subList(idx, idx + count));
+            }
+            if (preRole != null) {
+                candidates.add(preRole);
+            }
             roundCandidates.put(playerId, candidates);
             lockedCandidates.addAll(candidates); // 锁定本轮候选
             idx += count;
@@ -327,6 +368,7 @@ public class LightningDraftState {
                 world.playSound(null, p.getX(), p.getY(), p.getZ(),
                         SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0f, 1.0f);
             }
+            adjustRoles(world);
             startConfirmCountdown();
         }
     }
@@ -367,8 +409,39 @@ public class LightningDraftState {
         finishRound(world);
     }
 
-    public void adjustRemainingRoles(ServerLevel serverWorld) {
+    public void adjustRoles(ServerLevel serverWorld) {
         // 不做任何替换
+        var canReplacePlayers = new ArrayList<UUID>();
+        for (Entry<UUID, SRERole> entrySet : selectedRoles.entrySet()) {
+            if (entrySet.getValue().equals(TMMRoles.CIVILIAN)) {
+                canReplacePlayers.add(entrySet.getKey());
+            }
+        }
+
+        for (Entry<UUID, SRERole> entrySet : selectedRoles.entrySet()) {
+            if (!entrySet.getValue().equals(TMMRoles.CIVILIAN) && entrySet.getValue().isInnocent()) {
+                canReplacePlayers.add(entrySet.getKey());
+            }
+        }
+        boolean enableCivilianInPool = HarpyModLoaderConfig.instance().enableCivilianInPool;
+        var needToReplaceRole = new ArrayList<SRERole>();
+        for (SRERole role : rolePool) {
+            if (enableCivilianInPool && role.isInnocent() || role.equals(TMMRoles.CIVILIAN)) {
+                continue;
+            }
+            needToReplaceRole.add(role);
+        }
+        Collections.shuffle(needToReplaceRole);
+        int t = 0;
+        for (var r : needToReplaceRole) {
+            if (canReplacePlayers.isEmpty()) {
+                SRE.LOGGER.error("Need {} more innocent player.", needToReplaceRole.size() - t);
+                break;
+            }
+            var p = canReplacePlayers.getFirst();
+            selectedRoles.put(p, r);
+            t++;
+        }
     }
 
     public Map<UUID, List<String>> getRoundCandidatesAsStrings() {

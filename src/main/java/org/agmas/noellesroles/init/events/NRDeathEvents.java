@@ -42,6 +42,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.*;
+import org.agmas.noellesroles.cca.C4BackComponent;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.ModComponents;
@@ -724,7 +725,16 @@ public class NRDeathEvents {
         OnPlayerDeath.EVENT.register((p, reason) -> {
             if (!(p instanceof ServerPlayer player))
                 return;
+            if(C4BackComponent.hasC4(player)){
+                var c4instance = C4BackComponent.getInstance(player);
+                UUID planterUid = c4instance.getPlanter(player.getUUID());
+                var planter = player.server.getPlayerList().getPlayer(planterUid);
+                if(planter!=null && GameUtils.isPlayerAliveAndSurvival(planter)){
 
+                c4instance.addC4(planterUid, planterUid);
+                planter.displayClientMessage(Component.translatable("c4.back_to_planter").withStyle(ChatFormatting.RED), true);
+                }
+            }
             // 掉落左轮 (DropRevolverWhenDead)
             int dropCount = MCItemsUtils.clearItem(player, (t) -> {
                 return t.getItem() instanceof DropRevolverWhenDead || t.is(TMMItems.REVOLVER)

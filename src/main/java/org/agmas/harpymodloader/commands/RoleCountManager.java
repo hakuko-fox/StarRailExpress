@@ -19,7 +19,7 @@ public class RoleCountManager {
 
     public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setRoleCount")
-                .requires(serverCommandSource -> serverCommandSource.hasPermission(2))
+                .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
                 .then(Commands.literal("killer")
                         .then(Commands.argument("count", IntegerArgumentType.integer(0))
                                 .executes(RoleCountManager::setKillerCount)))
@@ -86,7 +86,7 @@ public class RoleCountManager {
         forcedKillerCount = -1;
         forcedVigilanteCount = -1;
         forcedNeutralCount = -1;
-        context.getSource().sendSuccess(() -> Component.translatable(""), false);
+        context.getSource().sendSuccess(() -> Component.translatable("Reseted!"), false);
         return 1;
     }
 

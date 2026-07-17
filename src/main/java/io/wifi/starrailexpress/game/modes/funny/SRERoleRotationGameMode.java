@@ -73,7 +73,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             p.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, ROTATION_SAFE_TIME + 40, 10, true, false, false));
             p.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 40, 10, true, false, false));
             p.addEffect(new MobEffectInstance(ModEffects.CCA_FREEZED, 40, 10, true, false, false));
-            RoleUtils.sendWelcomeAnnouncement(p);
         }
 
         // 保底
@@ -140,7 +139,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
 
             // 如果所有玩家都已获得职业（包括离线自动分配的），直接结束轮选
             if (draftState.selectedRoles.size() >= draftState.totalPlayers) {
-                draftState.adjustRemainingRoles(world);
+
                 finishRotationPhase(world, gameComp);
                 return;
             }
@@ -158,7 +157,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             if (draftState.confirmCountdown % 20 == 0)
                 broadcastSync(world);
             if (draftState.confirmCountdown <= 0) {
-                draftState.adjustRemainingRoles(world);
                 finishRotationPhase(world, gameComp);
                 return;
             }
@@ -189,7 +187,6 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         Map<UUID, SRERole> finalRoles = new HashMap<>(draftState.selectedRoles);
         isInRotationPhase = false;
         draftState = null;
-
         completeRoleSelection(world, gameComp, finalRoles);
 
         world.players().forEach(p -> {

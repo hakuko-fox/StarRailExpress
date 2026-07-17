@@ -864,7 +864,7 @@ public class ModRoles {
             })
             .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true)
             .setComponentKey(ModComponents.GHOST_EYE)
-            .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(9000)
+            .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(5000)
             .setDefaultEnableNeededPlayerCount(8);
 
     /**

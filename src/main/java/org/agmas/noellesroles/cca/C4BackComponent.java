@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -151,5 +152,9 @@ public class C4BackComponent implements AutoSyncedComponent {
             list.add(entry);
         }
         tag.put("carriers", list);
+    }
+
+    public static C4BackComponent getInstance(ServerPlayer player) {
+        return C4BackComponent.KEY.get(player.level());
     }
 }
