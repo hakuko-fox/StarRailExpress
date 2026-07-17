@@ -448,7 +448,7 @@ public class LightningDraftState {
             selectedRoles.put(p, r);
             var pp = serverWorld.getPlayerByUUID(p);
             SRE.LOGGER.info("Replace {}'s old role {} with new role {}",
-                    pp == null ? "null" : pp.getName().getString(), p, old.getName().getString(),
+                    pp == null ? "null" : pp.getName().getString(), old.getName().getString(),
                     r.getName().getString());
             t++;
         }
