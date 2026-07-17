@@ -214,6 +214,7 @@ public class LightningDraftState {
     // ---------- 轮次计算 ----------
     public void startNextRound(ServerLevel world) {
         if (remainingRoles <= 0) {
+            adjustRoles(world);
             startConfirmCountdown();
             return;
         }
@@ -368,6 +369,7 @@ public class LightningDraftState {
                 world.playSound(null, p.getX(), p.getY(), p.getZ(),
                         SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0f, 1.0f);
             }
+
             adjustRoles(world);
             startConfirmCountdown();
         }
