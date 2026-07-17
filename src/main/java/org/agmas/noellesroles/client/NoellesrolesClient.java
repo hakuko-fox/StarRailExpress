@@ -747,11 +747,16 @@ public class NoellesrolesClient implements ClientModInitializer {
             });
         });
         // 抽奖/抽卡功能已禁用 —— 以下所有 Loot/Lottery 网络包处理器均为空操作
-        ClientPlayNetworking.registerGlobalReceiver(LootResultS2CPacket.ID, (payload, context) -> {});
-        ClientPlayNetworking.registerGlobalReceiver(LootMultiResultS2CPacket.ID, (payload, context) -> {});
-        ClientPlayNetworking.registerGlobalReceiver(LootPoolsInfoCheckS2CPacket.ID, (payload, context) -> {});
-        ClientPlayNetworking.registerGlobalReceiver(LootPoolsInfoS2CPacket.ID, (payload, context) -> {});
-        ClientPlayNetworking.registerGlobalReceiver(LootDataRefreshS2CPacket.ID, (payload, context) -> {});
+        ClientPlayNetworking.registerGlobalReceiver(LootResultS2CPacket.ID, (payload, context) -> {
+        });
+        ClientPlayNetworking.registerGlobalReceiver(LootMultiResultS2CPacket.ID, (payload, context) -> {
+        });
+        ClientPlayNetworking.registerGlobalReceiver(LootPoolsInfoCheckS2CPacket.ID, (payload, context) -> {
+        });
+        ClientPlayNetworking.registerGlobalReceiver(LootPoolsInfoS2CPacket.ID, (payload, context) -> {
+        });
+        ClientPlayNetworking.registerGlobalReceiver(LootDataRefreshS2CPacket.ID, (payload, context) -> {
+        });
 
         OnRoundStartWelcomeTimmer.EVENT.register((player, timer) -> {
             if (timer == 1) {
@@ -1042,6 +1047,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 监听客户端断开连接：清空卡池配置信息
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             LotteryManager.getInstance().clearPools();
+            client.player = null;
         });
         //
         ClientTickEvents.END_WORLD_TICK.register((client) -> {

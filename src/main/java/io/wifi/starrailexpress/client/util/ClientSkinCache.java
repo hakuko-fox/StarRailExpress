@@ -21,6 +21,10 @@ public class ClientSkinCache {
     }
 
     public static void init() {
+        ClientPlayConnectionEvents.JOIN.register((a, b, c) -> {
+            // 加入游戏清空信息
+            ClientSkinCache.PLAYER_ENTRIES_CACHE.clear();
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((a, b) -> {
             // 加入游戏清空信息
             ClientSkinCache.PLAYER_ENTRIES_CACHE.clear();
