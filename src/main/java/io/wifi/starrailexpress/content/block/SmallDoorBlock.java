@@ -1,5 +1,15 @@
 package io.wifi.starrailexpress.content.block;
 
+import java.util.function.Supplier;
+
+import org.agmas.noellesroles.content.entity.LockEntityManager;
+import org.agmas.noellesroles.init.FunnyItems;
+import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.packet.OpenLockGuiS2CPacket;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
+
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
@@ -41,15 +51,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
-import org.agmas.noellesroles.content.entity.LockEntityManager;
-import org.agmas.noellesroles.init.FunnyItems;
-import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.packet.OpenLockGuiS2CPacket;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
-import java.util.function.Supplier;
 
 public class SmallDoorBlock extends DoorPartBlock {
     public static final int INTERACTION_COOLDOWN = 10;
@@ -430,8 +431,11 @@ public class SmallDoorBlock extends DoorPartBlock {
                         return InteractionResult.FAIL;
                     if (player.getMainHandItem().is(TMMItems.KEY) || hasLockpick) {
                         ItemLore lore = player.getMainHandItem().get(DataComponents.LORE);
+                        String needKey = entity.getKeyName();
+                        // 忽略加固和警报的影响
+                        needKey = needKey.replaceAll("alarmed:", "").replaceAll("reinforced:", "");
                         boolean isRightKey = lore != null && !lore.lines().isEmpty()
-                                && lore.lines().getFirst().getString().equals(entity.getKeyName());
+                                && lore.lines().getFirst().getString().equals(needKey);
                         if (isRightKey || hasLockpick) {
                             if (isRightKey)
                                 world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
