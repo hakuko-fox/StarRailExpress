@@ -30,7 +30,7 @@ public class THMiscRoles {
   public static SRERole KOMACHI = TMMRoles
       .registerRole(new THKomachiRole(KOMACHI_ID, new java.awt.Color(199, 144, 161).getRGB(),
           false, true, SRERole.MoodType.FAKE,
-          TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false), "th_hell");
+          Integer.MAX_VALUE, true), "th_hell");
   // 天子Hinanawi Tenshi
   public static final ResourceLocation TENSHI_ID = id("hinanawi_tenshi");
   public static SRERole TENSHI = TMMRoles
