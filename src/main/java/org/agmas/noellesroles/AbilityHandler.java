@@ -79,7 +79,7 @@ public class AbilityHandler {
                     ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
                 }
             });
-            abilityPlayerComponent.setCooldown(240 * 20);
+            abilityPlayerComponent.setCooldown(180 * 20);
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.GLITCH_ROBOT)) {
