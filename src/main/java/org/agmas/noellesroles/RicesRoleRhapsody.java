@@ -2,7 +2,6 @@ package org.agmas.noellesroles;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.api.ModInitializer;
@@ -238,8 +237,6 @@ public class RicesRoleRhapsody implements ModInitializer {
      */
     public static void onRoleAssigned(Player player, SRERole role) {
         // 重置玩家的技能冷却
-        SREAbilityPlayerComponent abilityComponent = ModComponents.ABILITY.get(player);
-        abilityComponent.init();
 
         // ==================== 清除其他角色的组件状态 ====================
         // 当角色改变时，需要清除之前角色的组件状态

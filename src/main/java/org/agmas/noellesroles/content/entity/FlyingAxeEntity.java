@@ -25,17 +25,20 @@ import org.agmas.noellesroles.init.ModItems;
 /**
  * 飞斧实体 —— 强盗蓄力投掷的斧子。
  *
- * <p>渲染由 {@code FlyingAxeRenderer} 直接绘制飞斧「物品模型」并翻滚旋转，
+ * <p>
+ * 渲染由 {@code FlyingAxeRenderer} 直接绘制飞斧「物品模型」并翻滚旋转，
  * 因此看起来是一把真正的斧头（而非箭矢渲染器画出的「飞剑」）。
  *
- * <p>行为（沿用旧 ThrowingAxeEntity）：
+ * <p>
+ * 行为（沿用旧 ThrowingAxeEntity）：
  * <ul>
  * <li>直线飞行（无重力），最多穿透并击杀 {@link #MAX_PIERCE} 名玩家；</li>
  * <li>击杀上限后继续穿过后续玩家（不再击杀），直到撞上方块；</li>
  * <li>撞墙后钉在墙上，{@link #STICK_TICKS} tick（5 秒）后消失。</li>
  * </ul>
  *
- * <p>AI 提示：这里刻意不调用 {@code super.onHitEntity}，因为原版飞行物在命中被判定为
+ * <p>
+ * AI 提示：这里刻意不调用 {@code super.onHitEntity}，因为原版飞行物在命中被判定为
  * 无敌 / 被规则取消伤害（PvP 阵营保护）的实体时会被弹开、停飞，破坏穿透效果。
  */
 public class FlyingAxeEntity extends AbstractArrow {
@@ -59,6 +62,15 @@ public class FlyingAxeEntity extends AbstractArrow {
         this.setNoGravity(true);
         this.setBaseDamage(0);
         this.pickup = AbstractArrow.Pickup.DISALLOWED; // 不可被拾取
+    }
+
+    @Override
+    protected boolean tryPickup(Player player) {
+        return false;
+    }
+
+    @Override
+    public void playerTouch(Player player) {
     }
 
     public FlyingAxeEntity(EntityType<? extends AbstractArrow> entityType, LivingEntity livingEntity, Level level,

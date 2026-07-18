@@ -2092,7 +2092,7 @@ public class RoleShopHandler {
                 public boolean onBuy(@NotNull Player player) {
                     // 启动疯狂模式
                     if (SREItemUtils.countItem(player, TMMItems.PSYCHO_MODE) > 0) {
-                        if (SREPlayerPsychoComponent.KEY.get(player).startPsycho()) {
+                        if (SREPlayerShopComponent.usePsychoMode(player)) {
                             SREItemUtils.clearItem(player, TMMItems.PSYCHO_MODE, 1);
                             return true;
                         }

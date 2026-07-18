@@ -86,6 +86,9 @@ public class ModRolesInitialEventRegister {
         // 初始化操纵师操控限制（被拖入水/岩浆/虚空/摔落致死时否决并弹回）
         InControlCCA.registerEvents();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
+
+            SREAbilityPlayerComponent abilityComponent = ModComponents.ABILITY.get(player);
+            abilityComponent.init();
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
                 ModEventsRegister.reJudgeSpectatorsPenalty(player.level());
