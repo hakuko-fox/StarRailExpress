@@ -172,7 +172,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
                 draftState.selectedRoles.put(uuid, role);
             }
         }
-        draftState.remainingRoles = 0;
+        draftState.remainingPlayerCount = 0;
         finishRotationPhase(world, gameComp);
     }
 

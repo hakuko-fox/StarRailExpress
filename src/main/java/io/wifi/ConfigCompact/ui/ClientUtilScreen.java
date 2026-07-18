@@ -1,14 +1,20 @@
 package io.wifi.ConfigCompact.ui;
 
+import java.util.ArrayList;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.agmas.noellesroles.mixin.SkinManagerAccessor;
+
+import io.wifi.starrailexpress.SRE;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.SkinManager;
 import net.minecraft.network.chat.Component;
 
 public class ClientUtilScreen extends Screen {
@@ -101,6 +107,34 @@ public class ClientUtilScreen extends Screen {
             Button btn = simpleButton(Component.translatable("screen.starrailexpress.client_utils.test_screen"),
                     (b) -> {
                         this.minecraft.setScreen(new TestScreen(this));
+                    });
+            rowHelper.addChild(btn);
+        }
+        {
+            Button btn = simpleButton(Component.translatable("screen.starrailexpress.client_utils.clear_skins"),
+                    (b) -> {
+                        var client = minecraft;
+                        if (client.player == null)
+                            return;
+
+                        UUID localUuid = client.player.getUUID();
+                        SkinManager skinManager = client.getSkinManager();
+                        SkinManagerAccessor accessor = (SkinManagerAccessor) skinManager;
+                        var cache = accessor.getSkinCache();
+
+                        // 复制键集，避免在迭代过程中修改集合导致并发异常
+                        ArrayList<SkinManager.CacheKey> allKeys = new ArrayList<>(cache.asMap().keySet());
+
+                        for (SkinManager.CacheKey key : allKeys) {
+                            // 仅清除其他玩家的缓存，保留自己的
+                            if (!key.profileId().equals(localUuid)) {
+                                cache.invalidate(key);
+                            }
+                        }
+
+                        // 立即执行清理，确保旧数据被丢弃
+                        cache.cleanUp();
+                        SRE.LOGGER.info("Skin caches cleared by user.");
                     });
             rowHelper.addChild(btn);
         }
