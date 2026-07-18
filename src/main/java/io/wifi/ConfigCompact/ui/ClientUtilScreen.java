@@ -1,7 +1,6 @@
 package io.wifi.ConfigCompact.ui;
 
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -117,7 +116,6 @@ public class ClientUtilScreen extends Screen {
                         if (client.player == null)
                             return;
 
-                        UUID localUuid = client.player.getUUID();
                         SkinManager skinManager = client.getSkinManager();
                         SkinManagerAccessor accessor = (SkinManagerAccessor) skinManager;
                         var cache = accessor.getSkinCache();
@@ -127,9 +125,7 @@ public class ClientUtilScreen extends Screen {
 
                         for (SkinManager.CacheKey key : allKeys) {
                             // 仅清除其他玩家的缓存，保留自己的
-                            if (!key.profileId().equals(localUuid)) {
-                                cache.invalidate(key);
-                            }
+                            cache.invalidate(key);
                         }
 
                         // 立即执行清理，确保旧数据被丢弃
