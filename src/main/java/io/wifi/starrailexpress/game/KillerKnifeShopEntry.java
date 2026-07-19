@@ -81,7 +81,7 @@ public class KillerKnifeShopEntry extends ShopEntry {
      * later buys.
      */
     private void applyFirstPurchaseDiscount(@NotNull Player player) {
-        if (!KillerKnifeDurability.isDurabilityModeEnabled(player.level())) {
+        if (this.stack().is(TMMItems.KNIFE) && !KillerKnifeDurability.isDurabilityModeEnabled(player.level())) {
             return;
         }
         DynamicShopComponent dynamicShop = DynamicShopComponent.KEY.get(player);

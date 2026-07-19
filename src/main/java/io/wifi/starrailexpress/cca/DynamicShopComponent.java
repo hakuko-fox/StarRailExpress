@@ -20,16 +20,22 @@ import java.util.Map;
 /**
  * 动态商店组件 / Dynamic shop component.
  *
- * <p>按玩家维度存储「商品价格修正」与「购买次数」，让局内商店的商品可以拥有动态价格
+ * <p>
+ * 按玩家维度存储「商品价格修正」与「购买次数」，让局内商店的商品可以拥有动态价格
  * （折扣、按比例打折、固定减价、甚至溢价）。修正以物品 ID（{@link ResourceLocation}）为键，
  * 因此同一件商品在不同玩家身上可以有不同的实时价格。
  *
- * <p>Stores per-player price modifiers and purchase counts, keyed by item id, so in-game shop
- * items can have dynamic prices (percentage discounts, flat reductions, multipliers, or surge
- * pricing). The component auto-syncs to its owner, so the client shop UI can display the same
+ * <p>
+ * Stores per-player price modifiers and purchase counts, keyed by item id, so
+ * in-game shop
+ * items can have dynamic prices (percentage discounts, flat reductions,
+ * multipliers, or surge
+ * pricing). The component auto-syncs to its owner, so the client shop UI can
+ * display the same
  * effective price the server will charge.
  *
- * <p>价格计算 / Price formula:
+ * <p>
+ * 价格计算 / Price formula:
  * {@code effective = max(0, round(basePrice * multiplier) - flatReduction)}.
  *
  * @author canyuesama
@@ -85,10 +91,11 @@ public class DynamicShopComponent implements RoleComponent {
      * 设置百分比折扣。 / Set a percentage discount.
      *
      * @param item    物品 ID / item id
-     * @param percent 折扣百分比（0~100），如 50 表示降价 50% / discount percent (0~100); 50 means -50%
+     * @param percent 折扣百分比（0~100），如 50 表示降价 50% / discount percent (0~100); 50
+     *                means -50%
      */
     public void setPercentDiscount(ResourceLocation item, int percent) {
-        int clamped = Math.max(0, Math.min(100, percent));
+        int clamped = Math.min(100, percent);
         setModifier(item, (100 - clamped) / 100.0, 0);
     }
 
@@ -98,7 +105,7 @@ public class DynamicShopComponent implements RoleComponent {
      * @param amount 减少的价格 / amount to subtract from the price
      */
     public void setFlatReduction(ResourceLocation item, int amount) {
-        setModifier(item, 1.0, Math.max(0, amount));
+        setModifier(item, 1.0, amount);
     }
 
     /**
@@ -147,7 +154,10 @@ public class DynamicShopComponent implements RoleComponent {
         return Math.max(0, (int) Math.round(price));
     }
 
-    /** 便捷方法：根据商店条目的物品与基础价格计算实际价格。 / Convenience: resolve a {@link ShopEntry}'s effective price. */
+    /**
+     * 便捷方法：根据商店条目的物品与基础价格计算实际价格。 / Convenience: resolve a {@link ShopEntry}'s
+     * effective price.
+     */
     public int effectivePrice(@NotNull ShopEntry entry) {
         return effectivePrice(itemId(entry.stack()), entry.price());
     }
