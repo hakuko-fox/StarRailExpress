@@ -142,9 +142,9 @@ public class TouhouHandlers {
           Player player = context.player();
           for (var p : player.level().players()) {
             if (GameUtils.isPlayerAliveAndSurvival(p)) {
-              if (p.distanceToSqr(player) <= 10 * 10) {
+              if (p.getUUID() != player.getUUID() && p.distanceToSqr(player) <= 6 * 6) {
                 p.addEffect(ModEffects.of(MobEffects.MOVEMENT_SLOWDOWN, 5 * 20, 1, true, false, true));
-                p.setRemainingFireTicks(100 * 20);
+                p.setRemainingFireTicks(5 * 20);
               }
             }
           }
