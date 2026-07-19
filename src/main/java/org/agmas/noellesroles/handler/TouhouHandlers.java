@@ -11,7 +11,6 @@ import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
-import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.ShouldGiveKillerBalance;
@@ -60,33 +59,33 @@ public class TouhouHandlers {
       return TrueFalseResult.PASS;
     });
     // 四季
-    AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+    OnKillPlayerTriggered.EVENT.register((victim, spawnBody, killer, deathReasosn, forceKill) -> {
       if (killer == null)
-        return true;
+        return TrueFalseResult.PASS;
       if (!RoleUtils.isPlayerTheJob(killer, THMiscRoles.SHIKIEIKI))
-        return true;
+        return TrueFalseResult.PASS;
       if (killer.getMainHandItem().is(TMMItems.DERRINGER) || killer.getMainHandItem().is(TMMItems.REVOLVER)
           || killer.getMainHandItem().is(ModItems.BANDIT_REVOLVER)) {
         {
           var mainhandItem = victim.getMainHandItem();
-          if (victim.distanceToSqr(killer) <= 5 * 5) {
+          if (victim.distanceToSqr(killer) <= 6 * 6) {
             if (mainhandItem.getItem() instanceof TrainWeapon
                 || mainhandItem.is(TMMItemTags.GUNS)) {
-              return true;
+              return TrueFalseResult.TRUE;
             }
           }
         }
 
         var cca = SREAbilityPlayerComponent.KEY.get(killer);
         if (cca.duration <= 0 || cca.targetUUID == null) {
-          return false;
+          return TrueFalseResult.FALSE;
         }
         if (victim.getUUID().equals(cca.targetUUID)) {
-          return true;
+          return TrueFalseResult.TRUE;
         }
-        return false;
+        return TrueFalseResult.FALSE;
       }
-      return true;
+      return TrueFalseResult.PASS;
     });
     ShouldGiveKillerBalance.EVENT.register((victim, killer, deathReason) -> {
       if (RoleUtils.isPlayerTheJob(killer, THMiscRoles.KOMACHI))
