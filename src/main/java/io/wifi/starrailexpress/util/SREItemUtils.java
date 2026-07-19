@@ -153,7 +153,26 @@ public class SREItemUtils {
         return result;
     }
 
-    public static boolean insertStackInFreeSlot(@NotNull Player player, ItemStack stackToInsert) {
+    public static boolean insertStackInFreeSlot(@NotNull Player player, ItemStack sstack) {
+        var stackToInsert = sstack.copy();
+        for (int i = 0; i < 9; ++i) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (ItemStack.isSameItemSameComponents(stackToInsert, stack)) {
+                int leftCount = 0;
+                leftCount = stackToInsert.getCount() + stack.getCount() - stack.getMaxStackSize();
+
+                if (leftCount <= 0) {
+                    stack.setCount(stack.getCount() + stackToInsert.getCount());
+                } else {
+                    stack.setCount(stack.getMaxStackSize());
+                }
+                player.getInventory().setItem(i, stack);
+                if (leftCount <= 0)
+                    return true;
+                else
+                    stackToInsert.setCount(leftCount);
+            }
+        }
         for (int i = 0; i < 9; ++i) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.isEmpty()) {
@@ -161,7 +180,6 @@ public class SREItemUtils {
                 return true;
             }
         }
-
         return false;
     }
 

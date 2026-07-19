@@ -6,6 +6,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -43,11 +44,11 @@ import org.agmas.noellesroles.Noellesroles;
 public class DanmukuEntity extends AbstractArrow {
 
     /** 最多穿透并击杀的玩家数量。 */
-    public static final int MAX_PIERCE = 2;
+    public static final int MAX_PIERCE = 1;
     /** 钉在墙上后存活的 tick 数（20 tick = 1 秒）。 */
-    public static final int STICK_TICKS = 20 * 5;
+    public static final int STICK_TICKS = 1;
     /** 从未命中任何东西时的兜底存活 tick 数。 */
-    private static final int MAX_FLIGHT_TICKS = 20 * 8;
+    private static final int MAX_FLIGHT_TICKS = 20 * 5;
 
     private final IntOpenHashSet hitPlayers = new IntOpenHashSet(4);
     private int killedPlayers = 0;
@@ -64,6 +65,11 @@ public class DanmukuEntity extends AbstractArrow {
     @Override
     protected boolean tryPickup(Player player) {
         return false;
+    }
+
+    @Override
+    protected SoundEvent getDefaultHitGroundSoundEvent() {
+        return SoundEvents.FISH_SWIM;
     }
 
     @Override

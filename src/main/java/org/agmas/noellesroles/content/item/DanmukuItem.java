@@ -2,7 +2,6 @@ package org.agmas.noellesroles.content.item;
 
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.jetbrains.annotations.NotNull;
 
 import io.wifi.starrailexpress.api.ChargeableItem;
@@ -59,9 +58,7 @@ public class DanmukuItem extends Item implements ChargeableItem {
             return; // 蓄力不足 0.8 秒，不发射
         }
         if (livingEntity instanceof ServerPlayer user) {
-            if (MCItemsUtils.clearItem(user, ModItems.DANMUKU, 1) > 0) {
-                GoheiItem.shootDamuku(user, 2f, 0.5f);
-            }
+            GoheiItem.shootDamuku(user, 2f, 0.5f);
 
             if (!user.isCreative()) {
                 user.getCooldowns().addCooldown(ModItems.DANMUKU, GameConstants.getRevolverDefaultTicks());

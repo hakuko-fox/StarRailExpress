@@ -70,11 +70,13 @@ public class GoheiItem extends Item implements ChargeableItem {
             return; // 蓄力不足 0.8 秒，不发射
         }
         if (livingEntity instanceof ServerPlayer user) {
-            if (MCItemsUtils.clearItem(user, ModItems.DANMUKU, 1) > 0) {
-                GoheiItem.shootDamuku(user, 4f, 0.5f);
-            }
             if (!user.isCreative()) {
+                if (MCItemsUtils.clearItem(user, ModItems.DANMUKU, 1) > 0) {
+                    GoheiItem.shootDamuku(user, 4f, 0.5f);
+                }
                 user.getCooldowns().addCooldown(ModItems.DANMUKU, GameConstants.getRevolverDefaultTicks());
+            } else {
+                GoheiItem.shootDamuku(user, 4f, 0.5f);
             }
         }
     }
