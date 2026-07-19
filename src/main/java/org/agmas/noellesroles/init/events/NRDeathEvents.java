@@ -630,6 +630,14 @@ public class NRDeathEvents {
     }
 
     private static void registerOthers() {
+        OnKillPlayerTriggered.EVENT.register((victim, spawnBody, killer, deathreason, forceKill) -> {
+            var cca = InControlCCA.KEY.get(victim);
+            if (cca.isControlling) {
+                cca.bounceToSafe();
+                return TrueFalseResult.FALSE;
+            }
+            return TrueFalseResult.PASS;
+        });
         ShouldReloadDerringer.EVENT.register((victim, killer, deathReason) -> {
             if (RoleUtils.isPlayerTheJob(killer, ModRoles.GODFATHER)) {
                 return TrueFalseResult.FALSE;
@@ -725,14 +733,15 @@ public class NRDeathEvents {
         OnPlayerDeath.EVENT.register((p, reason) -> {
             if (!(p instanceof ServerPlayer player))
                 return;
-            if(C4BackComponent.hasC4(player)){
+            if (C4BackComponent.hasC4(player)) {
                 var c4instance = C4BackComponent.getInstance(player);
                 UUID planterUid = c4instance.getPlanter(player.getUUID());
                 var planter = player.server.getPlayerList().getPlayer(planterUid);
-                if(planter!=null && GameUtils.isPlayerAliveAndSurvival(planter)){
+                if (planter != null && GameUtils.isPlayerAliveAndSurvival(planter)) {
 
-                c4instance.addC4(planterUid, planterUid);
-                planter.displayClientMessage(Component.translatable("c4.back_to_planter").withStyle(ChatFormatting.RED), true);
+                    c4instance.addC4(planterUid, planterUid);
+                    planter.displayClientMessage(
+                            Component.translatable("c4.back_to_planter").withStyle(ChatFormatting.RED), true);
                 }
             }
             // 掉落左轮 (DropRevolverWhenDead)

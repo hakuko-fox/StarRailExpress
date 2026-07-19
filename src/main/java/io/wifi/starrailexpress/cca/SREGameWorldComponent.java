@@ -1010,6 +1010,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     }
                 }
                 if (canDead) {
+
+                    if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA
+                            .bounceBackIfControlled(player)) {
+                        return;
+                    }
                     if (nowInfo == null || nowInfo.standonTick <= 0) {
                         gameCCA.playerBannedBlockTime.put(player.getUUID(),
                                 new PlayerBannedBlockTimeInfo(infoBlockId, level.getGameTime()));
@@ -1026,6 +1031,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                             }
                         } else {
                             if (level.getGameTime() - nowInfo.standonTick > info.deathTimeForInnocent()) {
+                                if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA
+                                        .bounceBackIfControlled(player)) {
+                                    return;
+                                }
                                 GameUtils.forceKillPlayer(player, true, null,
                                         GameConstants.DeathReasons.TOUCH_INCORRECT);
                                 if (gameCCA.playerBannedBlockTime.containsKey(player.getUUID()))
@@ -1034,6 +1043,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                         }
 
                     } else {
+                        if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA
+                                .bounceBackIfControlled(player)) {
+                            return;
+                        }
                         gameCCA.playerBannedBlockTime.put(player.getUUID(),
                                 new PlayerBannedBlockTimeInfo(infoBlockId, level.getGameTime()));
                     }
