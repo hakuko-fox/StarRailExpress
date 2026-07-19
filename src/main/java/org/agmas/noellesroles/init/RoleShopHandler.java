@@ -2036,8 +2036,9 @@ public class RoleShopHandler {
         // 大妖精的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
+            SHOP.add(new ShopEntry(ModItems.SHILIJIA.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(ModItems.CALMING_TEA.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
-            SHOP.add(new ShopEntry(ModItems.SHILIJIA.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.WREATH.getDefaultInstance(), 400, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(RedHouseRoles.DAIYOUSEI_ID, SHOP);
         }
         // INITIATE的商店
