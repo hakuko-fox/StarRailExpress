@@ -204,19 +204,31 @@ public class GameUtilsCommand {
             .then(Commands.literal("tests")
                 .then(Commands.literal("role_rotaion_weight")
                     .then(Commands.literal("clear").executes(ctx -> {
-                      LightningDraftState.PLAYER_SORT_WEIGHT.remove(ctx.getSource().getPlayerOrException().getUUID());
+                      var p = ctx.getSource().getPlayerOrException();
+                      LightningDraftState.PLAYER_SORT_WEIGHT.remove(p.getUUID());
+                      ctx.getSource()
+                          .sendSuccess(
+                              () -> Component.translatable(
+                                  "Successfully clear player %s role rotation weight", p.getName()),
+                              true);
                       return 0;
                     }))
                     .then(Commands.argument("weight", IntegerArgumentType.integer())
                         .executes((ctx) -> {
+                          var p = ctx.getSource().getPlayerOrException();
+                          int w = IntegerArgumentType.getInteger(ctx, "weight");
                           LightningDraftState.PLAYER_SORT_WEIGHT
-                              .put(ctx.getSource().getPlayerOrException().getUUID(),
-                                  IntegerArgumentType.getInteger(ctx, "weight"));
-
+                              .put(p.getUUID(),
+                                  w);
+                          ctx.getSource()
+                              .sendSuccess(
+                                  () -> Component.translatable(
+                                      "Successfully change player %s role rotation weight to %s", p.getName(), w),
+                                  true);
                           return 0;
                         })))
                 .then(Commands.literal("vote_players").executes((ctx) -> {
-                  var builder = VoteManager.builder(Component.literal("测试投票玩家"));
+                  var builder = VoteManager.builder(Component.literal("Test for vote"));
                   var source = ctx.getSource();
                   var players = source.getLevel().players();
                   for (ServerPlayer p : players) {

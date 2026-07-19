@@ -276,7 +276,7 @@ public class LightningDraftState {
             int aW = PLAYER_SORT_WEIGHT.getOrDefault(a.getUUID(), 0);
             int bW = PLAYER_SORT_WEIGHT.getOrDefault(b.getUUID(), 0);
             if (aW != bW) {
-                return Integer.compare(aW, bW);
+                return -Integer.compare(aW, bW);
             }
             boolean a_force = Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(a.getUUID());
             boolean b_force = Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(b.getUUID());
