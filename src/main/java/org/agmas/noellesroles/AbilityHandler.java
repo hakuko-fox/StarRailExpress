@@ -66,14 +66,15 @@ public class AbilityHandler {
         }
         if (gameWorldComponent.isRole(player, RedHouseRoles.HOAN_MEIRIN)) {
             var cca = HoanMeirinPlayerComponent.KEY.get(player);
-            if (cca.cooldown > 0) {
-                return;
-            }
+
             if (player.hasEffect(MobEffects.LEVITATION)) {
                 player.removeEffect(MobEffects.LEVITATION);
                 player.displayClientMessage(
                         Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
                         true);
+                return;
+            }
+            if (cca.cooldown > 0) {
                 return;
             }
             player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
