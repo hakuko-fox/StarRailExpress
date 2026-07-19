@@ -672,14 +672,7 @@ public interface TMMBlocks {
             new SecurityMonitorBlock(BlockBehaviour.Properties.ofFullCopy(DARK_STEEL).noOcclusion()),
             TMMItems.DECORATION_GROUP, org.agmas.noellesroles.init.ModSceneBlocks.QUEST_CREATIVE_GROUP);
 
-    // 邮箱方块
-    Block MAILBOX = registrar.createWithItem("mailbox",
-            new io.wifi.starrailexpress.content.mail.MailboxBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(2.0f, 6.0f)
-                            .sound(SoundType.METAL)
-                            .noOcclusion()),
-            TMMItems.DECORATION_GROUP);
+    // 邮箱方块已移除：邮箱系统迁移至网站端（新数据库表），游戏内邮箱方块与逻辑已删除。
 
     // 第四房间牌桌
     Block FOURTH_ROOM_TABLE = registrar.createWithItem("fourth_room_table",

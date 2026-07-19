@@ -863,11 +863,7 @@ public class SREClient implements ClientModInitializer {
                 (payload, context) -> context.client().execute(() -> context.client().setScreen(payload.admin()
                         ? new io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen()
                         : new io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen())));
-        ClientPlayNetworking.registerGlobalReceiver(
-                io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.ID, (payload, context) -> {
-                    context.client().execute(() -> context.client().setScreen(
-                            new io.wifi.starrailexpress.content.mail.MailboxScreen()));
-                });
+        // 邮箱客户端接收器已移除：邮箱系统迁移至网站端。
         // ClientPlayNetworking.registerGlobalReceiver(
         // io.wifi.starrailexpress.network.OpenRoleUnlockScreenPayload.ID, (payload,
         // context) -> {

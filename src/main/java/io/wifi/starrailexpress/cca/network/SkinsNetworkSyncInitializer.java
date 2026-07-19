@@ -2,7 +2,6 @@ package io.wifi.starrailexpress.cca.network;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
-import io.wifi.starrailexpress.content.mail.MailboxComponent;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
@@ -132,11 +131,6 @@ public class SkinsNetworkSyncInitializer {
                 NameTagInventoryComponent nameTagInventoryComponent = NameTagInventoryComponent.KEY.get(player);
                 if (nameTagInventoryComponent != null && nameTagInventoryComponent.isNetworkSyncEnabled()) {
                     wroteAny |= nameTagInventoryComponent.flushNetworkSyncBlocking();
-                }
-
-                MailboxComponent mailboxComponent = MailboxComponent.KEY.get(player);
-                if (mailboxComponent != null) {
-                    wroteAny |= mailboxComponent.flushDatabaseSyncBlocking();
                 }
 
                 if (wroteAny) {

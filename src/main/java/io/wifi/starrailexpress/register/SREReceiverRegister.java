@@ -166,17 +166,7 @@ public class SREReceiverRegister {
                     });
                 });
 
-        // Mailbox receivers
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
-                new io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.ID,
-                new io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.ID,
-                new io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.ID,
-                new io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.Receiver());
-        ServerPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.ID,
-                new io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.Receiver());
+        // Mailbox receivers 已移除：邮箱系统迁移至网站端。
 
         // Chat Dialogue advance handler
         ServerPlayNetworking.registerGlobalReceiver(

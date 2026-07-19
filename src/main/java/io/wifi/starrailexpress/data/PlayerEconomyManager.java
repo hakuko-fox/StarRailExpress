@@ -42,6 +42,9 @@ public final class PlayerEconomyManager {
     }
 
     public static int getLootChance(Player player) {
+        // 皮肤/经济同步策略：游戏端只读取远程数据库，不将本地数据写回远程。
+        // 远程数据库（由网站端邮箱/兑换码/抽奖/管理员发放写入）是唯一权威源。
+        // 游戏端在玩家加入时 reloadFromDatabase 拉取最新值；本地变更仅用于当次会话显示，不持久化到远程。
         return get(player.getUUID()).state.lootChance;
     }
 
@@ -145,22 +148,10 @@ public final class PlayerEconomyManager {
     }
 
     public static boolean flushBlocking(UUID playerUuid) {
-        Entry entry = ENTRIES.get(playerUuid);
-        if (entry == null || !isDatabaseEnabled()) {
-            return false;
-        }
-        String json = toJson(entry.state, entry.updatedAt);
-        // 同时写 economy 和 skins 分区：skins 分区是网站端/mysql-viewer 的权威源，
-        // 确保游戏内变更（加抽数/金币/解锁皮肤）能被网站端读到。
-        boolean success = MysqlPlayerDataStore.saveBatchBlocking(
-                playerUuid,
-                Map.of(PART, json, "skins", json),
-                Math.max(1L, entry.updatedAt),
-                FLUSH_TIMEOUT_MS);
-        if (success) {
-            entry.dirty = false;
-        }
-        return success;
+        // 皮肤/经济同步只读策略：游戏端不再将本地数据写回远程数据库。
+        // 远程数据库由网站端（邮箱/兑换码/抽奖/管理员发放）唯一写入，游戏端只读取。
+        // 此方法保留为空操作以兼容现有调用方（如 ItemSkinManager），但不执行任何远程写入。
+        return false;
     }
 
     private static void onJoin(ServerPlayer player) {
@@ -215,53 +206,25 @@ public final class PlayerEconomyManager {
     private static void onDisconnect(ServerPlayer player) {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
-            // Use async flush to avoid blocking the network thread.
-            // Final data is guaranteed by SERVER_STOPPING → flushAllBlocking.
-            flushAsync(player, entry);
+            // 皮肤/经济同步只读策略：断线时不再 flush 到远程数据库。
+            // 远程数据库是网站端唯一写入的权威源，游戏端只读取。
             ENTRIES.remove(player.getUUID(), entry);
         }
     }
 
     private static void tick(MinecraftServer server) {
-        long now = System.currentTimeMillis();
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            Entry entry = ENTRIES.get(player.getUUID());
-            if (entry == null || !entry.online || !entry.dirty || entry.saveInFlight
-                    || now - entry.lastFlushAt < FLUSH_INTERVAL_MS) {
-                continue;
-            }
-            flushAsync(player, entry);
-        }
+        // 皮肤/经济同步只读策略：不再周期性 flush 本地数据到远程数据库。
+        // 仍保留 tick 注册以兼容事件钩子，但不再执行任何远程写入。
     }
 
     private static void flushAsync(ServerPlayer player, Entry entry) {
-        if (!isDatabaseEnabled() || entry.loadInFlight) {
-            return;
-        }
-        entry.saveInFlight = true;
-        entry.dirty = false;
-        entry.lastFlushAt = System.currentTimeMillis();
-        long updatedAt = Math.max(1L, entry.updatedAt);
-        String json = toJson(entry.state, updatedAt);
-        // 同时写 economy 和 skins 分区，确保网站端能读到游戏内变更。
-        MysqlPlayerDataStore.saveBatchAsync(player.getUUID(), Map.of(PART, json, "skins", json), updatedAt)
-                .whenComplete((success, throwable) -> {
-                    entry.saveInFlight = false;
-                    if (throwable != null || !Boolean.TRUE.equals(success)) {
-                        entry.dirty = true;
-                        if (throwable != null) {
-                            SRE.LOGGER.warn("Failed to save economy part for {}", player.getUUID(), throwable);
-                        } else {
-                            reloadFromDatabase(player, entry);
-                        }
-                    }
-                });
+        // 皮肤/经济同步只读策略：不再将本地数据异步写入远程数据库。
+        // 保留方法签名以兼容调用方，但方法体为空操作。
     }
 
     private static void flushAllBlocking(MinecraftServer server) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            flushBlocking(player.getUUID());
-        }
+        // 皮肤/经济同步只读策略：关服时不再 flush 本地数据到远程数据库。
+        // 远程数据库由网站端唯一写入。
     }
 
     private static Entry get(UUID uuid) {

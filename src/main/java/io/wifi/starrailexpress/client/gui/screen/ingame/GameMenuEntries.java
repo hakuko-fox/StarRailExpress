@@ -8,7 +8,6 @@ import io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen;
 import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
-import io.wifi.starrailexpress.content.mail.MailboxScreen;
 import net.exmo.sre.record.client.MatchRecordsScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -126,11 +125,7 @@ public class GameMenuEntries {
             minecraft.setScreen(new BackpackScreen(parent));
             toggleViewMenu.accept(false);
         }));
-        // 邮箱管理
-        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.mail_manage"), (btn) -> {
-            minecraft.setScreen(new MailboxScreen());
-            toggleViewMenu.accept(false);
-        }));
+        // 邮箱管理已移除：邮箱系统迁移至网站端。
         if (minecraft.player.hasPermissions(2)) {
             // mod_settings
             entries.add(new MenuEntry(
