@@ -593,9 +593,9 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         if (i > 8) {
             int j;
             if (minecraft.gui.animateOverlayMessageColor) {
-               j = Mth.hsvToArgb(f / 50.0F, 0.7F, 0.6F, i);
+                j = Mth.hsvToArgb(f / 50.0F, 0.7F, 0.6F, i);
             } else {
-               j = ARGB32.color(i, -1);
+                j = ARGB32.color(i, -1);
             }
             int x = width;
             int y = 10;
@@ -733,10 +733,14 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                         100 - (int) ((double) effectivePrice / (double) basePrice * 100.0))
                         .withStyle(net.minecraft.ChatFormatting.GREEN));
                 // price.withStyle(net.minecraft.ChatFormatting.GREEN);
+            } else if (effectivePrice > basePrice) {
+                displayY -= 12;
+                renders.add(Component.translatable("gui.starrailexpress.shop.discount",
+                        (int) ((double) effectivePrice / (double) basePrice * 100.0) - 100)
+                        .withStyle(net.minecraft.ChatFormatting.RED));
             }
             renders.add(price);
             context.renderComponentTooltip(this.screen.font, renders, displayX, displayY);
-            ;
         }
 
         private void drawShopSlotHighlight(GuiGraphics context, int x, int y, int z) {

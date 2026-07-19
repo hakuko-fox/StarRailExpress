@@ -1259,6 +1259,7 @@
     "gui.starrailexpress.hint17": "太吵了太吵了太吵了",
     "gui.starrailexpress.hint18": "那些声音……我无法……",
     "gui.starrailexpress.shop.discount": "-%s%%",
+    "gui.starrailexpress.shop.increase": "+%s%%",
     "hud.noellesroles.repair.drop_line": "G 放下目标",
     "hud.noellesroles.repair.item_skill_empty": "道具技能 待机",
     "hud.noellesroles.repair.plugin_line": "插件 %s",
