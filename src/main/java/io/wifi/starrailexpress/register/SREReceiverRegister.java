@@ -110,7 +110,7 @@ public class SREReceiverRegister {
         ServerPlayNetworking.registerGlobalReceiver(UseAssassinationItemPayload.ID,
                 new UseAssassinationItemPayload.Receiver());
 
-        // Role Rotation receivers
+        // Role Rotation receivers（同时处理闪电轮抽和单选模式）
         SRERoleRotationGameMode.registerServerPacketRecievers();
         SREVolunteerGameMode.registerServerPacketRecievers();
 
