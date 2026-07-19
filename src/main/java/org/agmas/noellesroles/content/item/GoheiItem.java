@@ -77,7 +77,7 @@ public class GoheiItem extends Item implements ChargeableItem, TrainWeapon {
                 }
                 user.getCooldowns().addCooldown(ModItems.DANMUKU, GameConstants.getRevolverDefaultTicks());
             } else {
-                GoheiItem.shootDamuku(user, 4f, 0.5f);
+                GoheiItem.shootDamuku(user, 1.5f, 0.5f);
             }
         }
     }
