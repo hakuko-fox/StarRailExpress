@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.modifier;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
@@ -63,7 +64,10 @@ public class AnimeModifiers {
                             Component.translatable("message.anime.re0_486.trigger.subtitle"), 100, RE0_486.color(),
                             false, SubtitleS2CPayload.POS_CENTER);
             SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("message.anime.re0_486.trigger.text",player.getScoreboardName()).withStyle(ChatFormatting.YELLOW),
+                    Component
+                            .translatable("message.anime.re0_486.trigger.text",
+                                    GameReplayUtils.getReplayPlayerDisplayText(player, true))
+                            .withStyle(ChatFormatting.YELLOW),
                     false);
             // 时停，让其像时间回溯
             TimeStopEffect.tryTriggerStart(player, 20 * 2,
