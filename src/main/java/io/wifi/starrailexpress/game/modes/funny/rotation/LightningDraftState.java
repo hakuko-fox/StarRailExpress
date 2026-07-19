@@ -39,7 +39,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
 public class LightningDraftState {
-
+    public static HashMap<UUID, Integer> PLAYER_SORT_WEIGHT = new HashMap<>();
     public final List<ServerPlayer> allPlayers;
     public final int totalPlayers;
 
@@ -273,6 +273,11 @@ public class LightningDraftState {
         List<ServerPlayer> sorted = new ArrayList<>(allPlayers);
         Collections.shuffle(sorted);
         sorted.sort((a, b) -> {
+            int aW = PLAYER_SORT_WEIGHT.getOrDefault(a.getUUID(), 0);
+            int bW = PLAYER_SORT_WEIGHT.getOrDefault(b.getUUID(), 0);
+            if (aW != bW) {
+                return Integer.compare(aW, bW);
+            }
             boolean a_force = Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(a.getUUID());
             boolean b_force = Harpymodloader.FORCED_MODDED_ROLE_FLIP.containsKey(b.getUUID());
             int a_team = PlayerRoleWeightManager.ForcePlayerTeam.getOrDefault(a.getUUID(), 0);
@@ -289,6 +294,7 @@ public class LightningDraftState {
         for (ServerPlayer p : sorted) {
             playerOrder.add(p.getUUID());
         }
+        PLAYER_SORT_WEIGHT.clear();
     }
 
     // ---------- 轮次计算 ----------

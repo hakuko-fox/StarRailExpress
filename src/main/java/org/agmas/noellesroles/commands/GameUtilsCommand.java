@@ -23,6 +23,7 @@ import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.game.MapResetManager;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses.ServerTaskInfo;
+import io.wifi.starrailexpress.game.modes.funny.rotation.LightningDraftState;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -201,6 +202,19 @@ public class GameUtilsCommand {
                   return 1;
                 })))
             .then(Commands.literal("tests")
+                .then(Commands.literal("role_rotaion_weight")
+                    .then(Commands.literal("clear").executes(ctx -> {
+                      LightningDraftState.PLAYER_SORT_WEIGHT.remove(ctx.getSource().getPlayerOrException().getUUID());
+                      return 0;
+                    }))
+                    .then(Commands.argument("weight", IntegerArgumentType.integer())
+                        .executes((ctx) -> {
+                          LightningDraftState.PLAYER_SORT_WEIGHT
+                              .put(ctx.getSource().getPlayerOrException().getUUID(),
+                                  IntegerArgumentType.getInteger(ctx, "weight"));
+
+                          return 0;
+                        })))
                 .then(Commands.literal("vote_players").executes((ctx) -> {
                   var builder = VoteManager.builder(Component.literal("测试投票玩家"));
                   var source = ctx.getSource();
