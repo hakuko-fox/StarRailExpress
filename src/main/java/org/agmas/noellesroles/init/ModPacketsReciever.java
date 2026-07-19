@@ -1504,18 +1504,4 @@ public class ModPacketsReciever {
     player.inventoryMenu.slotsChanged(player.getInventory());
     return count - remaining;
   }
-
-  private static void sendLotteryResult(ServerPlayer player, BlockPos blockPos, boolean success, String messageKey,
-      ItemStack result) {
-    ServerPlayNetworking.send(player,
-        new LotteryMachineResultS2CPacket(blockPos, success, messageKey, result == null ? ItemStack.EMPTY : result));
-  }
-
-  private static void playShopSound(ServerPlayer player, boolean success) {
-    player.connection.send(new ClientboundSoundPacket(
-        BuiltInRegistries.SOUND_EVENT.wrapAsHolder(success ? TMMSounds.UI_SHOP_BUY : TMMSounds.UI_SHOP_BUY_FAIL),
-        SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), 1.0F,
-        0.9F + player.getRandom().nextFloat() * 0.2F, player.getRandom().nextLong()));
-  }
-
 }

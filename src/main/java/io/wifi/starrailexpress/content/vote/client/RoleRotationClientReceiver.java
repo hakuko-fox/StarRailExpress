@@ -4,6 +4,8 @@ import io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleRota
 import io.wifi.starrailexpress.network.packet.RoleRotationSyncS2CPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.PauseScreen;
 
 public class RoleRotationClientReceiver {
     public static void register() {
@@ -15,7 +17,7 @@ public class RoleRotationClientReceiver {
                 RoleRotationCache.updateFromPacket(payload);
 
                 if (RoleRotationCache.isSelecting() || RoleRotationCache.getConfirmCountdown() > 0) {
-                    if ((mc.screen == null)) {
+                    if ((mc.screen == null) || mc.screen instanceof ChatScreen || mc.screen instanceof PauseScreen) {
                         mc.setScreen(new RoleRotationScreen());
                     }
                 } else {
