@@ -42,8 +42,8 @@ public class THReimuRole extends TouhouRole {
     @Override
     public List<ShopEntry> getShopEntries() {
         ArrayList<ShopEntry> SHOP = new ArrayList<>();
-        SHOP.add(new KillerKnifeShopEntry(ModItems.DANMUKU.getDefaultInstance(), SREConfig.instance().knifePrice, 40));
-        SHOP.add(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), SREConfig.instance().knifePrice, -20));
+        SHOP.add(new KillerKnifeShopEntry(ModItems.DANMUKU.getDefaultInstance(), SREConfig.instance().knifePrice, 1));
+        SHOP.add(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), SREConfig.instance().knifePrice, 50));
         SHOP.add(new ShopEntry(ModItems.FAKE_REVOLVER.getDefaultInstance(),
                 100, ShopEntry.Type.WEAPON));
         SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
@@ -144,7 +144,7 @@ public class THReimuRole extends TouhouRole {
                 Component.translatable("skill.noellesroles.reimu.started").withStyle(ChatFormatting.GREEN), true);
         player.getAbilities().mayfly = true;
         player.getAbilities().flying = true;
-        player.getAbilities().setFlyingSpeed(0.01F);
+        player.getAbilities().setFlyingSpeed(0.02F);
         player.onUpdateAbilities();
     }
 
