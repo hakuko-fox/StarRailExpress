@@ -19,14 +19,15 @@ public class THMiscRoles {
       .registerRole(new THMarisaRole(KIRISAME_MARISA_ID, new java.awt.Color(172, 154, 104).getRGB(),
           true, false, SRERole.MoodType.REAL,
           TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
-      .setCanSetSpawnInfoInConfig(false).setDefaultMax(0);
+      .setCanSetSpawnInfoInConfig(false).setDefaultMax(1)
+      .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000);
   public static final ResourceLocation HAKUREI_REIMU_ID = id("hakurei_reimu");
   public static SRERole HAKUREI_REIMU = TMMRoles
       .registerRole(new THReimuRole(HAKUREI_REIMU_ID, new java.awt.Color(153, 82, 89).getRGB(),
           false, true, SRERole.MoodType.FAKE,
           Integer.MAX_VALUE, true))
       .setCanPickUpRevolver(false)
-      .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000).addOccupationRole(KIRISAME_MARISA);
+      .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000);
   // 四季映姬·夜摩仙那度 Shikieiki（有点像判官）
   // 四季映姬曾经是地藏，后来全国各地的地藏联名上书请求分担阎魔大人的工作，她也成为了阎魔。
   public static final ResourceLocation SHIKIEIKI_ID = id("shikieiki");
