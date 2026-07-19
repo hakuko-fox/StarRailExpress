@@ -735,7 +735,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                 // price.withStyle(net.minecraft.ChatFormatting.GREEN);
             } else if (effectivePrice > basePrice) {
                 displayY -= 12;
-                renders.add(Component.translatable("gui.starrailexpress.shop.discount",
+                renders.add(Component.translatable("gui.starrailexpress.shop.increase",
                         (int) ((double) effectivePrice / (double) basePrice * 100.0) - 100)
                         .withStyle(net.minecraft.ChatFormatting.RED));
             }
