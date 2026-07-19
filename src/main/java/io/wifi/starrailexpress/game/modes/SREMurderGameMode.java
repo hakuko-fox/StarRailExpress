@@ -478,6 +478,9 @@ public class SREMurderGameMode extends GameMode {
         if (haveOccupationRoles) {
             expandedRoles = RoleAssignmentManager.expandWithCompanionRoles(newRoleInstances);
         }
+        int needCivilian = (playerSize - forcedRoleSize) - expandedRoles.size();
+        for (int i = 0; i < needCivilian; i++)
+            expandedRoles.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
         return expandedRoles;
     }
 
@@ -653,7 +656,7 @@ public class SREMurderGameMode extends GameMode {
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         super.tickServerGameLoop(serverWorld, gameWorldComponent);
         GameUtils.WinStatus winStatus = GameUtils.WinStatus.NONE;
-        
+
         boolean civilianAlive = false;
         for (ServerPlayer player : serverWorld.players()) {
             // passive money

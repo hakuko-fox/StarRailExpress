@@ -305,6 +305,9 @@ public class LightningDraftState {
             return;
         }
 
+        roundCandidates.clear();
+        lockedCandidates.clear(); // 清空锁定集
+        
         int b = Math.max(1, rolePool.size() / 3);
         playersInThisRound = b;
 
@@ -345,7 +348,7 @@ public class LightningDraftState {
             // 尝试从剩余职业池中寻找匹配职业（排除已锁定和本轮已占用的）
             SRERole match = null;
             for (SRERole role : rolePool) {
-                if (!lockedCandidates.contains(role) && !usedInThisRound.contains(role)
+                if (!usedInThisRound.contains(role)
                         && roleMatchesFaction(role, type)) {
                     match = role;
                     break;
@@ -370,8 +373,6 @@ public class LightningDraftState {
             }
         }
         drawn.removeAll(usedInThisRound);
-        roundCandidates.clear();
-        lockedCandidates.clear(); // 清空锁定集
         int idx = 0;
         int max_count = drawn.size();
         for (UUID playerId : roundPlayers) {
