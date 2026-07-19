@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -16,6 +17,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
@@ -27,6 +29,7 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.RedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.List;
@@ -59,6 +62,26 @@ public class AbilityHandler {
             return;
         }
         if (!possessed && player.hasEffect(ModEffects.SKILL_BANED)) {
+            return;
+        }
+        if (gameWorldComponent.isRole(player, RedHouseRoles.HOAN_MEIRIN)) {
+            var cca = HoanMeirinPlayerComponent.KEY.get(player);
+            if (cca.cooldown > 0) {
+                return;
+            }
+            if (player.hasEffect(MobEffects.LEVITATION)) {
+                player.removeEffect(MobEffects.LEVITATION);
+                player.displayClientMessage(
+                        Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
+                        true);
+                return;
+            }
+            player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
+                    10 * 20, 1, true, false, true));
+            player.displayClientMessage(
+                    Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
+                    true);
+            cca.setCooldown(60 * 20);
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.EXAMPLER)) {

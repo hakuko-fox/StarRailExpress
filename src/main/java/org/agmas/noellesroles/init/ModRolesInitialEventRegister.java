@@ -841,27 +841,13 @@ public class ModRolesInitialEventRegister {
                 }).cooldownSeconds(30).build());
 
         // 方名美铃技能注册：可切换飘浮效果，冷却60秒
-        RoleSkill.register(RedHouseRoles.HOAN_MEIRIN, RoleSkill.skill(
-                SRE.id("hoan_meirin_levitation"),
-                "skill.hoan_meirin.levitation",
-                context -> {
-                    ServerPlayer player = context.player();
-                    if (player.hasEffect(MobEffects.LEVITATION)) {
-                        player.removeEffect(MobEffects.LEVITATION);
-                        player.displayClientMessage(
-                                Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
-                                true);
-                        return true;
-                    }
-                    if (!context.skillReady())
-                        return false;
-                    player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
-                            10 * 20, 1, true, false, true));
-                    player.displayClientMessage(
-                            Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
-                            true);
-                    return true;
-                }).cooldownSeconds(60).toggleable(true).build());
+        // RoleSkill.register(RedHouseRoles.HOAN_MEIRIN, RoleSkill.skill(
+        //         SRE.id("hoan_meirin_levitation"),
+        //         "skill.hoan_meirin.levitation",
+        //         context -> {
+                    
+        //             return true;
+        //         }).cooldownSeconds(60).toggleable(true).build());
 
         // 窃贼技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式
         RoleSkill.register(ModRoles.THIEF,

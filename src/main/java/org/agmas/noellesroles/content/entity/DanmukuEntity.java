@@ -142,8 +142,10 @@ public class DanmukuEntity extends AbstractArrow {
                     0.3, 0.2);
             serverLevel.players().forEach(p -> serverLevel.playSound(p, location.x, location.y, location.z,
                     SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0f, 0.9f));
-
-            GameUtils.killPlayer(target, true, owner, this.deathReason());
+            if (target.distanceToSqr(owner) >= 16 * 16) {
+            } else {
+                GameUtils.killPlayer(target, true, owner, this.deathReason());
+            }
         }
         // 不移除、不减速：飞斧保持原速继续飞向下一目标 / 墙壁。
     }
