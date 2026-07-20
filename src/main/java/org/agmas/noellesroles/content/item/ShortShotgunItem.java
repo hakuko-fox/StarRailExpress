@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.HeldLikeBat;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -27,7 +28,7 @@ import org.agmas.noellesroles.init.NRSounds;
 
 import java.util.List;
 
-public class ShortShotgunItem extends Item implements HeldLikeBat {
+public class ShortShotgunItem extends Item implements HeldLikeBat, TrainWeapon {
     /** 最小蓄力时间：0.2秒 = 4刻 */
     private static final int MIN_CHARGE_TICKS = 4;
     private static final int MAX_CHARGE_TICKS = 40;
