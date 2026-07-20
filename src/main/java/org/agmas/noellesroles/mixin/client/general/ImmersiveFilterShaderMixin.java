@@ -12,7 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ImmersiveFilterShaderMixin {
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;bindWrite(Z)V"))
     private void renderImmersive(DeltaTracker deltaTracker, boolean bl, CallbackInfo ci) {
-        try (GameRenderer renderer = (GameRenderer) (Object) this) {
+        @SuppressWarnings("resource")
+        GameRenderer renderer = (GameRenderer) (Object) this;
+        {
             if (renderer != null && bl && renderer.getMinecraft().level != null) {
                 ImmersiveFilterShader.instance.initPostProcessor();
                 ImmersiveFilterShader.instance.renderPostProcess(deltaTracker.getGameTimeDeltaPartialTick(true));
