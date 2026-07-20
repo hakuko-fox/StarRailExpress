@@ -129,6 +129,7 @@ public class MapManagerCommand {
                   areas.areasSettings = new AreasSettings();
                   areas.disabledTasks = new HashSet<>();
                   areas.disabledRoles = new HashSet<>();
+                  areas.disabledModifiers = new HashSet<>();
                   areas.enableSceneTask = new HashSet<>();
                   areas.mapName = "new_area";
                   io.wifi.starrailexpress.scenery.server.SceneLibrary.clearScene(areas);
@@ -767,7 +768,7 @@ public class MapManagerCommand {
   }
 
   private static LiteralArgumentBuilder<CommandSourceStack> setDisabledModifiers() {
-    return Commands.literal("disabledRoles")
+    return Commands.literal("disabledModifiers")
         .then(Commands.literal("add")
             .then(Commands.argument("roleId", StringArgumentType.string())
                 .executes(ctx -> {
