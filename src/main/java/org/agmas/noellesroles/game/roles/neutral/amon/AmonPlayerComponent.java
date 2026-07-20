@@ -314,10 +314,6 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
         seeds.put(target.getUUID(), 0);
         amon.displayClientMessage(Component.translatable("message.noellesroles.amon.seed_planted")
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
-        // 被寄生者获得音效与提示。
-        target.playNotifySound(SoundEvents.SCULK_CLICKING, SoundSource.PLAYERS, 0.8f, 0.6f);
-        target.displayClientMessage(Component.translatable("message.noellesroles.amon.parasitized")
-                .withStyle(ChatFormatting.DARK_PURPLE), true);
         sync();
         return true;
     }
