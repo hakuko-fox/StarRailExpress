@@ -314,7 +314,7 @@ public class MapVoteScreen extends Screen {
         if (json != null) {
             addSection("map_intro.section.properties", wrapW);
             addLine("map_intro.property.room_count", intValue(json, "roomCount", 1), wrapW);
-            if (json.has("areasSettings")) {
+            if (json.has("settings")) {
                 // 新数据
                 AreasSettings areasSettings = GSON.fromJson(json.get("settings"), AreasSettings.class);
                 addLine(areasSettings.canSimpleSwim && areasSettings.canUnderWater && areasSettings.allowInDeepWater
