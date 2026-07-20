@@ -6,22 +6,17 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import net.exmo.sre.meeting.MeetingManager;
 import net.exmo.sre.meeting.network.MeetingCooldownS2CPayload;
-import net.exmo.sre.meeting.network.MeetingReportC2SPayload;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.EntityHitResult;
-import org.lwjgl.glfw.GLFW;
-
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,13 +27,6 @@ import java.util.UUID;
  */
 @Environment(EnvType.CLIENT)
 public final class MeetingReportClientHandler {
-
-    // 已废弃：上报功能统一由 MeetingClientHandler 中的分号键处理
-    // 保留 KeyMapping 注册以避免配置报错，但不再用于 consumeClick
-    public static final KeyMapping reportKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-            "key.starrailexpress.meeting_report",
-            GLFW.GLFW_KEY_SEMICOLON,
-            "category.starrailexpress.general"));
 
     // 配色对齐 MeetingHud 的复古车票风格
     private static final int TEXT = 0xFFFFF4DC;
@@ -92,7 +80,7 @@ public final class MeetingReportClientHandler {
                 color = MUTED;
             } else {
                 text = Component.translatable("meeting.sre.report_hint",
-                        reportKey.getTranslatedKeyMessage());
+                        MeetingClientHandler.speakKey.getTranslatedKeyMessage());
                 color = TEXT;
             }
         }

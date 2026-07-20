@@ -45,7 +45,7 @@ public final class MeetingClientHandler {
 
     // 分号 [;/:] 键
     public static final KeyMapping speakKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-            "key.starrailexpress.meeting_speak",
+            "key.starrailexpress.meeting_report_and_speak",
             GLFW.GLFW_KEY_SEMICOLON,
             "category.starrailexpress.general"));;
 
