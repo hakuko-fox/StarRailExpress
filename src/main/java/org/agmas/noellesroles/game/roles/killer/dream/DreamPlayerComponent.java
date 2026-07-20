@@ -38,12 +38,14 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 /**
  * Dream（梦魇）玩家组件。
  *
- * <p>"噢，皮革噶的，i want to 和你蹦蹦蹦。"
+ * <p>
+ * "噢，皮革噶的，i want to 和你蹦蹦蹦。"
  *
  * <ul>
  * <li><b>虚拟血量</b>：所有玩家 20 滴血（见 {@link DreamHealthComponent}），
@@ -205,10 +207,28 @@ public class DreamPlayerComponent implements RoleComponent, ServerTickingCompone
                 old.discard();
             }
         }
+        {
+            var boatToRemove = new ArrayList<Entity>();
+            level.getAllEntities().forEach((entity) -> {
+                if (entity instanceof Boat bt) {
+                    if (bt.getTags() != null) {
+                        if (bt.getTags().contains("sre.dream")) {
+                            boatToRemove.add(bt);
+                        }
+                    }
+                }
+            });
+            for (Entity entity : boatToRemove) {
+                if (!entity.isRemoved()) { // 双重检查确保实体未被其他地方删除
+                    entity.discard();
+                }
+            }
+        }
         Boat boat = new Boat(net.minecraft.world.entity.EntityType.BOAT, level);
         boat.setVariant(Boat.Type.OAK);
         boat.setPos(pos.x, pos.y, pos.z);
         boat.setYRot(sp.getYRot());
+        boat.addTag("sre.dream");
         if (!level.addFreshEntity(boat)) {
             return false;
         }
