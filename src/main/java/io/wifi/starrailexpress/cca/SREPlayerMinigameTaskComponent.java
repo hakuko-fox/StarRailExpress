@@ -199,7 +199,7 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
 
     /** 轮换模式是否生效：配置开启且当前地图启用小游戏任务。 */
     public static boolean isRotationModeActive(ServerLevel serverLevel) {
-        return SREConfig.instance().minigameTaskInsertInNormalTask
+        return SREConfig.instance().minigameTaskRotationMode
                 && AreasWorldComponent.KEY.get(serverLevel).areasSettings.minigameQuestEnabled;
     }
 
@@ -317,7 +317,7 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
         // 轮换模式：完成小游戏任务额外获得金币奖励
         if (sp.level() instanceof ServerLevel serverLevel && isRotationModeActive(serverLevel)) {
             SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(sp);
-            if (shop != null) {
+            if (shop != null && SREConfig.instance().minigameTaskParallelMode) {
                 shop.addToBalance(SREConfig.instance().minigameRotationCoinBonus);
             }
         }

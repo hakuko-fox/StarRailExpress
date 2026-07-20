@@ -152,7 +152,7 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             boolean minigameDispatched = false;
             SREPlayerMinigameTaskComponent minigameComponent = null;
             boolean rotationActive = false;
-            boolean parallelMinigame = SREConfig.instance().minigamesNoForbiddenNormalTask;
+            boolean parallelMinigame = SREConfig.instance().minigameTaskParallelMode;
             if (this.player instanceof ServerPlayer sp
                     && sp.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
                     && SREPlayerMinigameTaskComponent.isRotationModeActive(serverLevel)) {
@@ -201,11 +201,12 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
                     * (maxCooldown - minCooldown)
                     + minCooldown);
             // 小游戏任务未启用时，正常任务刷新加快 30%
-            if (!AreasWorldComponent.KEY.get(this.player.level()).areasSettings.minigameQuestEnabled) {
+            if (parallelMinigame
+                    || !AreasWorldComponent.KEY.get(this.player.level()).areasSettings.minigameQuestEnabled) {
                 this.nextTaskTimer = (int) (this.nextTaskTimer * 0.7f);
             }
             // 轮换模式：全局任务刷新速率减缓 15%
-            if (rotationActive) {
+            if (rotationActive && !parallelMinigame) {
                 this.nextTaskTimer = (int) (this.nextTaskTimer * GameConstants.MINIGAME_ROTATION_REFRESH_SLOWDOWN);
             }
             this.nextTaskTimer = Math.max(this.nextTaskTimer, 2);

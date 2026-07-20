@@ -1,6 +1,9 @@
 package org.agmas.noellesroles.client.screen;
 
+import io.wifi.starrailexpress.content.item.KnifeItem;
+import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -193,6 +196,22 @@ public class PostmanScreenHandler extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(ItemStack stack) {
             // 任何玩家都可以放入物品
+            if (stack.is(TMMItems.REVOLVER))
+                return true;
+            if (stack.is(ModItems.ONCE_REVOLVER))
+                return true;
+            if (stack.is(ModItems.FAKE_REVOLVER))
+                return true;
+            if (stack.is(ModItems.FAKE_KNIFE))
+                return true;
+            if (stack.getItem() instanceof KnifeItem)
+                return false;
+            if (stack.getItem() instanceof TrainWeapon)
+                return false;
+            if (stack.is(TMMItemTags.GUNS))
+                return false;
+            if (stack.is(TMMItems.DERRINGER))
+                return false;
             if (stack.is(ModItems.DELIVERY_BOX))
                 return false;
             if (stack.is(Items.BOW))
