@@ -233,6 +233,7 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     public int furandoruSafeTime = 6 * 60;// 6分钟外安全
 
+    public boolean minigamesNoForbiddenNormalTask = true;
     public int safeTimeCooldown = 30;
     public int startingMoney = 100;
     // 杀手保底被动（降到 3/15秒，主要收入改由任务驱动，见 killerTaskIncome）

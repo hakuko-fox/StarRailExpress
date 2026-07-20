@@ -206,7 +206,8 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
     /** 轮换模式：普通 Mood 任务刷新一个后计数。 */
     public void onNormalTaskGenerated(ServerPlayer sp) {
         rollNextMinigameAfterIfNeeded(sp);
-        this.normalTasksSinceMinigame++;
+        if (pendingMinigameTasks <= 0)
+            this.normalTasksSinceMinigame++;
     }
 
     /** 轮换模式：本次刷新槽位是否应替换为小游戏任务（刷满 2~3 个普通任务且无待办时）。 */

@@ -1,6 +1,7 @@
 package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.client.SREClient;
@@ -147,20 +148,26 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         this.nextTaskTimer--;
         if (this.nextTaskTimer <= 0) {
             // 小游戏任务轮换模式：刷满 2~3 个普通任务后，本次刷新槽位替换为派发一个小游戏任务
+
             boolean minigameDispatched = false;
             SREPlayerMinigameTaskComponent minigameComponent = null;
             boolean rotationActive = false;
+            boolean parallelMinigame = SREConfig.instance().minigamesNoForbiddenNormalTask;
             if (this.player instanceof ServerPlayer sp
                     && sp.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
                     && SREPlayerMinigameTaskComponent.isRotationModeActive(serverLevel)) {
                 rotationActive = true;
                 minigameComponent = SREPlayerMinigameTaskComponent.KEY.get(sp);
-                if (this.tasks.isEmpty() && minigameComponent.shouldReplaceNormalTask(sp)) {
-                    minigameDispatched = minigameComponent.dispatchRotationTask(sp, serverLevel);
+                if (parallelMinigame || this.tasks.isEmpty()) {
+                    if (minigameComponent.shouldReplaceNormalTask(sp)) {
+                        // 并列模式：无论当前有无普通任务，均可派发小游戏任务
+                        // 原模式：仅在无普通任务时才替换
+                        minigameDispatched = minigameComponent.dispatchRotationTask(sp, serverLevel);
+                    }
                 }
             }
 
-            if (!minigameDispatched) {
+            if (!minigameDispatched || parallelMinigame) {
                 TrainTask task = this.generateTask();
                 if (task != null) {
                     this.tasks.put(task.getType(), task);

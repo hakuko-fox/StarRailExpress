@@ -86,6 +86,7 @@
   "text.autoconfig.starrailexpress.option.mapRandomCount.@Tooltip": "设置为 -1 禁用",
   "text.autoconfig.starrailexpress.option.mapRandomCount": "地图选择显示的随机数量",
   "text.autoconfig.starrailexpress.option.allowRandomChooseMapNotInMapConfig": "允许“随机选择地图”时选择不在“可投票地图配置”中的地图",
+  "text.autoconfig.starrailexpress.option.minigamesNoForbiddenNormalTask": "小游戏不会挤占默认任务刷新",
   "text.autoconfig.starrailexpress.option.customRolePermission": "自定义职业命令执行权限等级",
   "text.autoconfig.starrailexpress.option.startGameRequiredPermission": "启动游戏需要的权限等级 (/tmm:start)",
   "text.autoconfig.starrailexpress.option.stopGameRequiredPermission": "停止游戏需要的权限等级 (/tmm:stop 以及 /tmm:game win)",
