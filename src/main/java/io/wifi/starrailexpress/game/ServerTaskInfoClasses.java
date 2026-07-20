@@ -166,38 +166,40 @@ public class ServerTaskInfoClasses {
                 for (int y = chunk.minY(); y <= chunk.maxY(); y++) { // ← 新增 Y 循环
                     for (int k = chunk.minZ(); k <= chunk.maxZ(); k++) {
                         for (int m = chunk.minX(); m <= chunk.maxX(); m++) {
-                            BlockPos blockPos6 = new BlockPos(m, y, k);
-                            MapScanner.testTaskBlocksAndAddToGameUtils(sabotageMinigameIds, collectedMinigameIds,
-                                    serverWorld, blockPos6);
+                            BlockPos fromPos = new BlockPos(m, y, k);
 
-                            BlockPos blockPos7 = blockPos6.offset(offsetBlockPos);
-                            BlockInWorld cachedBlockPosition = new BlockInWorld(serverWorld, blockPos6, true);
+                            BlockPos targetPos = fromPos.offset(offsetBlockPos);
+
+                            MapScanner.testTaskBlocksAndAddToGameUtils(sabotageMinigameIds, collectedMinigameIds,
+                                    serverWorld, fromPos, targetPos);
+
+                            BlockInWorld cachedBlockPosition = new BlockInWorld(serverWorld, fromPos, true);
                             BlockState blockState = cachedBlockPosition.getState();
 
                             if (blockState.getBlock() instanceof LockableButtonBlock) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof SmallDoorBlock) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof ToiletBlock) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof TrimmedBedBlock) {
                                 if (blockState.getValue(TrimmedBedBlock.PART).equals(BedPart.HEAD)) {
-                                    GameUtils.resetPoints.add(blockPos7);
+                                    GameUtils.resetPoints.add(targetPos);
                                 }
                             } else if (blockState.getBlock() instanceof FoodPlatterBlock) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof LecternBlock) {
-                                if (serverWorld.getBlockEntity(blockPos7) instanceof LecternBlockEntity) {
-                                    GameUtils.resetPoints.add(blockPos7);
+                                if (serverWorld.getBlockEntity(targetPos) instanceof LecternBlockEntity) {
+                                    GameUtils.resetPoints.add(targetPos);
                                 }
                             } else if (blockState.getBlock() instanceof SprinklerBlock) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof LightBlockInterface) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof VentHatchBlock) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             } else if (blockState.getBlock() instanceof AutoResetBlockInterface) {
-                                GameUtils.resetPoints.add(blockPos7);
+                                GameUtils.resetPoints.add(targetPos);
                             }
                         }
                     }

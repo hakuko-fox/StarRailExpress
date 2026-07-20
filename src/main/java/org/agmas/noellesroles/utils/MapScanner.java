@@ -75,7 +75,7 @@ public class MapScanner {
                 for (int m = trainBox.minX(); m <= trainBox.maxX(); m++) {
                     BlockPos blockPos6 = new BlockPos(m, l, k);
                     testTaskBlocksAndAddToGameUtils(collectedMinigameIds, sabotageMinigameIds, localLevel,
-                            blockPos6);
+                            blockPos6, blockPos6);
                 }
             }
         }
@@ -91,41 +91,41 @@ public class MapScanner {
     }
 
     public static void testTaskBlocksAndAddToGameUtils(HashSet<String> sabotageMinigameIds,
-            HashSet<String> collectedMinigameIds, ServerLevel level, BlockPos blockPos6) {
-        var blockState = level.getBlockState(blockPos6);
+            HashSet<String> collectedMinigameIds, ServerLevel level, BlockPos checkPos, BlockPos savePos) {
+        var blockState = level.getBlockState(checkPos);
         if (blockState.isAir())
             return;
         // blockCounts++;
         if (blockState.is(ModBlocks.VENDING_MACHINES_BLOCK)
                 && blockState.getValue(VendingMachinesBlock.HALF).equals(DoubleBlockHalf.LOWER)) {
-            GameUtils.taskBlocks.put(blockPos6, 11);
+            GameUtils.taskBlocks.put(savePos, 11);
         } else if (blockState.is(ModBlocks.LOTTERY_MACHINE_BLOCK)) {
-            GameUtils.taskBlocks.put(blockPos6, 23);
+            GameUtils.taskBlocks.put(savePos, 23);
         } else if (blockState.is(ModBlocks.SUPPLY_CRATE_BLOCK)) {
-            GameUtils.taskBlocks.put(blockPos6, 12);
+            GameUtils.taskBlocks.put(savePos, 12);
         } else if (blockState.is(Blocks.NOTE_BLOCK)) {
-            GameUtils.taskBlocks.put(blockPos6, 10);
+            GameUtils.taskBlocks.put(savePos, 10);
         } else if (blockState.is(Blocks.BLACK_CONCRETE)) {
-            BlockPos blockPos7 = blockPos6.above();
+            BlockPos blockPos7 = checkPos.above();
             var blockState2 = level.getBlockState(blockPos7);
             if (blockState2.is(BlockTags.WOOL_CARPETS) || blockState2.is(BlockTags.AIR)) {
-                GameUtils.taskBlocks.put(blockPos6, 5);
+                GameUtils.taskBlocks.put(savePos, 5);
             }
         } else if (blockState.getBlock() instanceof TrimmedBedBlock
                 && blockState.getValue(BlockStateProperties.BED_PART).equals(BedPart.HEAD)) {
-            GameUtils.taskBlocks.put(blockPos6, 4);
+            GameUtils.taskBlocks.put(savePos, 4);
         } else if (blockState.getBlock() instanceof ToiletBlock) {
-            GameUtils.taskBlocks.put(blockPos6, 8);
+            GameUtils.taskBlocks.put(savePos, 8);
         } else if (blockState.getBlock() instanceof MountableBlock) {
-            GameUtils.taskBlocks.put(blockPos6, 9);
+            GameUtils.taskBlocks.put(savePos, 9);
         } else if (blockState.getBlock() instanceof SmallDoorBlock
                 && blockState.getValue(SmallDoorBlock.HALF).equals(DoubleBlockHalf.LOWER)) {
-            if (level.getBlockEntity(blockPos6) instanceof SmallDoorBlockEntity entity) {
+            if (level.getBlockEntity(checkPos) instanceof SmallDoorBlockEntity entity) {
                 if (entity.getKeyName() != null && !entity.getKeyName().isEmpty())
-                    GameUtils.taskBlocks.put(blockPos6, 7);
+                    GameUtils.taskBlocks.put(savePos, 7);
             }
         } else if (blockState.getBlock() instanceof FoodPlatterBlock) {
-            if (level.getBlockEntity(blockPos6) instanceof BeveragePlateBlockEntity entity) {
+            if (level.getBlockEntity(checkPos) instanceof BeveragePlateBlockEntity entity) {
                 var items = entity.getStoredItems();
                 if (items.size() > 0) {
                     ItemStack item_0 = items.get(0);
@@ -133,11 +133,11 @@ public class MapScanner {
                     if ((item_ instanceof CocktailItem)
                             || ((item_ instanceof PotionItem) && !(item_ instanceof ThrowablePotionItem))
                             || (item_ instanceof HoneyBottleItem)) {
-                        GameUtils.taskBlocks.put(blockPos6, 2);
+                        GameUtils.taskBlocks.put(savePos, 2);
                     } else {
                         FoodProperties foodPro = item_0.get(DataComponents.FOOD);
                         if (foodPro != null) {
-                            GameUtils.taskBlocks.put(blockPos6, 1);
+                            GameUtils.taskBlocks.put(savePos, 1);
                         }
                     }
                 }
@@ -145,17 +145,17 @@ public class MapScanner {
             }
         } else if (blockState.getBlock() instanceof LecternBlock) {
             if (blockState.getValue(LecternBlock.HAS_BOOK)) {
-                GameUtils.taskBlocks.put(blockPos6, 6);
+                GameUtils.taskBlocks.put(savePos, 6);
             }
         } else if (blockState.getBlock() instanceof SprinklerBlock) {
-            GameUtils.taskBlocks.put(blockPos6, 3);
+            GameUtils.taskBlocks.put(savePos, 3);
         } else if (blockState.getBlock() instanceof TaskInstinctShowableInterface it) {
             int instinctId = it.taskInstinctId();
-            GameUtils.taskBlocks.put(blockPos6, instinctId);
+            GameUtils.taskBlocks.put(savePos, instinctId);
             // 收集小游戏任务点方块的 minigameId（type 14 = MinigameQuestBlock, 15 =
             // MinigameQuestPanelBlock）
             if (instinctId == 14 || instinctId == 15) {
-                if (level.getBlockEntity(blockPos6) instanceof MinigameQuestBlockEntity questBe) {
+                if (level.getBlockEntity(checkPos) instanceof MinigameQuestBlockEntity questBe) {
                     String mgId = questBe.getMinigameId();
                     if (mgId != null && !mgId.isEmpty()) {
                         if (questBe.isSabotageTrigger()) {
@@ -169,23 +169,23 @@ public class MapScanner {
         }
         // ───── 场景任务方块扫描 ─────
         if (blockState.is(ModSceneBlocks.STOVE)) {
-            GameUtils.taskBlocks.put(blockPos6, 16); // 炉灶 — 取暖
+            GameUtils.taskBlocks.put(savePos, 16); // 炉灶 — 取暖
         } else if (blockState.is(ModSceneBlocks.DUST)) {
-            GameUtils.taskBlocks.put(blockPos6, 17); // 灰尘 — 清扫
+            GameUtils.taskBlocks.put(savePos, 17); // 灰尘 — 清扫
         } else if (blockState.is(ModSceneBlocks.TRANSPORT_POINT)) {
             if (blockState.getValue(org.agmas.noellesroles.content.block.scene.TransportPointBlock.END)) {
-                GameUtils.taskBlocks.put(blockPos6, 19); // 运输点终点 — 深红色
+                GameUtils.taskBlocks.put(savePos, 19); // 运输点终点 — 深红色
             } else {
-                GameUtils.taskBlocks.put(blockPos6, 18); // 运输点起点 — 亮绿色
+                GameUtils.taskBlocks.put(savePos, 18); // 运输点起点 — 亮绿色
             }
         } else if (blockState.is(ModSceneBlocks.STATUE)) {
-            GameUtils.taskBlocks.put(blockPos6, 20); // 雕像 — 祷告
+            GameUtils.taskBlocks.put(savePos, 20); // 雕像 — 祷告
         } else if (blockState.is(ModSceneBlocks.BUSH)) {
-            GameUtils.taskBlocks.put(blockPos6, 21); // 灌木 — 修剪
+            GameUtils.taskBlocks.put(savePos, 21); // 灌木 — 修剪
         } else if (blockState.is(ModSceneBlocks.CROP)) {
-            GameUtils.taskBlocks.put(blockPos6, 22); // 草垫 — 活动筋骨
+            GameUtils.taskBlocks.put(savePos, 22); // 草垫 — 活动筋骨
         } else if (blockState.is(Blocks.BELL)) {
-            GameUtils.taskBlocks.put(blockPos6, 24); // 钟 — 摇铃会议
+            GameUtils.taskBlocks.put(savePos, 24); // 钟 — 摇铃会议
         }
     }
 
