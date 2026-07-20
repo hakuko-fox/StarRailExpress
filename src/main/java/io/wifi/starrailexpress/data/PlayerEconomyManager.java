@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -41,6 +42,9 @@ public final class PlayerEconomyManager {
     }
 
     public static int getLootChance(Player player) {
+        // 皮肤/经济同步策略：游戏端只读取远程数据库，不将本地数据写回远程。
+        // 远程数据库（由网站端邮箱/兑换码/抽奖/管理员发放写入）是唯一权威源。
+        // 游戏端在玩家加入时 reloadFromDatabase 拉取最新值；本地变更仅用于当次会话显示，不持久化到远程。
         return get(player.getUUID()).state.lootChance;
     }
 
@@ -52,12 +56,14 @@ public final class PlayerEconomyManager {
         Entry entry = get(player.getUUID());
         entry.state.lootChance = Math.max(0, entry.state.lootChance + delta);
         markDirty(player, entry);
+        mirrorToSkinsComponent(player, sc -> sc.addLootChance(delta));
     }
 
     public static void addCoinNum(Player player, int delta) {
         Entry entry = get(player.getUUID());
         entry.state.coinNum = Math.max(0, entry.state.coinNum + delta);
         markDirty(player, entry);
+        mirrorToSkinsComponent(player, sc -> sc.addCoinNum(delta));
     }
 
     public static String getEquippedSkin(Player player, ItemStack stack) {
@@ -79,6 +85,7 @@ public final class PlayerEconomyManager {
         Entry entry = get(player.getUUID());
         entry.state.equipped.put(normalizedType, skinName == null || skinName.isBlank() ? "default" : skinName);
         markDirty(player, entry);
+        mirrorToSkinsComponent(player, sc -> sc.setEquippedSkinForItemType(normalizedType, skinName == null || skinName.isBlank() ? "default" : skinName));
     }
 
     public static boolean isSkinUnlocked(Player player, ItemStack stack, String skinName) {
@@ -107,23 +114,27 @@ public final class PlayerEconomyManager {
         if (skinName == null || skinName.isBlank()) {
             return;
         }
+        String normalizedType = normalizeItemName(itemType);
         Entry entry = get(player.getUUID());
         entry.state.unlocked
-                .computeIfAbsent(normalizeItemName(itemType), ignored -> new ConcurrentHashMap<>())
+                .computeIfAbsent(normalizedType, ignored -> new ConcurrentHashMap<>())
                 .put(skinName, true);
         markDirty(player, entry);
+        mirrorToSkinsComponent(player, sc -> sc.unlockSkinForItemType(normalizedType, skinName));
     }
 
     public static void lockSkinForItemType(Player player, String itemType, String skinName) {
+        String normalizedType = normalizeItemName(itemType);
         Entry entry = get(player.getUUID());
-        Map<String, Boolean> skins = entry.state.unlocked.get(normalizeItemName(itemType));
+        Map<String, Boolean> skins = entry.state.unlocked.get(normalizedType);
         if (skins != null) {
             skins.remove(skinName);
             if (skins.isEmpty()) {
-                entry.state.unlocked.remove(normalizeItemName(itemType));
+                entry.state.unlocked.remove(normalizedType);
             }
             markDirty(player, entry);
         }
+        mirrorToSkinsComponent(player, sc -> sc.lockSkinForItemType(normalizedType, skinName));
     }
 
     public static Map<String, String> getEquippedSkins(Player player) {
@@ -137,19 +148,10 @@ public final class PlayerEconomyManager {
     }
 
     public static boolean flushBlocking(UUID playerUuid) {
-        Entry entry = ENTRIES.get(playerUuid);
-        if (entry == null || !isDatabaseEnabled()) {
-            return false;
-        }
-        boolean success = MysqlPlayerDataStore.saveBatchBlocking(
-                playerUuid,
-                Map.of(PART, toJson(entry.state, entry.updatedAt)),
-                Math.max(1L, entry.updatedAt),
-                FLUSH_TIMEOUT_MS);
-        if (success) {
-            entry.dirty = false;
-        }
-        return success;
+        // 皮肤/经济同步只读策略：游戏端不再将本地数据写回远程数据库。
+        // 远程数据库由网站端（邮箱/兑换码/抽奖/管理员发放）唯一写入，游戏端只读取。
+        // 此方法保留为空操作以兼容现有调用方（如 ItemSkinManager），但不执行任何远程写入。
+        return false;
     }
 
     private static void onJoin(ServerPlayer player) {
@@ -167,7 +169,10 @@ public final class PlayerEconomyManager {
             return;
         }
         entry.loadInFlight = true;
-        MysqlPlayerDataStore.loadBatchAsync(player.getUUID(), List.of(PART))
+        // 同时加载 economy 和 skins 分区：skins 分区是网站端/mysql-viewer 的权威源，
+        // economy 分区是游戏内历史写入。优先采用 skins 分区的数据（版本更新），
+        // 避免"网站端修改抽数但游戏内仍显示旧值"。
+        MysqlPlayerDataStore.loadBatchAsync(player.getUUID(), List.of(PART, "skins"))
                 .whenComplete((records, throwable) -> {
                     entry.loadInFlight = false;
                     MinecraftServer server = player.getServer();
@@ -182,11 +187,15 @@ public final class PlayerEconomyManager {
                             SRE.LOGGER.warn("Failed to load economy part for {}", player.getUUID(), throwable);
                             return;
                         }
-                        MysqlPlayerDataStore.SyncRecord record = records.get(PART);
-                        if (record != null && record.payload() != null && !record.payload().isBlank()) {
-                            EconomyState loaded = fromJson(record.payload());
+                        // 优先使用 skins 分区（网站端权威源）；回退到 economy 分区
+                        MysqlPlayerDataStore.SyncRecord skinsRecord = records.get("skins");
+                        MysqlPlayerDataStore.SyncRecord economyRecord = records.get(PART);
+                        MysqlPlayerDataStore.SyncRecord primary = (skinsRecord != null && skinsRecord.payload() != null && !skinsRecord.payload().isBlank())
+                                ? skinsRecord : economyRecord;
+                        if (primary != null && primary.payload() != null && !primary.payload().isBlank()) {
+                            EconomyState loaded = fromJson(primary.payload());
                             entry.state.copyFrom(loaded);
-                            entry.updatedAt = Math.max(entry.updatedAt, record.updatedAt());
+                            entry.updatedAt = Math.max(entry.updatedAt, primary.updatedAt());
                             entry.dirty = false;
                         }
                         send(player, entry);
@@ -197,51 +206,25 @@ public final class PlayerEconomyManager {
     private static void onDisconnect(ServerPlayer player) {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
-            // Use async flush to avoid blocking the network thread.
-            // Final data is guaranteed by SERVER_STOPPING → flushAllBlocking.
-            flushAsync(player, entry);
+            // 皮肤/经济同步只读策略：断线时不再 flush 到远程数据库。
+            // 远程数据库是网站端唯一写入的权威源，游戏端只读取。
             ENTRIES.remove(player.getUUID(), entry);
         }
     }
 
     private static void tick(MinecraftServer server) {
-        long now = System.currentTimeMillis();
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            Entry entry = ENTRIES.get(player.getUUID());
-            if (entry == null || !entry.online || !entry.dirty || entry.saveInFlight
-                    || now - entry.lastFlushAt < FLUSH_INTERVAL_MS) {
-                continue;
-            }
-            flushAsync(player, entry);
-        }
+        // 皮肤/经济同步只读策略：不再周期性 flush 本地数据到远程数据库。
+        // 仍保留 tick 注册以兼容事件钩子，但不再执行任何远程写入。
     }
 
     private static void flushAsync(ServerPlayer player, Entry entry) {
-        if (!isDatabaseEnabled() || entry.loadInFlight) {
-            return;
-        }
-        entry.saveInFlight = true;
-        entry.dirty = false;
-        entry.lastFlushAt = System.currentTimeMillis();
-        long updatedAt = Math.max(1L, entry.updatedAt);
-        MysqlPlayerDataStore.saveBatchAsync(player.getUUID(), Map.of(PART, toJson(entry.state, updatedAt)), updatedAt)
-                .whenComplete((success, throwable) -> {
-                    entry.saveInFlight = false;
-                    if (throwable != null || !Boolean.TRUE.equals(success)) {
-                        entry.dirty = true;
-                        if (throwable != null) {
-                            SRE.LOGGER.warn("Failed to save economy part for {}", player.getUUID(), throwable);
-                        } else {
-                            reloadFromDatabase(player, entry);
-                        }
-                    }
-                });
+        // 皮肤/经济同步只读策略：不再将本地数据异步写入远程数据库。
+        // 保留方法签名以兼容调用方，但方法体为空操作。
     }
 
     private static void flushAllBlocking(MinecraftServer server) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            flushBlocking(player.getUUID());
-        }
+        // 皮肤/经济同步只读策略：关服时不再 flush 本地数据到远程数据库。
+        // 远程数据库由网站端唯一写入。
     }
 
     private static Entry get(UUID uuid) {
@@ -254,6 +237,34 @@ public final class PlayerEconomyManager {
         entry.dirty = true;
         if (player instanceof ServerPlayer serverPlayer) {
             send(serverPlayer, entry);
+        }
+    }
+
+    /**
+     * 将经济/皮肤变更同步镜像到 SREPlayerSkinsComponent（skins 分区）。
+     * <p>
+     * 游戏服务端存在两套并行的皮肤/经济存储：
+     * <ul>
+     *   <li>{@code SREPlayerSkinsComponent}（data_key="skins"）—— 客户端 UI、网站端、mysql-viewer 读写</li>
+     *   <li>{@code PlayerEconomyManager}（data_key="economy"）—— 游戏内 ItemSkinManager、任务奖励、角色技能等写入</li>
+     * </ul>
+     * 两者互不同步，导致"游戏内解锁皮肤但网站端看不到"、"网站端修改抽数但游戏内不变化"等问题。
+     * 此方法在服务端写入 economy 分区的同时，把相同的变更应用到 SREPlayerSkinsComponent，
+     * 使客户端 UI（CCA AutoSync）和 skins 分区（MySQL 持久化，需开启 itemSkinSyncServerEnabled）
+     * 都能及时看到变更。
+     * <p>
+     * 仅在服务端执行，避免客户端调用 {@code sync()} 出错。
+     */
+    private static void mirrorToSkinsComponent(Player player, java.util.function.Consumer<SREPlayerSkinsComponent> action) {
+        if (player.level().isClientSide()) return;
+        try {
+            SREPlayerSkinsComponent sc = SREPlayerSkinsComponent.KEY.get(player);
+            if (sc != null) {
+                action.accept(sc);
+            }
+        } catch (Throwable t) {
+            SRE.LOGGER.warn("Failed to mirror economy change to SREPlayerSkinsComponent for player {}",
+                    player.getName().getString(), t);
         }
     }
 

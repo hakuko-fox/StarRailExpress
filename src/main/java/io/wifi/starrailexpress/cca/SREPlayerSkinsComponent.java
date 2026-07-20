@@ -332,23 +332,20 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     }
 
     /**
-     * 标记皮肤数据已改变，需要网络同步
+     * 标记皮肤数据已改变，需要网络同步。
+     * 皮肤/经济同步只读策略：仅同步到客户端（this.sync()），不再将本地数据写入远程数据库。
+     * 远程数据库由网站端（邮箱/兑换码/抽奖/管理员发放）唯一写入，游戏端只读取。
      */
     private void markSkinDataChanged() {
         this.sync();
-        if (this.isNetworkSyncEnabled) {
-            this.databaseSyncQueued = true;
-            this.nextDatabaseSyncAt = System.currentTimeMillis() + DATABASE_SYNC_DEBOUNCE_MS;
-        }
     }
 
     /**
-     * 将皮肤数据异步同步到 MySQL
+     * 将皮肤数据异步同步到 MySQL —— 已禁用（只读策略）。
+     * 保留方法签名以兼容调用方（SkinsNetworkSyncCommand），但不再写入远程数据库。
      */
     public void syncSkinsToNetwork() {
-        this.databaseSyncQueued = true;
-        this.nextDatabaseSyncAt = 0L;
-        flushSkinDataToDatabase(false);
+        // 只读策略：不再写入远程数据库。
     }
 
     /**
@@ -381,7 +378,8 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
                             }
                         }
                         if (this.databaseSyncQueued) {
-                            flushSkinDataToDatabase(false);
+                            // 只读策略：不再将本地数据写入远程数据库。
+                            this.databaseSyncQueued = false;
                         }
                     });
                 })
@@ -435,30 +433,12 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     }
 
     public boolean flushNetworkSyncBlocking() {
-        return flushSkinDataToDatabase(true);
+        // 只读策略：关服时不再将本地数据阻塞写入远程数据库。保留签名以兼容调用方。
+        return false;
     }
 
     public void flushNetworkSyncAsyncOnDisconnect() {
-        if (!this.isNetworkSyncEnabled || this.databaseLoadPending) {
-            return;
-        }
-
-        String payloadJson = GSON.toJson(buildSkinDataPayload());
-        Map<String, String> payloads = Map.of(DATABASE_SYNC_KEY, payloadJson);
-        long updatedAt = System.currentTimeMillis();
-        this.databaseSyncQueued = false;
-
-        MysqlPlayerDataStore.saveBatchAsync(this.player.getUUID(), payloads, updatedAt)
-                .whenComplete((success, throwable) -> {
-                    if (throwable != null) {
-                        logger.warn("断线时异步刷新玩家 {} 的皮肤 MySQL 数据失败。", this.player.getName().getString(), throwable);
-                        return;
-                    }
-                    if (!Boolean.TRUE.equals(success)) {
-                        logger.warn("断线时异步刷新玩家 {} 的皮肤 MySQL 数据未成功写入。", this.player.getName().getString());
-                        queueReloadAfterDatabaseConflict();
-                    }
-                });
+        // 只读策略：断线时不再将本地数据异步写入远程数据库。保留签名以兼容调用方。
     }
 
     /**
@@ -491,62 +471,10 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     }
 
     private boolean flushSkinDataToDatabase(boolean blocking) {
-        if (!this.isNetworkSyncEnabled) {
-            return false;
-        }
-        if (this.databaseLoadPending) {
-            if (!blocking) {
-                this.databaseSyncQueued = true;
-            }
-            return false;
-        }
-
-        String payloadJson = GSON.toJson(buildSkinDataPayload());
-        Map<String, String> payloads = Map.of(DATABASE_SYNC_KEY, payloadJson);
-        long updatedAt = System.currentTimeMillis();
-
-        if (blocking) {
-            this.databaseSyncQueued = false;
-            boolean success = MysqlPlayerDataStore.saveBatchBlocking(
-                    this.player.getUUID(),
-                    payloads,
-                    updatedAt,
-                    DATABASE_SYNC_FLUSH_TIMEOUT_MS);
-            if (!success) {
-                logger.warn("阻塞刷新玩家 {} 的皮肤 MySQL 数据失败。", this.player.getName().getString());
-                queueReloadAfterDatabaseConflict();
-            }
-            return success;
-        }
-
-        if (this.databaseSyncInFlight) {
-            return false;
-        }
-
-        this.databaseSyncQueued = false;
-        this.databaseSyncInFlight = true;
-        MysqlPlayerDataStore.saveBatchAsync(this.player.getUUID(), payloads, updatedAt)
-                .whenComplete((success, throwable) -> {
-                    this.databaseSyncInFlight = false;
-                    if (throwable != null) {
-                        logger.warn("异步刷新玩家 {} 的皮肤 MySQL 数据失败。", this.player.getName().getString(), throwable);
-                        return;
-                    }
-                    if (!Boolean.TRUE.equals(success)) {
-                        logger.warn("异步刷新玩家 {} 的皮肤 MySQL 数据未成功写入。", this.player.getName().getString());
-                        queueReloadAfterDatabaseConflict();
-                    }
-                });
-        return true;
-    }
-
-    private void queueReloadAfterDatabaseConflict() {
-        if (!this.isNetworkSyncEnabled || this.databaseLoadPending) {
-            return;
-        }
-        this.databaseSyncQueued = true;
-        this.nextDatabaseSyncAt = System.currentTimeMillis() + DATABASE_SYNC_DEBOUNCE_MS;
-        pullSkinsFromNetwork();
+        // 皮肤/经济同步只读策略：游戏端不再将本地皮肤/经济数据写入远程数据库。
+        // 远程数据库由网站端（邮箱/兑换码/抽奖/管理员发放）唯一写入，游戏端只读取（pullSkinsFromNetwork）。
+        // 保留方法签名以兼容 serverTick / syncSkinsToNetwork 等调用方，但方法体为空操作。
+        return false;
     }
 
     private Map<String, Object> buildSkinDataPayload() {

@@ -189,19 +189,7 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.ID,
                 net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload.CODEC);
 
-        // Mailbox
-        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.ID,
-                io.wifi.starrailexpress.content.mail.OpenMailboxScreenPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.ID,
-                io.wifi.starrailexpress.content.mail.MailClaimC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.ID,
-                io.wifi.starrailexpress.content.mail.MailDeleteC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.ID,
-                io.wifi.starrailexpress.content.mail.MailClaimAllC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.ID,
-                io.wifi.starrailexpress.content.mail.MailDeleteAllReadC2SPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.ID,
-                io.wifi.starrailexpress.content.mail.MailMarkReadC2SPayload.CODEC);
+        // Mailbox 已移除：邮箱系统迁移至网站端（新数据库表），游戏内邮箱方块与逻辑已删除。
 
         // 实体交互方块数据包
         PayloadTypeRegistry.playS2C().register(EntityInteractionBlockPayload.OpenUI.TYPE,
