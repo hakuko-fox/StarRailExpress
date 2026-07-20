@@ -2,6 +2,7 @@ package org.agmas.noellesroles.client.hud;
 
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 
+import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.SREClientWarningTickEvents;
 import net.minecraft.ChatFormatting;
@@ -40,9 +41,16 @@ public class DarknessWarningHud {
                 ctx.pose().pushPose();
                 ctx.pose().translate((float) (ctx.guiWidth() / 2),
                         (float) (ctx.guiHeight() - 78 - OtherRolesRegister.warningOffset), 0.0F);
-                final var text = Component.translatable("message.starrailexpress.darkness_warn.warning",
-                        Component.literal("" + (int) (leftTime / 20)).withStyle(ChatFormatting.GOLD))
-                        .withStyle(ChatFormatting.RED);
+                Component text;
+                if (SREWorldBlackoutComponent.KEY.get(client.level).isBlackoutActive()) {
+                    text = Component.translatable("message.starrailexpress.darkness_warn.warning.blackout",
+                            Component.literal("" + (int) (leftTime / 20)).withStyle(ChatFormatting.GOLD))
+                            .withStyle(ChatFormatting.RED);
+                } else {
+                    text = Component.translatable("message.starrailexpress.darkness_warn.warning",
+                            Component.literal("" + (int) (leftTime / 20)).withStyle(ChatFormatting.GOLD))
+                            .withStyle(ChatFormatting.RED);
+                }
                 ctx.drawCenteredString(client.font, text, 0, -4, 0xffffffff);
                 ctx.pose().popPose();
                 OtherRolesRegister.warningOffset += 12;

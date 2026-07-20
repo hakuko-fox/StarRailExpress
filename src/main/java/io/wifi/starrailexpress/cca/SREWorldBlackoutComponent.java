@@ -61,15 +61,21 @@ public class SREWorldBlackoutComponent implements AutoSyncedComponent, ServerTic
             }
         }
         this.blackOutRemainingTicks = 0;
-        for (int i = 0; i < this.blackouts.size(); i++) {
-            BlackoutDetails detail = this.blackouts.get(i);
-            detail.tick(this.world);
-            if (detail.time <= 0) {
-                detail.end(this.world);
-                this.blackouts.remove(i);
-                i--;
-            } else {
-                this.blackOutRemainingTicks = Math.max(this.blackOutRemainingTicks, detail.time);
+        if (!this.blackouts.isEmpty()) {
+            for (int i = 0; i < this.blackouts.size(); i++) {
+                BlackoutDetails detail = this.blackouts.get(i);
+                detail.tick(this.world);
+                if (detail.time <= 0) {
+                    detail.end(this.world);
+                    this.blackouts.remove(i);
+                    i--;
+                } else {
+                    this.blackOutRemainingTicks = Math.max(this.blackOutRemainingTicks, detail.time);
+                }
+            }
+            if (this.blackouts.isEmpty()) {
+                this.blackOutRemainingTicks = 0;
+                sync();
             }
         }
     }

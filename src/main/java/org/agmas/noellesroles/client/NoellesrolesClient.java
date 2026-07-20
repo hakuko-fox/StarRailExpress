@@ -20,6 +20,7 @@ import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
+import io.wifi.starrailexpress.client.util.TaskInstinctManager;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
@@ -132,6 +133,10 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static KeyMapping abilityBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".ability",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "category.starrailexpress.keybinds"));
+
+    public static KeyMapping taskInstinctOptionBind = KeyBindingHelper
+            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".task_instinct_option",
+                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "category.starrailexpress.keybinds"));
     public static KeyMapping nextAbilityBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".next_ability",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, "category.starrailexpress.keybinds"));
@@ -1044,7 +1049,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientAmonState.clearAll();
             ClientSkincrawlerState.clearAll();
             // 在断开连接时，强制清理所有玩家的渲染缓存
-            
+
         });
         // 监听客户端断开连接：清空卡池配置信息
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -1132,6 +1137,11 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (taskInstinctOptionBind.consumeClick()) {
+                client.execute(() -> {
+                    TaskInstinctManager.showTaskInstinctChoices(null);
+                });
+            }
             if (taskInstinctBind.consumeClick()) {
                 isTaskInstinctEnabled = !isTaskInstinctEnabled;
                 if (isTaskInstinctEnabled) {

@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen;
 import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
+import io.wifi.starrailexpress.client.util.TaskInstinctManager;
 import net.exmo.sre.record.client.MatchRecordsScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -44,6 +45,9 @@ public class GameMenuEntries {
 
             minecraft.setScreen(new MapIntroduceScreen(parent));
             toggleViewMenu.accept(false);
+        }));
+        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.task_instinct_choices"), (btn)->{
+            TaskInstinctManager.showTaskInstinctChoices(parent);
         }));
         // 抽卡页面 —— 已禁用
         // entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.loot_screen"), (btn) -> {
@@ -119,6 +123,10 @@ public class GameMenuEntries {
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
             minecraft.setScreen(new BackpackScreen(parent));
             toggleViewMenu.accept(false);
+        }));
+        
+        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.task_instinct_choices"), (btn)->{
+            TaskInstinctManager.showTaskInstinctChoices(parent);
         }));
         // 邮箱管理已移除：邮箱系统迁移至网站端。
         if (minecraft.player.hasPermissions(2)) {

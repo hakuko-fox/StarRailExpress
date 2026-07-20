@@ -72,7 +72,8 @@ public class FilterSelectionScreen extends Screen {
     @Override
     public void resize(Minecraft minecraft, int i, int j) {
         super.resize(minecraft, i, j);
-        this.parent.resize(minecraft, i, j);
+        if (this.parent != null)
+            this.parent.resize(minecraft, i, j);
     }
 
     private FilterSelectionScreen(Component title, Component subtitle, Screen parent,
@@ -83,7 +84,7 @@ public class FilterSelectionScreen extends Screen {
         super(title);
         this.titleComp = Objects.requireNonNull(title, "title cannot be null");
         this.subtitleComp = Objects.requireNonNull(subtitle, "subtitle cannot be null");
-        this.parent = Objects.requireNonNull(parent, "parent screen cannot be null");
+        this.parent = parent;
         this.options = Objects.requireNonNull(options, "options cannot be null");
         this.multiSelect = multiSelect;
         this.callback = Objects.requireNonNull(callback, "callback cannot be null");
@@ -149,7 +150,7 @@ public class FilterSelectionScreen extends Screen {
         } else {
             int usableButtonArea = listW - totalGap;
             btnW = Math.max(1, usableButtonArea / buttonCount);
-            int totalButtonsW = buttonCount * btnW + totalGap;
+            // int totalButtonsW = buttonCount * btnW + totalGap;
             int startX = listX;
             selectAllX = startX;
             deselectAllX = selectAllX + btnW + BUTTON_GAP;
@@ -286,7 +287,7 @@ public class FilterSelectionScreen extends Screen {
     // ========== 键盘导航修复 ==========
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256 && parent != null) {
+        if (keyCode == 256) {
             onClose();
             return true;
         }
@@ -351,7 +352,8 @@ public class FilterSelectionScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.parent.render(g, mouseX, mouseY, partialTick);
+        if (this.parent != null)
+            this.parent.render(g, mouseX, mouseY, partialTick);
 
         int panelX = (width - panelWidth) / 2;
         int panelY = 30;
@@ -577,7 +579,7 @@ public class FilterSelectionScreen extends Screen {
         private Set<String> defaultSelections = new LinkedHashSet<>();
 
         public Builder(Screen parent) {
-            this.parent = Objects.requireNonNull(parent, "parent screen cannot be null");
+            this.parent = parent;
         }
 
         public Builder title(Component title) {

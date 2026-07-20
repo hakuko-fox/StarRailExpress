@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
@@ -381,6 +382,11 @@ public class SREAbilityPlayerComponent
             var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
             if (gameWorldComponent.isRunning()) {
                 RoleMethodDispatcher.callServerTick(serverPlayer, gameWorldComponent);
+            }
+            var worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
+            var modifiers = worldModifierComponent.getModifiers(player);
+            for (SREModifier mo : modifiers) {
+                mo.serverGameTickEvent(serverPlayer);
             }
             var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
             RolePassive.tick(serverPlayer, role);

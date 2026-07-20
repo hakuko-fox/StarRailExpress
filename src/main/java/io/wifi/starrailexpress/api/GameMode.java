@@ -176,7 +176,16 @@ public abstract class GameMode {
     }
 
     /**
-     * 是否启用区域外检测（主要是y轴和水）
+     * 是否启用环境检测（水/禁止方块/区域等）
+     * 
+     * @return
+     */
+    public boolean enableEnvironmentDetection() {
+        return true;
+    }
+
+    /**
+     * 是否启用区域外检测（区域）
      * 
      * @return
      */

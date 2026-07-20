@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.util.TaskInstinctManager;
 import io.wifi.starrailexpress.content.block.SecurityMonitorBlock;
 import io.wifi.starrailexpress.content.block.api.TaskInstinctShowableInterface;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
@@ -222,7 +223,7 @@ public class TaskBlockOverlayRenderer {
         var world = client.level;
         if (SREClient.isPlayerAliveAndInSurvival()) {
             var item = player.getMainHandItem();
-            if (item.is(TMMItems.KEY)) {
+            if (TaskInstinctManager.isTaskInstinctTypeShowable(-1) && item.is(TMMItems.KEY)) {
                 ItemLore lore = item.get(DataComponents.LORE);
                 if (lore != null && !lore.lines().isEmpty()) {
                     NoellesrolesClient.myRoomNumber = lore.lines().getFirst().getString();
@@ -257,6 +258,10 @@ public class TaskBlockOverlayRenderer {
          * 11: 售货机
          * 12: 物资箱
          */
+        {
+            shouldDisplay[11] = true;
+            shouldDisplay[23] = true;
+        }
         var playerMood = SREPlayerMoodComponent.KEY.get(client.player);
         if (playerMood != null) {
             for (var task : playerMood.getTasks().values()) {
@@ -322,6 +327,13 @@ public class TaskBlockOverlayRenderer {
                 }
             }
         }
+
+        // 用户自定义选项
+        for (int i = 0; i < shouldDisplay.length; i++) {
+            shouldDisplay[i] = shouldDisplay[i] && TaskInstinctManager.isTaskInstinctTypeShowable(i);
+        }
+
+        // 渲染
         for (var set : NoellesrolesClient.taskBlocks.entrySet()) {
             var pos = set.getKey();
             int type = set.getValue();
@@ -387,19 +399,11 @@ public class TaskBlockOverlayRenderer {
                                 true, 0f);
                     break;
                 case 11:
-                    TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                            new Color(255, 174, 201), 1f,
-                            true, 0f);
-                    break;
                 case 23:
-                    if (block.getBlock() instanceof TaskInstinctShowableInterface it
-                            && it.shouldRenderTaskInstinct(renderContext.world(), block, pos, player)) {
-                        java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
-                        float alpha = c.getAlpha() / 255f;
+                    if (shouldDisplay[type])
                         TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                c, alpha,
+                                new Color(255, 174, 201), 1f,
                                 true, 0f);
-                    }
                     break;
                 case 16:
                     if (shouldDisplay[type])
@@ -443,14 +447,16 @@ public class TaskBlockOverlayRenderer {
                     }
                     break;
                 default:
-                    if (block.getBlock() instanceof TaskInstinctShowableInterface it) {
-                        // 给我tmd老老实实的用api判断！！！！！！！！！！！！
-                        if (it.shouldRenderTaskInstinct(renderContext.world(), block, pos, player)) {
-                            java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
-                            float alpha = c.getAlpha() / 255f;
-                            TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
-                                    c, alpha,
-                                    true, 0f);
+                    if (TaskInstinctManager.isTaskInstinctTypeShowable(type)) {
+                        if (block.getBlock() instanceof TaskInstinctShowableInterface it) {
+                            // 给我tmd老老实实的用api判断！！！！！！！！！！！！
+                            if (it.shouldRenderTaskInstinct(renderContext.world(), block, pos, player)) {
+                                java.awt.Color c = it.taskInstinctRenderColor(block, pos, player);
+                                float alpha = c.getAlpha() / 255f;
+                                TaskBlockOverlayRenderer.renderBlockOverlay(renderContext, pos,
+                                        c, alpha,
+                                        true, 0f);
+                            }
                         }
                     }
                     break;

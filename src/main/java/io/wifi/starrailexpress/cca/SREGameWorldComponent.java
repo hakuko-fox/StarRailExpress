@@ -33,6 +33,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -351,7 +352,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public enum GameStatus {
-        INACTIVE, STARTING, ACTIVE, STOPPING
+        INACTIVE, STARTING, INITIATING, ACTIVE, STOPPING
     }
 
     public GameMode gameMode = SREGameModes.MURDER;
@@ -420,7 +421,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public boolean isRunning() {
-        return this.gameStatus == GameStatus.ACTIVE || this.gameStatus == GameStatus.STOPPING;
+        return this.gameStatus == GameStatus.ACTIVE || this.gameStatus == GameStatus.STOPPING
+                || this.gameStatus == GameStatus.INITIATING;
     }
 
     public void addRole(Player player, SRERole role) {
@@ -786,7 +788,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         // }
 
         {
-            if (this.gameStatus == GameStatus.ACTIVE) {
+            if (this.gameStatus == GameStatus.ACTIVE || this.gameStatus == GameStatus.INITIATING) {
                 var alivePlayers = new ArrayList<>(serverWorld.players());
                 alivePlayers.removeIf(p -> !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p));
                 if (alivePlayers.size() <= 0) {
@@ -810,14 +812,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                             continue;
                         }
 
-                        if (gameMode.enablePlayAreaDetections()) {
-                            isPlayerOutGameAreas(player, areas, this);
-                        }
-
-                        // put players with no role in spectator mode
-                        var modifiers = worldModifierComponent.getModifiers(player);
-                        for (var mo : modifiers) {
-                            mo.serverGameTickEvent(player);
+                        if (gameMode.enableEnvironmentDetection()) {
+                            playerEnvironmentDetection(player, areas, this);
                         }
                     }
                 }
@@ -845,7 +841,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         }
     }
 
-    public static void isPlayerOutGameAreas(ServerPlayer player, AreasWorldComponent areas,
+    public static void playerEnvironmentDetection(ServerPlayer player, AreasWorldComponent areas,
             SREGameWorldComponent gameCCA) {
         if (player.isSpectator() || player.isCreative())
             return;
@@ -853,22 +849,27 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (gameWorldComponent.gameMode == SREGameModes.REPAIR_ESCAPE_MODE)
             return;
         if (!(player.getZ() >= 19000)) {
-            checkPlayerBannedBlocks(player, areas, gameCCA);
-            checkPlayerDarkness(player, areas, gameCCA);
-            if (checkPlayerIsOutOfAreas(player, areas)) {
-                if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA.bounceBackIfControlled(player)) {
-                    return;
-                }
-                GameUtils.killPlayer(player, false,
-                        player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
-                        GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
-                if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
-                        && checkPlayerIsOutOfAreas(player, areas)) {
-                    GameUtils.forceKillPlayer(player, false,
+            if (gameCCA.getGameMode().enablePlayAreaDetections()) {
+                if (checkPlayerIsOutOfAreas(player, areas)) {
+                    if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA
+                            .bounceBackIfControlled(player)) {
+                        return;
+                    }
+                    GameUtils.killPlayer(player, false,
                             player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
+                    if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
+                            && checkPlayerIsOutOfAreas(player, areas)) {
+                        GameUtils.forceKillPlayer(player, false,
+                                player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
+                                GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
+                    }
                 }
             }
+            
+            checkPlayerBannedBlocks(player, areas, gameCCA);
+            checkPlayerDarkness(player, areas, gameCCA);
+
             if (!areas.areasSettings.canUnderWater) {
                 if (player.isUnderWater()) {
                     GameUtils.killPlayer(player, false,
@@ -942,6 +943,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             SREGameWorldComponent gameCCA) {
         if (player.isSpectator() || player.isCreative())
             return;
+        if (player.hasEffect(ModEffects.SAFE_TIME)) {
+            return;
+        }
         if (areas.areasSettings.deadInDarknessTime > 0) {
             final var level = player.level();
             if (SREWorldBlackoutComponent.KEY.get(level).isBlackoutActive())
