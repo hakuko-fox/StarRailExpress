@@ -28,8 +28,16 @@ public abstract class MobEffectKeyMixin {
         final LocalPlayer player = instance.player;
         if (player == null)
             return false;
+        if (player.isCreative())
+            return false;
         final var options = instance.options;
-        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)
+        if (player.isSpectator()) {
+            if (this.same(options.keySwapOffhand)) {
+                return true;
+            }
+        }
+        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.OTHERWORLD_AURA)
+                || player.hasEffect(ModEffects.TAROT_ASSEMBLY)
                 || player.hasEffect(ModEffects.GHOST_CURSE)) {
             if (this.same(NoellesrolesClient.abilityBind)) {
                 return true;
@@ -41,10 +49,12 @@ public abstract class MobEffectKeyMixin {
                 return true;
         }
 
-        if (player.hasEffect(ModEffects.TAROT_ASSEMBLY) || player.hasEffect(ModEffects.INVENTORY_BANED)){
-            if (this.same(options.keyInventory))return true;
+        if (player.hasEffect(ModEffects.TAROT_ASSEMBLY) || player.hasEffect(ModEffects.INVENTORY_BANED)) {
+            if (this.same(options.keyInventory))
+                return true;
         }
-        if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE) || player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
+        if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)
+                || player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
             if (this.same(options.keyAttack) || this.same(options.keyDrop))
                 return true;
             if (this.same(options.keyUse)) {
