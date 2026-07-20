@@ -67,6 +67,9 @@ public class MountainRoles {
             // 报纸 - 50金币
             SHOP.add(new ShopEntry(ModItems.NEWSPAPER.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
             SHOP.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
+
+            SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
+                    (int) ((float) SREConfig.instance().revolverPrice * 1.005f), ShopEntry.Type.WEAPON));
             SHOP.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(),
                     SREConfig.instance().grenadePrice, ShopEntry.Type.WEAPON));
 
