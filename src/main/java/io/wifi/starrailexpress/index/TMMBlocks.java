@@ -28,7 +28,14 @@ public interface TMMBlocks {
     BlockRegistrar registrar = new BlockRegistrar(SRE.TMM_MOD_ID);
     BlockRegistrar sreBlockRegistrar = new BlockRegistrar(SRE.MOD_ID);
     ItemRegistrar sreItemRegistrar = new ItemRegistrar(SRE.MOD_ID);
-
+    // 邮箱方块
+    Block MAILBOX = registrar.createWithItem("mailbox",
+            new MailboxBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(2.0f, 6.0f)
+                            .sound(SoundType.METAL)
+                            .noOcclusion()),
+            TMMItems.DECORATION_GROUP);
     // Metallic blocks
     Block TARNISHED_GOLD = registrar.createWithItem("tarnished_gold",
             new Block(BlockBehaviour.Properties.of().strength(-1.0f, 3600000.0f).sound(SoundType.NETHERITE_BLOCK)),
@@ -738,7 +745,8 @@ public interface TMMBlocks {
                     org.agmas.noellesroles.init.ModSceneBlocks.SCENE_CREATIVE_GROUP });
 
     Block TICKET_GATE = sreBlockRegistrar.create("ticket_gate",
-            new TicketGateBlock(BlockSetType.COPPER, BlockBehaviour.Properties.ofFullCopy(SMALL_GLASS_DOOR).sound(SoundType.COPPER)));
+            new TicketGateBlock(BlockSetType.COPPER,
+                    BlockBehaviour.Properties.ofFullCopy(SMALL_GLASS_DOOR).sound(SoundType.COPPER)));
     Item TICKET_GATE_ITEM = sreItemRegistrar.create("ticket_gate",
             new BlockItem(TICKET_GATE, new Item.Properties().rarity(Rarity.EPIC)),
             new net.minecraft.resources.ResourceKey[] { CreativeModeTabs.OP_BLOCKS,
