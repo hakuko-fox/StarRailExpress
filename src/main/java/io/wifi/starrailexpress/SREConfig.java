@@ -233,8 +233,6 @@ public class SREConfig implements ConfigData {
     @ConfigSync(shouldSync = true)
     public int furandoruSafeTime = 6 * 60;// 6分钟外安全
 
-    // 小游戏任务并列模式：在轮换模式启用时不影响普通任务刷新
-    public boolean minigameTaskParallelMode = true;
     public int safeTimeCooldown = 30;
     public int startingMoney = 100;
     // 杀手保底被动（降到 3/15秒，主要收入改由任务驱动，见 killerTaskIncome）
@@ -253,6 +251,8 @@ public class SREConfig implements ConfigData {
     // 全局任务刷新速率减缓 15%；关闭后恢复独立计时刷新逻辑
     @Tooltip
     public boolean minigameTaskRotationMode = true;
+    // 小游戏任务并列模式：在轮换模式启用时不影响普通任务刷新
+    public boolean minigameTaskParallelMode = true;
     // 轮换模式下小游戏任务完成时的额外金币奖励
     public int minigameRotationCoinBonus = 0;
     public int moneyPerKill = 100;
