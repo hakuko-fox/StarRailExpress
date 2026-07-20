@@ -328,7 +328,6 @@ public class InitModRolesMax {
             if (players_count >= NoellesRolesConfig.instance().minPlayerForEggRoles
                     && random.nextInt(0, 100) <= EGGS_CHANCE) {
                 isEggEnabled = true;
-                Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
                 for (var a : TMMRoles.ROLES.values()) {
                     if (a instanceof EggRole) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
@@ -346,8 +345,9 @@ public class InitModRolesMax {
                         }
                     }
                 }
+                
+                Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
             } else {
-                Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
                 isEggEnabled = false;
 
                 for (var a : HMLModifiers.MODIFIERS) {
@@ -360,6 +360,8 @@ public class InitModRolesMax {
                         Harpymodloader.setRoleMaximum(a, 0);
                     }
                 }
+                Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
+
             }
 
             {

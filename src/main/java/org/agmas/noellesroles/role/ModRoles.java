@@ -580,7 +580,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(),
             false // 不隐藏计分板
-    )).setCanSeeCoin(true).setVigilanteTeam(true).setCanBeRandomedByOtherRoles(false).setDefaultMax(0);
+    )).setCanSeeCoin(true).setVigilanteTeam(true).setCanBeRandomedByOtherRoles(false).setDefaultMax(0).setCanSetSpawnInfoInConfig(false);
 
     // ==================== 已注册角色定义 ====================
     // 乘客阵营角色
