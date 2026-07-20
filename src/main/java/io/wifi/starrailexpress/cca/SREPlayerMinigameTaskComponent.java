@@ -199,7 +199,7 @@ public class SREPlayerMinigameTaskComponent implements RoleComponent, ServerTick
 
     /** 轮换模式是否生效：配置开启且当前地图启用小游戏任务。 */
     public static boolean isRotationModeActive(ServerLevel serverLevel) {
-        return SREConfig.instance().minigameTaskRotationMode
+        return SREConfig.instance().minigameTaskInsertInNormalTask
                 && AreasWorldComponent.KEY.get(serverLevel).areasSettings.minigameQuestEnabled;
     }
 
