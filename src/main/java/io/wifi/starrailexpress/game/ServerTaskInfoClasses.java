@@ -32,6 +32,8 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.agmas.noellesroles.utils.MapScannerManager;
+
 public class ServerTaskInfoClasses {
     public static abstract class ServerTaskInfo {
         public boolean finished = false;
@@ -231,6 +233,18 @@ public class ServerTaskInfoClasses {
                                 .withStyle(ChatFormatting.YELLOW),
                         true);
             });
+            if (!shouldStartGame) {
+                GameUtils.serverTaskQueue.addLast(new SchedulerTask(1, () -> {
+                    this.serverWorld.players().forEach((p) -> {
+                        p.displayClientMessage(
+                                Component
+                                        .translatable("message.sre.map_scanning")
+                                        .withStyle(ChatFormatting.GOLD),
+                                true);
+                    });
+                    MapScannerManager.scanAndSaveScannerArea(serverWorld, area);
+                }));
+            }
             if (shouldStartGame) {
                 if (SREConfig.instance().verboseTrainResetLogs) {
                     SRE.LOGGER.info("RESETING MAP FINISHED. STARTING RESET TASK BLOCKS.");

@@ -1544,6 +1544,7 @@
     "message.sre.progression.level_up": "列车等级提升至 Lv.%s，来源: %s",
     "message.sre.progression.quest_completed": "通行任务完成: %s",
     "message.sre.reseting": "重置地图中 %s%%",
+    "message.sre.map_scanning": "扫描地图中... 这可能导致一些卡顿...",
     "message.sre.sabotage_cooldown": "破坏任务冷却中，稍后再来",
     "message.sre.starting": "游戏开始！",
     "message.sre.sticky_grenade.defused": "粘性雷被成功拆除！",
