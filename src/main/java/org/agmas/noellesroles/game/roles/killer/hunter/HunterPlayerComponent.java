@@ -55,7 +55,7 @@ public class HunterPlayerComponent implements RoleComponent {
 
     /**
      * 猎人击杀玩家后调用
-     * - 弓进入5秒原版物品冷却
+     * - 弓进入20秒原版物品冷却
      * - 累计杀敌数
      * - 每3杀给予1根毒箭
      */
@@ -63,8 +63,8 @@ public class HunterPlayerComponent implements RoleComponent {
         if (!GameUtils.isPlayerAliveAndSurvival(player))
             return;
 
-        // 弓5秒原版物品冷却
-        player.getCooldowns().addCooldown(Items.BOW, 100); // 5秒 = 100 tick
+        // 弓20秒原版物品冷却
+        player.getCooldowns().addCooldown(Items.BOW, 400); // 20秒 = 400 tick
 
         // 累计杀敌
         killCount++;

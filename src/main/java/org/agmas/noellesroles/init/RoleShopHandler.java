@@ -906,8 +906,18 @@ public class RoleShopHandler {
             HUNTER_SHOP.add(new ShopEntry(PoisonArrow.copy(), 90, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean onBuy(Player player) {
-                    int itemCount = SREItemUtils.countItem(player, Items.TIPPED_ARROW);
-                    if (itemCount >= 2) {
+                    // 仅统计背包中的毒箭（中毒药水箭），不包括其他药水箭
+                    int poisonArrowCount = 0;
+                    for (ItemStack stack : player.getInventory().items) {
+                        if (stack.is(Items.TIPPED_ARROW)) {
+                            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+                            if (contents != null && contents.potion().isPresent()
+                                    && contents.potion().get() == Potions.POISON) {
+                                poisonArrowCount++;
+                            }
+                        }
+                    }
+                    if (poisonArrowCount >= 1) {
                         if (player instanceof ServerPlayer sp) {
                             sp.sendSystemMessage(Component.translatable("message.noellesroles.shop.max_poison_arrow"),
                                     true);
