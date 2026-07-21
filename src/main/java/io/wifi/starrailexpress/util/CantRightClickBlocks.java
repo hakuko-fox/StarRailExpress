@@ -22,7 +22,6 @@ public class CantRightClickBlocks {
             "supplementaries:fire_pit",
             "supplementaries:item_shelf",
             "supplementaries:flower_box",
-            "supplementaries:hourglass",
             "supplementaries:pedestal",
             "supplementaries:lunch_basket"));
     // 原版工作方块集合
