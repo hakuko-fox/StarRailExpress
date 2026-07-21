@@ -219,10 +219,9 @@ public class LightningDraftState {
         cardUsedCount.clear();
         cardMaxPerType.clear();
         cardReturnedPlayers.clear();
-        int limit = Math.max(1, totalPlayers / 14);
+        int limit = Math.max(1, totalPlayers / 10);
         cardMaxPerType.put(4, limit);
         cardMaxPerType.put(2, limit);
-        cardMaxPerType.put(1, limit * 2);
 
         Map<Integer, List<UUID>> byType = new HashMap<>();
         for (ServerPlayer p : allPlayers) {
@@ -235,7 +234,7 @@ public class LightningDraftState {
         for (Map.Entry<Integer, List<UUID>> entry : byType.entrySet()) {
             int type = entry.getKey();
             List<UUID> uuids = entry.getValue();
-            int max = cardMaxPerType.getOrDefault(type, 0);
+            int max = cardMaxPerType.getOrDefault(type, uuids.size());
             cardUsedCount.put(type, Math.min(uuids.size(), max));
             for (int i = max; i < uuids.size(); i++) {
                 UUID uid = uuids.get(i);
@@ -243,7 +242,7 @@ public class LightningDraftState {
                 cardReturnedPlayers.add(uid);
                 ServerPlayer sp = allPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst().orElse(null);
                 if (sp != null) {
-                    FactionCardType cardType = FactionCardType.fromInt(type);
+                    FactionCardType cardType = FactionCardType.fromRoleType(type);
                     if (cardType != FactionCardType.NONE) {
                         ProgressionDataManager.addFactionCard(sp, cardType, 1);
                         sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
@@ -373,10 +372,10 @@ public class LightningDraftState {
                 PlayerRoleWeightManager.ForcePlayerTeam.remove(playerId);
                 ServerPlayer sp = world.getServer().getPlayerList().getPlayer(playerId);
                 if (sp != null) {
-                    FactionCardType cardType = FactionCardType.fromInt(type);
+                    FactionCardType cardType = FactionCardType.fromRoleType(type);
                     if (cardType != FactionCardType.NONE) {
                         ProgressionDataManager.addFactionCard(sp, cardType, 1);
-                        sp.displayClientMessage(Component.translatable("message.sre.role_rotation.faction_fallback")
+                        sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
                                 .withStyle(ChatFormatting.RED), false);
                     }
                 }

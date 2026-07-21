@@ -75,7 +75,7 @@ public final class BackpackManager {
                 || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
             return false;
         }
-        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), type.getTypeId());
+        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), type.getTypeRoleId());
         entry.state.cards.put(type, current - 1);
         markDirty(player, entry);
         Component message = Component.translatable("message.sre.progression.faction_card_activated",
