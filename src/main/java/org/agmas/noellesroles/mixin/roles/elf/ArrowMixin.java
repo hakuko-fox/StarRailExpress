@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -13,6 +14,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.SpectralArrow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -42,6 +45,20 @@ public class ArrowMixin {
 
             }
             if (arrow instanceof Arrow) {
+                // 瞬间伤害药水箭：任何职业用弓/弩装填并射出即死，死因是箭矢
+                ItemStack pickupItem = arrow.getPickupItemStackOrigin();
+                PotionContents potionContents = pickupItem.get(DataComponents.POTION_CONTENTS);
+                if (potionContents != null) {
+                    for (MobEffectInstance instance : potionContents.getAllEffects()) {
+                        if (instance.getEffect().value() instanceof net.minecraft.world.effect.HarmMobEffect) {
+                            isHit = true;
+                            ServerPlayer shooter = arrow.getOwner() instanceof ServerPlayer sp ? sp : null;
+                            GameUtils.killPlayer(player, true, shooter, SRE.id("arrow"));
+                            ci.cancel();
+                            return;
+                        }
+                    }
+                }
                 if (arrow.getOwner() instanceof ServerPlayer serverPlayer) {
                     if (CupidPlayerComponent.handleArrowHit((Arrow) arrow, serverPlayer, player)) {
                         ci.cancel();
