@@ -219,10 +219,10 @@ public class LightningDraftState {
         cardUsedCount.clear();
         cardMaxPerType.clear();
         cardReturnedPlayers.clear();
-        int limit = Math.max(1, totalPlayers / 7);
+        int limit = Math.max(1, totalPlayers / 14);
         cardMaxPerType.put(4, limit);
         cardMaxPerType.put(2, limit);
-        cardMaxPerType.put(1, limit);
+        cardMaxPerType.put(1, limit * 2);
 
         Map<Integer, List<UUID>> byType = new HashMap<>();
         for (ServerPlayer p : allPlayers) {
@@ -302,7 +302,7 @@ public class LightningDraftState {
             type = -2;
         }
         if (type == 5) {
-            type = -1;
+            type = 0;
         }
         return type;
     }
