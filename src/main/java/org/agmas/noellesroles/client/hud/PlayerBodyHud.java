@@ -186,7 +186,7 @@ public class PlayerBodyHud {
                 }
                 String victimName = bodyDeathReasonComponent.getOwnerName();
                 MutableComponent nameMessage = Component.empty();
-                if (victimName != null) {
+                if (victimName != null && !victimName.isBlank()) {
                     nameMessage = Component
                             .translatable("hud.coroner.death_info.name",
                                     victimName);
