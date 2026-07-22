@@ -2,6 +2,7 @@ package org.agmas.noellesroles.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.model.TMMModelLayers;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
@@ -17,6 +18,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -163,7 +165,6 @@ public class PuppeteerBodyEntityRenderer<T extends LivingEntity, M extends Entit
 
     @Override
     public ResourceLocation getTextureLocation(PuppeteerBodyEntity entity) {
-        // 首先尝试通过 ownerUuid 从玩家列表获取皮肤
         UUID ownerUuid = entity.getOwnerUuid().orElse(null);
         if (ownerUuid == null) {
             return DEFAULT_TEXTURE;
@@ -171,15 +172,26 @@ public class PuppeteerBodyEntityRenderer<T extends LivingEntity, M extends Entit
         if (SREClient.getLooseEndPenalty()) {
             return DEFAULT_TEXTURE;
         }
+        if (SREClient.gameComponent == null) {
+            return DEFAULT_TEXTURE;
+        }
+
         Player owner = entity.getOwner();
-        if (owner != null) {
-            if(owner instanceof AbstractClientPlayer abp)
-            return abp.getSkin().texture();
-        } else {
-            PlayerInfo playerListEntry = ClientSkinCache.getCachedPlayerInfo(ownerUuid);
-            if (playerListEntry != null) {
-                return playerListEntry.getSkin().texture();
+        if (owner instanceof AbstractClientPlayer abp) {
+            SRERole role = SREClient.gameComponent.getRole(ownerUuid);
+            boolean isSLIM = abp.getSkin().model() == PlayerSkin.Model.SLIM;
+            if (role != null) {
+                ResourceLocation fixed = role.getNormalSkin(abp, isSLIM);
+                if (fixed != null) {
+                    return fixed;
+                }
             }
+            return abp.getSkin().texture();
+        }
+
+        PlayerInfo playerListEntry = ClientSkinCache.getCachedPlayerInfo(ownerUuid);
+        if (playerListEntry != null) {
+            return playerListEntry.getSkin().texture();
         }
 
         return DEFAULT_TEXTURE;
