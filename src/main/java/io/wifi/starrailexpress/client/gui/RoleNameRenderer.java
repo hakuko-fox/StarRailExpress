@@ -194,6 +194,9 @@ public class RoleNameRenderer {
                         selfRoleType = TrainRole.KILLER;
                     if (component.isNeutralForKiller(self))
                         selfRoleType = TrainRole.KILLER;
+                    if (self.isSpectator()) {
+                        selfRoleType = TrainRole.BYSTANDER;
+                    }
                     if (targetRole != null) {
                         boolean allowRenderRole = true;
                         {

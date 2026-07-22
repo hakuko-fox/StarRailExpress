@@ -95,10 +95,13 @@ public class SREClientEvents {
             if (target == null)
                 return null;
             if (SREClient.gameComponent != null) {
-                if (SREClient.gameComponent.isKillerTeam(player)) {
-                    if (SREClient.gameComponent.isRole(target, ModRoles.MAGICIAN)) {
-                        var roleR = MagicianPlayerComponent.KEY.get(target).getDisguiseRoleId();
-                        return TrueFalseAndCustomResult.custom(RoleUtils.getRoleName(roleR));
+                var selfRole = SREClient.gameComponent.getRole(player);
+                if (SREGameWorldComponent.isKillerTeamRoleStatic(selfRole)) {
+                    if (selfRole.canSeeTeammateKillerRole()) {
+                        if (SREClient.gameComponent.isRole(target, ModRoles.MAGICIAN)) {
+                            var roleR = MagicianPlayerComponent.KEY.get(target).getDisguiseRoleId();
+                            return TrueFalseAndCustomResult.custom(RoleUtils.getRoleName(roleR));
+                        }
                     }
                 }
             }
@@ -125,7 +128,7 @@ public class SREClientEvents {
                 return TrueFalseResult.FALSE;
             // 亡命徒也是
             if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
-                && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
+                    && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
                 return TrueFalseResult.FALSE;
             }
             // 鹈鹕肚内玩家不能通过准星查看玩家身份
