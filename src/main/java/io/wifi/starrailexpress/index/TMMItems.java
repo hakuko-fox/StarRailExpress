@@ -8,6 +8,7 @@ import io.wifi.starrailexpress.api.impl.GrenadeChargeableItem;
 import io.wifi.starrailexpress.api.impl.KnifeChargeableItem;
 import io.wifi.starrailexpress.content.item.*;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.index.wathe_bridge.WatheBridgerItems;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.core.Registry;
@@ -260,5 +261,18 @@ public interface TMMItems {
         WatheBridgerItems.initialize();
         sreRegistrar.registerEntries();
         SREItems.init();
+
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.KNIFE, "gold", 0xFFD700);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.KNIFE, "ice", 0x64C8FF);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.KNIFE, "inferno", 0xFF5000);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.REVOLVER, "gold", 0xFFD700);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.REVOLVER, "ice", 0x64C8FF);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.REVOLVER, "inferno", 0xFF5000);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.BAT, "gold", 0xFFD700);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.BAT, "ice", 0x64C8FF);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.BAT, "inferno", 0xFF5000);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.GRENADE, "gold", 0xFFD700);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.GRENADE, "ice", 0x64C8FF);
+        ItemSkinManager.registerACustomSkin(ItemSkinManager.SkinTypes.GRENADE, "inferno", 0xFF5000);
     }
 }
