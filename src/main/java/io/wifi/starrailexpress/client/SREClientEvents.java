@@ -42,6 +42,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
+import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
 import pro.fazeclan.river.stupid_express.role.arsonist.cca.DousedPlayerComponent;
 import pro.fazeclan.river.stupid_express.role.necromancer.cca.NecromancerComponent;
 
@@ -126,6 +127,14 @@ public class SREClientEvents {
             // Penalty 直接啥也别看了
             if (DeathPenaltyComponent.hasPenalty(player))
                 return TrueFalseResult.FALSE;
+            if (SREClient.modifierComponent != null) {
+                if (SREClient.modifierComponent.isModifier(player, SEModifiers.SPLIT_PERSONALITY)) {
+                    var splitComponent = SplitPersonalityComponent.KEY.get(player);
+                    if (splitComponent != null && !splitComponent.isDeath()) {
+                        return TrueFalseResult.FALSE;
+                    }
+                }
+            }
             // 亡命徒也是
             if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
                     && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
