@@ -231,6 +231,8 @@
   "info.screen.roleid.delayer": "Delayer (Killer team)\nPassive: each kill extends the game by 20s; when 1m25s remain, extend by another 30s (once per round).\nActive [Time Anchor]: press the ability key, spend 75 coins to anchor the current state; the anchor lasts 20s, then you automatically rewind (only yourself):\nposition, money and potion effects are restored; inventory and item cooldowns are NOT rewound. If you are dead by then, the rewind will not revive you.\nThe rewind is not a teleport - you glide back to the anchor ALONG your path: your position is sampled every 2s while anchored, then replayed in reverse.\nWhile rewinding your screen shows the same gray time-stop filter; everyone else is briefly dazed with a glass-break sound. Cooldown 120s.\nWarning: if you are hit while the anchor is still active (within 20s), you are forced to rewind immediately and end up prone, unable to move, for 30s.",
   "effect.noellesroles.time_rewind_daze": "Temporal Daze",
   "effect.noellesroles.time_stop_filter": "Time-Stop Filter",
+  "effect.noellesroles.cca_freezed": "CCA Frozen",
+  "effect.noellesroles.shop_banned": "Shop Banned",
   "message.noellesroles.delayer.anchored": "Time anchor set - auto-rewinding in %ss...",
   "message.noellesroles.delayer.rewound": "Time rewind! You returned to the anchored state",
   "message.noellesroles.delayer.returning": "Rewinding... gliding back to the anchor along your path",
@@ -3628,5 +3630,9 @@
   "effect.noellesroles.voice_range_boost": "Voice Range Boost",
   "mob_effect.noellesroles.voice_range_boost": "Voice Range Boost",
   "effect.noellesroles.skill_freezed": "Skill Freeze",
-  "mob_effect.noellesroles.skill_freezed": "Skill Freeze"
+  "mob_effect.noellesroles.skill_freezed": "Skill Freeze",
+  "effect.noellesroles.cca_freezed": "CCA Frozen",
+  "mob_effect.noellesroles.cca_freezed": "CCA Frozen",
+  "effect.noellesroles.shop_banned": "Shop Banned",
+  "mob_effect.noellesroles.shop_banned": "Shop Banned"
 }

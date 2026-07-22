@@ -3774,5 +3774,9 @@
   "effect.noellesroles.heavy_metal_voice": "重金屬語音",
   "mob_effect.noellesroles.heavy_metal_voice": "重金屬語音",
   "effect.noellesroles.voice_range_boost": "擴音語音",
-  "mob_effect.noellesroles.voice_range_boost": "擴音語音"
+  "mob_effect.noellesroles.voice_range_boost": "擴音語音",
+  "effect.noellesroles.cca_freezed": "CCA冷凍",
+  "mob_effect.noellesroles.cca_freezed": "CCA冷凍",
+  "effect.noellesroles.shop_banned": "商店被禁用",
+  "mob_effect.noellesroles.shop_banned": "商店被禁用"
 }
