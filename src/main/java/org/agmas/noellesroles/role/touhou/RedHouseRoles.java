@@ -112,7 +112,7 @@ public class RedHouseRoles {
       SRERole.MoodType.REAL, // 真实心情
       TMMRoles.CIVILIAN.getMaxSprintTime() * 2, // 2 倍冲刺时间
       false // 不隐藏计分板
-  ), "th_redhouse").setCanSeeCoin(true).setCanSeeTime(true).setDefaultMax(0);
+  ), "th_redhouse").setCanSeeCoin(true).setCanSeeTime(true).setDefaultMax(1).setDefaultEnableChance(2000);
   // 好人：大妖精baka
   public static SRERole BAKA = TMMRoles.registerRole(
       new TouhouRole(BAKA_ID, new Color(185, 240, 243).getRGB(),

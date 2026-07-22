@@ -345,8 +345,6 @@ public class InitModRolesMax {
                         }
                     }
                 }
-                
-                Harpymodloader.setRoleMaximum(ModRoles.DIO, 1);
             } else {
                 isEggEnabled = false;
 
@@ -360,7 +358,6 @@ public class InitModRolesMax {
                         Harpymodloader.setRoleMaximum(a, 0);
                     }
                 }
-                Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
 
             }
 
@@ -413,9 +410,6 @@ public class InitModRolesMax {
                             Harpymodloader.MODIFIER_MAX.put(a.identifier(), max);
                         }
                     }
-                }
-                if (Harpymodloader.ROLE_MAX.getOrDefault(ModRoles.DIO, 0) > 0) {
-                    Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 1);
                 }
                 Harpymodloader.setRoleMaximum(RedHouseRoles.BAKA_ID, 1);
                 Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 1);
