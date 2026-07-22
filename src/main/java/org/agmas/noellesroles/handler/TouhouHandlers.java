@@ -67,9 +67,11 @@ public class TouhouHandlers {
           || killer.getMainHandItem().is(ModItems.BANDIT_REVOLVER)) {
         {
           var mainhandItem = victim.getMainHandItem();
+          var offhandItem = victim.getOffhandItem();
           if (victim.distanceToSqr(killer) <= 6 * 6) {
             if (mainhandItem.getItem() instanceof TrainWeapon
-                || mainhandItem.is(TMMItemTags.GUNS)) {
+                || mainhandItem.is(TMMItemTags.GUNS) || offhandItem.getItem() instanceof TrainWeapon
+                || offhandItem.is(TMMItemTags.GUNS)) {
               return TrueFalseResult.TRUE;
             }
           }
