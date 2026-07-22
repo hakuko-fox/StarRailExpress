@@ -190,6 +190,7 @@ public class RoleNameRenderer {
                     ctx.drawString(font, partTag, -partWidth / 2, 16 + font.lineHeight + 2,
                             Mth.color(1f, 0.69f, 0f) | (255 << 24));
                 }
+                ctx.pose().translate(0, 20, 0);
                 {
                     TrainRole selfRoleType = TrainRole.BYSTANDER;
                     if (component.canUseKillerFeatures(self))
@@ -216,7 +217,7 @@ public class RoleNameRenderer {
                             }
                         }
                         if (allowRenderRole) {
-                            ctx.pose().translate(0, 20 + font.lineHeight, 0);
+                            ctx.pose().translate(0, 10, 0);
                             if (roleText1 != null) {
                                 int roleWidth1 = font.width(roleText1);
                                 ctx.drawString(font, roleText1, -roleWidth1 / 2, 0,
@@ -225,6 +226,7 @@ public class RoleNameRenderer {
                         }
                     }
                     {
+
                         Component cohortText = Component.translatable("game.tip.cohort");
                         boolean allowRenderCohort = true;
                         {
@@ -237,20 +239,21 @@ public class RoleNameRenderer {
                                 cohortText = result.getContent().orElse(cohortText);
                             } else {
                                 allowRenderCohort = selfRoleType == TrainRole.KILLER
-                                        && targetRoleType == TrainRole.KILLER && component.canSeeKillerTeammate(self);
+                                        && targetRoleType == TrainRole.KILLER && component.canSeeKillerTeammate(self)
+                                        && SREClient.isPlayerAliveAndInSurvival();
                             }
                         }
                         if (allowRenderCohort) {
-                            ctx.pose().translate(0, 20 + font.lineHeight, 0);
+                            ctx.pose().translate(0, 10, 0);
                             int roleWidth = font.width(cohortText);
                             ctx.drawString(font, cohortText, -roleWidth / 2, 0,
                                     Mth.color(1f, 0f, 0f) | ((int) (255) << 24));
                         }
+
                     }
                     {
-                        ctx.pose().pushPose();
-                        ctx.pose().translate(0, font.lineHeight, 0);
                         if (SREClient.isPlayerSpectatingOrCreative()) {
+                            ctx.pose().translate(0, 10, 0);
                             SRERole targetRole = SREClient.gameComponent.getRole(target);
                             if (targetRole == null) {
                                 targetRole = TMMRoles.DISCOVERY_CIVILIAN;
@@ -262,7 +265,6 @@ public class RoleNameRenderer {
                             ctx.drawString(font, name, -font.width(name) / 2, 0,
                                     di_color | (int) (1 * 255.0F) << 24);
                         }
-                        ctx.pose().popPose();
                     }
                     {
                         OnRenderRoleName.RENDER_PLAYER_EXTRA.invoker().renderExtra(self, target, ctx, tickCounter,
