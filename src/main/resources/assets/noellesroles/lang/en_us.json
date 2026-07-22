@@ -3634,5 +3634,20 @@
   "effect.noellesroles.cca_freezed": "CCA Frozen",
   "mob_effect.noellesroles.cca_freezed": "CCA Frozen",
   "effect.noellesroles.shop_banned": "Shop Banned",
-  "mob_effect.noellesroles.shop_banned": "Shop Banned"
+  "mob_effect.noellesroles.shop_banned": "Shop Banned",
+  "announcement.star.role.halic": "Halic",
+  "announcement.star.role.noellesroles.halic": "Halic",
+  "announcement.star.goals.halic": "Use decoys and sanity restoration to help teammates survive!",
+  "message.noellesroles.halic.decoy_created": "§aDecoy deployed! Lasts 30 seconds.",
+  "message.noellesroles.halic.decoy_already_active": "§cDecoy already active!",
+  "message.noellesroles.halic.not_enough_money": "§cNot enough coins! Need %d coins.",
+  "message.noellesroles.halic.sanity_restored": "§aRestored sanity for %d players, costing %d coins.",
+  "skill.noellesroles.halic.decoy": "Deploy Decoy",
+  "skill.noellesroles.halic.sanity": "Sanity Restore",
+  "announcement.star.role.hakukofox": "HakukoFox",
+  "announcement.star.role.noellesroles.hakukofox": "HakukoFox",
+  "announcement.star.goals.hakukofox": "Use your fox agility and fox fire to eliminate all passengers!",
+  "skill.noellesroles.hakukofox.transform": "§aTransform into a white fox and gain Speed III!",
+  "skill.noellesroles.hakukofox.foxfire": "§aRelease fox fire, blinding nearby players and revealing their position!",
+  "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins."
 }

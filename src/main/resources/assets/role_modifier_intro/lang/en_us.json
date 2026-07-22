@@ -227,6 +227,9 @@
   "info.screen.roleid.politician": "Civilian Faction\nOnly spawns in maps with meeting voting enabled.\nCannot be voted out.\nYour vote counts as 2 (3 if >24 players alive).\nWhen votes received reach 1/4 of alive players, receive a revolver.",
   "info.screen.roleid.politician.simple": "Civilian Faction\nVote immune + weight 2/3, receive revolver when heavily voted",
   "info.screen.roleid.missionary": "Killer Faction\nOnly spawns in maps with meeting voting enabled.\nClick player heads in your backpack to convert them, adding +1 to their meeting vote weight (60s initial CD, 80s skill CD).\nBuffed players get +1 vote (+2 if >24 alive), stacked on top of their base weight.\nSwitching target removes the bonus from the old target.",
-  "info.screen.roleid.missionary.simple": "Killer Faction\nClick player head in backpack: target gets +1/2 vote weight"
-
+  "info.screen.roleid.missionary.simple": "Killer Faction\nClick player head in backpack: target gets +1/2 vote weight",
+  "info.screen.roleid.halic": "Civilian Faction\nI am the intelligent android Halic.\nSkill 1 (G): Deploy a decoy that lasts 30 seconds. Cooldown 2 minutes.\nSkill 2 (Shift+G): Spend 50 coins to restore sanity of nearby players.",
+  "info.screen.roleid.halic.simple": "Civilian Faction\nDeploy a decoy to distract\nSpend coins to restore sanity",
+  "info.screen.roleid.hakukofox": "Killer Faction\nHong Kong indie Vtuber 🦊\nOn a journey to return to her own time and become a VTuber.\nShe gathers support from viewers and converts their cheers into magic power to return to the Ice Castle.\nSkill 1 (G): Transform into a white fox, gaining Speed III for 20 seconds. Cooldown 90 seconds.\nSkill 2 (Shift+G): Release fox fire, blinding nearby players for 3s and revealing their position for 8s. Costs 40 coins. Cooldown 30 seconds.",
+  "info.screen.roleid.hakukofox.simple": "Killer Faction\nTransform into a white fox for speed\nFox fire blinds and reveals enemies"
 }

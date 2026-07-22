@@ -417,5 +417,9 @@
   "info.screen.roleid.repair_saboteur": "中立独立胜利职业\n通过修机校准累计 10 点破坏记录即可独立获胜。",
   "info.screen.roleid.repair_saboteur.simple": "",
   "info.screen.roleid.repair_collector": "中立独立胜利职业\n使用 4 次修机道具或补给即可独立获胜。",
-  "info.screen.roleid.repair_collector.simple": ""
+  "info.screen.roleid.repair_collector.simple": "",
+  "info.screen.roleid.halic": "平民阵营\n我是智慧型仿生人哈力克 Halic\n技能1（G键）：释放一个持续30秒的分身，冷却2分钟。\n技能2（Shift+G）：消耗50金币，恢复附近玩家的理智值。",
+  "info.screen.roleid.halic.simple": "平民阵营\n释放分身吸引注意力\n消耗金币恢复理智",
+  "info.screen.roleid.hakukofox": "杀手阵营\n香港個人勢Vtuber 🦊\n為了回到自己所屬的時空，踏上成為VTuber的旅途。\n希望藉此吸引觀眾的支持，將他們的應援轉化為魔力，幫助自己回到冰霜之城。\n技能1（G）：變身為白色狐狸，獲得速度 III，持續 20 秒，冷卻 90 秒。\n技能2（Shift+G）：釋放狐火，使附近玩家失明 3 秒並暴露位置 8 秒，消耗 40 金幣，冷卻 30 秒。",
+  "info.screen.roleid.hakukofox.simple": "杀手阵营\n變身白狐獲得加速\n狐火使敵人失明並暴露位置"
 }

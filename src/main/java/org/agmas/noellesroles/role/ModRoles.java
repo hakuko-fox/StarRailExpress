@@ -42,6 +42,7 @@ import org.agmas.noellesroles.game.roles.innocence.clock_maker.ClockmakerPlayerC
 import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
@@ -218,6 +219,9 @@ public class ModRoles {
     public static final ResourceLocation LEATHER_PIG_ID = Noellesroles.id("leather_pig");
     // 亡灵之主角色 ID
     public static final ResourceLocation UNDEAD_LORD_ID = Noellesroles.id("undead_lord");
+
+    // 白狐角色 ID
+    public static final ResourceLocation HAKUKO_FOX_ID = Noellesroles.id("hakukofox");
 
     // 悍匪角色 ID
     public static final ResourceLocation GANGSTERS_ID = Noellesroles.id("gangsters");
@@ -1060,6 +1064,33 @@ public class ModRoles {
      * - 专属商店：绳索(150金币)、裹尸袋(150金币)
      * - 只在中级及高级场中出现
      */
+    // Halic 角色 ID
+    public static final ResourceLocation HALIC_ID = Noellesroles.id("halic");
+
+    /**
+     * Halic 角色
+     * - 屬於乘客陣營 (isInnocent = true)
+     * - 不能使用殺手能力 (canUseKiller = false)
+     * - 真實心情系統
+     * - 固定皮膚：Halic_C17v4
+     * - 技能1（G）：複製一個假人留在原地 30 秒，冷卻 2 分鐘
+     * - 技能2（Shift+G）：花費 50 金幣恢復附近玩家理智值
+     */
+    public static SRERole HALIC = TMMRoles.registerRole(new NormalRole(
+            HALIC_ID,
+            new Color(100, 180, 255).getRGB(), // 淡藍色 - 代表科技感
+            true,  // isInnocent = 乘客陣營
+            false, // canUseKiller = 無殺手能力
+            SRERole.MoodType.REAL, // 真實心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),
+            false  // 不隱藏計分板
+    ) {
+        @Override
+        public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
+            return SRE.id("textures/entity/custom_psycho/halic.png");
+        }
+    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000);
+
     // 搜救员角色 - 乘客阵营
     public static SRERole RESCUER = TMMRoles.registerRole(new NormalRole(
             RESCUER_ID, // 角色 ID
@@ -1332,6 +1363,11 @@ public class ModRoles {
             .registerRole(new NormalRole(PHANTOM_ID, new Color(80, 5, 5, 192).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setComponentKey(ModComponents.ABILITY).setDefaultMax(1);
+
+    public static SRERole HAKUKO_FOX = TMMRoles
+            .registerRole(new NormalRole(HAKUKO_FOX_ID, new Color(255, 200, 200).getRGB(), false,
+                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(1);
     public static SRERole SWAPPER = TMMRoles
             .registerRole(new NormalRole(SWAPPER_ID, new Color(255, 0, 255).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -2518,6 +2554,8 @@ public class ModRoles {
         SREArmorPlayerComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.MA_CHEN_XU_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.WRAITH_ASSASSIN_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX_ID.getPath());
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.INFECTED_ID.getPath());
 
         // 设置疫使与毒师互斥

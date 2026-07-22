@@ -26,6 +26,7 @@ import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
@@ -485,6 +486,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       org.agmas.noellesroles.game.roles.neutral.amon.AmonPlayerComponent.KEY;
   public static final ComponentKey<CakeMakerComponent> CAKE_MAKER = CakeMakerComponent.KEY;
   public static final ComponentKey<AdventurerPlayerComponent> ADVENTURER = AdventurerPlayerComponent.KEY;
+  public static final ComponentKey<HalicPlayerComponent> HALIC = HalicPlayerComponent.KEY;
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent> HAKUKO_FOX =
+      org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -984,6 +988,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, SKINCRAWLER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.skincrawler.SkincrawlerPlayerComponent::new);
+
+    // 注册 Halic 组件
+    registry.beginRegistration(Player.class, HALIC)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent::new);
+
+    // 注册 HakukoFox 组件
+    registry.beginRegistration(Player.class, HAKUKO_FOX)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

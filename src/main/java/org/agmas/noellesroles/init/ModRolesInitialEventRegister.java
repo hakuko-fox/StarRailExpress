@@ -1181,6 +1181,40 @@ public class ModRolesInitialEventRegister {
                     DIOPlayerComponent.KEY.get(context.player()).tryActivateTimeStop();
                     return true;
                 }).build());
+
+        // ==================== Halic 技能注册 ====================
+        // 技能1（G）：複製一個假人留在原地 30 秒，冷卻 2 分鐘
+        // 技能2（Shift+G）：花費 50 金幣恢復附近 8 格內玩家理智值
+        RoleSkill.register(ModRoles.HALIC,
+                RoleSkill.skill(SRE.id("halic_decoy"), "skill.noellesroles.halic.decoy", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent.KEY.get(player)
+                            .createDecoy(player);
+                }).cooldownSeconds(120).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("halic_sanity"), "skill.noellesroles.halic.sanity", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent.KEY.get(player)
+                            .restoreSanity(player);
+                }).shifted(true).cooldownSeconds(10).showOnHud(true).build());
+
+        // ==================== HakukoFox 技能注册 ====================
+        // 技能1（G）：变身为白色狐狸，获得速度 III 持续 20 秒，冷却 90 秒
+        // 技能2（Shift+G）：狐火，使附近玩家失明 3 秒 + 发光 8 秒，消耗 40 金币，冷却 30 秒
+        RoleSkill.register(ModRoles.HAKUKO_FOX,
+                RoleSkill.skill(SRE.id("hakukofox_transform"), "skill.noellesroles.hakukofox.transform", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
+                            .transformFox(player);
+                }).cooldownSeconds(90).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("hakukofox_foxfire"), "skill.noellesroles.hakukofox.foxfire", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
+                            .foxFire(player);
+                }).shifted(true).cooldownSeconds(30).showOnHud(true).build());
     }
 
 }

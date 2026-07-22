@@ -3778,5 +3778,20 @@
   "effect.noellesroles.voice_range_boost": "扩音语音",
   "mob_effect.noellesroles.voice_range_boost": "扩音语音",
   "mob_effect.noellesroles.cca_freezed": "CCA冷冻",
-  "mob_effect.noellesroles.shop_banned": "商店被禁用"
+  "mob_effect.noellesroles.shop_banned": "商店被禁用",
+  "announcement.star.role.halic": "哈力克",
+  "announcement.star.role.noellesroles.halic": "哈力克",
+  "announcement.star.goals.halic": "利用假人和理智恢复能力，帮助队友活到最后！",
+  "message.noellesroles.halic.decoy_created": "§a假人已部署！持续30秒。",
+  "message.noellesroles.halic.decoy_already_active": "§c已有活跃的假人！",
+  "message.noellesroles.halic.not_enough_money": "§c金币不足！需要 %d 金币。",
+  "message.noellesroles.halic.sanity_restored": "§a恢复了 %d 名玩家的理智值，花费 %d 金币。",
+  "skill.noellesroles.halic.decoy": "部署假人",
+  "skill.noellesroles.halic.sanity": "理智恢复",
+  "announcement.star.role.hakukofox": "白狐",
+  "announcement.star.role.noellesroles.hakukofox": "白狐",
+  "announcement.star.goals.hakukofox": "利用狐狸的机敏和狐火，淘汰所有乘客！",
+  "skill.noellesroles.hakukofox.transform": "§a变身为白色狐狸，获得速度 III！",
+  "skill.noellesroles.hakukofox.foxfire": "§a释放狐火，使附近玩家失明并暴露位置！",
+  "message.noellesroles.hakukofox.not_enough_money": "§c金币不足！需要 %d 金币。"
 }
