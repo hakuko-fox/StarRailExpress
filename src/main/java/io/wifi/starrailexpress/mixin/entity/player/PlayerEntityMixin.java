@@ -199,7 +199,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
             int poisonTicks = SREPlayerPoisonComponent.KEY.get(this).poisonTicks;
             if (SRE.REPLAY_MANAGER != null) {
                 if (armorer == null) {
-                    SRE.REPLAY_MANAGER.recordItemEatFlaggedItem(player, stack.getItem(), "poison");
+                    String flag = isFakePoison ? "fake_poison" : "poison";
+                    SRE.REPLAY_MANAGER.recordItemEatFlaggedItem(player, stack.getItem(), flag);
                 }
             }
             UUID poisonerUUID = UUID.fromString(poisoner);
@@ -251,7 +252,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
                             io.wifi.starrailexpress.game.GameConstants.DeathReasons.KNIFE)));
         }
         if (poisoner != null && armorer != null) {
-            SRE.REPLAY_MANAGER.recordItemEatFlaggedItem(player, stack.getItem(), "poison_and_armor");
+            String flag = isFakePoison ? "fake_poison_and_armor" : "poison_and_armor";
+            SRE.REPLAY_MANAGER.recordItemEatFlaggedItem(player, stack.getItem(), flag);
         }
 
     }
