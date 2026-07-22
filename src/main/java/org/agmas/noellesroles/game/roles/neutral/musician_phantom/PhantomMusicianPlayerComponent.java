@@ -1,4 +1,4 @@
-package org.agmas.noellesroles.game.roles.neutral.phantom_musician;
+package org.agmas.noellesroles.game.roles.neutral.musician_phantom;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -46,7 +46,7 @@ import java.util.List;
 public class PhantomMusicianPlayerComponent implements RoleComponent, ServerTickingComponent, ClientTickingComponent {
 
     public static final ComponentKey<PhantomMusicianPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_musician"),
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "musician_phantom"),
             PhantomMusicianPlayerComponent.class);
 
     private final Player player;

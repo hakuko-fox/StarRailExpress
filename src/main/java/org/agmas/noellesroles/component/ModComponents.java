@@ -81,7 +81,7 @@ import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
 import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.reasoner.ReasonerPlayerComponent;
@@ -467,7 +467,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
 
   // 幻音师组件 - 杀手方中立阵营，音效商店+传送技能
   public static final ComponentKey<PhantomMusicianPlayerComponent> PHANTOM_MUSICIAN = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "phantom_musician"),
+      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "musician_phantom"),
       PhantomMusicianPlayerComponent.class);
 
   // 亡灵之主组件 - 杀手阵营，亡灵召唤 + 感染滚雪球

@@ -2477,7 +2477,7 @@ public class ModRoles {
             .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true);
 
     /**
-     * 幻音师角色 (Phantom Musician)
+     * 幻音师角色 (Musician Phantom)
      * - 杀手方中立阵营 (isInnocent = false, canUseKiller = false)
      * - 假心情系统
      * - 无限冲刺时间
@@ -2500,7 +2500,7 @@ public class ModRoles {
                     false,
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
                     .setComponentKey(
-                            org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY))
+                            org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY))
             .setNeutralForKiller(true)
             .setNeutrals(true)
             .setCanUseInstinctAndNightVision(true)

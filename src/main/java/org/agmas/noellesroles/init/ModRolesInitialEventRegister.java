@@ -409,7 +409,7 @@ public class ModRolesInitialEventRegister {
             }
             // 幻音师角色初始化
             if (role.equals(ModRoles.PHANTOM_MUSICIAN)) {
-                var pmComponent = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                var pmComponent = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                         .get(player);
                 pmComponent.init();
                 pmComponent.sync();
@@ -674,7 +674,7 @@ public class ModRolesInitialEventRegister {
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
         RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {
             ServerPlayer player = context.player();
-            var comp = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+            var comp = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                     .get(player);
             if (comp == null)
                 return;

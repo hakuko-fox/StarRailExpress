@@ -50,7 +50,7 @@ import org.agmas.noellesroles.game.roles.killer.water_ghost.WaterGhostPlayerComp
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -1708,11 +1708,11 @@ public class RoleShopHandler {
             {
                 ItemStack s = new ItemStack(Items.NOTE_BLOCK);
                 s.set(DataComponents.ITEM_NAME,
-                        Component.translatable("item.noellesroles.phantom_musician.knife_sound"));
+                        Component.translatable("item.noellesroles.musician_phantom.knife_sound"));
                 PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
                     @Override
                     public boolean onBuy(@NotNull Player p) {
-                        var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        var c = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                                 .get(p);
                         if (c.knifeSoundCooldown > 0)
                             return false;
@@ -1728,11 +1728,11 @@ public class RoleShopHandler {
             {
                 ItemStack s = new ItemStack(Items.NOTE_BLOCK);
                 s.set(DataComponents.ITEM_NAME,
-                        Component.translatable("item.noellesroles.phantom_musician.revolver_sound"));
+                        Component.translatable("item.noellesroles.musician_phantom.revolver_sound"));
                 PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 75, ShopEntry.Type.TOOL) {
                     @Override
                     public boolean onBuy(@NotNull Player p) {
-                        var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        var c = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                                 .get(p);
                         if (c.revolverSoundCooldown > 0)
                             return false;
@@ -1748,11 +1748,11 @@ public class RoleShopHandler {
             {
                 ItemStack s = new ItemStack(Items.NOTE_BLOCK);
                 s.set(DataComponents.ITEM_NAME,
-                        Component.translatable("item.noellesroles.phantom_musician.stalker_sound"));
+                        Component.translatable("item.noellesroles.musician_phantom.stalker_sound"));
                 PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 100, ShopEntry.Type.TOOL) {
                     @Override
                     public boolean onBuy(@NotNull Player p) {
-                        var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        var c = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                                 .get(p);
                         if (c.stalkerSoundCooldown > 0)
                             return false;
@@ -1770,11 +1770,11 @@ public class RoleShopHandler {
             {
                 ItemStack s = new ItemStack(io.wifi.starrailexpress.index.TMMItems.PSYCHO_MODE);
                 s.set(DataComponents.ITEM_NAME,
-                        Component.translatable("item.noellesroles.phantom_musician.psycho_sound"));
+                        Component.translatable("item.noellesroles.musician_phantom.psycho_sound"));
                 PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 350, ShopEntry.Type.TOOL) {
                     @Override
                     public boolean onBuy(@NotNull Player p) {
-                        var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        var c = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                                 .get(p);
                         if (c.psychoSoundCooldown > 0)
                             return false;
@@ -1796,11 +1796,11 @@ public class RoleShopHandler {
             {
                 ItemStack s = new ItemStack(Items.NOTE_BLOCK);
                 s.set(DataComponents.ITEM_NAME,
-                        Component.translatable("item.noellesroles.phantom_musician.crowbar_sound"));
+                        Component.translatable("item.noellesroles.musician_phantom.crowbar_sound"));
                 PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 25, ShopEntry.Type.TOOL) {
                     @Override
                     public boolean onBuy(@NotNull Player p) {
-                        var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        var c = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                                 .get(p);
                         if (c.crowbarSoundCooldown > 0)
                             return false;
@@ -1816,7 +1816,7 @@ public class RoleShopHandler {
             {
                 ItemStack s = new ItemStack(Items.MUSIC_DISC_RELIC);
                 s.set(DataComponents.ITEM_NAME,
-                        Component.translatable("item.noellesroles.phantom_musician.random_sound"));
+                        Component.translatable("item.noellesroles.musician_phantom.random_sound"));
                 PHANTOM_MUSICIAN_SHOP.add(new ShopEntry(s, 50, ShopEntry.Type.TOOL) {
                     private final java.util.List<Object> allSounds = java.util.List.of(
                             // === TMMSounds (starrailexpress) ===
@@ -1877,7 +1877,7 @@ public class RoleShopHandler {
 
                     @Override
                     public boolean onBuy(@NotNull Player p) {
-                        var c = org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent.KEY
+                        var c = org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent.KEY
                                 .get(p);
                         if (c.randomSoundCooldown > 0)
                             return false;

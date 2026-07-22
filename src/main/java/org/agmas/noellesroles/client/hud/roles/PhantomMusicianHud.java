@@ -6,7 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
-import org.agmas.noellesroles.game.roles.neutral.phantom_musician.PhantomMusicianPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.musician_phantom.PhantomMusicianPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 
 /**
@@ -37,13 +37,13 @@ public class PhantomMusicianHud {
             // 传送技能冷却显示（优先显示，最下方）
             if (comp.teleportCooldown > 0) {
                 int seconds = (comp.teleportCooldown + 19) / 20;
-                line = Component.translatable("hud.noellesroles.phantom_musician.teleport_cooldown", seconds)
+                line = Component.translatable("hud.noellesroles.musician_phantom.teleport_cooldown", seconds)
                         .withStyle(ChatFormatting.RED);
             } else if (shop.balance >= PhantomMusicianPlayerComponent.TELEPORT_COST) {
-                line = Component.translatable("hud.noellesroles.phantom_musician.teleport_ready")
+                line = Component.translatable("hud.noellesroles.musician_phantom.teleport_ready")
                         .withStyle(ChatFormatting.GREEN);
             } else {
-                line = Component.translatable("hud.noellesroles.phantom_musician.teleport_no_coin")
+                line = Component.translatable("hud.noellesroles.musician_phantom.teleport_no_coin")
                         .withStyle(ChatFormatting.GOLD);
             }
 
