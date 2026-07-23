@@ -39,7 +39,8 @@ import pro.fazeclan.river.stupid_express.constants.SERoles;
  * 高亮获取顺序：
  * <li>通用逻辑：{@link CommonInstinctEvents#ALIVE_COMMON_BEFORE_EVENT}</li>
  * <li>被看逻辑：{@link RoleInstinctEvents#TARGET_HIGHLIGHT_EVENT}</li>
- * <li>被看职业逻辑 {@link SRERole#setBeSeenInstinctType(InstinctType,InstinctType)}</li>
+ * <li>被看职业逻辑
+ * {@link SRERole#setBeSeenInstinctType(InstinctType,InstinctType)}</li>
  * <li>看人逻辑：{@link RoleInstinctEvents#OBSERVER_HIGHLIGHT_EVENT}</li>
  * <li>看人职业逻辑 {@link SRERole#setInstinctType(InstinctType,InstinctType)}</li>
  * <li>通用逻辑：{@link CommonInstinctEvents#ALIVE_COMMON_AFTER_EVENT}</li>
@@ -138,16 +139,17 @@ public class InstinctManager {
             if (targetRole != null) {
                 ArrayList<InnerRoleInstinctFunction> funcs = RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT
                         .getFunctions(targetRole.getIdentifier());
-                for (var f : funcs) {
-                    var result = f.getInstinctHighlight(client, self, target, instinctEnabled);
-                    if (result.isFalse()) {
-                        return TrueFalseAndCustomResult.no();
-                    } else if (result.isTrue()) {
-                        break;
-                    } else if (result.isCustom()) {
-                        return result;
+                if (funcs != null)
+                    for (var f : funcs) {
+                        var result = f.getInstinctHighlight(client, self, target, instinctEnabled);
+                        if (result.isFalse()) {
+                            return TrueFalseAndCustomResult.no();
+                        } else if (result.isTrue()) {
+                            break;
+                        } else if (result.isCustom()) {
+                            return result;
+                        }
                     }
-                }
 
                 InstinctType targetInstinct = instinctEnabled ? targetRole.getToggledOnBeSeenInstinctType()
                         : targetRole.getToggledOffBeSeenInstinctType();
@@ -175,16 +177,17 @@ public class InstinctManager {
         {
             ArrayList<InnerRoleInstinctFunction> funcs = RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT
                     .getFunctions(selfRole.getIdentifier());
-            for (var f : funcs) {
-                var result = f.getInstinctHighlight(client, self, target, instinctEnabled);
-                if (result.isFalse()) {
-                    return TrueFalseAndCustomResult.no();
-                } else if (result.isTrue()) {
-                    break;
-                } else if (result.isCustom()) {
-                    return result;
+            if (funcs != null)
+                for (var f : funcs) {
+                    var result = f.getInstinctHighlight(client, self, target, instinctEnabled);
+                    if (result.isFalse()) {
+                        return TrueFalseAndCustomResult.no();
+                    } else if (result.isTrue()) {
+                        break;
+                    } else if (result.isCustom()) {
+                        return result;
+                    }
                 }
-            }
             if (target instanceof Player targetPlayer) {
                 InstinctType selfInstinct = instinctEnabled ? selfRole.getToggledOnInstinctType()
                         : selfRole.getToggledOffInstinctType();

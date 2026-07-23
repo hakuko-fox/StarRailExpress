@@ -34,6 +34,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 //只要Color别的都不要
@@ -57,9 +58,13 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
     protected boolean mafiaTeam = false;
+    @NotNull
     protected InstinctType toggledOffInstinctType = InstinctType.DEFAULT;
+    @NotNull
     protected InstinctType toggledOnInstinctType = InstinctType.DEFAULT;
+    @NotNull
     protected InstinctType toggledOffBeSeenInstinctType = InstinctType.DEFAULT;
+    @NotNull
     protected InstinctType toggledOnBeSeenInstinctType = InstinctType.DEFAULT;
     /**
      * -1
@@ -1554,7 +1559,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
      * @return
      */
-    public SRERole setToggledOffInstinctType(InstinctType type) {
+    public SRERole setToggledOffInstinctType(@NotNull InstinctType type) {
         this.toggledOffInstinctType = type;
         return this;
     }
@@ -1565,7 +1570,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
      * @return
      */
-    public SRERole setToggledOnInstinctType(InstinctType type) {
+    public SRERole setToggledOnInstinctType(@NotNull InstinctType type) {
         this.toggledOnInstinctType = type;
         return this;
     }
@@ -1577,7 +1582,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param on  开启直觉时
      * @return
      */
-    public SRERole setInstinctType(InstinctType off, InstinctType on) {
+    public SRERole setInstinctType(@NotNull InstinctType off, @NotNull InstinctType on) {
         this.toggledOffInstinctType = off;
         this.toggledOnInstinctType = on;
         return this;
@@ -1589,7 +1594,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param type
      * @return
      */
-    public SRERole setAllInstinctType(InstinctType type) {
+    public SRERole setAllInstinctType(@NotNull InstinctType type) {
         this.toggledOffInstinctType = type;
         this.toggledOnInstinctType = type;
         return this;
@@ -1601,7 +1606,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param type
      * @return
      */
-    public SRERole setAllBeSeenInstinctType(InstinctType type) {
+    public SRERole setAllBeSeenInstinctType(@NotNull InstinctType type) {
         this.toggledOffBeSeenInstinctType = type;
         this.toggledOnBeSeenInstinctType = type;
         return this;
@@ -1614,7 +1619,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param on  别人开启直觉时
      * @return
      */
-    public SRERole setBeSeenInstinctType(InstinctType off, InstinctType on) {
+    public SRERole setBeSeenInstinctType(@NotNull InstinctType off, @NotNull InstinctType on) {
         this.toggledOffBeSeenInstinctType = off;
         this.toggledOnBeSeenInstinctType = on;
         return this;
@@ -1626,7 +1631,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
      * @return
      */
-    public SRERole setToggledOffBeSeenInstinctType(InstinctType type) {
+    public SRERole setToggledOffBeSeenInstinctType(@NotNull InstinctType type) {
         this.toggledOffBeSeenInstinctType = type;
         return this;
     }
@@ -1637,7 +1642,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
      * @return
      */
-    public SRERole setToggledOnBeSeenInstinctType(InstinctType type) {
+    public SRERole setToggledOnBeSeenInstinctType(@NotNull InstinctType type) {
         this.toggledOnBeSeenInstinctType = type;
         return this;
     }
