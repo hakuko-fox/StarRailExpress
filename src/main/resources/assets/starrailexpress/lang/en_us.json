@@ -39,6 +39,7 @@
     "============ 重置 ===========": "",
     "message.sre.reseting": "Resetting map %s%%",
     "message.sre.sticky_grenade.stuck": "You\u0027ve been stuck by a Sticky Grenade!",
+    "message.sre.task_reward_received": "You completed the task reward condition and received an item!",
     "message.sre.sticky_grenade.defused": "Sticky Grenade defused!",
     "message.sre.sticky_grenade.defused_self": "You defused the Sticky Grenade!",
     "message.sre.starting": "Game starting!",

@@ -91,6 +91,11 @@ public class ModRolesInitialEventRegister {
 
             SREAbilityPlayerComponent abilityComponent = ModComponents.ABILITY.get(player);
             abilityComponent.init();
+            // 通用：设置职业的初始金币数（未配置则不改变，默认 -1）
+            int initialCoin = role.getInitialCoinCount();
+            if (initialCoin >= 0) {
+                SREPlayerShopComponent.KEY.get(player).setBalance(initialCoin);
+            }
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
                 ModEventsRegister.reJudgeSpectatorsPenalty(player.level());

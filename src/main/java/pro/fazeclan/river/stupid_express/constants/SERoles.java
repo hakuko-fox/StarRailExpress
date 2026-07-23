@@ -52,7 +52,7 @@ public class SERoles {
             -1,
             true)).setServerGameTickEvent((player, gameWorldComponent) -> {
                 AvariciousGoldHandler.playerServerTick(player, gameWorldComponent);
-            }).setPassiveIncome(false).setDefaultEnableNeededPlayerCount(12);
+            }).setPassiveIncome(false).setInitialCoinCount(0).setDefaultEnableNeededPlayerCount(12);
 
     public static SRERole NECROMANCER = registerRole(new NormalRole(
             StupidExpress.id("necromancer"),

@@ -89,8 +89,13 @@ public class TouhouHandlers {
       return TrueFalseResult.PASS;
     });
     ShouldGiveKillerBalance.EVENT.register((victim, killer, deathReason) -> {
-      if (RoleUtils.isPlayerTheJob(killer, THMiscRoles.KOMACHI))
-        return TrueFalseResult.FALSE;
+      if (killer != null) {
+        var gameWorld = SREGameWorldComponent.KEY.get(killer.level());
+        var role = gameWorld != null ? gameWorld.getRole(killer) : null;
+        // 杀人无法获得基础金币奖励的职业（如小野冢小町）
+        if (role != null && role.cannotEarnCoinFromKills())
+          return TrueFalseResult.FALSE;
+      }
       return TrueFalseResult.PASS;
     });
     // 天子&小町

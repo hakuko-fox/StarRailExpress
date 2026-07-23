@@ -963,7 +963,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 int time = perPlayerDarknessTime.getOrDefault(player.getUUID(), 0);
 
                 if (time > areas.areasSettings.deadInDarknessTime) {
-                    GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.DEATH_IN_DARKNESS);
+                    // 免疫黑暗死亡的职业不会被黑暗判定致死
+                    if (role == null || !role.isDarknessImmune()) {
+                        GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.DEATH_IN_DARKNESS);
+                    }
                     perPlayerDarknessTime.remove(player.getUUID());
                 } else {
                     perPlayerDarknessTime.put(player.getUUID(), time + 1);

@@ -373,7 +373,8 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
             int newRoleType = getFactionType(newRole);
 
             // 扒手的默认基础金币数为0
-            int killerBaseGold = isAvariciousRole(newRole) ? 0 : GameConstants.getMoneyStart();
+            int initialCoin = newRole.getInitialCoinCount();
+            int killerBaseGold = initialCoin >= 0 ? initialCoin : GameConstants.getMoneyStart();
 
             if (isCivilianOrVigilanteFaction(oldRoleType) && isKillerFaction(newRoleType)) {
                 // 平民/中立 → 杀手：杀手基础金币 + 旧金币*20%
@@ -452,16 +453,6 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
 
     private boolean isCivilianOrVigilanteFaction(int factionType) {
         return factionType == 1;
-    }
-
-    /**
-     * 判断是否为扒手（Avaricious），扒手基础金币为0
-     */
-    private boolean isAvariciousRole(SRERole role) {
-        if (role == null)
-            return false;
-        String path = role.identifier().getPath();
-        return path.contains("avaricious") || path.contains("Avaricious");
     }
 
     /**
@@ -593,7 +584,8 @@ public class SREClassChangeGameMode extends SREMurderGameMode {
         // 计算新金币
         int newGold;
         int newRoleType = getFactionType(newRole);
-        int killerBaseGold = isAvariciousRole(newRole) ? 0 : GameConstants.getMoneyStart();
+        int initialCoin = newRole.getInitialCoinCount();
+        int killerBaseGold = initialCoin >= 0 ? initialCoin : GameConstants.getMoneyStart();
 
         if (isCivilianOrVigilanteFaction(oldRoleType) && isKillerFaction(newRoleType)) {
             newGold = killerBaseGold + (int) (oldGold * 0.2);

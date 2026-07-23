@@ -11,17 +11,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.noellesroles.init.ModEffects;
-
-import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 public class AvariciousGoldHandler {
 
     public static long gameStartTime = -1; // 添加游戏开始时间字段
     public static int TIMER_TICKS = GameConstants.getInTicks(0, 60); // 改为45秒一次，频率加倍
     public static double MAX_DISTANCE = 8.0; // 扩大距离范围
-    public static int STARTING_BALANCE = 0; // 初始金币翻倍
     public static int BASE_PAYOUT_PER_PLAYER = 25; // 基础金币提高
     public static double DISTANCE_MULTIPLIER = 1.5; // 距离奖励系数
 
@@ -49,12 +45,6 @@ public class AvariciousGoldHandler {
         OnGameTrueStarted.EVENT.register((ServerLevel) -> {
             AvariciousGoldHandler.gameStartTime = -1;
         });
-        ModdedRoleAssigned.EVENT.register(((player, role) -> {
-            if (role.equals(SERoles.AVARICIOUS)) {
-                SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-                shop.setBalance(STARTING_BALANCE);
-            }
-        }));
     }
 
     public static void playerServerTick(ServerPlayer player, SREGameWorldComponent gameWorldComponent) {

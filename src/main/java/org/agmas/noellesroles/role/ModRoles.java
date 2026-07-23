@@ -92,6 +92,7 @@ import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.utils.RandomColorUtil;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -518,6 +519,7 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限冲刺
             true // 隐藏计分板
     )).setCanSeeCoin(false).setComponentKey(ModComponents.WIZARD).setCanBeRandomedByOtherRoles(false)
+            .setNoCoinSystem(true) // 不拥有金币系统，金币数始终为 0
             .setDefaultMax(1).setDefaultEnableChance(2500);
 
     /**
@@ -782,47 +784,17 @@ public class ModRoles {
     public static SRERole SHERIFF = TMMRoles.registerRole(
             new NormalRole(SHERIFF_ID, 0x1B8AE5, true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
-                private final java.util.Map<java.util.UUID, Integer> sheriffTaskCounts = new java.util.HashMap<>();
-                private final java.util.Set<java.util.UUID> sheriffHasReceivedRevolver = new java.util.HashSet<>();
-
-                @Override
-                public void onFinishQuest(Player player, String quest) {
-                    java.util.UUID playerUuid = player.getUUID();
-                    // 如果已经获得过左轮手枪，不再处理
-                    if (sheriffHasReceivedRevolver.contains(playerUuid))
-                        return;
-
-                    int count = sheriffTaskCounts.getOrDefault(playerUuid, 0) + 1;
-                    sheriffTaskCounts.put(playerUuid, count);
-
-                    if (count >= 2) {
-                        sheriffHasReceivedRevolver.add(playerUuid);
-                        player.addItem(io.wifi.starrailexpress.index.TMMItems.REVOLVER
-                                .getDefaultInstance().copy());
-                        player.displayClientMessage(
-                                net.minecraft.network.chat.Component.translatable(
-                                        "message.noellesroles.sheriff.revolver_received")
-                                        .withStyle(net.minecraft.ChatFormatting.GOLD),
-                                true);
-                    }
-                }
-
-                @Override
-                public void onInit(net.minecraft.server.MinecraftServer server, ServerPlayer player) {
-                    // 每局开始时重置任务计数
-                    sheriffTaskCounts.remove(player.getUUID());
-                    sheriffHasReceivedRevolver.remove(player.getUUID());
-                }
-
                 @Override
                 public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
                         net.minecraft.resources.ResourceLocation deathReason) {
                     // 未解锁左轮手枪前死亡：在死亡位置掉落一把左轮手枪
-                    dropUnearnedRevolverOnDeath(victim, sheriffHasReceivedRevolver);
+                    dropUnearnedRevolverOnDeath(victim, this);
                     super.onDeath(victim, spawnBody, killer, deathReason);
                 }
             })
-            .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true);
+            .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true)
+            .setTaskReward(2, 1, io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance())
+            .setTaskRewardMessage("message.noellesroles.sheriff.revolver_received");
 
     /**
      * 鬼眼·杨间（警长阵营）。完成两个任务后获得左轮手枪。
@@ -834,57 +806,29 @@ public class ModRoles {
             new EggRole(GHOST_EYE_ID, new Color(132, 196, 200).getRGB(),
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
-                private final java.util.Map<java.util.UUID, Integer> taskCounts = new java.util.HashMap<>();
-                private final java.util.Set<java.util.UUID> hasReceivedRevolver = new java.util.HashSet<>();
-
-                @Override
-                public void onFinishQuest(Player player, String quest) {
-                    java.util.UUID playerUuid = player.getUUID();
-                    // 如果已经获得过左轮手枪，不再处理
-                    if (hasReceivedRevolver.contains(playerUuid))
-                        return;
-                    int count = taskCounts.getOrDefault(playerUuid, 0) + 1;
-                    taskCounts.put(playerUuid, count);
-                    if (count >= 2) {
-                        hasReceivedRevolver.add(playerUuid);
-                        player.addItem(io.wifi.starrailexpress.index.TMMItems.REVOLVER
-                                .getDefaultInstance().copy());
-                        player.displayClientMessage(
-                                net.minecraft.network.chat.Component.translatable(
-                                        "message.noellesroles.ghost_eye.revolver_received")
-                                        .withStyle(net.minecraft.ChatFormatting.GOLD),
-                                true);
-                    }
-                }
-
-                @Override
-                public void onInit(net.minecraft.server.MinecraftServer server, ServerPlayer player) {
-                    // 每局开始时重置任务计数
-                    taskCounts.remove(player.getUUID());
-                    hasReceivedRevolver.remove(player.getUUID());
-                }
-
                 @Override
                 public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
                         net.minecraft.resources.ResourceLocation deathReason) {
                     // 未解锁左轮手枪前死亡：在死亡位置掉落一把左轮手枪
-                    dropUnearnedRevolverOnDeath(victim, hasReceivedRevolver);
+                    dropUnearnedRevolverOnDeath(victim, this);
                     super.onDeath(victim, spawnBody, killer, deathReason);
                 }
             })
             .setVigilanteTeam(true).setCanPickUpRevolver(true).setCanAutoAddMoney(true)
             .setComponentKey(ModComponents.GHOST_EYE)
             .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(5000)
-            .setDefaultEnableNeededPlayerCount(8);
+            .setDefaultEnableNeededPlayerCount(8)
+            .setTaskReward(2, 1, io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance())
+            .setTaskRewardMessage("message.noellesroles.ghost_eye.revolver_received");
 
     /**
      * 警长 / 鬼眼·杨间 共用：在尚未通过完成两个任务解锁左轮手枪、且身上也没有左轮手枪时死亡，
      * 于死亡位置掉落一把左轮手枪。
      */
-    private static void dropUnearnedRevolverOnDeath(Player victim, java.util.Set<java.util.UUID> received) {
+    private static void dropUnearnedRevolverOnDeath(Player victim, SRERole role) {
         if (!(victim instanceof ServerPlayer sp))
             return;
-        if (received.contains(sp.getUUID()))
+        if (role.hasReceivedTaskReward(sp.getUUID()))
             return;
         for (ItemStack stack : sp.getInventory().items) {
             if (stack.is(io.wifi.starrailexpress.index.TMMItems.REVOLVER))
@@ -914,7 +858,9 @@ public class ModRoles {
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true)
-            .setComponentKey(FoodDrinkGlowComponent.KEY);
+            .setComponentKey(FoodDrinkGlowComponent.KEY)
+            .setTaskReward(1, -1, ModItems.FOOD_STUFF.getDefaultInstance())
+            .setTaskRewardSilent(true); // 每完成一个任务给 1 个食材，不限次数，静默发放
     public static SRERole CAKE_MAKER = TMMRoles.registerRole(
             new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
@@ -1876,18 +1822,23 @@ public class ModRoles {
     )).setOccupiedRoleCount(0) // 不占用杀手位
             .setCanUseInstinctAndNightVision(false) // 没有杀手透视
             .setCanSeeTeammateKillerRole(false) // 杀手本能看不到队友，对杀手的框显示如平民
+            .setKillerTeammateScreenVisibility(true, false) // 其它职业的 screen 看不到迷失杀手的杀手同伙
+            .setHideRoleInfoWhenSeen(true) // 别人靠近查看时不显示身份与杀手同伙
             .setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1).setDefaultEnableChance(2000).setDefaultEnableNeededPlayerCount(12);
 
     /**
      * 判断角色是否应该在技能页面（Widget）中显示为可见的杀手同伙。
-     * 迷失杀手虽然属于杀手阵营，但被设计为不暴露身份，因此排除。
+     * 若角色启用了杀手同伙可见性覆盖（{@link io.wifi.starrailexpress.api.SRERole#setKillerTeammateScreenVisibility}），
+     * 则按该角色自身配置决定是否可见；否则按默认的杀手阵营逻辑判断。
      */
     public static boolean isVisibleKillerTeammate(io.wifi.starrailexpress.api.SRERole role) {
         if (role == null)
             return false;
+        if (role.hasKillerTeammateVisibilityOverride())
+            return role.canBeSeenAsKillerTeammate();
         if (role.isKillerTeam() || role.isKiller() || role.isNeutralForKiller()) {
-            return !LOST_KILLER_ID.equals(role.identifier());
+            return true;
         }
         return false;
     }
@@ -2246,6 +2197,7 @@ public class ModRoles {
             false // 不显示计分板
     )).setCanPickUpRevolver(true).setCanSeeCoin(true)
             .setNeutralForKiller(true).setCanSeeTeammateKillerRole(false).setNeutrals(false)
+            .setKillerTeammateScreenVisibility(true, true) // 其它职业的 screen 能看到魔术师的杀手同伙
             .setCanBeRandomedByOtherRoles(false)
             .setDefaultEnableChance(2500)
             .setDefaultEnableNeededPlayerCount(16)
