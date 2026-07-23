@@ -736,7 +736,8 @@ public class ModRoles {
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setVigilanteTeam(true).setCanSeeCoin(true).setCanPickUpRevolver(false).setCanAutoAddMoney(true)
             .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(7000)
-            .setRefreshableSpecialVigilante(1000, true);
+            .setRefreshableSpecialVigilante(1000, true)
+            .setCanKillWithBowAndCrossbow(true);
     public static final ResourceLocation GUARD_ID = Noellesroles.id("guard");
     public static SRERole GUARD = TMMRoles.registerRole(
             new NormalRole(GUARD_ID, new Color(170, 170, 170).getRGB(), true, false, SRERole.MoodType.REAL,
@@ -925,7 +926,8 @@ public class ModRoles {
             .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanJumpManhole(true).setCanAcrossFog(true)
             .setComponentKey(AdventurerPlayerComponent.KEY).setDefaultEnableNeededPlayerCount(6)
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.TRAP).setDefaultMax(1)
-            .setCanBeRandomedByOtherRoles(false);
+            .setCanBeRandomedByOtherRoles(false)
+            .setEnvironmentalImmunity(true);
     // 红尘客
     public static SRERole WAYFARER = TMMRoles.registerRole(
             new NormalRole(WAYFARER_ID, new Color(255, 54, 105).getRGB(),
@@ -1267,7 +1269,8 @@ public class ModRoles {
                     true // showIcon（显示图标）
             )))
             .setCanSeeCoin(true).setVigilanteTeam(true).setCanPickUpRevolver(false)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER).setDefaultMax(1);
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER).setDefaultMax(1)
+            .setCanKillWithTrident(true);
 
     /**
      * 水鬼角色
@@ -1301,7 +1304,8 @@ public class ModRoles {
             )))
             .setComponentKey(ModComponents.WATER_GHOST).setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER)
-            .setDefaultMax(1);
+            .setDefaultMax(1)
+            .setCanKillWithTrident(true);
 
     // 杀手阵营角色
     public static SRERole CLEANER = TMMRoles
@@ -1381,7 +1385,8 @@ public class ModRoles {
             .setNeutrals(false).setCanSeeCoin(true)
             .setSpecialMapRole(SRERole.SpecialMapRoleMap.HORSE).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
-            .setComponentKey(org.agmas.noellesroles.component.ModComponents.HUNTER);
+            .setComponentKey(org.agmas.noellesroles.component.ModComponents.HUNTER)
+            .setCanKillWithBowAndCrossbow(true);
     public static SRERole POISONER = TMMRoles
             .registerRole(new NormalRole(POISONER_ID, (new Color(115, 0, 57)).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -1696,7 +1701,7 @@ public class ModRoles {
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不显示计分板
-    ));
+    )).setCannotKnifeLeftClick(true);
 
     /**
      * 歌手角色

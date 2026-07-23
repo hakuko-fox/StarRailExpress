@@ -58,6 +58,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
     protected boolean mafiaTeam = false;
+    // --- 通用能力标识 ---
+    protected boolean environmentalImmunity = false;   // 免疫环境致死（窒息、冰冻、干渴等）
+    protected boolean canKillWithBowAndCrossbow = false; // 能用弓/弩和箭杀人
+    protected boolean cannotKnifeLeftClick = false;    // 无法用刀左键击退人
+    protected boolean canKillWithTrident = false;      // 能用三叉戟（忠诚/激流）杀人
     @NotNull
     protected InstinctType toggledOffInstinctType = InstinctType.DEFAULT;
     @NotNull
@@ -1645,6 +1650,48 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole setToggledOnBeSeenInstinctType(@NotNull InstinctType type) {
         this.toggledOnBeSeenInstinctType = type;
         return this;
+    }
+
+    // ---------- 通用能力标识 ----------
+
+    /** 设置该职业是否免疫环境致死（窒息、冰冻、干渴、饥饿、溺水等） */
+    public SRERole setEnvironmentalImmunity(boolean immune) {
+        this.environmentalImmunity = immune;
+        return this;
+    }
+
+    public boolean hasEnvironmentalImmunity() {
+        return environmentalImmunity;
+    }
+
+    /** 设置该职业是否能用弓/弩和箭杀人 */
+    public SRERole setCanKillWithBowAndCrossbow(boolean can) {
+        this.canKillWithBowAndCrossbow = can;
+        return this;
+    }
+
+    public boolean canKillWithBowAndCrossbow() {
+        return canKillWithBowAndCrossbow;
+    }
+
+    /** 设置该职业是否无法用刀左键击退/攻击人 */
+    public SRERole setCannotKnifeLeftClick(boolean cannot) {
+        this.cannotKnifeLeftClick = cannot;
+        return this;
+    }
+
+    public boolean cannotKnifeLeftClick() {
+        return cannotKnifeLeftClick;
+    }
+
+    /** 设置该职业是否能用三叉戟（忠诚/激流）杀人 */
+    public SRERole setCanKillWithTrident(boolean can) {
+        this.canKillWithTrident = can;
+        return this;
+    }
+
+    public boolean canKillWithTrident() {
+        return canKillWithTrident;
     }
 
     public enum MoodType {
