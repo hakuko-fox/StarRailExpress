@@ -1077,11 +1077,12 @@ public class CustomRoleLoader {
                 roundComponent.CustomWinnerTitle = Component.literal("");
             }
             roundComponent.CustomWinnerColor = color;
+            roundComponent.CustomWinnerID = data.englishId;
             roundComponent.setRoundEndData(serverLevel.players(), WinStatus.CUSTOM_COMPONENT);
             GameUtils.stopGame(serverLevel);
         } else {
             // 无自定义文本时使用 CUSTOM 模式，走翻译键
-            RoleUtils.customWinnerWin(serverLevel, "customwin", color);
+            RoleUtils.customWinnerWin(serverLevel, data.englishId, color);
         }
     }
 }
