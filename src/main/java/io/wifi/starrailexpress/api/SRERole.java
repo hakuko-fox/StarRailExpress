@@ -34,6 +34,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.utils.RoleUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 //只要Color别的都不要
@@ -57,6 +58,14 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
     protected boolean mafiaTeam = false;
+    @NotNull
+    protected InstinctType toggledOffInstinctType = InstinctType.DEFAULT;
+    @NotNull
+    protected InstinctType toggledOnInstinctType = InstinctType.DEFAULT;
+    @NotNull
+    protected InstinctType toggledOffBeSeenInstinctType = InstinctType.DEFAULT;
+    @NotNull
+    protected InstinctType toggledOnBeSeenInstinctType = InstinctType.DEFAULT;
     /**
      * -1
      * 表示不设置。将不会调整普通刷新最大数量。与canSetSpawnInfoInConfig设置为false不同的是，此不会覆盖SpawnInfo。而canSetSpawnInfoInConfig将会覆盖SpawnInfo来达到配置项起作用。
@@ -1072,10 +1081,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
-    public enum MoodType {
-        NONE, REAL, FAKE
-    }
-
     /**
      * @param identifier    the mod id and name of the role
      * @param color         the role announcement color
@@ -1530,5 +1535,119 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole setMoodColor(Function<SRERole, Color> func) {
         this.moodColor = func.apply(this);
         return this;
+    }
+
+    public InstinctType getToggledOffInstinctType() {
+        return toggledOffInstinctType;
+    }
+
+    public InstinctType getToggledOffBeSeenInstinctType() {
+        return toggledOffBeSeenInstinctType;
+    }
+
+    public InstinctType getToggledOnInstinctType() {
+        return toggledOnInstinctType;
+    }
+
+    public InstinctType getToggledOnBeSeenInstinctType() {
+        return toggledOnBeSeenInstinctType;
+    }
+
+    /**
+     * 设置该职业不启用直觉时看别人的高亮类型
+     * 
+     * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
+     * @return
+     */
+    public SRERole setToggledOffInstinctType(@NotNull InstinctType type) {
+        this.toggledOffInstinctType = type;
+        return this;
+    }
+
+    /**
+     * 设置该职业启用直觉时看别人的高亮类型
+     * 
+     * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
+     * @return
+     */
+    public SRERole setToggledOnInstinctType(@NotNull InstinctType type) {
+        this.toggledOnInstinctType = type;
+        return this;
+    }
+
+    /**
+     * 设置看别人的高亮
+     * 
+     * @param off 关闭直觉时
+     * @param on  开启直觉时
+     * @return
+     */
+    public SRERole setInstinctType(@NotNull InstinctType off, @NotNull InstinctType on) {
+        this.toggledOffInstinctType = off;
+        this.toggledOnInstinctType = on;
+        return this;
+    }
+
+    /**
+     * 设置看别人的高亮
+     * 
+     * @param type
+     * @return
+     */
+    public SRERole setAllInstinctType(@NotNull InstinctType type) {
+        this.toggledOffInstinctType = type;
+        this.toggledOnInstinctType = type;
+        return this;
+    }
+
+    /**
+     * 设置被别人看的高亮
+     * 
+     * @param type
+     * @return
+     */
+    public SRERole setAllBeSeenInstinctType(@NotNull InstinctType type) {
+        this.toggledOffBeSeenInstinctType = type;
+        this.toggledOnBeSeenInstinctType = type;
+        return this;
+    }
+
+    /**
+     * 设置被别人看的高亮
+     * 
+     * @param off 别人关闭直觉时
+     * @param on  别人开启直觉时
+     * @return
+     */
+    public SRERole setBeSeenInstinctType(@NotNull InstinctType off, @NotNull InstinctType on) {
+        this.toggledOffBeSeenInstinctType = off;
+        this.toggledOnBeSeenInstinctType = on;
+        return this;
+    }
+
+    /**
+     * 设置别人不启用直觉时看该职业的高亮类型
+     * 
+     * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
+     * @return
+     */
+    public SRERole setToggledOffBeSeenInstinctType(@NotNull InstinctType type) {
+        this.toggledOffBeSeenInstinctType = type;
+        return this;
+    }
+
+    /**
+     * 设置别人不启用直觉时看该职业的高亮类型
+     * 
+     * @param type 默认 {@link InstinctType#DEFAULT} 自动判断
+     * @return
+     */
+    public SRERole setToggledOnBeSeenInstinctType(@NotNull InstinctType type) {
+        this.toggledOnBeSeenInstinctType = type;
+        return this;
+    }
+
+    public enum MoodType {
+        NONE, REAL, FAKE
     }
 }
