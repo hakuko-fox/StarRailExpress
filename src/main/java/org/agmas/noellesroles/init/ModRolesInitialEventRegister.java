@@ -1077,7 +1077,8 @@ public class ModRolesInitialEventRegister {
         RoleSkill.register(ModRoles.SALTED_FISH,
                 RoleSkill.skill(SaltedFishPlayerComponent.SKILL_ID, "skill.noellesroles.salted_fish.sunbathe",
                         context -> SaltedFishPlayerComponent.KEY.get(context.player()).useSkill(context.player()))
-                        .showOnHud(true).announceToSelf(false).build());
+                        .cooldownTicks(SaltedFishPlayerComponent.COOLDOWN_TICKS)
+                        .toggleable(true).showOnHud(true).announceToSelf(false).build());
 
         // 皮革噶的技能注册：消耗 150 金币进入疯魔模式（直觉 + 速度 III + 追杀音效）
         RoleSkill.register(ModRoles.LEATHER_PIG,
