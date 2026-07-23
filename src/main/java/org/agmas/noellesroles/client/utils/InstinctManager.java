@@ -207,7 +207,7 @@ public class InstinctManager {
             }
         }
         {
-            var result = CommonInstinctEvents.ALIVE_COMMON_BEFORE_EVENT.invoker().getInstinctHighlight(self, target,
+            var result = CommonInstinctEvents.ALIVE_COMMON_AFTER_EVENT.invoker().getInstinctHighlight(self, target,
                     instinctEnabled);
             if (result.isCustom()) {
                 int color = result.getContent().orElse(-1);
