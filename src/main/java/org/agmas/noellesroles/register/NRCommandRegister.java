@@ -34,5 +34,7 @@ public class NRCommandRegister {
 
         // 注册疫使测试指令
         org.agmas.noellesroles.commands.InfectedCommand.register();
+        // 将 train_maps/ 未注册的地图补进 train_vote_maps.json 投票清单
+        org.agmas.noellesroles.commands.SyncMapsCommand.register();
     }
 }

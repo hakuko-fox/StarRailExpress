@@ -5,6 +5,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
+import io.wifi.starrailexpress.cca.SREMonitorWorldComponent;
 import io.wifi.starrailexpress.cca.SREWorldBlackoutComponent;
 import io.wifi.starrailexpress.content.block.*;
 import io.wifi.starrailexpress.content.block.api.AutoResetBlockInterface;
@@ -585,6 +586,8 @@ public class ServerTaskInfoClasses {
                 // -> {
                 // blackoutComponent.reset();
                 // }));
+
+                SREMonitorWorldComponent.KEY.get(this.world).scanMap(this.world);
 
                 GameUtils.serverTaskQueue.add(new ServerTaskInfoClasses.SchedulerTask(5, () -> {
                     GameUtils.trueStartGame(this.world, this.gameMode, this.time);

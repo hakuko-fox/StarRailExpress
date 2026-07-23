@@ -100,6 +100,9 @@ public class RoleShopHandler {
             }
         });
         entries.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
+            public boolean canDisplay(Player player) {
+                return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+            }
             public boolean onBuy(@NotNull Player player) {
                 return SREPlayerShopComponent.useMonitorBroken(player, SREConfig.instance().monitorBrokenDuration * 20);
             }
@@ -424,6 +427,10 @@ public class RoleShopHandler {
             // 监控失灵 - 60金币（刽子手专属）
             柜子区的商店.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
                 @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
+                @Override
                 public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,
                             SREConfig.instance().monitorBrokenDuration * 20);
@@ -542,6 +549,10 @@ public class RoleShopHandler {
             // 监控失灵 - 50金币（捣蛋鬼专属）
             SLIPPERY_GHOST_SHOP
                     .add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+                        @Override
+                        public boolean canDisplay(@NotNull Player player) {
+                            return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                        }
                         @Override
                         public boolean onBuy(@NotNull Player player) {
                             return SREPlayerShopComponent.useMonitorBroken(player,
@@ -832,6 +843,10 @@ public class RoleShopHandler {
             // 监控失灵 - 75金币（强盗专属）
             BANDIT_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
                 @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
+                @Override
                 public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,
                             SREConfig.instance().monitorBrokenDuration * 20);
@@ -853,7 +868,12 @@ public class RoleShopHandler {
         // 保安商店：远程监控台 - 150金币
         {
             var GUARD_SHOP = new java.util.ArrayList<ShopEntry>();
-            GUARD_SHOP.add(new ShopEntry(ModItems.MONITORING_TERMINAL.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+            GUARD_SHOP.add(new ShopEntry(ModItems.MONITORING_TERMINAL.getDefaultInstance(), 150, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
+            });
             ShopContent.customEntries.put(ModRoles.GUARD.getIdentifier(), GUARD_SHOP);
         }
 
@@ -942,7 +962,11 @@ public class RoleShopHandler {
             HUNTER_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(),
                     SREConfig.instance().monitorBrokenPrice, ShopEntry.Type.TOOL) {
                 @Override
-                public boolean onBuy(Player player) {
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
+                @Override
+                public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,
                             SREConfig.instance().monitorBrokenDuration * 20);
                 }
@@ -1525,6 +1549,10 @@ public class RoleShopHandler {
             // 监控失灵 - 60金币
             WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
                 @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
+                @Override
                 public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,
                             SREConfig.instance().monitorBrokenDuration * 20);
@@ -2041,6 +2069,10 @@ public class RoleShopHandler {
             });
             SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 40, ShopEntry.Type.TOOL) {
                 @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
+                @Override
                 public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,
                             SREConfig.instance().monitorBrokenDuration * 20);
@@ -2053,7 +2085,12 @@ public class RoleShopHandler {
                     return SREPlayerShopComponent.useBlackout(player);
                 }
             });
-            SHOP.add(new ShopEntry(ModItems.CAMERA_SHEARS.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(ModItems.CAMERA_SHEARS.getDefaultInstance(), 25, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasCameras;
+                }
+            });
             SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(), 15, ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
@@ -2142,6 +2179,10 @@ public class RoleShopHandler {
 
             // 监控失灵 - 60金币（小镇做题家专属）
             SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
                 @Override
                 public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,
@@ -2783,6 +2824,10 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
             // 监控失灵 - 60金币（清道夫专属）
             shopEntries.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
+                }
                 @Override
                 public boolean onBuy(@NotNull Player player) {
                     return SREPlayerShopComponent.useMonitorBroken(player,

@@ -441,6 +441,7 @@ public class GameUtils {
         if (areas.areasSettings.noReset) {
             resetEntities(world);
             SRE.LOGGER.info("NO RESET MAP!");
+            SREMonitorWorldComponent.KEY.get(world).scanMap(world);
             trueStartGame(world, gameMode, time);
             return;
         }

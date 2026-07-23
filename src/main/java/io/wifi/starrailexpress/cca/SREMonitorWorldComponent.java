@@ -2,6 +2,9 @@ package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMBlocks;
+import org.agmas.noellesroles.role.ModRoles;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -11,6 +14,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -22,6 +27,8 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
             SREMonitorWorldComponent.class);
     public final Level world;
     public int brokenTime = 0;
+    public boolean hasMonitors = false;
+    public boolean hasCameras = false;
 
     public SREMonitorWorldComponent(Level world) {
         this.world = world;
@@ -29,6 +36,29 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
 
     public void sync() {
         KEY.sync(this.world);
+    }
+
+    public void scanMap(ServerLevel level) {
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(level);
+        AABB pasteArea = areas.getResetPasteArea();
+        hasMonitors = false;
+        hasCameras = false;
+        BlockPos minPos = BlockPos.containing(pasteArea.minX, pasteArea.minY, pasteArea.minZ);
+        BlockPos maxPos = BlockPos.containing(pasteArea.maxX, pasteArea.maxY, pasteArea.maxZ);
+        for (BlockPos pos : BlockPos.betweenClosed(minPos, maxPos)) {
+            BlockState state = level.getBlockState(pos);
+            if (!hasMonitors && state.is(TMMBlocks.SECURITY_MONITOR))
+                hasMonitors = true;
+            if (!hasCameras && state.is(TMMBlocks.CAMERA))
+                hasCameras = true;
+            if (hasMonitors && hasCameras)
+                break;
+        }
+
+        if (!hasMonitors)
+            areas.disabledRoles.add(ModRoles.GUARD_ID.toString());
+        areas.sync();
+        sync();
     }
 
     public boolean triggerBroken(boolean haveSound, int duration) {
@@ -87,6 +117,8 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
     @Override
     public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putInt("b_time", this.brokenTime);
+        tag.putBoolean("hasMonitors", this.hasMonitors);
+        tag.putBoolean("hasCameras", this.hasCameras);
     }
 
     @Override
@@ -95,5 +127,7 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
             this.brokenTime = tag.getInt("b_time");
         else
             this.brokenTime = 0;
+        this.hasMonitors = tag.getBoolean("hasMonitors");
+        this.hasCameras = tag.getBoolean("hasCameras");
     }
 }
