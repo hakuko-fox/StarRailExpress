@@ -530,57 +530,63 @@ public class CustomRoleLoader {
             }
         }
 
-        // 技能
-        if (data.enableAbility && (!data.abilitySkillCommands.isEmpty() || !data.abilityDelayedCommands.isEmpty())) {
-            final List<String> commands = new ArrayList<>(data.abilitySkillCommands);
-            final List<String> delayedCommands = new ArrayList<>(data.abilityDelayedCommands);
-            final int cooldownSeconds = data.abilityCooldownSeconds;
-            final int delaySeconds = data.abilityDelaySeconds;
+        // 技能（支持单技能 / 多技能切换）
+        if (data.enableAbility) {
+            List<CustomRoleData.SkillData> skills = data.getEffectiveSkills();
+            String skillNs = role.identifier().getNamespace();
+            String skillPath = role.identifier().getPath();
+            for (int si = 0; si < skills.size(); si++) {
+                final CustomRoleData.SkillData sd = skills.get(si);
+                final List<String> commands = new ArrayList<>(sd.commands);
+                final List<String> delayedCommands = new ArrayList<>(sd.delayedCommands);
+                final int cooldownSeconds = sd.cooldownSeconds;
+                final int delaySeconds = sd.delaySeconds;
 
-            ResourceLocation customSkillId = ResourceLocation.fromNamespaceAndPath(
-                    role.identifier().getNamespace(), role.identifier().getPath() + "_ability");
-            RoleSkill.register(role, RoleSkill.skill(
-                    customSkillId,
-                    "skill.sre.custom_role.ability",
-                    context -> {
-                        ServerPlayer player = context.player();
-                        // 死亡/旁观者不能使用技能；若角色设置了 canUseSkillWhileSpectator 则允许旁观者释放
-                        if (player.isSpectator() && !role.canUseSkillWhileSpectator()) {
-                            return false;
-                        }
-                        SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
+                ResourceLocation customSkillId = ResourceLocation.fromNamespaceAndPath(
+                        skillNs, skillPath + "_ability_" + si);
+                RoleSkill.register(role, RoleSkill.skill(
+                        customSkillId,
+                        "skill.sre.custom_role.ability",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            // 死亡/旁观者不能使用技能；若角色设置了 canUseSkillWhileSpectator 则允许旁观者释放
+                            if (player.isSpectator() && !role.canUseSkillWhileSpectator()) {
+                                return false;
+                            }
+                            SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(player);
 
-                        if (ability.cooldown > 0) {
-                            return false;
-                        }
+                            if (ability.cooldown > 0) {
+                                return false;
+                            }
 
-                        // 执行即时指令（支持 @a @p @r @s 选择器）
-                        for (String cmd : commands) {
-                            executeConfiguredCommand(cmd, player);
-                        }
+                            // 执行即时指令（支持 @a @p @r @s 选择器）
+                            for (String cmd : commands) {
+                                executeConfiguredCommand(cmd, player);
+                            }
 
-                        // 延迟执行指令
-                        if (!delayedCommands.isEmpty() && delaySeconds > 0) {
-                            final UUID playerUuid = player.getUUID();
-                            final ServerLevel level = player.serverLevel();
-                            GameUtils.serverTaskQueue
-                                    .add(new ServerTaskInfoClasses.SchedulerTask(delaySeconds * 20, () -> {
-                                        ServerPlayer target = level.getServer().getPlayerList().getPlayer(playerUuid);
-                                        if (target == null
-                                                || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(target))
-                                            return;
-                                        for (String cmd : delayedCommands) {
-                                            executeConfiguredCommand(cmd, target);
-                                        }
-                                    }));
-                        }
+                            // 延迟执行指令
+                            if (!delayedCommands.isEmpty() && delaySeconds > 0) {
+                                final UUID playerUuid = player.getUUID();
+                                final ServerLevel level = player.serverLevel();
+                                GameUtils.serverTaskQueue
+                                        .add(new ServerTaskInfoClasses.SchedulerTask(delaySeconds * 20, () -> {
+                                            ServerPlayer target = level.getServer().getPlayerList().getPlayer(playerUuid);
+                                            if (target == null
+                                                    || !GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(target))
+                                                return;
+                                            for (String cmd : delayedCommands) {
+                                                executeConfiguredCommand(cmd, target);
+                                            }
+                                        }));
+                            }
 
-                        return true;
-                    }).cooldownSeconds(cooldownSeconds).build());
+                            return true;
+                        }).cooldownSeconds(cooldownSeconds).build());
 
-            // 存储技能初始冷却（游戏开始后首次分配角色时应用）
-            if (data.abilityInitialCooldownSeconds > 0) {
-                initialCooldownMap.put(role.identifier(), data.abilityInitialCooldownSeconds * 20);
+                // 存储技能初始冷却（游戏开始后首次分配角色时按技能分别应用）
+                if (sd.initialCooldownSeconds > 0) {
+                    initialCooldownMap.put(customSkillId, sd.initialCooldownSeconds * 20);
+                }
             }
         }
 
@@ -590,9 +596,15 @@ public class CustomRoleLoader {
             customWinDataMap.put(data.englishId, data);
         }
 
-        // 存储游戏结束时执行指令
-        if (!data.gameEndCommands.isEmpty()) {
-            gameEndCommandsByRoleId.put(data.englishId, new ArrayList<>(data.gameEndCommands));
+        // 存储游戏结束时执行指令（启用切换技能时汇总所有模块，否则使用单技能字段）
+        List<String> allGameEnd = new ArrayList<>(data.gameEndCommands);
+        if (data.enableSkillSwitch) {
+            for (CustomRoleData.SkillData mod : data.skillModules) {
+                allGameEnd.addAll(mod.gameEndCommands);
+            }
+        }
+        if (!allGameEnd.isEmpty()) {
+            gameEndCommandsByRoleId.put(data.englishId, allGameEnd);
             registerGameEndHandlerIfNeeded();
         }
 
@@ -727,15 +739,16 @@ public class CustomRoleLoader {
         org.agmas.harpymodloader.events.ModdedRoleAssigned.EVENT.register((player, role) -> {
             if (!(player instanceof ServerPlayer serverPlayer))
                 return;
-            Integer cooldownTicks = initialCooldownMap.get(role.identifier());
-            if (cooldownTicks != null && cooldownTicks > 0) {
-                SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(serverPlayer);
-                var definitions = RoleSkill.getDefinitions(role);
-                if (definitions.isEmpty()) {
-                    ability.setCooldown(cooldownTicks);
-                } else {
-                    ability.ensureSkills(definitions);
-                    ability.setSkillCooldown(definitions.getFirst().id(), cooldownTicks);
+            SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(serverPlayer);
+            var definitions = RoleSkill.getDefinitions(role);
+            if (definitions.isEmpty())
+                return;
+            ability.ensureSkills(definitions);
+            // 按技能分别应用各自的初始冷却
+            for (var def : definitions) {
+                Integer cooldownTicks = initialCooldownMap.get(def.id());
+                if (cooldownTicks != null && cooldownTicks > 0) {
+                    ability.setSkillCooldown(def.id(), cooldownTicks);
                 }
             }
         });

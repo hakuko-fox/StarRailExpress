@@ -726,6 +726,10 @@ public class SREClient implements ClientModInitializer {
 
         // 注册自定义职业同步接收器（客户端）
         io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.register();
+
+        // 注册自定义职业 HUD（技能名称 / 切换提示）
+        io.wifi.starrailexpress.customrole.CustomRoleHud.register();
+
         ClientPlayNetworking.registerGlobalReceiver(ShootMuzzleS2CPayload.ID, (payload, context) -> {
             Minecraft client = context.client();
             client.execute(() -> {

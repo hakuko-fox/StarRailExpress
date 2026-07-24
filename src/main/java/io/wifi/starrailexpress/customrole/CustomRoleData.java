@@ -210,6 +210,16 @@ public class CustomRoleData {
     @SerializedName("gameEndCommands")
     public List<String> gameEndCommands = new ArrayList<>();
 
+    // ============ 职业技能名称与切换 ============
+    @SerializedName("abilityName")
+    public String abilityName = ""; // 技能名称（HUD 显示在冷却上方）
+
+    @SerializedName("enableSkillSwitch")
+    public boolean enableSkillSwitch = false; // 是否启用切换技能（多技能模块）
+
+    @SerializedName("skillModules")
+    public List<SkillData> skillModules = new ArrayList<>(); // 切换技能模块列表（技能1、技能2…）
+
     // ============ 生成选项 ============
     @SerializedName("twoWayOpposingJobs")
     public List<String> twoWayOpposingJobs = new ArrayList<>();
@@ -379,6 +389,61 @@ public class CustomRoleData {
 
         @SerializedName("commands")
         public List<String> commands = new ArrayList<>();
+    }
+
+    /**
+     * 单个技能模块的配置（用于「启用切换技能」时的多技能）。
+     * 包含：技能名称、技能执行指令、技能冷却、技能初始冷却、延迟执行秒数、延迟执行指令、游戏结束执行指令。
+     */
+    public static class SkillData {
+        @SerializedName("name")
+        public String name = ""; // 技能名称（HUD 显示）
+
+        @SerializedName("commands")
+        public List<String> commands = new ArrayList<>(); // 技能执行指令
+
+        @SerializedName("cooldownSeconds")
+        public int cooldownSeconds = 30; // 技能冷却（秒）
+
+        @SerializedName("initialCooldownSeconds")
+        public int initialCooldownSeconds = 0; // 技能初始冷却（秒）
+
+        @SerializedName("delaySeconds")
+        public int delaySeconds = 0; // 延迟执行秒数
+
+        @SerializedName("delayedCommands")
+        public List<String> delayedCommands = new ArrayList<>(); // 延迟执行指令
+
+        @SerializedName("gameEndCommands")
+        public List<String> gameEndCommands = new ArrayList<>(); // 游戏结束执行指令
+    }
+
+    /**
+     * 返回实际生效的技能列表（供 HUD 显示名称与加载器注册使用）。
+     * - 启用切换技能：遍历 skillModules，跳过没有任何指令的空模块。
+     * - 否则：由旧版单技能字段（ability*）合成一个技能。
+     */
+    public List<SkillData> getEffectiveSkills() {
+        List<SkillData> result = new ArrayList<>();
+        if (enableSkillSwitch && !skillModules.isEmpty()) {
+            for (SkillData sd : skillModules) {
+                if (sd.commands.isEmpty() && sd.delayedCommands.isEmpty())
+                    continue;
+                result.add(sd);
+            }
+        } else {
+            if (!abilitySkillCommands.isEmpty() || !abilityDelayedCommands.isEmpty()) {
+                SkillData sd = new SkillData();
+                sd.name = abilityName;
+                sd.commands = abilitySkillCommands;
+                sd.cooldownSeconds = abilityCooldownSeconds;
+                sd.initialCooldownSeconds = abilityInitialCooldownSeconds;
+                sd.delaySeconds = abilityDelaySeconds;
+                sd.delayedCommands = abilityDelayedCommands;
+                result.add(sd);
+            }
+        }
+        return result;
     }
 
     public String getFullIdentifier() {
