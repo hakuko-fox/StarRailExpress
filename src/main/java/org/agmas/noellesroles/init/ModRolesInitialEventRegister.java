@@ -91,6 +91,11 @@ public class ModRolesInitialEventRegister {
 
             SREAbilityPlayerComponent abilityComponent = ModComponents.ABILITY.get(player);
             abilityComponent.init();
+            // 通用：设置职业的初始金币数（未配置则不改变，默认 -1）
+            int initialCoin = role.getInitialCoinCount();
+            if (initialCoin >= 0) {
+                SREPlayerShopComponent.KEY.get(player).setBalance(initialCoin);
+            }
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
                 ModEventsRegister.reJudgeSpectatorsPenalty(player.level());
@@ -1169,7 +1174,7 @@ public class ModRolesInitialEventRegister {
                     ServerPlayer player = context.player();
                     if (player.getCooldowns().isOnCooldown(Items.CLOCK))
                         return false;
-                    return TimeStopEffect.tryTriggerStart(player, 20 * 3,
+                    return TimeStopEffect.tryTriggerStart(player, 20 * 5,
                             Component.translatable("hud.noellesroles.jojo.the_world")
                                     .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
                 }).cooldownSeconds(240).build());
@@ -1201,21 +1206,24 @@ public class ModRolesInitialEventRegister {
                 }).shifted(true).cooldownSeconds(70).showOnHud(true).build());
 
         // ==================== HakukoFox 技能注册 ====================
-        // 技能1（G）：变身为白色狐狸，获得速度 III 持续 20 秒，冷却 90 秒
-        // 技能2（Shift+G）：狐火，使附近玩家失明 3 秒 + 发光 8 秒，消耗 40 金币，冷却 30 秒
+        // 技能1（G）：兽化型态 — 变身为白色狐狸，获得速度 II, 跳跃 II，无限时间
+        //   再按 G 回到人型，冷却 180 秒。
+        //   被动：兽化时免疫一次致命伤害（狐有九命）。
+        // 技能2（Shift+G）：狐狸分身 — 消耗50金生产狐狸分身，切换视角/接管/退回
+        //   冷却 90 秒。
         RoleSkill.register(ModRoles.HAKUKO_FOX,
                 RoleSkill.skill(SRE.id("hakukofox_transform"), "skill.noellesroles.hakukofox.transform", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
-                            .transformFox(player);
-                }).cooldownSeconds(90).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("hakukofox_foxfire"), "skill.noellesroles.hakukofox.foxfire", context -> {
+                            .toggleBeastForm(player, context);
+                }).cooldownSeconds(0).toggleable(true).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("hakukofox_clone"), "skill.noellesroles.hakukofox.clone", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
-                            .foxFire(player);
-                }).shifted(true).cooldownSeconds(30).showOnHud(true).build());
+                            .useCloneSkill(player);
+                }).shifted(true).cooldownSeconds(90).showOnHud(true).build());
     }
 
 }

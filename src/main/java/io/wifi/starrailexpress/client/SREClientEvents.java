@@ -180,16 +180,17 @@ public class SREClientEvents {
             return TrueFalseResult.PASS;
         });
         {
-            // 迷失杀手：杀手本能中不显示迷失杀手和杀手同伙信息
-            RenderPlayerNameInterface lostKillerGeneral = (player, target, c, d, f) -> {
+            // 被靠近查看时隐藏身份与杀手同伙（如迷失杀手）
+            RenderPlayerNameInterface hideRoleInfoWhenSeen = (player, target, c, d, f) -> {
                 // 此处可以直接用 SREClient.gameComponent，如果是null不会执行此event。
-                if (SREClient.gameComponent.isRole(target, ModRoles.LOST_KILLER)) {
+                var role = SREClient.gameComponent.getRole(target);
+                if (role != null && role.isHideRoleInfoWhenSeen()) {
                     return TrueFalseAndCustomResult.disallow();
                 }
                 return TrueFalseAndCustomResult.pass();
             };
-            OnRenderRoleName.RENDER_PLAYER_ROLE.register(lostKillerGeneral);
-            OnRenderRoleName.RENDER_PLAYER_COHORT.register(lostKillerGeneral);
+            OnRenderRoleName.RENDER_PLAYER_ROLE.register(hideRoleInfoWhenSeen);
+            OnRenderRoleName.RENDER_PLAYER_COHORT.register(hideRoleInfoWhenSeen);
         }
         // 肉汁：本能提示只对杀手（isKiller）生效
         OnRenderRoleName.RENDER_PLAYER_EXTRA.register((player, target, context, delta, font) -> {

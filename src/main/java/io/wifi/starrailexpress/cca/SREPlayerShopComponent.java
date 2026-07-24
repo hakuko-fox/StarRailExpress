@@ -113,10 +113,16 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             return false;
         }
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(this.player.level());
-        if (gameWorld == null || !gameWorld.isRole(this.player, org.agmas.noellesroles.role.ModRoles.WIZARD)) {
+        if (gameWorld == null) {
             return false;
         }
-        if (amount > 0) {
+        var role = gameWorld.getRole(this.player);
+        // 不具有金币系统的职业：金币数始终为 0
+        if (role == null || !role.hasNoCoinSystem()) {
+            return false;
+        }
+        // 巫师专属：正向金额转换为魔素
+        if (role == org.agmas.noellesroles.role.ModRoles.WIZARD && amount > 0) {
             org.agmas.noellesroles.component.ModComponents.WIZARD.get(this.player).addMana(
                     amount * org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().wizardManaPerCoin);
         }

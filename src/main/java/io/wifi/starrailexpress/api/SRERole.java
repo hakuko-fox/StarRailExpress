@@ -58,6 +58,38 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canBePoisoned = true;
     protected boolean canUseSkillWhileSpectator = false;
     protected boolean mafiaTeam = false;
+    // --- 通用能力标识 ---
+    protected boolean environmentalImmunity = false;   // 免疫环境致死（窒息、冰冻、干渴等）
+    protected boolean canKillWithBowAndCrossbow = false; // 能用弓/弩和箭杀人
+    protected boolean cannotKnifeLeftClick = false;    // 无法用刀左键击退人
+    protected boolean canKillWithTrident = false;      // 能用三叉戟（忠诚/激流）杀人
+
+    // --- 任务奖励追踪（per-player） ---
+    private static final Map<UUID, Map<ResourceLocation, Integer>> taskRewardCounts = new HashMap<>();
+    private static final Map<UUID, Set<ResourceLocation>> taskRewardTriggered = new HashMap<>();
+
+    /** 获取玩家对指定角色的已完成任务数 */
+    private static int getTaskCount(UUID playerUuid, ResourceLocation roleId) {
+        return taskRewardCounts.getOrDefault(playerUuid, Map.of()).getOrDefault(roleId, 0);
+    }
+
+    /** 检查是否已触发过奖励 */
+    private static boolean hasTaskRewardTriggered(UUID playerUuid, ResourceLocation roleId, int triggerIdx) {
+        var set = taskRewardTriggered.getOrDefault(playerUuid, Set.of());
+        return set.contains(ResourceLocation.fromNamespaceAndPath(roleId.getNamespace(), roleId.getPath() + "_" + triggerIdx));
+    }
+
+    /** 标记奖励已触发 */
+    private static void markTaskRewardTriggered(UUID playerUuid, ResourceLocation roleId, int triggerIdx) {
+        taskRewardTriggered.computeIfAbsent(playerUuid, k -> new HashSet<>())
+                .add(ResourceLocation.fromNamespaceAndPath(roleId.getNamespace(), roleId.getPath() + "_" + triggerIdx));
+    }
+
+    /** 清除玩家的任务奖励追踪数据 */
+    public static void clearTaskRewardTracking(UUID playerUuid) {
+        taskRewardCounts.remove(playerUuid);
+        taskRewardTriggered.remove(playerUuid);
+    }
     @NotNull
     protected InstinctType toggledOffInstinctType = InstinctType.DEFAULT;
     @NotNull
@@ -899,7 +931,47 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public void onFinishQuest(Player player, String quest) {
+        // 通用任务奖励系统
+        if (taskRewardCount > 0 && !taskRewardItems.isEmpty()) {
+            UUID uuid = player.getUUID();
+            int count = getTaskCount(uuid, identifier) + 1;
+            taskRewardCounts.computeIfAbsent(uuid, k -> new HashMap<>()).put(identifier, count);
+            if (taskRewardMaxTriggers < 0) {
+                // 不限次数：每完成 taskRewardCount 个任务发放一次
+                if (count >= taskRewardCount) {
+                    giveTaskRewardItems(player);
+                    // 重置计数以支持多次
+                    taskRewardCounts.computeIfAbsent(uuid, k -> new HashMap<>()).put(identifier, 0);
+                }
+            } else {
+                // 检查已触发次数
+                int triggered = 0;
+                for (int i = 1; i <= taskRewardMaxTriggers; i++) {
+                    if (hasTaskRewardTriggered(uuid, identifier, i)) triggered++;
+                }
+                if (count >= taskRewardCount && triggered < taskRewardMaxTriggers) {
+                    int nextTrigger = triggered + 1;
+                    markTaskRewardTriggered(uuid, identifier, nextTrigger);
+                    giveTaskRewardItems(player);
+                    // 重置计数以支持多次
+                    taskRewardCounts.computeIfAbsent(uuid, k -> new HashMap<>()).put(identifier, 0);
+                }
+            }
+        }
+    }
 
+    /** 向玩家发放任务奖励物品并（在非静默时）弹出提示 */
+    private void giveTaskRewardItems(Player player) {
+        for (ItemStack item : taskRewardItems) {
+            player.addItem(item.copy());
+        }
+        if (!taskRewardSilent && player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                    net.minecraft.network.chat.Component.translatable(
+                            taskRewardMessageKey)
+                            .withStyle(net.minecraft.ChatFormatting.GOLD),
+                    true);
+        }
     }
 
     /**
@@ -1011,7 +1083,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * 在HarpyModLoader中使用
      */
     public void onInit(MinecraftServer server, ServerPlayer serverPlayer) {
-
+        clearTaskRewardTracking(serverPlayer.getUUID());
     }
 
     public static SREAbilityPlayerComponent getAbilityComponent(Player player) {
@@ -1645,6 +1717,202 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole setToggledOnBeSeenInstinctType(@NotNull InstinctType type) {
         this.toggledOnBeSeenInstinctType = type;
         return this;
+    }
+
+    // ---------- 通用能力标识 ----------
+
+    /** 设置该职业是否免疫环境致死（窒息、冰冻、干渴、饥饿、溺水等） */
+    public SRERole setEnvironmentalImmunity(boolean immune) {
+        this.environmentalImmunity = immune;
+        return this;
+    }
+
+    public boolean hasEnvironmentalImmunity() {
+        return environmentalImmunity;
+    }
+
+    /** 设置该职业是否能用弓/弩和箭杀人 */
+    public SRERole setCanKillWithBowAndCrossbow(boolean can) {
+        this.canKillWithBowAndCrossbow = can;
+        return this;
+    }
+
+    public boolean canKillWithBowAndCrossbow() {
+        return canKillWithBowAndCrossbow;
+    }
+
+    /** 设置该职业是否无法用刀左键击退/攻击人 */
+    public SRERole setCannotKnifeLeftClick(boolean cannot) {
+        this.cannotKnifeLeftClick = cannot;
+        return this;
+    }
+
+    public boolean cannotKnifeLeftClick() {
+        return cannotKnifeLeftClick;
+    }
+
+    /** 设置该职业是否能用三叉戟（忠诚/激流）杀人 */
+    public SRERole setCanKillWithTrident(boolean can) {
+        this.canKillWithTrident = can;
+        return this;
+    }
+
+    public boolean canKillWithTrident() {
+        return canKillWithTrident;
+    }
+
+    // ---------- 任务奖励（完成 N 个任务给予物品，一局最多触发 M 次，物品可设置多个） ----------
+    protected int taskRewardCount = 0;       // 需要完成的任务数
+    protected final List<ItemStack> taskRewardItems = new ArrayList<>(); // 奖励物品（可多个）
+    protected int taskRewardMaxTriggers = 1; // 一局最多触发次数
+    protected String taskRewardMessageKey = "message.sre.task_reward_received"; // 奖励提示翻译键
+    protected boolean taskRewardSilent = false; // 触发时不向玩家弹提示（如每任务给物品的厨师）
+
+    /**
+     * 完成几个任务给予什么物品、一局触发几次（物品可以设置多个）。
+     *
+     * @param taskCount   需要完成的任务数
+     * @param maxTriggers 一局最多触发次数；传 {@code -1} 表示不限次数（每达到 taskCount 就发放一次）
+     * @param items       给予的物品（可多个）
+     */
+    public SRERole setTaskReward(int taskCount, int maxTriggers, ItemStack... items) {
+        this.taskRewardCount = taskCount;
+        this.taskRewardMaxTriggers = maxTriggers;
+        this.taskRewardItems.clear();
+        for (ItemStack item : items) {
+            if (item != null && !item.isEmpty())
+                this.taskRewardItems.add(item.copy());
+        }
+        return this;
+    }
+
+    /** 设置任务奖励触发时向玩家展示的提示翻译键 */
+    public SRERole setTaskRewardMessage(String translationKey) {
+        this.taskRewardMessageKey = translationKey;
+        return this;
+    }
+
+    /** 设置任务奖励触发时是否静默（不弹提示，用于每任务给物品等高频触发场景） */
+    public SRERole setTaskRewardSilent(boolean silent) {
+        this.taskRewardSilent = silent;
+        return this;
+    }
+
+    public int getTaskRewardCount() { return taskRewardCount; }
+    public List<ItemStack> getTaskRewardItems() { return Collections.unmodifiableList(taskRewardItems); }
+    public int getTaskRewardMaxTriggers() { return taskRewardMaxTriggers; }
+
+    /** 玩家本局是否已至少触发过一次任务奖励 */
+    public boolean hasReceivedTaskReward(UUID playerUuid) {
+        for (int i = 1; i <= taskRewardMaxTriggers; i++) {
+            if (hasTaskRewardTriggered(playerUuid, identifier, i))
+                return true;
+        }
+        return false;
+    }
+
+    // ---------- 杀手同伙可见性机制（能否被其它职业的 screen 看到杀手同伙） ----------
+    protected boolean killerTeammateVisibilityOverride = false; // 是否启用该机制
+    protected boolean canBeSeenAsKillerTeammate = true;         // 能否被看到杀手同伙
+
+    /**
+     * 杀手同伙可见性机制。
+     *
+     * @param enabled   是否启用该机制
+     * @param canBeSeen true = 会被其它职业的 screen 看到杀手同伙（如魔术师）；
+     *                  false = 不会被看到杀手同伙（如迷失杀手）
+     */
+    public SRERole setKillerTeammateScreenVisibility(boolean enabled, boolean canBeSeen) {
+        this.killerTeammateVisibilityOverride = enabled;
+        this.canBeSeenAsKillerTeammate = canBeSeen;
+        return this;
+    }
+
+    public boolean hasKillerTeammateVisibilityOverride() {
+        return killerTeammateVisibilityOverride;
+    }
+
+    public boolean canBeSeenAsKillerTeammate() {
+        return canBeSeenAsKillerTeammate;
+    }
+
+    // ---------- 被靠近查看时隐藏身份与杀手同伙 ----------
+    protected boolean hideRoleInfoWhenSeen = false;
+
+    /** 别人靠近查看该职业时，不显示其杀手同伙与职业身份信息（如迷失杀手） */
+    public SRERole setHideRoleInfoWhenSeen(boolean hide) {
+        this.hideRoleInfoWhenSeen = hide;
+        return this;
+    }
+
+    public boolean isHideRoleInfoWhenSeen() {
+        return hideRoleInfoWhenSeen;
+    }
+
+    // ---------- 不具有金币系统 ----------
+    protected boolean noCoinSystem = false;
+
+    /** 该职业不拥有金币，金币数始终为 0 */
+    public SRERole setNoCoinSystem(boolean noCoin) {
+        this.noCoinSystem = noCoin;
+        return this;
+    }
+
+    public boolean hasNoCoinSystem() {
+        return noCoinSystem;
+    }
+
+    // ---------- 免疫摔落致死 ----------
+    protected boolean fallDamageImmune = false;
+
+    /** 该职业不会因高度限制 / 摔落伤害而死 */
+    public SRERole setFallDamageImmune(boolean immune) {
+        this.fallDamageImmune = immune;
+        return this;
+    }
+
+    public boolean isFallDamageImmune() {
+        return fallDamageImmune;
+    }
+
+    // ---------- 免疫黑暗死亡（地图配置：在黑暗中待多少秒会死亡） ----------
+    protected boolean darknessImmune = false;
+
+    /** 该职业免疫地图配置中设置的「在黑暗中待多少秒会死亡」机制 */
+    public SRERole setDarknessImmune(boolean immune) {
+        this.darknessImmune = immune;
+        return this;
+    }
+
+    public boolean isDarknessImmune() {
+        return darknessImmune;
+    }
+
+
+    // ---------- 杀人无法获得金币 ----------
+    protected boolean cannotEarnCoinFromKills = false;
+
+    /** 该职业杀人后无法获得基础金币奖励 */
+    public SRERole setCannotEarnCoinFromKills(boolean cannot) {
+        this.cannotEarnCoinFromKills = cannot;
+        return this;
+    }
+
+    public boolean cannotEarnCoinFromKills() {
+        return cannotEarnCoinFromKills;
+    }
+
+    // ---------- 初始金币数 ----------
+    protected int initialCoinCount = -1; // -1 = 不修改
+
+    /** 设置该职业的初始金币数（-1 = 不覆盖默认值） */
+    public SRERole setInitialCoinCount(int coins) {
+        this.initialCoinCount = coins;
+        return this;
+    }
+
+    public int getInitialCoinCount() {
+        return initialCoinCount;
     }
 
     public enum MoodType {

@@ -3794,8 +3794,15 @@
   "skill.noellesroles.halic.sanity": "漏電仿生人",
   "announcement.star.role.hakukofox": "白狐",
   "announcement.star.role.noellesroles.hakukofox": "白狐",
-  "announcement.star.goals.hakukofox": "利用狐狸的機敏和狐火，淘汰所有乘客！",
-  "skill.noellesroles.hakukofox.transform": "§a變身為白色狐狸，獲得速度 III！",
-  "skill.noellesroles.hakukofox.foxfire": "§a釋放狐火，使附近玩家失明並暴露位置！",
-  "message.noellesroles.hakukofox.not_enough_money": "§c金幣不足！需要 %d 金幣。"
+  "announcement.star.goals.hakukofox": "利用獸化型態和狐狸分身，淘汰所有乘客！",
+  "skill.noellesroles.hakukofox.transform": "獸化型態",
+  "skill.noellesroles.hakukofox.transform_on": "§a變身為獸化型態！獲得速度 II 和跳躍 II！",
+  "skill.noellesroles.hakukofox.transform_off": "§c回到人類型態。",
+  "skill.noellesroles.hakukofox.clone": "狐狸分身",
+  "skill.noellesroles.hakukofox.clone_spawn": "§a消耗50金幣，生產了一隻狐狸分身！",
+  "skill.noellesroles.hakukofox.clone_pov": "§a進入狐狸分身視角。",
+  "skill.noellesroles.hakukofox.clone_possess": "§a接管了狐狸分身！",
+  "skill.noellesroles.hakukofox.clone_revert": "§c退回原身體。",
+  "message.noellesroles.hakukofox.not_enough_money": "§c金幣不足！需要 %d 金幣。",
+  "message.noellesroles.hakukofox.nine_lives_saved": "§6狐有九命！你逃過一劫！"
 }

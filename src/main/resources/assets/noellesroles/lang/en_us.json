@@ -3650,8 +3650,15 @@
   "skill.noellesroles.halic.sanity": "Electrocute",
   "announcement.star.role.hakukofox": "HakukoFox",
   "announcement.star.role.noellesroles.hakukofox": "HakukoFox",
-  "announcement.star.goals.hakukofox": "Use your fox agility and fox fire to eliminate all passengers!",
-  "skill.noellesroles.hakukofox.transform": "§aTransform into a white fox and gain Speed III!",
-  "skill.noellesroles.hakukofox.foxfire": "§aRelease fox fire, blinding nearby players and revealing their position!",
-  "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins."
+  "announcement.star.goals.hakukofox": "Use beast form and fox clones to eliminate all passengers!",
+  "skill.noellesroles.hakukofox.transform": "Beast Form",
+  "skill.noellesroles.hakukofox.transform_on": "§aTransformed into beast form! Gain Speed II and Jump II.",
+  "skill.noellesroles.hakukofox.transform_off": "§cReverted to human form.",
+  "skill.noellesroles.hakukofox.clone": "Fox Clone",
+  "skill.noellesroles.hakukofox.clone_spawn": "§aSpent 50 coins to spawn a fox clone!",
+  "skill.noellesroles.hakukofox.clone_pov": "§aNow viewing through the clone's eyes.",
+  "skill.noellesroles.hakukofox.clone_possess": "§aPossessed the fox clone!",
+  "skill.noellesroles.hakukofox.clone_revert": "§cReturned to original body.",
+  "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins.",
+  "message.noellesroles.hakukofox.nine_lives_saved": "§6Nine Lives! You cheated death!"
 }

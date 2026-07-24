@@ -1,30 +1,36 @@
 package org.agmas.noellesroles.mixin.roles.adventurer;
 
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerPlayerComponent;
-import org.agmas.noellesroles.role.ModRoles;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Intercepts environmental force-kills for the Adventurer role.
- * Targets GameUtils.killPlayer — the single choke-point all forceKill paths pass through.
+ * 拦截所有职业的 forceDeath 环境致死，对设置了 {@code environmentalImmunity=true} 的角色免疫。
+ * 原仅作用于冒险家，现已泛化为通用能力。
  */
 @Mixin(GameUtils.class)
 public abstract class AdventurerDeathImmunityMixin {
+
+    private static final int MESSAGE_COOLDOWN_TICKS = 70;
+    private static final Map<java.util.UUID, Map<ResourceLocation, Integer>> playerMessageCooldowns = new HashMap<>();
 
     @Inject(method = "killPlayer(Lnet/minecraft/world/entity/player/Player;Z"
             + "Lnet/minecraft/world/entity/player/Player;"
             + "Lnet/minecraft/resources/ResourceLocation;Z)V",
             at = @At("HEAD"), cancellable = true)
-    private static void noellesroles$adventurerDeathImmunity(
+    private static void noellesroles$environmentalDeathImmunity(
             Player victim, boolean spawnBody, Player _killer,
             ResourceLocation deathReason, boolean forceDeath, CallbackInfo ci) {
         if (!forceDeath) return;
@@ -32,13 +38,22 @@ public abstract class AdventurerDeathImmunityMixin {
         if (!(victim instanceof ServerPlayer sp)) return;
 
         var gameWorld = SREGameWorldComponent.KEY.get(sp.level());
-        if (gameWorld == null || !gameWorld.isRole(sp, ModRoles.ADVENTURER)) return;
+        if (gameWorld == null) return;
+        SRERole role = gameWorld.getRole(sp);
+        if (role == null || !role.hasEnvironmentalImmunity()) return;
 
-        AdventurerPlayerComponent adv = ModComponents.ADVENTURER.get(sp);
-        if (adv == null) return;
-
-        if (adv.blockEnvironmentalDeath(deathReason)) {
-            ci.cancel();
+        // 节流提示信息
+        var cooldowns = playerMessageCooldowns.computeIfAbsent(victim.getUUID(), k -> new HashMap<>());
+        if (!cooldowns.containsKey(deathReason)) {
+            cooldowns.put(deathReason, MESSAGE_COOLDOWN_TICKS);
+            sp.displayClientMessage(
+                    Component.translatable("message.noellesroles.adventurer.immunity")
+                            .withStyle(net.minecraft.ChatFormatting.GREEN), true);
         }
+        // 减少所有冷却
+        cooldowns.replaceAll((k, v) -> Math.max(0, v - 1));
+        cooldowns.values().removeIf(v -> v <= 0);
+
+        ci.cancel();
     }
 }

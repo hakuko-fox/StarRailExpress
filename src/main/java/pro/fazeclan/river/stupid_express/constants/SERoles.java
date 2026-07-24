@@ -52,7 +52,7 @@ public class SERoles {
             -1,
             true)).setServerGameTickEvent((player, gameWorldComponent) -> {
                 AvariciousGoldHandler.playerServerTick(player, gameWorldComponent);
-            }).setPassiveIncome(false).setDefaultEnableNeededPlayerCount(12);
+            }).setPassiveIncome(false).setInitialCoinCount(0).setDefaultEnableNeededPlayerCount(12);
 
     public static SRERole NECROMANCER = registerRole(new NormalRole(
             StupidExpress.id("necromancer"),
@@ -70,7 +70,9 @@ public class SERoles {
             false,
             SRERole.MoodType.REAL,
             TMMRoles.CIVILIAN.getMaxSprintTime(),
-            true)).setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(8000).setDefaultEnableNeededPlayerCount(12);
+            true)).setCanBeRandomedByOtherRoles(false).setDefaultMax(1).setDefaultEnableChance(8000)
+            .setDefaultEnableNeededPlayerCount(12)
+            .setCannotKnifeLeftClick(true);
 
     public static List<ShopEntry> INITIATE_SHOP = Util.make(new ArrayList<>(), entries -> {
         entries.add(new ShopEntry(TMMItems.KNIFE.getDefaultInstance(), 200, ShopEntry.Type.WEAPON));

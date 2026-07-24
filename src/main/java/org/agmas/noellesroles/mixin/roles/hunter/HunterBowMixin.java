@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.mixin.roles.hunter;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -16,37 +17,30 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * 猎人专属：手持弓时自动获得力量 V 附魔。
+ * 游侠（ELF）和其他 {@code canKillWithBowAndCrossbow} 职业不需要此效果。
+ */
 @Mixin(Player.class)
 public class HunterBowMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void noellesroles$hunterBowPowerEnchant(CallbackInfo ci) {
-        if (SRE.isLobby)
-            return;
-
+        if (SRE.isLobby) return;
         Player player = (Player) (Object) this;
-        if (!(player instanceof ServerPlayer serverPlayer))
-            return;
-
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         ServerLevel serverLevel = serverPlayer.serverLevel();
 
-        // 检查是否是猎人角色
-        if (!SREGameWorldComponent.KEY.get(serverLevel).isRole(player.getUUID(), ModRoles.HUNTER))
-            return;
+        if (!SREGameWorldComponent.KEY.get(serverLevel).isRole(player.getUUID(), ModRoles.HUNTER)) return;
 
-        // 检查主手是否持有弓
         ItemStack mainHandItem = player.getMainHandItem();
-        if (!mainHandItem.is(Items.BOW))
-            return;
+        if (!mainHandItem.is(Items.BOW)) return;
 
-        // 检查是否已有力量V附魔
         boolean hasPower = false;
-        for (java.util.Map.Entry<net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment>, Integer> entry : mainHandItem
-                .getEnchantments().entrySet()) {
+        for (var entry : mainHandItem.getEnchantments().entrySet()) {
             String enchantmentId = entry.getKey().unwrapKey().map(key -> key.location().toString()).orElse("");
             if (enchantmentId.contains("minecraft:power")) {
                 hasPower = true;
-                // 检查等级是否为5，如果不是则更新
                 if (entry.getValue() != 5) {
                     mainHandItem.remove(DataComponents.ENCHANTMENTS);
                     hasPower = false;
@@ -55,11 +49,8 @@ public class HunterBowMixin {
             }
         }
         if (!hasPower) {
-            // 没有力量附魔或者等级不对，添加力量5
             mainHandItem.enchant(serverLevel.registryAccess().registryOrThrow(Registries.ENCHANTMENT).holders()
-                    .filter(holder -> {
-                        return holder.is((Enchantments.POWER));
-                    }).findFirst().get(), 5);
+                    .filter(holder -> holder.is(Enchantments.POWER)).findFirst().get(), 5);
         }
     }
 }

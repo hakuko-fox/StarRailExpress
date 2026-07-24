@@ -1,6 +1,8 @@
 package org.agmas.noellesroles.mixin;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -14,45 +16,39 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * 投掷三叉戟击杀逻辑：仅对 {@code canKillWithTrident=true} 的职业生效。
+ * 原为全局行为，现已泛化。
+ */
 @Mixin(ThrownTrident.class)
 public class TridentMixin {
     private ServerPlayer lastHitPlayer = null;
 
     @Inject(method = "onHitEntity", at = @At("TAIL"))
     private void noellesroles$onHitEntity(EntityHitResult entityHitResult, CallbackInfo ci) {
-        if (SRE.isLobby)
-            return;
+        if (SRE.isLobby) return;
+        if (!(entityHitResult.getEntity() instanceof ServerPlayer player)) return;
 
-        if (entityHitResult.getEntity() instanceof ServerPlayer player) {
-            ThrownTrident trident = (ThrownTrident) (Object) this;
-            if (trident.getOwner() instanceof ServerPlayer serverPlayer) {
-                // 检查是否已经击中过这个玩家（避免重复击杀）
-                if (lastHitPlayer == player) {
-                    return;
-                }
+        ThrownTrident trident = (ThrownTrident) (Object) this;
+        if (!(trident.getOwner() instanceof ServerPlayer thrower)) return;
+        if (lastHitPlayer == player) return;
 
-                // 让三叉戟按原版逻辑先造成伤害（通过不取消，让原生逻辑执行）
-                // 然后在原生逻辑执行完后，让玩家死亡
-                lastHitPlayer = player;
-                if (trident.getOwner() instanceof ServerPlayer killer) {
-                    if (!killer.isSpectator()) {
-                        GameUtils.killPlayer(player, true, serverPlayer, SRE.id("trident"));
-                    }
-                    killer.getCooldowns().addCooldown(Items.TRIDENT,
-                            GameConstants.ITEM_COOLDOWNS.getOrDefault(Items.TRIDENT,
-                                    GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
-                } else {
-                    trident.discard();
-                }
-                //
-            }
+        // 仅 canKillWithTrident 的角色才能用投掷三叉戟杀人
+        SRERole role = SREGameWorldComponent.KEY.get(thrower.level()).getRole(thrower);
+        if (role == null || !role.canKillWithTrident()) return;
+
+        lastHitPlayer = player;
+        if (!thrower.isSpectator()) {
+            GameUtils.killPlayer(player, true, thrower, SRE.id("trident"));
         }
+        thrower.getCooldowns().addCooldown(Items.TRIDENT,
+                GameConstants.ITEM_COOLDOWNS.getOrDefault(Items.TRIDENT,
+                        GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.REVOLVER, 0)));
     }
 
     @Inject(method = "onHitEntity", at = @At("HEAD"))
     private void noellesroles$onHitPlayerBody(EntityHitResult entityHitResult, CallbackInfo ci) {
-        if (SRE.isLobby)
-            return;
+        if (SRE.isLobby) return;
         if (entityHitResult.getEntity() instanceof PlayerBodyEntity) {
             ThrownTrident trident = (ThrownTrident) (Object) this;
             if (trident.getOwner() instanceof ServerPlayer killer) {

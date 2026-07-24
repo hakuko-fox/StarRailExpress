@@ -38,10 +38,11 @@ public class RiptideTridentMixin {
 
         ServerLevel serverLevel = serverPlayer.serverLevel();
 
-        // 检查是否是海王或水鬼角色
+        // 检查是否能用三叉戟杀人（海王/水鬼等）
+        var role = SREGameWorldComponent.KEY.get(serverLevel).getRole(player.getUUID());
+        boolean canTridentKill = role != null && role.canKillWithTrident();
         boolean isSeaKing = SREGameWorldComponent.KEY.get(serverLevel).isRole(player.getUUID(), ModRoles.SEA_KING);
-        boolean isWaterGhost = SREGameWorldComponent.KEY.get(serverLevel).isRole(player.getUUID(),
-                ModRoles.WATER_GHOST);
+        boolean isWaterGhost = SREGameWorldComponent.KEY.get(serverLevel).isRole(player.getUUID(), ModRoles.WATER_GHOST);
 
         boolean isUsingRiptide = player.isAutoSpinAttack();
 
@@ -76,7 +77,7 @@ public class RiptideTridentMixin {
             }
         }
 
-        if (!isSeaKing && !isWaterGhost)
+        if (!canTridentKill)
             return;
 
         // 检查主手是否持有三叉戟

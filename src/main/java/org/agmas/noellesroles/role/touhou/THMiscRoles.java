@@ -20,13 +20,15 @@ public class THMiscRoles {
           true, false, SRERole.MoodType.REAL,
           TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
       .setCanSetSpawnInfoInConfig(true).setDefaultMax(1)
-      .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000);
+      .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000)
+      .setFallDamageImmune(true); // 不会因高度限制摔死
   public static final ResourceLocation HAKUREI_REIMU_ID = id("hakurei_reimu");
   public static SRERole HAKUREI_REIMU = TMMRoles
       .registerRole(new THReimuRole(HAKUREI_REIMU_ID, new java.awt.Color(153, 82, 89).getRGB(),
           false, true, SRERole.MoodType.FAKE,
           Integer.MAX_VALUE, true))
       .setCanPickUpRevolver(false)
+      .setFallDamageImmune(true) // 不会因高度限制摔死
       .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(1000);
   // 四季映姬·夜摩仙那度 Shikieiki（有点像判官）
   // 四季映姬曾经是地藏，后来全国各地的地藏联名上书请求分担阎魔大人的工作，她也成为了阎魔。
@@ -42,7 +44,8 @@ public class THMiscRoles {
   public static SRERole KOMACHI = TMMRoles
       .registerRole(new THKomachiRole(KOMACHI_ID, new java.awt.Color(199, 144, 161).getRGB(),
           false, true, SRERole.MoodType.FAKE,
-          Integer.MAX_VALUE, true), "th_hell");
+          Integer.MAX_VALUE, true), "th_hell")
+      .setCannotEarnCoinFromKills(true); // 杀人无法获得基础金币奖励
   // 天子Hinanawi Tenshi
   public static final ResourceLocation TENSHI_ID = id("hinanawi_tenshi");
   public static SRERole TENSHI = TMMRoles

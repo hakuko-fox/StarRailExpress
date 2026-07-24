@@ -47,6 +47,8 @@
     "roles.jester.JesterItemEntityMixin",
     "roles.leather_pig.LeatherPigEyeHeightMixin",
     "roles.hakukofox.HakukoFoxEyeHeightMixin",
+    "roles.hakukofox.HakukoFoxAttackBlockMixin",
+    "roles.hakukofox.HakukoFoxDeathImmunityMixin",
     "roles.manipulator.PlayerControlMixin",
     "roles.manipulator.ManipulatorControlledDeathImmunityMixin",
     "roles.mercenary.MercenaryConfirmMixin",
