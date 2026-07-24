@@ -49,10 +49,14 @@ public class CustomRoleHud {
             int x = screenWidth - 10;
             int y = screenHeight - 30;
 
-            // 计算当前选中技能名称（与 RoleSkill 定义顺序一致）
-            var effective = data.getEffectiveSkills();
-            int selected = Math.floorMod(ability.getSelectedSkill(), Math.max(1, effective.size()));
-            String skillName = effective.isEmpty() ? "" : (effective.get(selected).name == null ? "" : effective.get(selected).name);
+            // 计算当前选中技能名称。
+            // 关键：必须使用与「释放 / 切换」完全相同的权威列表 getSelectableDefinitions(role)，
+            // 再用选中技能的定义 id 反查模块显示名。这样 HUD 名字必定与真正释放/切换到的技能一致，
+            // 不会再出现「HUD 显示一技能、实际释放/切换却对应二技能」的错位。
+            var selectable = RoleSkill.getSelectableDefinitions(role);
+            int selected = selectable.isEmpty() ? 0 : Math.floorMod(ability.getSelectedSkill(), selectable.size());
+            String skillName = selectable.isEmpty() ? ""
+                    : CustomRoleLoader.getSkillDisplayName(selectable.get(selected).id());
             Component nameComponent = skillName.isEmpty()
                     ? Component.translatable("hud.sre.custom_role.skill_default")
                     : Component.literal(skillName);

@@ -171,12 +171,12 @@ public class ClientAbilityHandler {
             return;
         }
 
-        var definitions = RoleSkill.getDefinitions(role);
         // 仅显式标记 modeSwitch 的技能才由切换键触发。其余潜行技能（重启、篡夺、领域……）
         // 只能由 潜行+技能键 释放，否则切换键会误放技能。
         var modeSwitch = RoleSkill.getModeSwitchDefinition(role);
         if (modeSwitch.isPresent()) {
             // 服务端按「潜行技能」子列表取槽位，这里也要用同一子列表的下标
+            var definitions = RoleSkill.getDefinitions(role);
             var shiftedDefs = definitions.stream().filter(RoleSkill.Definition::shifted).toList();
             ClientPlayNetworking.send(new UnifiedSkillInputC2SPacket(
                     Math.max(0, shiftedDefs.indexOf(modeSwitch.get())),
@@ -185,15 +185,14 @@ public class ClientAbilityHandler {
                     true));
             return;
         }
-        if (definitions.size() < 2) {
-            return;
-        }
-        var selectableDefs = RoleSkill.getSelectableDefinitions(role);
-        if (selectableDefs.size() < 2) {
-            return;
-        }
+
+        // 普通多技能切换：不再依赖客户端注册的技能数量（避免客户端配置未同步、
+        // 或某个技能模块为空导致 getEffectiveSkills 只返回 1 个时切换键静默失效）。
+        // 客户端直接把「当前选中 + 1」发给服务端，由服务端用权威列表取模
+        // （RoleSkill.selectSkill 内的 Math.floorMod(slot, definitions.size())）。
+        // 服务端只有 1 个技能时取模后仍为原槽位，行为正确；≥2 个时正常循环切换。
         var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(client.player);
-        int next = (ability.getSelectedSkill() + 1) % selectableDefs.size();
+        int next = ability.getSelectedSkill() + 1;
         ClientPlayNetworking.send(new org.agmas.noellesroles.packet.UnifiedSkillSelectC2SPacket(next));
     }
 

@@ -47,6 +47,8 @@ public class CustomRoleLoader {
     private static final Map<String, Integer> instinctMaxRanges = new HashMap<>(); // englishId -> maxBlocksSquared
     private static final Map<String, Boolean> instinctSameColor = new HashMap<>(); // englishId -> sameColorFrame
     private static final Map<String, Boolean> instinctUnlimitedTeammate = new HashMap<>(); // englishId -> unlimitedTeammate
+    // 技能 id -> 模块显示名（注册时写入，HUD 反查用，保证与释放/切换用的是同一个技能）
+    private static final Map<ResourceLocation, String> skillDisplayNames = new HashMap<>();
     // 新版直觉模式存储：englishRoleId -> 模式列表
     private static final Map<String, List<InstinctModeData>> instinctModeDataMap = new HashMap<>();
     // 技能初始冷却配置：roleIdentifier -> initialCooldownTicks
@@ -98,6 +100,7 @@ public class CustomRoleLoader {
         instinctSameColor.clear();
         instinctUnlimitedTeammate.clear();
         instinctModeDataMap.clear();
+        skillDisplayNames.clear();
 
         // 从服务器世界目录加载配置
         var level = server.overworld();
@@ -166,6 +169,7 @@ public class CustomRoleLoader {
         instinctSameColor.clear();
         instinctUnlimitedTeammate.clear();
         instinctModeDataMap.clear();
+        skillDisplayNames.clear();
 
         // 从客户端本地 config 目录加载（网络同步写入的）
         CustomRoleConfig config = CustomRoleConfig.loadFromDefaultPath();
@@ -259,6 +263,15 @@ public class CustomRoleLoader {
 
     public static SRERole getRegisteredRole(String englishId) {
         return registeredRoles.get(englishId);
+    }
+
+    /**
+     * 获取技能 id 对应的模块显示名（注册时写入）。
+     * 用于 HUD 精确显示当前选中的技能名，保证与释放/切换用的是同一个技能。
+     */
+    public static String getSkillDisplayName(ResourceLocation skillId) {
+        String name = skillDisplayNames.get(skillId);
+        return name == null ? "" : name;
     }
 
     /**
@@ -544,6 +557,9 @@ public class CustomRoleLoader {
 
                 ResourceLocation customSkillId = ResourceLocation.fromNamespaceAndPath(
                         skillNs, skillPath + "_ability_" + si);
+                // 记录「技能 id -> 模块显示名」，供 HUD 精确显示当前选中的技能名
+                skillDisplayNames.put(customSkillId,
+                        sd.name == null ? "" : sd.name);
                 RoleSkill.register(role, RoleSkill.skill(
                         customSkillId,
                         "skill.sre.custom_role.ability",
