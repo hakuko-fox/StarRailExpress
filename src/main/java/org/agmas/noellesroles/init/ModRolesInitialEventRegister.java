@@ -1184,21 +1184,21 @@ public class ModRolesInitialEventRegister {
                 }).build());
 
         // ==================== Halic 技能注册 ====================
-        // 技能1（G）：複製一個假人留在原地 30 秒，冷卻 2 分鐘
-        // 技能2（Shift+G）：花費 50 金幣恢復附近 8 格內玩家理智值
+        // 技能1（G）：每 10 秒消耗 10 金幣生產一隻永久存在的分身，分身被攻擊時使攻擊者失明 2 秒
+        // 技能2（Shift+G）：消耗 50 金幣電擊附近 10 格內玩家，使其停止行動 10 秒
         RoleSkill.register(ModRoles.HALIC,
                 RoleSkill.skill(SRE.id("halic_decoy"), "skill.noellesroles.halic.decoy", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent.KEY.get(player)
                             .createDecoy(player);
-                }).cooldownSeconds(120).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("halic_sanity"), "skill.noellesroles.halic.sanity", context -> {
+                }).cooldownSeconds(10).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("halic_electrocute"), "skill.noellesroles.halic.sanity", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent.KEY.get(player)
-                            .restoreSanity(player);
-                }).shifted(true).cooldownSeconds(10).showOnHud(true).build());
+                            .electrocute(player);
+                }).shifted(true).cooldownSeconds(70).showOnHud(true).build());
 
         // ==================== HakukoFox 技能注册 ====================
         // 技能1（G）：变身为白色狐狸，获得速度 III 持续 20 秒，冷却 90 秒

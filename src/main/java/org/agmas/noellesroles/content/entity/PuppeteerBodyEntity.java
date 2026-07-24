@@ -11,6 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -43,6 +45,17 @@ public class PuppeteerBodyEntity extends LivingEntity {
             PuppeteerBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     // 不会被自然刷新
     private boolean persistenceRequired = false;
+
+    /** 是否為 Halic 的分身（永久存在，被攻擊即消失） */
+    private boolean halicDecoy = false;
+
+    public boolean isHalicDecoy() {
+        return halicDecoy;
+    }
+
+    public void setHalicDecoy(boolean halicDecoy) {
+        this.halicDecoy = halicDecoy;
+    }
 
     /** 皮肤 GameProfile（用于渲染玩家皮肤） */
     private GameProfile skinProfile = null;
@@ -190,6 +203,15 @@ public class PuppeteerBodyEntity extends LivingEntity {
     public boolean playerHurt(Player player, ResourceLocation deathReason) {
         if (level().isClientSide())
             return false;
+
+        if (halicDecoy) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 0, false, false, true));
+            }
+            discard();
+            return true;
+        }
+
         Player owner = getOwner();
         if (owner != null) {
             // 通知傀儡师组件本体死亡
@@ -214,6 +236,14 @@ public class PuppeteerBodyEntity extends LivingEntity {
     public boolean hurt(DamageSource source, float amount) {
         if (level().isClientSide())
             return false;
+
+        if (halicDecoy) {
+            if (source.getEntity() instanceof ServerPlayer attacker) {
+                attacker.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 0, false, false, true));
+            }
+            discard();
+            return true;
+        }
 
         if (source.is(DamageTypes.IN_WALL))
             return false;
@@ -281,6 +311,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
         }
         // SkinProfile 通过 OwnerUUID 在客户端动态获取，不需要从 NBT 加载
         this.lifetime = nbt.contains("Lifetime") ? nbt.getInt("Lifetime") : 0;
+        this.halicDecoy = nbt.getBoolean("HalicDecoy");
     }
 
     @Override
@@ -293,6 +324,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
         nbt.putString("OwnerName", this.ownerName);
         // SkinProfile 通过 OwnerUUID 在客户端动态获取，不需要保存到 NBT
         nbt.putInt("Lifetime", this.lifetime);
+        nbt.putBoolean("HalicDecoy", this.halicDecoy);
     }
 
     @Override
