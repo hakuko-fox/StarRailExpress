@@ -795,7 +795,7 @@ public class RoleInstinctRegister {
         });
 
         // 恋人
-        CommonInstinctEvents.ALIVE_COMMON_BEFORE_EVENT.register((self, target, hasInstinct) -> {
+        CommonInstinctEvents.ALIVE_COMMON_MIDDLE_EVENT.register((self, target, hasInstinct) -> {
             if (!(target instanceof Player)
                     || !WorldModifierComponent.KEY.get(self.level()).isModifier(self, SEModifiers.LOVERS))
                 return TrueFalseAndCustomResult.pass();
