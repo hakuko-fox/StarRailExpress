@@ -40,6 +40,27 @@ public class CommonInstinctEvents {
             });
 
     /**
+     * 获取活着的玩家的直觉高亮颜色的事件。在被观察的条件后观察条件前触发<br/>
+     * 首个返回非 {@link TrueFalseAndCustomResult#pass()} 的监听器结果生效。<br/>
+     * <li>{@link TrueFalseAndCustomResult#pass()} 不修改颜色（走默认逻辑）</li>
+     * <li>{@link TrueFalseAndCustomResult#custom()} 返回自定义颜色</li>
+     * <li>{@link TrueFalseAndCustomResult#disallow()} 或
+     * {@link TrueFalseAndCustomResult#no()} 阻止显示</li>
+     */
+    public static Event<InnerOnGetInstinctHighlight> ALIVE_COMMON_MIDDLE_EVENT = createArrayBacked(
+            InnerOnGetInstinctHighlight.class,
+            listeners -> (self, target, isInstinctEnabled) -> {
+                if (target == null)
+                    return TrueFalseAndCustomResult.pass();
+                for (InnerOnGetInstinctHighlight listener : listeners) {
+                    var color = listener.getInstinctHighlight(self, target, isInstinctEnabled);
+                    if (color != null && !color.isPass()) {
+                        return color;
+                    }
+                }
+                return TrueFalseAndCustomResult.pass();
+            });
+    /**
      * 获取活着的玩家的直觉高亮颜色的事件。<br/>
      * 首个返回非 {@link TrueFalseAndCustomResult#pass()} 的监听器结果生效。<br/>
      * <li>{@link TrueFalseAndCustomResult#pass()} 不修改颜色（走默认逻辑）</li>

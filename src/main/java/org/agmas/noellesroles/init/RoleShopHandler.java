@@ -1323,7 +1323,23 @@ public class RoleShopHandler {
             GANGSTERS_SHOP.add(new ShopEntry(
                     ModItems.C4.getDefaultInstance(),
                     280,
-                    ShopEntry.Type.TOOL));
+                    ShopEntry.Type.TOOL) {
+                public static int BUY_COOLDOWN = 30 * 20;
+
+                @Override
+                public boolean onBuy(Player player) {
+                    if (player.getCooldowns().isOnCooldown(Items.BARRIER)) {
+                        setFailedMessage(Component.translatable("message.tip.purchase_failed.cooldown_time",
+                                (int) (100 - player.getCooldowns().getCooldownPercent(Items.BARRIER, 0) * 100f)));
+                        return false;
+                    }
+                    if (super.onBuy(player)) {
+                        player.getCooldowns().addCooldown(Items.BARRIER, BUY_COOLDOWN);
+                        return true;
+                    }
+                    return false;
+                }
+            });
 
             // 撬棍 - 25金币
             GANGSTERS_SHOP.add(new ShopEntry(

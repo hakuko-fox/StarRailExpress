@@ -175,6 +175,16 @@ public class InstinctManager {
         if (selfRole == null)
             return TrueFalseAndCustomResult.pass();
         {
+            var result = CommonInstinctEvents.ALIVE_COMMON_MIDDLE_EVENT.invoker().getInstinctHighlight(self, target,
+                    instinctEnabled);
+            if (result.isCustom()) {
+                int color = result.getContent().orElse(-1);
+                return TrueFalseAndCustomResult.custom(color);
+            } else if (result.isFalse()) {
+                return TrueFalseAndCustomResult.disallow();
+            }
+        }
+        {
             ArrayList<InnerRoleInstinctFunction> funcs = RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT
                     .getFunctions(selfRole.getIdentifier());
             if (funcs != null)
