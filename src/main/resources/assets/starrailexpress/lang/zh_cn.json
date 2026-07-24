@@ -1572,6 +1572,7 @@
     "message.tip.purchase_failed_with_reason": "购买失败：%s",
     "message.tip.purchase_failed.safe_time": "安全时间无法购买",
     "message.tip.purchase_failed.cooldown": "冷却中",
+    "message.tip.purchase_failed.cooldown_time": "冷却中 %s%%",
     "message.tip.purchase_failed.derringer_full": "没有无子弹的德林加手枪",
     "message.tip.purchase_failed.not_enough_money": "金币数量不够",
     "message.tip.purchase_failed.shop_banned": "商店被禁用",

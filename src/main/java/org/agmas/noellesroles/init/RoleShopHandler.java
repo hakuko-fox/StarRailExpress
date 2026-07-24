@@ -1304,8 +1304,13 @@ public class RoleShopHandler {
 
                 @Override
                 public boolean onBuy(Player player) {
+                    if (player.getCooldowns().isOnCooldown(Items.BARRIER)) {
+                        setFailedMessage(Component.translatable("message.tip.purchase_failed.cooldown_time",
+                                (int) (100 - player.getCooldowns().getCooldownPercent(Items.BARRIER, 0) * 100f)));
+                        return false;
+                    }
                     if (super.onBuy(player)) {
-                        player.getCooldowns().addCooldown(ModItems.C4, BUY_COOLDOWN);
+                        player.getCooldowns().addCooldown(Items.BARRIER, BUY_COOLDOWN);
                         return true;
                     }
                     return false;
