@@ -3658,7 +3658,8 @@
   "skill.noellesroles.hakukofox.clone_spawn": "§aSpent 50 coins to spawn a fox clone!",
   "skill.noellesroles.hakukofox.clone_pov": "§aNow viewing through the clone's eyes.",
   "skill.noellesroles.hakukofox.clone_possess": "§aPossessed the fox clone!",
-  "skill.noellesroles.hakukofox.clone_revert": "§cReturned to original body.",
+  "skill.noellesroles.hakukofox.clone_pov_exit": "§cReturned to original body.",
+  "skill.noellesroles.hakukofox.clone_killed": "§cYour fox clone was killed! 30s cooldown.",
   "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins.",
   "message.noellesroles.hakukofox.nine_lives_saved": "§6Nine Lives! You cheated death!"
 }

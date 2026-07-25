@@ -3802,7 +3802,8 @@
   "skill.noellesroles.hakukofox.clone_spawn": "§a消耗50金幣，生產了一隻狐狸分身！",
   "skill.noellesroles.hakukofox.clone_pov": "§a進入狐狸分身視角。",
   "skill.noellesroles.hakukofox.clone_possess": "§a接管了狐狸分身！",
-  "skill.noellesroles.hakukofox.clone_revert": "§c退回原身體。",
+  "skill.noellesroles.hakukofox.clone_pov_exit": "§c退出分身視角。",
+  "skill.noellesroles.hakukofox.clone_killed": "§c你的狐狸分身被殺了！冷卻30秒。",
   "message.noellesroles.hakukofox.not_enough_money": "§c金幣不足！需要 %d 金幣。",
   "message.noellesroles.hakukofox.nine_lives_saved": "§6狐有九命！你逃過一劫！"
 }

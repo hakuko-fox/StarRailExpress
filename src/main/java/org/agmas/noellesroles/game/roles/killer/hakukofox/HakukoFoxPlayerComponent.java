@@ -113,6 +113,9 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             cloneState = CloneState.EXISTS;
             context.abilityCCA().setSkillCooldown(
                     ResourceLocation.fromNamespaceAndPath("sre", "hakukofox_clone"), 15 * 20);
+            sp.displayClientMessage(
+                    Component.translatable("skill.noellesroles.hakukofox.clone_pov_exit"),
+                    true);
             sync();
             return true;
         }
@@ -149,7 +152,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             case NONE -> spawnClone(sp);
             case EXISTS -> enterPOV(sp);
             case POV -> possessClone(sp);
-            case POSSESSED -> revertToOriginal(sp);
+            default -> false;
         };
         if (result && cloneState == CloneState.NONE) {
             ctx.setSkillCooldown(90 * 20);
@@ -204,6 +207,9 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         originalPitch = sp.getXRot();
         sp.setCamera(fox);
         cloneState = CloneState.POV;
+        sp.displayClientMessage(
+                Component.translatable("skill.noellesroles.hakukofox.clone_pov"),
+                true);
         sync();
         return true;
     }
@@ -222,8 +228,11 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         fox.discard();
         sp.setCamera(null);
         sp.teleportTo(fx, fy, fz);
-        cloneState = CloneState.POSSESSED;
+        cloneState = CloneState.NONE;
         cloneId = -1;
+        sp.displayClientMessage(
+                Component.translatable("skill.noellesroles.hakukofox.clone_possess"),
+                true);
         sync();
         return true;
     }
@@ -303,6 +312,9 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             cloneId = -1;
             SREAbilityPlayerComponent.KEY.get(sp).setSkillCooldown(
                     ResourceLocation.fromNamespaceAndPath("sre", "hakukofox_clone"), 30 * 20);
+            sp.displayClientMessage(
+                    Component.translatable("skill.noellesroles.hakukofox.clone_killed"),
+                    true);
             sync();
         }
 
