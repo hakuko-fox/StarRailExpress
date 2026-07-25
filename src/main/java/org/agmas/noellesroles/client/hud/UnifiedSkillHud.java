@@ -7,6 +7,7 @@ import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 import org.agmas.noellesroles.client.NoellesrolesClient;
@@ -98,7 +99,7 @@ public final class UnifiedSkillHud {
                 }
 
                 Component name;
-                if (skill.id().getNamespace().equals("sre") && skill.id().getPath().equals("hakukofox_transform")) {
+                if (skill.id().equals(ResourceLocation.fromNamespaceAndPath("starrailexpress", "hakukofox_transform"))) {
                     var hakuko = HakukoFoxPlayerComponent.KEY.maybeGet(client.player).orElse(null);
                     name = Component.translatable(hakuko != null && hakuko.isInPOV()
                             ? "skill.noellesroles.hakukofox.transform_pov"
