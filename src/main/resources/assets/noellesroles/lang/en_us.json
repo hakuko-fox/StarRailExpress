@@ -3652,6 +3652,7 @@
   "announcement.star.role.noellesroles.hakukofox": "HakukoFox",
   "announcement.star.goals.hakukofox": "Use beast form and fox clones to eliminate all passengers!",
   "skill.noellesroles.hakukofox.transform": "Beast Form",
+  "skill.noellesroles.hakukofox.transform_pov": "§eExit POV (Return to Body)",
   "skill.noellesroles.hakukofox.transform_on": "§aTransformed into beast form! Gain Speed II and Jump II.",
   "skill.noellesroles.hakukofox.transform_off": "§cReverted to human form.",
   "skill.noellesroles.hakukofox.clone": "Fox Clone",

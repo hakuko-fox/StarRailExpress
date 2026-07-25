@@ -57,6 +57,10 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         return player;
     }
 
+    public boolean isInPOV() {
+        return cloneState == CloneState.POV;
+    }
+
     @Override
     public boolean shouldSyncWith(ServerPlayer p) {
         return p == this.player;

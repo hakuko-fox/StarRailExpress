@@ -11,6 +11,7 @@ import net.minecraft.util.Mth;
 
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
+import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 
 import java.util.List;
 
@@ -96,7 +97,15 @@ public final class UnifiedSkillHud {
                     selectedIdx = idx;
                 }
 
-                Component name = Component.translatable(skill.nameKey());
+                Component name;
+                if (skill.id().getNamespace().equals("sre") && skill.id().getPath().equals("hakukofox_transform")) {
+                    var hakuko = HakukoFoxPlayerComponent.KEY.maybeGet(client.player).orElse(null);
+                    name = Component.translatable(hakuko != null && hakuko.isInPOV()
+                            ? "skill.noellesroles.hakukofox.transform_pov"
+                            : skill.nameKey());
+                } else {
+                    name = Component.translatable(skill.nameKey());
+                }
                 if (state.maxCharges > 0) {
                     name = name.copy().append(Component.literal(" x" + Math.max(0, state.charges))
                             .withStyle(s -> s.withColor(GOLD & 0xFFFFFF)));
