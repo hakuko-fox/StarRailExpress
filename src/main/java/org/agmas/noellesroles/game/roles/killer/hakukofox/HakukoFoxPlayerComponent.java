@@ -132,16 +132,20 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         }
     }
 
-    public boolean useCloneSkill(ServerPlayer sp) {
+    public boolean useCloneSkill(ServerPlayer sp, RoleSkillContext ctx) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
         }
-        return switch (cloneState) {
+        boolean result = switch (cloneState) {
             case NONE -> spawnClone(sp);
             case EXISTS -> enterPOV(sp);
             case POV -> possessClone(sp);
             case POSSESSED -> revertToOriginal(sp);
         };
+        if (result && cloneState == CloneState.NONE) {
+            ctx.setSkillCooldown(90 * 20);
+        }
+        return result;
     }
 
     private boolean spawnClone(ServerPlayer sp) {
@@ -282,7 +286,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
     public void serverTick() {
         if (!(player instanceof ServerPlayer sp)) return;
 
-        if (cloneState != CloneState.NONE && getCloneFox(sp) == null) {
+        if (cloneState != CloneState.NONE && cloneState != CloneState.POSSESSED && getCloneFox(sp) == null) {
             if (cloneState == CloneState.POV) {
                 sp.setCamera(null);
             }
@@ -298,8 +302,13 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             sync();
         }
 
-        if (cloneState == CloneState.POV && sp.getCamera() == sp) {
-            exitPOV(sp);
+        if (cloneState == CloneState.POV) {
+            Fox fox = getCloneFox(sp);
+            if (fox == null || !fox.isAlive()) {
+                exitPOV(sp);
+            } else if (sp.getCamera() != fox) {
+                sp.setCamera(fox);
+            }
         }
     }
 

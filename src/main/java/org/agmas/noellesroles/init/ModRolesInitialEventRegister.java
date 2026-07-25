@@ -1222,8 +1222,8 @@ public class ModRolesInitialEventRegister {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
-                            .useCloneSkill(player);
-                }).shifted(true).cooldownSeconds(90).showOnHud(true).build());
+                            .useCloneSkill(player, context);
+                }).shifted(true).cooldownSeconds(0).showOnHud(true).build());
     }
 
 }
