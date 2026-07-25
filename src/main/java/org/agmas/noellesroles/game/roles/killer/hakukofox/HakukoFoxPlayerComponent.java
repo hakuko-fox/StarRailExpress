@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.killer.hakukofox;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext;
+import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
@@ -300,6 +301,8 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             }
             cloneState = CloneState.NONE;
             cloneId = -1;
+            SREAbilityPlayerComponent.KEY.get(sp).setSkillCooldown(
+                    ResourceLocation.fromNamespaceAndPath("sre", "hakukofox_clone"), 30 * 20);
             sync();
         }
 
