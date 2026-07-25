@@ -110,6 +110,9 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         }
         if (cloneState == CloneState.POV) {
             sp.setCamera(null);
+            sp.teleportTo(originalX, originalY, originalZ);
+            sp.setYRot(originalYaw);
+            sp.setXRot(originalPitch);
             cloneState = CloneState.EXISTS;
             context.abilityCCA().setSkillCooldown(
                     ResourceLocation.fromNamespaceAndPath("sre", "hakukofox_clone"), 15 * 20);
