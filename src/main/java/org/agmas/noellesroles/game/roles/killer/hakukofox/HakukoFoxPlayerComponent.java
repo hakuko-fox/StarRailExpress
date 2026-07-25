@@ -107,6 +107,14 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
         }
+        if (cloneState == CloneState.POV) {
+            sp.setCamera(null);
+            cloneState = CloneState.EXISTS;
+            context.abilityCCA().setSkillCooldown(
+                    ResourceLocation.fromNamespaceAndPath("sre", "hakukofox_clone"), 15 * 20);
+            sync();
+            return true;
+        }
         if (beastFormActive) {
             removeBeastEffects();
             beastFormActive = false;
