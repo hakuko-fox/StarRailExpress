@@ -3669,12 +3669,11 @@
   "skill.noellesroles.hakukofox.transform_pov": "§eExit POV (Return to Body)",
   "skill.noellesroles.hakukofox.transform_on": "§aTransformed into beast form! Gain Speed II and Jump II.",
   "skill.noellesroles.hakukofox.transform_off": "§cReverted to human form.",
-  "skill.noellesroles.hakukofox.clone": "Fox Clone",
-  "skill.noellesroles.hakukofox.clone_spawn": "§aSpent 50 coins to spawn a fox clone!",
-  "skill.noellesroles.hakukofox.clone_pov": "§aNow viewing through the clone's eyes.",
-  "skill.noellesroles.hakukofox.clone_possess": "§aPossessed the fox clone!",
-  "skill.noellesroles.hakukofox.clone_pov_exit": "§cReturned to original body.",
-  "skill.noellesroles.hakukofox.clone_killed": "§cYour fox clone was killed! 30s cooldown.",
+  "skill.noellesroles.hakukofox.freeze": "Freeze All",
   "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins.",
-  "message.noellesroles.hakukofox.nine_lives_saved": "§6Nine Lives! You cheated death!"
+  "message.noellesroles.hakukofox.nine_lives_saved": "§6Nine Lives! You cheated death!",
+  "skill.noellesroles.hakukofox.no_weapon": "§cYou cannot use weapons in beast form or clone POV.",
+  "skill.noellesroles.hakukofox.freeze": "Freeze All",
+  "skill.noellesroles.hakukofox.freeze_notify": "§bYou have been frozen by HakukoFox!",
+  "skill.noellesroles.hakukofox.freeze_self": "§aFroze all players for 5 seconds!"
 }

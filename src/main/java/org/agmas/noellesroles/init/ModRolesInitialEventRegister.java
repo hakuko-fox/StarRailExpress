@@ -1209,8 +1209,8 @@ public class ModRolesInitialEventRegister {
         // 技能1（G）：兽化型态 — 变身为白色狐狸，获得速度 II, 跳跃 II，无限时间
         //   再按 G 回到人型，冷却 180 秒。
         //   被动：兽化时免疫一次致命伤害（狐有九命）。
-        // 技能2（Shift+G）：狐狸分身 — 消耗50金生产狐狸分身，切换视角/接管/退回
-        //   冷却 90 秒。
+        // 技能2（Shift+G）：冻结全场 — 消耗100金令所有玩家冻结5秒（缓慢+失明+禁止跳跃）
+        //   冷却 60 秒。
         RoleSkill.register(ModRoles.HAKUKO_FOX,
                 RoleSkill.skill(SRE.id("hakukofox_transform"), "skill.noellesroles.hakukofox.transform", context -> {
                     ServerPlayer player = context.player();
@@ -1218,12 +1218,12 @@ public class ModRolesInitialEventRegister {
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
                             .toggleBeastForm(player, context);
                 }).cooldownSeconds(0).toggleable(true).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("hakukofox_clone"), "skill.noellesroles.hakukofox.clone", context -> {
+                RoleSkill.skill(SRE.id("hakukofox_freeze"), "skill.noellesroles.hakukofox.freeze", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
-                            .useCloneSkill(player, context);
-                }).shifted(true).cooldownSeconds(0).showOnHud(true).build());
+                            .useFreezeSkill(player, context);
+                }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
     }
 
 }

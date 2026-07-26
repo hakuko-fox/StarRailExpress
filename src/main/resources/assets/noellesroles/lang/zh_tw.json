@@ -3812,12 +3812,10 @@
   "skill.noellesroles.hakukofox.transform_pov": "§e退出分身視角（返回原位）",
   "skill.noellesroles.hakukofox.transform_on": "§a變身為獸化型態！獲得速度 II 和跳躍 II！",
   "skill.noellesroles.hakukofox.transform_off": "§c回到人類型態。",
-  "skill.noellesroles.hakukofox.clone": "狐狸分身",
-  "skill.noellesroles.hakukofox.clone_spawn": "§a消耗50金幣，生產了一隻狐狸分身！",
-  "skill.noellesroles.hakukofox.clone_pov": "§a進入狐狸分身視角。",
-  "skill.noellesroles.hakukofox.clone_possess": "§a接管了狐狸分身！",
-  "skill.noellesroles.hakukofox.clone_pov_exit": "§c退出分身視角。",
-  "skill.noellesroles.hakukofox.clone_killed": "§c你的狐狸分身被殺了！冷卻30秒。",
   "message.noellesroles.hakukofox.not_enough_money": "§c金幣不足！需要 %d 金幣。",
-  "message.noellesroles.hakukofox.nine_lives_saved": "§6狐有九命！你逃過一劫！"
+  "message.noellesroles.hakukofox.nine_lives_saved": "§6狐有九命！你逃過一劫！",
+  "skill.noellesroles.hakukofox.no_weapon": "§c你無法在野獸型態或狐狸分身視覺時使用此武器。",
+  "skill.noellesroles.hakukofox.freeze": "凍結全場",
+  "skill.noellesroles.hakukofox.freeze_notify": "§b你被白狐凍結了！",
+  "skill.noellesroles.hakukofox.freeze_self": "§a凍結所有玩家5秒！"
 }
