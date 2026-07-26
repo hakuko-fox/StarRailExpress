@@ -133,7 +133,6 @@
     "client.roles.leather_pig.LeatherPigSelfRenderMixin",
     "client.roles.hakukofox.HakukoFoxPlayerRenderMixin",
     "client.roles.hakukofox.HakukoFoxPOVBodyRenderMixin",
-    "client.roles.hakukofox.HakukoFoxPOVManualRenderMixin",
     "client.sodium.HakukoFoxPOVSodiumSectionMixin",
     "client.roles.salted_fish.SaltedFishBodyRenderMixin",
     "client.roles.salted_fish.SaltedFishPlayerRenderMixin",
