@@ -88,6 +88,9 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
     public void clear() {
         removeBeastEffects();
         despawnClone();
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            sp.refreshDimensions();
+        }
         init();
     }
 
