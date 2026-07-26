@@ -3820,5 +3820,5 @@
   "skill.noellesroles.hakukofox.clone_killed": "§c你的狐狸分身被杀了！冷却30秒。",
   "message.noellesroles.hakukofox.not_enough_money": "§c金币不足！需要 %d 金币。",
   "message.noellesroles.hakukofox.nine_lives_saved": "§6狐有九命！你逃过一劫！",
-  "skill.noellesroles.hakukofox.no_weapon": "§c你无法在野兽形态或操纵克隆时使用此武器。"
+  "skill.noellesroles.hakukofox.no_weapon": "§c你无法在野兽形态或狐狸分身视觉时使用此武器。"
 }
