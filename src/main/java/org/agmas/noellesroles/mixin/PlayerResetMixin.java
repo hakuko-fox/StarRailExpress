@@ -28,6 +28,7 @@ import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerCompon
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.conspirator.ConspiratorPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
@@ -129,6 +130,8 @@ public abstract class PlayerResetMixin {
         // 清除惩罚组件状态
         DeathPenaltyComponent deathPenalty = ModComponents.DEATH_PENALTY.get(player);
         deathPenalty.clear();
+
+        HakukoFoxPlayerComponent.KEY.get(player).clear();
 
         // 清除慕恋者组件状态
         AdmirerPlayerComponent admirerComp = ModComponents.ADMIRER.get(player);
