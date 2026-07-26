@@ -49,7 +49,6 @@
     "roles.leather_pig.LeatherPigEyeHeightMixin",
     "roles.hakukofox.HakukoFoxEyeHeightMixin",
     "roles.hakukofox.HakukoFoxAttackBlockMixin",
-    "roles.hakukofox.HakukoFoxBlockWeaponMixin",
     "roles.hakukofox.HakukoFoxDeathImmunityMixin",
     "roles.manipulator.PlayerControlMixin",
     "roles.manipulator.ManipulatorControlledDeathImmunityMixin",
