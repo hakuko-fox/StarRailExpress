@@ -17,6 +17,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
@@ -94,7 +95,8 @@ public class KnifeItem extends SkinableItem implements TrainWeapon {
                     // var owner = puppeteerBodyEntity.getOwner();
                     // return owner != null && GameUtils.isPlayerAliveAndSurvival(owner);
                     // }
-                    return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player);
+                    return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvival(player)
+                            || entity instanceof Fox;
 
                 }, 4f);
     }

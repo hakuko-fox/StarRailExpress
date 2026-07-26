@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
+import net.minecraft.world.entity.animal.Fox;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.RainbowHorseEntity;
 import org.agmas.noellesroles.content.entity.CanyuesaHorseEntity;
@@ -96,6 +97,7 @@ public class RevolverItem extends SkinableItem implements HeldLikeRevolver {
                 entity -> {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             || entity instanceof PuppeteerBodyEntity
+                            || entity instanceof Fox
                             || entity instanceof org.agmas.noellesroles.content.entity.PigeonEntity
                             || entity instanceof org.agmas.noellesroles.content.entity.MorphlingKnifeDummyEntity
                             || entity instanceof RainbowHorseEntity

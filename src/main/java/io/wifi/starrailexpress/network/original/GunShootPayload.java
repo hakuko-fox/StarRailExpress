@@ -82,6 +82,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
             }
             Entity hitEntity = player.serverLevel().getEntity(payload.target());
             if (mainHandStack.is(TMMItemTags.GUNS)
+                    && hitEntity instanceof net.minecraft.world.entity.animal.Fox fox
+                    && fox.distanceToSqr(player) < 30 * 30) {
+                fox.hurt(player.damageSources().playerAttack(player), 999f);
+                return;
+            }
+            if (mainHandStack.is(TMMItemTags.GUNS)
                     && hitEntity instanceof ServerPlayer target
                     && target.distanceToSqr(player) < 30 * 30) {
                 SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());

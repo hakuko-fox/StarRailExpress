@@ -19,6 +19,8 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +38,12 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
-            if (!(player.serverLevel().getEntity(payload.target()) instanceof ServerPlayer target))
+            Entity targetEntity = player.serverLevel().getEntity(payload.target());
+            if (targetEntity instanceof Fox fox) {
+                fox.hurt(player.damageSources().playerAttack(player), 999f);
+                return;
+            }
+            if (!(targetEntity instanceof ServerPlayer target))
                 return;
             if (target.distanceTo(player) > 3.0)
                 return;
