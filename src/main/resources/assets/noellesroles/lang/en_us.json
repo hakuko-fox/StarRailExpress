@@ -3677,5 +3677,5 @@
   "skill.noellesroles.hakukofox.clone_killed": "§cYour fox clone was killed! 30s cooldown.",
   "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins.",
   "message.noellesroles.hakukofox.nine_lives_saved": "§6Nine Lives! You cheated death!",
-  "skill.noellesroles.hakukofox.no_weapon": "§cYou cannot use weapons in beast form or fox clone POV."
+  "skill.noellesroles.hakukofox.no_weapon": "§cYou cannot use this weapon while in beast form or clone POV."
 }
