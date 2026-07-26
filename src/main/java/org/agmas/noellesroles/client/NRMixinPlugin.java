@@ -10,10 +10,12 @@ import java.util.Set;
 
 public class NRMixinPlugin implements IMixinConfigPlugin {
     private static final boolean IS_LAMBDYNLIGHTS_LOADED = FabricLoader.getInstance().isModLoaded("lambdynlights");
+    private static final boolean IS_SODIUM_LOADED = FabricLoader.getInstance().isModLoaded("sodium");
 
     public void onLoad(String mixinPackage) {
         System.out.println("Noelle's Roles: Mixin Plugin Loaded");
         System.out.println("LambDynLights loaded: " + IS_LAMBDYNLIGHTS_LOADED);
+        System.out.println("Sodium loaded: " + IS_SODIUM_LOADED);
     }
 
     public String getRefMapperConfig() {
@@ -21,8 +23,10 @@ public class NRMixinPlugin implements IMixinConfigPlugin {
     }
 
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        // Skip LamBugFix mixin if LambDynLights is not loaded
         if (mixinClassName.endsWith("LamBugFix") && !IS_LAMBDYNLIGHTS_LOADED) {
+            return false;
+        }
+        if (mixinClassName.contains("sodium.HakukoFoxPOVSodiumSectionMixin") && !IS_SODIUM_LOADED) {
             return false;
         }
         return true;
