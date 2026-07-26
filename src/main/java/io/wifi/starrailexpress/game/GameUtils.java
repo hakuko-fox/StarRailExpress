@@ -575,6 +575,7 @@ public class GameUtils {
 
     public static void initializeGame(ServerLevel serverWorld) {
         isGameStarted = false;
+        SRERole.resetStatic();
         var packet = ListRolesCommand.getRoleAndModifierEnableInfoPacket(false);
         for (var p : serverWorld.players()) {
             ServerPlayNetworking.send(p, packet);
@@ -1184,6 +1185,11 @@ public class GameUtils {
                         case CUSTOM_COMPONENT:
                             String roleIdentifier = playerRole.identifier().getPath();
                             if (roundEnd.CustomWinnerID != null && roundEnd.CustomWinnerID.equals(roleIdentifier)) {
+                                isWinner = true;
+                            }
+                            // 条件6：只剩自己和指定职业时，指定职业（整类）也一同获胜，对齐教父/杀手团队
+                            else if (roundEnd.CustomWinnerExtraRoleIds != null
+                                    && roundEnd.CustomWinnerExtraRoleIds.contains(roleIdentifier)) {
                                 isWinner = true;
                             }
                             // 保留原有的 CustomWinnersPredicates 作为备用

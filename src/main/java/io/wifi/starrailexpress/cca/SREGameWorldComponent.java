@@ -32,7 +32,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.content.item.GroselleJourneyManager;
 import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
+import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -848,6 +850,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
         if (gameWorldComponent.gameMode == SREGameModes.REPAIR_ESCAPE_MODE)
             return;
+        if (GroselleJourneyManager.isBanished(player.getUUID())) {
+            return;
+        }
         if (!(player.getZ() >= 19000)) {
             if (gameCCA.getGameMode().enablePlayAreaDetections()) {
                 if (checkPlayerIsOutOfAreas(player, areas)) {
@@ -866,12 +871,16 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     }
                 }
             }
-            
+
             checkPlayerBannedBlocks(player, areas, gameCCA);
             checkPlayerDarkness(player, areas, gameCCA);
 
             if (!areas.areasSettings.canUnderWater) {
                 if (player.isUnderWater()) {
+                    if (InControlCCA
+                            .bounceBackIfControlled(player)) {
+                        return;
+                    }
                     GameUtils.killPlayer(player, false,
                             player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.CANNOT_SWIM);
@@ -885,6 +894,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             }
             if (!areas.areasSettings.allowInDeepWater) {
                 if (checkPlayerIsInDeepWater(player, areas)) {
+
+                    if (InControlCCA
+                            .bounceBackIfControlled(player)) {
+                        return;
+                    }
                     GameUtils.killPlayer(player, false,
                             player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.CANNOT_SWIM);
@@ -898,6 +912,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             }
             if (!areas.areasSettings.canSimpleSwim) {
                 if (checkPlayerIsSwiming(player, areas)) {
+
+                    if (InControlCCA
+                            .bounceBackIfControlled(player)) {
+                        return;
+                    }
                     GameUtils.killPlayer(player, false,
                             player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.CANNOT_SWIM);
@@ -911,6 +930,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             }
             if (!areas.areasSettings.canInLava) {
                 if (checkPlayerIsInLava(player, areas)) {
+
+                    if (InControlCCA
+                            .bounceBackIfControlled(player)) {
+                        return;
+                    }
                     GameUtils.killPlayer(player, false,
                             player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.LAVA);
@@ -925,6 +949,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
         } else {
             gameCCA.playerBannedBlockTime.remove(player.getUUID());
+            perPlayerDarknessTime.remove(player.getUUID());
             if (!TarotAssemblyManager.havingMeeting) {
                 GameUtils.killPlayer(player, false,
                         player.getLastAttacker() instanceof Player killerPlayer ? killerPlayer : null,
@@ -1019,8 +1044,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     }
                 }
                 if (canDead) {
-
-                    if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA
+                    if (InControlCCA
                             .bounceBackIfControlled(player)) {
                         return;
                     }

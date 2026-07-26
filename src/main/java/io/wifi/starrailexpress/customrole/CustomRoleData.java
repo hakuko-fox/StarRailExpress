@@ -288,6 +288,9 @@ public class CustomRoleData {
     @SerializedName("cannotEarnCoinFromKills")
     public Boolean cannotEarnCoinFromKills = null; // 击杀不获得金币
 
+    @SerializedName("neutralKillCoin")
+    public int neutralKillCoin = 0; // 击杀玩家获得的额外金币（0=不给予）
+
     // ============ 战斗 / 击杀限制 ============
     @SerializedName("canKillWithBowAndCrossbow")
     public Boolean canKillWithBowAndCrossbow = null; // 能用弓/弩杀人
@@ -297,6 +300,9 @@ public class CustomRoleData {
 
     @SerializedName("cannotKnifeLeftClick")
     public Boolean cannotKnifeLeftClick = null; // 无法用刀左键击退人
+
+    @SerializedName("canUseDreamAxe")
+    public Boolean canUseDreamAxe = null; // 能用 Dream 铁斧削减他人虚拟血量
 
     // ============ 杀手同伙可见性 ============
     @SerializedName("killerTeammateVisibilityEnabled")

@@ -31,7 +31,9 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.noellesroles.client.RoleInstinctRegister;
 import org.agmas.noellesroles.utils.RoleUtils;
+import pro.fazeclan.river.stupid_express.modifier.lovers.LoversWinCheckEvent;
 
 import java.util.*;
 
@@ -179,6 +181,17 @@ public class CustomRoleLoader {
                 TMMRoles.registerRole(role);
                 loadedRoles.put(data.englishId, data);
                 registeredRoles.put(data.englishId, role);
+
+                // 自定义角色可能因重载而修改 mafiaTeam 状态，先清掉该角色上一次重载残留的
+                // OBSERVER_HIGHLIGHT_EVENT 处理器（含家族本能 / instinctModes），避免重复累积。
+                // 家族本能（若有）与 instinctModes 处理器会在下方按当前配置重新注册。
+                io.wifi.starrailexpress.event.client.RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT
+                        .removeConsumer(role.identifier());
+                // 若该自定义角色是 mafia 家族职业，为其注册家族本能，使其能互相看到特殊框。
+                // 必须在此处（registerModeEvents 之前）注册，以保证在事件分发中优先于模式处理器生效。
+                if (role.isMafiaTeam()) {
+                    RoleInstinctRegister.registerFamilyInstinct(role);
+                }
 
                 // 注册报幕文本（客户端），确保欢迎报到能显示自定义职业
                 try {
@@ -439,7 +452,9 @@ public class CustomRoleLoader {
         if (data.noCoinSystem != null)
             role.setNoCoinSystem(data.noCoinSystem);
         if (data.cannotEarnCoinFromKills != null)
-            role.setCannotEarnCoinFromKills(data.cannotEarnCoinFromKills);
+            role.setCanEarnKillerCoinAwardsFromKills(!data.cannotEarnCoinFromKills);
+        if (data.neutralKillCoin > 0)
+            role.setKillExtraCoinAwards(data.neutralKillCoin);
 
         if (data.canKillWithBowAndCrossbow != null)
             role.setCanKillWithBowAndCrossbow(data.canKillWithBowAndCrossbow);
@@ -447,6 +462,8 @@ public class CustomRoleLoader {
             role.setCanKillWithTrident(data.canKillWithTrident);
         if (data.cannotKnifeLeftClick != null)
             role.setCannotKnifeLeftClick(data.cannotKnifeLeftClick);
+        if (data.canUseDreamAxe != null)
+            role.setCanUseSpVanillaWeapon(data.canUseDreamAxe);
 
         if (data.killerTeammateVisibilityEnabled != null)
             role.setKillerTeammateScreenVisibility(data.killerTeammateVisibilityEnabled,
@@ -548,8 +565,11 @@ public class CustomRoleLoader {
             List<CustomRoleData.SkillData> skills = data.getEffectiveSkills();
             String skillNs = role.identifier().getNamespace();
             String skillPath = role.identifier().getPath();
+            List<RoleSkill.Definition> skillDefs = new ArrayList<>();
             for (int si = 0; si < skills.size(); si++) {
                 final CustomRoleData.SkillData sd = skills.get(si);
+                SRE.LOGGER.info("[CustomRole] Registering skill module #{} '{}' for role {} (commands={}, delayed={})",
+                        si, sd.name, data.englishId, sd.commands.size(), sd.delayedCommands.size());
                 final List<String> commands = new ArrayList<>(sd.commands);
                 final List<String> delayedCommands = new ArrayList<>(sd.delayedCommands);
                 final int cooldownSeconds = sd.cooldownSeconds;
@@ -557,12 +577,12 @@ public class CustomRoleLoader {
 
                 ResourceLocation customSkillId = ResourceLocation.fromNamespaceAndPath(
                         skillNs, skillPath + "_ability_" + si);
-                // 记录「技能 id -> 模块显示名」，供 HUD 精确显示当前选中的技能名
+                // 记录「技能 id -> 模块显示名」，供 HUD / 切换提示精确显示当前选中的技能名
                 skillDisplayNames.put(customSkillId,
                         sd.name == null ? "" : sd.name);
-                RoleSkill.register(role, RoleSkill.skill(
+                skillDefs.add(RoleSkill.skill(
                         customSkillId,
-                        "skill.sre.custom_role.ability",
+                        sd.name == null || sd.name.isEmpty() ? "skill.sre.custom_role.ability" : sd.name,
                         context -> {
                             ServerPlayer player = context.player();
                             // 死亡/旁观者不能使用技能；若角色设置了 canUseSkillWhileSpectator 则允许旁观者释放
@@ -603,6 +623,10 @@ public class CustomRoleLoader {
                 if (sd.initialCooldownSeconds > 0) {
                     initialCooldownMap.put(customSkillId, sd.initialCooldownSeconds * 20);
                 }
+            }
+            // 收集齐所有技能模块后，一次性注册（避免 RoleSkill.register 覆盖式 put 丢掉前面的技能）
+            if (!skillDefs.isEmpty()) {
+                RoleSkill.register(role, skillDefs.toArray(new RoleSkill.Definition[0]));
             }
         }
 
@@ -978,11 +1002,11 @@ public class CustomRoleLoader {
                     });
         }
 
-        private static TrueFalseAndCustomResult applyType(InstinctType type,
+        private static TrueFalseAndCustomResult<Integer> applyType(InstinctType type,
                 net.minecraft.world.entity.player.Player self,
                 net.minecraft.world.entity.player.Player target,
                 SRERole selfRole, SRERole targetRole,
-                TrueFalseAndCustomResult fallback) {
+                TrueFalseAndCustomResult<Integer> fallback) {
             if (type.isNone())
                 return TrueFalseAndCustomResult.disallow();
             if (type.isObserverRoleColor()) {
@@ -1195,6 +1219,46 @@ public class CustomRoleLoader {
     // ==================== 自定义独立胜利判定 ====================
 
     /**
+     * 判断某个角色是否匹配配置中填写的「指定职业 ID」。
+     * <p>
+     * 兼容多种填写格式（大小写不敏感）：
+     * <ul>
+     * <li>完整 ResourceLocation：{@code noellesroles:killer}</li>
+     * <li>仅路径（path）：{@code killer}</li>
+     * <li>{@code 命名空间:路径} 任意大小写</li>
+     * </ul>
+     * 修复此前用 {@code identifier().toString()} 与手填值严格 {@code equals} 比较，
+     * 导致用户填短 id 时匹配失败、条件6 误判为非「只剩自己和指定职业」、
+     * 从而通过 {@code return WinStatus.NONE} 永久阻止游戏结束的问题。
+     */
+    /**
+     * 从配置中填写的「指定职业 ID」提取职业路径（path），用于结算时的整类算赢匹配。
+     * <p>
+     * 兼容 {@code noellesroles:killer}（取 {@code killer}）与 {@code killer}（原样）两种写法。
+     */
+    private static String roleIdPath(String configuredId) {
+        if (configuredId == null)
+            return null;
+        String id = configuredId.trim();
+        if (id.isEmpty())
+            return null;
+        int idx = id.indexOf(':');
+        return idx >= 0 ? id.substring(idx + 1) : id;
+    }
+
+    private static boolean roleIdMatches(SRERole role, String configuredId) {
+        if (configuredId == null)
+            return false;
+        String id = configuredId.trim();
+        if (id.isEmpty())
+            return false;
+        ResourceLocation actual = role.identifier();
+        return actual.toString().equalsIgnoreCase(id) // 例如 noellesroles:killer
+                || actual.getPath().equalsIgnoreCase(id) // 例如 killer
+                || (actual.getNamespace() + ":" + actual.getPath()).equalsIgnoreCase(id);
+    }
+
+    /**
      * 检查所有启用了独立胜利的自定义角色是否满足胜利条件。
      * 在 {@link org.agmas.noellesroles.CustomWinnerClass} 中调用。
      *
@@ -1210,6 +1274,11 @@ public class CustomRoleLoader {
             if (GameUtils.isPlayerAliveAndSurvival(p))
                 alivePlayerCount++;
         }
+
+        // 恋人胜利状态（供低优先级条件让位使用）。优先级链：
+        // 条件4(存活到最后) > TIME > LOVER > 条件5/6(只剩自己/只剩自己+指定职业)
+        boolean loversWin = LoversWinCheckEvent.isLoversWin(serverLevel);
+
 
         for (var entry : customWinDataMap.entrySet()) {
             CustomRoleData data = entry.getValue();
@@ -1230,10 +1299,12 @@ public class CustomRoleLoader {
                 continue;
 
             // 条件6: 当场上只剩下自己和某职业时 (类似教父)
+            // 优先级低于 TIME 与 LOVER：TIME 时不触发；恋人已赢时让位
             if (!data.customWinLastWithRoles.isEmpty() && (currentWinStatus == WinStatus.KILLERS
-                    || currentWinStatus == WinStatus.PASSENGERS || currentWinStatus == WinStatus.TIME)) {
+                    || currentWinStatus == WinStatus.PASSENGERS)) {
                 // 检查场上是否只有自己 + 指定职业
                 boolean onlySelfAndSpecifiedRoles = true;
+                List<ServerPlayer> specifiedWinners = new ArrayList<>();
                 for (var p : serverLevel.players()) {
                     if (!GameUtils.isPlayerAliveAndSurvival(p) || p == customPlayer)
                         continue;
@@ -1242,10 +1313,9 @@ public class CustomRoleLoader {
                         onlySelfAndSpecifiedRoles = false;
                         break;
                     }
-                    String pRoleId = pRole.identifier().toString();
                     boolean matched = false;
                     for (String allowedId : data.customWinLastWithRoles) {
-                        if (pRoleId.equals(allowedId.trim())) {
+                        if (roleIdMatches(pRole, allowedId)) {
                             matched = true;
                             break;
                         }
@@ -1254,41 +1324,52 @@ public class CustomRoleLoader {
                         onlySelfAndSpecifiedRoles = false;
                         break;
                     }
+                    specifiedWinners.add(p);
                 }
                 if (onlySelfAndSpecifiedRoles) {
-                    doCustomWin(serverLevel, data, customPlayer);
+                    // 恋人胜利优先级高于条件6：让位给后注册的恋人监听器
+                    if (loversWin) return WinStatus.NOT_MODIFY;
+                    doCustomWin(serverLevel, data, customPlayer, specifiedWinners);
                     return WinStatus.CUSTOM;
                 }
-                // 阻止游戏提前结束（场上还有自己和指定职业）
+                // 阻止游戏提前结束（场上还有自己和指定职业）；恋人已赢时让位给恋人
                 if (currentWinStatus != WinStatus.TIME) {
+                    if (loversWin) return WinStatus.NOT_MODIFY;
                     return WinStatus.NONE;
                 }
             }
 
+
             // 条件5: 当场上一共只剩下自己存活时 (类似纵火犯)
-            if (data.customWinLastAlive && alivePlayerCount == 1) {
-                doCustomWin(serverLevel, data, customPlayer);
+            // 优先级低于 TIME 与 LOVER：TIME 时不触发；恋人已赢时让位
+            if (data.customWinLastAlive && alivePlayerCount == 1 && currentWinStatus != WinStatus.TIME) {
+                if (loversWin) return WinStatus.NOT_MODIFY;
+                doCustomWin(serverLevel, data, customPlayer, List.of());
                 return WinStatus.CUSTOM;
             }
-            // 阻止游戏结束（纵火犯式）
+            // 阻止游戏结束（纵火犯式）；恋人已赢时让位给恋人
             if (data.customWinLastAlive && (currentWinStatus == WinStatus.KILLERS
                     || currentWinStatus == WinStatus.PASSENGERS)) {
+                if (loversWin) return WinStatus.NOT_MODIFY;
                 return WinStatus.NONE;
             }
 
-            // 条件4: 存活到最后 (类似芙兰朵露)
+            // 条件4: 存活到最后 (类似芙兰朵露) —— 优先级最高，高于 TIME 与 LOVER
             if (data.customWinSurviveToLast && (alivePlayerCount <= 1 || currentWinStatus == WinStatus.TIME)) {
-                doCustomWin(serverLevel, data, customPlayer);
+                doCustomWin(serverLevel, data, customPlayer, List.of());
                 return WinStatus.CUSTOM;
             }
             if (data.customWinSurviveToLast && !currentWinStatus.equals(WinStatus.NONE)) {
+                // 仅「拖延」阻止；恋人已赢时让位给恋人（条件4 真正胜利时不会被拦截）
+                if (loversWin) return WinStatus.NOT_MODIFY;
                 return WinStatus.NONE;
             }
+
 
             // 条件7: 拥有指定标签时躺在床上取得独立胜利 (类似小偷)
             if (!data.customWinTagSleep.isEmpty() && customPlayer.getTags().contains(data.customWinTagSleep)
                     && customPlayer.isSleeping()) {
-                doCustomWin(serverLevel, data, customPlayer);
+                doCustomWin(serverLevel, data, customPlayer, List.of());
                 return WinStatus.CUSTOM;
             }
 
@@ -1308,7 +1389,7 @@ public class CustomRoleLoader {
                     }
                 }
                 if (hasItem) {
-                    doCustomWin(serverLevel, data, customPlayer);
+                    doCustomWin(serverLevel, data, customPlayer, List.of());
                     return WinStatus.CUSTOM;
                 }
             }
@@ -1317,10 +1398,20 @@ public class CustomRoleLoader {
         return WinStatus.NOT_MODIFY;
     }
 
-    private static void doCustomWin(ServerLevel serverLevel, CustomRoleData data, ServerPlayer winner) {
+    private static void doCustomWin(ServerLevel serverLevel, CustomRoleData data, ServerPlayer winner,
+            List<ServerPlayer> extraWinners) {
         int color = (data.colorR << 16) | (data.colorG << 8) | data.colorB;
         var roundComponent = SREGameRoundEndComponent.KEY.get(serverLevel);
         boolean hasCustomText = !data.customWinTitle.isEmpty() || !data.customWinSubtitle.isEmpty();
+
+        // 记录条件6中一同获胜的「指定职业」角色路径，使其在结算时整类算赢（对齐教父/杀手团队）
+        // 来源使用配置里填写的指定职业（而非仅存活玩家），确保已死的指定职业成员也随其职业整类算赢
+        roundComponent.CustomWinnerExtraRoleIds.clear();
+        for (String allowedId : data.customWinLastWithRoles) {
+            String path = roleIdPath(allowedId);
+            if (path != null && !path.isEmpty())
+                roundComponent.CustomWinnerExtraRoleIds.add(path);
+        }
 
         if (hasCustomText && roundComponent != null) {
             // 使用 CUSTOM_COMPONENT 模式直接显示用户自定义文本

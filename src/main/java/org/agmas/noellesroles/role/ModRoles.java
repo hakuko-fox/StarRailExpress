@@ -1475,33 +1475,35 @@ public class ModRoles {
             .setDefaultEnableChance(4000);
 
     // ==================== Mafia 家族角色 归到彩蛋里 ====================
+    // 注意：setMafiaTeam(true) 必须在 registerRole() 之前调用，否则角色不会被收集进
+    // TMMRoles.CACHE.MAFIA_ROLES，导致 RoleInstinctRegister 的家族本能循环遗漏该角色。
     public static SRERole GODFATHER = TMMRoles
             .registerRole(new EggRole(GODFATHER_ID, new Color(199, 21, 133).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true).setMafiaTeam(true))
             .setNeutrals(true).setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
             .setCanSeeCoin(true).setOccupiedRoleCount(3).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
-            .setMafiaTeam(true).setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(2000);
+            .setDefaultEnableNeededPlayerCount(18).setDefaultEnableChance(2000).setKillExtraCoinAwards(50);
     public static SRERole MAFIOSO = TMMRoles
             .registerRole(new EggRole(MAFIOSO_ID, new Color(218, 112, 214).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true).setMafiaTeam(true))
             .setNeutrals(true).setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setKillExtraCoinAwards(75);
     public static SRERole JANITOR = TMMRoles
             .registerRole(new EggRole(JANITOR_ID, new Color(255, 105, 180).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true).setMafiaTeam(true))
             .setNeutrals(true).setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setKillExtraCoinAwards(75);
     public static SRERole NUTRITIONIST = TMMRoles
             .registerRole(new EggRole(NUTRITIONIST_ID, new Color(50, 205, 50).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true).setMafiaTeam(true))
             .setNeutrals(true).setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setKillExtraCoinAwards(75);
     public static SRERole PARASOL = TMMRoles
             .registerRole(new EggRole(PARASOL_ID, new Color(0, 139, 139).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true))
+                    false, SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime() * 2, true).setMafiaTeam(true))
             .setNeutrals(true).setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
-            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setMafiaTeam(true);
+            .setCanSeeCoin(true).setDefaultMax(0).setCanBeRandomedByOtherRoles(false).setKillExtraCoinAwards(50);
 
     // 验尸官
     public static SRERole CORONER = TMMRoles
@@ -2100,7 +2102,7 @@ public class ModRoles {
         }
     }).setComponentKey(ThiefPlayerComponent.KEY).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKillerRole(false).setDefaultEnableChance(5000)
-            .setDefaultEnableNeededPlayerCount(10);
+            .setDefaultEnableNeededPlayerCount(10).setKillExtraCoinAwards(200);
 
     /**
      * 雇佣兵角色 - 中立阵营（非独立胜利）
@@ -2449,7 +2451,7 @@ public class ModRoles {
     public static ArrayList<SRERole> SHOW_MONEY_ROLES = new ArrayList<>();
     public static HashMap<SRERole, RoleAnnouncementTexts.RoleAnnouncementText> roleRoleAnnouncementTextHashMap = new HashMap<>();
 
-    // ==================== 咒法师 ====================
+    // ==================== 咒术师 ====================
     public static SRERole WARLOCK = TMMRoles.registerRole(new NormalRole(
             WARLOCK_ID, new java.awt.Color(139, 0, 139).getRGB(), false,
             true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)
@@ -2478,7 +2480,7 @@ public class ModRoles {
     }).setComponentKey(org.agmas.noellesroles.game.roles.killer.dream.DreamPlayerComponent.KEY)
             .setCanUseKiller(true).setCanSeeTeammateKillerRole(true).setCanBeRandomedByOtherRoles(false)
             .setDefaultMax(1)
-            .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true);
+            .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true).setCanUseSpVanillaWeapon(true);
 
     // ==================== 嬉命人（Embalmer）====================
     public static SRERole EMBALMER = TMMRoles.registerRole(new NormalRole(
