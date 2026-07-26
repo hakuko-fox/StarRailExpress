@@ -4,7 +4,9 @@ import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.item.ItemEntity;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
@@ -26,6 +28,11 @@ public class SodiumWorldRendererMixin {
 
     @Inject(method = "isEntityVisible", at = @At("HEAD"), cancellable = true)
     private void sre$keepGameplayEntitiesVisible(Entity entity, CallbackInfoReturnable<Boolean> cir) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.cameraEntity instanceof Fox && entity == mc.player) {
+            cir.setReturnValue(true);
+            return;
+        }
         if (entity instanceof PlayerBodyEntity
                 || entity instanceof PuppeteerBodyEntity
                 || entity instanceof WheelchairEntity
