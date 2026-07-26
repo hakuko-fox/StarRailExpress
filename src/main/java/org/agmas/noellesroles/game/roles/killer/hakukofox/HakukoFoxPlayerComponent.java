@@ -87,6 +87,12 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
     @Override
     public void clear() {
         removeBeastEffects();
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp && cloneState == CloneState.POV) {
+            sp.setCamera(sp);
+            sp.teleportTo(originalX, originalY, originalZ);
+            sp.setYRot(originalYaw);
+            sp.setXRot(originalPitch);
+        }
         despawnClone();
         if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
             sp.refreshDimensions();
