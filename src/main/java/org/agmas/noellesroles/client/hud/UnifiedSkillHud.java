@@ -12,7 +12,7 @@ import net.minecraft.util.Mth;
 
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
-import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 
 import java.util.List;
 
@@ -100,10 +100,7 @@ public final class UnifiedSkillHud {
 
                 Component name;
                 if (skill.id().equals(ResourceLocation.fromNamespaceAndPath("starrailexpress", "hakukofox_transform"))) {
-                    var hakuko = HakukoFoxPlayerComponent.KEY.maybeGet(client.player).orElse(null);
-                    name = Component.translatable(hakuko != null && hakuko.isInPOV()
-                            ? "skill.noellesroles.hakukofox.transform_pov"
-                            : skill.nameKey());
+                    name = Component.translatable(skill.nameKey());
                 } else {
                     name = Component.translatable(skill.nameKey());
                 }

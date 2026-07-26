@@ -3815,7 +3815,7 @@
   "message.noellesroles.hakukofox.not_enough_money": "§c金幣不足！需要 %d 金幣。",
   "message.noellesroles.hakukofox.nine_lives_saved": "§6狐有九命！你逃過一劫！",
   "skill.noellesroles.hakukofox.no_weapon": "§c你無法在野獸型態或狐狸分身視覺時使用此武器。",
-  "skill.noellesroles.hakukofox.freeze": "凍結全場",
+  "skill.noellesroles.hakukofox.freeze": "凍結所有玩家五秒(100金幣)",
   "skill.noellesroles.hakukofox.freeze_notify": "§b你被白狐凍結了！",
-  "skill.noellesroles.hakukofox.freeze_self": "§a凍結所有玩家5秒！"
+  "skill.noellesroles.hakukofox.freeze_self": "§a凍結所有玩家五秒！"
 }
