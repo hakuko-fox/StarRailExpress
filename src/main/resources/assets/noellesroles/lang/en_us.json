@@ -3671,7 +3671,7 @@
   "skill.noellesroles.hakukofox.freeze": "Freeze All (100 coins)",
   "message.noellesroles.hakukofox.not_enough_money": "§cNot enough coins! Need %d coins.",
   "message.noellesroles.hakukofox.nine_lives_saved": "§6Nine Lives! You cheated death!",
-  "skill.noellesroles.hakukofox.no_weapon": "§cYou cannot use weapons in beast form or clone POV.",
+  "skill.noellesroles.hakukofox.no_weapon": "§cYou cannot use weapons in beast form.",
   "skill.noellesroles.hakukofox.freeze_notify": "§bYou have been frozen by HakukoFox!",
   "skill.noellesroles.hakukofox.freeze_self": "§aFroze all players for 5 seconds!"
 }
