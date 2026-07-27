@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.item.GrenadeItem;
 import io.wifi.starrailexpress.index.TMMSounds;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,6 +38,14 @@ public class FakeGrenadeItem extends GrenadeItem {
 
     @Override
     public void releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
+        if (user instanceof Player player) {
+            HakukoFoxPlayerComponent comp = HakukoFoxPlayerComponent.KEY.maybeGet(player).orElse(null);
+            if (comp != null && comp.isBeastFormActive()) {
+                player.displayClientMessage(Component.translatable("skill.noellesroles.hakukofox.no_weapon"), true);
+                return;
+            }
+        }
+
         if (!world.isClientSide) {
             if (user instanceof Player player && player.getCooldowns().isOnCooldown(stack.getItem())) {
                 return;

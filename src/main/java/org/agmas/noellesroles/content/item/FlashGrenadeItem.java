@@ -1,6 +1,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.index.TMMSounds;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
@@ -10,6 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.FlashGrenadeEntity;
+import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 import org.agmas.noellesroles.init.ModEntities;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,6 +29,12 @@ public class FlashGrenadeItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(@NotNull Level world, @NotNull Player user, InteractionHand hand) {
         ItemStack itemStack = user.getItemInHand(hand);
+
+        HakukoFoxPlayerComponent comp = HakukoFoxPlayerComponent.KEY.maybeGet(user).orElse(null);
+        if (comp != null && comp.isBeastFormActive()) {
+            user.displayClientMessage(Component.translatable("skill.noellesroles.hakukofox.no_weapon"), true);
+            return InteractionResultHolder.fail(itemStack);
+        }
 
         // 播放投掷音效
         world.playSound(null, user.getX(), user.getY(), user.getZ(),

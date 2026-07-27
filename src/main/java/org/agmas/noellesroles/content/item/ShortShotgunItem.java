@@ -4,6 +4,7 @@ import io.wifi.starrailexpress.content.item.api.SREItemProperties.HeldLikeBat;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -23,6 +24,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
 
@@ -85,6 +87,12 @@ public class ShortShotgunItem extends Item implements HeldLikeBat, TrainWeapon {
         // 检查玩家状态：旁观者或已死亡时不发射，防止蓄力期间死亡仍能开枪
         Player player = (Player) user;
         if (player.isSpectator() || !player.isAlive()) {
+            return;
+        }
+
+        HakukoFoxPlayerComponent comp = HakukoFoxPlayerComponent.KEY.maybeGet(player).orElse(null);
+        if (comp != null && comp.isBeastFormActive()) {
+            player.displayClientMessage(Component.translatable("skill.noellesroles.hakukofox.no_weapon"), true);
             return;
         }
 
