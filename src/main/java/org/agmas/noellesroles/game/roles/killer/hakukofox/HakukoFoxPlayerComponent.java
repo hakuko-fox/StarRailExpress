@@ -89,12 +89,16 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             sync();
             return true;
         } else {
+            if (!context.skillReady()) {
+                sp.displayClientMessage(Component.translatable("message.sre.skill.cooldown",
+                        String.format("%.1f", context.skillState().cooldown / 20.0F)), true);
+                return false;
+            }
             sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, -1, 1, false, false, true));
             sp.addEffect(new MobEffectInstance(MobEffects.JUMP, -1, 1, false, false, true));
             beastFormActive = true;
             nineLivesUsed = false;
             sp.refreshDimensions();
-            context.setSkillCooldown(180 * 20);
 
             ServerLevel world = sp.serverLevel();
             world.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
