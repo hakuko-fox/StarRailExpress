@@ -89,6 +89,7 @@ import org.agmas.noellesroles.game.roles.neutral.reasoner.ReasonerPlayerComponen
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.slippery_ghost.SlipperyGhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.voice_changer.VoiceChangerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.wayfarer.WayfarerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilantePlayerComponent;
@@ -431,6 +432,12 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "jade_general"),
       JadeGeneralPlayerComponent.class);
 
+  // 幽露组件 - 杀手阵营，锚点传送/穿墙烟雾/自由摄像机球烟
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.youlu.YouluPlayerComponent> YOULU =
+      ComponentRegistry.getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "youlu"),
+          org.agmas.noellesroles.game.roles.killer.youlu.YouluPlayerComponent.class);
+
   // 巫师组件 - 杀手阵营，魔素/法杖/魔药/法术池
   public static final ComponentKey<WizardPlayerComponent> WIZARD = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "wizard"),
@@ -680,6 +687,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(GhostPlayerComponent::new);
     registry.beginRegistration(Player.class, VulturePlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(VulturePlayerComponent::new);
+
+    // 注册变声怪杰组件
+    registry.beginRegistration(Player.class, VoiceChangerPlayerComponent.KEY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(VoiceChangerPlayerComponent::new);
     registry.beginRegistration(Player.class, PelicanPlayerComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(PelicanPlayerComponent::new);
     registry.beginRegistration(Player.class, GodfatherComponent.KEY)
@@ -902,6 +913,11 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, JADE_GENERAL)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(JadeGeneralPlayerComponent::new);
+
+    // 注册幽露组件 - 锚点/自由摄像机状态
+    registry.beginRegistration(Player.class, YOULU)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.youlu.YouluPlayerComponent::new);
 
     // 注册巫师组件 - 魔素/法术状态
     registry.beginRegistration(Player.class, WIZARD)

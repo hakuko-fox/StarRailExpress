@@ -236,6 +236,7 @@ public class GameConstants {
         public static ResourceLocation HOT_POTATO = SRE.id("hot_potato");
         public static ResourceLocation CAT_KILLER = SRE.wifiId("cat_killer");
 
+        public static ResourceLocation SUIKA_RUSH = Noellesroles.id("suika_rush");
         public static ResourceLocation VOODOO = Noellesroles.id("voodoo");
         public static ResourceLocation SHOT_INNOCENT = Noellesroles.id("shot_innocent");
         public static ResourceLocation INSANE_KILLER_DEATH = Noellesroles.id("insane_killer_death");
@@ -284,6 +285,7 @@ public class GameConstants {
         public static ResourceLocation DREAM_DIAMOND_SWORD = Noellesroles.id("dream_diamond_sword");
         public static ResourceLocation DREAM_MACE = Noellesroles.id("dream_mace");
 
+        public static ResourceLocation RADIATION = StupidExpress.id("radiation");
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");
         public static ResourceLocation FAILED_INITIATION = StupidExpress.id("failed_initiation");
         public static ResourceLocation ALLERGIST = StupidExpress.id("allergist");

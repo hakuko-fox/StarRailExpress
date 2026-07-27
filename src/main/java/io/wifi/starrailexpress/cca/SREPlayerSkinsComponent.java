@@ -4,12 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
-import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -29,8 +27,6 @@ import java.util.*;
 public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTickingComponent {
     private static final Logger logger = LoggerFactory.getLogger(SREPlayerSkinsComponent.class);
     private static final String DATABASE_SYNC_KEY = "skins";
-    private static final long DATABASE_SYNC_DEBOUNCE_MS = 2500L;
-    private static final long DATABASE_SYNC_FLUSH_TIMEOUT_MS = 4000L;
     public static final ComponentKey<SREPlayerSkinsComponent> KEY = ComponentRegistry.getOrCreate(
             SRE.id("player_skins"),
             SREPlayerSkinsComponent.class);
@@ -46,8 +42,6 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     private boolean isNetworkSyncEnabled = false;
     private boolean syncMode = false;
     private volatile boolean databaseSyncQueued = false;
-    private volatile boolean databaseSyncInFlight = false;
-    private volatile boolean databaseLoadPending = false;
     private volatile long nextDatabaseSyncAt = 0L;
 
     public SREPlayerSkinsComponent(Player player) {
@@ -82,7 +76,6 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         this.isNetworkSyncEnabled = SREConfig.instance().itemSkinSyncServerEnabled
                 && SREConfig.instance().mysqlPlayerSyncEnabled
                 && MysqlPlayerDataStore.isAvailable();
-        this.databaseLoadPending = false;
         if (this.isNetworkSyncEnabled) {
             logger.info("玩家 {} 的皮肤 MySQL 同步已启用", this.player.getName().getString());
         } else if (SREConfig.instance().itemSkinSyncServerEnabled) {
@@ -102,7 +95,6 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      */
     public void disableNetworkSync() {
         this.isNetworkSyncEnabled = false;
-        this.databaseLoadPending = false;
     }
 
     @Override
@@ -151,7 +143,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 获取当前装备的皮肤名称
      */
     public String getEquippedSkin(ItemStack itemStack) {
-        String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath().toLowerCase();
+        String itemName = ItemSkinManager.getItemTypeName(itemStack);
         return equippedSkins.getOrDefault(itemName, "default");
     }
 
@@ -159,7 +151,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 设置当前装备的皮肤名称
      */
     public void setEquippedSkin(ItemStack itemStack, String skinName) {
-        String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath().toLowerCase();
+        String itemName = ItemSkinManager.getItemTypeName(itemStack);
         equippedSkins.put(itemName, skinName);
         markSkinDataChanged();
     }
@@ -168,7 +160,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 解锁一个皮肤
      */
     public void unlockSkin(ItemStack itemStack, String skinName) {
-        String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath().toLowerCase();
+        String itemName =ItemSkinManager.getItemTypeName(itemStack);
         unlockedSkins.computeIfAbsent(itemName, k -> new HashMap<>()).put(skinName, true);
         // 触发网络同步
         markSkinDataChanged();
@@ -188,7 +180,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 锁定一个皮肤（移除解锁状态）
      */
     public void lockSkin(ItemStack itemStack, String skinName) {
-        String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath().toLowerCase();
+        String itemName = ItemSkinManager.getItemTypeName(itemStack);
         Map<String, Boolean> skinsForItem = unlockedSkins.get(itemName);
         if (skinsForItem != null) {
             skinsForItem.remove(skinName);
@@ -230,7 +222,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 检查皮肤是否已解锁
      */
     public boolean isSkinUnlocked(ItemStack itemStack, String skinName) {
-        String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath().toLowerCase();
+        String itemName = ItemSkinManager.getItemTypeName(itemStack);
         Map<String, Boolean> skinsForItem = unlockedSkins.get(itemName);
         return skinsForItem != null && skinsForItem.getOrDefault(skinName, false);
     }
@@ -250,7 +242,8 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 获取所有解锁的皮肤
      */
     public Map<String, Boolean> getUnlockedSkins(ItemStack itemStack) {
-        String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath().toLowerCase();
+        
+        String itemName = ItemSkinManager.getItemTypeName(itemStack);
         return unlockedSkins.getOrDefault(itemName, new HashMap<>());
     }
 
@@ -296,12 +289,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      * 从数据同步令牌获取皮肤数据
      */
     public String getSkinFromDataSync(ItemStack itemStack) {
-        String itemName = "default";
-        if (itemStack.getItem() instanceof SkinableItem ski) {
-            itemName = ski.getItemSkinType();
-        } else {
-            itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath();
-        }
+        String itemName = ItemSkinManager.getItemTypeName(itemStack);
         // 使用物品的注册名而不是显示名称，以确保一致性
 
         if (KEY.get(player).equippedSkins.containsKey(itemName)) {
@@ -316,7 +304,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
      */
     public void setSkinInDataSync(ItemStack itemStack, String skinName) {
         // 只在客户端上传数据
-        KEY.get(player).equippedSkins.put(BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath(), skinName);
+        KEY.get(player).equippedSkins.put(ItemSkinManager.getItemTypeName(itemStack), skinName);
         markSkinDataChanged();
     }
 
@@ -362,12 +350,10 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
             return;
         }
 
-        this.databaseLoadPending = true;
         MysqlPlayerDataStore.loadBatchAsync(this.player.getUUID(), List.of(DATABASE_SYNC_KEY))
                 .thenAccept(records -> {
                     MysqlPlayerDataStore.SyncRecord record = records.get(DATABASE_SYNC_KEY);
                     serverPlayer.getServer().execute(() -> {
-                        this.databaseLoadPending = false;
                         if (record != null && record.payload() != null && !record.payload().isBlank()) {
                             @SuppressWarnings("unchecked")
                             Map<String, Object> skinData = GSON.fromJson(record.payload(), Map.class);
@@ -384,7 +370,6 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
                     });
                 })
                 .exceptionally(throwable -> {
-                    this.databaseLoadPending = false;
                     logger.error("从 MySQL 拉取玩家 {} 的皮肤数据时出错", this.player.getName().getString(), throwable);
                     this.isNetworkSyncEnabled = false;
                     return null;
@@ -442,17 +427,6 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     }
 
     /**
-     * 深复制解锁皮肤映射
-     */
-    private Map<String, Map<String, Boolean>> deepCopyUnlockedSkins() {
-        Map<String, Map<String, Boolean>> copy = new HashMap<>();
-        for (Map.Entry<String, Map<String, Boolean>> entry : this.unlockedSkins.entrySet()) {
-            copy.put(entry.getKey(), new HashMap<>(entry.getValue()));
-        }
-        return copy;
-    }
-
-    /**
      * 深复制嵌套的映射
      */
     private Map<String, Map<String, Boolean>> deepCopyMap(Map<String, Map<String, Boolean>> original) {
@@ -475,17 +449,6 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
         // 远程数据库由网站端（邮箱/兑换码/抽奖/管理员发放）唯一写入，游戏端只读取（pullSkinsFromNetwork）。
         // 保留方法签名以兼容 serverTick / syncSkinsToNetwork 等调用方，但方法体为空操作。
         return false;
-    }
-
-    private Map<String, Object> buildSkinDataPayload() {
-        Map<String, Object> skinData = new HashMap<>();
-        skinData.put("equipped", new HashMap<>(this.equippedSkins));
-        skinData.put("unlocked", this.deepCopyUnlockedSkins());
-        skinData.put("lootChance", this.lootChance);
-        skinData.put("coinNum", this.coinNum);
-        skinData.put("version", System.currentTimeMillis());
-        skinData.put("timestamp", System.currentTimeMillis());
-        return skinData;
     }
 
     @Override

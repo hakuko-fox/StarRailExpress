@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
+import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -26,21 +27,64 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
+import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
 
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
 import org.agmas.noellesroles.content.item.RopeItem;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THLostForestRoles;
+import org.agmas.noellesroles.role.touhou.THMagicForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.role.touhou.roles.THReimuRole;
+import org.agmas.noellesroles.role.touhou.roles.THSuikaRole;
+import org.agmas.noellesroles.role.touhou.roles.THUtsuhoRole;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TouhouHandlers {
   public static void register() {
     registerSkills();
     registerEvents();
+    registerInitEvents();
+  }
+
+  public static void registerInitEvents() {
+    OnGameTrueStarted.EVENT.register((serverLevel) -> {
+      final var modifierCca = WorldModifierComponent.KEY.get(serverLevel);
+      final var gameCca = SREGameWorldComponent.getInstance(serverLevel);
+      for (final var player : serverLevel.players()) {
+        final var role = RoleUtils.getPlayerRole(player);
+        // 强制绑定不死组辉夜和妹红为恋人
+        {
+          if (RoleUtils.compareRole(role, THLostForestRoles.KAGUYA)) {
+            if (modifierCca.isModifier(player, SEModifiers.LOVERS)
+                && LoversComponent.KEY.get(player).getLoverAsPlayer() != null) {
+              return;
+            }
+            Player mokou = null;
+            for (final Player p : player.level().players()) {
+              if (!modifierCca.isModifier(p.getUUID(), SEModifiers.LOVERS)
+                  && gameCca.isRole(p.getUUID(), THLostForestRoles.MOKOU)) {
+                mokou = p;
+              }
+            }
+            if (mokou != null) {
+              modifierCca.addModifier(player.getUUID(), SEModifiers.LOVERS, false);
+              modifierCca.addModifier(mokou.getUUID(), SEModifiers.LOVERS, false);
+              LoversComponent.KEY.get(player).setLoverAndSync(mokou.getUUID());
+              LoversComponent.KEY.get(mokou).setLoverAndSync(player.getUUID());
+              modifierCca.sync();
+            } else {
+              SRE.LOGGER.warn("Cannot find mokou for kaguya {}", player.getScoreboardName());
+            }
+          }
+        }
+      }
+    });
   }
 
   public static void registerEvents() {
@@ -50,7 +94,7 @@ public class TouhouHandlers {
         if (RoleUtils.isPlayerTheJob(victim, THMiscRoles.HAKUREI_REIMU)) {
           return TrueFalseResult.FALSE;
         }
-        if (RoleUtils.isPlayerTheJob(victim, THMiscRoles.KIRISAME_MARISA)) {
+        if (RoleUtils.isPlayerTheJob(victim, THMagicForestRoles.KIRISAME_MARISA)) {
           return TrueFalseResult.FALSE;
         }
       }
@@ -135,7 +179,16 @@ public class TouhouHandlers {
   }
 
   public static void registerSkills() {
-    RoleSkill.register(THMiscRoles.KIRISAME_MARISA,
+    RoleSkill.register(THMiscRoles.REIUJI_UTSUHO,
+        RoleSkill.skill(SRE.id("utsuho"), "skill.noellesroles.utsuho", THUtsuhoRole::skillHandler)
+            .announceToSelf().showOnHud(true).cooldownSeconds(120).build());
+    RoleSkill.register(THMiscRoles.IBUKI_SUIKA,
+        RoleSkill.skill(SRE.id("suika_big"), "skill.noellesroles.suika.big", THSuikaRole::handleSkillBig)
+            .announceToSelf()
+            .showOnHud(true).cooldownSeconds(60).build(),
+        RoleSkill.skill(SRE.id("suika_small"), "skill.noellesroles.suika.small", THSuikaRole::handleSkillSmall)
+            .announceToSelf().cooldownSeconds(60).showOnHud(true).shifted(true).build());
+    RoleSkill.register(THMagicForestRoles.KIRISAME_MARISA,
         RoleSkill.skill(SRE.id("marisa_magic"), "skill.noellesroles.marisa_magic", context -> {
           Player player = context.player();
           for (var p : player.level().players()) {

@@ -385,6 +385,21 @@ public class ModItems {
             new SmokeGrenadeItem(new Item.Properties().stacksTo(8)),
             "smoke_grenade", WEAPONS_GROUP);
 
+    /** 燃烧弹：右键投掷，落点形成半径4燃烧区域，持续站立2秒即死亡 */
+    public static final Item INCENDIARY_GRENADE = register(
+            new org.agmas.noellesroles.content.item.IncendiaryGrenadeItem(new Item.Properties().stacksTo(8)),
+            "incendiary_grenade", WEAPONS_GROUP);
+
+    /** 粘液弹：右键投掷，落点形成半径4粘液区域，范围内无法跳跃+缓慢III */
+    public static final Item SLIME_GRENADE = register(
+            new org.agmas.noellesroles.content.item.SlimeGrenadeItem(new Item.Properties().stacksTo(8)),
+            "slime_grenade", WEAPONS_GROUP);
+
+    /** 破墙弹：右键投掷，命中墙壁拆除半径2方块，5秒后持久化恢复（带NBT方块不拆） */
+    public static final Item WALL_BREAK_GRENADE = register(
+            new org.agmas.noellesroles.content.item.WallBreakGrenadeItem(new Item.Properties().stacksTo(8)),
+            "wall_break_grenade", WEAPONS_GROUP);
+
     /**
      * 氯气弹
      * - 可投掷物品
@@ -546,7 +561,7 @@ public class ModItems {
      */
     public static final Item WREATH = register(
             new WreathItem(ArmorMaterials.CHAIN, ArmorItem.Type.HELMET,
-                    (new Item.Properties()).stacksTo(1)),
+                    (new Item.Properties()).durability(60)),
             "wreath", EQUIPMENT_GROUP, SANITY_GROUP);
     /**
      * 巧克力
@@ -954,6 +969,28 @@ public class ModItems {
             "zero_one_five_gun", WEAPONS_GROUP);
 
     /**
+     * 幽露技能物品「不请自来」
+     * - 幽露商店 80 金币购买一次，可反复使用
+     * - 第一次使用放置沿地面向前滑行的球形锚点（仅本人可见）
+     * - 第二次使用传送到锚点位置，随后进入 30s 冷却
+     */
+    public static final Item YOULU_ANCHOR = register(
+            new org.agmas.noellesroles.content.item.YouluAnchorItem(
+                    new Item.Properties().stacksTo(1)),
+            "youlu_anchor", ROLE_ITEMS_GROUP);
+
+    /**
+     * 幽露技能物品「遮天闭目」
+     * - 幽露商店 100 金币购买一次，可反复使用
+     * - 向前释放穿墙烟雾，锥形范围内玩家 8s 失明+黑暗
+     * - 60s 冷却
+     */
+    public static final Item YOULU_SMOKE = register(
+            new org.agmas.noellesroles.content.item.YouluSmokeItem(
+                    new Item.Properties().stacksTo(1)),
+            "youlu_smoke", ROLE_ITEMS_GROUP);
+
+    /**
      * 尊名纸条
      * - 愚者商店购买（50金币）
      * - 右键墙壁/地面贴附，生成不可破坏的文本实体
@@ -1152,6 +1189,10 @@ public class ModItems {
     public static final ItemStack ExamplerPsychoItemStack = TMMItems.PSYCHO_MODE.getDefaultInstance();
     public static Map<Item, Integer> ITEM_COOLDOWNS = new HashMap<>();
     static {
+        // 不需要单独注册！！！！
+        // 不需要单独注册！！！！
+        // 直接在 Item类里面 implement即可！！！
+        // 直接在 Item类里面 implement即可！！！
         var examplerPsychoLore = new ItemLore(
                 List.of(Component.translatable("itemstack.exampler.psychoitem.item_lore.1"),
                         Component.translatable("itemstack.exampler.psychoitem.item_lore.2")));

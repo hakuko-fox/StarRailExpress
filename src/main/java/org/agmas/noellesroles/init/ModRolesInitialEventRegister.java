@@ -63,9 +63,11 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.roles.neutral.recorder.RecorderPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.thief.ThiefPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.voice_changer.VoiceChangerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -106,7 +108,8 @@ public class ModRolesInitialEventRegister {
             if (role.identifier().equals(ModRoles.CHEF.identifier())) {
                 FoodDrinkGlowComponent.KEY.get(player).init();
             }
-            if (role.identifier().equals(ModRoles.MAGICIAN.identifier())) {
+            if (RoleUtils.compareRole(role, THLostForestRoles.KAGUYA)
+                    || RoleUtils.compareRole(role, ModRoles.MAGICIAN)) {
                 var magicianComponent = ModComponents.MAGICIAN.maybeGet(player).orElse(null);
                 if (magicianComponent != null) {
                     // 停止疯狂模式（如果之前存在）
@@ -605,16 +608,10 @@ public class ModRolesInitialEventRegister {
                     ServerPlayer target = context.target() != null
                             && player.level().getPlayerByUUID(context.target()) instanceof ServerPlayer sp ? sp : null;
                     return comp.tryCurse(target);
-                }).cooldownSeconds(45).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("warlock_domain"), "skill.noellesroles.warlock.domain", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator())
-                        return false;
-                    var comp = org.agmas.noellesroles.game.roles.killer.warlock.WarlockPlayerComponent.KEY.get(player);
-                    if (comp == null)
-                        return false;
-                    return comp.tryOpenDomain();
-                }).cooldownSeconds(240).shifted(true).showOnHud(true).announceToSelf(true).build());
+                }).cooldownSeconds(45).showOnHud(true).build());
+        // 领域展开（技能三）改为在背包 LimitedInventoryScreen 点选已被诅咒且存活的目标触发，
+        // 见 WarlockDomainScreenMixin / WarlockDomainWidget /
+        // WarlockDomainC2SPacket（冷却记在组件里，60s）。
 
         // Dream（梦魇）技能注册：制酒 —— 酿一瓶酒，喝下隐身10s（期间无法攻击/无法受伤）
         RoleSkill.register(ModRoles.DREAM,
@@ -647,6 +644,17 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).cooldownSeconds(NoellesRolesConfig.instance().dreamBrewCooldownSeconds)
                         .showOnHud(true).announceToSelf(true).build());
+
+        // 幽露（Youlu）G 键技能：【魂游】—— 第一次按 G 进入自由摄像机（返回 false 不进冷却），
+        // 再按 G 在摄像机位置生成球烟并进入 45s 冷却；ESC 取消由 YouluFreeCamCancelC2SPacket 处理。
+        RoleSkill.register(ModRoles.YOULU,
+                RoleSkill.skill(SRE.id("youlu_freecam"), "skill.noellesroles.youlu.freecam", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator())
+                        return false;
+                    return org.agmas.noellesroles.game.roles.killer.youlu.YouluPlayerComponent.KEY
+                            .get(player).useCamSkill(player);
+                }).cooldownSeconds(45).showOnHud(true).announceToSelf(true).build());
 
         // 滞时鬼（Delayer）技能注册：【时间锚点】——消耗金币锚定当前状态，
         // delayerRewindDelaySeconds 秒后自动沿原路平滑回溯（详见 DelayerPlayerComponent）。
@@ -878,6 +886,33 @@ public class ModRolesInitialEventRegister {
                             ThiefPlayerComponent.KEY.get(context.player()).toggleMode();
                             return true;
                         }).shifted(true).modeSwitch(true).announceToSelf(false).showOnHud(false).build());
+
+        // 变声怪杰技能注册：
+        // - 蹲下+技能键(G)：标记准星玩家（冷却20秒）
+        // - 技能键(G)：对全部被标记目标施加当前选择的变声效果（持续60秒，冷却60秒）
+        // - 技能切换键(Y)：切换变声种类
+        // - 蹲下+技能切换键(Y)：切换变声等级
+        RoleSkill.register(ModRoles.VOICE_CHANGER,
+                RoleSkill.skill(SRE.id("voice_changer_apply"),
+                        "skill.noellesroles.voice_changer.apply",
+                        context -> {
+                            return VoiceChangerPlayerComponent.KEY.get(context.player()).applyVoice();
+                        }).cooldownSeconds(60).showOnHud(true).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("voice_changer_mark"),
+                        "skill.noellesroles.voice_changer.mark",
+                        context -> {
+                            return VoiceChangerPlayerComponent.KEY.get(context.player()).markTarget(context.target());
+                        }).shifted(true).cooldownSeconds(20).showOnHud(true).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("voice_changer_switch"),
+                        "skill.noellesroles.voice_changer.switch",
+                        context -> {
+                            if (context.player().isShiftKeyDown()) {
+                                VoiceChangerPlayerComponent.KEY.get(context.player()).switchVoiceLevel();
+                            } else {
+                                VoiceChangerPlayerComponent.KEY.get(context.player()).switchVoiceType();
+                            }
+                            return true;
+                        }).shifted(true).modeSwitch(true).announceToSelf(false).build());
 
         // 会计技能注册：普通按 G 使用技能，按技能切换键(Y) 切换模式
         RoleSkill.register(ModRoles.ACCOUNTANT,

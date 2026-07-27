@@ -21,8 +21,8 @@ public class SREModifier extends SREAbstractInfoClass {
     private ResourceLocation identifier;
     public boolean canSetSpawnInfoInConfig = true;
     public int color;
-    public HashSet<SRERole> cannotBeAppliedTo;
-    public HashSet<SRERole> canOnlyBeAppliedTo;
+    public HashSet<SRERole> cannotBeAppliedTo = null;
+    public HashSet<SRERole> canOnlyBeAppliedTo = null;
     public boolean killerOnly = false;
     public boolean civilianOnly = false;
     public boolean notVigilante = false;
@@ -315,12 +315,14 @@ public class SREModifier extends SREAbstractInfoClass {
         return this;
     }
 
-    public SREModifier(ResourceLocation identifier, int color, HashSet<SRERole> cannotBeAppliedTo,
-            HashSet<SRERole> canOnlyBeAppliedTo, boolean killerOnly, boolean civilianOnly) {
+    public SREModifier(ResourceLocation identifier, int color, Collection<SRERole> cannotBeAppliedTo,
+            Collection<SRERole> canOnlyBeAppliedTo, boolean killerOnly, boolean civilianOnly) {
         this.identifier = identifier;
         this.color = color;
-        this.cannotBeAppliedTo = cannotBeAppliedTo;
-        this.canOnlyBeAppliedTo = canOnlyBeAppliedTo;
+        if (cannotBeAppliedTo != null)
+            this.cannotBeAppliedTo = new HashSet<SRERole>(cannotBeAppliedTo);
+        if (canOnlyBeAppliedTo != null)
+            this.canOnlyBeAppliedTo = new HashSet<SRERole>(canOnlyBeAppliedTo);
         this.killerOnly = killerOnly;
         this.civilianOnly = civilianOnly;
     }

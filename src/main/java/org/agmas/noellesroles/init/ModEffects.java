@@ -20,6 +20,7 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.GhostStateComponent;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
+import org.agmas.noellesroles.content.effects.PuppetWanderEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
@@ -90,6 +91,15 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> USED_BANED = register("used_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
+
+    /**
+     * 傀儡游走（操控者·失控之躯）
+     * - 有害效果
+     * - 拥有者身体每 tick 自动朝随机方向缓慢走动、拥有者无法控制（配合 MOVE_BANED/TURN_BANED 等），
+     *   带悬崖/危险探测避免走进虚空。行为见 {@link PuppetWanderEffect}。
+     */
+    public static final Holder<MobEffect> PUPPET_WANDER = register("puppet_wander",
+            new PuppetWanderEffect());
 
     /**
      * 时间停止效果
@@ -311,6 +321,80 @@ public class ModEffects {
     public static final Holder<MobEffect> VOICE_SILENCE = register("voice_silence",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x808080));
     /**
+     * 蜂鸣音效：把说话者的声音替换成跟随语调起伏的纯正弦音（pitch-tracking sine vocoder）。
+     * 听不出具体内容，但能感知语调与情绪起伏。客户端处理见
+     * {@code org.agmas.noellesroles.voice.client.BeepRobotVoiceClientReceiver}。
+     */
+    public static final Holder<MobEffect> VOICE_BEEP = register("voice_beep",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFD700));
+    /**
+     * 机器人音效：环形调制（ring modulation）+ 轻度低通，模拟机器人电子音，但保留可懂度。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.client.BeepRobotVoiceClientReceiver}。
+     */
+    public static final Holder<MobEffect> VOICE_ROBOT = register("voice_robot",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x00CED1));
+    /**
+     * 头盔/远处语音：OpenAL 直接低通滤波，让声音变闷、像隔着头盔或很远。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_HELMET = register("voice_helmet",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9E9E9E));
+    /**
+     * 水下语音：低通 + 降低增益，模拟在水下说话。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_UNDERWATER = register("voice_underwater",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x1E90FF));
+    /**
+     * 混响语音：OpenAL EFX REVERB 效果，让语音带空间回响。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_REVERB = register("voice_reverb",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xB0E0E6));
+    /**
+     * 合成人声 / 自动调音：基频量化到最近半音后用 WSOLA 变调，像电子歌姬/机器人唱歌。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_SYNTH = register("voice_synth",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFF69B4));
+    /**
+     * 失真语音：tanh 软削波，像电吉他失真/坏掉的收音机。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_DISTORTION = register("voice_distortion",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFF4500));
+    /**
+     * 合唱语音：延迟线 + LFO 调制，像多个自己同时说话。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_CHORUS = register("voice_chorus",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7FFF00));
+    /**
+     * 颤音语音：幅度 LFO 调制，声音一抖一抖的。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_TREMOLO = register("voice_tremolo",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFF00));
+    /**
+     * 口吃语音：重复小段音频，像机器人卡碟/结巴。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_STUTTER = register("voice_stutter",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFF00FF));
+    /**
+     * 倒放语音：分块缓冲后反向播放，像倒放磁带。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_REVERSE = register("voice_reverse",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x8A2BE2));
+    /**
+     * 氦气变声：用 WSOLA 实时升调（pitch shift），像吸了氦气一样尖细。
+     * 变调倍率随等级提升（等级越高升得越尖）。
+     * 客户端处理见 {@code org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin}。
+     */
+    public static final Holder<MobEffect> VOICE_HELIUM = register("voice_helium",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9FE0FF));
+    /**
      * 聊天禁止：拥有此效果的玩家发送的聊天消息不会被任何人看到
      */
     public static final Holder<MobEffect> CHAT_BAN = register("chat_ban",
@@ -511,6 +595,66 @@ public class ModEffects {
             return 0;
         }
         return Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 头盔/远处语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceHelmetLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_HELMET);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 水下语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceUnderwaterLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_UNDERWATER);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 混响语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceReverbLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_REVERB);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 合成人声等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceSynthLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_SYNTH);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 失真语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceDistortionLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_DISTORTION);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 合唱语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceChorusLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_CHORUS);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 颤音语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceTremoloLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_TREMOLO);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 口吃语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceStutterLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_STUTTER);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 倒放语音等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceReverseLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_REVERSE);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
+    }
+
+    /** 氦气变声等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getVoiceHeliumLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, VOICE_HELIUM);
+        return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
     }
 
     /**

@@ -2,14 +2,18 @@ package org.agmas.noellesroles.component;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.roles.THUtsuhoRole;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
@@ -31,10 +35,15 @@ public class FoodDrinkGlowComponent implements RoleComponent, ServerTickingCompo
      * 1: Food
      * ...
      */
-    public static void playerDrink(Player p) {
+    public static void playerDrink(Player p, ItemStack item) {
         var gameWorldComponent = SREGameWorldComponent.KEY.get(p.level());
         if (!gameWorldComponent.isRunning())
             return;
+        SRERole pRole = gameWorldComponent.getRole(p);
+        if (pRole != null) {
+            pRole.onDrink(p, item);
+        }
+        THUtsuhoRole.playerDrink(p);
         for (var p2 : p.level().players()) {
             if (gameWorldComponent.isRole(p2, ModRoles.BARTENDER)) {
                 FoodDrinkGlowComponent.KEY.get(p2).startGlow(p, 0);
@@ -43,10 +52,15 @@ public class FoodDrinkGlowComponent implements RoleComponent, ServerTickingCompo
         }
     }
 
-    public static void playerEat(Player p) {
+    public static void playerEat(Player p, ItemStack item) {
         var gameWorldComponent = SREGameWorldComponent.KEY.get(p.level());
         if (!gameWorldComponent.isRunning())
             return;
+
+        SRERole pRole = gameWorldComponent.getRole(p);
+        if (pRole != null) {
+            pRole.onEat(p, item);
+        }
         for (var p2 : p.level().players()) {
             if (gameWorldComponent.isRole(p2, ModRoles.CHEF)) {
                 FoodDrinkGlowComponent.KEY.get(p2).startGlow(p, 1);

@@ -49,6 +49,8 @@
       "org.agmas.noellesroles.voice.NoellesrolesVoiceChatPlugin",
       "org.agmas.noellesroles.voice.HeliumBuzzVoicechatPlugin",
       "org.agmas.noellesroles.voice.VoiceEffectsOpenALPlugin",
+      "org.agmas.noellesroles.voice.BeepRobotVoicechatPlugin",
+      "org.agmas.noellesroles.voice.VoiceExtraEffectsPlugin",
       "pro.fazeclan.river.stupid_express.StupidExpressVoiceChatPlugin",
       "io.wifi.starrailexpress.compat.TrainVoicePlugin"
     ],
@@ -226,6 +228,7 @@
       "noellesroles:shadow_falcon",
       "noellesroles:pilot",
       "noellesroles:jade_general",
+      "noellesroles:youlu",
       "noellesroles:wizard",
       "noellesroles:raven",
       "noellesroles:cake_maker",
@@ -235,7 +238,8 @@
       "noellesroles:doomed_sinner",
       "noellesroles:ghost_eye",
       "noellesroles:halic",
-      "noellesroles:hakukofox"
+      "noellesroles:hakukofox",
+      "noellesroles:voice_changer"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

@@ -34,6 +34,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
@@ -177,7 +178,7 @@ public class TraitorAndModifiers {
     public static SREModifier DWARF = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("dwarf"),
             new Color(205, 133, 63).getRGB(), // 秘鲁色
-            null, null, false, false))
+            Set.of(THMiscRoles.IBUKI_SUIKA), null, false, false))
             .setDefaultEnableChance(300);
 
     // 绝境信徒 - 唯一杀手时获得金币和药水效果
@@ -469,6 +470,11 @@ public class TraitorAndModifiers {
             if (killer == null)
                 return true;
 
+            // 起义军作为攻击者误杀他人后受到的惩罚性死亡（shot_innocent），不触发起义军。
+            // 惩罚逻辑会把被误杀的受害者作为 killer 传入，若不排除会被误判为"被平民误杀"。
+            if (deathReason != null && deathReason.getPath().equals("shot_innocent"))
+                return true;
+
             // 检查是否已经触发过
             if (REBEL_TRIGGERED.contains(player.getUUID()))
                 return true;
@@ -575,12 +581,17 @@ public class TraitorAndModifiers {
         });
 
         // 起义军效果 - 当平民玩家击杀起义军玩家时，平民因误杀平民而死亡
-        OnPlayerKilledPlayer.EVENT.register((victim, killer, reason) -> {
+        OnPlayerKilledPlayerIdentifier.EVENT.register((victim, killer, reason) -> {
             if (victim.level().isClientSide)
                 return;
 
             // 防止递归惩罚：如果victim正在被起义军逻辑惩罚中，跳过
             if (REBEL_PUNISHING.contains(victim.getUUID()))
+                return;
+
+            // 起义军因误杀他人受到惩罚性死亡（shot_innocent）时，惩罚逻辑会把原受害者记为killer，
+            // 此时不应反过来处死该无辜"killer"
+            if (reason != null && reason.getPath().equals("shot_innocent"))
                 return;
 
             SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
