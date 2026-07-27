@@ -13,6 +13,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModEffects;
@@ -115,12 +116,34 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
         shop.addToBalance(-cost);
 
         double range = 10.0;
-        int count = 0;
+        java.util.Set<ServerPlayer> targets = new java.util.HashSet<>();
+
         for (ServerPlayer target : sp.serverLevel().getEntitiesOfClass(
                 ServerPlayer.class,
                 sp.getBoundingBox().inflate(range),
                 p -> !p.getUUID().equals(sp.getUUID()) && GameUtils.isPlayerAliveAndSurvival(p))) {
-            if (sp.distanceToSqr(target) > range * range) continue;
+            if (sp.distanceToSqr(target) <= range * range) {
+                targets.add(target);
+            }
+        }
+
+        var decoys = sp.serverLevel().getEntitiesOfClass(
+                PuppeteerBodyEntity.class,
+                new AABB(sp.blockPosition()).inflate(10000),
+                e -> e.isHalicDecoy() && sp.getUUID().equals(e.getOwnerUuid().orElse(null)));
+        for (var decoy : decoys) {
+            for (ServerPlayer target : sp.serverLevel().getEntitiesOfClass(
+                    ServerPlayer.class,
+                    decoy.getBoundingBox().inflate(range),
+                    p -> !p.getUUID().equals(sp.getUUID()) && GameUtils.isPlayerAliveAndSurvival(p))) {
+                if (decoy.distanceToSqr(target) <= range * range) {
+                    targets.add(target);
+                }
+            }
+        }
+
+        int count = 0;
+        for (ServerPlayer target : targets) {
             target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 200, 0, false, false, true));
             target.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 200, 0, false, false, true));
             target.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 200, 0, false, false, true));
