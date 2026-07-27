@@ -1217,7 +1217,7 @@ public class ModRolesInitialEventRegister {
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
                             .toggleBeastForm(player, context);
-                }).cooldownSeconds(0).toggleable(true).showOnHud(true).build(),
+                }).cooldownSeconds(180).toggleable(true).showOnHud(true).build(),
                 RoleSkill.skill(SRE.id("hakukofox_freeze"), "skill.noellesroles.hakukofox.freeze", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;

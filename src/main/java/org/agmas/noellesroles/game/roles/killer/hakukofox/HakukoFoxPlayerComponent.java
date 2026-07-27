@@ -94,6 +94,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             beastFormActive = true;
             nineLivesUsed = false;
             sp.refreshDimensions();
+            context.setSkillCooldown(180 * 20);
 
             ServerLevel world = sp.serverLevel();
             world.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
