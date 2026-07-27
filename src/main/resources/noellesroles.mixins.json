@@ -50,6 +50,7 @@
     "roles.hakukofox.HakukoFoxEyeHeightMixin",
     "roles.hakukofox.HakukoFoxAttackBlockMixin",
     "roles.hakukofox.HakukoFoxBlockWeaponMixin",
+    "roles.hakukofox.HakukoFoxBlockPsychoMixin",
     "roles.hakukofox.HakukoFoxDeathImmunityMixin",
     "roles.manipulator.PlayerControlMixin",
     "roles.manipulator.ManipulatorControlledDeathImmunityMixin",
