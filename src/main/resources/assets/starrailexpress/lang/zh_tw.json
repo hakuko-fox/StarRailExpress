@@ -1315,6 +1315,8 @@
     "hud.sre.tip.gamemode.role_pick": "陽光自選模式",
     "hud.sre.tip.gamemode.volunteer": "陽光志願模式",
     "hud.sre.tip.gamemode.role_rotation": "職業輪選模式",
+    "hud.sre.tip.gamemode.role_rotation_hide": "職業輪選隱藏模式",
+    "hud.sre.tip.gamemode.role_rotation_single_select_hide": "職業輪選單選隱藏模式",
     "hud.sre.tip.gamemode.sniper_war": "狙擊模式",
     "hud.sre.tip.gamemode.thief_mode": "小偷模式",
     "hud.sre.tip.gamemode.tnt_tag": "燙手的山芋模式",

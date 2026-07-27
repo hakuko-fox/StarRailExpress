@@ -45,9 +45,9 @@ import org.agmas.noellesroles.utils.RoleUtils;
 public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
 
     private static final int ROTATION_SAFE_TIME = 5 * 60 * 20;
-    private boolean isInRotationPhase = false;
+    protected boolean isInRotationPhase = false;
     private long rotationTimeout = -1;
-    private SingleSelectDraftState draftState;
+    protected SingleSelectDraftState draftState;
 
     public SRERoleRotationSingleSelectGameMode(ResourceLocation identifier) {
         super(identifier, 10, 3);
@@ -96,7 +96,7 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
         broadcastSync(world);
     }
 
-    private void broadcastSync(ServerLevel world) {
+    protected void broadcastSync(ServerLevel world) {
         // 获取当前玩家序号列表
         List<UUID> orderList = new ArrayList<>();
         for (int i = 1; i <= draftState.totalPlayers; i++) {
@@ -124,7 +124,7 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
         }
     }
 
-    public void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
+    protected void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
         if (!isInRotationPhase || draftState == null) return;
         if (draftState.processSelection(player.serverLevel(), player.getUUID(), choiceIndex)) {
             broadcastSync(player.serverLevel());

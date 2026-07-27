@@ -357,6 +357,8 @@
     "gui.sre.gamemode.custom.subtitle": "Time remaining: %ss",
     "hud.sre.tip.gamemode.role_rotation": "Role Rotation Mode",
     "hud.sre.tip.gamemode.class_change": "Class Change Mode",
+    "hud.sre.tip.gamemode.role_rotation_hide": "Role Rotation Hide Mode",
+    "hud.sre.tip.gamemode.role_rotation_single_select_hide": "Role Rotation Single Select Hide Mode",
     "gui.sre.role_rotation.title": "Role Rotation",
     "gui.sre.role_rotation.current_turn": "Current: Player #%s/%s",
     "gui.sre.role_rotation.your_index": "You are Player #%s",

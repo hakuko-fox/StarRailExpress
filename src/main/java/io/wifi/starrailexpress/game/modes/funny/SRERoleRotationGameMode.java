@@ -39,9 +39,9 @@ import java.util.*;
 public class SRERoleRotationGameMode extends SREMurderGameMode {
 
     private static final int ROTATION_SAFE_TIME = 5 * 60 * 20;
-    private boolean isInRotationPhase = false;
+    protected boolean isInRotationPhase = false;
     private long rotationTimeout = -1;
-    private LightningDraftState draftState;
+    protected LightningDraftState draftState;
 
     public SRERoleRotationGameMode(ResourceLocation identifier) {
         super(identifier, 10, 3);
@@ -103,7 +103,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         broadcastSync(world);
     }
 
-    private void broadcastSync(ServerLevel world) {
+    protected void broadcastSync(ServerLevel world) {
         RoleRotationSyncS2CPacket packet = new RoleRotationSyncS2CPacket(
                 draftState.isSelecting,
                 draftState.currentRoundIndex,
@@ -120,7 +120,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
         }
     }
 
-    private void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
+    protected void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
         if (!isInRotationPhase || draftState == null)
             return;
         if (draftState.processSelection(player.serverLevel(), player.getUUID(), choiceIndex)) {
