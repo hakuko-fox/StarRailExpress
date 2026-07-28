@@ -1050,7 +1050,7 @@ public class ModRoles {
         public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
             return SRE.id("textures/entity/custom_psycho/halic.png");
         }
-    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000);
+    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("香港Vtuber");
 
     // 搜救员角色 - 乘客阵营
     public static SRERole RESCUER = TMMRoles.registerRole(new NormalRole(
@@ -1331,7 +1331,7 @@ public class ModRoles {
     public static SRERole HAKUKO_FOX = TMMRoles
             .registerRole(new NormalRole(HAKUKO_FOX_ID, new Color(255, 200, 200).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(1);
+            .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(1).addFlag("香港Vtuber");
     public static SRERole SWAPPER = TMMRoles
             .registerRole(new NormalRole(SWAPPER_ID, new Color(255, 0, 255).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
