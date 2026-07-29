@@ -9,6 +9,8 @@ import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
 import io.wifi.starrailexpress.client.util.TaskInstinctManager;
+import io.wifi.starrailexpress.network.MapIntroRequestPayload;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.exmo.sre.record.client.MatchRecordsScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -42,7 +44,7 @@ public class GameMenuEntries {
         }));
         // 地图介绍
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.map_introduction"), (btn) -> {
-
+            ClientPlayNetworking.send(new MapIntroRequestPayload());
             minecraft.setScreen(new MapIntroduceScreen(parent));
             toggleViewMenu.accept(false);
         }));
@@ -99,7 +101,7 @@ public class GameMenuEntries {
             toggleViewMenu.accept(false);
         }));
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.map_introduction"), (btn) -> {
-
+            ClientPlayNetworking.send(new MapIntroRequestPayload());
             minecraft.setScreen(new MapIntroduceScreen(parent));
             toggleViewMenu.accept(false);
         }));
