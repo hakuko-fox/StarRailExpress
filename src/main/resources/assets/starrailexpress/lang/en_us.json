@@ -345,6 +345,8 @@
     "hud.sre.tip.gamemode.day_night_fight": "Abandoned Prison Seven Nights",
     "hud.sre.tip.gamemode.tradition": "Tradition Mode",
     "hud.sre.tip.gamemode.discovery": "Discovery Mode",
+    "hud.sre.tip.gamemode.hkvtuber": "HK Vtuber Mode",
+    "hud.sre.tip.gamemode.vtuber": "Vtuber Mode",
     "gui.sre.gamemode.tnt_tag.bomb_time": "Hot Potato will explode in %s!",
     "gui.sre.gamemode.tnt_tag.bomb_time_having": "You are holding the Hot Potato! It will explode in %s!",
     "gui.sre.gamemode.tnt_tag.bomb": "Hot Potato exploded! Victims:\n%s",

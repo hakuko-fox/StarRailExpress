@@ -1323,6 +1323,8 @@
     "hud.sre.tip.gamemode.thief_mode": "小偷模式",
     "hud.sre.tip.gamemode.tnt_tag": "烫手的山芋模式",
     "hud.sre.tip.gamemode.tradition": "传统模式",
+    "hud.sre.tip.gamemode.hkvtuber": "香港Vtuber模式",
+    "hud.sre.tip.gamemode.vtuber": "Vtuber模式",
     "item.noellesroles.hunter_plugin_concussion": "震荡插件",
     "item.noellesroles.hunter_plugin_concussion.tooltip": "下一次追捕利刃命中强化击退、减速和倒地窗口。",
     "item.noellesroles.hunter_plugin_laceration": "裂伤插件",

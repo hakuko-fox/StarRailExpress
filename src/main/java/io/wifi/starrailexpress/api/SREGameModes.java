@@ -64,6 +64,12 @@ public class SREGameModes {
     // Discovery Mode (sre)
     public static final ResourceLocation DISCOVERY_MODE_ID = SRE.shortId("discovery");
 
+    // HK Vtuber Mode (sre)
+    public static final ResourceLocation HK_VTUBER_MODE_ID = SRE.shortId("hkvtuber");
+
+    // Vtuber Mode (sre)
+    public static final ResourceLocation VTUBER_MODE_ID = SRE.shortId("vtuber");
+
     // Modified from Harpymodloader
     public static final GameMode MURDER = registerGameMode(new SREMurderGameMode(MURDER_ID));
 
@@ -122,6 +128,12 @@ public class SREGameModes {
 
     // Discovery Mode (sre)
     public static final GameMode DISCOVERY_MODE = registerGameMode(new SREDiscoveryGameMode(DISCOVERY_MODE_ID));
+
+    // HK Vtuber Mode (sre)
+    public static final GameMode HK_VTUBER_MODE = registerGameMode(new SREHkVtuberGameMode(HK_VTUBER_MODE_ID));
+
+    // Vtuber Mode (sre)
+    public static final GameMode VTUBER_MODE = registerGameMode(new SREVtuberGameMode(VTUBER_MODE_ID));
 
     // register
     public static GameMode registerGameMode(GameMode gameMode) {
