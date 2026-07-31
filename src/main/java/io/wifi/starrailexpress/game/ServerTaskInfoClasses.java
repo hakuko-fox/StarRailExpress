@@ -12,7 +12,6 @@ import io.wifi.starrailexpress.content.block.api.AutoResetBlockInterface;
 import io.wifi.starrailexpress.content.block.api.LightBlockInterface;
 import io.wifi.starrailexpress.content.block_entity.*;
 import io.wifi.starrailexpress.game.GameUtils.BlockEntityInfo;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -32,12 +31,8 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
-import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
-import org.agmas.noellesroles.utils.MapScanner;
 import org.agmas.noellesroles.utils.MapScannerManager;
 
 public class ServerTaskInfoClasses {
@@ -114,14 +109,6 @@ public class ServerTaskInfoClasses {
             this.serverWorld = world;
             this.gameMode = gameMode;
             this.time = gameStartTime;
-
-            areas.availableMinigameIds.clear();
-            areas.sabotageMinigameIds.clear();
-
-            if (GameUtils.taskBlocks == null) {
-                GameUtils.taskBlocks = new HashMap<>();
-            }
-            GameUtils.taskBlocks.clear();
         }
 
         // ── 预计算三维分块 ──────────────────────────────────────────────────
@@ -156,9 +143,6 @@ public class ServerTaskInfoClasses {
 
         // ── resetBlock：按 chunk 索引推进 ──────────────────────────────────
         public void resetBlock() {
-
-            HashSet<String> collectedMinigameIds = new HashSet<>();
-            HashSet<String> sabotageMinigameIds = new HashSet<>();
             for (int i = 0; i < MAX_RESET_PER && this.progress < this.totalProgress; i++, this.progress++) {
                 BoundingBox chunk = resetChunks.get(this.progress);
 
@@ -170,9 +154,6 @@ public class ServerTaskInfoClasses {
                             BlockPos fromPos = new BlockPos(m, y, k);
 
                             BlockPos targetPos = fromPos.offset(offsetBlockPos);
-
-                            MapScanner.testTaskBlocksAndAddToGameUtils(sabotageMinigameIds, collectedMinigameIds,
-                                    serverWorld, fromPos, targetPos);
 
                             BlockInWorld cachedBlockPosition = new BlockInWorld(serverWorld, fromPos, true);
                             BlockState blockState = cachedBlockPosition.getState();
@@ -206,10 +187,6 @@ public class ServerTaskInfoClasses {
                     }
                 }
             }
-            // 将扫描到的小游戏种类 ID 存入 AreasWorldComponent 并同步
-            collectedMinigameIds.removeAll(sabotageMinigameIds);
-            area.availableMinigameIds.addAll(collectedMinigameIds);
-            area.sabotageMinigameIds.addAll(sabotageMinigameIds);
         }
 
         // ── onTick 不变 ────────────────────────────────────────────────────
@@ -258,11 +235,6 @@ public class ServerTaskInfoClasses {
                                 .withStyle(ChatFormatting.YELLOW),
                         true);
             });
-            area.sync();
-
-            for (var player : serverWorld.players()) {
-                ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(GameUtils.taskBlocks));
-            }
             MapScannerManager.saveArea(serverWorld);
             // if (!shouldStartGame) {
             // GameUtils.serverTaskQueue.addLast(new SchedulerTask(1, () -> {

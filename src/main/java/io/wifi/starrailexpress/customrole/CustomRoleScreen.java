@@ -500,9 +500,13 @@ public class CustomRoleScreen extends Screen {
                 r++;
             }
 
-            // 最大距离
+            // 看别人最大距离（透视范围）
             makeLabeledHintBox(tabWidgets2, tabLabels2, r++, 80, "sre.custom_role.label.instinct_range",
                     mode.maxRange, "* = 不限", v -> mode.maxRange = v);
+            // 被透视最大距离（被别人看范围，独立）
+            makeLabeledHintBox(tabWidgets2, tabLabels2, r++, 80, "sre.custom_role.label.instinct_beseen_range",
+                    mode.beSeenMaxRange == null ? "*" : mode.beSeenMaxRange, "* = 不限（回退到透视范围）",
+                    v -> mode.beSeenMaxRange = v);
             addBoolBtn(tabWidgets2, r++, "sre.custom_role.instinct_unlimited_teammate", mode.unlimitedTeammate,
                     v -> mode.unlimitedTeammate = v, false);
         }
@@ -905,6 +909,10 @@ public class CustomRoleScreen extends Screen {
             server.execute(() -> {
                 try { io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server); } catch (Exception ignored) {}
             });
+            try {
+                config.saveToDefaultPath();
+                io.wifi.starrailexpress.customrole.CustomRoleLoader.reloadClient();
+            } catch (Exception ignored) {}
         }
         if (minecraft.player != null) minecraft.player.displayClientMessage(Component.translatable("sre.custom_role.saved", data.englishId), false);
         onClose();

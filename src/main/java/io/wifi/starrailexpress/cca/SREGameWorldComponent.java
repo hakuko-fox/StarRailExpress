@@ -881,7 +881,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             checkPlayerDarkness(player, areas, gameCCA);
 
             if (!areas.areasSettings.canUnderWater) {
-                if (player.isUnderWater()) {
+                if (checkPlayerUnderwater(player)) {
                     if (InControlCCA
                             .bounceBackIfControlled(player)) {
                         return;
@@ -1125,6 +1125,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (player.isInLava()) {
             return true;
         }
+        if (player.getVehicle() != null) {
+            if (player.getVehicle().isInLava())
+                return true;
+        }
         return false;
     }
 
@@ -1135,12 +1139,23 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return false;
     }
 
+    private static boolean checkPlayerUnderwater(ServerPlayer player) {
+        if (player.hasEffect(ModEffects.SAFE_TIME)) {
+            return false;
+        }
+        return player.isUnderWater();
+    }
+
     private static boolean checkPlayerIsInDeepWater(ServerPlayer player, AreasWorldComponent areas) {
 
         if (player.hasEffect(ModEffects.SAFE_TIME))
             return false;
         if (player.isUnderWater()) {
             return true;
+        }
+        if (player.getVehicle() != null) {
+            if (player.getVehicle().isUnderWater())
+                return true;
         }
 
         final var block = player.level()
@@ -1159,7 +1174,12 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             return false;
 
         if (!player.isUnderWater()) {
-            return false;
+            if (player.getVehicle() != null) {
+                if (!player.getVehicle().isUnderWater())
+                    return false;
+            } else {
+                return false;
+            }
         }
         final var block = player.level()
                 .getBlockState(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getBlock();
