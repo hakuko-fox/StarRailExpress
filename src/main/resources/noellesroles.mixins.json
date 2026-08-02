@@ -55,6 +55,7 @@
     "roles.hakukofox.HakukoFoxBlockPsychoMixin",
     "roles.hakukofox.HakukoFoxBlockGrenadeMixin",
     "roles.hakukofox.HakukoFoxDeathImmunityMixin",
+    "roles.hakukofox2.Hakukofox2AttackBlockMixin",
     "roles.manipulator.PlayerControlMixin",
     "roles.manipulator.ManipulatorControlledDeathImmunityMixin",
     "roles.mercenary.MercenaryConfirmMixin",

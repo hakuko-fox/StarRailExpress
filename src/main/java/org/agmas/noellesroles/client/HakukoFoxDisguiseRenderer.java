@@ -19,7 +19,8 @@ public class HakukoFoxDisguiseRenderer {
     private static final Map<UUID, Fox> FOXES = new HashMap<>();
 
     public static boolean shouldDisguise(AbstractClientPlayer player) {
-        return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.isDisguised(player);
+        return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.isDisguised(player)
+                || org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.isDisguised(player);
     }
 
     public static boolean render(AbstractClientPlayer player, float yaw, float tickDelta,

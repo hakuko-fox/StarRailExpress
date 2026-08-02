@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -23,6 +24,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
+import org.agmas.noellesroles.events.OnVendingMachinesBuyItems;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.RicesRoleRhapsody;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
@@ -52,6 +54,8 @@ import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerC
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
@@ -97,6 +101,11 @@ public class ModRolesInitialEventRegister {
             int initialCoin = role.getInitialCoinCount();
             if (initialCoin >= 0) {
                 SREPlayerShopComponent.KEY.get(player).setBalance(initialCoin);
+            }
+            // 白狐2.0 被動：修仙成狐 — 開局失明60秒，屆時自動化身
+            if (RoleUtils.compareRole(role, ModRoles.HAKUKO_FOX2)
+                    && player instanceof ServerPlayer cultivationPlayer) {
+                Hakukofox2PlayerComponent.KEY.get(cultivationPlayer).startCultivation(cultivationPlayer);
             }
             // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
@@ -1259,6 +1268,58 @@ public class ModRolesInitialEventRegister {
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
                             .useFreezeSkill(player, context);
                 }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
+
+        // ==================== 白狐 2.0 技能注册 ====================
+        // 技能1（G）：兽化型态（可隨時關閉）冷卻180秒 — 變身雪狐，無法攻擊、受傷不死、速度II跳躍II
+        // 技能2（Shift+G）：瞬想 — 消耗100金幣，冷卻60秒，凍結其他玩家5秒（愛速+失明+無法跳躍）
+        RoleSkill.register(ModRoles.HAKUKO_FOX2,
+                RoleSkill.skill(SRE.id("hakukofox2_transform"), "skill.noellesroles.hakukofox2.transform", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.KEY.get(player)
+                            .toggleBeastForm(player, context);
+                }).cooldownSeconds(180).toggleable(true).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("hakukofox2_freeze"), "skill.noellesroles.hakukofox2.freeze", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.KEY.get(player)
+                            .useFreezeSkill(player, context);
+                }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
+
+        // ==================== Halic 2.0 技能注册 ====================
+        // 技能1（G）：這樣10秒，消耗10金幣生產一隻永久分身哈力克
+        // 技能2（Shift+G）：每局最多1次，消耗50金幣使所有哈力克附近7格玩家停止行動7秒
+        RoleSkill.register(ModRoles.HALIC2,
+                RoleSkill.skill(SRE.id("halic2_decoy"), "skill.noellesroles.halic2.decoy", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent.KEY.get(player)
+                            .createDecoy(player);
+                }).cooldownSeconds(10).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("halic2_electrocute"), "skill.noellesroles.halic2.sanity", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent.KEY.get(player)
+                            .electrocute(player);
+                }).shifted(true).charges(1).showOnHud(true).build());
+
+        // Halic 2.0 被動：無法購買武器
+        OnVendingMachinesBuyItems.EVENT.register((player, entry) -> {
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorldComponent.isRole(player, ModRoles.HALIC2)) {
+                return !isWeaponItem(entry.stack());
+            }
+            return true;
+        });
+    }
+
+    private static boolean isWeaponItem(net.minecraft.world.item.ItemStack stack) {
+        net.minecraft.world.item.Item item = stack.getItem();
+        return stack.is(TMMItemTags.GUNS)
+                || item == TMMItems.KNIFE || item == TMMItems.BAT
+                || item == TMMItems.GRENADE || item == TMMItems.STICKY_GRENADE
+                || item == TMMItems.TIMED_GRENADE
+                || item == TMMItems.FIRECRACKER || item == TMMItems.NUNCHUCK;
     }
 
 }

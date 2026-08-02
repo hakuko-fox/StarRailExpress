@@ -14,7 +14,8 @@ public abstract class HakukoFoxEyeHeightMixin {
     @ModifyReturnValue(method = "getDefaultDimensions", at = @At("RETURN"))
     private EntityDimensions noellesroles$lowerEyeToFox(EntityDimensions dimensions, Pose pose) {
         Player self = (Player) (Object) this;
-        if (!HakukoFoxPlayerComponent.isDisguised(self)) {
+        if (!HakukoFoxPlayerComponent.isDisguised(self)
+                && !org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.isDisguised(self)) {
             return dimensions;
         }
         float eyeHeight = Math.min(dimensions.eyeHeight(), 0.6F);

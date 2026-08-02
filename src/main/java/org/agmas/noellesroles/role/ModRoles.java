@@ -43,6 +43,7 @@ import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponen
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
@@ -65,6 +66,7 @@ import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayer
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
+import org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
@@ -1052,6 +1054,34 @@ public class ModRoles {
         }
     }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("hkvtuber");
 
+    // Halic 2.0 角色 ID
+    public static final ResourceLocation HALIC2_ID = Noellesroles.id("halic2");
+
+    /**
+     * Halic 2.0 角色
+     * - 屬於乘客陣營 (isInnocent = true)
+     * - 不能使用殺手能力 (canUseKiller = false)
+     * - 固定皮膚：與哈力克相同 Halic_C17v4
+     * - 技能1（G）：花費 10 金幣生產一隻永久分身哈力克，冷卻 10 秒
+     * - 技能2（Shift+G）：數局最多1次，花費50金幣令所有哈力克附近7格玩家停止行動7秒
+     * - 被動：無法被殺手透視，且無法購買武器
+     */
+    public static SRERole HALIC2 = TMMRoles.registerRole(new NormalRole(
+            HALIC2_ID,
+            new Color(120, 190, 255).getRGB(), // 淡藍色 - 代表科技感
+            true,  // isInnocent = 乘客陣營
+            false, // canUseKiller = 無殺手能力
+            SRERole.MoodType.REAL, // 真實心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(),
+            false  // 不隱藏計分板
+    ) {
+        @Override
+        public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
+            return SRE.id("textures/entity/custom_psycho/halic.png");
+        }
+    }).setCanSeeCoin(true).setComponentKey(Halic2PlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("hkvtuber")
+            .setAllBeSeenInstinctType(InstinctType.NONE);
+
     // 搜救员角色 - 乘客阵营
     public static SRERole RESCUER = TMMRoles.registerRole(new NormalRole(
             RESCUER_ID, // 角色 ID
@@ -1332,6 +1362,14 @@ public class ModRoles {
             .registerRole(new NormalRole(HAKUKO_FOX_ID, new Color(255, 200, 200).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+
+    // 白狐2.0 角色 ID
+    public static final ResourceLocation HAKUKO_FOX2_ID = Noellesroles.id("hakukofox2");
+
+    public static SRERole HAKUKO_FOX2 = TMMRoles
+            .registerRole(new NormalRole(HAKUKO_FOX2_ID, new Color(220, 235, 250).getRGB(), false,
+                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setComponentKey(ModComponents.HAKUKO_FOX2).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
     public static SRERole SWAPPER = TMMRoles
             .registerRole(new NormalRole(SWAPPER_ID, new Color(255, 0, 255).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -2589,7 +2627,9 @@ public class ModRoles {
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.MA_CHEN_XU_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.WRAITH_ASSASSIN_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC2_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX2_ID.getPath());
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.INFECTED_ID.getPath());
 
         // 设置疫使与毒师互斥

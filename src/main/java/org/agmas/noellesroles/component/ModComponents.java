@@ -496,6 +496,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<HalicPlayerComponent> HALIC = HalicPlayerComponent.KEY;
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent> HAKUKO_FOX =
       org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY;
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent> HALIC2 =
+      org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent.KEY;
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent> HAKUKO_FOX2 =
+      org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -1014,6 +1018,16 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, HAKUKO_FOX)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent::new);
+
+    // 注册 Halic2.0 组件
+    registry.beginRegistration(Player.class, HALIC2)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent::new);
+
+    // 注册 白狐2.0 组件
+    registry.beginRegistration(Player.class, HAKUKO_FOX2)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //
