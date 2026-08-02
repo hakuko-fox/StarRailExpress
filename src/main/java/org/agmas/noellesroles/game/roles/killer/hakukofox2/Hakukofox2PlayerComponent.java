@@ -177,10 +177,12 @@ public class Hakukofox2PlayerComponent implements RoleComponent, ServerTickingCo
 
     private void removeBeastEffects() {
         if (player instanceof ServerPlayer sp) {
-            if (sp.hasEffect(MobEffects.MOVEMENT_SPEED)) {
+            var speed = sp.getEffect(MobEffects.MOVEMENT_SPEED);
+            if (speed != null && speed.getDuration() < 0 && speed.getAmplifier() == 1) {
                 sp.removeEffect(MobEffects.MOVEMENT_SPEED);
             }
-            if (sp.hasEffect(MobEffects.JUMP)) {
+            var jump = sp.getEffect(MobEffects.JUMP);
+            if (jump != null && jump.getDuration() < 0 && jump.getAmplifier() == 1) {
                 sp.removeEffect(MobEffects.JUMP);
             }
         }

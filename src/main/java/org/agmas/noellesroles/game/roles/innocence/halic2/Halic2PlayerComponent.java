@@ -25,22 +25,20 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 /**
  * 哈力克 2.0 — 平民陣營
  *
- * 主動技1（G）：如兔子般量產的威力。冷卻10秒，消耗10金幣，生產一隻分身哈力克（直到遊戲結束）。
- *   分身被攻擊時分身會消失，攻擊者失明5秒。
- * 主動技2（Shift+G）：漏電仿生人。每局遊戲最多1次，消耗50金幣，令所有哈力克附近7格玩家停止行動7秒。
+ * 主動技1（G）：如兔子般量產的威力。冷卻10秒（由框架 cooldownSeconds(10) 控制），消耗10金幣，
+ *   生產一隻分身哈力克（直到遊戲結束）。分身被攻擊時分身會消失，攻擊者失明5秒。
+ * 主動技2（Shift+G）：漏電仿生人。每局遊戲最多1次（由框架 charges(1) 控制），消耗50金幣，
+ *   令所有哈力克附近7格玩家停止行動7秒。
  * 被動技（和平統治）：如小透明般無法被殺手透視所在點，且無法購買武器。
  * 標籤：香港Vtuber
  */
 public class Halic2PlayerComponent implements RoleComponent, ServerTickingComponent {
-    private static final long DECOY_COOLDOWN_TICKS = 10 * 20;
 
     public static final ComponentKey<Halic2PlayerComponent> KEY = ComponentRegistry.getOrCreate(
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "halic2"),
             Halic2PlayerComponent.class);
 
     private final Player player;
-    private long lastDecoyTime = 0;
-    private boolean electrocuteUsed = false;
 
     public Halic2PlayerComponent(Player player) {
         this.player = player;
@@ -62,8 +60,6 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
 
     @Override
     public void init() {
-        lastDecoyTime = 0;
-        electrocuteUsed = false;
         sync();
     }
 
@@ -72,16 +68,9 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
         init();
     }
 
+    /** 主動技1：量產分身 — 冷卻由框架 cooldownSeconds(10) 控制 */
     public boolean createDecoy(ServerPlayer sp) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
-            return false;
-        }
-        ServerLevel level = sp.serverLevel();
-        long now = level.getGameTime();
-        if (now - lastDecoyTime < DECOY_COOLDOWN_TICKS) {
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.halic2.decoy_cooldown"),
-                    true);
             return false;
         }
         var shop = SREPlayerShopComponent.KEY.get(sp);
@@ -94,6 +83,7 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
         }
         shop.addToBalance(-cost);
 
+        ServerLevel level = sp.serverLevel();
         PuppeteerBodyEntity decoy = new PuppeteerBodyEntity(ModEntities.PUPPETEER_BODY, level);
         decoy.setPos(sp.getX(), sp.getY(), sp.getZ());
         decoy.setYRot(sp.getYRot());
@@ -103,9 +93,6 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
         decoy.setPersistenceRequired();
         level.addFreshEntity(decoy);
 
-        lastDecoyTime = now;
-        sync();
-
         level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
                 SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
         sp.displayClientMessage(
@@ -114,14 +101,9 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
         return true;
     }
 
+    /** 主動技2：漏電 — 每局1次由框架 charges(1) 控制 */
     public boolean electrocute(ServerPlayer sp) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
-            return false;
-        }
-        if (electrocuteUsed) {
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.halic2.electrocute_used"),
-                    true);
             return false;
         }
         int cost = 50;
@@ -133,7 +115,6 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
             return false;
         }
         shop.addToBalance(-cost);
-        electrocuteUsed = true;
 
         double range = 7.0;
         java.util.Set<ServerPlayer> targets = new java.util.HashSet<>();
@@ -175,7 +156,6 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
         sp.displayClientMessage(
                 Component.translatable("message.noellesroles.halic2.electrocuted", count),
                 true);
-        sync();
         return true;
     }
 
@@ -185,14 +165,10 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
 
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        tag.putLong("lastDecoyTime", lastDecoyTime);
-        tag.putBoolean("electrocuteUsed", electrocuteUsed);
     }
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        lastDecoyTime = tag.getLong("lastDecoyTime");
-        electrocuteUsed = tag.getBoolean("electrocuteUsed");
     }
 
     @Override
