@@ -75,7 +75,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
     }
 
     public boolean isPetrified() {
-        return petrifyEndTime > 0 ? true : false;
+        return petrifyEndTime > 0;
     }
 
     /** 主動技1：信仰之力 — 消耗100金幣，獲得速度II 10秒 */
