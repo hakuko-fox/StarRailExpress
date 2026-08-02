@@ -1311,6 +1311,39 @@ public class ModRolesInitialEventRegister {
             }
             return true;
         });
+
+        // ==================== 玖璃 技能註冊 ====================
+        // 技能1（G）：信仰之力 — 消耗100金幣，獲得速度II 10秒，冷卻120秒。
+        // 被動：石化狀態 — 每分鐘30%機率石化10秒（無法說話/移動，且無敵）。
+        RoleSkill.register(ModRoles.NINE_MUI,
+                RoleSkill.skill(SRE.id("nine_mui_blessing"), "skill.noellesroles.nine_mui.blessing", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent.KEY.get(player)
+                            .useBlessingSkill(player, context);
+                }).cooldownSeconds(120).showOnHud(true).build());
+
+        // ==================== 芙妮 技能註冊 ====================
+        // 技能1（G）：時間停止 — 全場停止3秒，每局最多2次，冷卻60秒。
+        // 被動：無視所有時間停止技能。
+        RoleSkill.register(ModRoles.EVERLY,
+                RoleSkill.skill(SRE.id("everly_timestop"), "skill.noellesroles.everly.timestop", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.vigilante.everly.EverlyPlayerComponent.KEY.get(player)
+                            .useTimeStop(player, context);
+                }).cooldownSeconds(60).charges(2).showOnHud(true).build());
+
+        // ==================== 風太 技能註冊 ====================
+        // 技能1（G）：神諭 — 消耗200金幣得知剩餘殺手與中立數量，冷卻120秒。
+        // 被動：巫女祝福 — 抵擋一次任何方式死亡。
+        RoleSkill.register(ModRoles.FU_TAI,
+                RoleSkill.skill(SRE.id("futai_oracle"), "skill.noellesroles.futai.oracle", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent.KEY.get(player)
+                            .useOracleSkill(player, context);
+                }).cooldownSeconds(120).showOnHud(true).build());
     }
 
     private static boolean isWeaponItem(net.minecraft.world.item.ItemStack stack) {

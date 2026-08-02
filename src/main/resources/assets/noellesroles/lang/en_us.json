@@ -3744,5 +3744,22 @@
   "message.noellesroles.halic2.decoy_cooldown": "§cSkill on cooldown, wait 10 seconds!",
   "message.noellesroles.halic2.not_enough_money": "§cNot enough coins! Need %d coins.",
   "message.noellesroles.halic2.electrocute_used": "§cElectricity can only be used once per round!",
-  "message.noellesroles.halic2.electrocuted": "§aSpent 50 coins, electrocuted %d nearby players!"
+  "message.noellesroles.halic2.electrocuted": "§aSpent 50 coins, electrocuted %d nearby players!",
+  "announcement.star.role.nine_mui": "NineRuvian",
+  "announcement.star.goals.nine_mui": "Use the penguin princess statue's power to eliminate all passengers!",
+  "skill.noellesroles.nine_mui.blessing": "Faith Energy",
+  "skill.noellesroles.nine_mui.blessing_on": "§aGained speed from the penguin princess statue's power!",
+  "skill.noellesroles.nine_mui.petrified_on": "§dPetrified! Cannot move or speak, but invincible, for 10s.",
+  "message.noellesroles.nine_mui.not_enough_money": "§cNot enough coins! Need %d coins.",
+  "announcement.star.role.everly": "Everly",
+  "announcement.star.goals.everly": "Stop time to lead the Bear Beer team to victory!",
+  "skill.noellesroles.everly.timestop": "§bTime Stop",
+  "message.noellesroles.everly.timestop_used_out": "§cTime stop used up this round!",
+  "message.noellesroles.everly.timestop_final": "§eReminder: time stop already used twice this round!",
+  "announcement.star.role.futai": "Fu Tai",
+  "announcement.star.goals.futai": "Use divine invocation to foresee and protect until the end!",
+  "skill.noellesroles.futai.oracle": "Divine Oracle",
+  "message.noellesroles.futai.not_enough_money": "§cNot enough coins! Need %d coins.",
+  "message.noellesroles.futai.oracle_result": "§6Oracle: %d killers remaining, %d neutrals remaining.",
+  "message.noellesroles.futai.bless_saved": "§6Miko Blessing: blocked a fatal blow!"
 }

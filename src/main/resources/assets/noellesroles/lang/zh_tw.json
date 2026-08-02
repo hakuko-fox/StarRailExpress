@@ -3890,5 +3890,22 @@
   "message.noellesroles.halic2.decoy_cooldown": "§c技能冷卻中，請等待10秒！",
   "message.noellesroles.halic2.not_enough_money": "§c金幣不足！需要 %d 金幣。",
   "message.noellesroles.halic2.electrocute_used": "§c漏電仿生人在每局遊戲中只能使用一次！",
-  "message.noellesroles.halic2.electrocuted": "§a消耗50金幣，電暈了 %d 名附近的玩家！"
+  "message.noellesroles.halic2.electrocuted": "§a消耗50金幣，電暈了 %d 名附近的玩家！",
+  "announcement.star.role.nine_mui": "玖璃",
+  "announcement.star.goals.nine_mui": "利用企鵝公主雕像的力量，石化並淘汰所有乘客！",
+  "skill.noellesroles.nine_mui.blessing": "信仰之力",
+  "skill.noellesroles.nine_mui.blessing_on": "§a獲得企鵝公主雕像的力量，速度暫時提升！",
+  "skill.noellesroles.nine_mui.petrified_on": "§d你被石化了！10秒內無法移動、無法說話，且無敵。",
+  "message.noellesroles.nine_mui.not_enough_money": "§c金幣不足！需要 %d 金幣。",
+  "announcement.star.role.everly": "芙妮",
+  "announcement.star.goals.everly": "利用時間停止的技能，帶同熊啤啤團隊獲得勝利！",
+  "skill.noellesroles.everly.timestop": "§b時間停止！",
+  "message.noellesroles.everly.timestop_used_out": "§c本局時間停止已使用完！",
+  "message.noellesroles.everly.timestop_final": "§e提醒：本局時間停止已使用 2 次！",
+  "announcement.star.role.futai": "風太",
+  "announcement.star.goals.futai": "利用神諭占卜預見，守護到最後！",
+  "skill.noellesroles.futai.oracle": "神諭",
+  "message.noellesroles.futai.not_enough_money": "§c金幣不足！需要 %d 金幣。",
+  "message.noellesroles.futai.oracle_result": "§6神諭：目前剩餘殺手 %d 名，剩餘中立 %d 名。",
+  "message.noellesroles.futai.bless_saved": "§6巫女祝福：抵擋了一次致命傷害！"
 }

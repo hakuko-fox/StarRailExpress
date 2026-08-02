@@ -44,6 +44,9 @@ import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerCompon
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent;
+import org.agmas.noellesroles.game.roles.vigilante.everly.EverlyPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bandit.BanditPlayerComponent;
@@ -500,6 +503,9 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent.KEY;
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent> HAKUKO_FOX2 =
       org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.KEY;
+  public static final ComponentKey<NineMuiPlayerComponent> NINE_MUI = NineMuiPlayerComponent.KEY;
+  public static final ComponentKey<EverlyPlayerComponent> EVERLY = EverlyPlayerComponent.KEY;
+  public static final ComponentKey<FuTaiPlayerComponent> FU_TAI = FuTaiPlayerComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -1028,6 +1034,21 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, HAKUKO_FOX2)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent::new);
+
+    // 注册 玖璃 组件
+    registry.beginRegistration(Player.class, NINE_MUI)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(NineMuiPlayerComponent::new);
+
+    // 注册 芙妮 组件
+    registry.beginRegistration(Player.class, EVERLY)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(EverlyPlayerComponent::new);
+
+    // 注册 风太 组件
+    registry.beginRegistration(Player.class, FU_TAI)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(FuTaiPlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

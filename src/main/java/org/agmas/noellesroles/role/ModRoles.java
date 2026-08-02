@@ -1370,6 +1370,31 @@ public class ModRoles {
             .registerRole(new NormalRole(HAKUKO_FOX2_ID, new Color(220, 235, 250).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setComponentKey(ModComponents.HAKUKO_FOX2).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+
+    // ==================== 玖/愛 系列新角色 ====================
+
+    // 玖璃（9mui）角色 ID — 殺手陣營
+    public static final ResourceLocation NINE_MUI_ID = Noellesroles.id("nine_mui");
+    public static SRERole NINE_MUI = TMMRoles
+            .registerRole(new NormalRole(NINE_MUI_ID, new Color(170, 110, 200).getRGB(), false,
+                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setComponentKey(ModComponents.NINE_MUI).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+
+    // 芙妮（Everly）角色 ID：警長陣營
+    public static final ResourceLocation EVERLY_ID = Noellesroles.id("everly");
+    public static SRERole EVERLY = TMMRoles
+            .registerRole(new NormalRole(EVERLY_ID, new Color(225, 170, 90).getRGB(), true, false,
+                    SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)
+                    .setVigilanteTeam(true))
+            .setCanSeeCoin(true).setComponentKey(ModComponents.EVERLY).setDefaultMax(1)
+            .setCanPickUpRevolver(true).addFlag("hkvtuber");
+
+    // 風太（Fu_Tai）：平民陣營
+    public static final ResourceLocation FU_TAI_ID = Noellesroles.id("futai");
+    public static SRERole FU_TAI = TMMRoles
+            .registerRole(new NormalRole(FU_TAI_ID, new Color(232, 90, 90).getRGB(), true, false,
+                    SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setComponentKey(ModComponents.FU_TAI).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
     public static SRERole SWAPPER = TMMRoles
             .registerRole(new NormalRole(SWAPPER_ID, new Color(255, 0, 255).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -2630,6 +2655,9 @@ public class ModRoles {
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC2_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX2_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.NINE_MUI_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.EVERLY_ID.getPath());
+        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.FU_TAI_ID.getPath());
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.INFECTED_ID.getPath());
 
         // 设置疫使与毒师互斥
