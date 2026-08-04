@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.content.command;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -299,30 +314,8 @@ public class MapManagerCommand {
       BlockPos min, BlockPos max,
       CommandSourceStack source, String fieldName) {
     AABB box = new AABB(min.getX(), min.getY(), min.getZ(),
-        max.getX() + 1.0, max.getY() + 1.0, max.getZ() + 1.0);
+        max.getX(), max.getY(), max.getZ());
     updateAABB(areas, setter, box, source, fieldName);
-  }
-
-  private static void setAABBMin(AreasWorldComponent areas,
-      BiConsumer<AreasWorldComponent, AABB> setter,
-      Function<AreasWorldComponent, AABB> getter,
-      BlockPos min,
-      CommandSourceStack source, String fieldName) {
-    AABB old = getter.apply(areas);
-    AABB newBox = new AABB(min.getX(), min.getY(), min.getZ(),
-        old.maxX, old.maxY, old.maxZ);
-    updateAABB(areas, setter, newBox, source, fieldName + ".min");
-  }
-
-  private static void setAABBMax(AreasWorldComponent areas,
-      BiConsumer<AreasWorldComponent, AABB> setter,
-      Function<AreasWorldComponent, AABB> getter,
-      BlockPos max,
-      CommandSourceStack source, String fieldName) {
-    AABB old = getter.apply(areas);
-    AABB newBox = new AABB(old.minX, old.minY, old.minZ,
-        max.getX() + 1.0, max.getY() + 1.0, max.getZ() + 1.0);
-    updateAABB(areas, setter, newBox, source, fieldName + ".max");
   }
 
   // 3. playAreaOffset
@@ -442,6 +435,7 @@ public class MapManagerCommand {
     sb.append("playAreaOffset: ").append(formatVec3(areas.getPlayAreaOffset())).append("\n");
     sb.append("roomCount: ").append(areas.getRoomCount()).append("\n");
     sb.append("roomPositions: ").append(formatRoomPositions(areas.getRoomPositions())).append("\n");
+    sb.append("Vote List Display Name: \"").append(areas.mapDisplayName).append("\"\n");
     sb.append("mapName: \"").append(areas.mapName).append("\"\n");
     sb.append("disabledTasks: ").append(formatDisabledTasks(areas.disabledTasks)).append("\n");
     sb.append("disabledRoles: ").append(formatDisabledTasks(areas.disabledRoles)).append("\n");
@@ -653,25 +647,7 @@ public class MapManagerCommand {
                           BlockPos max = BlockPosArgument.getBlockPos(ctx, "max");
                           setAABBFull(areas, setter, min, max, src, name);
                           return 1;
-                        })))
-                // 仅设置 min 角
-                .executes(ctx -> {
-                  CommandSourceStack src = ctx.getSource();
-                  AreasWorldComponent areas = AreasWorldComponent.KEY.get(src.getLevel());
-                  BlockPos min = BlockPosArgument.getBlockPos(ctx, "min");
-                  setAABBMin(areas, setter, getter, min, src, name);
-                  return 1;
-                })))
-        // 仅设置 max 角
-        .then(Commands.literal("max")
-            .then(Commands.argument("max", BlockPosArgument.blockPos())
-                .executes(ctx -> {
-                  CommandSourceStack src = ctx.getSource();
-                  AreasWorldComponent areas = AreasWorldComponent.KEY.get(src.getLevel());
-                  BlockPos max = BlockPosArgument.getBlockPos(ctx, "max");
-                  setAABBMax(areas, setter, getter, max, src, name);
-                  return 1;
-                })));
+                        })))));
   }
 
   private static LiteralArgumentBuilder<CommandSourceStack> setReadyArea() {

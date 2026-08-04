@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.neutral.thief;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -684,6 +699,61 @@ public class ThiefPlayerComponent implements RoleComponent, ServerTickingCompone
             return true;
         // 时停钟
         if (stack.is(ModItems.TIME_STOP_CLOCK))
+            return true;
+
+        // 弹幕 / 石粒架 / 前人留下的马铠 / 花圈
+        if (stack.is(ModItems.DANMUKU))
+            return true;
+        if (stack.is(ModItems.SHILIJIA))
+            return true;
+        if (stack.is(ModItems.PREDECESSOR_HORSE_ARMOR))
+            return true;
+        if (stack.is(ModItems.WREATH))
+            return true;
+        // 巧克力 / 安神茶 / 蓝色草药 / 红色草药 / 提神咖啡
+        if (stack.is(ModItems.CHOCOLATE))
+            return true;
+        if (stack.is(ModItems.CALMING_TEA))
+            return true;
+        if (stack.is(ModItems.LEON_BLUE_HERB))
+            return true;
+        if (stack.is(ModItems.LEON_RED_HERB))
+            return true;
+        if (stack.is(ModItems.ENERGIZING_COFFEE))
+            return true;
+        // 护身符 / 荷官包裹 / 飞斧 / 迷你八卦炉
+        if (stack.is(ModItems.TALISMAN))
+            return true;
+        if (stack.is(ModItems.DEALER_PACKAGE))
+            return true;
+        if (stack.is(ModItems.THROWING_AXE))
+            return true;
+        if (stack.is(ModItems.MINI_BAGUALU))
+            return true;
+        // dream 系列：铁斧 / 钻石剑 / 重锤 / 钻石镐 / 船 / 酒
+        if (stack.is(ModItems.DREAM_AXE))
+            return true;
+        if (stack.is(ModItems.DREAM_DIAMOND_SWORD))
+            return true;
+        if (stack.is(ModItems.DREAM_MACE))
+            return true;
+        if (stack.is(ModItems.DREAM_PICKAXE))
+            return true;
+        if (stack.is(ModItems.DREAM_BOAT))
+            return true;
+        if (stack.is(ModItems.DREAM_WINE))
+            return true;
+        // 磁铁
+        if (stack.is(ModItems.MAGNET))
+            return true;
+        // 彩虹马蹄铁
+        if (stack.is(FunnyItems.RAINBOW_HORSESHOE))
+            return true;
+        // 残月萨马蹄铁
+        if (stack.is(FunnyItems.CANYUESA_HORSESHOE))
+            return true;
+        // 超级猪马蹄铁
+        if (stack.is(FunnyItems.SUPER_PIG_HORSESHOE))
             return true;
 
         // 其他物品不可偷取

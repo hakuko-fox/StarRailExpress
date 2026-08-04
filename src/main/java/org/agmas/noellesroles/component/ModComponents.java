@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.component;
 
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
@@ -28,7 +43,6 @@ import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
@@ -235,11 +249,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<InsaneKillerPlayerComponent> INSANE_KILLER = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "insane_killer"),
       InsaneKillerPlayerComponent.class);
-
-  public static final ComponentKey<HoanMeirinPlayerComponent> hoan_meirin = ComponentRegistry
-      .getOrCreate(
-          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "hoan_meirin"),
-          HoanMeirinPlayerComponent.class);
   public static final ComponentKey<PandaComponent> panda = ComponentRegistry
       .getOrCreate(
           ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "panda"),
@@ -316,13 +325,14 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "salted_fish"),
       SaltedFishPlayerComponent.class);
 
+  public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.return_traveler.ReturnTravelerPlayerComponent> RETURN_TRAVELER = ComponentRegistry
+      .getOrCreate(
+          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "return_traveler"),
+          org.agmas.noellesroles.game.roles.innocence.return_traveler.ReturnTravelerPlayerComponent.class);
+
   public static final ComponentKey<org.agmas.noellesroles.game.roles.innocence.leather_pig.LeatherPigPlayerComponent> LEATHER_PIG = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "leather_pig"),
       org.agmas.noellesroles.game.roles.innocence.leather_pig.LeatherPigPlayerComponent.class);
-
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent> LEON = ComponentRegistry.getOrCreate(
-      ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "leon"),
-      org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent.class);
 
   public static final ComponentKey<BloodFeudistPlayerComponent> BLOOD_FEUDIST = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "blood_feudist"),
@@ -559,14 +569,14 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(SaltedFishPlayerComponent::new);
 
+    // 注册归途旅人组件 - 旧日渡口 / 末班车
+    registry.beginRegistration(Player.class, RETURN_TRAVELER)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(org.agmas.noellesroles.game.roles.innocence.return_traveler.ReturnTravelerPlayerComponent::new);
+
     registry.beginRegistration(Player.class, LEATHER_PIG)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.innocence.leather_pig.LeatherPigPlayerComponent::new);
-
-    // 注册里昂组件 - 「幸存之人」被动草药发放
-    registry.beginRegistration(Player.class, LEON)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent::new);
 
     // 注册算命大师组件 - 存储目标和死亡倒计时
     registry.beginRegistration(Player.class, FORTUNETELLER)
@@ -716,11 +726,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, BETTER_VIGILANTE)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(BetterVigilantePlayerComponent::new);
-
-    // 注册记录员组件 - 存储猜测记录和可用角色
-    registry.beginRegistration(Player.class, hoan_meirin)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(HoanMeirinPlayerComponent::new);
     // 注册记录员组件 - 存储猜测记录和可用角色
     registry.beginRegistration(Player.class, RECORDER)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)

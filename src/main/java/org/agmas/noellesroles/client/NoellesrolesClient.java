@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client;
 
 import net.exmo.sre.repair.network.*;
@@ -455,7 +470,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         RoleInstinctRegister.registerInstinctEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(OpenScreenPayload.ID, (payload, context) -> {
-            ClientOpenScreenManager.openScreen(payload,context);
+            ClientOpenScreenManager.openScreen(payload, context);
         });
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
@@ -476,9 +491,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         // 枪械射击轨迹
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID, (payload, context) ->
-                        context.client().execute(() ->
-                                org.agmas.noellesroles.gunfx.GunTracerRenderer.onPacket(payload)));
+                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID, (payload, context) -> context.client()
+                        .execute(() -> org.agmas.noellesroles.gunfx.GunTracerRenderer.onPacket(payload)));
 
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID,
@@ -557,14 +571,14 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(YouluFreeCamClient::tick);
         // 幽露自由摄像机进入/退出
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.packet.YouluFreeCamS2CPacket.ID, (payload, context) ->
-                        context.client().execute(() -> {
-                            if (payload.active()) {
-                                YouluFreeCamClient.enter(context.client());
-                            } else {
-                                YouluFreeCamClient.exit();
-                            }
-                        }));
+                org.agmas.noellesroles.packet.YouluFreeCamS2CPacket.ID,
+                (payload, context) -> context.client().execute(() -> {
+                    if (payload.active()) {
+                        YouluFreeCamClient.enter(context.client());
+                    } else {
+                        YouluFreeCamClient.exit();
+                    }
+                }));
         ClientPlayNetworking.registerGlobalReceiver(ProblemScreenOpenC2SPacket.ID, (payload, context) -> {
             var client = context.client();
             client.execute(() -> {
@@ -612,7 +626,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 if (client.player != null) {
                     // if (!isPlayerInAdventureMode(client.player))
                     // return;
-                    ShowBroadcastMessage(payload.content());
+                    showBroadcastMessage(payload.content());
                 }
             });
         });
@@ -1457,6 +1471,23 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             return null;
         });
+        // 当前地图
+        OnMessageBelowMoneyRenderer.EVENT.register((minecraft, guiGraphics, deltaTracker) -> {
+            if (SREClient.gameComponent != null && SREClient.areaComponent != null && minecraft != null
+                    && minecraft.player != null) {
+                if (SREClient.gameComponent.isRunning() && SREClient.areaComponent.mapDisplayName != null) {
+                    if (SREClient.areaComponent.mapDisplayName.isBlank()) {
+                        return null;
+                    }
+                    return new MutableComponentResult(
+                            Component
+                                    .translatable("message.tip.map_name", Component
+                                            .translatable(SREClient.areaComponent.mapDisplayName))
+                                    .withStyle(ChatFormatting.WHITE));
+                }
+            }
+            return null;
+        });
         // 当前死亡惩罚
         OnMessageBelowMoneyRenderer.EVENT.register((minecraft, guiGraphics, deltaTracker) -> {
             if (SREClient.gameComponent != null && minecraft != null && minecraft.player != null) {
@@ -1639,7 +1670,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         SREClientCommand.register();
     }
 
-    private void ShowBroadcastMessage(Component message) {
+    public static void showBroadcastMessage(Component message) {
         var client = Minecraft.getInstance();
         if (client == null)
             return;

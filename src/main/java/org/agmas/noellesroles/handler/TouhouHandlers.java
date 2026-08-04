@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.handler;
 
 import io.wifi.starrailexpress.SRE;
@@ -31,6 +46,7 @@ import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.harpymodloader.events.ModdedRoleRemoved;
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
 import org.agmas.noellesroles.content.item.RopeItem;
 import org.agmas.noellesroles.init.ModEffects;
@@ -53,6 +69,16 @@ public class TouhouHandlers {
   }
 
   public static void registerInitEvents() {
+    ModdedRoleRemoved.EVENT.register((player, role) -> {
+      if (!(player instanceof ServerPlayer sp)) {
+        return;
+      }
+      if (RoleUtils.compareRole(role, THMiscRoles.IBUKI_SUIKA)) {
+        THSuikaRole.restore(sp);
+      } else if (RoleUtils.compareRole(role, THMiscRoles.HAKUREI_REIMU)) {
+        THReimuRole.stopFlying(sp);
+      }
+    });
     OnGameTrueStarted.EVENT.register((serverLevel) -> {
       final var modifierCca = WorldModifierComponent.KEY.get(serverLevel);
       final var gameCca = SREGameWorldComponent.getInstance(serverLevel);
@@ -274,7 +300,7 @@ public class TouhouHandlers {
             moodcca.addMood(0.4f);
           }
           return true;
-        }).announceToSelf().showOnHud(true).cooldownTicks(20 * 60).build());
+        }).withTarget().announceToSelf().showOnHud(true).cooldownTicks(20 * 60).build());
     RoleSkill.register(THMiscRoles.SHIKIEIKI,
         RoleSkill.skill(SRE.id("shikieiki"), "skill.noellesroles.shikieiki.instinct", context -> {
           final int GAP = 15 * 20;
@@ -359,6 +385,6 @@ public class TouhouHandlers {
             return true;
           }
           return false;
-        }).announceToSelf(false).cooldownSeconds(30).build());
+        }).withTarget().announceToSelf(false).cooldownSeconds(30).build());
   }
 }

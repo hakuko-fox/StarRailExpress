@@ -1,10 +1,24 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role.touhou.roles;
 
 import java.util.List;
 
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,8 +86,6 @@ public class THKaguyaRole extends TouhouRole {
             DefibrillatorComponent component = ModComponents.DEFIBRILLATOR.get(victim);
             component.triggerDeath(30 * 20, null, victim.position());
             SREPlayerShopComponent.KEY.get(victim).addToBalance(50);
-            // 更换对象
-            MagicianPlayerComponent.KEY.get(victim).startDisguiseRandomRole();
         }
     }
 }

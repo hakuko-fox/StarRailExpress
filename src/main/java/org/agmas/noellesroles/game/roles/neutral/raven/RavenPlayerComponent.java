@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.neutral.raven;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -76,7 +91,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
 
     @Override
     public boolean shouldSyncWith(ServerPlayer target) {
-        return true;
+        return target == player;
     }
 
     public void sync() {
@@ -145,19 +160,22 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             cooldownTicks--;
         if (huntTicks > 0) {
             huntTicks--;
-            if (!hasLivingTargetRole(game))
-                chooseTargetRole(game);
+            if (!hasLivingTargetRole(game) && chooseTargetRole(game))
+                changed = true;
             if (huntTicks <= 0)
                 endHunt(true);
-            changed = true;
         }
-        if (changed || player.tickCount % 200 == 0)
+        if (changed)
             sync();
     }
 
     private boolean observeNearbyMood(int totalPlayers) {
         boolean changed = false;
         float threshold = getChargeThreshold(totalPlayers);
+        if (charges >= MAX_CHARGES) {
+            observedMood.keySet().removeIf(id -> player.level().getPlayerByUUID(id) == null);
+            return false;
+        }
         for (Player nearby : player.level().players()) {
             if (nearby == player || nearby.distanceToSqr(player) > MOOD_RADIUS_SQR
                     || !GameUtils.isPlayerAliveAndSurvival(nearby))
@@ -165,7 +183,7 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
             float now = SREPlayerMoodComponent.KEY.get(nearby).getMood();
             Float before = observedMood.put(nearby.getUUID(), now);
             if (before != null && now > before && charges < MAX_CHARGES) {
-                changed |= addChargeProgress(now - before, threshold);
+                changed = changed || addChargeProgress(now - before, threshold);
             }
         }
         observedMood.keySet().removeIf(id -> player.level().getPlayerByUUID(id) == null);
@@ -388,7 +406,8 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
         buf.writeFloat(moodProgressThreshold);
         boolean hasTarget = targetRoleId != null;
         buf.writeBoolean(hasTarget);
-        if (hasTarget) buf.writeUtf(targetRoleId.toString());
+        if (hasTarget)
+            buf.writeUtf(targetRoleId.toString());
     }
 
     @Override
@@ -405,12 +424,30 @@ public final class RavenPlayerComponent implements RoleComponent, ServerTickingC
 
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        // 使用 writeSyncPacket/applySyncPacket 紧凑二进制格式
+        tag.putInt("charges", charges);
+        tag.putInt("cooldownTicks", cooldownTicks);
+        tag.putInt("huntTicks", huntTicks);
+        tag.putInt("kills", kills);
+        tag.putInt("requiredKills", requiredKills);
+        tag.putFloat("moodProgress", moodProgress);
+        tag.putFloat("moodProgressThreshold", moodProgressThreshold);
+        if (targetRoleId != null) {
+            tag.putString("targetRoleId", targetRoleId.toString());
+        }
     }
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider provider) {
-        // 使用 writeSyncPacket/applySyncPacket 紧凑二进制格式
+        charges = tag.getInt("charges");
+        cooldownTicks = tag.getInt("cooldownTicks");
+        huntTicks = tag.getInt("huntTicks");
+        kills = tag.getInt("kills");
+        requiredKills = tag.getInt("requiredKills");
+        moodProgress = tag.getFloat("moodProgress");
+        moodProgressThreshold = tag.getFloat("moodProgressThreshold");
+        if (tag.contains("targetRoleId")) {
+            targetRoleId = ResourceLocation.tryParse(tag.getString("targetRoleId"));
+        }
     }
 
     @Override

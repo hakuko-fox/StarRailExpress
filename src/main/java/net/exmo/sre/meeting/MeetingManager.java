@@ -1,5 +1,22 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package net.exmo.sre.meeting;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -9,6 +26,8 @@ import io.wifi.starrailexpress.content.block.entity.SeatEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.content.vote.VoteOption;
+import io.wifi.starrailexpress.content.vote.VoteSession;
+import io.wifi.starrailexpress.content.vote.VoteSession.VoteResultOption;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.MeetingEndEvent;
@@ -18,7 +37,6 @@ import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
-import io.wifi.starrailexpress.util.BlockTypeChecker;
 import net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload;
 import net.exmo.sre.meeting.network.MeetingStateS2CPayload;
 import net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload;
@@ -29,7 +47,10 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -37,10 +58,14 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
@@ -55,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * 紧急会议系统（Among Us / 鹅鸭杀式），服务端核心。
@@ -74,7 +100,7 @@ import java.util.UUID;
  * 对外 API 见 {@link MeetingApi}。
  */
 public final class MeetingManager {
-
+    public static ResourceLocation DATA_STORAGE_ID = SRE.id("meeting_vote_results");
     /** 开场运镜时长（tick）。 */
     public static final int INTRO_TICKS = 70;
 
@@ -162,7 +188,7 @@ public final class MeetingManager {
             refreshVoiceMuted();
         });
 
-        // 会议期间否决一切死亡（forceKill 除外）
+        // 会议期间否决一切非投票死亡（forceKill 除外）
         AllowPlayerDeath.EVENT.register((player, deathReason) -> !isActive());
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> !isActive());
     }
@@ -187,6 +213,8 @@ public final class MeetingManager {
 
     /** 尸体被右键：满足条件则召开会议。返回是否已消费该交互。 */
     public static boolean tryReportBody(ServerPlayer reporter, PlayerBodyEntity body) {
+        // SRE.LOGGER.info("[MEETING] Try report body");
+
         ServerLevel serverLevel = reporter.serverLevel();
         AreasSettings settings = settings(serverLevel);
         if (settings == null || !settings.meetingEnabled) {
@@ -196,9 +224,14 @@ public final class MeetingManager {
             return false;
         }
         if (reportedBodies.contains(body.getUUID())) {
+            // SRE.LOGGER.info("[MEETING] Body has already reported");
+
             return false;
         }
-        String victim = body.getName().getString();
+        String victim = body.getComponent().getOwnerName();
+        if (victim == null || victim.isBlank()) {
+            victim = body.getName().getString();
+        }
         UUID owner = body.getPlayerUuid();
         if (owner != null) {
             ServerPlayer ownerPlayer = reporter.server.getPlayerList().getPlayer(owner);
@@ -257,7 +290,27 @@ public final class MeetingManager {
     public static boolean startMeeting(ServerLevel serverLevel, ServerPlayer reporter, @Nullable String victim,
             boolean emergency) {
         // 亡命徒期间（难民触发）：无论如何都无法启用/发起会议
-        if (RefugeeComponent.KEY.get(serverLevel).isAnyRevivals) {
+        if (RefugeeComponent.KEY.get(serverLevel).isAnyRevivals
+                || SREGameWorldComponent.getInstance(serverLevel).isPsychoActive()
+                || !SREGameWorldComponent.getInstance(serverLevel).isSkillAvailable) {
+            reporter.displayClientMessage(
+                    Component.translatable("meeting.sre.report_failed").withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+        // 愚者会议取消，愚者的开会时间恢复。
+        if (TarotAssemblyManager.havingMeeting) {
+            final var gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
+            ServerPlayer fool = TarotAssemblyManager.findFoolPlayer(serverLevel, gameComponent);
+            if (fool == null) {
+                TarotAssemblyManager.havingMeeting = false;
+            } else {
+                TarotAssemblyManager.endMeeting(fool);
+                FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(fool);
+                comp.tarotCooldownEndTick = 0;
+                comp.sync();
+            }
+        }
+        if (!SREGameWorldComponent.KEY.get(serverLevel).getGameMode().canHaveMeeting()) {
             return false;
         }
         skipVoters.clear();
@@ -271,6 +324,7 @@ public final class MeetingManager {
         }
         long now = serverLevel.getGameTime();
         if (!emergency && now < cooldownUntilTick) {
+            // SRE.LOGGER.info("[MEETING] Cooldown: {} < {}", now, cooldownUntilTick);
             return false;
         }
         // 开局冷却：游戏开始后一段时间内不能召开会议（紧急会议绕过）。
@@ -279,6 +333,9 @@ public final class MeetingManager {
             if (timeComponent != null) {
                 long elapsed = Math.max(0, serverLevel.getGameTime() - timeComponent.getStartWorldTick());
                 if (!emergency && elapsed < settings.meetingStartCooldown * 20L) {
+                    // SRE.LOGGER.info("[MEETING] Cooldown: elapsed{} <
+                    // settings.meetingStartCooldown*20 {}", elapsed,
+                    // settings.meetingStartCooldown);
                     return false;
                 }
             }
@@ -288,7 +345,11 @@ public final class MeetingManager {
         phase = PHASE_INTRO;
         phaseEndTick = now + INTRO_TICKS;
         center = new Vec3(settings.meetingPosition.x, settings.meetingPosition.y, settings.meetingPosition.z);
-        reporterName = reporter.getGameProfile().getName();
+        if (settings.meetingNoReporter) {
+            reporterName = "meeting.sre.subtitle.a_player";
+        } else {
+            reporterName = reporter.getGameProfile().getName();
+        }
         victimName = victim == null ? "" : victim;
         participants.clear();
         seatEntityIds.clear();
@@ -296,10 +357,9 @@ public final class MeetingManager {
         speakCooldownUntil.clear();
         lastSyncedSpeakers = List.of();
 
-        List<ServerPlayer> alive = serverLevel.players().stream()
+        List<ServerPlayer> alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
                 .filter(GameUtils::isPlayerAliveAndSurvival)
                 .toList();
-        int totalDuration = INTRO_TICKS + settings.meetingDiscussSeconds * 20 + 40;
         List<BlockPos> chairs = scanChairs(serverLevel, settings);
 
         int index = 0;
@@ -310,8 +370,7 @@ public final class MeetingManager {
             participant.stopSleeping();
             participant.stopRiding();
 
-            if (index < chairs.size()) {
-                seatOnChair(serverLevel, participant, chairs.get(index));
+            if (index < chairs.size() && seatOnChair(serverLevel, participant, chairs.get(index))) {
             } else {
                 // 没有椅子的玩家围成一圈站立
                 int standIndex = index - chairs.size();
@@ -324,15 +383,20 @@ public final class MeetingManager {
             participant.setDeltaMovement(Vec3.ZERO);
             participant.fallDistance = 0.0F;
 
-            participant.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, totalDuration, 0, false, false, false));
-            participant.addEffect(new MobEffectInstance(ModEffects.USED_BANED, totalDuration, 0, false, false, false));
-            participant.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, totalDuration, 0, false, false, false));
+            participant.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, -1, 0, false, false, false));
+            participant.addEffect(new MobEffectInstance(ModEffects.USED_BANED, -1, 0, false, false, false));
+            participant.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, -1, 0, false, false, false));
+            participant
+                    .addEffect(new MobEffectInstance(ModEffects.SKILL_FREEZED, -1, 0, false, false, false));
+            participant.addEffect(new MobEffectInstance(ModEffects.CCA_FREEZED, -1, 0, false, false, false));
+
             index++;
         }
 
         MeetingVoice.joinAll(participants.keySet(), serverLevel.getServer());
-
-        for (ServerPlayer player : serverLevel.players()) {
+        final var timecca = SREGameTimeComponent.KEY.get(serverLevel);
+        timecca.setTimeFrozen(true, true);
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
             player.playNotifySound(SoundEvents.BELL_BLOCK, SoundSource.MASTER, 1.0F, 0.8F);
         }
         broadcastState(serverLevel);
@@ -361,6 +425,8 @@ public final class MeetingManager {
             participant.removeEffect(ModEffects.MOVE_BANED);
             participant.removeEffect(ModEffects.USED_BANED);
             participant.removeEffect(ModEffects.SKILL_BANED);
+            participant.removeEffect(ModEffects.SKILL_FREEZED);
+            participant.removeEffect(ModEffects.CCA_FREEZED);
             if (!participant.isSpectator()) {
                 ReturnPos pos = entry.getValue();
                 participant.teleportTo(serverLevel, pos.x(), pos.y(), pos.z(), Set.of(), pos.yaw(), pos.pitch());
@@ -368,6 +434,8 @@ public final class MeetingManager {
                 participant.fallDistance = 0.0F;
             }
         }
+        final var timecca = SREGameTimeComponent.KEY.get(serverLevel);
+        timecca.setTimeFrozen(false, true);
         for (int entityId : seatEntityIds) {
             var entity = serverLevel.getEntity(entityId);
             if (entity instanceof SeatEntity) {
@@ -383,7 +451,7 @@ public final class MeetingManager {
         skipVoters.clear();
         lastSyncedSpeakers = List.of();
         if (!silent) {
-            for (ServerPlayer player : serverLevel.players()) {
+            for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
                 player.playNotifySound(SoundEvents.BELL_BLOCK, SoundSource.MASTER, 0.8F, 1.2F);
             }
         }
@@ -391,7 +459,6 @@ public final class MeetingManager {
         MeetingEndEvent.EVENT.invoker().onMeetingEnd(serverLevel);
         level = null;
     }
-
 
     // ==================== 跳过会议 ====================
 
@@ -419,7 +486,9 @@ public final class MeetingManager {
         ServerLevel serverLevel = level;
         broadcastSkipState(serverLevel);
         // 超过二分之一的存活玩家投了跳过 → 跳过会议（有投票则直接进入投票阶段）
-        long alive = serverLevel.players().stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
+        long alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
+                .filter(GameUtils::isPlayerAliveAndSurvival)
+                .count();
         if (alive > 0 && skipVoters.size() > alive / 2) {
             skipMeeting(serverLevel);
         }
@@ -438,9 +507,11 @@ public final class MeetingManager {
 
     /** 向全体玩家同步跳过计票状态。 */
     private static void broadcastSkipState(ServerLevel serverLevel) {
-        long alive = serverLevel.players().stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
+        long alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
+                .filter(GameUtils::isPlayerAliveAndSurvival)
+                .count();
         MeetingSkipStateS2CPayload payload = new MeetingSkipStateS2CPayload(skipVoters.size(), (int) alive);
-        for (ServerPlayer player : serverLevel.players()) {
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
             ServerPlayNetworking.send(player, payload);
         }
     }
@@ -558,7 +629,7 @@ public final class MeetingManager {
                 centerPos.offset((int) scanBox.minX, (int) scanBox.minY, (int) scanBox.minZ),
                 centerPos.offset((int) scanBox.maxX, (int) scanBox.maxY, (int) scanBox.maxZ))) {
             BlockState state = serverLevel.getBlockState(pos);
-            if (BlockTypeChecker.isSeatBlock(state.getBlock())) {
+            if ((state.getBlock()) instanceof MountableBlock) {
                 chairs.add(pos.immutable());
             }
         }
@@ -567,10 +638,10 @@ public final class MeetingManager {
     }
 
     /** 在椅子上生成临时座位实体并让玩家就座（复刻 MountableBlock 的坐下逻辑）。 */
-    private static void seatOnChair(ServerLevel serverLevel, ServerPlayer participant, BlockPos chairPos) {
+    private static boolean seatOnChair(ServerLevel serverLevel, ServerPlayer participant, BlockPos chairPos) {
         BlockState state = serverLevel.getBlockState(chairPos);
         if (!(state.getBlock() instanceof MountableBlock mountable)) {
-            return;
+            return false;
         }
         // 传送到椅子旁再上座，避免跨房间 startRiding 失败
         Vec3 chairCenter = chairPos.getCenter();
@@ -580,15 +651,17 @@ public final class MeetingManager {
 
         SeatEntity seat = TMMEntities.SEAT.create(serverLevel);
         if (seat == null) {
-            return;
+            return false;
         }
         Vec3 sitPos = mountable.getSitPos(serverLevel, state, chairPos);
-        Vec3 target = chairCenter.add(sitPos);
-        seat.moveTo(target.x, target.y, target.z, yaw, 0);
+        Vec3 vec3d = Vec3.atLowerCornerOf(chairPos).add(sitPos);
+
+        seat.moveTo(vec3d.x, vec3d.y, vec3d.z, 0, 0);
         seat.setSeatPos(chairPos);
         serverLevel.addFreshEntity(seat);
         participant.startRiding(seat, true);
         seatEntityIds.add(seat.getId());
+        return true;
     }
 
     // ==================== 同步 ====================
@@ -601,7 +674,7 @@ public final class MeetingManager {
                 reporterName, victimName,
                 List.copyOf(participants.keySet()),
                 phase == PHASE_DISCUSS ? currentSpeakers() : List.of());
-        for (ServerPlayer player : serverLevel.players()) {
+        for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
             ServerPlayNetworking.send(player, payload);
         }
     }
@@ -617,34 +690,53 @@ public final class MeetingManager {
     /** "跳过"选项的 resultId 常量。 */
     private static final String SKIP_RESULT_ID = "meeting_skip";
 
+    private static CompoundTag getVoteOptionCompoundTag(VoteResultOption optresult, ServerLevel serverWorld) {
+        var ttag = new CompoundTag();
+        var opt = optresult.option();
+        ttag.putInt("id", optresult.id());
+        ttag.putInt("count", optresult.count());
+        ttag.putString("rid", opt.resultId());
+        ttag.putString("display", Component.Serializer.toJson(opt.display(), serverWorld.registryAccess()));
+        ttag.putString("type", opt.typeId().toString());
+        if (opt.isItem() && opt instanceof VoteOption.ItemOption ito) {
+            ttag.put("item", ito.stack().save(serverWorld.registryAccess()));
+        } else if (opt.isPlayer() && opt instanceof VoteOption.PlayerOption ito) {
+            var player_info_tag = new CompoundTag();
+            player_info_tag.putUUID("id",
+                    ito.uuid());
+            player_info_tag.putString("display_name",
+                    ito.display().getString());
+            ttag.put("player", player_info_tag);
+        }
+        return ttag;
+    }
+
     /** 开始投票阶段：创建玩家投票 Session，投票结束时按新规则处理出局。 */
     private static void startVotingPhase(ServerLevel serverLevel) {
         phase = PHASE_VOTE;
         phaseEndTick = serverLevel.getGameTime() + VOTE_DURATION_SECONDS * 20L;
-        List<ServerPlayer> alive = serverLevel.players().stream()
+        List<ServerPlayer> alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
                 .filter(GameUtils::isPlayerAliveAndSurvival)
                 .toList();
         if (alive.size() <= 1) {
             endMeeting(false);
             return;
         }
+
         List<VoteOption> options = new ArrayList<>();
-        for (ServerPlayer p : alive) {
-            options.add(new VoteOption.PlayerOption(p.getName(), p.getUUID()));
-        }
-        // 添加"跳过"选项
+        // 添加"跳过"选项在最前面
         options.add(VoteOption.text(
                 Component.translatable("meeting.vote.skip"), SKIP_RESULT_ID));
 
+        for (ServerPlayer p : alive) {
+            options.add(new VoteOption.PlayerOption(p.getName(), p.getUUID()));
+        }
         Set<UUID> targetPlayers = new HashSet<>();
-        for (ServerPlayer p : alive) targetPlayers.add(p.getUUID());
-        VoteManager.builder(Component.translatable("meeting.vote.title"))
-                .options(options).duration(VOTE_DURATION_SECONDS * 20).allowReVote(true)
-                .showResults(true).syncInterval(20).targetPlayerUUIDs(targetPlayers)
-                .maxSelect(1).type("meeting").start();
+        for (ServerPlayer p : alive)
+            targetPlayers.add(p.getUUID());
 
         // ==================== 投票结束时按新规则处理 ====================
-        VoteManager.addEndCallback(session -> {
+        Consumer<VoteSession> callback = session -> {
             String expelledName = "";
 
             // 第一步：统计所有选项的票数（实际计票应用"被投票倍率"，如呆呆鸟每票按 1.5 计）
@@ -667,7 +759,8 @@ public final class MeetingManager {
                     topResultIds.add(entry.getKey());
                 }
             }
-
+            // 结束会议
+            endMeeting(false);
             // 第三步：判定出局者
             // 只有当最高票唯一、且不是"跳过"、且是玩家时，才驱逐
             if (topResultIds.size() == 1 && !topResultIds.get(0).equals(SKIP_RESULT_ID)) {
@@ -677,9 +770,61 @@ public final class MeetingManager {
                         UUID votedOut = po.uuid();
                         ServerPlayer target = serverLevel.getServer().getPlayerList().getPlayer(votedOut);
                         if (target != null && GameUtils.isPlayerAliveAndSurvival(target)) {
+                            final var areaCCA = AreasWorldComponent.getInstance(serverLevel);
+                            final AreasSettings areasSettings = areaCCA.areasSettings;
                             if (MeetingVoteOutEvent.EVENT.invoker().onVoteOut(serverLevel, target)) {
-                                GameUtils.forceKillPlayer(target, false, null,
-                                        GameConstants.DeathReasons.VOTED_OUT);
+                                switch (areasSettings.meetingVoteProcessor) {
+                                    case FUNCTION: {
+                                        var tag = new CompoundTag();
+                                        var tag_results = new CompoundTag();
+                                        var tag_top_results = new CompoundTag();
+                                        {
+                                            // 存储所有results
+                                            for (var entry : session.getResults().entrySet()) {
+                                                tag_results.put(entry.getKey(),
+                                                        getVoteOptionCompoundTag(entry.getValue(), serverLevel));
+                                            }
+                                        }
+                                        {
+                                            // 存储获胜者
+
+                                            // 存储所有results
+                                            var tag_top_result_entries = new ListTag();
+                                            for (var entry : session.getTopResults()) {
+                                                tag_top_result_entries
+                                                        .add(getVoteOptionCompoundTag(entry.getValue(), serverLevel));
+                                            }
+                                            tag_top_results.put("entries", tag_top_result_entries);
+                                        }
+                                        {
+                                            tag.put("results", tag_results);
+                                            tag.put("tops", tag_top_results);
+                                        }
+                                        serverLevel.getServer().getCommandStorage().set(DATA_STORAGE_ID, tag);
+
+                                        if (areasSettings.meetingVoteProcessorFunction != null
+                                                && !areasSettings.meetingVoteProcessorFunction.isBlank())
+                                            GameUtils.executeFunction(serverLevel.getServer(),
+                                                    SREConfig.instance().meetingVoteProcessorFunctionPermission,
+                                                    areasSettings.meetingVoteProcessorFunction);
+                                    }
+                                        break;
+                                    case GLOWING:
+                                        target.addEffect(ModEffects.of(MobEffects.GLOWING,
+                                                areasSettings.meetingVoteProcessorGlowingTime * 20, 1, false, true,
+                                                true));
+                                        break;
+                                    case KILL:
+                                        GameUtils.killPlayer(target, false, null,
+                                                GameConstants.DeathReasons.VOTED_OUT);
+                                        break;
+                                    case FORCE_KILL:
+                                        GameUtils.forceKillPlayer(target, false, null,
+                                                GameConstants.DeathReasons.VOTED_OUT);
+                                        break;
+                                    default:
+                                        break;
+                                }
                                 expelledName = target.getGameProfile().getName();
                             }
                         }
@@ -698,12 +843,16 @@ public final class MeetingManager {
 
             // 广播投票结果给所有玩家
             MeetingVoteResultS2CPayload resultPayload = new MeetingVoteResultS2CPayload(expelledName, entries);
-            for (ServerPlayer player : serverLevel.players()) {
+            for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
                 ServerPlayNetworking.send(player, resultPayload);
             }
+        };
 
-            endMeeting(false);
-        });
+        // ==================== 开始投票 ====================
+        VoteManager.builder(Component.translatable("meeting.vote.title"))
+                .options(options).duration(VOTE_DURATION_SECONDS * 20).allowReVote(true)
+                .showResults(true).syncInterval(20).targetPlayerUUIDs(targetPlayers)
+                .maxSelect(1).type("meeting").callback(callback).start();
         broadcastState(serverLevel);
     }
 
@@ -734,8 +883,10 @@ public final class MeetingManager {
     public static int getVoterWeight(UUID uuid) {
         int weight = voteWeightOverrides.getOrDefault(uuid, 1);
         if (weight >= 2 && level != null) {
-            long alive = level.players().stream().filter(GameUtils::isPlayerAliveAndSurvival).count();
-            if (alive > 24) weight = Math.max(weight, 3);
+            long alive = level.getServer().getPlayerList().getPlayers().stream()
+                    .filter(GameUtils::isPlayerAliveAndSurvival).count();
+            if (alive > 24)
+                weight = Math.max(weight, 3);
         }
         return weight;
     }

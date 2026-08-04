@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.neutral.amon;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -72,8 +87,8 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
     private static final int POSSESSION_REQUIRED_TICKS = 60 * 20;
     /** 终幕「寻找阿蒙」持续时间：80 秒。 */
     public static final int FINALE_TICKS = 80 * 20;
-    /** 种植半径：15 格。 */
-    private static final double PLANT_RADIUS_SQR = 15.0 * 15.0;
+    /** 种植（寄生）半径：10 格。 */
+    private static final double PLANT_RADIUS_SQR = 10.0 * 10.0;
     /** 夺舍半径：15 格（玩家主动夺舍时，目标须在此范围内）。 */
     private static final double USURP_RADIUS_SQR = 15.0 * 15.0;
     /** 食物/饮料标签（noellesroles:food_drink），用于窃取豁免。 */
@@ -312,8 +327,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
             return false;
         }
         seeds.put(target.getUUID(), 0);
-        amon.displayClientMessage(Component.translatable("message.noellesroles.amon.seed_planted")
-                .withStyle(ChatFormatting.DARK_PURPLE), true);
+        // 用 SubtitleHUD 报幕（原 actionbar 提示会被角色 HUD 覆盖导致「不提示」）。
+        io.wifi.starrailexpress.util.SRENetworkMessageUtils.sendCODSubtitleToPlayerTop(amon,
+                Component.translatable("message.noellesroles.amon.seed_planted")
+                        .withStyle(ChatFormatting.DARK_PURPLE),
+                Component.empty(), 60);
         sync();
         return true;
     }
@@ -366,8 +384,11 @@ public final class AmonPlayerComponent implements RoleComponent, ServerTickingCo
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
         // 被夺舍宿主获得音效与提示。
         host.playNotifySound(SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.PLAYERS, 0.9f, 0.7f);
+        
         host.displayClientMessage(Component.translatable("message.noellesroles.amon.possessed_victim")
                 .withStyle(ChatFormatting.DARK_PURPLE), false);
+        host.displayClientMessage(Component.translatable("message.noellesroles.amon.possessed_victim")
+                .withStyle(ChatFormatting.DARK_PURPLE), true);
         sync();
         return true;
     }

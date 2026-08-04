@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.content.command;
 
 import com.google.common.collect.ImmutableList;
@@ -12,21 +27,21 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Collection;
 
 /**
  * 统一中毒指令 (无旧指令, 直接以 sre: 开头):
- *   sre:poison <normal|fake> <set|get|clear|trigger> [参数...] [目标...]
+ * sre:poison <normal|fake> <set|get|clear|trigger> [参数...] [目标...]
  *
- * - normal: set <tick> | get | clear | trigger   (真毒)
- * - fake:   set <tick> | get | clear | trigger   (假毒)
+ * - normal: set <tick> | get | clear | trigger (真毒)
+ * - fake: set <tick> | get | clear | trigger (假毒)
  *
  * - set <tick>: 给予目标 tick 数的中毒/假毒 (<tick> 为游戏刻, 1 秒 = 20 tick)。
  * - clear: 直接移除目标的中毒/假毒状态 (清为无)。
  * - trigger: 直接使目标"触发"当前中毒/假毒并立即死亡 (假毒也会致死)。
- *   仅在目标当前存在中毒/假毒 (poisonTicks > 0) 时生效。
+ * 仅在目标当前存在中毒/假毒 (poisonTicks > 0) 时生效。
  */
 public class PoisonCommand {
     private static final String TYPE_NORMAL = "normal";
@@ -42,21 +57,28 @@ public class PoisonCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> buildType(String type, boolean fake) {
         LiteralArgumentBuilder<CommandSourceStack> set = Commands.literal("set")
                 .then(Commands.argument("ticks", IntegerArgumentType.integer(1))
-                        .executes(ctx -> doSet(ctx, fake, ImmutableList.of(ctx.getSource().getEntityOrException())))
-                        .then(Commands.argument("targets", EntityArgument.entities())
-                                .executes(ctx -> doSet(ctx, fake, EntityArgument.getEntities(ctx, "targets")))));
+                        .executes(ctx -> doSet(ctx, fake, ImmutableList.of(ctx.getSource().getPlayerOrException()),
+                                ctx.getSource().getPlayerOrException()))
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .executes(ctx -> doSet(ctx, fake, EntityArgument.getPlayers(ctx, "targets"),
+                                        ctx.getSource().getPlayerOrException()))
+                                .then(Commands.argument("poisoner", EntityArgument.player())
+                                        .executes(ctx -> doSet(ctx, fake, EntityArgument.getPlayers(ctx, "targets"),
+                                                EntityArgument.getPlayer(ctx, "poisoner")))))
+
+                );
         LiteralArgumentBuilder<CommandSourceStack> get = Commands.literal("get")
-                .executes(ctx -> doGet(ctx, fake, ImmutableList.of(ctx.getSource().getEntityOrException())))
-                .then(Commands.argument("targets", EntityArgument.entities())
-                        .executes(ctx -> doGet(ctx, fake, EntityArgument.getEntities(ctx, "targets"))));
+                .executes(ctx -> doGet(ctx, fake, ImmutableList.of(ctx.getSource().getPlayerOrException())))
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .executes(ctx -> doGet(ctx, fake, EntityArgument.getPlayers(ctx, "targets"))));
         LiteralArgumentBuilder<CommandSourceStack> clear = Commands.literal("clear")
-                .executes(ctx -> doClear(ctx, fake, ImmutableList.of(ctx.getSource().getEntityOrException())))
-                .then(Commands.argument("targets", EntityArgument.entities())
-                        .executes(ctx -> doClear(ctx, fake, EntityArgument.getEntities(ctx, "targets"))));
+                .executes(ctx -> doClear(ctx, fake, ImmutableList.of(ctx.getSource().getPlayerOrException())))
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .executes(ctx -> doClear(ctx, fake, EntityArgument.getPlayers(ctx, "targets"))));
         LiteralArgumentBuilder<CommandSourceStack> trigger = Commands.literal("trigger")
-                .executes(ctx -> doTrigger(ctx, fake, ImmutableList.of(ctx.getSource().getEntityOrException())))
-                .then(Commands.argument("targets", EntityArgument.entities())
-                        .executes(ctx -> doTrigger(ctx, fake, EntityArgument.getEntities(ctx, "targets"))));
+                .executes(ctx -> doTrigger(ctx, fake, ImmutableList.of(ctx.getSource().getPlayerOrException())))
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .executes(ctx -> doTrigger(ctx, fake, EntityArgument.getPlayers(ctx, "targets"))));
         return Commands.literal(type)
                 .then(set)
                 .then(get)
@@ -64,15 +86,16 @@ public class PoisonCommand {
                 .then(trigger);
     }
 
-    private static int doSet(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<? extends Entity> targets) {
+    private static int doSet(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<ServerPlayer> targets,
+            ServerPlayer poisoner) {
         int ticks = IntegerArgumentType.getInteger(ctx, "ticks");
         int applied = 0;
-        for (Entity e : targets) {
+        for (ServerPlayer e : targets) {
             SREPlayerPoisonComponent c = SREPlayerPoisonComponent.KEY.get(e);
             if (fake) {
-                c.setFakePoisonTicks(ticks, null);
+                c.setFakePoisonTicks(ticks, poisoner.getUUID());
             } else {
-                c.setPoisonTicks(ticks, null);
+                c.setPoisonTicks(ticks, poisoner.getUUID());
             }
             applied++;
         }
@@ -81,11 +104,11 @@ public class PoisonCommand {
         return applied;
     }
 
-    private static int doGet(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<? extends Entity> targets) {
+    private static int doGet(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<ServerPlayer> targets) {
         MutableComponent out = Component.translatable(
                 fake ? "commands.sre.poison.fake.get.header" : "commands.sre.poison.normal.get.header")
                 .withStyle(ChatFormatting.GREEN);
-        for (Entity e : targets) {
+        for (ServerPlayer e : targets) {
             SREPlayerPoisonComponent c = SREPlayerPoisonComponent.KEY.get(e);
             boolean isFake = c.fakePoison;
             String kind = isFake ? "commands.sre.poison.fake.label" : "commands.sre.poison.normal.label";
@@ -98,9 +121,9 @@ public class PoisonCommand {
         return 1;
     }
 
-    private static int doClear(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<? extends Entity> targets) {
+    private static int doClear(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<ServerPlayer> targets) {
         int cleared = 0;
-        for (Entity e : targets) {
+        for (ServerPlayer e : targets) {
             SREPlayerPoisonComponent c = SREPlayerPoisonComponent.KEY.get(e);
             // 仅清除与当前类型匹配的中毒状态, 避免误清另一种。
             if (fake == c.fakePoison && c.poisonTicks > 0) {
@@ -113,9 +136,10 @@ public class PoisonCommand {
         return 1;
     }
 
-    private static int doTrigger(CommandContext<CommandSourceStack> ctx, boolean fake, Collection<? extends Entity> targets) {
+    private static int doTrigger(CommandContext<CommandSourceStack> ctx, boolean fake,
+            Collection<ServerPlayer> targets) {
         int triggered = 0;
-        for (Entity e : targets) {
+        for (ServerPlayer e : targets) {
             SREPlayerPoisonComponent c = SREPlayerPoisonComponent.KEY.get(e);
             if (fake == c.fakePoison && c.poisonTicks > 0) {
                 // 强制触发: 取消假毒标记并将剩余刻设为 1, 下次 serverTick 即致死。

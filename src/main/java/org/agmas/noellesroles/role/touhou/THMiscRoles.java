@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role.touhou;
 
 import org.agmas.noellesroles.role.touhou.roles.*;
@@ -20,7 +35,7 @@ public class THMiscRoles {
   public static SRERole IBUKI_SUIKA = TMMRoles
       .registerRole(new THSuikaRole(IBUKI_SUIKA_ID, new Color(149, 76, 24).getRGB(),
           false, true, SRERole.MoodType.FAKE,
-          TMMRoles.CIVILIAN_MAX_SPRINT_TICKS * 20, true))
+          TMMRoles.CIVILIAN_MAX_SPRINT_TICKS * 100, true))
       .setDefaultMax(1)
       .setDefaultEnableNeededPlayerCount(18)
       .setDefaultEnableChance(5000);

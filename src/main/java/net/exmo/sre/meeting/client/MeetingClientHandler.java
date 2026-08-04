@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package net.exmo.sre.meeting.client;
 
 import net.exmo.sre.camera.client.AdvancedCameraDirector;
@@ -12,6 +27,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -20,8 +36,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+
+import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.init.ModEffects;
 import org.lwjgl.glfw.GLFW;
+
+import io.wifi.starrailexpress.client.SREClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,8 +99,6 @@ public final class MeetingClientHandler {
 
     private static boolean overriding;
     private static boolean speakingToggled;
-    /** 跳过按钮左键按下沿检测。 */
-    private static boolean wasLeftDownSkip;
 
     private MeetingClientHandler() {
     }
@@ -146,34 +164,45 @@ public final class MeetingClientHandler {
         if (client.gui == null) {
             return;
         }
+        if (SREClient.areaComponent == null)
+            return;
         String expelled = payload.expelledPlayerName();
         Component title = expelled.isEmpty()
                 ? Component.translatable("meeting.vote.result.none_expelled")
-                : Component.translatable("meeting.vote.result.expelled", expelled);
-        Component subtitle = buildVoteSummary(payload.voteEntries());
+                : switch (SREClient.areaComponent.areasSettings.meetingVoteProcessor) {
+                    case GLOWING -> Component.translatable("meeting.vote.result.glowing", expelled);
+                    default -> Component.translatable("meeting.vote.result.expelled", expelled);
+                };
+        Component subtitle = expelled.isEmpty()
+                ? Component.translatable("meeting.vote.result.none_expelled.subtitle")
+                : Component.translatable("meeting.vote.result.expelled.subtitle", expelled);
+        Component summary = Component
+                .translatable("meeting.vote.result.summary",
+                        buildVoteSummary(payload.voteEntries()).copy()
+                                .withStyle(style -> style.withBold(false).withColor(ChatFormatting.WHITE)))
+                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
         // fadeIn / stay / fadeOut（tick）
+        NoellesrolesClient.showBroadcastMessage(summary);
         client.gui.setTimes(10, 120, 20);
         client.gui.setSubtitle(subtitle);
         client.gui.setTitle(title);
+
     }
 
-    /** 把票数按降序拼成一行紧凑摘要，用于 Title 副标题。 */
+    /** 把票数按降序拼成一行紧凑摘要，用于 Broadcast。 */
     private static Component buildVoteSummary(List<MeetingVoteResultS2CPayload.VoteEntry> entries) {
         if (entries.isEmpty()) {
             return Component.empty();
         }
         List<MeetingVoteResultS2CPayload.VoteEntry> sorted = new ArrayList<>(entries);
         sorted.sort((a, b) -> Integer.compare(b.voteCount(), a.voteCount()));
-        int max = Math.min(sorted.size(), 6);
+        int max = sorted.size();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < max; i++) {
             if (i > 0) {
-                sb.append("    ");
+                sb.append(" ; ");
             }
             sb.append(sorted.get(i).playerName()).append(':').append(sorted.get(i).voteCount());
-        }
-        if (sorted.size() > max) {
-            sb.append("  …");
         }
         return Component.literal(sb.toString());
     }
@@ -184,9 +213,12 @@ public final class MeetingClientHandler {
 
     private static void tick(Minecraft client) {
         LocalPlayer player = client.player;
-        if (player == null || client.level == null || phase == MeetingManager.PHASE_NONE) {
+        if (player == null || client.level == null) {
             stopOverride();
             return;
+        }
+        if (phase == MeetingManager.PHASE_NONE) {
+            stopOverride();
         }
         boolean participant = participants.contains(player.getUUID());
 

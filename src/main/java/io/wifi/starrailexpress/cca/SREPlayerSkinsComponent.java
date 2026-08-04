@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.cca;
 
 import com.google.gson.Gson;
@@ -5,6 +20,7 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.util.ItemSkinManager;
+import net.exmo.sre.sync.EquippedSkinsDatabaseSync;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.api.EnvType;
 import net.minecraft.core.HolderLookup;
@@ -153,6 +169,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     public void setEquippedSkin(ItemStack itemStack, String skinName) {
         String itemName = ItemSkinManager.getItemTypeName(itemStack);
         equippedSkins.put(itemName, skinName);
+        EquippedSkinsDatabaseSync.queueUpload(this.player);
         markSkinDataChanged();
     }
 
@@ -261,6 +278,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     public void setEquippedSkinForItemType(String itemTypeName, String skinName) {
         String normalizedItemName = normalizeItemName(itemTypeName);
         equippedSkins.put(normalizedItemName, skinName);
+        EquippedSkinsDatabaseSync.queueUpload(this.player);
         markSkinDataChanged();
     }
 
@@ -305,6 +323,7 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     public void setSkinInDataSync(ItemStack itemStack, String skinName) {
         // 只在客户端上传数据
         KEY.get(player).equippedSkins.put(ItemSkinManager.getItemTypeName(itemStack), skinName);
+        EquippedSkinsDatabaseSync.queueUpload(this.player);
         markSkinDataChanged();
     }
 

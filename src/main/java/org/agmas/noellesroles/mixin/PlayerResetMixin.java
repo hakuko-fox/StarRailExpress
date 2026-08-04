@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.mixin;
 
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
@@ -12,7 +27,7 @@ import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
-import org.agmas.noellesroles.content.entity.CalamityMarkEntity;
+import org.agmas.noellesroles.content.entity.MudTrapEntity;
 import org.agmas.noellesroles.content.entity.TripwireTrapEntity;
 import org.agmas.noellesroles.game.roles.innocence.athlete.AthletePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
@@ -23,7 +38,6 @@ import org.agmas.noellesroles.game.roles.innocence.broadcaster.BroadcasterPlayer
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
@@ -107,7 +121,6 @@ public abstract class PlayerResetMixin {
         MonokumaPlayerComponent.KEY.get(player).clear();
         (PlayerVolumeComponent.KEY.get(player)).clear();
         (WayfarerPlayerComponent.KEY.get(player)).clear();
-        (HoanMeirinPlayerComponent.KEY.get(player)).clear();
 
         ((MorphlingPlayerComponent) MorphlingPlayerComponent.KEY.get(player)).init();
         ((VoodooPlayerComponent) VoodooPlayerComponent.KEY.get(player)).init();
@@ -200,16 +213,16 @@ public abstract class PlayerResetMixin {
         // WorldModifierComponent.KEY.get(player.level());
         // worldModifierComponent.modifiers.clear();
         // worldModifierComponent.sync();
-        // 清除该玩家放置的所有灾厄印记实体
-        clearCalamityMarks(player);
-        // 清除该玩家放置的所有绊索陷阱实体
+        // 清除该玩家放置的所有泥沼陷阱实体
+        clearMudTraps(player);
+        // 清除该玩家放置的所有绊线陷阱实体
         clearTripwireTraps(player);
     }
 
     /**
-     * 清除指定玩家放置的所有灾厄印记实体
+     * 清除指定玩家放置的所有泥沼陷阱实体
      */
-    private static void clearCalamityMarks(ServerPlayer player) {
+    private static void clearMudTraps(ServerPlayer player) {
         ServerLevel world = player.serverLevel();
         if (world == null)
             return;
@@ -218,11 +231,11 @@ public abstract class PlayerResetMixin {
         List<Entity> toRemove = new ArrayList<>();
 
         for (Entity entity : world.getAllEntities()) {
-            if (entity instanceof CalamityMarkEntity mark) {
+            if (entity instanceof MudTrapEntity mud) {
                 // 检查是否是该玩家放置的
-                if (mark.getOwnerUuid().isPresent() &&
-                        mark.getOwnerUuid().get().equals(player.getUUID())) {
-                    toRemove.add(mark);
+                if (mud.getOwnerUuid().isPresent() &&
+                        mud.getOwnerUuid().get().equals(player.getUUID())) {
+                    toRemove.add(mud);
                 }
             }
         }

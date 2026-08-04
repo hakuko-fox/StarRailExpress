@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
@@ -150,6 +165,14 @@ public class SREPlayerPoisonComponent implements RoleComponent, ServerTickingCom
     public void serverTick() {
         // CCA冷冻：仅禁止CCA/职业执行tick，因此冻结中毒/假毒的递减（不减少、不失活致死）
         // 不需要，已在上游冻结
+        
+        if (!checkIsGameRunning()) {
+            this.poisonTicks = 0;
+            this.poisonPulseCooldown = 0;
+            this.poisoner = null;
+            return;
+        }
+        
         if (this.poisonTicks > 0) {
             this.poisonTicks--;
             if (this.poisonTicks == 0) {
@@ -176,7 +199,7 @@ public class SREPlayerPoisonComponent implements RoleComponent, ServerTickingCom
         }
     }
 
-    public void setPoisonTicks(int ticks, UUID poisoner) {
+    public void setPoisonTicks(int ticks, @NotNull UUID poisoner) {
         this.poisoner = poisoner;
         this.poisonTicks = ticks;
         this.fakePoison = false;
@@ -185,7 +208,7 @@ public class SREPlayerPoisonComponent implements RoleComponent, ServerTickingCom
         this.sync();
     }
 
-    public void setFakePoisonTicks(int ticks, UUID poisoner) {
+    public void setFakePoisonTicks(int ticks, @NotNull UUID poisoner) {
         this.poisoner = poisoner;
         this.poisonTicks = ticks;
         this.fakePoison = true;

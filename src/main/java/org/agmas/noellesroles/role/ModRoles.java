@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role;
 
 import com.mojang.serialization.Codec;
@@ -54,6 +69,7 @@ import org.agmas.noellesroles.game.roles.innocence.painter.PainterPlayerComponen
 import org.agmas.noellesroles.game.roles.innocence.photographer.PhotographerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.psychologist.PsychologistPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.return_traveler.ReturnTravelerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.singer.SingerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerComponent;
@@ -98,7 +114,9 @@ import org.agmas.noellesroles.game.roles.special.better_vigilante.BetterVigilant
 import org.agmas.noellesroles.game.roles.vigilante.patroller.PatrollerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role_data.vigilante.LeonRoleData;
 import org.agmas.noellesroles.utils.RandomColorUtil;
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
@@ -221,6 +239,8 @@ public class ModRoles {
     public static final ResourceLocation CAKE_MAKER_ID = Noellesroles.id("cake_maker");
     public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     public static final ResourceLocation SALTED_FISH_ID = Noellesroles.id("salted_fish");
+    // 归途旅人角色 ID
+    public static final ResourceLocation RETURN_TRAVELER_ID = Noellesroles.id("return_traveler");
     // 皮革噶的角色 ID
     public static final ResourceLocation LEATHER_PIG_ID = Noellesroles.id("leather_pig");
     // 亡灵之主角色 ID
@@ -665,6 +685,21 @@ public class ModRoles {
             .setDefaultEnableChance(5000);
 
     /**
+     * 归途旅人（乘客阵营）。
+     * - 拥有两个可切换技能「旧日渡口」「末班车」，玩法见 {@code ReturnTravelerPlayerComponent}。
+     * - 旧日渡口：把附近最近的 2 名玩家拉入里世界 10 秒，结束后自身隐匿 15 秒。
+     * - 末班车：一局一次，把 12 格内除自己外的玩家拉入里世界 30 秒，期间再次按键转为平民。
+     */
+    public static SRERole RETURN_TRAVELER = TMMRoles.registerRole(
+            new EggRole(RETURN_TRAVELER_ID, new Color(120, 200, 180).getRGB(), // 青碧色 - 归途旅人
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true)
+            .setComponentKey(ReturnTravelerPlayerComponent.KEY)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(4000);
+
+    /**
      * 皮革噶的 - 平民阵营
      * - 被动：模型变成一头猪
      * - 技能（G）：消耗 150 金币进入疯魔模式 30 秒，开启直觉并获得速度 III，
@@ -1003,7 +1038,7 @@ public class ModRoles {
      * - 格斗体术（按 G 触发，见 {@link org.agmas.noellesroles.AbilityHandler}）：向面前玩家猛踹一脚，
      * 造成较远击退与减速。
      * - 被动「幸存之人」（见
-     * {@link org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent}）：
+     * {@link org.agmas.noellesroles.role_data.vigilante.LeonRoleData}）：
      * 场上剩 6 人时获得蓝色草药（刷新格斗体术），剩 3 人时获得红色草药（套盾，不可叠加）。
      * - 不与远征队等任何修饰符共存（见 {@link org.agmas.noellesroles.game.modifier.NRModifiers}）。
      */
@@ -1011,8 +1046,7 @@ public class ModRoles {
             .registerRole(new NormalRole(LEON_ID, 0x2E6FB0, true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false)
                     .setVigilanteTeam(true)
-                    .setComponentKey(
-                            org.agmas.noellesroles.game.roles.vigilante.leon.LeonPlayerComponent.KEY))
+                    .setRoleData(LeonRoleData::new))
             .setCanPickUpRevolver(true).setDefaultMax(1).setDefaultEnableChance(5000)
             .setDefaultEnableNeededPlayerCount(12)
             .setSpecialVigilante(true);
@@ -2648,7 +2682,15 @@ public class ModRoles {
         BounsRoles.init();
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.POISONER_ID.getPath());
         SREPlayerPoisonComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
-        SREArmorPlayerComponent.canSyncedRolePaths.add(ModRoles.BARTENDER_ID.getPath());
+        SREArmorPlayerComponent.canSynced.add((entry) -> {
+            if (RoleUtils.compareRole(entry.getKey(), ModRoles.BARTENDER)) {
+                if (SREGameWorldComponent.isKillerTeamRoleStatic(entry.getValue())) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.MA_CHEN_XU_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.WRAITH_ASSASSIN_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC_ID.getPath());

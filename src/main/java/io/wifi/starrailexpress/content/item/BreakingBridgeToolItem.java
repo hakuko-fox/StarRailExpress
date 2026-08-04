@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.content.item;
 
 import org.agmas.noellesroles.content.block.scene.BreakingBridgeBlock;
@@ -52,7 +67,7 @@ public class BreakingBridgeToolItem extends Item {
                     if (entity instanceof BreakingBridgeBlockEntity bbbe) {
                         if (bbbe.displayState != null) {
                             var originalTag = bbbe.blockEntityTag;
-                            level.setBlock(pos, bbbe.displayState, Block.UPDATE_CLIENTS);
+                            level.setBlock(pos, bbbe.displayState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                             if (originalTag != null) {
                                 var newBlockEntity = level.getBlockEntity(pos);
                                 if (newBlockEntity != null) {
@@ -77,12 +92,13 @@ public class BreakingBridgeToolItem extends Item {
             if (targetState == null) {
                 return InteractionResult.FAIL;
             }
-            level.setBlock(pos, block.getStateForPlacement(new BlockPlaceContext(useOnContext))
-                    .setValue(BreakingBridgeBlock.TYPE,
-                            targetState.getOptionalValue(BreakingBridgeBlock.TYPE).orElse(SlabType.DOUBLE))
-                    .setValue(BlockStateProperties.WATERLOGGED,
-                            targetState.getOptionalValue(BlockStateProperties.WATERLOGGED).orElse(false)),
-                    Block.UPDATE_CLIENTS);
+            level.setBlock(
+                    pos, block.getStateForPlacement(new BlockPlaceContext(useOnContext))
+                            .setValue(BreakingBridgeBlock.TYPE,
+                                    targetState.getOptionalValue(BreakingBridgeBlock.TYPE).orElse(SlabType.DOUBLE))
+                            .setValue(BlockStateProperties.WATERLOGGED,
+                                    targetState.getOptionalValue(BlockStateProperties.WATERLOGGED).orElse(false)),
+                    Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
             if (level.getBlockEntity(pos) instanceof BreakingBridgeBlockEntity bbbe) {
                 bbbe.displayState = targetState;
                 bbbe.blockEntityTag = entityTag;

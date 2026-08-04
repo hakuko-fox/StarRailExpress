@@ -1,9 +1,25 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -65,6 +81,7 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
     @Override
     public void initializeGame(ServerLevel world, SREGameWorldComponent gameComp, List<ServerPlayer> players) {
         gameComp.clearRoleMap(false);
+        SREGameTimeComponent.KEY.get(world).setTimeFrozen(true);
         for (ServerPlayer p : players) {
             gameComp.addRole(p, SpecialGameModeRoles.CUSTOM_PENDING, false);
             p.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, ROTATION_SAFE_TIME + 40, 10, true, false, false));
@@ -76,6 +93,7 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
             RoleUtils.sendWelcomeAnnouncement(p);
         }
         // 保底
+
         final var random = new Random(world.getGameTime());
         for (var p : players) {
             if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(p.getUUID()))
@@ -285,6 +303,7 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
             mood.setMood(1);
             mood.sync();
         });
+        SREGameTimeComponent.KEY.get(world).setTimeFrozen(false);
         OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(world);
     }
 

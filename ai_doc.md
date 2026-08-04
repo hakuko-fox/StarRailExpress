@@ -8,6 +8,7 @@
 如果实在没办法请告知用户让其自行鉴定后修改。
 
 # 有关Component（CCA）
+！！！请尽量不要使用CCA！！！
 如果你打算写冷却等需要ticking的cca：
 - 请服务端尽量在重大更改时同步，而不是每秒同步！
 - 如果是类似于 cooldown-- 的需要同步的逻辑，每10s再同步。
@@ -113,3 +114,25 @@ if (role.equals(ModRoles.BROADCASTER)) {
 - 哈力克 `restoreSanity()`：扣 50 金幣，恢復範圍 8 格內玩家理智
 - 白狐 `foxFire()`：扣 40 金幣，使範圍 6 格內玩家失明 + 發光
 - 滯時鬼 `delayer_anchor`：扣 config 設定金幣，錨定狀態
+
+# 有关玩家职业数据
+
+你可以使用SRERole中的 
+```java
+.setRoleData(RoleData实例类::new)
+```
+RoleData实例类：可以extends SimpleRoleData，或是 implements RoleData
+因为每次实例都是创建新的，理论上你不需要init和clear。
+
+获取此实例类方法是 `RoleData.getNullable(类.class, 玩家)`
+或者 `RoleData.getOptional(类.class, 玩家);`
+
+如果你打算写冷却等需要ticking的事件：
+- 请服务端尽量在重大更改时同步，而不是每秒同步！
+- 如果是类似于 cooldown-- 的需要同步的逻辑，每10s再同步。
+- 或者使用 `level.getGameTime() + time` 设定触发时间来代替（只需要在触发和结束的时候同步更改）（推荐）
+- 
+！！！尽量使用此API，不要使用CCA！！！
+
+# 语言文件
+遵循使用翻译键，优先补全 `zh_cn.json`

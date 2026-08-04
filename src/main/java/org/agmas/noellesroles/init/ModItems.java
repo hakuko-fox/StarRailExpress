@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.init;
 
 import net.exmo.sre.repair.content.item.*;
@@ -855,6 +870,14 @@ public class ModItems {
     public static final Item DREAM_WINE = register(
             new org.agmas.noellesroles.content.item.DreamWineItem(new Item.Properties().stacksTo(1)),
             "dream_wine", ROLE_ITEMS_GROUP, CONSUMABLES_GROUP);
+    /**
+     * 设陷者大招「捕网枪」
+     * - G 键（选中捕网类型）花费200金币购得，到手即150s初始冷却
+     * - 右键发射捕网：命中玩家或落地后禁锢半径5格内玩家8s；150s冷却
+     */
+    public static final Item TRAPPER_NET_GUN = register(
+            new org.agmas.noellesroles.content.item.TrapperNetGunItem(new Item.Properties().stacksTo(1)),
+            "trapper_net_gun", ROLE_ITEMS_GROUP);
     /**
      * 绳索
      * - 2点耐久

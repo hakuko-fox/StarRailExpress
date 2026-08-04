@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
@@ -38,11 +53,12 @@ import org.agmas.noellesroles.game.roles.innocence.alchemist.AlchemistPlayerComp
 import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
 import org.agmas.noellesroles.game.roles.innocence.fortuneteller.FortunetellerPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.ghost.GhostPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.monitor.MonitorPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.painter.PainterPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.leather_pig.LeatherPigPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.magician.MagicianPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.salted_fish.SaltedFishPlayerComponent;
+import org.agmas.noellesroles.game.roles.innocence.return_traveler.ReturnTravelerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.dio.DIOPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
@@ -107,20 +123,20 @@ public class ModRolesInitialEventRegister {
                     && player instanceof ServerPlayer cultivationPlayer) {
                 Hakukofox2PlayerComponent.KEY.get(cultivationPlayer).startCultivation(cultivationPlayer);
             }
-            // 魔术师角色初始化
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
                 ModEventsRegister.reJudgeSpectatorsPenalty(player.level());
             }
             if (role.identifier().equals(ModRoles.BARTENDER.identifier())) {
                 FoodDrinkGlowComponent.KEY.get(player).init();
             }
+            // 魔术师角色初始化
             if (role.identifier().equals(ModRoles.CHEF.identifier())) {
                 FoodDrinkGlowComponent.KEY.get(player).init();
             }
             if (RoleUtils.compareRole(role, THLostForestRoles.KAGUYA)
                     || RoleUtils.compareRole(role, ModRoles.MAGICIAN)) {
-                var magicianComponent = ModComponents.MAGICIAN.maybeGet(player).orElse(null);
-                if (magicianComponent != null) {
+                var magicianComponent = MagicianPlayerComponent.KEY.get(player);
+                {
                     // 停止疯狂模式（如果之前存在）
                     var psychoComponent = SREPlayerPsychoComponent.KEY.get(player);
                     if (psychoComponent != null) {
@@ -148,10 +164,6 @@ public class ModRolesInitialEventRegister {
 
             if (role.identifier().equals(ModRoles.DIO.identifier())) {
                 var tpc = DIOPlayerComponent.KEY.get(player);
-                tpc.init();
-            }
-            if (role.identifier().equals(RedHouseRoles.HOAN_MEIRIN.identifier())) {
-                var tpc = HoanMeirinPlayerComponent.KEY.get(player);
                 tpc.init();
             }
             if (role.identifier().equals(RedHouseRoles.FURANDORU.identifier())) {
@@ -655,7 +667,7 @@ public class ModRolesInitialEventRegister {
                         .showOnHud(true).announceToSelf(true).build());
 
         // 幽露（Youlu）G 键技能：【魂游】—— 第一次按 G 进入自由摄像机（返回 false 不进冷却），
-        // 再按 G 在摄像机位置生成球烟并进入 45s 冷却；ESC 取消由 YouluFreeCamCancelC2SPacket 处理。
+        // 再按 G 在摄像机位置生成球烟并进入 60s 冷却；ESC 取消由 YouluFreeCamCancelC2SPacket 处理。
         RoleSkill.register(ModRoles.YOULU,
                 RoleSkill.skill(SRE.id("youlu_freecam"), "skill.noellesroles.youlu.freecam", context -> {
                     ServerPlayer player = context.player();
@@ -663,7 +675,7 @@ public class ModRolesInitialEventRegister {
                         return false;
                     return org.agmas.noellesroles.game.roles.killer.youlu.YouluPlayerComponent.KEY
                             .get(player).useCamSkill(player);
-                }).cooldownSeconds(45).showOnHud(true).announceToSelf(true).build());
+                }).cooldownSeconds(60).showOnHud(true).announceToSelf(true).build());
 
         // 滞时鬼（Delayer）技能注册：【时间锚点】——消耗金币锚定当前状态，
         // delayerRewindDelaySeconds 秒后自动沿原路平滑回溯（详见 DelayerPlayerComponent）。
@@ -678,7 +690,7 @@ public class ModRolesInitialEventRegister {
                     if (delayer.isAnchored())
                         return false; // 已锚定，等待回溯
                     SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-                    int cost = NoellesRolesConfig.instance().delayerRewindCost;
+                    int cost = 75; 
                     if (shop.balance < cost) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.delayer.no_money", cost)
@@ -690,7 +702,7 @@ public class ModRolesInitialEventRegister {
                     shop.sync();
                     delayer.anchor();
                     return true; // 进入冷却
-                }).cooldownSeconds(NoellesRolesConfig.instance().delayerRewindCooldown)
+                }).cooldownSeconds(120) 
                         .showOnHud(true).build());
 
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
@@ -1128,6 +1140,19 @@ public class ModRolesInitialEventRegister {
                         context -> SaltedFishPlayerComponent.KEY.get(context.player()).useSkill(context.player()))
                         .cooldownTicks(SaltedFishPlayerComponent.COOLDOWN_TICKS)
                         .toggleable(true).showOnHud(true).announceToSelf(false).build());
+
+        // 归途旅人技能注册：普通按 G 释放当前技能，按技能切换键(Y) 直接切换技能
+        RoleSkill.register(ModRoles.RETURN_TRAVELER,
+                RoleSkill.skill(ReturnTravelerPlayerComponent.SKILL_ID,
+                        "skill.noellesroles.return_traveler.ability",
+                        context -> ReturnTravelerPlayerComponent.KEY.get(context.player()).useAbility())
+                        .showOnHud(true).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("return_traveler_toggle_mode"),
+                        "skill.noellesroles.return_traveler.toggle_mode",
+                        context -> {
+                            ReturnTravelerPlayerComponent.KEY.get(context.player()).toggleMode();
+                            return true;
+                        }).shifted(true).modeSwitch(true).announceToSelf(false).build());
 
         // 皮革噶的技能注册：消耗 150 金币进入疯魔模式（直觉 + 速度 III + 追杀音效）
         RoleSkill.register(ModRoles.LEATHER_PIG,

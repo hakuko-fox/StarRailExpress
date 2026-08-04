@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress;
 
 import java.util.HashMap;
@@ -89,6 +104,14 @@ public class SREClientConfig implements ConfigData {
     public boolean welcome_voice = false;
 
     public boolean autoSortVotes = false;
+
+    @Category("skin")
+    @ConfigEntry.Gui.Tooltip
+    public boolean hideAllHats = false; // 不显示所有人的帽子
+
+    @Category("skin")
+    @ConfigEntry.Gui.Tooltip
+    public boolean showOwnHatOnly = false; // 只显示自己的帽子
 
     public boolean isUltraPerfMode() {
         return ultraPerfMode;

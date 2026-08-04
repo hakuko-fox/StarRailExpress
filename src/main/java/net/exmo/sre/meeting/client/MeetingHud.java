@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package net.exmo.sre.meeting.client;
 
 import net.exmo.sre.meeting.MeetingManager;
@@ -86,10 +101,16 @@ public final class MeetingHud {
 
         boolean bodyFound = !MeetingClientHandler.victimName.isEmpty();
         Component title = Component.translatable(bodyFound ? "meeting.sre.title.body" : "meeting.sre.title.emergency");
+        if (MeetingClientHandler.reporterName == null) {
+            MeetingClientHandler.reporterName = "meeting.sre.subtitle.a_player";
+        }
+        Component reporterNameComponent = MeetingClientHandler.reporterName.equals("meeting.sre.subtitle.a_player")
+                ? Component.translatable("meeting.sre.subtitle.a_player")
+                : Component.literal(MeetingClientHandler.reporterName);
         Component subtitle = bodyFound
                 ? Component.translatable("meeting.sre.subtitle.body",
-                        MeetingClientHandler.reporterName, MeetingClientHandler.victimName)
-                : Component.translatable("meeting.sre.subtitle.emergency", MeetingClientHandler.reporterName);
+                        reporterNameComponent, MeetingClientHandler.victimName)
+                : Component.translatable("meeting.sre.subtitle.emergency", reporterNameComponent);
 
         // 标题冲击式入场：过冲缩放（3.6 → 2.4）+ 微震屏
         float titleT = Mth.clamp(sincePhase / (float) INTRO_TITLE_MS, 0.0F, 1.0F);
@@ -164,11 +185,13 @@ public final class MeetingHud {
         // 发言者名牌（面板正下方横排，金框脉冲）
         int speakersY = py + panelH + 4;
         renderSpeakers(g, client, speakersY);
-
+        Component reporterNameComponent = MeetingClientHandler.reporterName.equals("meeting.sre.subtitle.a_player")
+                ? Component.translatable("meeting.sre.subtitle.a_player")
+                : Component.literal(MeetingClientHandler.reporterName);
         // 报告信息（发言人名牌下方；过宽时自动缩放，避免溢出屏幕）
         if (!MeetingClientHandler.victimName.isEmpty()) {
             Component reportInfo = Component.translatable("meeting.sre.subtitle.body",
-                    MeetingClientHandler.reporterName, MeetingClientHandler.victimName);
+                    reporterNameComponent, MeetingClientHandler.victimName);
             drawReportInfo(g, client, reportInfo, w / 2, speakersY + 18, TEXT, w - 20);
         }
 
@@ -195,29 +218,32 @@ public final class MeetingHud {
 
     // ==================== 跳过会议按钮 ====================
 
-    private static void renderSkipButton(GuiGraphics g, Minecraft client) {
-        int[] r = MeetingClientHandler.skipButtonRect();
-        int bx = r[0], by = r[1], bw = r[2], bh = r[3];
-        boolean voted = MeetingClientHandler.skipVoted;
+    // private static void renderSkipButton(GuiGraphics g, Minecraft client) {
+    // int[] r = MeetingClientHandler.skipButtonRect();
+    // int bx = r[0], by = r[1], bw = r[2], bh = r[3];
+    // boolean voted = MeetingClientHandler.skipVoted;
 
-        // 按钮底色与边框
-        int fill = voted ? 0xAA3A2A12 : 0xAA1A1008;
-        g.fill(bx, by, bx + bw, by + bh, fill);
-        g.renderOutline(bx, by, bw, bh, voted ? GREEN : BORDER);
+    // // 按钮底色与边框
+    // int fill = voted ? 0xAA3A2A12 : 0xAA1A1008;
+    // g.fill(bx, by, bx + bw, by + bh, fill);
+    // g.renderOutline(bx, by, bw, bh, voted ? GREEN : BORDER);
 
-        var font = client.font;
-        Component label = Component.translatable(voted ? "meeting.sre.skip_button_voted"
-                : "meeting.sre.skip_button");
-        g.drawCenteredString(font, label, bx + bw / 2, by + (bh - font.lineHeight) / 2,
-                voted ? GREEN : TEXT);
+    // var font = client.font;
+    // Component label = Component.translatable(voted ?
+    // "meeting.sre.skip_button_voted"
+    // : "meeting.sre.skip_button");
+    // g.drawCenteredString(font, label, bx + bw / 2, by + (bh - font.lineHeight) /
+    // 2,
+    // voted ? GREEN : TEXT);
 
-        // 进度：按钮旁边显示「已有多少人跳过会议」（超过存活玩家二分之一即跳过）
-        int alive = MeetingClientHandler.skipAliveCount;
-        int need = alive / 2 + 1;
-        Component progress = Component.translatable("meeting.sre.skip_progress",
-                MeetingClientHandler.skipCount, need);
-        g.drawString(font, progress, bx + bw + 6, by + (bh - font.lineHeight) / 2, MUTED);
-    }
+    // // 进度：按钮旁边显示「已有多少人跳过会议」（超过存活玩家二分之一即跳过）
+    // int alive = MeetingClientHandler.skipAliveCount;
+    // int need = alive / 2 + 1;
+    // Component progress = Component.translatable("meeting.sre.skip_progress",
+    // MeetingClientHandler.skipCount, need);
+    // g.drawString(font, progress, bx + bw + 6, by + (bh - font.lineHeight) / 2,
+    // MUTED);
+    // }
 
     /** 居中绘制报告信息：文本过宽时按 maxWidth 等比缩小，避免溢出屏幕。 */
     private static void drawReportInfo(GuiGraphics g, Minecraft client, Component text, int cx, int y,
@@ -267,7 +293,5 @@ public final class MeetingHud {
             x += cardW + 6;
         }
     }
-
-
 
 }

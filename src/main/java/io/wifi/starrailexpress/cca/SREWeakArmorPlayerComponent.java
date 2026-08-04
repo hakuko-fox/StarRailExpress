@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
@@ -18,6 +33,7 @@ import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,7 +77,8 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
 
     /**
      * 给予一层弱效护盾（叠加），使用指定的持续时间与可抵挡的死亡原因。
-     * @param durationTicks 持续时间（ticks）
+     * 
+     * @param durationTicks  持续时间（ticks）
      * @param blockedReasons 可以抵挡的死亡原因列表
      */
     public void giveWeakArmor(int durationTicks, Set<ResourceLocation> blockedReasons) {
@@ -70,9 +87,10 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
 
     /**
      * 给予一层弱效护盾（叠加）。
-     * @param durationTicks 持续时间（ticks）
+     * 
+     * @param durationTicks  持续时间（ticks）
      * @param blockedReasons 可以抵挡的死亡原因列表
-     * @param blockAll 是否抵挡任意死亡原因（true 时忽略 blockedReasons）
+     * @param blockAll       是否抵挡任意死亡原因（true 时忽略 blockedReasons）
      */
     public void giveWeakArmor(int durationTicks, Set<ResourceLocation> blockedReasons, boolean blockAll) {
         this.weakArmor += 1;
@@ -92,10 +110,11 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
 
     /**
      * 直接设置弱效护盾层数（非叠加）。
-     * @param layers 层数（0 表示清除）
-     * @param durationTicks 持续时间（ticks）
+     * 
+     * @param layers         层数（0 表示清除）
+     * @param durationTicks  持续时间（ticks）
      * @param blockedReasons 可以抵挡的死亡原因列表
-     * @param blockAll 是否抵挡任意死亡原因
+     * @param blockAll       是否抵挡任意死亡原因
      */
     public void setWeakArmor(int layers, int durationTicks, Set<ResourceLocation> blockedReasons, boolean blockAll) {
         this.weakArmor = Math.max(0, layers);
@@ -149,6 +168,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
 
     /**
      * 增加弱效护盾层数（仅在已存在弱效护盾时生效，保留原有的持续时间与抵挡规则）。
+     * 
      * @param layers 要增加的层数（>0）
      */
     public void increaseWeakArmor(int layers) {
@@ -160,6 +180,7 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
 
     /**
      * 减少弱效护盾层数（最小到 0）；减到 0 时一并清除持续时间与抵挡规则。
+     * 
      * @param layers 要减少的层数（>0）
      */
     public void decreaseWeakArmor(int layers) {
@@ -180,17 +201,21 @@ public class SREWeakArmorPlayerComponent implements RoleComponent, ServerTicking
     }
 
     @Override
-    public boolean shouldSyncWith(ServerPlayer sp) {
-        if (sp == this.player)
+    public boolean shouldSyncWith(ServerPlayer target) {
+        if (target == this.player)
             return true;
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
         }
         if (gameWorldComponent != null) {
-            var role = gameWorldComponent.getRole(sp);
-            if (role != null) {
-                // 酒保可以看到弱效护盾
-                return SREArmorPlayerComponent.canSyncedRolePaths.contains(role.identifier().getPath());
+            var selfRole = gameWorldComponent.getRole(player);
+            var targetRole = gameWorldComponent.getRole(target);
+            if (targetRole != null && selfRole != null) {
+                for (var t : SREArmorPlayerComponent.canSynced) {
+                    if (t.test(Map.entry(targetRole, selfRole))) {
+                        return true;
+                    }
+                }
             }
         }
         return false;

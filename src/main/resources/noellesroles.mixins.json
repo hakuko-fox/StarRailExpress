@@ -69,6 +69,7 @@
     "roles.courier.PigeonGunPayloadMixin",
     "roles.morphling.MorphlingDummyGunPayloadMixin",
     "roles.undead_lord.UndeadGunPayloadMixin",
+    "roles.trapper.TrapperTrapGunPayloadMixin",
     "roles.nostalgist.NostalgistKnifeImmuneMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
@@ -89,6 +90,7 @@
   "client": [
     "LivingEntityAccessor",
     "client.general.AmonHideTargetMixin",
+    "client.general.BackworldOutlineGlowMixin",
     "client.HandCuffsKeyBindingMixin",
     "client.InstinctMixin",
     "client.LamBugFix",

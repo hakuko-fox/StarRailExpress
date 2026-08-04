@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.client.gui.screen.ingame;
 
 import java.util.ArrayList;
@@ -260,6 +275,8 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                         .bounds(0, 0, PARTICIPATION_BTN_W, PARTICIPATION_BTN_H).build());
         refreshShopLayout();
         initWaitingMenu();
+
+        updateWaitingMenuVisibility();
     }
 
     /** 创建等待面板中的便捷菜单格子按钮与翻页按钮（复用 GameMenuEntries 的同一组动作）。 */
@@ -330,6 +347,21 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     /** 根据游戏状态/当前页设置等待菜单控件可见性。 */
     private void updateWaitingMenuVisibility() {
         boolean show = !isGameActive();
+        if (menuButton != null) {
+            menuButton.visible = !show;
+            menuButton.active = !show;
+        }
+        for (var ms : menuSelections) {
+            ms.visible = this.isMenuOpen && !show;
+            ms.active = this.isMenuOpen && !show;
+        }
+
+        // 右上角参与切换按钮：仅在等待（游戏未开始）时显示，文案随状态刷新
+        if (participationButton != null) {
+            participationButton.visible = show;
+            participationButton.active = show;
+            participationButton.setMessage(participationButtonLabel());
+        }
         int start = waitingMenuPage * MENU_PER_PAGE;
         for (int i = 0; i < waitingMenuButtons.size(); i++) {
             boolean onPage = show && i >= start && i < start + MENU_PER_PAGE;
@@ -537,26 +569,6 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         renderOverlayMessageOnScreen(context, mouseX, mouseY, delta);
-        boolean gameActive = isGameActive();
-
-        // 游戏未开始时：隐藏整个快捷菜单（按钮和选项都不显示）
-        if (menuButton != null) {
-            menuButton.visible = gameActive;
-            menuButton.active = gameActive;
-        }
-        for (var ms : menuSelections) {
-            ms.visible = this.isMenuOpen && gameActive;
-            ms.active = this.isMenuOpen && gameActive;
-        }
-        // 未开始时：等待面板内的便捷菜单接管交互
-        updateWaitingMenuVisibility();
-
-        // 右上角参与切换按钮：仅在等待（游戏未开始）时显示，文案随状态刷新
-        if (participationButton != null) {
-            participationButton.visible = !gameActive;
-            participationButton.active = !gameActive;
-            participationButton.setMessage(participationButtonLabel());
-        }
 
         if (shopTotalPages > 1) {
             Component pageText = Component.literal((shopCurrentPage + 1) + " / " + shopTotalPages);
@@ -674,6 +686,13 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         @Override
         public void renderString(GuiGraphics context, Font textRenderer, int color) {
         }
+    }
+
+    @Override
+    public void tick() {
+        // 未开始时：等待面板内的便捷菜单接管交互
+        updateWaitingMenuVisibility();
+        super.tick();
     }
 
     public static class StoreItemWidget extends Button {

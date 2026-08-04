@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress;
 
 import io.wifi.ConfigCompact.ConfigClassHandler;
@@ -76,37 +91,43 @@ public class SREConfig implements ConfigData {
     // 随机地图设置
 
     @ConfigEntry.Category(value = "commands")
-    public int customRolePermission = 3;
+    public int customRolePermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int startGameRequiredPermission = 2;
+    public int entityInteractionBlockEntityPlayerPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int stopGameRequiredPermission = 3;
+    public int entityInteractionBlockEntityPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int switchMapRequiredPermission = 2;
+    public int startGameRequiredPermission = 1;
     @ConfigEntry.Category(value = "commands")
-    public int modifyEnableStatusRequiredPermission = 2;
+    public int stopGameRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int changeRoleRequiredPermission = 3;
+    public int switchMapRequiredPermission = 1;
     @ConfigEntry.Category(value = "commands")
-    public int changeModifierRequiredPermission = 3;
+    public int meetingVoteProcessorFunctionPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int forceRoleRequiredPermission = 3;
+    public int modifyEnableStatusRequiredPermission = 1;
     @ConfigEntry.Category(value = "commands")
-    public int forceModifierRequiredPermission = 3;
+    public int changeRoleRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int forceTeamRequiredPermission = 3;
+    public int changeModifierRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int spawnInfoConfigRequiredPermission = 3;
+    public int forceRoleRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int killRequiredPermission = 3;
+    public int forceModifierRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int gameKillRequiredPermission = 3;
+    public int forceTeamRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int spawnInfoConfigRequiredPermission = 1;
+    @ConfigEntry.Category(value = "commands")
+    public int killRequiredPermission = 2;
+    @ConfigEntry.Category(value = "commands")
+    public int gameKillRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int gameKickRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int gameUtilsRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
-    public int forceResetRequiredPermission = 3;
+    public int forceResetRequiredPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int cooldownCommandsRequiredPermission = 2;
 

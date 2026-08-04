@@ -1,5 +1,19 @@
-package io.wifi.starrailexpress.cca;
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
+package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.cca.gamemode.CustomRoleGameModeTeamsPlayerComponent;
 import io.wifi.starrailexpress.cca.gamemode.CustomRoleGameModeWorldComponent;
@@ -31,14 +45,14 @@ public class SREComponents
         registry.register(ParticipationComponent.KEY, ParticipationComponent::new);
         registry.register(SREGameRoundEndComponent.KEY, SREGameRoundEndComponent::new);
         registry.register(MapVotingComponent.KEY, MapVotingComponent::new);
-
-
     }
 
     @Override
     public void registerEntityComponentFactories(@NotNull EntityComponentFactoryRegistry registry) {
         registry.beginRegistration(Player.class, SREArmorPlayerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREArmorPlayerComponent::new);
+        registry.beginRegistration(Player.class, SRERoleDataPlayerComponent.KEY)
+                .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SRERoleDataPlayerComponent::new);
         registry.beginRegistration(Player.class, SREWeakArmorPlayerComponent.KEY)
                 .respawnStrategy(RespawnCopyStrategy.NEVER_COPY).end(SREWeakArmorPlayerComponent::new);
         registry.beginRegistration(Player.class, SREPlayerTaskComponent.KEY)

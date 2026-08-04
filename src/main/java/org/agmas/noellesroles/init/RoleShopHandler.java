@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.SRE;
@@ -3393,8 +3408,8 @@ public class RoleShopHandler {
                     return super.onBuy(player);
                 }
             });
-            // 技能：遮天闭目 - 100金币购买一次（可反复使用，物品自带60s冷却）
-            YOULU_SHOP.add(new ShopEntry(ModItems.YOULU_SMOKE.getDefaultInstance(), 100,
+            // 技能：遮天闭目 - 70金币购买一次（可反复使用，物品自带60s冷却）
+            YOULU_SHOP.add(new ShopEntry(ModItems.YOULU_SMOKE.getDefaultInstance(), 70,
                     ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
@@ -3486,6 +3501,8 @@ public class RoleShopHandler {
             INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 450, ShopEntry.Type.TOOL));
             // 乘务员钥匙 - 100金币
             INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            // 开锁器 - 50金币
+            INFECTED_SHOP_LIST.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.INFECTED.getIdentifier(), INFECTED_SHOP_LIST);
         }
 

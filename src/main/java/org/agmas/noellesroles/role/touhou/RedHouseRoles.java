@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role.touhou;
 
 import io.wifi.starrailexpress.SRE;
@@ -22,6 +37,7 @@ import org.agmas.noellesroles.handler.THEventHandler;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role_data.vigilante.HoanMeirinRoleData;
 
 import java.awt.*;
 import java.util.List;
@@ -46,7 +62,8 @@ public class RedHouseRoles {
       new TouhouRole(KOAKUMA_ID, new Color(175, 94, 83).getRGB(),
           false, false, SRERole.MoodType.FAKE,
           Integer.MAX_VALUE, true),
-      "th_redhouse").setNeutralForKiller(true).addTwoWayOpposingRole(ModRoles.PRANKSTER).setCanUseInstinct(true);
+      "th_redhouse").setNeutralForKiller(true).addTwoWayOpposingRole(ModRoles.PRANKSTER)
+      .setCanUseInstinct(true);
   // 大妖精
   public static SRERole DAIYOUSEI = TMMRoles.registerRole(
       new TouhouRole(DAIYOUSEI_ID, new Color(171, 216, 167).getRGB(),
@@ -128,6 +145,7 @@ public class RedHouseRoles {
       "th_redhouse")
       .setCanAutoAddMoney(true)
       .setVigilanteTeam(true).setSpecialVigilante(true).setCanSeeCoin(true)
+      .setRoleData(HoanMeirinRoleData::new)
       .setSpecialMapRole(SRERole.SpecialMapRoleMap.CAN_JUMP);
   // 好人：帕秋莉 Patchouli Knowledge
   public static SRERole PACHURI = TMMRoles.registerRole(

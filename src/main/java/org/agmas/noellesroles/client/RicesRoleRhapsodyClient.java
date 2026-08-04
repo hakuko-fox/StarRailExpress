@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
@@ -237,19 +252,6 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
             }
 
             return false;
-        }
-        // ==================== 傀儡师：优先检测操控假人状态 ====================
-        // 必须放在所有角色之前，因为傀儡师操控假人时角色会临时变成其他杀手
-        // 如果不优先检测，假人角色的按键处理会拦截G键
-        PuppeteerPlayerComponent puppeteerComp = PuppeteerPlayerComponent.KEY.get(client.player);
-        if (puppeteerComp.isControllingPuppet && client.player.isShiftKeyDown()) {
-            // 检查玩家是否存活
-            if (!GameUtils.isPlayerAliveAndSurvival(client.player))
-                return true;
-
-            // 正在操控假人，按G返回本体
-            ClientPlayNetworking.send(new PuppeteerC2SPacket(PuppeteerC2SPacket.Action.RETURN_TO_BODY));
-            return true;
         }
         // ==================== 斗士：激活钢筋铁骨技能 ====================
         if (gameWorld.isRole(client.player, ModRoles.FIGHTER)) {
@@ -708,10 +710,13 @@ public class RicesRoleRhapsodyClient implements ClientModInitializer {
 
         EntityRendererRegistry.register(ModEntities.SILENCE_TOTEM, TotemItemRenderer::new);
 
-        // 灾厄印记实体渲染器 - 使用自定义渲染器（对设陷者半透明可见）
-        EntityRendererRegistry.register(ModEntities.CALAMITY_MARK, CalamityMarkEntityRenderer::new);
+        // 泥沼陷阱实体渲染器 - 使用自定义渲染器（仅设陷者本人可见）
+        EntityRendererRegistry.register(ModEntities.MUD_TRAP, MudTrapEntityRenderer::new);
 
-        // 绊索陷阱实体渲染器 - 使用自定义渲染器（对所有玩家可见）
+        // 捕网实体渲染器 - 渲染为蜘蛛网方块
+        EntityRendererRegistry.register(ModEntities.TRAPPER_NET, TrapperNetEntityRenderer::new);
+
+        // 绊线陷阱实体渲染器 - 使用自定义渲染器（对所有玩家可见）
         EntityRendererRegistry.register(ModEntities.TRIPWIRE_TRAP, TripwireTrapEntityRenderer::new);
 
         // 傀儡本体实体渲染器 - 使用玩家皮肤渲染

@@ -1,5 +1,21 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.innocence.magician;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -121,6 +137,10 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
         killerRoles.add(ModRoles.DELAYER_ID);
         killerRoles.add(ModRoles.SILENCER_ID);
         killerRoles.add(ModRoles.SKINCRAWLER_ID);
+        // 新增可扮演职业
+        killerRoles.add(ModRoles.EXAMPLER_ID);
+        killerRoles.add(ModRoles.YOULU_ID);
+        killerRoles.add(ModRoles.WARLOCK_ID);
 
         if (killerRoles.isEmpty()) {
             killerRoles.add(TMMRoles.KILLER.identifier());
@@ -134,6 +154,8 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
             player.displayClientMessage(Component.translatable("message.magician.you_are_playing_as")
                     .append(Component.translatable("announcement.star.role." + disguiseRole.getPath()))
                     .withStyle(ChatFormatting.GOLD), true);
+
+            SRE.LOGGER.info("Player {} is disguising role {}", player.getScoreboardName(), disguiseRole);
         }
         sync();
     }
@@ -155,6 +177,8 @@ public class MagicianPlayerComponent implements RoleComponent, ServerTickingComp
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         if (tag.contains("DisguiseRoleId")) {
             this.disguiseRoleId = ResourceLocation.tryParse(tag.getString("DisguiseRoleId"));
+        } else {
+            this.disguiseRoleId = null;
         }
     }
 

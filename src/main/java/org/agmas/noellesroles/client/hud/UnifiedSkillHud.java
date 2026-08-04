@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client.hud;
 
 import io.wifi.starrailexpress.api.RolePassive;
@@ -12,7 +27,6 @@ import net.minecraft.util.Mth;
 
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
-import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 
 import java.util.List;
 
@@ -60,6 +74,10 @@ public final class UnifiedSkillHud {
             }
             // 小镇做题家有自绘的 HUD，跳过
             if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.EXAMPLER_ID)) {
+                return;
+            }
+            // 归途旅人有自绘的 HUD（两个技能独立状态），跳过通用技能 HUD
+            if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.RETURN_TRAVELER_ID)) {
                 return;
             }
             List<RoleSkill.Definition> skills = RoleSkill.getDefinitions(role);

@@ -1,5 +1,21 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles;
 
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -17,7 +33,6 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
-import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.jade_general.JadeGeneralPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.recaller.RecallerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.imitator.ImitatorPlayerComponent;
@@ -30,6 +45,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role_data.vigilante.HoanMeirinRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.List;
@@ -44,7 +60,8 @@ public class AbilityHandler {
     /**
      * 在踢击者前方锥形范围内寻找最近的存活玩家目标。
      *
-     * <p>相比射线检测（{@code getHitResultOnViewVector}），锥形检测在贴脸/近距离时更稳定，
+     * <p>
+     * 相比射线检测（{@code getHitResultOnViewVector}），锥形检测在贴脸/近距离时更稳定，
      * 不会因准星未精确对上目标碰撞箱而踢空。
      *
      * @param player 踢击者
@@ -129,24 +146,26 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, RedHouseRoles.HOAN_MEIRIN)) {
-            var cca = HoanMeirinPlayerComponent.KEY.get(player);
-
-            if (player.hasEffect(MobEffects.LEVITATION)) {
-                player.removeEffect(MobEffects.LEVITATION);
+            var cca = RoleData.getOrCreate(HoanMeirinRoleData.class, player);
+            if (cca != null) {
+                if (player.hasEffect(MobEffects.LEVITATION)) {
+                    player.removeEffect(MobEffects.LEVITATION);
+                    player.displayClientMessage(
+                            Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
+                            true);
+                    return;
+                }
+                if (cca.cooldown > 0) {
+                    return;
+                }
+                player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
+                        10 * 20, 1, true, false, true));
                 player.displayClientMessage(
-                        Component.translatable("hud.hoan_meirin.ability_stop").withStyle(ChatFormatting.AQUA),
+                        Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
                         true);
-                return;
+                cca.setCooldown(60 * 20);
             }
-            if (cca.cooldown > 0) {
-                return;
-            }
-            player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
-                    10 * 20, 1, true, false, true));
-            player.displayClientMessage(
-                    Component.translatable("hud.hoan_meirin.ability_activated").withStyle(ChatFormatting.GREEN),
-                    true);
-            cca.setCooldown(60 * 20);
+
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.EXAMPLER)) {
@@ -246,6 +265,9 @@ public class AbilityHandler {
                 net.minecraft.world.phys.Vec3 dir = horizontalLookDirection(player, victim);
                 // knockback(strength, x, z) 会把目标推向 -(x, z)，故传入反方向
                 victim.knockback(cfg.leonKickKnockback, -dir.x, -dir.z);
+                // 踹人击退的竖直分量削减 60%，避免把人踢飞上天
+                net.minecraft.world.phys.Vec3 kickVel = victim.getDeltaMovement();
+                victim.setDeltaMovement(kickVel.x, kickVel.y * 0.4D, kickVel.z);
                 victim.hurtMarked = true;
                 // 玩家受服务端击退需主动同步速度
                 victim.connection
@@ -256,7 +278,7 @@ public class AbilityHandler {
                 player.level().playSound(null, victim.blockPosition(),
                         net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK,
                         net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
-                abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.leonKickCooldown);
+                abilityPlayerComponent.setCooldown(GameConstants.getInTicks(0, cfg.leonKickCooldown));
                 player.displayClientMessage(
                         Component.translatable("message.noellesroles.leon.kick_hit")
                                 .withStyle(ChatFormatting.AQUA),
@@ -305,7 +327,7 @@ public class AbilityHandler {
             level.playSound(null, player.blockPosition(),
                     net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG,
                     net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.2f);
-            abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, cfg.morphlingDummyCooldown);
+            abilityPlayerComponent.setCooldown(GameConstants.getInTicks(0, cfg.morphlingDummyCooldown));
             player.displayClientMessage(
                     Component.translatable("message.noellesroles.morphling.dummy_spawned")
                             .withStyle(ChatFormatting.GREEN),
@@ -328,7 +350,7 @@ public class AbilityHandler {
                         NoellesRolesConfig.HANDLER.instance().recallerTeleportCooldown);
                 recallerPlayerComponent.teleport();
             }
-
+            abilityPlayerComponent.sync();
         }
         if (gameWorldComponent.isRole(player, ModRoles.JADE_GENERAL)
                 && abilityPlayerComponent.cooldown <= 0) {

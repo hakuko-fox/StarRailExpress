@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.client;
 
 import static org.agmas.noellesroles.init.ModEventsRegister.canThrowItems;
@@ -36,6 +51,7 @@ import dev.doctor4t.ratatouille.client.util.ambience.AmbienceUtil;
 import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
 import io.wifi.rhythm.client.RhythmMapManager;
+import io.wifi.rhythm.client.utils.OggPlayer;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.SREConfig;
@@ -281,6 +297,9 @@ public class SREClient implements ClientModInitializer {
         SceneAssetNetwork.registerClientReceivers();
         ClientScheduler.init();
         ClientSkinCache.init();
+        io.wifi.starrailexpress.hat.HatEquipmentApi.registerDefaultOwnerResolvers();
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
+                .register((handler, client) -> io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.clear());
         io.wifi.starrailexpress.client.mirror.MirrorReflectionManager.init();
         ClientConfigEvents.register();
         new EXSREClient().onInitializeClient();
@@ -514,6 +533,7 @@ public class SREClient implements ClientModInitializer {
             trainComponent = SRETrainWorldComponent.KEY.get(clientWorld);
             moodComponent = SREPlayerMoodComponent.KEY.get(Minecraft.getInstance().player);
         });
+
         ClientPlayConnectionEvents.DISCONNECT.register((a, b) -> {
             gameComponent = null;
             modifierComponent = null;
@@ -650,6 +670,9 @@ public class SREClient implements ClientModInitializer {
         });
         intervalTime = new Random().nextInt(0, 200);
         ClientTickEvents.END_CLIENT_TICK.register((client) -> {
+            {
+                OggPlayer.checker(Minecraft.getInstance().screen);
+            }
             if (client.level == null || gameComponent == null)
                 return;
             FrameAnimationRenderer.setInWorld(client != null && client.level != null);
@@ -853,6 +876,9 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(PlayerDataPartSyncPayload.ID,
                 (payload, context) -> context.client().execute(() -> ClientPlayerDataCache.update(payload.playerUuid(),
                         payload.part(), payload.json(), payload.updatedAt())));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.HatEquipmentSyncPayload.ID,
+                (payload, context) -> context.client()
+                        .execute(() -> io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.applySync(payload)));
         ClientPlayNetworking.registerGlobalReceiver(ShowStatsPayload.ID, (payload, context) -> {
             UUID targetPlayerUuid = payload.targetPlayerUuid();
             context.client().execute(() -> {

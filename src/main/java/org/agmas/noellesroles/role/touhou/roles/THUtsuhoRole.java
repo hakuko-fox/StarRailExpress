@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role.touhou.roles;
 
 import java.util.ArrayList;
@@ -33,7 +48,7 @@ public class THUtsuhoRole extends TouhouRole {
 
     public static final int SKILL_RANGE = 4;
     public static final int MAX_PLAYER_COUNT = 6;
-    public static final int DRINK_THRESHOLD = 30 * 20;
+    public static final int DRINK_THRESHOLD = 10 * 20;
 
     public THUtsuhoRole(ResourceLocation identifier, int color, boolean isInnocent, boolean canUseKiller,
             MoodType moodType, int maxSprintTime, boolean canSeeTime) {
@@ -119,9 +134,9 @@ public class THUtsuhoRole extends TouhouRole {
             }
         }
         final long timenow = level.getGameTime();
-        player.addEffect(ModEffects.of(MobEffects.GLOWING, 30 * 20, 1, true, true, true));
+        player.addEffect(ModEffects.of(MobEffects.GLOWING, DRINK_THRESHOLD, 1, true, true, true));
         for (var p : victims) {
-            p.addEffect(ModEffects.of(MobEffects.GLOWING, 30 * 20, 1, true, true, true));
+            p.addEffect(ModEffects.of(MobEffects.GLOWING, DRINK_THRESHOLD, 1, true, true, true));
             NEED_DRINK_TIME.put(p.getUUID(), new UtsuhoNeedDrinkInfo(timenow + DRINK_THRESHOLD, player));
             p.playNotifySound(NRSounds.C4_BEEP, SoundSource.MASTER, 1f, 1f);
             SRENetworkMessageUtils.sendBroadcast(p,

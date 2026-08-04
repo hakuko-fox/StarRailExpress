@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.innocence.fool;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -50,7 +65,7 @@ public class HonoredNoteItem extends NoteItem {
             // 设置固定的尊名内容到玩家的笔记组件
             SREPlayerNoteComponent component = SREPlayerNoteComponent.KEY.get(player);
             component.setNote(
-                    "§l§6按下Y进行祷告",
+                    "§l§6按下“祈祷键”（默认为J键）进行祷告",
                     "§6不属于这个时代的愚者",
                     "§6灰雾之上的神秘主宰",
                     "§6执掌好运的黄黑之王"

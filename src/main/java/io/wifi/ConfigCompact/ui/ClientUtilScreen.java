@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.ConfigCompact.ui;
 
 import java.util.ArrayList;
@@ -6,6 +21,7 @@ import java.util.function.Supplier;
 
 import org.agmas.noellesroles.mixin.SkinManagerAccessor;
 
+import io.wifi.rhythm.client.screen.RhythmGameListScreen;
 import io.wifi.starrailexpress.SRE;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -131,6 +147,14 @@ public class ClientUtilScreen extends Screen {
                         // 立即执行清理，确保旧数据被丢弃
                         cache.cleanUp();
                         SRE.LOGGER.info("Skin caches cleared by user.");
+                    });
+            rowHelper.addChild(btn);
+        }
+
+        {
+            Button btn = simpleButton(Component.translatable("screen.starrailexpress.client_utils.rhythm_game"),
+                    (b) -> {
+                        this.minecraft.setScreen(new RhythmGameListScreen(this));
                     });
             rowHelper.addChild(btn);
         }

@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.innocence.salted_fish;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -43,13 +58,13 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
     public static final int FLIP_TICKS = 20;
 
     private final Player player;
-    public int activeTicks;
-    public int cooldownTicks;
-    public int flipTicks;
-    public int side;
-    public int previousSide;
-    public float sunYaw;
-    private UUID fakeBodyUuid;
+    public int activeTicks = 0;
+    public int cooldownTicks = 0;
+    public int flipTicks = 0;
+    public int side = 0;
+    public int previousSide = 0;
+    public float sunYaw = 0;
+    private UUID fakeBodyUuid = null;
 
     public SaltedFishPlayerComponent(Player player) {
         this.player = player;
@@ -177,7 +192,7 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
 
         // 每秒做一次纠偏同步即可；翻身的离散状态改变已在 startFlip/finishActive 里各同步一次，
         // 客户端 clientTick 会自行递减 flipTicks 播放动画。切勿每 tick 同步（会造成广播风暴）。
-        if (elapsed % 20 == 0) {
+        if (elapsed % 200 == 0) {
             sync();
         }
     }
@@ -343,6 +358,11 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
 
     @Override
     public void writeToSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (!gameWorld.isRole(player, ModRoles.SALTED_FISH)) {
+            // 不是 RETURN_TRAVELER 职业则不执行职业CCA逻辑
+            return;
+        }
         tag.putInt("activeTicks", activeTicks);
         tag.putInt("cooldownTicks", cooldownTicks);
         tag.putInt("flipTicks", flipTicks);
@@ -353,12 +373,12 @@ public class SaltedFishPlayerComponent implements RoleComponent, ServerTickingCo
 
     @Override
     public void readFromSyncNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-        activeTicks = tag.getInt("activeTicks");
-        cooldownTicks = tag.getInt("cooldownTicks");
-        flipTicks = tag.getInt("flipTicks");
-        side = tag.getInt("side");
-        previousSide = tag.getInt("previousSide");
-        sunYaw = tag.getFloat("sunYaw");
+        activeTicks = getIntTag(tag, "activeTicks", 0);
+        cooldownTicks = tag.contains("cooldownTicks") ? tag.getInt("cooldownTicks") : 0;
+        flipTicks = tag.contains("flipTicks") ? tag.getInt("flipTicks") : 0;
+        side = tag.contains("side") ? tag.getInt("side") : 0;
+        previousSide = tag.contains("previousSide") ? tag.getInt("previousSide") : 0;
+        sunYaw = tag.contains("sunYaw") ? tag.getFloat("sunYaw") : 0;
     }
 
     @Override

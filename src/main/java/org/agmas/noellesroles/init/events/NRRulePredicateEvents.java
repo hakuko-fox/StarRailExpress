@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.init.events;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -109,29 +124,29 @@ public class NRRulePredicateEvents {
 
         // 多种条件不可被推动
         CollisionRules.cantPushableBy.add(entity -> {
-            if (entity instanceof Player serverPlayer) {
-                if (serverPlayer.hasEffect(MobEffects.INVISIBILITY)
-                        || serverPlayer.hasEffect(ModEffects.SAFE_TIME)
-                        || serverPlayer.hasEffect(ModEffects.NO_COLLIDE)) {
+            if (entity instanceof Player player) {
+                if (player.isInvisible() || player.hasEffect(MobEffects.INVISIBILITY)
+                        || player.hasEffect(ModEffects.SAFE_TIME)
+                        || player.hasEffect(ModEffects.NO_COLLIDE)) {
                     return true;
                 }
-                var modifiers = WorldModifierComponent.KEY.get(serverPlayer.level());
-                if (modifiers.isModifier(serverPlayer.getUUID(), SEModifiers.FEATHER)) {
+                var modifiers = WorldModifierComponent.KEY.get(player.level());
+                if (modifiers.isModifier(player.getUUID(), SEModifiers.FEATHER)) {
                     return true;
                 }
-                var gameComp = SREGameWorldComponent.KEY.get(serverPlayer.level());
+                var gameComp = SREGameWorldComponent.KEY.get(player.level());
                 if (gameComp != null) {
-                    if (gameComp.isRole(serverPlayer, ModRoles.NOSTALGIST)) {
+                    if (gameComp.isRole(player, ModRoles.NOSTALGIST)) {
                         return true;
                     }
-                    if (gameComp.isRole(serverPlayer, ModRoles.SALTED_FISH)) {
-                        if (SaltedFishPlayerComponent.KEY.get(serverPlayer).isActive()){
+                    if (gameComp.isRole(player, ModRoles.SALTED_FISH)) {
+                        if (SaltedFishPlayerComponent.KEY.get(player).isActive()) {
                             return true;
                         }
 
                     }
-                    if (gameComp.isRole(serverPlayer, ModRoles.INSANE_KILLER)) {
-                        InsaneKillerPlayerComponent insaneKiller = InsaneKillerPlayerComponent.KEY.get(serverPlayer);
+                    if (gameComp.isRole(player, ModRoles.INSANE_KILLER)) {
+                        InsaneKillerPlayerComponent insaneKiller = InsaneKillerPlayerComponent.KEY.get(player);
                         if (insaneKiller.isActive) {
                             return true;
                         }
@@ -142,7 +157,8 @@ public class NRRulePredicateEvents {
         });
 
         // 傀儡身体不可被推动
-        CollisionRules.cantPushableBy.add(entity -> (entity instanceof io.wifi.starrailexpress.content.entity.NoteEntity));
+        CollisionRules.cantPushableBy
+                .add(entity -> (entity instanceof io.wifi.starrailexpress.content.entity.NoteEntity));
     }
 
     // --- DropRules ---

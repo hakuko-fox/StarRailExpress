@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.content.entity;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -40,7 +55,7 @@ public class YouluSmokeWaveEntity extends Entity {
     /** 剩余可推进距离（同步给客户端用于渲染消散进度）。 */
     private static final EntityDataAccessor<Float> REMAINING_DISTANCE = SynchedEntityData.defineId(
             YouluSmokeWaveEntity.class, EntityDataSerializers.FLOAT);
-    /** 前进方向（水平单位向量）。 */
+    /** 前进方向（单位向量，可含 Y 轴分量）。 */
     private Vec3 direction = new Vec3(0, 0, 1);
     /** 推进速度（格/tick）。 */
     private double speed = 0.5D;

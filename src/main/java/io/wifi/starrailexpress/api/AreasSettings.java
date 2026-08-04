@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.api;
 
 import java.util.ArrayList;
@@ -218,9 +233,26 @@ public class AreasSettings {
     /** 是否启用会议系统（右键尸体召开紧急会议）。 */
     @Category("meeting")
     public boolean meetingEnabled = false;
-    /** 是否启用会议投票（讨论结束后可投票出局）。前提是 meetingEnabled 为 true。 */
+    /** 尸体会议不显示上报人 */
+    @Category("meeting")
+    public boolean meetingNoReporter = false;
+
     @Category("meeting")
     public boolean meetingVoteEnabled = false;
+
+    public enum VoteResultProcessor {
+        KILL, FORCE_KILL, GLOWING, FUNCTION
+    }
+
+    @Category("meeting")
+    public VoteResultProcessor meetingVoteProcessor = VoteResultProcessor.GLOWING;
+
+    @Category("meeting")
+    public int meetingVoteProcessorGlowingTime = 60;
+
+    @Category("meeting")
+    public String meetingVoteProcessorFunction = "sre:meeting_vote_result";
+
     /** 这个class里有可以存储的Vec3不用的AI是真的逊。 */
     @Category("meeting")
     public StoreableVec3 meetingPosition = new StoreableVec3(0, 0, 0);

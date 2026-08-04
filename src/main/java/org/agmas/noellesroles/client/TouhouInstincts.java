@@ -1,10 +1,24 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client;
 
 import org.agmas.noellesroles.role.touhou.THMagicForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
 import io.wifi.starrailexpress.event.client.RoleInstinctEvents;
@@ -16,16 +30,6 @@ import net.minecraft.world.entity.player.Player;
 public class TouhouInstincts {
 
     public static void registerEvents() {
-
-        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(THMiscRoles.REIUJI_UTSUHO_ID,
-                (client, self, target, hasInstinct) -> {
-                    if (target instanceof Player targetPlayer) {
-                        if (SREGameWorldComponent.isKillerTeamStatic(targetPlayer)) {
-                            return TrueFalseAndCustomResult.allow();
-                        }
-                    }
-                    return TrueFalseAndCustomResult.disallow();
-                });
         // 雾雨魔理沙看博丽灵梦飞行
         RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(THMagicForestRoles.KIRISAME_MARISA_ID,
                 (client, self, target, hasInstinct) ->

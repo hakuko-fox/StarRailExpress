@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client;
 
 import io.wifi.starrailexpress.api.SRERole;
@@ -171,6 +186,9 @@ public final class GKeyRoleSkill {
             var comp = org.agmas.noellesroles.game.roles.neutral.mafia.GodfatherComponent.KEY.maybeGet(client.player)
                     .orElse(null);
             if (comp != null && client.player != null && client.player.level() != null) {
+                if (!GameUtils.isPlayerAliveAndSurvival(client.player)) {
+                    return true;
+                }
                 long now = client.player.level().getGameTime();
                 if (comp.recruitCooldownUntil > 0 && now < comp.recruitCooldownUntil) {
                     long remaining = (comp.recruitCooldownUntil - now) / 20 + 1;

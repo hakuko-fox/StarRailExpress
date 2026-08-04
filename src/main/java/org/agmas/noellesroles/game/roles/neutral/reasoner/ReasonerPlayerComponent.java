@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.neutral.reasoner;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -41,6 +56,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     private final Player player;
 
     private boolean compassGiven;
+    private long compassStartWorldTick = -1;
     private int activeTicks;
     private UUID roleQuestionTarget;
     private UUID bodyQuestionTarget;
@@ -63,6 +79,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void init() {
         compassGiven = false;
+        compassStartWorldTick = -1;
         activeTicks = 0;
         roleQuestionTarget = null;
         bodyQuestionTarget = null;
@@ -97,10 +114,18 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         activeTicks++;
         boolean changed = false;
 
-        if (!compassGiven && getElapsedTicks() >= GIVE_COMPASS_TICKS && player instanceof ServerPlayer serverPlayer) {
-            giveCompass(serverPlayer);
-            compassGiven = true;
-            changed = true;
+        if (!compassGiven) {
+            // 使用 serverLevel.getGameTime() 作为基准，不受击杀加时影响，开局冷却稳定
+            ServerLevel serverLevel = (ServerLevel) player.level();
+            if (compassStartWorldTick < 0) {
+                compassStartWorldTick = serverLevel.getGameTime();
+            }
+            if (serverLevel.getGameTime() - compassStartWorldTick >= GIVE_COMPASS_TICKS
+                    && player instanceof ServerPlayer serverPlayer) {
+                giveCompass(serverPlayer);
+                compassGiven = true;
+                changed = true;
+            }
         }
 
         if (changed) {
@@ -201,12 +226,10 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     private int getElapsedTicks() {
-        if (player.level() instanceof ServerLevel) {
-            SREGameTimeComponent time = SREGameTimeComponent.KEY.get(player.level());
-            int reset = time.getResetTime();
-            int current = time.getTime();
-            if (reset > 0 && current >= 0 && reset >= current) {
-                return reset - current;
+        if (player.level() instanceof ServerLevel sl) {
+            long startWorldTick = SREGameTimeComponent.KEY.get(sl).getStartWorldTick();
+            if (startWorldTick > 0) {
+                return (int) (sl.getGameTime() - startWorldTick);
             }
         }
         return activeTicks;
@@ -424,6 +447,27 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
         return solvedCount();
     }
 
+    /** 是否已发放罗盘。 */
+    public boolean isCompassGiven() {
+        return compassGiven;
+    }
+
+    /**
+     * 拿取罗盘的剩余倒计时（tick）。
+     * 基于 serverLevel.getGameTime() 与开局基准计算，不受击杀加时影响；
+     * 若已发放或尚未开始则返回 0。
+     */
+    public int getCompassRemainingTicks() {
+        if (compassGiven || compassStartWorldTick < 0) {
+            return 0;
+        }
+        if (player.level() instanceof ServerLevel sl) {
+            long elapsed = sl.getGameTime() - compassStartWorldTick;
+            return (int) Math.max(0, GIVE_COMPASS_TICKS - elapsed);
+        }
+        return 0;
+    }
+
     private int solvedCount() {
         int count = 0;
         if (solvedAliveCount) count++;
@@ -453,6 +497,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         tag.putBoolean("compassGiven", compassGiven);
+        tag.putLong("compassStartWorldTick", compassStartWorldTick);
         tag.putInt("activeTicks", activeTicks);
         tag.putBoolean("solvedAliveCount", solvedAliveCount);
         tag.putBoolean("solvedRole", solvedRole);
@@ -464,6 +509,7 @@ public class ReasonerPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
         compassGiven = tag.getBoolean("compassGiven");
+        compassStartWorldTick = tag.getLong("compassStartWorldTick");
         activeTicks = tag.getInt("activeTicks");
         solvedAliveCount = tag.getBoolean("solvedAliveCount");
         solvedRole = tag.getBoolean("solvedRole");

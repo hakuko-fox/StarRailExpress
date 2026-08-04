@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.game;
 
 import com.google.gson.*;
@@ -269,6 +284,18 @@ public class MapManager {
 
     public static String last_start_map = "";
 
+    public static String getVoteMapName(ServerLevel serverWorld, String mapId) {
+
+        HashMap<String, MapConfig.MapEntry> mapConfigHashMap = new HashMap<>();
+        for (MapEntry map : ServerMapConfig.getInstance(serverWorld).getMaps()) {
+            mapConfigHashMap.put(map.id, map);
+        }
+        var mapConfig = mapConfigHashMap.getOrDefault(mapId, null);
+        if (mapConfig == null)
+            return mapId;
+        return mapConfig.displayName;
+    }
+
     /**
      * 加载指定的地图配置
      * 
@@ -295,6 +322,7 @@ public class MapManager {
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
             reader.close();
             areas.mapName = normalizedMapName(mapName);
+            areas.mapDisplayName = getVoteMapName(serverWorld, mapName);
             // 先读取，避免后面被覆盖了
             if (jsonObject.has("settings")) {
                 try {
@@ -918,7 +946,6 @@ public class MapManager {
         for (MapEntry map : ServerMapConfig.getInstance(serverWorld).getMaps()) {
             mapConfigHashMap.put(map.id, map);
         }
-        ;
         availableMaps.removeIf(
                 e -> {
                     final var first = mapConfigHashMap.getOrDefault(e, null);

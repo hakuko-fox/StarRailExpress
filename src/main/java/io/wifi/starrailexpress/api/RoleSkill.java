@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.api.RoleSkill.AnnounceInfo.AnnounceContext;
@@ -81,13 +96,12 @@ public final class RoleSkill {
                 stateLabel = Component.translatable("message.sre.skill.toggled_off",
                         Component.translatable(ctx.definition.nameKey()));
             } else {
-                // if (ctx.target() != null) {
-                // stateLabel = Component.translatable("message.sre.skill.cast_with_target",
-                // ctx.target().getName(),
-                // Component.translatable(ctx.definition.nameKey()),
-                // ctx.skillState.castCount);
-                // } else
-                {
+                if (ctx.target() != null && ctx.definition().withTarget()) {
+                    stateLabel = Component.translatable("message.sre.skill.cast_with_target",
+                            ctx.target().getName(),
+                            Component.translatable(ctx.definition.nameKey()),
+                            ctx.skillState.castCount);
+                } else {
                     stateLabel = Component.translatable("message.sre.skill.cast",
                             Component.translatable(ctx.definition.nameKey()),
                             ctx.skillState.castCount);
@@ -165,6 +179,7 @@ public final class RoleSkill {
             boolean shifted,
             boolean modeSwitch,
             boolean showOnHud,
+            boolean withTarget,
             Handler handler) {
         public Definition {
             if (id == null || nameKey == null || handler == null) {
@@ -188,6 +203,7 @@ public final class RoleSkill {
         private final Handler handler;
         private int cooldownTicks;
         private boolean noCastCCA = false;
+        private boolean withTarget = false;
         private int maxCharges = -1;
         private boolean continuous;
         private int holdIntervalTicks = 1;
@@ -201,6 +217,16 @@ public final class RoleSkill {
             this.id = id;
             this.nameKey = nameKey;
             this.handler = handler;
+        }
+
+        public Builder withTarget(boolean flag) {
+            withTarget = flag;
+            return this;
+        }
+
+        public Builder withTarget() {
+            withTarget = true;
+            return this;
         }
 
         public Builder cooldownTicks(int ticks) {
@@ -309,7 +335,8 @@ public final class RoleSkill {
 
         public Definition build() {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
-                    holdIntervalTicks, noCastCCA, announceInfo, toggleable, shifted, modeSwitch, showOnHud, handler);
+                    holdIntervalTicks, noCastCCA, announceInfo, toggleable, shifted, modeSwitch, showOnHud, withTarget,
+                    handler);
         }
     }
 

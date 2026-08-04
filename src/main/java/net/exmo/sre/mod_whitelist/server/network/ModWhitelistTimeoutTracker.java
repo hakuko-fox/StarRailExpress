@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package net.exmo.sre.mod_whitelist.server.network;
 
 import net.exmo.sre.mod_whitelist.common.utils.MWLogger;
@@ -6,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tracks mod whitelist payload timeout for players
@@ -13,7 +29,7 @@ import java.util.*;
  */
 public class ModWhitelistTimeoutTracker {
 	private static final long TIMEOUT_MS = 7500; // 5 seconds
-	private static final Map<UUID, Long> PLAYER_TIMEOUT_MAP = new HashMap<>();
+	private static final Map<UUID, Long> PLAYER_TIMEOUT_MAP = new ConcurrentHashMap<>();
 
 	/**
 	 * Registers a player for timeout checking

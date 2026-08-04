@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.content.entity;
 
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -22,7 +37,7 @@ import java.util.UUID;
 /**
  * 幽露「球烟」实体：G 键技能在自由摄像机位置生成的黑色烟雾球。
  *
- * <p>悬浮在生成位置（无重力），持续 12s（可配置）。内部的存活玩家（拥有者除外）
+ * <p>悬浮在生成位置（无重力），持续 20s（可配置）。内部的存活玩家（拥有者除外）
  * 每 0.5s 刷新一次视野迷雾 1 级（{@link ModEffects#VISION_FOG}）；处于球内的玩家
  * 客户端雾色会被渲染为黑色（见 {@code YouluFogColorMixin}）。
  * 渲染为自制的半透明暗色球体（见 {@code YouluSmokeBallRenderer}）。

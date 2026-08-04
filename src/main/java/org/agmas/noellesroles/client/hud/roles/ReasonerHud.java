@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client.hud.roles;
 
 import io.wifi.starrailexpress.client.SREClient;
@@ -19,6 +34,15 @@ public final class ReasonerHud {
             int x = context.guiWidth() - 100;
             int y = context.guiHeight() - 23;
             var font = Minecraft.getInstance().font;
+
+            if (!comp.isCompassGiven()) {
+                int remainTicks = comp.getCompassRemainingTicks();
+                int secs = (int) Math.ceil(remainTicks / 20.0f);
+                context.drawString(font,
+                        Component.translatable("hud.noellesroles.reasoner.compass", secs),
+                        x, y, 0xFF7FD4E0);
+                y -= font.lineHeight + 2;
+            }
 
             context.drawString(font,
                     Component.translatable("hud.noellesroles.reasoner.progress", solved, 5),

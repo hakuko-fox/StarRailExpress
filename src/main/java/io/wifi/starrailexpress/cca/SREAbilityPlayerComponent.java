@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -303,6 +318,18 @@ public class SREAbilityPlayerComponent
         }
     }
 
+    public SkillState getSelectedSkillState(List<RoleSkill.Definition> definitions) {
+        if (definitions.isEmpty()) {
+            return null;
+        }
+        var definition = definitions.get(selectedSkill);
+        if (definition.noCastCCA()) {
+            return null;
+        }
+        SkillState state = getSkillState(definition.id());
+        return state;
+    }
+
     private void mirrorSelectedSkill(List<RoleSkill.Definition> definitions) {
         if (definitions.isEmpty()) {
             return;
@@ -349,7 +376,7 @@ public class SREAbilityPlayerComponent
     @Override
     public void serverTick() {
         boolean unifiedStateChanged = false;
-        boolean shouldSync = true;
+        boolean shouldSync = false;
         if (this.cooldown > 0) {
             this.cooldown--;
 
@@ -365,16 +392,20 @@ public class SREAbilityPlayerComponent
             }
         }
         if (!skillStates.isEmpty()) {
+            boolean hasZeroCooldown = false;
             for (SkillState state : skillStates.values()) {
                 if (state.cooldown > 0) {
                     state.cooldown--;
                     unifiedStateChanged = true;
+                    if (state.cooldown == 0) {
+                        hasZeroCooldown = true;
+                    }
                 }
             }
             var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
             List<RoleSkill.Definition> definitions = RoleSkill.getDefinitions(role);
             mirrorSelectedSkill(definitions);
-            if (unifiedStateChanged && (player.level().getGameTime() % 400 == 0 || cooldown == 0)) {
+            if (unifiedStateChanged && (player.level().getGameTime() % 400 == 0 || hasZeroCooldown)) {
                 shouldSync = true;
             }
         }

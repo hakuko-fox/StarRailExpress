@@ -1,8 +1,24 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client.commands;
 
 import io.wifi.ConfigCompact.ui.SettingMenuScreen;
 import io.wifi.ConfigCompact.ui.TestScreen;
 import io.wifi.rhythm.client.RhythmMapManager;
+import io.wifi.rhythm.client.screen.RhythmGameListScreen;
 import io.wifi.rhythm.client.screen.RhythmGameScreen;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
@@ -51,6 +67,12 @@ public class SREClientCommand {
                           })))
               .then(ClientCommandManager.literal("debug")
                   .then(ClientCommandManager.literal("rhythm_game")
+                      .executes((ctx) -> {
+                        ClientScheduler.schedule(() -> {
+                          ctx.getSource().getClient().setScreen(new RhythmGameListScreen(null));
+                        }, 1);
+                        return 1;
+                      })
                       .then(ClientCommandManager.literal("random")
                           .executes((ctx) -> {
                             var mapDatas = new ArrayList<>(RhythmMapManager.MAP_NAMES.keySet());
@@ -108,6 +130,11 @@ public class SREClientCommand {
                       .executes((ctx) -> {
                         var key = AreasWorldComponent.KEY.get(ctx.getSource().getWorld());
                         final var GSON = new GsonBuilder().setPrettyPrinting().create();
+
+                        ctx.getSource()
+                            .sendFeedback(Component
+                                .translatable("Map ID: %s\nMap Display Name Key: %s", key.mapName, key.mapDisplayName)
+                                .withStyle(ChatFormatting.GREEN));
                         String result = GSON.toJson(key.areasSettings);
                         ctx.getSource()
                             .sendFeedback(Component.literal(result)

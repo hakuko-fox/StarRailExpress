@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.killer.youlu;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -41,7 +56,7 @@ import java.util.UUID;
  *       再次使用传送到锚点位置，随后进入 30s 物品冷却。</li>
  *   <li><b>遮天闭目</b>（物品）：向前释放穿墙烟雾，锥形范围内玩家陷入 8s 失明+黑暗，60s 物品冷却。</li>
  *   <li><b>魂游</b>（G 键）：摄像机进入自由模式（本体禁止移动/攻击），再按 G 在摄像机处
- *       生成持续 12s 的球烟（内部视野迷雾 1 级且雾为黑色），冷却 45s；ESC 取消（不进冷却）。</li>
+ *       生成持续 20s 的球烟（内部视野迷雾 1 级且雾为黑色），冷却 60s；ESC 取消（不进冷却）。</li>
  * </ul>
  *
  * <p>自由摄像机位置由客户端周期性上报（{@code YouluCamPosC2SPacket}），服务端按
@@ -103,7 +118,7 @@ public class YouluPlayerComponent implements RoleComponent, ServerTickingCompone
     /**
      * G 键技能入口（统一技能系统调用）。
      *
-     * @return true 表示本次按键"生成球烟并退出"，应消耗 45s 冷却；
+     * @return true 表示本次按键"生成球烟并退出"，应消耗 60s 冷却；
      *         false 表示本次按键只是进入自由摄像机（或前置校验失败），不消耗冷却。
      */
     public boolean useCamSkill(ServerPlayer sp) {

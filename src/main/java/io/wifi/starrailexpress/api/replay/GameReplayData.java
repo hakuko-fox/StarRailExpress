@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.api.replay;
 
 import io.wifi.starrailexpress.SRE;
@@ -321,10 +336,7 @@ public class GameReplayData {
             }
             case DISGUISE -> Component.translatable("sre.replay.event.disguise", sourceName);
             case TRAP_TRIGGERED -> {
-                if (sourcePlayer != null) {
-                    yield Component.translatable("sre.replay.event.trap_triggered", targetName, sourceName);
-                }
-                yield Component.translatable("sre.replay.event.trap_triggered_no_owner", targetName);
+                yield null;
             }
             case DOOR_PRY -> Component.translatable("sre.replay.event.door_pry", sourceName);
             case DOOR_SEAL -> Component.translatable("sre.replay.event.door_seal", sourceName);
@@ -401,12 +413,12 @@ public class GameReplayData {
         PSYCHO_STATE_CHANGE,
         BLACKOUT_START,
         BLACKOUT_END, CHANGE_ROLE, PLAYER_REVIVAL,
+        TRAP_TRIGGERED,
         // ===== 新增低频关键事件 =====
         SKILL_RELEASE,
         BOMB_DEFUSE,
         BOMB_DETONATE,
         DISGUISE,
-        TRAP_TRIGGERED,
         DOOR_PRY,
         DOOR_SEAL,
         ROPE_PULL

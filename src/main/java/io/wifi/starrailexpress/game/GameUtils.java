@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.game;
 
 import io.wifi.StarRailExpressID;
@@ -13,6 +28,7 @@ import io.wifi.starrailexpress.content.entity.FirecrackerEntity;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnGameInitialized;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.event.OnTrainAreaHaveReseted;
 import io.wifi.starrailexpress.event.ShouldDropOnDeath;
@@ -45,6 +61,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -222,7 +239,8 @@ public class GameUtils {
             return;
         if (GameUtils.roomToPlayer.isEmpty())
             return;
-
+        player.stopRiding();
+        player.stopSleeping();
         var areas = AreasWorldComponent.KEY.get(player.level());
         Vec3 pos = GameUtils.getSpawnPos(areas,
                 GameUtils.roomToPlayer.getOrDefault(player.getUUID(), 0));
@@ -565,6 +583,15 @@ public class GameUtils {
         component.gameMode.stopGame(world);
     }
 
+    public static void executeFunction(MinecraftServer server, int permission, String function) {
+        try {
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withPermission(permission),
+                    "function " + function);
+        } catch (Exception e) {
+            Log.warn(LogCategory.GENERAL, "Failed to execute function: " + function + ", error: " + e.getMessage());
+        }
+    }
+
     public static void executeFunction(CommandSourceStack source, String function) {
         try {
             source.getServer().getCommands().performPrefixedCommand(source, "function " + function);
@@ -574,6 +601,7 @@ public class GameUtils {
     }
 
     public static void initializeGame(ServerLevel serverWorld) {
+        OnGameInitialized.EVENT.invoker().onGameInitialized(serverWorld);
         isGameStarted = false;
         SRERole.resetStatic();
         var packet = ListRolesCommand.getRoleAndModifierEnableInfoPacket(false);
@@ -1308,6 +1336,15 @@ public class GameUtils {
 
     public static void resetPlayer(ServerPlayer player) {
         SREItemUtils.clearItem(player, (item) -> true, -1);
+        {
+            player.getAbilities().mayfly = false;
+            player.getAbilities().flying = false;
+            player.getAbilities().setFlyingSpeed(0.05F);
+            player.fallDistance = 0;
+            player.onUpdateAbilities();
+        }
+
+        SRERoleDataPlayerComponent.KEY.get(player).clear();
         SREPlayerMoodComponent.KEY.get(player).clear();
         SREPlayerShopComponent.KEY.get(player).clear();
         io.wifi.starrailexpress.cca.DynamicShopComponent.KEY.get(player).clear();

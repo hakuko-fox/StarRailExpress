@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.innocence.jade_general;
 
 import io.wifi.starrailexpress.api.RoleComponent;
@@ -175,9 +190,9 @@ public class JadeGeneralPlayerComponent implements RoleComponent, ServerTickingC
         if (dir.lengthSqr() < 1.0e-4) dir = flatten(sp.getLookAngle());
         dir = dir.normalize();
 
-        // 击退
+        // 击退（竖直分量削减 60%：0.42 -> 0.168，避免把人踢飞上天）
         double strength = config.jadeGeneralKnockbackBlocks * KNOCKBACK_PER_BLOCK;
-        target.push(dir.x * strength, 0.42D, dir.z * strength);
+        target.push(dir.x * strength, 0.168D, dir.z * strength);
         if (target instanceof ServerPlayer stp) {
             stp.hurtMarked = true;
             stp.connection.send(new ClientboundSetEntityMotionPacket(stp.getId(), stp.getDeltaMovement()));

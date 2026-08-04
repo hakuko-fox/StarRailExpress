@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.killer.warlock;
 
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
@@ -154,9 +169,10 @@ public final class WarlockDomainManager {
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, DURATION_TICKS, 0,
                     false, false, false));
         } else {
-            // 进入领域时目标获得黑暗 + 失明双重效果
+            // 进入领域时目标获得黑暗 + 失明双重效果，并禁用技能
             player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, DURATION_TICKS, 0, false, false, true));
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, DURATION_TICKS, 0, false, false, true));
+            player.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, DURATION_TICKS, 0, false, false, true));
             sendDomainTitle(player);
         }
     }

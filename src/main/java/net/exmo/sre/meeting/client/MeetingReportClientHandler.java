@@ -1,9 +1,27 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package net.exmo.sre.meeting.client;
 
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.event.client.OnRenderRoleName;
+import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.exmo.sre.meeting.MeetingManager;
 import net.exmo.sre.meeting.network.MeetingCooldownS2CPayload;
 import net.fabricmc.api.EnvType;
@@ -11,11 +29,11 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 import java.util.Set;
 import java.util.UUID;
@@ -51,14 +69,15 @@ public final class MeetingReportClientHandler {
             reportedBodies = Set.of();
         });
         ClientTickEvents.END_CLIENT_TICK.register(MeetingReportClientHandler::tick);
-        HudRenderCallback.EVENT.register(MeetingReportClientHandler::renderHint);
+        OnRenderRoleName.RENDER_END.register(MeetingReportClientHandler::renderHint);
     }
 
     private static void tick(Minecraft client) {
         // 上报逻辑已迁移到 MeetingClientHandler.tick() 中由分号键统一处理
     }
 
-    private static void renderHint(GuiGraphics g, DeltaTracker deltaTracker) {
+    private static void renderHint(Player player, float range, FakeGuiGraphics g,
+            DeltaTracker tickCounter, Font renderer) {
         Minecraft client = Minecraft.getInstance();
         if (client.options.hideGui || !canPrompt(client)) {
             return;
@@ -90,6 +109,9 @@ public final class MeetingReportClientHandler {
     /** 地图启用会议 + 游戏运行中 + 当前无会议 + 本人非旁观。 */
     public static boolean canPrompt(Minecraft client) {
         if (client.player == null || client.level == null || client.player.isSpectator()) {
+            return false;
+        }
+        if (SREClient.gameComponent == null || !SREClient.gameComponent.getGameMode().canHaveMeeting()) {
             return false;
         }
         if (MeetingClientHandler.phase != MeetingManager.PHASE_NONE) {

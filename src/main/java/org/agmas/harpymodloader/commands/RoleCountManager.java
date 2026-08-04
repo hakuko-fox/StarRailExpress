@@ -1,9 +1,26 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.harpymodloader.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
+import io.wifi.starrailexpress.SREConfig;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -19,7 +36,8 @@ public class RoleCountManager {
 
     public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("setRoleCount")
-                .requires(serverCommandSource -> serverCommandSource.hasPermission(3))
+                .requires(serverCommandSource -> serverCommandSource
+                        .hasPermission(SREConfig.instance().modifyEnableStatusRequiredPermission))
                 .then(Commands.literal("killer")
                         .then(Commands.argument("count", IntegerArgumentType.integer(0))
                                 .executes(RoleCountManager::setKillerCount)))

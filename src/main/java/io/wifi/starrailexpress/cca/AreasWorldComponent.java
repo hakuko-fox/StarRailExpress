@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.cca;
 
 import com.google.gson.Gson;
@@ -187,6 +202,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     // Room positions map
     Map<Integer, Vec3> roomPositions = new HashMap<>();
     public String mapName = null;
+    public String mapDisplayName = null;
 
     /** 当前地图中存在的小游戏种类 ID 集合（由 MapScanner 扫描填充），用于小游戏任务刷新时随机选取。 */
     public final HashSet<String> availableMinigameIds = new HashSet<>();
@@ -456,6 +472,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         this.mapName = tag.contains("mapName") && !tag.getString("mapName").isBlank()
                 ? tag.getString("mapName")
                 : null;
+        this.mapDisplayName = tag.contains("displayName") && !tag.getString("displayName").isBlank()
+                ? tag.getString("displayName")
+                : null;
         // this.canJump = tag.contains("canJump") ? tag.getBoolean("canJump") : false;
         // this.canSwim = tag.contains("canSwim") ? tag.getBoolean("canSwim") : false;
         // this.enableOxygenDrowning = tag.contains("drowning") &&
@@ -567,6 +586,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         writeVec3dToNbt(tag, this.sceneDisplayOffset, "sceneDisplayOffset");
         if (this.mapName != null) {
             tag.putString("mapName", this.mapName);
+        }
+        if (this.mapDisplayName != null) {
+            tag.putString("displayName", this.mapDisplayName);
         }
         // writeVec3dToNbt(tag, this.playAreaOffset, "playAreaOffset");
         // writeBoxToNbt(tag, this.playArea, "playArea");

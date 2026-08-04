@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.game.modes;
 
 import io.wifi.starrailexpress.SREConfig;
@@ -664,6 +679,7 @@ public class SREMurderGameMode extends GameMode {
 
         boolean civilianAlive = false;
         boolean killerAlive = false;
+        boolean anyAlive = false;
         for (ServerPlayer player : serverWorld.players()) {
             // passive money
             if (gameWorldComponent.canAutoAddMoney(player)) {
@@ -684,10 +700,13 @@ public class SREMurderGameMode extends GameMode {
             if (gameWorldComponent.canIncreaseSurvivingKillers(player) && !GameUtils.isPlayerEliminated(player)) {
                 killerAlive = true;
             }
+            if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                anyAlive = true;
+            }
         }
 
         // check killer win condition (killed all civilians)
-        if (!civilianAlive && !killerAlive) {
+        if (!anyAlive) {
             winStatus = GameUtils.WinStatus.NO_PLAYER;
         } else if (!civilianAlive) {
             winStatus = GameUtils.WinStatus.KILLERS;
@@ -748,7 +767,7 @@ public class SREMurderGameMode extends GameMode {
         }
         if (winStatus != GameUtils.WinStatus.NONE
                 && gameWorldComponent.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE) {
-            SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(serverWorld.players(), winStatus);
+            SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(new ArrayList<>(serverWorld.players()), winStatus);
             GameUtils.stopGame(serverWorld);
         }
     }
@@ -757,5 +776,10 @@ public class SREMurderGameMode extends GameMode {
             boolean isLooseEndsMode, SREGameWorldComponent gameWorldComponent) {
         return AllowGameEnd.EVENT.invoker().allowGameEnd(serverWorld,
                 winStatus, false);
+    }
+
+    @Override
+    public boolean canHaveMeeting() {
+        return true;
     }
 }

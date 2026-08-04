@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
@@ -18,6 +33,8 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
     public int time = 0;
     /** 游戏开始（计时器启动）时的世界 gameTime，用于「开局冷却」基准，不受击杀加时影响。 */
     public long startWorldTick = 0;
+    public boolean timeFrozen = false;
+    public boolean levelGameTimeFrozen = false;
 
     public SREGameTimeComponent(Level world) {
         this.world = world;
@@ -29,7 +46,10 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
 
     public void reset() {
         this.startWorldTick = this.world.getGameTime();
+        this.timeFrozen = false;
+        this.setServerFrozen(false);
         this.setTime(this.resetTime);
+        this.levelGameTimeFrozen = false;
     }
 
     public int getResetTime() {
@@ -40,12 +60,38 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
         return this.startWorldTick;
     }
 
+    public void setLevelGameTimeFrozen(boolean frozen) {
+        setLevelGameTimeFrozen(frozen, true);
+    }
+
+    public void setLevelGameTimeFrozen(boolean frozen, boolean sync) {
+        levelGameTimeFrozen = frozen;
+        if (sync)
+            sync();
+    }
+
+    public void setServerFrozen(boolean frozen) {
+        world.tickRateManager().setFrozen(frozen);
+    }
+
+    public void setTimeFrozen(boolean frozen) {
+        setTimeFrozen(frozen, true);
+    }
+
+    public void setTimeFrozen(boolean frozen, boolean sync) {
+        this.timeFrozen = frozen;
+        if (sync)
+            sync();
+    }
+
+    public boolean isTimeFrozen() {
+        return this.timeFrozen || levelGameTimeFrozen || world.tickRateManager().isFrozen();
+    }
+
     @Override
     public void tick() {
-        if (!world.isClientSide) {
-            if (world.getServer().tickRateManager().isFrozen()) {
-                return;
-            }
+        if (isTimeFrozen()) {
+            return;
         }
         if (!SREGameWorldComponent.KEY.get(this.world).isRunning())
             return;
@@ -55,13 +101,6 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
         // 从每400tick增加到每600tick同步（30秒）
         if (this.time % 600 == 0)
             this.sync();
-
-        // 更新计分板上的游戏计时器
-        if (this.time % 20 == 0) { // 每秒更新一次计分板
-            final var server = this.world.getServer();
-            if (server == null)
-                return;
-        }
     }
 
     public boolean hasTime() {
@@ -87,6 +126,8 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
 
     @Override
     public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
+        tag.putBoolean("frozen", this.timeFrozen);
+        tag.putBoolean("lt_frozen", this.levelGameTimeFrozen);
         tag.putInt("resetTime", this.resetTime);
         tag.putInt("time", this.time);
         tag.putLong("startWorldTick", this.startWorldTick);
@@ -94,6 +135,10 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
 
     @Override
     public void readFromNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
+
+        this.timeFrozen = tag.contains("frozen") && tag.getBoolean("frozen");
+        this.levelGameTimeFrozen = tag.contains("lt_frozen") && tag.getBoolean("lt_frozen");
+
         this.resetTime = tag.contains("resetTime") ? tag.getInt("resetTime") : 0;
         this.time = tag.contains("time") ? tag.getInt("time") : 0;
         this.startWorldTick = tag.contains("startWorldTick") ? tag.getLong("startWorldTick") : 0L;

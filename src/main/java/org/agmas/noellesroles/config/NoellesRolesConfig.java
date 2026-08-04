@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.config;
 
 import io.wifi.ConfigCompact.ConfigClassHandler;
@@ -249,24 +264,6 @@ public class NoellesRolesConfig implements ConfigData {
     /** Photographer - 画框传送的最大垂直(Y轴)距离（方块，<=0 表示不限制） */
     public double photographerFrameMaxYDistance = 12.0;
 
-    // ==================== Delayer (滞时鬼) ====================
-    /** Delayer - Rewind skill: seconds the time anchor lasts before the automatic rewind */
-    public int delayerRewindDelaySeconds = 15;
-    /** Delayer - Rewind skill cooldown in seconds */
-    public int delayerRewindCooldown = 120;
-    /** Delayer - Rewind skill coin cost */
-    public int delayerRewindCost = 75;
-    /** Delayer - Duration (seconds) of the daze/shader filter applied to everyone else on rewind */
-    public int delayerDazeSeconds = 1;
-    /** Delayer - Path sampling interval (seconds) while anchored, used to trace the rewind route */
-    public int delayerPathSampleSeconds = 2;
-    /** Delayer - Rolling path buffer length (seconds); older samples are dropped */
-    public int delayerPathRecordSeconds = 30;
-    /** Delayer - Ticks spent smoothly traversing each recorded path segment during the rewind */
-    public int delayerReturnSegmentTicks = 6;
-    /** Delayer - Prone + immobilize duration (seconds) when hit while the anchor is still active */
-    public int delayerDownedSeconds = 30;
-
     // ==================== Dream (梦魇) ====================
     /** Dream - 全员虚拟血量上限（Dream 斧头攻击扣此血量，归零死亡） */
     public int dreamMaxHealth = 20;
@@ -431,7 +428,7 @@ public class NoellesRolesConfig implements ConfigData {
     /** 幽露 (Youlu) - 不请自来：锚点在地面滑行的速度（格/tick） */
     public double youluAnchorSpeed = 0.25;
     /** 幽露 (Youlu) - 不请自来：锚点最长存在时间（秒），超时自动消散 */
-    public int youluAnchorLifetimeSeconds = 60;
+    public int youluAnchorLifetimeSeconds = 25;
     /** 幽露 (Youlu) - 遮天闭目：烟雾物品使用冷却（秒） */
     public int youluSmokeCooldownSeconds = 60;
     /** 幽露 (Youlu) - 遮天闭目：烟雾波向前推进的总距离（格），可穿墙 */
@@ -447,9 +444,9 @@ public class NoellesRolesConfig implements ConfigData {
     /** 幽露 (Youlu) - 自由摄像机：最长持续时间（秒），超时自动退出 */
     public int youluCamMaxSeconds = 60;
     /** 幽露 (Youlu) - 球烟：半径（格） */
-    public double youluSmokeBallRadius = 6;
+    public double youluSmokeBallRadius = 7;
     /** 幽露 (Youlu) - 球烟：持续时间（秒） */
-    public int youluSmokeBallSeconds = 12;
+    public int youluSmokeBallSeconds = 20;
     /** 幽露 (Youlu) - 商店范围关灯半径（格） */
     public int youluBlackoutRadius = 24;
 

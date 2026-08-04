@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.client;
 
 import net.exmo.sre.repair.network.*;
@@ -6,12 +21,14 @@ import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.gamemode.CustomRoleGameModeTeamsPlayerComponent;
 import io.wifi.starrailexpress.client.gui.screen.gamemode.custom_role.CustomRoleSelectScreen;
+import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import org.agmas.noellesroles.component.ModComponents;
 import net.exmo.sre.repair.role.RepairRoleDefinition;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.packet.*;
 import org.agmas.noellesroles.role.ModRoles;
 
@@ -30,6 +47,19 @@ public class ClientAbilityHandler {
         ManipulatorPlayerComponent manipulatorComp = ManipulatorPlayerComponent.KEY.get(client.player);
         if (manipulatorComp.isControlling && manipulatorComp.target != null) {
             ClientPlayNetworking.send(new ManipulatorAbilityC2SPacket());
+            return;
+        }
+        // ==================== 傀儡师：优先检测操控假人状态 ====================
+        // 必须放在所有角色之前，因为傀儡师操控假人时角色会临时变成其他杀手
+        // 如果不优先检测，假人角色的按键处理会拦截G键
+        PuppeteerPlayerComponent puppeteerComp = PuppeteerPlayerComponent.KEY.get(client.player);
+        if (puppeteerComp.isControllingPuppet && client.player.isShiftKeyDown()) {
+            // 检查玩家是否存活
+            if (!GameUtils.isPlayerAliveAndSurvival(client.player))
+                return;
+
+            // 正在操控假人，按G返回本体
+            ClientPlayNetworking.send(new PuppeteerC2SPacket(PuppeteerC2SPacket.Action.RETURN_TO_BODY));
             return;
         }
         // 游戏模式：自选职业
@@ -125,11 +155,7 @@ public class ClientAbilityHandler {
         if (GKeyRoleSkill.trigger(client, gameWorldComponent, false)) {
             return;
         }
-        if (NoellesrolesClient.targetPlayer != null) {
-            ClientPlayNetworking.send(new AbilityWithTargetC2SPacket(NoellesrolesClient.targetPlayer));
-        } else {
-            ClientPlayNetworking.send(new AbilityC2SPacket());
-        }
+        ClientPlayNetworking.send(new AbilityC2SPacket());
     }
 
     public static void tickContinuousInput(Minecraft client) {

@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package io.wifi.starrailexpress.content.item;
 
 import io.wifi.StarRailExpressID;
@@ -100,7 +115,8 @@ public class StandardRevolverItem extends SkinableItem {
     }
 
     public static HitResult getGunTarget(Player user) {
-        return ProjectileUtil.getHitResultOnViewVector(user,
+        // 优先判定玩家等常规目标；设陷者绊线只作兜底，避免挡在玩家前面的绊线抢走子弹
+        HitResult result = ProjectileUtil.getHitResultOnViewVector(user,
                 entity -> {
                     return entity instanceof Player player && GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             || entity instanceof PuppeteerBodyEntity
@@ -109,6 +125,14 @@ public class StandardRevolverItem extends SkinableItem {
                             || entity instanceof CanyuesaHorseEntity
                             || entity instanceof SuperPigHorseEntity;
                 }, 20f);
+        if (!(result instanceof net.minecraft.world.phys.EntityHitResult)) {
+            HitResult wireResult = ProjectileUtil.getHitResultOnViewVector(user,
+                    entity -> entity instanceof org.agmas.noellesroles.content.entity.TripwireTrapEntity, 20f);
+            if (wireResult instanceof net.minecraft.world.phys.EntityHitResult) {
+                result = wireResult;
+            }
+        }
+        return result;
     }
 
     @Override
