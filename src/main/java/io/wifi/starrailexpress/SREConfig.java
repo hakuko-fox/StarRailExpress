@@ -23,6 +23,8 @@ public class SREConfig implements ConfigData {
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
+    @ConfigEntry.Category(value = "gamemodes")
+    public int minPlayerCountForMurder = 6;
 
     @ConfigEntry.Category(value = "gamemodes")
     public boolean enableRepairMode = false;

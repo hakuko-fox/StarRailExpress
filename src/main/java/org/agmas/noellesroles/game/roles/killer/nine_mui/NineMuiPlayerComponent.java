@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.roles.killer.nine_mui;
 
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
@@ -16,6 +17,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -148,6 +150,11 @@ private void clearPetrifiedState(ServerPlayer sp) {
     @Override
     public void serverTick() {
         if (!(player instanceof ServerPlayer sp)) {
+            return;
+        }
+        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(sp.level());
+        // 僅在遊戲進行中且玩家確實為玖璃時才觸發被動，避免在大廳等場合誤石化
+        if (!gameWorldComponent.isRunning() || !gameWorldComponent.isRole(sp, ModRoles.NINE_MUI)) {
             return;
         }
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {

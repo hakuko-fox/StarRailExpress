@@ -240,6 +240,7 @@
   "text.autoconfig.starrailexpress.option.blackoutCooldown": "停電冷卻",
   "text.autoconfig.starrailexpress.option.enableRoster": "允許輪換Roster",
   "text.autoconfig.starrailexpress.option.defaultStartTimeForMurder": "謀殺模式：默認遊戲時長（分鐘）",
+  "text.autoconfig.starrailexpress.option.minPlayerCountForMurder": "謀殺模式：最小啟動玩家人數",
   "text.autoconfig.starrailexpress.option.monitorBrokenCooldown": "破壞全部監視器冷卻",
   "text.autoconfig.starrailexpress.option.monitorBrokenDuration": "破壞全部監視器持續時間",
   "text.autoconfig.starrailexpress.option.monitorBrokenCooldownGlobal": "破壞全部監視器公用冷卻",

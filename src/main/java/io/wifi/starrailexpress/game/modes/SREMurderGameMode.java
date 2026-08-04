@@ -52,7 +52,7 @@ public class SREMurderGameMode extends GameMode {
     private static final int VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS = 15 * 20;
 
     public SREMurderGameMode(ResourceLocation identifier) {
-        super(identifier, SREConfig.instance().defaultStartTimeForMurder, 6);
+        super(identifier, SREConfig.instance().defaultStartTimeForMurder, SREConfig.instance().minPlayerCountForMurder);
     }
 
     @Override
