@@ -41,7 +41,8 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
 
     @Override
     public boolean shouldSyncWith(ServerPlayer p) {
-        return p == this.player;
+        // 偽裝狀態必須同步給所有客戶端，否則其他玩家看不到狐狸模型，且遊戲結束時無法正確還原。
+        return true;
     }
 
     public void sync() {
