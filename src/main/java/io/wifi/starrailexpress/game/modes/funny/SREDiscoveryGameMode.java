@@ -97,6 +97,8 @@ public class SREDiscoveryGameMode extends SREMurderGameMode {
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
+        // 游客模式不支援陣營卡，退還所有已使用卡片
+        FactionCardUtils.refundAll(players);
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }
 

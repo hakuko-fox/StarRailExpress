@@ -218,15 +218,17 @@ public class LightningDraftState {
         cardMaxPerType.clear();
         cardReturnedPlayers.clear();
         int limit = Math.max(1, totalPlayers / 10);
+        // 4 種陣營卡各自獨立限額：1=平民 / 2=中立 / 3=中立偏殺 / 4=殺手
         cardMaxPerType.put(4, limit);
+        cardMaxPerType.put(3, limit);
         cardMaxPerType.put(2, limit);
+        cardMaxPerType.put(1, limit);
 
         Map<Integer, List<UUID>> byType = new HashMap<>();
         for (ServerPlayer p : allPlayers) {
             Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(p.getUUID());
             if (forcedType != null) {
-                int normalized = normalizeCardType(forcedType);
-                byType.computeIfAbsent(normalized, k -> new ArrayList<>()).add(p.getUUID());
+                byType.computeIfAbsent(forcedType, k -> new ArrayList<>()).add(p.getUUID());
             }
         }
         for (Map.Entry<Integer, List<UUID>> entry : byType.entrySet()) {
@@ -240,6 +242,7 @@ public class LightningDraftState {
                 cardReturnedPlayers.add(uid);
                 ServerPlayer sp = allPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst().orElse(null);
                 if (sp != null) {
+                    // 退還確切卡片型別
                     FactionCardType cardType = FactionCardType.fromRoleType(type);
                     if (cardType != FactionCardType.NONE) {
                         ProgressionDataManager.addFactionCard(sp, cardType, 1);
@@ -251,16 +254,8 @@ public class LightningDraftState {
         }
     }
 
-    private boolean roleMatchesFaction(SRERole role, int type) {
-        return role != null && normalizeCardType(role.getRoleType()) == type;
-    }
-
-    private static int normalizeCardType(int rawType) {
-        return switch (rawType) {
-            case 5 -> 1;
-            case 3 -> 2;
-            default -> rawType;
-        };
+    private boolean roleMatchesFaction(SRERole role, int forcedType) {
+        return io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.roleMatchesCard(role, forcedType);
     }
 
     // ---------- 玩家顺序 ----------
@@ -360,27 +355,26 @@ public class LightningDraftState {
             }
         }
 
-        // 2. 强制阵营预分配
+        // 2. 强制阵营预分配（直接以原始卡片 roleType 比對，4 型別獨立）
         for (UUID playerId : roundPlayers) {
             Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(playerId);
             if (forcedType == null || forcedType < 1 || forcedType > 5)
                 continue;
-            int type = normalizeCardType(forcedType);
             if (candidateMap.get(playerId).size() >= PLAYER_SELECT_COUNT)
                 continue;
 
             Optional<RoleInstance> match = remainingDrawn.stream()
-                    .filter(ri -> roleMatchesFaction(ri.role(), type)).findFirst();
+                    .filter(ri -> roleMatchesFaction(ri.role(), forcedType)).findFirst();
             if (match.isPresent()) {
                 RoleInstance ri = match.get();
                 candidateMap.get(playerId).add(ri);
                 remainingDrawn.remove(ri);
             } else {
-                // 无法提供匹配职业，移除强制要求，退还卡片
+                // 无法提供匹配职业，移除强制要求，退还确切断落型别的卡片
                 PlayerRoleWeightManager.ForcePlayerTeam.remove(playerId);
                 ServerPlayer sp = world.getServer().getPlayerList().getPlayer(playerId);
                 if (sp != null) {
-                    FactionCardType cardType = FactionCardType.fromRoleType(type);
+                    FactionCardType cardType = FactionCardType.fromRoleType(forcedType);
                     if (cardType != FactionCardType.NONE) {
                         ProgressionDataManager.addFactionCard(sp, cardType, 1);
                         sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")

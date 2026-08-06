@@ -126,6 +126,8 @@ public class SRETraditionGameMode extends SREMurderGameMode {
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
+        // 傳統模式不支援陣營卡（無中立職業），退還所有已使用卡片
+        FactionCardUtils.refundAll(players);
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }
 

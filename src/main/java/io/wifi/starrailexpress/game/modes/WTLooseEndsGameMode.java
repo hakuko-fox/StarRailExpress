@@ -146,6 +146,9 @@ public class WTLooseEndsGameMode extends GameMode {
         initCoolDownItems(players, gameWorldComponent);
         initPlayerItems(players, gameWorldComponent);
         sendWelcomePackets(players, gameWorldComponent, TMMRoles.LOOSE_END);
+        // 亡命徒系列模式不支援陣營卡，退還所有已使用卡片並清除強制陣營（避免洩漏到下一局）
+        io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.refundAll(players);
+        org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }
 
     @Override

@@ -45,6 +45,7 @@ public class SREVtuberGameMode extends SREMurderGameMode {
         List<SRERole> vtuberRoles = TMMRoles.ROLES.values().stream()
                 .filter(role -> role.isFlag("vtuber"))
                 .filter(role -> !role.isOtherModeRole())
+                .filter(role -> !org.agmas.harpymodloader.SREDisableManager.isRoleDisabled(role))
                 .collect(Collectors.toList());
 
         if (vtuberRoles.isEmpty()) {
@@ -55,16 +56,46 @@ public class SREVtuberGameMode extends SREMurderGameMode {
         Collections.shuffle(shuffled);
 
         int killerCount = 0;
-        for (int i = 0; i < shuffled.size(); i++) {
-            ServerPlayer player = shuffled.get(i);
+        // 先處理陣營卡：盡量從 vtuber 職業池中配發符合陣營的職業，無法配發則退回卡片
+        List<ServerPlayer> remaining = new ArrayList<>();
+        for (ServerPlayer player : shuffled) {
+            Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+            if (forcedType == null) {
+                remaining.add(player);
+                continue;
+            }
+            SRERole match = null;
+            for (SRERole role : vtuberRoles) {
+                if (FactionCardUtils.roleMatchesCard(role, forcedType)) {
+                    match = role;
+                    break;
+                }
+            }
+            if (match != null) {
+                gameWorldComponent.addRole(player, match, false);
+                if (match.canUseKiller()) {
+                    killerCount++;
+                    SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < GameConstants.getMoneyStart())
+                        shop.setBalance(GameConstants.getMoneyStart());
+                }
+            } else {
+                FactionCardUtils.refund(player, forcedType);
+                remaining.add(player);
+            }
+        }
+
+        // 剩餘玩家 round-robin
+        for (int i = 0; i < remaining.size(); i++) {
+            ServerPlayer player = remaining.get(i);
             SRERole role = vtuberRoles.get(i % vtuberRoles.size());
             gameWorldComponent.addRole(player, role, false);
 
             if (role.canUseKiller()) {
                 killerCount++;
-                SREPlayerShopComponent playerShopComponent = SREPlayerShopComponent.KEY.get(player);
-                if (playerShopComponent.balance < GameConstants.getMoneyStart())
-                    playerShopComponent.setBalance(GameConstants.getMoneyStart());
+                SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
+                if (shop.balance < GameConstants.getMoneyStart())
+                    shop.setBalance(GameConstants.getMoneyStart());
             }
         }
 

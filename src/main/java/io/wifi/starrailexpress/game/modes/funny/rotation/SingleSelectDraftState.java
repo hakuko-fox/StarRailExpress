@@ -31,6 +31,8 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
+import io.wifi.starrailexpress.progression.ProgressionDataManager;
+import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.exmo.sre.repair.role.RepairRole;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -68,6 +70,9 @@ public class SingleSelectDraftState {
     // ===== 最后阶段阈值 =====
     private int finalPhaseThreshold = 6;
 
+    // ===== 當前世界（用於卡片退款時取得玩家） =====
+    private ServerLevel world;
+
     // ===== 卡片追踪 =====
     private final Map<Integer, Integer> cardUsedCount = new HashMap<>();
     private final Map<Integer, Integer> cardMaxPerType = new HashMap<>();
@@ -83,6 +88,7 @@ public class SingleSelectDraftState {
 
     // ---------- 初始化角色池 ----------
     public void initializeRolePool(ServerLevel world) {
+        this.world = world;
         rolePool.clear();
         totalPlayers = playerOrder.size();
 
@@ -144,16 +150,18 @@ public class SingleSelectDraftState {
             }
         }
 
-        initializeCardTracking();
+        initializeCardTracking(world);
     }
 
     // ---------- 卡片追踪 ----------
-    private void initializeCardTracking() {
+    private void initializeCardTracking(ServerLevel world) {
         cardUsedCount.clear();
         cardMaxPerType.clear();
 
         int limit = Math.max(1, totalPlayers / 7);
+        // 4 種陣營卡各自獨立限額：1=平民 / 2=中立 / 3=中立偏殺 / 4=殺手
         cardMaxPerType.put(4, limit);
+        cardMaxPerType.put(3, limit);
         cardMaxPerType.put(2, limit);
         cardMaxPerType.put(1, limit);
 
@@ -162,8 +170,7 @@ public class SingleSelectDraftState {
             UUID uuid = entry.getKey();
             Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
             if (forcedType != null) {
-                int normalized = normalizeCardType(forcedType);
-                byType.computeIfAbsent(normalized, k -> new ArrayList<>()).add(uuid);
+                byType.computeIfAbsent(forcedType, k -> new ArrayList<>()).add(uuid);
             }
         }
         for (Map.Entry<Integer, List<UUID>> entry : byType.entrySet()) {
@@ -172,22 +179,25 @@ public class SingleSelectDraftState {
             int max = cardMaxPerType.getOrDefault(type, 0);
             cardUsedCount.put(type, Math.min(uuids.size(), max));
             for (int i = max; i < uuids.size(); i++) {
-                PlayerRoleWeightManager.ForcePlayerTeam.remove(uuids.get(i));
+                UUID uid = uuids.get(i);
+                PlayerRoleWeightManager.ForcePlayerTeam.remove(uid);
+                // 超過同陣營卡片上限，退還卡片（使用確切卡片型別）
+                ServerPlayer sp = world.getServer().getPlayerList().getPlayer(uid);
+                if (sp != null) {
+                    FactionCardType cardType = FactionCardType.fromRoleType(type);
+                    if (cardType != FactionCardType.NONE) {
+                        ProgressionDataManager.addFactionCard(sp, cardType, 1);
+                        sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
+                                .withStyle(ChatFormatting.RED), true);
+                    }
+                }
             }
         }
     }
 
-    private static int normalizeCardType(int rawType) {
-        return switch (rawType) {
-            case 5 -> 1;
-            case 3 -> 2;
-            default -> rawType;
-        };
-    }
-
     private int getPlayerCardType(UUID uuid) {
         Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
-        return forcedType != null ? normalizeCardType(forcedType) : -1;
+        return forcedType != null ? forcedType : -1;
     }
 
     // ---------- 玩家顺序 ----------
@@ -205,9 +215,9 @@ public class SingleSelectDraftState {
         for (UUID uuid : sortedPlayers) {
             int card = getPlayerCardType(uuid);
             switch (card) {
-                case 0: killerCardUsers.add(uuid); break;
-                case 1: neutralCardUsers.add(uuid); break;
-                case 2: civilianCardUsers.add(uuid); break;
+                case 4: killerCardUsers.add(uuid); break;           // 殺手卡 (roleType 4)
+                case 2: case 3: neutralCardUsers.add(uuid); break;  // 中立卡(2) / 中立偏殺(3)
+                case 1: civilianCardUsers.add(uuid); break;         // 平民卡 (roleType 1)
                 default: noCardUsers.add(uuid); break;
             }
         }
@@ -340,24 +350,41 @@ public class SingleSelectDraftState {
         int cardType = getPlayerCardType(playerUuid);
         boolean cardPriorityHandled = false;
 
-        // 卡片用户优先处理
-        if (cardType == 0 || cardType == 1) {
+        // 卡片用戶優先處理（cardType 為 roleType：1=平民 / 2=中立 / 3=中立偏殺 / 4=殺手）
+        if (cardType >= 1 && cardType <= 4) {
             ArrayList<SRERole> priorityRoles = new ArrayList<>();
             ArrayList<SRERole> otherRoles = new ArrayList<>();
 
             for (SRERole role : poolCopy) {
                 int type = PlayerRoleWeightManager.getRoleType(role);
-                if (cardType == 0 && type == 4) {
+                boolean priority = switch (cardType) {
+                    case 4 -> type == 4;                          // 殺手卡 → 殺手
+                    case 3 -> type == 3;                          // 中立偏殺卡 → 中立偏殺
+                    case 2 -> type == 2;                          // 中立卡 → 中立
+                    case 1 -> type == 1 || type == 5;             // 平民卡 → 平民 / 義警
+                    default -> false;
+                };
+                if (priority) {
                     priorityRoles.add(role);
-                } else if (cardType == 1 && (type == 2 || type == 3)) {
-                    if (type == 2) priorityRoles.add(role);
-                    else otherRoles.add(role);
                 } else {
                     otherRoles.add(role);
                 }
             }
 
-            if (!priorityRoles.isEmpty() && priorityRoles.size() + otherRoles.size() >= 3) {
+            if (priorityRoles.isEmpty()) {
+                // 池中已無符合陣營的職業可作為候選，退還卡片（僅退一次）並移除強制
+                PlayerRoleWeightManager.ForcePlayerTeam.remove(playerUuid);
+                ServerPlayer sp = world != null ? world.getServer().getPlayerList().getPlayer(playerUuid) : null;
+                if (sp != null) {
+                    FactionCardType ct = FactionCardType.fromRoleType(cardType);
+                    if (ct != FactionCardType.NONE) {
+                        ProgressionDataManager.addFactionCard(sp, ct, 1);
+                        sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
+                                .withStyle(ChatFormatting.RED), true);
+                    }
+                }
+                // 不設 cardPriorityHandled，落入下方一般選擇邏輯
+            } else if (priorityRoles.size() + otherRoles.size() >= 3) {
                 Collections.shuffle(priorityRoles, random);
                 int priorityCount = Math.min(2, priorityRoles.size());
                 for (int i = 0; i < priorityCount; i++) {

@@ -238,7 +238,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
             if (roleAssignments.get(player) == null)
                 unassignedPlayers.add(player);
 
-        // 分配 ForcePlayerTeam
+        // 分配 ForcePlayerTeam（陣營卡）：盡量配發符合陣營的職業，無法配發則退回卡片
         for (Map.Entry<UUID, Integer> entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
             UUID uid = entry.getKey();
             ServerPlayer selected = unassignedPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst()
@@ -247,13 +247,17 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 continue;
             int roleType = entry.getValue();
             RoleWeightedUtil selector = roleSelectors.get(roleType);
-            if (selector == null)
+            if (selector == null) {
+                refundFactionCard(selected, roleType);
                 continue;
+            }
             RoleInstance ri = selector.selectRandomKeyBasedOnWeightsAndRemoved();
             if (ri != null) {
                 hashMap.remove(ri);
                 roleAssignments.put(selected, ri.role());
                 unassignedPlayers.remove(selected);
+            } else {
+                refundFactionCard(selected, roleType);
             }
         }
 
@@ -387,5 +391,17 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 out.add(role);
         }
         return out;
+    }
+
+    /** 退還一張陣營卡給玩家（當無法配發符合陣營的職業時呼叫）。 */
+    private static void refundFactionCard(ServerPlayer player, int roleType) {
+        io.wifi.starrailexpress.progression.ProgressionState.FactionCardType cardType =
+                io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.fromRoleType(roleType);
+        if (cardType != io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.NONE) {
+            ProgressionDataManager.addFactionCard(player, cardType, 1);
+            player.displayClientMessage(
+                    net.minecraft.network.chat.Component.translatable("message.sre.role_rotation.card_limit")
+                            .withStyle(net.minecraft.ChatFormatting.RED), true);
+        }
     }
 }

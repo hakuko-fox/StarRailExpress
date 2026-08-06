@@ -108,6 +108,14 @@ public class Hakukofox2PlayerComponent implements RoleComponent, ServerTickingCo
     public void enterBeastForm(ServerPlayer sp) {
         if (beastFormActive) return;
         beastFormActive = true;
+        // 修仙成狐被動一旦完成（手動或自動變身），清除倒數與失明，避免離開型態後又被自動變身
+        if (cultivating) {
+            cultivating = false;
+            cultivateEndTime = 0;
+            if (sp.hasEffect(MobEffects.BLINDNESS)) {
+                sp.removeEffect(MobEffects.BLINDNESS);
+            }
+        }
         sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, -1, 1, false, false, true));
         sp.addEffect(new MobEffectInstance(MobEffects.JUMP, -1, 1, false, false, true));
         sp.refreshDimensions();
@@ -122,6 +130,9 @@ public class Hakukofox2PlayerComponent implements RoleComponent, ServerTickingCo
     private void leaveBeastForm(ServerPlayer sp) {
         removeBeastEffects();
         beastFormActive = false;
+        // 離開型態時清除被動倒數（防禦性：正常流程已在 enterBeastForm 清除）
+        cultivating = false;
+        cultivateEndTime = 0;
         sp.refreshDimensions();
         sync();
     }

@@ -140,6 +140,15 @@ public class VolunteerDraftState {
             UUID pid = player.getUUID();
             List<SRERole> factionPool = getFactionPool(player); // 该玩家可选的阵营池
 
+            // 卡片用戶但池中無符合陣營的職業 → 退還卡片，改用預設（平民）池
+            if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(pid) && factionPool.isEmpty()) {
+                Integer forced = PlayerRoleWeightManager.ForcePlayerTeam.remove(pid);
+                if (forced != null) {
+                    io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.refund(player, forced);
+                }
+                factionPool = getFactionPool(player);
+            }
+
             // 分离：未达上限的角色 vs 已达上限的角色
             List<SRERole> underLimit = new ArrayList<>();
             List<SRERole> overLimit = new ArrayList<>();
@@ -193,22 +202,13 @@ public class VolunteerDraftState {
     private List<SRERole> getFactionPool(ServerPlayer player) {
         Integer forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
         if (forced != null) {
-            int type = normalizeCardType(forced);
             return globalRolePool.stream()
-                    .filter(r -> PlayerRoleWeightManager.getRoleType(r) == type)
+                    .filter(r -> io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.roleMatchesCard(r, forced))
                     .collect(Collectors.toList());
         }
         return globalRolePool.stream()
                 .filter(r -> r.isInnocent() && !r.canUseKiller())
                 .collect(Collectors.toList());
-    }
-
-    private int normalizeCardType(int raw) {
-        return switch (raw) {
-            case 5 -> 1;
-            case 3 -> 2;
-            default -> raw;
-        };
     }
 
     public boolean submitPreference(UUID playerId, List<Integer> orderedPreferences) {
