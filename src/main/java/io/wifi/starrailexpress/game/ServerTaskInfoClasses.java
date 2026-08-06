@@ -250,7 +250,6 @@ public class ServerTaskInfoClasses {
                                 .withStyle(ChatFormatting.YELLOW),
                         true);
             });
-            MapScannerManager.saveArea(serverWorld);
             // if (!shouldStartGame) {
             // GameUtils.serverTaskQueue.addLast(new SchedulerTask(1, () -> {
             // this.serverWorld.players().forEach((p) -> {
@@ -274,6 +273,7 @@ public class ServerTaskInfoClasses {
                 GameUtils.serverTaskQueue.addLast(task);
             }
             MapResetManager.saveArea(serverWorld);
+            MapScannerManager.scanAndSaveScannerArea(serverWorld, area);
         }
     }
 

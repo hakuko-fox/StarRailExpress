@@ -32,6 +32,7 @@ import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.MeetingEndEvent;
 import io.wifi.starrailexpress.event.MeetingStartEvent;
+import io.wifi.starrailexpress.event.MeetingVoteEndEvent;
 import io.wifi.starrailexpress.event.MeetingVoteOutEvent;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -382,7 +383,8 @@ public final class MeetingManager {
             }
             participant.setDeltaMovement(Vec3.ZERO);
             participant.fallDistance = 0.0F;
-
+            participant.removeEffect(MobEffects.INVISIBILITY);
+            participant.removeEffect(MobEffects.GLOWING);
             participant.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, -1, 0, false, false, false));
             participant.addEffect(new MobEffectInstance(ModEffects.USED_BANED, -1, 0, false, false, false));
             participant.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, -1, 0, false, false, false));
@@ -846,6 +848,7 @@ public final class MeetingManager {
             for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
                 ServerPlayNetworking.send(player, resultPayload);
             }
+            MeetingVoteEndEvent.EVENT.invoker().onVoteOver(serverLevel, session);
         };
 
         // ==================== 开始投票 ====================

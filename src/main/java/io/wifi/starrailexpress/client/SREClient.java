@@ -39,6 +39,7 @@ import org.agmas.noellesroles.game.modes.fourthroom.network.FourthRoomTableEffec
 import org.agmas.noellesroles.game.modes.fourthroom.network.OpenFourthRoomPeekDeckPayload;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.YinYangSwordItem;
 import org.agmas.noellesroles.init.SREFumoBlocks;
+import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.include.com.google.gson.JsonSyntaxException;
@@ -983,6 +984,10 @@ public class SREClient implements ClientModInitializer {
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(PlayerDeathPayload.ID, (payload, context) -> {
+            int slot = MCItemsUtils.getHotbarNotKnifeSlot(context.client().player);
+            if (slot >= 0 && slot < 9) {
+                context.client().player.getInventory().selected = slot;
+            }
             NoellesrolesClient.isTaskInstinctEnabled = false;
             // isInstinctToggleEnabled = false;
         });
@@ -1227,7 +1232,7 @@ public class SREClient implements ClientModInitializer {
     }
 
     public static float getTrainSpeed() {
-        return trainComponent.getSpeed();
+        return trainComponent != null ? trainComponent.getSpeed() : 0f;
     }
 
     public static boolean isTrainMoving() {
