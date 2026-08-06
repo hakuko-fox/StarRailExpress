@@ -43,6 +43,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -392,12 +393,22 @@ public class RoundTextRenderer {
                             context.pose().popPose();
                         }
 
-                        if (playerProfile != null) {
+                        Component nameText = null;
+                        Player targetPlayer = client.level.getPlayerByUUID(entry.player().getId());
+                        if (targetPlayer != null) {
+                            nameText = targetPlayer.getDisplayName();
+                        }
+                        if (nameText == null) {
+                            nameText = playerListEntry.getTabListDisplayName();
+                        }
+                        if (nameText == null && playerProfile != null) {
                             String p_name = playerProfile.getName();
                             if (p_name.length() >= 10) {
                                 p_name = p_name.substring(0, 9) + "...";
                             }
-                            var nameText = Component.literal(p_name);
+                            nameText = Component.literal(p_name);
+                        }
+                        if (nameText != null) {
                             int nameWidth = getOrCacheWidth(renderer, nameText);
 
                             context.pose().pushPose();
