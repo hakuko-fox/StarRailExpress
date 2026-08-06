@@ -44,6 +44,10 @@ public class NRMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.contains("sodium.HakukoFoxPOVSodiumSectionMixin") && !IS_SODIUM_LOADED) {
             return false;
         }
+        if (!FabricLoader.getInstance().isModLoaded("invmove")) {
+            if (mixinClassName.contains("org.agmas.noellesroles.mixin.client.compat.inv_move"))
+                return false;
+        }
         return true;
     }
 

@@ -18,6 +18,7 @@ package org.agmas.noellesroles.role;
 import com.mojang.serialization.Codec;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.*;
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
@@ -98,6 +99,8 @@ import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
 import org.agmas.noellesroles.game.roles.neutral.doomedsinner.DoomedSinnerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
+import org.agmas.noellesroles.game.roles.neutral.leader.LeaderRole;
+import org.agmas.noellesroles.role_data.leader.LeaderRoleData;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterHandler;
 import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaRole;
@@ -266,6 +269,7 @@ public class ModRoles {
     public static ResourceLocation HUNTER_ID = Noellesroles.id("hunter");
     public static ResourceLocation POISONER_ID = Noellesroles.id("poisoner");
     public static ResourceLocation SPELLBREAKER_ID = Noellesroles.id("spellbreaker");
+    public static ResourceLocation LEADER_ID = Noellesroles.id("leader");
 
     public static ResourceLocation LOCKSMITH_ID = Noellesroles.id("locksmith");
     public static ResourceLocation EXAMPLER_ID = Noellesroles.id("exampler");
@@ -1455,6 +1459,58 @@ public class ModRoles {
             .setCanPickUpRevolver(true).setComponentKey(GamblerPlayerComponent.KEY).setNeutrals(true)
             .setBeSeenInstinctType(InstinctType.DEFAULT, InstinctType.NONE)
             .setDefaultMax(1).setHiddenForRoleRotation(true);
+    /**
+     * 领袖（Leader）：中立阵营，非杀手方中立。
+     * <ul>
+     * <li>无限体力（Integer.MAX_VALUE）、假心情、可见计分板</li>
+     * <li>不可被赌徒等职业随机到</li>
+     * <li>仅 18 人及以上对局生成</li>
+     * <li>本能透视：追随者蓝、非杀手方中立黄、其余领袖色</li>
+     * </ul>
+     */
+    public static SRERole LEADER = TMMRoles
+            .registerRole(new LeaderRole(LEADER_ID, new Color(255, 0, 255).getRGB(), false,
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setRoleData(LeaderRoleData::new)
+            .setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            .setDefaultEnableNeededPlayerCount(18)
+            .setDefaultEnableChance(3000)
+            .setCanSeeCoin(true)
+            .setCanUseInstinctAndNightVision(true)
+            // 只有本能开启时才透视；关闭时不显示任何颜色
+            .setToggledOffInstinctType(InstinctType.NONE)
+            .setToggledOnInstinctType(InstinctType.customWithFunction((self, target, selfRole, targetRole) -> {
+                if (target == null || targetRole == null) {
+                    return InstinctType.custom(new Color(255, 0, 255).getRGB());
+                }
+                LeaderRoleData data = RoleData.getNullable(LeaderRoleData.class, self);
+                boolean isFollower = data != null && data.isFollower(target.getUUID());
+                boolean isNonKillerNeutral = targetRole.isNeutrals() && !targetRole.isNeutralForKiller();
+                boolean hasFollowers = data != null && !data.followers.isEmpty();
+                // 自己的追随者 → 蓝色（可无限距离透视）
+                if (isFollower) {
+                    return InstinctType.custom(new Color(0, 0, 255).getRGB());
+                }
+                // 有追随者时：不再额外显示其它非杀手方中立的特殊框
+                if (hasFollowers && isNonKillerNeutral) {
+                    return InstinctType.NONE;
+                }
+                double dist = self.distanceTo(target);
+                // 超出 10 格：仅当没有追随者时可无限透视非杀手方中立（黄色），其余不透视
+                if (dist > 10.0D) {
+                    if (!hasFollowers && isNonKillerNeutral) {
+                        return InstinctType.custom(new Color(255, 255, 0).getRGB());
+                    }
+                    return InstinctType.NONE;
+                }
+                // 10 格内
+                if (isNonKillerNeutral) {
+                    return InstinctType.custom(new Color(255, 255, 0).getRGB());
+                }
+                // 其余（杀手、好人、杀手方中立、自己） → 领袖色
+                return InstinctType.custom(new Color(255, 0, 255).getRGB());
+            }));
     public static SRERole TAMER = TMMRoles
             .registerRole(new NormalRole(TAMER_ID, new Color(210, 180, 140).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
