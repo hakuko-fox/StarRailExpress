@@ -96,6 +96,7 @@ public class SRECommandRegister {
             ShieldCommand.register(dispatcher);
             PoisonCommand.register(dispatcher);
             StaminaCommand.register(dispatcher);
+            RoleRotationCommand.register(dispatcher);
             SceneCommand.register(dispatcher);
             SceneEventCommand.register(dispatcher);
             SceneTaskCommand.register(dispatcher);

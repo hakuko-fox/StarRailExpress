@@ -73,6 +73,9 @@ public class SREGameModes {
     public static final ResourceLocation ROLE_ROTATION_SINGLE_SELECT_HIDE_MODE_ID = SRE
             .haimanId("role_rotation_single_select_hide");
 
+    // All Role Rotation Mode (sre) — 跨多局輪跑全部職業
+    public static final ResourceLocation ALL_ROLE_ROTATION_MODE_ID = SRE.shortId("all_role_rotation");
+
     // Tradition Mode (sre)
     public static final ResourceLocation TRADITION_MODE_ID = SRE.shortId("tradition");
 
@@ -137,6 +140,10 @@ public class SREGameModes {
     // Role Rotation Single Select Hide Mode (haiman)
     public static final GameMode ROLE_ROTATION_SINGLE_SELECT_HIDE_MODE = registerGameMode(
             new SRERoleRotationSingleSelectHideGameMode(ROLE_ROTATION_SINGLE_SELECT_HIDE_MODE_ID));
+
+    // All Role Rotation Mode (sre) — 跨多局輪跑全部職業
+    public static final GameMode ALL_ROLE_ROTATION_MODE = registerGameMode(
+            new SREAllRoleRotationGameMode(ALL_ROLE_ROTATION_MODE_ID));
 
     // Tradition Mode (sre)
     public static final GameMode TRADITION_MODE = registerGameMode(new SRETraditionGameMode(TRADITION_MODE_ID));
