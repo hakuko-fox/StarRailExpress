@@ -40,4 +40,4 @@ RoleData实例类：可以extends SimpleRoleData，或是 implements RoleData
 ！！！尽量使用此API，不要使用CCA！！！
 
 # 语言文件
-遵循使用翻译键，优先补全 `zh_cn.json`
+遵循使用翻译键，优先补全 `zh_tw.json`，其次 `zh_cn.json`
