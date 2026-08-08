@@ -86,7 +86,7 @@ import org.agmas.noellesroles.game.roles.neutral.vulture.VulturePlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.voice_changer.VoiceChangerPlayerComponent;
 import org.agmas.noellesroles.game.roles.special.super_loose_end.SuperLooseEndPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -166,11 +166,11 @@ public class ModRolesInitialEventRegister {
                 var tpc = DIOPlayerComponent.KEY.get(player);
                 tpc.init();
             }
-            if (role.identifier().equals(RedHouseRoles.FURANDORU.identifier())) {
+            if (role.identifier().equals(THRedHouseRoles.FURANDORU.identifier())) {
                 var tpc = GhostPlayerComponent.KEY.get(player);
                 tpc.init();
             }
-            if (role.identifier().equals(RedHouseRoles.MAID_SAKUYA.identifier())) {
+            if (role.identifier().equals(THRedHouseRoles.MAID_SAKUYA.identifier())) {
                 SREPlayerShopComponent.KEY.get(player).setBalance(100);
             }
             if (role.identifier().equals(ModRoles.JOJO.identifier())) {
@@ -258,7 +258,6 @@ public class ModRolesInitialEventRegister {
             SREAbilityPlayerComponent abilityPlayerComponent = (SREAbilityPlayerComponent) SREAbilityPlayerComponent.KEY
                     .get(player);
             abilityPlayerComponent.init(false);
-            abilityPlayerComponent.cooldown = NoellesRolesConfig.HANDLER.instance().generalCooldownTicks;
 
             if (role.equals(ModRoles.BROADCASTER)) {
                 abilityPlayerComponent.cooldown = 0;
@@ -690,7 +689,7 @@ public class ModRolesInitialEventRegister {
                     if (delayer.isAnchored())
                         return false; // 已锚定，等待回溯
                     SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(player);
-                    int cost = 75; 
+                    int cost = 75;
                     if (shop.balance < cost) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.delayer.no_money", cost)
@@ -702,7 +701,7 @@ public class ModRolesInitialEventRegister {
                     shop.sync();
                     delayer.anchor();
                     return true; // 进入冷却
-                }).cooldownSeconds(120) 
+                }).cooldownSeconds(120)
                         .showOnHud(true).build());
 
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
@@ -1223,7 +1222,7 @@ public class ModRolesInitialEventRegister {
                 }).cooldownSeconds(120).build());
 
         // 十六夜咲夜技能注册：时间停止5秒，冷却240秒
-        RoleSkill.register(RedHouseRoles.MAID_SAKUYA, RoleSkill.skill(
+        RoleSkill.register(THRedHouseRoles.MAID_SAKUYA, RoleSkill.skill(
                 SRE.id("maid_sakuya_timestop"),
                 "skill.maid_sakuya.timestop",
                 context -> {

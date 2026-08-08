@@ -18,10 +18,10 @@ package org.agmas.noellesroles.init;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.SREConfig.AutoPresetInfo;
-import io.wifi.starrailexpress.api.EggRole;
+import io.wifi.starrailexpress.api.EggRoleInterface;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.api.TouhouRole;
+import io.wifi.starrailexpress.api.TouhouRoleInterface;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
@@ -42,7 +42,7 @@ import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -257,7 +257,7 @@ public class InitModRolesMax {
 
         // 同时出现
         Harpymodloader.addOccupationRole(ModRoles.ENGINEER, ModRoles.LOCKSMITH);
-        Harpymodloader.addOccupationRole(RedHouseRoles.FURANDORU, RedHouseRoles.PACHURI);
+        Harpymodloader.addOccupationRole(THRedHouseRoles.FURANDORU, THRedHouseRoles.PACHURI);
         Harpymodloader.addOccupationRole(ModRoles.MA_CHEN_XU, ModRoles.GUEST_GHOST);
         Harpymodloader.addOccupationRole(ModRoles.GANGSTERS, ModRoles.FITTER);
 
@@ -267,14 +267,14 @@ public class InitModRolesMax {
         RoleAssignmentManager.addOccupationRole(ModRoles.WATER_GHOST, ModRoles.DIVER);
 
         Harpymodloader.setRoleMaximum(ModRoles.CONDUCTOR_ID, 0);
-        Harpymodloader.setRoleMaximum(RedHouseRoles.MAID_SAKUYA, 0);
+        Harpymodloader.setRoleMaximum(THRedHouseRoles.MAID_SAKUYA, 0);
         Harpymodloader.setRoleMaximum(ModRoles.DIO, 0);
         Harpymodloader.setRoleMaximum(ModRoles.BETTER_VIGILANTE, 0);
-        Harpymodloader.setRoleMaximum(RedHouseRoles.BAKA, 0);
-        Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 0);
-        Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 0);
-        Harpymodloader.setRoleMaximum(RedHouseRoles.FURANDORU, 0);
-        Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA, 0);
+        Harpymodloader.setRoleMaximum(THRedHouseRoles.BAKA, 0);
+        Harpymodloader.setRoleMaximum(THRedHouseRoles.HOAN_MEIRIN, 0);
+        Harpymodloader.setRoleMaximum(THRedHouseRoles.PACHURI, 0);
+        Harpymodloader.setRoleMaximum(THRedHouseRoles.FURANDORU, 0);
+        Harpymodloader.setRoleMaximum(THRedHouseRoles.REMILIA, 0);
         Harpymodloader.setRoleMaximum(ModRoles.MANIPULATOR, 0);
         Harpymodloader.setRoleMaximum(ModRoles.EXECUTIONER_ID, 1);
         Harpymodloader.setRoleMaximum(ModRoles.VULTURE_ID, 1);
@@ -342,7 +342,7 @@ public class InitModRolesMax {
                     && random.nextInt(0, 100) <= EGGS_CHANCE) {
                 isEggEnabled = true;
                 for (var a : TMMRoles.ROLES.values()) {
-                    if (a instanceof EggRole) {
+                    if (a instanceof EggRoleInterface) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
                         if (max >= 0) {
                             Harpymodloader.setRoleMaximum(a, max);
@@ -367,7 +367,7 @@ public class InitModRolesMax {
                     }
                 }
                 for (var a : TMMRoles.ROLES.values()) {
-                    if (a instanceof EggRole) {
+                    if (a instanceof EggRoleInterface) {
                         Harpymodloader.setRoleMaximum(a, 0);
                     }
                 }
@@ -375,10 +375,11 @@ public class InitModRolesMax {
             }
 
             {
-                // 杀手中立（只处理没有配置的职业：无概率 且 无显式 setMax）
+                // 杀手中立（只处理没有配置的职业：无概率 且 无显式 setMax 且 允许修改生成配置的职业）
                 var neutralRoles = new ArrayList<SRERole>(TMMRoles.ROLES.values());
                 neutralRoles.removeIf((r) -> {
                     if (r.isNeutrals() && r.isNeutralForKiller() && (r.spawnInfo.enableChance < 0)
+                            && r.canSetSpawnInfoInConfig()
                             && r.spawnInfo.maxSpawn < 0)
                         return false;
                     return true;
@@ -409,7 +410,7 @@ public class InitModRolesMax {
             if (players_count >= config.minPlayerForTouhouRoles && random.nextInt(0, 100) < TOUHOU_CHANCE) {
                 isTouhouEnabled = true;
                 for (var a : TMMRoles.ROLES.values()) {
-                    if (a instanceof TouhouRole) {
+                    if (a instanceof TouhouRoleInterface) {
                         int max = a.getRoundMaxCount(serverLevel, gameWorldComponent, players, currentMap);
                         if (max >= 0) {
                             Harpymodloader.setRoleMaximum(a, max);
@@ -424,15 +425,15 @@ public class InitModRolesMax {
                         }
                     }
                 }
-                Harpymodloader.setRoleMaximum(RedHouseRoles.BAKA_ID, 1);
-                Harpymodloader.setRoleMaximum(RedHouseRoles.PACHURI, 1);
-                Harpymodloader.setRoleMaximum(RedHouseRoles.REMILIA, 1);
-                Harpymodloader.setRoleMaximum(RedHouseRoles.FURANDORU, 1);
-                Harpymodloader.setRoleMaximum(RedHouseRoles.HOAN_MEIRIN, 1);
+                Harpymodloader.setRoleMaximum(THRedHouseRoles.BAKA_ID, 1);
+                Harpymodloader.setRoleMaximum(THRedHouseRoles.PACHURI, 1);
+                Harpymodloader.setRoleMaximum(THRedHouseRoles.REMILIA, 1);
+                Harpymodloader.setRoleMaximum(THRedHouseRoles.FURANDORU, 1);
+                Harpymodloader.setRoleMaximum(THRedHouseRoles.HOAN_MEIRIN, 1);
             } else {
                 isTouhouEnabled = false;
                 for (var a : TMMRoles.ROLES.values()) {
-                    if (a instanceof TouhouRole) {
+                    if (a instanceof TouhouRoleInterface) {
                         Harpymodloader.setRoleMaximum(a, 0);
                     }
                 }
@@ -569,9 +570,9 @@ public class InitModRolesMax {
         var areacca = AreasWorldComponent.KEY.get(serverLevel);
         var mapName = areacca.mapName;
         for (var entry : TMMRoles.ROLES.entrySet()) {
-            if (entry.getValue() instanceof TouhouRole)
+            if (entry.getValue() instanceof TouhouRoleInterface)
                 continue;
-            if (entry.getValue() instanceof EggRole)
+            if (entry.getValue() instanceof EggRoleInterface)
                 continue;
             ResourceLocation name = entry.getKey();
             SRERole role = entry.getValue();
@@ -618,8 +619,10 @@ public class InitModRolesMax {
         // 对没有 enableChance 的杀手方中立职业，默认 max=1、概率 75%
         for (var entry : TMMRoles.ROLES.entrySet()) {
             var role = entry.getValue();
-            if (role.spawnInfo.enableChance < 0 && role.isNeutralForKiller()) {
-                role.setDefaultMax(1);
+            if (role.spawnInfo.enableChance < 0 && role.canSetSpawnInfoInConfig() && role.isNeutralForKiller()) {
+                if (role.spawnInfo.maxSpawn < 0) {
+                    role.setDefaultMax(1);
+                }
                 role.spawnInfo.enableChance = 7500;
             }
         }

@@ -74,7 +74,8 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.BounsRoles;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
+import org.agmas.noellesroles.role_data.neutral.RemiliaBloodServantRoleData;
 import org.agmas.noellesroles.role_data.vigilante.HoanMeirinRoleData;
 import org.agmas.noellesroles.utils.MessageDetail;
 
@@ -214,7 +215,7 @@ public class CommonClientHudRenderer {
         BroadcasterHud.renderBroadcast(guiGraphics, deltaTracker);
       }
 
-      OtherRolesRegister.warningOffset = 0;
+      OtherRolesHudRegister.warningOffset = 0;
       var consumer1 = CommonHudRenderCallback.EVENT.getConsumer();
       if (consumer1 != null && !consumer1.isEmpty()) {
         consumer1.forEach((c) -> {
@@ -256,10 +257,46 @@ public class CommonClientHudRenderer {
     MurderTimeHud.register();
     RepairEscapeHud.register();
     registerSons();
-    OtherRolesRegister.registerSons();
+    OtherRolesHudRegister.registerSons();
   }
 
   public static void registerSons() {
+    RoleHudRenderCallback.EVENT.register(THRedHouseRoles.REMILIA_ID, (context, tickCounter) -> {
+      var client = Minecraft.getInstance();
+      var cca = SREAbilityPlayerComponent.KEY.get(client.player);
+      final var font = client.font;
+
+      int screenHeight = client.getWindow().getGuiScaledHeight();
+      int screenWidth = client.getWindow().getGuiScaledWidth();
+      int x = screenWidth - 10;
+      int y = screenHeight - 20;
+      Component killsText;
+      if (cca.cooldown > 0) {
+        killsText = Component.translatable("hud.noellesroles.remilia.cd",
+            String.format("%.1f", cca.getCooldownSeconds())).withStyle(ChatFormatting.RED);
+      } else {
+        killsText = Component.translatable("hud.noellesroles.remilia.ready").withStyle(ChatFormatting.GREEN);
+      }
+
+      context.drawString(font, killsText, x - font.width(killsText), y, 0xffffffff);
+    });
+    RoleHudRenderCallback.EVENT.register(THRedHouseRoles.REMILIA_BLOOD_SERVANT_ID, (context, tickCounter) -> {
+      var client = Minecraft.getInstance();
+      var roleData = RoleData.getNullable(RemiliaBloodServantRoleData.class, client.player);
+      if (roleData == null)
+        return;
+      final var font = client.font;
+      int screenHeight = client.getWindow().getGuiScaledHeight();
+      int screenWidth = client.getWindow().getGuiScaledWidth();
+      int x = screenWidth - 10;
+      int y = screenHeight - 20;
+      if (roleData.ticks > 0) {
+        Component killsText;
+        killsText = Component.translatable("hud.noellesroles.remilia_servant.alive",
+            String.format("%.1f", roleData.ticks / 20f)).withStyle(ChatFormatting.RED);
+        context.drawString(font, killsText, x - font.width(killsText), y, 0xffffffff);
+      }
+    });
     RoleHudRenderCallback.EVENT.register(ModRoles.STALKER_ID, (context, tickCounter) -> {
       var client = Minecraft.getInstance();
       // 获取跟踪者组件
@@ -910,7 +947,7 @@ public class CommonClientHudRenderer {
       }
       return;
     });
-    RoleHudRenderCallback.EVENT.register(RedHouseRoles.MAID_SAKUYA_ID, (guiGraphics, deltaTracker) -> {
+    RoleHudRenderCallback.EVENT.register(THRedHouseRoles.MAID_SAKUYA_ID, (guiGraphics, deltaTracker) -> {
       // 渲染SAKUYA的提示
       var client = Minecraft.getInstance();
       int screenWidth = guiGraphics.guiWidth();
@@ -1028,7 +1065,7 @@ public class CommonClientHudRenderer {
       return;
     });
 
-    RoleHudRenderCallback.EVENT.register(RedHouseRoles.HOAN_MEIRIN_ID, (guiGraphics, deltaTracker) -> {
+    RoleHudRenderCallback.EVENT.register(THRedHouseRoles.HOAN_MEIRIN_ID, (guiGraphics, deltaTracker) -> {
       // 渲染红美铃的提示
 
       var client = Minecraft.getInstance();

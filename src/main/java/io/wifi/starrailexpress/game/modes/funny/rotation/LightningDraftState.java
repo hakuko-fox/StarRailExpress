@@ -225,7 +225,9 @@ public class LightningDraftState {
         cardMaxPerType.put(1, limit);
 
         Map<Integer, List<UUID>> byType = new HashMap<>();
-        for (ServerPlayer p : allPlayers) {
+        final var ppps = new ArrayList<>(allPlayers);
+        Collections.shuffle(ppps);
+        for (ServerPlayer p : ppps) {
             Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(p.getUUID());
             if (forcedType != null) {
                 byType.computeIfAbsent(forcedType, k -> new ArrayList<>()).add(p.getUUID());

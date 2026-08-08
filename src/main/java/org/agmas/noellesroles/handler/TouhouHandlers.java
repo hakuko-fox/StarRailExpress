@@ -25,8 +25,10 @@ import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.TrainWeapon;
+import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
+import io.wifi.starrailexpress.event.OnPlayerDeathWithBody;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -47,18 +49,23 @@ import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
+import org.agmas.noellesroles.component.DefibrillatorComponent;
+import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
 import org.agmas.noellesroles.content.item.RopeItem;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.MountainRoles;
-import org.agmas.noellesroles.role.touhou.RedHouseRoles;
+import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.role.touhou.THMagicForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
+import org.agmas.noellesroles.role.touhou.roles.THMamizouRole;
 import org.agmas.noellesroles.role.touhou.roles.THReimuRole;
+import org.agmas.noellesroles.role.touhou.roles.THRemiliaRole;
 import org.agmas.noellesroles.role.touhou.roles.THSuikaRole;
 import org.agmas.noellesroles.role.touhou.roles.THUtsuhoRole;
+import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TouhouHandlers {
@@ -114,6 +121,43 @@ public class TouhouHandlers {
   }
 
   public static void registerEvents() {
+    // 大小姐仆从不能杀蕾米莉亚
+    AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathreason) -> {
+      if (killer == null)
+        return true;
+      if (RoleUtils.isPlayerTheJob(killer, THRedHouseRoles.REMILIA_BLOOD_SERVANT)) {
+        if (RoleUtils.isPlayerTheJob(victim, THRedHouseRoles.REMILIA))
+          return false;
+      }
+      return true;
+    });
+    // 蕾米莉亚杀人转换职业
+    OnPlayerDeathWithBody.EVENT.register((victim, killer, deathReason, body) -> {
+      if (killer == null)
+        return;
+      if (RoleUtils.isPlayerTheJob(killer, THRedHouseRoles.REMILIA)) {
+        final var cdcca = SREAbilityPlayerComponent.KEY.get(killer);
+        if (cdcca.hasCooldown()) {
+          return;
+        }
+        MCItemsUtils.clearItem(victim, (item) -> !item.is(TMMItems.LETTER) && !item.is(TMMItems.KEY));
+        victim.displayClientMessage(
+            Component.translatable("hud.noellesroles.remilia.victim", killer.getName()).withStyle(ChatFormatting.GOLD),
+            true);
+        if (victim instanceof ServerPlayer svictim) {
+          SRENetworkMessageUtils.sendBroadcast(svictim, Component
+              .translatable("hud.noellesroles.remilia.victim", killer.getName()).withStyle(ChatFormatting.GOLD));
+        }
+        killer.displayClientMessage(Component.translatable("hud.noellesroles.remilia.success", victim.getName(),
+            RoleUtils.getPlayerRoleName(victim, true)).withStyle(ChatFormatting.GREEN), true);
+        RoleUtils.changeRole(victim, THRedHouseRoles.REMILIA_BLOOD_SERVANT);
+
+        DefibrillatorComponent component = ModComponents.DEFIBRILLATOR.get(victim);
+        component.triggerDeath(30 * 20, null, victim.position());
+
+        cdcca.setCooldown(THRemiliaRole.COOLDOWN_TICKS);
+      }
+    });
     // 魔理沙和灵梦不受到摔伤影响
     OnKillPlayerTriggered.EVENT.register((victim, spawnBody, killer, deathreason, forceKill) -> {
       if (deathreason.equals(GameConstants.DeathReasons.FALL_DAMAGE)) {
@@ -205,6 +249,11 @@ public class TouhouHandlers {
   }
 
   public static void registerSkills() {
+
+    RoleSkill.register(THMiscRoles.MAMIZOU,
+        RoleSkill.skill(SRE.id("mamizou_select"), "skill.noellesroles.mamizou_select", THMamizouRole::handleSelect)
+            .noAnnouncement()
+            .showOnHud(true).cooldownSeconds(60).build());
     RoleSkill.register(THMiscRoles.REIUJI_UTSUHO,
         RoleSkill.skill(SRE.id("utsuho"), "skill.noellesroles.utsuho", THUtsuhoRole::skillHandler)
             .announceToSelf().showOnHud(true).cooldownSeconds(120).build());
@@ -249,7 +298,7 @@ public class TouhouHandlers {
           THReimuRole.startFlying(player);
           return true;
         }).noAnnouncement().showOnHud(false).cooldownTicks(THReimuRole.FLY_COOLDOWN).build());
-    RoleSkill.register(RedHouseRoles.KOAKUMA,
+    RoleSkill.register(THRedHouseRoles.KOAKUMA,
         RoleSkill.skill(SRE.id("koakuma"), "skill.noellesroles.koakuma", context -> {
           var targetId = context.target();
           if (targetId == null)
@@ -266,7 +315,7 @@ public class TouhouHandlers {
           // 不需要同步因为客户端不显示东西。
           return true;
         }).announceToSelf().showOnHud(true).cooldownTicks(20 * 120).build());
-    RoleSkill.register(RedHouseRoles.DAIYOUSEI,
+    RoleSkill.register(THRedHouseRoles.DAIYOUSEI,
         RoleSkill.skill(SRE.id("daiyouse"), "skill.noellesroles.daiyouse", context -> {
           var targetId = context.target();
           if (targetId == null)
@@ -303,7 +352,7 @@ public class TouhouHandlers {
         }).withTarget().announceToSelf().showOnHud(true).cooldownTicks(20 * 60).build());
     RoleSkill.register(THMiscRoles.SHIKIEIKI,
         RoleSkill.skill(SRE.id("shikieiki"), "skill.noellesroles.shikieiki.instinct", context -> {
-          final int GAP = 15 * 20;
+          final int GAP = 45 * 20;
           final int TIME = 60 * 20;
           final int COOLDOWN_TIME = 45 * 20;
           final var player = context.player();

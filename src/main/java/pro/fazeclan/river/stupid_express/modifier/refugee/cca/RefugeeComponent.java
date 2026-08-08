@@ -49,6 +49,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEventsRegister;
@@ -68,6 +69,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RefugeeComponent implements AutoSyncedComponent, ServerTickingComponent, ClientTickingComponent {
     public static final ComponentKey<RefugeeComponent> KEY = ComponentRegistry.getOrCreate(
@@ -104,18 +106,32 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
     @Override
     public void serverTick() {
+
+        if (isPendingRestore) {
+            isPendingRestore = false;
+            afterLooseEndTryRestore(pendingWho);
+        }
         if (pendingRevivals.isEmpty()) {
             return;
         }
+        boolean shouldSync = false;
 
         long currentTime = level.getGameTime();
-        pendingRevivals.removeIf((data) -> {
-            if (data.isDead)
-                return true;
-            return false;
-        });
         boolean timeFrozen = SREGameTimeComponent.KEY.get(level).timeFrozen;
         for (RefugeeData data : new ArrayList<>(pendingRevivals)) {
+            final var player = level.getPlayerByUUID(data.uuid);
+            if (player == null) {
+                data.isDead = true;
+                continue;
+            }
+            if (GameUtils.isPlayerAliveAndSurvival(player) && !data.isRevive) {
+                data.isDead = true;
+                continue;
+            }
+            if (DefibrillatorComponent.KEY.get(player).isReviving()) {
+                data.isDead = true;
+                continue;
+            }
             if (timeFrozen) {
                 data.revivalTime += 1;
                 continue;
@@ -126,7 +142,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             }
             if (data.isRevive && !data.isDead && currentTime >= data.revivalTime + 3000) {
                 data.isDead = true;
-                for (var player : level.players()) {
+                {
                     if (player.getUUID().equals(data.uuid)) {
                         if (GameUtils.isPlayerAliveAndSurvival(player)) {
                             GameUtils.killPlayer(player, true, null, StupidExpress.id("loose_end"), true);
@@ -134,22 +150,24 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                         }
                     }
                 }
-                this.sync();
             }
         }
+        AtomicBoolean anyOneRemoved = new AtomicBoolean(false);
         pendingRevivals.removeIf((data) -> {
-            if (data.isDead)
+            if (data.isDead) {
+                anyOneRemoved.set(true);
                 return true;
+            }
             return false;
         });
+        shouldSync = anyOneRemoved.get() || anyOneRemoved.get();
         // 每600 tick（30秒）发送一次倒计时提示
         if (currentTime % 600 == 0) {
             sendCountdownMessages();
-            this.sync();
+            shouldSync = true;
         }
-        if (isPendingRestore) {
-            isPendingRestore = false;
-            afterLooseEndTryRestore(pendingWho);
+        if (shouldSync) {
+            sync();
         }
     }
 
