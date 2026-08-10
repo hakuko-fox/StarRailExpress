@@ -144,14 +144,17 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
 
         // 第一步：強制分配的職業
         Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
+        Set<ServerPlayer> forcedPlayers = new HashSet<>();
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
         for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
             SRERole role = entry.getValue();
-            if (player != null && role != null) {
+            if (player != null && players.contains(player) && role != null
+                    && baseEligible(role)) {
                 roleAssignments.put(player, role);
+                forcedPlayers.add(player);
                 if (role.canUseKiller())
                     killerCount--;
                 else if (role.isVigilanteTeam())
@@ -181,7 +184,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
             neutrals.addAll(pickForFaction(eligibleNeutrals(), (int) zeroNeutrals, state, random));
 
         int assignedSpecial = killers.size() + vigilantes.size() + neutrals.size();
-        int civilianCount = players.size() - assignedSpecial - forcedRoles.size();
+        int civilianCount = players.size() - assignedSpecial - forcedPlayers.size();
 
         List<SRERole> civilians = pickForFaction(eligibleCivilians(),
                 Math.max(0, civilianCount), state, random);
@@ -205,7 +208,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 true, 10);
         instances = RoleAssignmentManager.expandWithCompanionRoles(instances);
 
-        int needCivilian = (players.size() - forcedRoles.size()) - instances.size();
+        int needCivilian = (players.size() - forcedPlayers.size()) - instances.size();
         for (int i = 0; i < needCivilian; i++)
             instances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
 
@@ -318,13 +321,9 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 break;
             result.add(r);
         }
-        // 不足時以「最久未玩」為基準循環挑選（允許本局重複）
-        List<SRERole> lruBase = played.isEmpty() ? eligible : played;
-        int i = 0;
-        while (result.size() < need) {
-            result.add(lruBase.get(i % lruBase.size()));
-            i++;
-        }
+        // 不足時保留空位，由呼叫端以 civilian 補足，避免突破職業分配上限。
+        // Never duplicate a role here. If a faction has fewer eligible roles than
+        // the requested slots, the caller fills the remaining players as civilians.
         return result;
     }
 
@@ -336,7 +335,11 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 && !(role instanceof RepairRole)
                 && role != TMMRoles.DISCOVERY_CIVILIAN
                 && role != TMMRoles.LOOSE_END
-                && !SREDisableManager.isRoleDisabled(role);
+                && !SREDisableManager.isRoleDisabled(role)
+                // InitModRolesMax sets this to zero when the current map does
+                // not support a map-specific role.
+                && (!role.isSpecialMapRole()
+                        || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 0) > 0);
     }
 
     private static boolean isKillerEligible(SRERole role) {
