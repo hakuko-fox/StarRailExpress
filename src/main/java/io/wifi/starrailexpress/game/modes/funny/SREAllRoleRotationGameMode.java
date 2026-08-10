@@ -168,26 +168,31 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         neutralsCount = Math.max(0, neutralsCount);
 
         // 第二步：依佇列順序從各陣營挑選職業
-        List<SRERole> killers = pickForFaction(eligibleKillers(), killerCount, state, random);
-        List<SRERole> vigilantes = pickForFaction(eligibleVigilantes(), vigilanteCount, state, random);
-        List<SRERole> neutrals = pickForFaction(eligibleNeutrals(), neutralsCount, state, random);
+        Set<String> selectedKillers = new HashSet<>();
+        Set<String> selectedVigilantes = new HashSet<>();
+        Set<String> selectedNeutrals = new HashSet<>();
+        List<SRERole> killers = pickForFaction(eligibleKillers(), killerCount, state, random, selectedKillers);
+        List<SRERole> vigilantes = pickForFaction(eligibleVigilantes(), vigilanteCount, state, random,
+                selectedVigilantes);
+        List<SRERole> neutrals = pickForFaction(eligibleNeutrals(), neutralsCount, state, random, selectedNeutrals);
 
         // 處理 setOccupiedRoleCount(0) 的職業：不佔用原本名額，額外補充同陣營職業
         long zeroKillers = killers.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
         long zeroVigilantes = vigilantes.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
         long zeroNeutrals = neutrals.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
         if (zeroKillers > 0)
-            killers.addAll(pickForFaction(eligibleKillers(), (int) zeroKillers, state, random));
+            killers.addAll(pickForFaction(eligibleKillers(), (int) zeroKillers, state, random, selectedKillers));
         if (zeroVigilantes > 0)
-            vigilantes.addAll(pickForFaction(eligibleVigilantes(), (int) zeroVigilantes, state, random));
+            vigilantes.addAll(pickForFaction(eligibleVigilantes(), (int) zeroVigilantes, state, random,
+                    selectedVigilantes));
         if (zeroNeutrals > 0)
-            neutrals.addAll(pickForFaction(eligibleNeutrals(), (int) zeroNeutrals, state, random));
+            neutrals.addAll(pickForFaction(eligibleNeutrals(), (int) zeroNeutrals, state, random, selectedNeutrals));
 
         int assignedSpecial = killers.size() + vigilantes.size() + neutrals.size();
         int civilianCount = players.size() - assignedSpecial - forcedPlayers.size();
 
         List<SRERole> civilians = pickForFaction(eligibleCivilians(),
-                Math.max(0, civilianCount), state, random);
+                Math.max(0, civilianCount), state, random, new HashSet<>());
 
         // 第三步：合併為 RoleInstance，並處理對立 / 伴生職業（沿用 Murder 邏輯）
         List<RoleInstance> instances = new ArrayList<>();
@@ -291,7 +296,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
      * 若合格職業少於需求，則從「最久未玩」開始重複挑選。
      */
     private List<SRERole> pickForFaction(List<SRERole> eligible, int need, AllRoleRotationSavedData state,
-            RandomSource random) {
+            RandomSource random, Set<String> selectedThisRound) {
         List<SRERole> result = new ArrayList<>();
         if (need <= 0 || eligible.isEmpty())
             return result;
@@ -316,14 +321,21 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         List<SRERole> sequence = new ArrayList<>(unplayed);
         sequence.addAll(played);
 
-        for (SRERole r : sequence) {
-            if (result.size() >= need)
-                break;
-            result.add(r);
+        while (result.size() < need && !sequence.isEmpty()) {
+            List<SRERole> available = sequence.stream()
+                    .filter(role -> !selectedThisRound.contains(role.getIdentifier().toString()))
+                    .toList();
+            if (available.isEmpty()) {
+                selectedThisRound.clear();
+                available = new ArrayList<>(sequence);
+                Collections.shuffle(available, new Random(random.nextLong()));
+            }
+            SRERole selected = available.get(0);
+            selectedThisRound.add(selected.getIdentifier().toString());
+            result.add(selected);
         }
-        // 不足時保留空位，由呼叫端以 civilian 補足，避免突破職業分配上限。
-        // Never duplicate a role here. If a faction has fewer eligible roles than
-        // the requested slots, the caller fills the remaining players as civilians.
+        // Reset this faction's picker after its pool is exhausted. A role can only
+        // repeat after every eligible role in this faction has been selected.
         return result;
     }
 
