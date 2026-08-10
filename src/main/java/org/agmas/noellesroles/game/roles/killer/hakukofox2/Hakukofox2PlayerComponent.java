@@ -6,6 +6,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,6 +19,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -76,6 +78,7 @@ public class Hakukofox2PlayerComponent implements RoleComponent, ServerTickingCo
     public void clear() {
         removeBeastEffects();
         if (player instanceof ServerPlayer sp) {
+            sp.removeEffect(MobEffects.BLINDNESS);
             sp.refreshDimensions();
         }
         init();
@@ -146,6 +149,9 @@ public class Hakukofox2PlayerComponent implements RoleComponent, ServerTickingCo
             leaveBeastForm(sp);
             context.setSkillCooldown(180 * 20);
             return true;
+        }
+        if (cultivating) {
+            return false;
         }
         if (!context.skillReady()) {
             sp.displayClientMessage(Component.translatable("message.sre.skill.cooldown",
@@ -249,7 +255,8 @@ public class Hakukofox2PlayerComponent implements RoleComponent, ServerTickingCo
 
     private static boolean isBeastForm(Player player) {
         Hakukofox2PlayerComponent comp = KEY.maybeGet(player).orElse(null);
-        return comp != null && comp.isBeastFormActive();
+        return comp != null && comp.isBeastFormActive()
+                && SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.HAKUKO_FOX2);
     }
 
     //

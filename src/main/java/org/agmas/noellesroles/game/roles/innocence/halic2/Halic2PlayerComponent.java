@@ -65,7 +65,21 @@ public class Halic2PlayerComponent implements RoleComponent, ServerTickingCompon
 
     @Override
     public void clear() {
+        clearDecoys();
         init();
+    }
+
+    private void clearDecoys() {
+        if (!(player instanceof ServerPlayer sp)) {
+            return;
+        }
+        for (PuppeteerBodyEntity decoy : sp.serverLevel().getEntitiesOfClass(
+                PuppeteerBodyEntity.class,
+                new AABB(sp.blockPosition()).inflate(10000),
+                entity -> entity.isHalicDecoy()
+                        && sp.getUUID().equals(entity.getOwnerUuid().orElse(null)))) {
+            decoy.remove(net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+        }
     }
 
     /** 主動技1：量產分身 — 冷卻由框架 cooldownSeconds(10) 控制 */

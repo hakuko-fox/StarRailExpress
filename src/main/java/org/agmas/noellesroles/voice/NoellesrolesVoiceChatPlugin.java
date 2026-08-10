@@ -95,6 +95,9 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     if (receiverPlayer.hasEffect(ModEffects.PLAYER_ISOLATION) || senderPlayer.hasEffect(ModEffects.PLAYER_ISOLATION)) {
       return true;
     }
+    if (receiverPlayer.hasEffect(ModEffects.VOICE_DEAFENED)) {
+      return true;
+    }
     if (SREGameWorldComponent.KEY.get(senderPlayer.level()).isRole(senderPlayer, ModRoles.WRAITH_ASSASSIN)) {
       var wraith = ModComponents.WRAITH_ASSASSIN.get(senderPlayer);
       if (!wraith.isManifested()

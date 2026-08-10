@@ -110,7 +110,8 @@ public class FuTaiPlayerComponent implements RoleComponent, ServerTickingCompone
 
     /** 被動祝福消耗：抵擋一次死亡。成功返回 true（死亡被攔截）。 */
     public boolean tryConsumeBlessing(ServerPlayer sp) {
-        if (blessingUsed) {
+        if (blessingUsed || !SREGameWorldComponent.KEY.get(sp.level()).isRole(sp,
+                org.agmas.noellesroles.role.ModRoles.FU_TAI)) {
             return false;
         }
         blessingUsed = true;

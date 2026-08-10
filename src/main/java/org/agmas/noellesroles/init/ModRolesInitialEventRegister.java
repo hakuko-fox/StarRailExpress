@@ -237,7 +237,20 @@ public class ModRolesInitialEventRegister {
                 player.addItem(TMMItems.KNIFE.getDefaultInstance().copy());
                 return;
             }
+            if (role.identifier().equals(ModRoles.HAKUKO_FOX2.identifier())
+                    || role.identifier().equals(ModRoles.NINE_MUI.identifier())) {
+                if (!SREItemUtils.hasItem(player, TMMItems.KNIFE)) {
+                    player.addItem(TMMItems.KNIFE.getDefaultInstance().copy());
+                }
+                return;
+            }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
+                if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
+                    player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
+                }
+                return;
+            }
+            if (role.identifier().equals(ModRoles.EVERLY.identifier())) {
                 if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
                     player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
                 }

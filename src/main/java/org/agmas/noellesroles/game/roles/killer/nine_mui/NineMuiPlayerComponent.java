@@ -114,6 +114,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
         sp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, PETRIFY_DURATION_TICKS, 0, false, false, true));
+        sp.addEffect(new MobEffectInstance(ModEffects.VOICE_DEAFENED, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.displayClientMessage(
@@ -136,6 +137,9 @@ private void clearPetrifiedState(ServerPlayer sp) {
         }
         if (sp.hasEffect(ModEffects.VOICE_SILENCE)) {
             sp.removeEffect(ModEffects.VOICE_SILENCE);
+        }
+        if (sp.hasEffect(ModEffects.VOICE_DEAFENED)) {
+            sp.removeEffect(ModEffects.VOICE_DEAFENED);
         }
         if (sp.hasEffect(ModEffects.CHAT_BAN)) {
             sp.removeEffect(ModEffects.CHAT_BAN);
