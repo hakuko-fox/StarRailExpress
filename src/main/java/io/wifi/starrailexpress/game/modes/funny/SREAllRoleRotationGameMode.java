@@ -151,10 +151,10 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
             SRERole role = entry.getValue();
-            if (player != null && players.contains(player) && role != null
+            if (player instanceof ServerPlayer serverPlayer && players.contains(serverPlayer) && role != null
                     && baseEligible(role)) {
-                roleAssignments.put(player, role);
-                forcedPlayers.add(player);
+                roleAssignments.put(serverPlayer, role);
+                forcedPlayers.add(serverPlayer);
                 if (role.canUseKiller())
                     killerCount--;
                 else if (role.isVigilanteTeam())
