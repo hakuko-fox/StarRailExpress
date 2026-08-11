@@ -15,8 +15,18 @@
 
 package io.wifi.starrailexpress.roster;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.agmas.harpymodloader.modifiers.SREModifier;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
@@ -28,14 +38,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import org.agmas.harpymodloader.modifiers.SREModifier;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * 职业轮换系统的服务端核心：维护一份服务器全局的职业名单，并负责
@@ -109,6 +111,9 @@ public final class RoleRosterManager {
         broadcast();
         // 再尝试从数据库覆盖（数据库版本更新时为准）
         if (!isDatabaseEnabled()) {
+            return;
+        }
+        if (SREConfig.instance().ignoreMysqlRosterConfig) {
             return;
         }
         MysqlPlayerDataStore.loadBatchAsync(CONFIG_UUID, List.of(PART))
@@ -227,6 +232,10 @@ public final class RoleRosterManager {
         if (!isDatabaseEnabled()) {
             return;
         }
+        
+        if (SREConfig.instance().ignoreMysqlRosterConfig) {
+            return;
+        }
         long updatedAt = Math.max(1L, state.version);
         MysqlPlayerDataStore.saveBatchAsync(CONFIG_UUID, Map.of(PART, toJson(state)), updatedAt)
                 .whenComplete((success, throwable) -> {
@@ -239,6 +248,10 @@ public final class RoleRosterManager {
     private static void flushBlocking() {
         writeLocalFile();
         if (!isDatabaseEnabled()) {
+            return;
+        }
+        
+        if (SREConfig.instance().ignoreMysqlRosterConfig) {
             return;
         }
         MysqlPlayerDataStore.saveBatchBlocking(CONFIG_UUID, Map.of(PART, toJson(state)),

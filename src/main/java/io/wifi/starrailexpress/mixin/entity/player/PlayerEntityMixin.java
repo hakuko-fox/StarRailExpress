@@ -54,6 +54,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.level.Level;
 
+import org.agmas.noellesroles.client.FlashlightLightProvider;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
@@ -85,6 +86,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements PlayerSt
 
     @Unique
     public float sprintingTicks;
+    @Unique
+    public FlashlightLightProvider flashlightProvider;
     @Unique
     private Scheduler.ScheduledTask poisonSleepTask;
 

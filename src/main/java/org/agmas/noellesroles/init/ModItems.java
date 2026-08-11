@@ -27,6 +27,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.food.Foods;
 import net.minecraft.world.item.*;
@@ -181,6 +182,9 @@ public class ModItems {
             "bandit_revolver", WEAPONS_GROUP);
     public static final String PILL_POISONOUS_KEY = "poisonous";
 
+    public static final Item FLASHLIGHT = register(
+            new FlashlightItem(new Item.Properties().stacksTo(1)),
+            "flashlight", TOOLS_GROUP);
     public static final Item COOKED_FOOD = register(
             new ChefFoodItem(new Item.Properties().stacksTo(1)), "cooked_food",
             CONSUMABLES_GROUP);
@@ -308,8 +312,11 @@ public class ModItems {
             new FakeLockpickItem(new Item.Properties().stacksTo(1)),
             "fake_lockpick", TOOLS_GROUP);
 
+    public static final Item SRE_MINECART = register(
+            new SREMinecartItem(AbstractMinecart.Type.RIDEABLE, new Item.Properties().stacksTo(1).durability(3)),
+            "sre_minecart", TOOLS_GROUP);
     public static final Item INFERIOR_LOCKPICK = register(
-            new InferiorLockpickItem(new Item.Properties().stacksTo(1)),
+            new InferiorLockpickItem(new Item.Properties().stacksTo(1).durability(3)),
             "inferior_lockpick", TOOLS_GROUP);
 
     public static final Item FAKE_CROWBAR = register(

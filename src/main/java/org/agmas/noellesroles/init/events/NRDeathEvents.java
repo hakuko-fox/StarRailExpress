@@ -57,7 +57,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.*;
-import org.agmas.noellesroles.cca.C4BackComponent;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.ModComponents;
@@ -86,6 +85,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.RoleShopHandler;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
+import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -235,21 +235,8 @@ public class NRDeathEvents {
 
     private static boolean handleDefibrillator(Player victim) {
         DefibrillatorComponent component = ModComponents.DEFIBRILLATOR.get(victim);
-        if (component.hasProtection()) {
-            if (component.defibrillatorMark) {
-                component.isDead = true;
-                component.resurrectionTime = victim.level().getGameTime() + 30 * 20;
-                component.deathPos = victim.position();
-                ModComponents.DEFIBRILLATOR.sync(victim);
-
-                DeathPenaltyComponent deathPenaltyComponent = ModComponents.DEATH_PENALTY.get(victim);
-                deathPenaltyComponent.setPenalty(45 * 20, true);
-                victim.displayClientMessage(
-                        Component.translatable("message.noellesroles.doctor.penalty").withStyle(ChatFormatting.RED),
-                        true);
-                victim.sendSystemMessage(
-                        Component.translatable("message.noellesroles.doctor.penalty").withStyle(ChatFormatting.RED));
-            } else {
+        if (component.hasProtection() && component.defibrillatorMark) {
+            {
                 component.triggerDeath(30 * 20, null, victim.position());
             }
             return true;
@@ -360,8 +347,7 @@ public class NRDeathEvents {
         }
         for (final var victim : victims) {
             DeathPenaltyComponent deathPenaltyComponent = ModComponents.DEATH_PENALTY.get(victim);
-            if (deathPenaltyComponent.hasPenalty()
-                    && (deathPenaltyComponent.limitCameraUUID != null || deathPenaltyComponent.limitPos != null)) {
+            if (deathPenaltyComponent.hasStrictPenalty()) {
                 continue;
             }
             if (looseEndAlive && !ignoreLooseEnd) {
@@ -737,7 +723,6 @@ public class NRDeathEvents {
         AfterShieldAllowPlayerDeath.EVENT.register((victim, deathReason) -> {
             if (handlePuppeteerDeath(victim, deathReason))
                 return false;
-            handleDefibrillator(victim);
             return true;
         });
     }
@@ -801,6 +786,13 @@ public class NRDeathEvents {
 
     private static void dropRoleSpecificItems(ServerPlayer player, SREGameWorldComponent gameWorldComponent) {
 
+        if (gameWorldComponent.isRole(player, THRedHouseRoles.HOAN_MEIRIN)) {
+            int dropCount = MCItemsUtils.clearItem(player, TMMItems.REVOLVER) + 1;
+            while (dropCount > 0) {
+                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                dropCount--;
+            }
+        }
         if (gameWorldComponent.isRole(player, THMiscRoles.SHIKIEIKI)) {
             int dropCount = MCItemsUtils.clearItem(player, TMMItems.DERRINGER);
             while (dropCount > 0) {
@@ -886,6 +878,7 @@ public class NRDeathEvents {
             handleFitterDeath(victim);
             handlePelicanDeath(victim);
             handleGodfatherDeath(victim);
+            handleDefibrillator(victim);
             handleDeathPenalty(victim);
             handleGlitchRobotDeath(victim);
             handleCakeMakerDeath(victim);
@@ -911,22 +904,8 @@ public class NRDeathEvents {
             if (raven.canKill(victim))
                 raven.onTargetKilled(victim);
         });
-        OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
-            if (!(victim instanceof ServerPlayer player))
-                return;
-            if (C4BackComponent.hasC4(player)) {
-                var c4instance = C4BackComponent.getInstance(player);
-                UUID planterUid = c4instance.getPlanter(player.getUUID());
-                var planter = player.server.getPlayerList().getPlayer(planterUid);
-                if (planter != null && (killer == null || !planterUid.equals(killer.getUUID()))
-                        && GameUtils.isPlayerAliveAndSurvival(planter)) {
-                    RoleUtils.insertStackInFreeSlot(planter, ModItems.C4.getDefaultInstance());
-                    // c4instance.addC4(planterUid, planterUid);
-                    planter.displayClientMessage(
-                            Component.translatable("c4.back_to_planter").withStyle(ChatFormatting.RED), true);
-                }
-            }
-        });
+        // 携带C4的玩家死亡/变成旁观者后，C4由 C4Detonation.dropCarrierCharge 直接贴在最近的墙面上
+        // （见 C4Detonation#afterDeath / tick），不再返还给种植者
 
         // 血迹路径
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {

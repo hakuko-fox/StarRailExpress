@@ -85,7 +85,7 @@ public class SREConfig implements ConfigData {
     public boolean hideRandomRoleInRoleRotation = true;
     @ConfigEntry.Category(value = "gamemodes")
     public int roleRotationPerPlayerPerRoleTime = 3;
-    
+
     @ConfigEntry.Category(value = "gamemodes")
     public boolean roleRotationForceRoleSettings = false;
     // 随机地图设置
@@ -292,6 +292,7 @@ public class SREConfig implements ConfigData {
     public boolean verboseTrainResetLogs = true;
     public boolean logGameEvent = true;
     public boolean savePlayerBodyItems = true;
+    public boolean vehicleEntityNoItemDrops = true;
 
     @ConfigEntry.Category(value = "items")
     public boolean enableBrokenGunDropWhenKillerKillsGunHolder = false;
@@ -374,6 +375,8 @@ public class SREConfig implements ConfigData {
     public boolean isTeammedStatsSyncEnabled = true;
     @ConfigEntry.Category(value = "sync")
     public boolean mysqlPlayerSyncEnabled = false;
+    @ConfigEntry.Category(value = "sync")
+    public boolean ignoreMysqlRosterConfig = false;
     @ConfigEntry.Category(value = "sync")
     public String mysqlSyncHost = "127.0.0.1";
     @ConfigEntry.Category(value = "sync")

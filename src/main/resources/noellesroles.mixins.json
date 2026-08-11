@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "org.agmas.noellesroles.client.NRMixinPlugin",
   "mixins": [
+    "VehicleEntityNoDropMixin",
     "LivingEntityAccessor",
     "AbstractContainerMenuMixin",
     "DecServerJoinPlayer",
@@ -68,8 +69,6 @@
     "roles.photographer.PhotographerMixin",
     "roles.photographer.PhotographFrameEntityMixin",
     "roles.photographer.PhotographFrameItemMixin",
-    "roles.puppeteer.PuppeteerBodyGunPayloadMixin",
-    "roles.puppeteer.PuppeteerBodyKnifePayloadMixin",
     "roles.raven.RavenKnifeLeftClickMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",

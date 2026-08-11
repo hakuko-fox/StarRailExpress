@@ -37,8 +37,10 @@ public class SREClientConfig implements ConfigData {
             SREClientConfig.class);
     // 客户端专用配置 - 仅在客户端环境生效
 
+
     @ConfigEntry.Gui.Tooltip
     public boolean ultraPerfMode = false;
+    public boolean bgsoundForSpectator = false;
 
     @ConfigEntry.Gui.Excluded
     public HashMap<Integer, Boolean> taskStatus = new LinkedHashMap<>();
@@ -66,6 +68,20 @@ public class SREClientConfig implements ConfigData {
     public float playerHudScale = 0.6f;
     @Category("style")
     public float bodyHudScale = 0.6f;
+
+    @Category("style")
+    public int minWinCenterColumns = 3;
+    @Category("style")
+    public int maxWinCenterColumns = 8;
+    @Category("style")
+    public int winCenterColumnsDiv = 3;
+
+    @Category("style")
+    public int minWinSideColumns = 1;
+    @Category("style")
+    public int maxWinSideColumns = 5;
+    @Category("style")
+    public int winSideColumnsDiv = 2;
 
     @Category("style")
     @ConfigEntry.Gui.Tooltip

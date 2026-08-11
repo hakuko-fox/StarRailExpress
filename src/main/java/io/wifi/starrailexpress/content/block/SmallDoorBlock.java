@@ -18,6 +18,7 @@ package io.wifi.starrailexpress.content.block;
 import java.util.function.Supplier;
 
 import org.agmas.noellesroles.content.entity.LockEntityManager;
+import org.agmas.noellesroles.content.item.InferiorLockpickItem;
 import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.OpenLockGuiS2CPacket;
@@ -28,6 +29,7 @@ import org.joml.Vector3f;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
 import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
+import io.wifi.starrailexpress.content.item.LockpickItem;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties.DoorCustomOpenItem;
 import io.wifi.starrailexpress.event.AllowPlayerOpenLockedDoor;
 import io.wifi.starrailexpress.event.DisallowPlayerOpenDoor;
@@ -43,6 +45,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -430,7 +433,8 @@ public class SmallDoorBlock extends DoorPartBlock {
                 boolean hasLockpick = mainhandItem.is(TMMItems.LOCKPICK) || mainhandItem.is(ModItems.MASTER_KEY)
                         || mainhandItem.is(FunnyItems.BOWEN_BADGE)
                         // Dream 的钻石镐：像开锁器一样直接开门（不能锁门）
-                        || mainhandItem.is(ModItems.DREAM_PICKAXE);
+                        || mainhandItem.is(ModItems.DREAM_PICKAXE)
+                        || mainhandItem.getItem() instanceof LockpickItem;
                 if (mainhandItem.is(ModItems.MASTER_KEY_P)) {
                     if (!player.isCreative()) {
                         mainhandItem.hurtAndBreak(1, player, player.getEquipmentSlotForItem(mainhandItem));
@@ -442,22 +446,39 @@ public class SmallDoorBlock extends DoorPartBlock {
                 if (entity.isOpen()) {
                     return openFunction.apply(state, world, entity, lowerPos);
                 } else if (requiresKey && !jammed) {
-                    if (player.getMainHandItem().is(TMMItems.CROWBAR))
+                    if (mainhandItem.is(TMMItems.CROWBAR))
                         return InteractionResult.FAIL;
-                    if (player.getMainHandItem().is(TMMItems.KEY) || hasLockpick) {
-                        ItemLore lore = player.getMainHandItem().get(DataComponents.LORE);
+                    if (mainhandItem.is(TMMItems.KEY) || hasLockpick) {
+                        ItemLore lore = mainhandItem.get(DataComponents.LORE);
                         String needKey = entity.getKeyName();
                         // 忽略加固和警报的影响
                         needKey = needKey.replaceAll("alarmed:", "").replaceAll("reinforced:", "");
                         boolean isRightKey = lore != null && !lore.lines().isEmpty()
                                 && lore.lines().getFirst().getString().equals(needKey);
+
+                        if (mainhandItem.is(ModItems.INFERIOR_LOCKPICK)) {
+                            if (player.getCooldowns().isOnCooldown(ModItems.INFERIOR_LOCKPICK)) {
+                                return InteractionResult.FAIL;
+                            }
+                        }
                         if (isRightKey || hasLockpick) {
                             if (isRightKey)
                                 world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
                                         TMMSounds.ITEM_KEY_DOOR, SoundSource.BLOCKS, 1f, 1f);
-                            if (hasLockpick)
+                            if (hasLockpick) {
                                 world.playSound(null, lowerPos.getX() + .5f, lowerPos.getY() + 1, lowerPos.getZ() + .5f,
                                         TMMSounds.ITEM_LOCKPICK_DOOR, SoundSource.BLOCKS, 1f, 1f);
+
+                                if (!player.isCreative()) {
+                                    if (mainhandItem.getItem() instanceof InferiorLockpickItem li) {
+                                        if (!player.level().isClientSide) {
+                                            mainhandItem.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+                                            player.getCooldowns().addCooldown(mainhandItem.getItem(),
+                                                    li.getOpenCooldownTicks());
+                                        }
+                                    }
+                                }
+                            }
                             return openFunction.apply(state, world, entity, lowerPos);
                         } else {
                             if (!world.isClientSide) {

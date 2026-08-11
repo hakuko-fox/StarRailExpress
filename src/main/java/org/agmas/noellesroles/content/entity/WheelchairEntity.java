@@ -48,6 +48,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -58,7 +59,7 @@ public class WheelchairEntity extends Mob {
             EntityDataSerializers.INT);
 
     // ===== 耐久（保留原有变量名）=====
-    public int durability = 60;
+    public int durability = 60 * 20;
 
     // ===== 转向控制 =====
     private float deltaRotation = 0.0f;
@@ -212,22 +213,25 @@ public class WheelchairEntity extends Mob {
         deltaRotation *= 0.8f;
 
         // --- 耐久逻辑（完全保留原逻辑）---
-        if (this.level().getGameTime() % 20 == 0) {
+        {
             var gameC = SREGameWorldComponent.KEY.get(player.level());
-            if (!(gameC.getGameMode() instanceof ChairWheelRaceGame) && gameC.isRunning()) {
-                this.durability--;
+            if (!(gameC.getGameMode() instanceof ChairWheelRaceGame)) {
+                if (!level().isClientSide)
+                    this.durability--;
             }
         }
-        if (this.durability <= 0) {
-            Vec3 safePos = this.position().add(0, 0.25, 0); // 轮椅上方0.25格
-            player.stopRiding();
-            this.discard();
-            player.teleportTo(safePos.x, safePos.y, safePos.z);
-            player.displayClientMessage(
-                    Component.translatable("entity.noellesroles.wheelchair.damaged")
-                            .withStyle(ChatFormatting.RED),
-                    true);
-            return;
+        if (!level().isClientSide) {
+            if (this.durability <= 0) {
+                Vec3 safePos = this.position().add(0, 0.25, 0); // 轮椅上方0.25格
+                player.stopRiding();
+                this.kill();
+                player.teleportTo(safePos.x, safePos.y, safePos.z);
+                player.displayClientMessage(
+                        Component.translatable("entity.noellesroles.wheelchair.damaged")
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return;
+            }
         }
 
         // --- 加速 tick（使用药水效果，无需额外处理）---
@@ -424,7 +428,7 @@ public class WheelchairEntity extends Mob {
         if (this.getPassengers().isEmpty() && player.isShiftKeyDown()) {
             if (!this.level().isClientSide) {
                 ItemStack wheelchairItem = new ItemStack(ModItems.WHEELCHAIR);
-                wheelchairItem.setDamageValue(wheelchairItem.getMaxDamage() - this.durability);
+                wheelchairItem.setDamageValue(wheelchairItem.getMaxDamage() - this.durability / 20);
                 player.getCooldowns().addCooldown(ModItems.WHEELCHAIR, 40);
                 if (!player.getInventory().add(wheelchairItem)) {
                     player.drop(wheelchairItem, false);
@@ -448,8 +452,8 @@ public class WheelchairEntity extends Mob {
 
     @Override
     public void kill() {
-        this.discard();
-        super.kill();
+        this.remove(Entity.RemovalReason.KILLED);
+        this.gameEvent(GameEvent.ENTITY_DIE);
     }
 
     @Override

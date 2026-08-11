@@ -737,10 +737,9 @@ public class RoleShopHandler {
                             io.wifi.starrailexpress.index.TMMItems.IRON_DOOR_KEY
                                     .getDefaultInstance(),
                             75, ShopEntry.Type.TOOL));
-            // 手电筒（moonlight_lamp） - 150金币
-            if (BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse("handheldmoon:moonlight_lamp"))) {
-                final var moonlightLampItem = BuiltInRegistries.ITEM
-                        .get(ResourceLocation.parse("handheldmoon:moonlight_lamp"));
+            // 手电筒（ModItems.FLASHLIGHT） - 150金币
+            {
+                final var moonlightLampItem = ModItems.FLASHLIGHT;
                 if (moonlightLampItem != null) {
                     final var defaultInstance = moonlightLampItem.getDefaultInstance();
                     ATTENDANT_SHOP.add(new ShopEntry(defaultInstance, 150, ShopEntry.Type.TOOL));
@@ -2597,7 +2596,7 @@ public class RoleShopHandler {
             List<ShopEntry> entries = new ArrayList<>();
             var SAKUYA_KNIFE = ModItems.THROWING_KNIFE.getDefaultInstance();
             SAKUYA_KNIFE.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(1));
-            entries.add(new ShopEntry(SAKUYA_KNIFE, 250,
+            entries.add(new ShopEntry(SAKUYA_KNIFE, 325,
                     ShopEntry.Type.TOOL));
             entries.add(new ShopEntry(FunnyItems.SHISIYE.getDefaultInstance(), 440,
                     ShopEntry.Type.TOOL));
