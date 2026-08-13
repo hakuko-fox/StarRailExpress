@@ -47,8 +47,19 @@ import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable BlockPos hitBlockPos)
         implements CustomPacketPayload {
+    private static final Map<String, Boolean> ZORA_TARGET_HITS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> ZORA_MISSES = new ConcurrentHashMap<>();
+
+    public static void resetZoraState(UUID shooter) {
+        ZORA_MISSES.remove(shooter);
+        ZORA_TARGET_HITS.keySet().removeIf(key -> key.startsWith(shooter + ":"));
+    }
     public static final Type<SniperShootPayload> TYPE = new Type<>(SRE.id("sniper_shoot"));
     public static final StreamCodec<FriendlyByteBuf, SniperShootPayload> STREAM_CODEC = StreamCodec.ofMember(
             SniperShootPayload::write,
@@ -103,6 +114,9 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         return;
                     if (SniperRifleItem.getAmmoCount(mainHandStack) <= 0)
                         return;
+                    var shooterRole = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
+                    if (shooterRole != null && !shooterRole.onUseGun(player))
+                        return;
 
                     if (!player.isCreative()) {
                         player.getCooldowns().addCooldown(mainHandStack.getItem(),
@@ -138,6 +152,21 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                             if (!role.onGunHit(player, target)) {
                                 return;
                             }
+                        }
+
+                        // 星空宙：同一目標第一次命中只造成受傷提示，第二次命中才死亡。
+                        if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.HOSHIZORA.identifier())) {
+                            String hitKey = player.getUUID() + ":" + target.getUUID();
+                            if (!ZORA_TARGET_HITS.getOrDefault(hitKey, false)) {
+                                ZORA_TARGET_HITS.put(hitKey, true);
+                                target.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                                        net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
+                                target.displayClientMessage(
+                                        net.minecraft.network.chat.Component.translatable(
+                                                "message.noellesroles.zora.first_hit"), true);
+                                return;
+                            }
+                            ZORA_TARGET_HITS.remove(hitKey);
                         }
 
                         double distance = player.distanceTo(target);
@@ -192,6 +221,14 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         }
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
                     } else {
+                        if (SREGameWorldComponent.KEY.get(player.level()).isRole(player,
+                                org.agmas.noellesroles.role.ModRoles.HOSHIZORA)) {
+                            int misses = ZORA_MISSES.merge(player.getUUID(), 1, Integer::sum);
+                            if (misses >= 5) {
+                                GameUtils.killPlayer(player, true, null,
+                                        GameConstants.DeathReasons.SNIPER_RIFLE_BACKFIRE);
+                            }
+                        }
                         // 通用马匹伤害处理
                         HorseDamageUtil.tryDamageHorse(hitEntity, player, 20.0F, 200.0);
                     }

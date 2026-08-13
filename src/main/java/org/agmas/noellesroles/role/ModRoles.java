@@ -27,9 +27,11 @@ import io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -39,6 +41,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -59,7 +62,6 @@ import org.agmas.noellesroles.game.roles.innocence.detective.AgentPlayerComponen
 import org.agmas.noellesroles.game.roles.innocence.driver.DiverPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.glitch_robot.GlitchRobotPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectivePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
@@ -83,7 +85,6 @@ import org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKillerPlayer
 import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.MaChenXuPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
-import org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.morphling.MorphlingPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
@@ -128,6 +129,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 角色定义类
@@ -165,6 +167,37 @@ import java.util.List;
  * | 邪恶乘客 | true | true | 乘客阵营但有杀手能力（特殊） |
  */
 public class ModRoles {
+    private static final HashMap<UUID, Vec3> LAFINA_CHARGES = new HashMap<>();
+
+    public static void beginLafinaCharge(ServerPlayer player) {
+        Vec3 direction = player.getLookAngle().multiply(1, 0, 1).normalize();
+        if (direction.lengthSqr() < 0.01D) {
+            direction = new Vec3(0, 0, 1);
+        }
+        LAFINA_CHARGES.put(player.getUUID(), direction);
+    }
+
+    private static void tickLafinaCharge(ServerPlayer player) {
+        Vec3 direction = LAFINA_CHARGES.get(player.getUUID());
+        if (direction == null) {
+            return;
+        }
+        if (player.horizontalCollision || player.verticalCollision) {
+            LAFINA_CHARGES.remove(player.getUUID());
+            player.setDeltaMovement(Vec3.ZERO);
+            return;
+        }
+        player.setDeltaMovement(direction.scale(1.15D).add(0, player.getDeltaMovement().y, 0));
+        player.hurtMarked = true;
+        for (Player target : player.level().players()) {
+            if (target == player || target.distanceToSqr(player) > 3.0D) {
+                continue;
+            }
+            target.push(direction.x * 1.3D, 0.35D, direction.z * 1.3D);
+            target.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.MOVE_BANED,
+                    3 * 20, 0, false, true, true));
+        }
+    }
 
     @SuppressWarnings("deprecation")
     public static final AttachmentType<String> ENTITY_NOTE_MAKER = AttachmentRegistry.<String>builder()
@@ -1073,44 +1106,9 @@ public class ModRoles {
     // Halic 角色 ID
     public static final ResourceLocation HALIC_ID = Noellesroles.id("halic");
 
-    /**
-     * Halic 角色
-     * - 屬於乘客陣營 (isInnocent = true)
-     * - 不能使用殺手能力 (canUseKiller = false)
-     * - 真實心情系統
-     * - 固定皮膚：Halic_C17v4
-     * - 技能1（G）：複製一個假人留在原地 30 秒，冷卻 2 分鐘
-     * - 技能2（Shift+G）：花費 50 金幣恢復附近玩家理智值
-     */
+    /** Halic：永久分身、漏電控制、無法被殺手直覺看到。 */
     public static SRERole HALIC = TMMRoles.registerRole(new NormalRole(
             HALIC_ID,
-            new Color(100, 180, 255).getRGB(), // 淡藍色 - 代表科技感
-            true,  // isInnocent = 乘客陣營
-            false, // canUseKiller = 無殺手能力
-            SRERole.MoodType.REAL, // 真實心情
-            TMMRoles.CIVILIAN.getMaxSprintTime(),
-            false  // 不隱藏計分板
-    ) {
-        @Override
-        public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
-            return SRE.id("textures/entity/custom_psycho/halic.png");
-        }
-    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("hkvtuber");
-
-    // Halic 2.0 角色 ID
-    public static final ResourceLocation HALIC2_ID = Noellesroles.id("halic2");
-
-    /**
-     * Halic 2.0 角色
-     * - 屬於乘客陣營 (isInnocent = true)
-     * - 不能使用殺手能力 (canUseKiller = false)
-     * - 固定皮膚：與哈力克相同 Halic_C17v4
-     * - 技能1（G）：花費 10 金幣生產一隻永久分身哈力克，冷卻 10 秒
-     * - 技能2（Shift+G）：數局最多1次，花費50金幣令所有哈力克附近7格玩家停止行動7秒
-     * - 被動：無法被殺手透視，且無法購買武器
-     */
-    public static SRERole HALIC2 = TMMRoles.registerRole(new NormalRole(
-            HALIC2_ID,
             new Color(120, 190, 255).getRGB(), // 淡藍色 - 代表科技感
             true,  // isInnocent = 乘客陣營
             false, // canUseKiller = 無殺手能力
@@ -1122,7 +1120,7 @@ public class ModRoles {
         public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
             return SRE.id("textures/entity/custom_psycho/halic.png");
         }
-    }).setCanSeeCoin(true).setComponentKey(Halic2PlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("hkvtuber")
+    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("hkvtuber")
             .setAllBeSeenInstinctType(InstinctType.NONE);
 
     // 搜救员角色 - 乘客阵营
@@ -1406,18 +1404,10 @@ public class ModRoles {
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
 
-    // 白狐2.0 角色 ID
-    public static final ResourceLocation HAKUKO_FOX2_ID = Noellesroles.id("hakukofox2");
-
-    public static SRERole HAKUKO_FOX2 = TMMRoles
-            .registerRole(new NormalRole(HAKUKO_FOX2_ID, new Color(220, 235, 250).getRGB(), false,
-                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setComponentKey(ModComponents.HAKUKO_FOX2).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
-
     // ==================== 玖/愛 系列新角色 ====================
 
     // 玖璃（9mui）角色 ID — 殺手陣營
-    public static final ResourceLocation NINE_MUI_ID = Noellesroles.id("nine_mui");
+    public static final ResourceLocation NINE_MUI_ID = Noellesroles.id("9muimui");
     public static SRERole NINE_MUI = TMMRoles
             .registerRole(new NormalRole(NINE_MUI_ID, new Color(170, 110, 200).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -1433,11 +1423,171 @@ public class ModRoles {
             .setCanPickUpRevolver(true).addFlag("hkvtuber");
 
     // 風太（Fu_Tai）：平民陣營
-    public static final ResourceLocation FU_TAI_ID = Noellesroles.id("futai");
+    public static final ResourceLocation FU_TAI_ID = Noellesroles.id("fu_tai");
     public static SRERole FU_TAI = TMMRoles
             .registerRole(new NormalRole(FU_TAI_ID, new Color(232, 90, 90).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setComponentKey(ModComponents.FU_TAI).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+
+    // Vtuber 角色擴充：先註冊角色身份；各角色技能依其規格接入對應系統。
+    public static final ResourceLocation ALIN_ID = Noellesroles.id("hkc_alan");
+    public static final ResourceLocation LAFINA_ID = Noellesroles.id("lavanaii");
+    public static final ResourceLocation HOSHIZORA_ID = Noellesroles.id("zora");
+    public static final ResourceLocation SEPTEMBER_ONE_ID = Noellesroles.id("nine_one");
+    public static final ResourceLocation SHENWU_BINGFENG_ID = Noellesroles.id("kamikiri_ice");
+    public static final ResourceLocation MAOLUN_ID = Noellesroles.id("meowlen");
+    public static final ResourceLocation YOZORA_ID = Noellesroles.id("yozora");
+
+    public static SRERole ALIN = TMMRoles.registerRole(new NormalRole(ALIN_ID, new Color(140, 180, 110).getRGB(),
+            true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(false).setDefaultMax(1).addFlag("hkvtuber");
+    public static SRERole LAFINA = TMMRoles.registerRole(new NormalRole(LAFINA_ID, new Color(230, 190, 230).getRGB(),
+            true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setServerGameTickEvent((player, game) -> tickLafinaCharge(player))
+            .setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+    public static SRERole HOSHIZORA = TMMRoles.registerRole(new NormalRole(HOSHIZORA_ID, new Color(80, 100, 190).getRGB(),
+            false, true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
+                @Override
+                public boolean onUseGun(net.minecraft.world.entity.player.Player player) {
+                    return player.level().players().stream()
+                            .filter(other -> other != player && other.isAlive())
+                            .noneMatch(other -> other.distanceToSqr(player) <= 400.0D);
+                }
+
+                @Override
+                public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+                    return item -> item != TMMItems.SNIPER_RIFLE && isNewRoleWeapon(item);
+                }
+            })
+            .setCanSeeCoin(true).setCanUseKiller(true).setDefaultMax(1).addFlag("hkvtuber");
+    public static SRERole SEPTEMBER_ONE = TMMRoles.registerRole(new CustomWinnerRole(SEPTEMBER_ONE_ID,
+            new Color(210, 150, 90).getRGB(), false, false, SRERole.MoodType.REAL,
+            TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+                @Override
+                public void onFinishQuest(Player player, String quest) {
+                    super.onFinishQuest(player, quest);
+                    if (!(player instanceof ServerPlayer serverPlayer))
+                        return;
+                    var ability = io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(serverPlayer);
+                    ability.status++;
+                    ability.sync();
+                    serverPlayer.displayClientMessage(Component.translatable(
+                            "message.noellesroles.nine_one.task_progress",
+                            Component.literal(Integer.toString(ability.status)), Component.literal("10")), true);
+                    if (ability.status >= 10) {
+                        win(serverPlayer);
+                    }
+                }
+
+                @Override
+                  public io.wifi.starrailexpress.game.GameUtils.WinStatus checkWin(ServerPlayer player,
+                        io.wifi.starrailexpress.game.GameUtils.WinStatus winStatus) {
+                    return io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(player).status >= 10
+                            ? io.wifi.starrailexpress.game.GameUtils.WinStatus.CUSTOM
+                            : io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
+                  }
+
+                  @Override
+                  public boolean onUseGun(Player player) { return false; }
+
+                  @Override
+                  public boolean onUseKnife(Player player) { return false; }
+
+                  @Override
+                  public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+                      return ModRoles::isNewRoleWeapon;
+                  }
+              })
+            .setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
+            .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1).addFlag("vtuber");
+    public static SRERole SHENWU_BINGFENG = TMMRoles.registerRole(new CustomWinnerRole(SHENWU_BINGFENG_ID,
+            new Color(120, 190, 235).getRGB(), false, false, SRERole.MoodType.REAL,
+            TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+                @Override
+                  public io.wifi.starrailexpress.game.GameUtils.WinStatus checkWin(ServerPlayer player,
+                        io.wifi.starrailexpress.game.GameUtils.WinStatus winStatus) {
+                      return io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
+                  }
+
+                  @Override
+                  public boolean onUseGun(Player player) { return false; }
+
+                  @Override
+                  public boolean onUseKnife(Player player) { return false; }
+
+                  @Override
+                  public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+                      return ModRoles::isNewRoleWeapon;
+                  }
+              })
+            .setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
+            .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1).addFlag("hkvtuber");
+    public static SRERole MAOLUN = TMMRoles.registerRole(new NormalRole(MAOLUN_ID, new Color(170, 150, 100).getRGB(),
+            false, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+                @Override
+                public boolean onUseGun(Player player) { return false; }
+
+                @Override
+                public boolean onUseKnife(Player player) { return false; }
+
+                @Override
+                public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+                    return ModRoles::isNewRoleWeapon;
+                }
+            })
+            .setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
+            .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1).addFlag("vtuber");
+    public static SRERole YOZORA = TMMRoles.registerRole(new NormalRole(YOZORA_ID, new Color(100, 130, 190).getRGB(),
+            true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+                private final HashMap<UUID, Integer> nearbyTicks = new HashMap<>();
+
+                @Override
+                public boolean onUseGun(Player player) {
+                    return !player.hasEffect(MobEffects.INVISIBILITY);
+                }
+
+                @Override
+                public boolean onUseKnife(Player player) {
+                    return !player.hasEffect(MobEffects.INVISIBILITY);
+                }
+
+                @Override
+                public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+                    return item -> player.hasEffect(MobEffects.INVISIBILITY) && isNewRoleWeapon(item);
+                }
+
+                @Override
+                public void serverTick(ServerPlayer player) {
+                    if (!player.hasEffect(MobEffects.INVISIBILITY)) {
+                        nearbyTicks.remove(player.getUUID());
+                        return;
+                    }
+                    boolean nearby = player.level().players().stream()
+                            .anyMatch(other -> other != player && other.isAlive()
+                                    && other.distanceToSqr(player) <= 9.0D);
+                    int ticks = nearby ? nearbyTicks.merge(player.getUUID(), 1, Integer::sum) : 0;
+                    if (!nearby) {
+                        nearbyTicks.remove(player.getUUID());
+                    } else if (ticks >= 5 * 20 && ticks % 20 == 0) {
+                        SREPlayerMoodComponent.KEY.get(player).addMood(-0.01F);
+                    }
+                }
+            }
+                    .setVigilanteTeam(true))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1).addFlag("hkvtuber");
+
+    private static boolean isNewRoleWeapon(Item item) {
+        return item.builtInRegistryHolder().is(TMMItemTags.GUNS)
+                || item == TMMItems.KNIFE || item == TMMItems.BAT
+                || item == TMMItems.GRENADE || item == TMMItems.STICKY_GRENADE
+                || item == TMMItems.TIMED_GRENADE || item == TMMItems.FIRECRACKER
+                || item == TMMItems.NUNCHUCK;
+    }
+
     public static SRERole SWAPPER = TMMRoles
             .registerRole(new NormalRole(SWAPPER_ID, new Color(255, 0, 255).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -2755,9 +2905,7 @@ public class ModRoles {
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.MA_CHEN_XU_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.WRAITH_ASSASSIN_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC_ID.getPath());
-        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HALIC2_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX_ID.getPath());
-        SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.HAKUKO_FOX2_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.NINE_MUI_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.EVERLY_ID.getPath());
         SREPlayerMoodComponent.canSyncedRolePaths.add(ModRoles.FU_TAI_ID.getPath());

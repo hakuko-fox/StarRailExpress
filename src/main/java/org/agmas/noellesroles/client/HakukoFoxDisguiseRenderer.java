@@ -20,7 +20,7 @@ public class HakukoFoxDisguiseRenderer {
 
     public static boolean shouldDisguise(AbstractClientPlayer player) {
         return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.isDisguised(player)
-                || org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.isDisguised(player);
+                || org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.isDisguised(player);
     }
 
     public static boolean render(AbstractClientPlayer player, float yaw, float tickDelta,

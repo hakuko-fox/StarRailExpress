@@ -3526,6 +3526,16 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.MORTICIAN_BODYMAKER_ID, MORTICIAN_BODYMAKER_SHOP);
         }
+
+        // 修車麟阿麟商店：一次性修門工具與破門工具
+        {
+            var ALIN_SHOP = new ArrayList<ShopEntry>();
+            ALIN_SHOP.add(new ShopEntry(ModItems.REPAIR_CROWBAR.getDefaultInstance(), 130,
+                    ShopEntry.Type.TOOL));
+            ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_SCREWDRIVER.getDefaultInstance(), 130,
+                    ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.ALIN_ID, ALIN_SHOP);
+        }
     }
 
     /**

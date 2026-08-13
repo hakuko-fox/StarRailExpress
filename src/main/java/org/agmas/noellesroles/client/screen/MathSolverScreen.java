@@ -46,15 +46,21 @@ public class MathSolverScreen extends Screen {
     private long startTime = 0;
     private boolean failed = false;
     private boolean forced = false;
+    private int timeLimitSeconds = 0;
 
     public MathSolverScreen() {
         this(false, 1);
     }
 
     public MathSolverScreen(boolean forced, int maxTrial) {
+        this(forced, maxTrial, 0);
+    }
+
+    public MathSolverScreen(boolean forced, int maxTrial, int timeLimitSeconds) {
         super(Component.translatable("screen.math_solver.title"));
         this.forced = forced;
         this.maxTrial = maxTrial;
+        this.timeLimitSeconds = timeLimitSeconds;
         hasStarted = false;
         currentIndex = -1;
         startTime = 0;
@@ -100,6 +106,9 @@ public class MathSolverScreen extends Screen {
             this.MathProblems.add(newP);
         }
         this.maxTime = maxT * 20;
+        if (timeLimitSeconds > 0) {
+            this.maxTime = timeLimitSeconds * 20;
+        }
     }
 
     public void solveFailed_and_sendPacket() {

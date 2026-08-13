@@ -3200,7 +3200,11 @@
     "item.noellesroles.repair_gear_handle": "gear handle",
     "item.noellesroles.repair_gear_handle.tooltip": "Used to start maintenance lifts, rolling shutter doors or old-style mechanisms.",
     "item.noellesroles.repair_crowbar": "Repair mode: crowbar",
+    "item.noellesroles.alin_screwdriver": "Alin's breaching screwdriver",
+    "item.noellesroles.alin_screwdriver.tooltip": "Alin's one-use tool for breaking a small door.",
     "item.noellesroles.repair_crowbar.tooltip": "It can pry open some locked doors or secret passage mechanisms, and the buckle is usually durable and does not wear out.",
+    "message.noellesroles.alin.door_repaired": "Small door repaired.",
+    "message.noellesroles.alin.door_broken": "Small door broken.",
     "item.noellesroles.repair_lockpick": "Repair mode: lock picker",
     "item.noellesroles.repair_lockpick.tooltip": "Lightweight lock picking tool, suitable for low-level locks and random cabinet locks.",
     "item.noellesroles.repair_battery": "backup battery",
@@ -4042,5 +4046,10 @@
     "deathreason.starrailexpress.drowned": "Drowned",
     "death_reason.starrailexpress.ancient_bite": "Bitten by ancient things",
     "death_reason.starrailexpress.drowned": "Drowned",
-    "mob_effect.noellesroles.skill_freezed": "Skill Freeze"
+    "mob_effect.noellesroles.skill_freezed": "Skill Freeze",
+    "skill.noellesroles.meowlen.math_challenge": "Math Tutor",
+    "message.noellesroles.meowlen.challenge_started": "§dMeowlen: solve five math problems. Target: %s.",
+    "message.noellesroles.meowlen.challenge_failed": "§cMath challenge failed: %s / %s.",
+    "skill.noellesroles.everly.time_reversal": "§dTime Reversal!",
+    "message.noellesroles.everly.time_reversal": "Revived %s player(s)."
 }

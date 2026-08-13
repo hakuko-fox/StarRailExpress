@@ -592,7 +592,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 if (client.screen != null && !(client.screen instanceof MathSolverScreen)) {
                     client.screen.onClose();
                 }
-                client.setScreen(new MathSolverScreen(payload.forced(), payload.maxTrial()));
+                client.setScreen(new MathSolverScreen(payload.forced(), payload.maxTrial(), payload.timeLimitSeconds()));
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(ScanAllTaskPointsPayload.ID, (payload, context) -> {

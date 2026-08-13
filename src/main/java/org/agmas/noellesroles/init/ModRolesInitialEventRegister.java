@@ -27,6 +27,8 @@ import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.util.SREItemUtils;
+import io.wifi.starrailexpress.event.OnPlayerDeath;
+import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -70,8 +72,6 @@ import org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerC
 import org.agmas.noellesroles.game.roles.killer.stalker.StalkerPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.trapper.TrapperPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.candlebearer.CandleBearerPlayerComponent;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
@@ -95,10 +95,64 @@ import pro.fazeclan.river.stupid_express.constants.SEItems;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.EnumSet;
+import java.util.Set;
 
 public class ModRolesInitialEventRegister {
 
+    private static final Map<UUID, Integer> YOZORA_DEATH_NOTICES = new HashMap<>();
+    private static final Map<UUID, UUID> MAOLUN_CHALLENGES = new HashMap<>();
+    private static final Map<UUID, Integer> MAOLUN_FAILURES = new HashMap<>();
+    private static final Map<UUID, Set<ShenwuDamageGroup>> SHENWU_DAMAGE_GROUPS = new HashMap<>();
+    private static final Set<UUID> SHENWU_FATAL_SHIELD_USED = new java.util.HashSet<>();
+
+    private enum ShenwuDamageGroup {
+        CIVILIAN,
+        SHERIFF,
+        KILLER
+    }
+
     public static void register() {
+
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (!(victim.level() instanceof net.minecraft.server.level.ServerLevel serverLevel))
+                return;
+            var game = SREGameWorldComponent.KEY.get(serverLevel);
+            for (ServerPlayer observer : serverLevel.players()) {
+                if (!game.isRole(observer, ModRoles.YOZORA) || !observer.hasEffect(MobEffects.INVISIBILITY))
+                    continue;
+                int notices = YOZORA_DEATH_NOTICES.merge(observer.getUUID(), 1, Integer::sum);
+                observer.displayClientMessage(Component.translatable("message.noellesroles.yozora.death_notice",
+                        notices, 9), true);
+                if (notices >= 9 && GameUtils.isPlayerAliveAndSurvival(observer)) {
+                    GameUtils.killPlayer(observer, true, null,
+                            org.agmas.noellesroles.Noellesroles.id("yozora_nine_lives"));
+                }
+            }
+        });
+
+        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (!(victim instanceof ServerPlayer shenwu)
+                    || !SREGameWorldComponent.KEY.get(victim.level()).isRole(shenwu, ModRoles.SHENWU_BINGFENG)
+                    || !(killer instanceof ServerPlayer)) {
+                return true;
+            }
+            Set<ShenwuDamageGroup> groups = SHENWU_DAMAGE_GROUPS
+                    .computeIfAbsent(shenwu.getUUID(), ignored -> EnumSet.noneOf(ShenwuDamageGroup.class));
+            if (groups.size() >= ShenwuDamageGroup.values().length
+                    && hasNonKillerPlayerBesides(shenwu)) {
+                org.agmas.noellesroles.utils.RoleUtils.customWinnerWin(shenwu.serverLevel(),
+                        ModRoles.SHENWU_BINGFENG.identifier().getPath(), ModRoles.SHENWU_BINGFENG.color());
+                return false;
+            }
+            if (!SHENWU_FATAL_SHIELD_USED.add(shenwu.getUUID())) {
+                return true;
+            }
+            shenwu.displayClientMessage(Component.translatable("message.noellesroles.kamikiri_ice.fatal_saved"), true);
+            return false;
+        });
 
         // 初始化亡灵之主事件（亡者复苏 / 角色初始化）
         org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordHandler.init();
@@ -118,10 +172,11 @@ public class ModRolesInitialEventRegister {
             if (initialCoin >= 0) {
                 SREPlayerShopComponent.KEY.get(player).setBalance(initialCoin);
             }
-            // 白狐2.0 被動：修仙成狐 — 開局失明60秒，屆時自動化身
-            if (RoleUtils.compareRole(role, ModRoles.HAKUKO_FOX2)
+            // 白狐被動：修仙成狐 — 開局失明60秒，屆時自動化身
+            if (RoleUtils.compareRole(role, ModRoles.HAKUKO_FOX)
                     && player instanceof ServerPlayer cultivationPlayer) {
-                Hakukofox2PlayerComponent.KEY.get(cultivationPlayer).startCultivation(cultivationPlayer);
+                org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY
+                        .get(cultivationPlayer).startCultivation(cultivationPlayer);
             }
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
                 ModEventsRegister.reJudgeSpectatorsPenalty(player.level());
@@ -237,7 +292,7 @@ public class ModRolesInitialEventRegister {
                 player.addItem(TMMItems.KNIFE.getDefaultInstance().copy());
                 return;
             }
-            if (role.identifier().equals(ModRoles.HAKUKO_FOX2.identifier())
+            if (role.identifier().equals(ModRoles.HAKUKO_FOX.identifier())
                     || role.identifier().equals(ModRoles.NINE_MUI.identifier())) {
                 if (!SREItemUtils.hasItem(player, TMMItems.KNIFE)) {
                     player.addItem(TMMItems.KNIFE.getDefaultInstance().copy());
@@ -250,10 +305,51 @@ public class ModRolesInitialEventRegister {
                 }
                 return;
             }
-            if (role.identifier().equals(ModRoles.EVERLY.identifier())) {
+            if (role.identifier().equals(ModRoles.EVERLY.identifier())
+                    || role.identifier().equals(ModRoles.YOZORA.identifier())) {
+                if (role.identifier().equals(ModRoles.YOZORA.identifier())) {
+                    YOZORA_DEATH_NOTICES.remove(player.getUUID());
+                }
                 if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
                     player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
                 }
+                return;
+            }
+            if (role.identifier().equals(ModRoles.ALIN.identifier())) {
+                RoleUtils.insertStackInFreeSlot(player, ModItems.REPAIR_CROWBAR.getDefaultInstance());
+                RoleUtils.insertStackInFreeSlot(player, ModItems.ALIN_SCREWDRIVER.getDefaultInstance());
+                return;
+            }
+            if (role.identifier().equals(ModRoles.HOSHIZORA.identifier())) {
+                io.wifi.starrailexpress.network.original.SniperShootPayload.resetZoraState(player.getUUID());
+                var sniper = io.wifi.starrailexpress.index.TMMItems.SNIPER_RIFLE.getDefaultInstance();
+                io.wifi.starrailexpress.content.item.SniperRifleItem.setAmmoCount(sniper,
+                        io.wifi.starrailexpress.content.item.SniperRifleItem.MAX_AMMO);
+                RoleUtils.insertStackInFreeSlot(player, sniper);
+                return;
+            }
+            if (role.identifier().equals(ModRoles.SHENWU_BINGFENG.identifier())) {
+                SHENWU_DAMAGE_GROUPS.remove(player.getUUID());
+                SHENWU_FATAL_SHIELD_USED.remove(player.getUUID());
+                boolean sheriffVariant = player.getRandom().nextFloat() < 0.70F;
+                RoleUtils.insertStackInFreeSlot(player,
+                        sheriffVariant
+                                ? ModItems.FAKE_REVOLVER.getDefaultInstance()
+                                : ModItems.FAKE_KNIFE.getDefaultInstance());
+                player.displayClientMessage(Component.translatable(sheriffVariant
+                        ? "message.noellesroles.kamikiri_ice.sheriff_variant"
+                        : "message.noellesroles.kamikiri_ice.killer_variant"), true);
+                return;
+            }
+            if (role.identifier().equals(ModRoles.MAOLUN.identifier())) {
+                RoleUtils.insertStackInFreeSlot(player, FunnyItems.PROBLEM_SET.getDefaultInstance());
+                return;
+            }
+            if (role.identifier().equals(ModRoles.SEPTEMBER_ONE.identifier())) {
+                var ability = SREAbilityPlayerComponent.KEY.get(player);
+                ability.init(false);
+                ability.status = 0;
+                ability.sync();
                 return;
             }
             if (role.identifier().equals(ModRoles.SHERIFF_ID)) {
@@ -475,6 +571,74 @@ public class ModRolesInitialEventRegister {
                 SREItemUtils.clearItem(player, (stack) -> stack.is(TMMItems.DERRINGER));
             }
         });
+    }
+
+    public static void recordShenwuDamage(Player victim, Player attacker) {
+        if (!(victim instanceof ServerPlayer shenwu) || attacker == null)
+            return;
+        var game = SREGameWorldComponent.KEY.get(victim.level());
+        if (!game.isRole(shenwu, ModRoles.SHENWU_BINGFENG))
+            return;
+        var attackerRole = game.getRole(attacker);
+        if (attackerRole == null)
+            return;
+        ShenwuDamageGroup group = attackerRole.isKiller() && !attackerRole.isNeutrals()
+                ? ShenwuDamageGroup.KILLER
+                : attackerRole.isVigilanteTeam()
+                        ? ShenwuDamageGroup.SHERIFF
+                        : attackerRole.isInnocent() && !attackerRole.isNeutrals()
+                                ? ShenwuDamageGroup.CIVILIAN
+                                : null;
+        if (group != null) {
+            SHENWU_DAMAGE_GROUPS.computeIfAbsent(shenwu.getUUID(), ignored ->
+                    EnumSet.noneOf(ShenwuDamageGroup.class)).add(group);
+        }
+    }
+
+    public static boolean startMaolunChallenge(ServerPlayer caster, ServerPlayer target) {
+        if (!SREGameWorldComponent.KEY.get(caster.level()).isRole(caster, ModRoles.MAOLUN)
+                || caster == target || !GameUtils.isPlayerAliveAndSurvival(target)) {
+            return false;
+        }
+        MAOLUN_CHALLENGES.put(target.getUUID(), caster.getUUID());
+        MAOLUN_FAILURES.putIfAbsent(target.getUUID(), 0);
+        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1200, 255, false, false, true));
+        target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 1200, 255, false, false, true));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(target,
+                new org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket(true, 3, 50));
+        caster.displayClientMessage(Component.translatable("message.noellesroles.meowlen.challenge_started",
+                target.getName()), true);
+        return true;
+    }
+
+    public static boolean finishMaolunChallenge(ServerPlayer target, boolean success) {
+        if (!MAOLUN_CHALLENGES.containsKey(target.getUUID())) {
+            return false;
+        }
+        target.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        target.removeEffect(MobEffects.DIG_SLOWDOWN);
+        if (success) {
+            MAOLUN_CHALLENGES.remove(target.getUUID());
+            MAOLUN_FAILURES.remove(target.getUUID());
+            return true;
+        }
+        int failures = MAOLUN_FAILURES.merge(target.getUUID(), 1, Integer::sum);
+        target.displayClientMessage(Component.translatable("message.noellesroles.meowlen.challenge_failed",
+                Component.literal(Integer.toString(failures)), Component.literal("2")), true);
+        if (failures >= 2) {
+            MAOLUN_CHALLENGES.remove(target.getUUID());
+            MAOLUN_FAILURES.remove(target.getUUID());
+            GameUtils.killPlayer(target, true, null, org.agmas.noellesroles.Noellesroles.id("meowlen_math_failure"));
+        }
+        return true;
+    }
+
+    private static boolean hasNonKillerPlayerBesides(ServerPlayer shenwu) {
+        var game = SREGameWorldComponent.KEY.get(shenwu.level());
+        return shenwu.level().players().stream()
+                .filter(player -> player != shenwu && GameUtils.isPlayerAliveAndSurvival(player))
+                .map(game::getRole)
+                .anyMatch(role -> role != null && !(role.isKiller() && !role.isNeutrals()));
     }
 
     static {
@@ -1306,44 +1470,14 @@ public class ModRolesInitialEventRegister {
                             .useFreezeSkill(player, context);
                 }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
 
-        // ==================== 白狐 2.0 技能注册 ====================
-        // 技能1（G）：兽化型态（可隨時關閉）冷卻180秒 — 變身雪狐，無法攻擊、受傷不死、速度II跳躍II
-        // 技能2（Shift+G）：瞬想 — 消耗100金幣，冷卻60秒，凍結其他玩家5秒（愛速+失明+無法跳躍）
-        RoleSkill.register(ModRoles.HAKUKO_FOX2,
-                RoleSkill.skill(SRE.id("hakukofox2_transform"), "skill.noellesroles.hakukofox2.transform", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.KEY.get(player)
-                            .toggleBeastForm(player, context);
-                }).cooldownSeconds(180).toggleable(true).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("hakukofox2_freeze"), "skill.noellesroles.hakukofox2.freeze", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.killer.hakukofox2.Hakukofox2PlayerComponent.KEY.get(player)
-                            .useFreezeSkill(player, context);
-                }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
-
-        // ==================== Halic 2.0 技能注册 ====================
-        // 技能1（G）：這樣10秒，消耗10金幣生產一隻永久分身哈力克
-        // 技能2（Shift+G）：每局最多1次，消耗50金幣使所有哈力克附近7格玩家停止行動7秒
-        RoleSkill.register(ModRoles.HALIC2,
-                RoleSkill.skill(SRE.id("halic2_decoy"), "skill.noellesroles.halic2.decoy", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent.KEY.get(player)
-                            .createDecoy(player);
-                }).cooldownSeconds(10).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("halic2_electrocute"), "skill.noellesroles.halic2.sanity", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.innocence.halic2.Halic2PlayerComponent.KEY.get(player)
-                            .electrocute(player);
-                }).shifted(true).charges(1).showOnHud(true).build());
-
-        // Halic 2.0 被動：無法購買武器
+        // Halic 被動：無法購買武器
         OnVendingMachinesBuyItems.EVENT.register((player, entry) -> {
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorldComponent.isRole(player, ModRoles.HALIC2)) {
+            if (gameWorldComponent.isRole(player, ModRoles.HALIC)
+                    || gameWorldComponent.isRole(player, ModRoles.HOSHIZORA)
+                    || gameWorldComponent.isRole(player, ModRoles.SEPTEMBER_ONE)
+                    || gameWorldComponent.isRole(player, ModRoles.SHENWU_BINGFENG)
+                    || gameWorldComponent.isRole(player, ModRoles.MAOLUN)) {
                 return !isWeaponItem(entry.stack());
             }
             return true;
@@ -1353,7 +1487,7 @@ public class ModRolesInitialEventRegister {
         // 技能1（G）：信仰之力 — 消耗100金幣，獲得速度II 10秒，冷卻120秒。
         // 被動：石化狀態 — 每分鐘30%機率石化10秒（無法說話/移動，且無敵）。
         RoleSkill.register(ModRoles.NINE_MUI,
-                RoleSkill.skill(SRE.id("nine_mui_blessing"), "skill.noellesroles.nine_mui.blessing", context -> {
+                RoleSkill.skill(SRE.id("9muimui_blessing"), "skill.noellesroles.9muimui.blessing", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent.KEY.get(player)
@@ -1371,16 +1505,67 @@ public class ModRolesInitialEventRegister {
                             .useTimeStop(player, context);
                 }).cooldownSeconds(60).charges(2).showOnHud(true).build());
 
+        RoleSkill.register(ModRoles.EVERLY,
+                RoleSkill.skill(SRE.id("everly_time_reversal"), "skill.noellesroles.everly.time_reversal", context -> {
+                    ServerPlayer player = context.player();
+                    int revived = 0;
+                    for (ServerPlayer target : player.serverLevel().players()) {
+                        if (target == player || !GameUtils.isPlayerEliminated(target)) {
+                            continue;
+                        }
+                        GameUtils.revivePlayerToItsRoom(target);
+                        revived++;
+                    }
+                    player.displayClientMessage(Component.translatable(
+                            "message.noellesroles.everly.time_reversal", revived), true);
+                    return revived > 0;
+                }).cooldownSeconds(60).charges(1).shifted(true).showOnHud(true).build());
+
         // ==================== 風太 技能註冊 ====================
         // 技能1（G）：神諭 — 消耗200金幣得知剩餘殺手與中立數量，冷卻120秒。
         // 被動：巫女祝福 — 抵擋一次任何方式死亡。
         RoleSkill.register(ModRoles.FU_TAI,
-                RoleSkill.skill(SRE.id("futai_oracle"), "skill.noellesroles.futai.oracle", context -> {
+                RoleSkill.skill(SRE.id("fu_tai_oracle"), "skill.noellesroles.fu_tai.oracle", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent.KEY.get(player)
                             .useOracleSkill(player, context);
                 }).cooldownSeconds(120).showOnHud(true).build());
+
+        RoleSkill.register(ModRoles.LAFINA,
+                RoleSkill.skill(SRE.id("lavanaii_bear_charge"), "skill.noellesroles.lavanaii.bear_charge", context -> {
+                    ServerPlayer player = context.player();
+                    var shop = SREPlayerShopComponent.KEY.get(player);
+                    if (shop.balance < 200) {
+                        player.displayClientMessage(Component.translatable("message.noellesroles.lavanaii.not_enough_coins"), true);
+                        return false;
+                    }
+                    shop.setBalance(shop.balance - 200);
+                    player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 100, 2));
+                    player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 4));
+                    org.agmas.noellesroles.role.ModRoles.beginLafinaCharge(player);
+                    return true;
+                }).cooldownSeconds(100).showOnHud(true).build());
+
+        RoleSkill.register(ModRoles.YOZORA,
+                RoleSkill.skill(SRE.id("yozora_cat_sixth_sense"), "skill.noellesroles.yozora.cat_sixth_sense", context -> {
+                    ServerPlayer player = context.player();
+                    boolean active = player.hasEffect(MobEffects.INVISIBILITY);
+                    if (active) {
+                        player.removeEffect(MobEffects.INVISIBILITY);
+                        player.removeEffect(MobEffects.MOVEMENT_SPEED);
+                    } else {
+                        player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 2400, 0, false, false, true));
+                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 2400, 1, false, false, true));
+                    }
+                    return true;
+                }).cooldownSeconds(120).toggleable(true).showOnHud(true).build());
+
+        RoleSkill.register(ModRoles.MAOLUN,
+                RoleSkill.skill(SRE.id("meowlen_math_challenge"), "skill.noellesroles.meowlen.math_challenge", context -> {
+                    ServerPlayer target = context.getTargetAsPlayer();
+                    return target != null && startMaolunChallenge(context.player(), target);
+                }).cooldownSeconds(60).withTarget(true).showOnHud(true).build());
     }
 
     private static boolean isWeaponItem(net.minecraft.world.item.ItemStack stack) {

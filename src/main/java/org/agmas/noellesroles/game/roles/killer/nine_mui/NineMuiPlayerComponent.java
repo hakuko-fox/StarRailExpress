@@ -89,14 +89,14 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
         var shop = SREPlayerShopComponent.KEY.get(sp);
         if (shop.balance < cost) {
             sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.nine_mui.not_enough_money", cost),
+                    Component.translatable("message.noellesroles.9muimui.not_enough_money", cost),
                     true);
             return false;
         }
         shop.addToBalance(-cost);
         sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 10 * 20, 1, false, false, true));
         sp.displayClientMessage(
-                Component.translatable("skill.noellesroles.nine_mui.blessing_on"), true);
+                Component.translatable("skill.noellesroles.9muimui.blessing_on"), true);
         sp.level().playSound(null, sp.getX(), sp.getY(), sp.getZ(),
                 SoundEvents.WITHER_SPAWN, SoundSource.PLAYERS, 0.3F, 1.4F);
         return true;
@@ -118,7 +118,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
         sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.displayClientMessage(
-                Component.translatable("skill.noellesroles.nine_mui.petrified_on"), true);
+                Component.translatable("skill.noellesroles.9muimui.petrified_on"), true);
         sync();
     }
 
@@ -179,7 +179,7 @@ private void clearPetrifiedState(ServerPlayer sp) {
         }
         if (now >= nextPetrifyScan) {
             nextPetrifyScan = now + PETRIFY_SCAN_INTERVAL_TICKS;
-            if (sp.getRandom().nextFloat() < 0.30F) {
+            if (sp.getRandom().nextFloat() < 0.20F) {
                 startPetrified(sp);
             }
         }

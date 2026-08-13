@@ -3199,7 +3199,11 @@
   "item.noellesroles.repair_gear_handle": "齒輪把手",
   "item.noellesroles.repair_gear_handle.tooltip": "用於啟動維修升降機、卷簾門或舊式機關。",
   "item.noellesroles.repair_crowbar": "修機模式：撬棍",
+  "item.noellesroles.alin_screwdriver": "阿麟破門螺絲刀",
+  "item.noellesroles.alin_screwdriver.tooltip": "修車麟阿麟專用：一次性破壞一扇小門。",
   "item.noellesroles.repair_crowbar.tooltip": "可撬開部分鎖門或密道機關，通常扣耐久而不消耗。",
+  "message.noellesroles.alin.door_repaired": "已修復小門。",
+  "message.noellesroles.alin.door_broken": "已破壞小門。",
   "item.noellesroles.repair_lockpick": "修機模式：開鎖器",
   "item.noellesroles.repair_lockpick.tooltip": "輕量開鎖工具，適合低級鎖和隨機櫃鎖。",
   "item.noellesroles.repair_battery": "備用電池",
@@ -3964,5 +3968,10 @@
   "effect.noellesroles.voice_range_boost": "擴音語音",
   "mob_effect.noellesroles.voice_range_boost": "擴音語音",
   "mob_effect.noellesroles.cca_freezed": "CCA冷凍",
-  "mob_effect.noellesroles.shop_banned": "商店被禁用"
+  "mob_effect.noellesroles.shop_banned": "商店被禁用",
+  "skill.noellesroles.meowlen.math_challenge": "數學家教",
+  "message.noellesroles.meowlen.challenge_started": "§d貓倫：請完成五條數學題，目標：%s。",
+  "message.noellesroles.meowlen.challenge_failed": "§c數學挑戰失敗：%s / %s。",
+  "skill.noellesroles.everly.time_reversal": "§d時間倒流！",
+  "message.noellesroles.everly.time_reversal": "已復活 %s 名玩家。"
 }

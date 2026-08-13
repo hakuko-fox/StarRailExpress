@@ -78,7 +78,7 @@ public class FuTaiPlayerComponent implements RoleComponent, ServerTickingCompone
         var shop = SREPlayerShopComponent.KEY.get(sp);
         if (shop.balance < cost) {
             sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.futai.not_enough_money", cost),
+                    Component.translatable("message.noellesroles.fu_tai.not_enough_money", cost),
                     true);
             return false;
         }
@@ -103,7 +103,7 @@ public class FuTaiPlayerComponent implements RoleComponent, ServerTickingCompone
         }
 
         sp.displayClientMessage(
-                Component.translatable("message.noellesroles.futai.oracle_result", killers, neutrals),
+                Component.translatable("message.noellesroles.fu_tai.oracle_result", killers, neutrals),
                 true);
         return true;
     }
@@ -119,7 +119,7 @@ public class FuTaiPlayerComponent implements RoleComponent, ServerTickingCompone
         sp.setHealth(sp.getMaxHealth());
         sp.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 0, false, false, true));
         sp.displayClientMessage(
-                Component.translatable("message.noellesroles.futai.bless_saved"), true);
+                Component.translatable("message.noellesroles.fu_tai.bless_saved"), true);
         return true;
     }
 

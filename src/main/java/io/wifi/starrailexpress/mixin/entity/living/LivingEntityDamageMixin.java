@@ -38,6 +38,11 @@ public abstract class LivingEntityDamageMixin {
         Entity attacker = source.getEntity();
         boolean isPlayerDamage = attacker instanceof Player;
 
+        if (isPlayerDamage) {
+            org.agmas.noellesroles.init.ModRolesInitialEventRegister.recordShenwuDamage(
+                    player, (Player) attacker);
+        }
+
         // 记录伤害
         SREPlayerDamageTrackerComponent.recordDamage(
                 player,

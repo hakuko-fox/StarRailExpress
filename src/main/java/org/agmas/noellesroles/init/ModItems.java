@@ -151,7 +151,7 @@ public class ModItems {
             new RepairRouteItem("gear_handle", new Item.Properties().stacksTo(4)),
             "repair_gear_handle", REPAIR_MODE_GROUP);
     public static final Item REPAIR_CROWBAR = register(
-            new RepairRouteItem("crowbar", new Item.Properties().stacksTo(1).durability(24)),
+            new AlinDoorToolItem(AlinDoorToolItem.Mode.REPAIR, new Item.Properties().stacksTo(1)),
             "repair_crowbar", REPAIR_MODE_GROUP);
     public static final Item REPAIR_LOCKPICK = register(
             new RepairRouteItem("lockpick", new Item.Properties().stacksTo(8)),
@@ -505,6 +505,10 @@ public class ModItems {
     public static final Item SCREWDRIVER = register(
             new ScrewdriverItem(new Item.Properties().stacksTo(16)),
             "screwdriver", ROLE_ITEMS_GROUP);
+
+    public static final Item ALIN_SCREWDRIVER = register(
+            new AlinDoorToolItem(AlinDoorToolItem.Mode.BREAK, new Item.Properties().stacksTo(1)),
+            "alin_screwdriver", ROLE_ITEMS_GROUP);
 
     /**
      * 警报陷阱

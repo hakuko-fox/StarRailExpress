@@ -266,6 +266,8 @@ public class ModPacketsReciever {
       var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
 
       if (payload.success()) {
+        if (ModRolesInitialEventRegister.finishMaolunChallenge(player, true))
+          return;
         var psc = SREPlayerShopComponent.KEY.get(player);
         if (isForced) {
           player.displayClientMessage(
@@ -284,6 +286,8 @@ public class ModPacketsReciever {
           }
         }
       } else {
+        if (ModRolesInitialEventRegister.finishMaolunChallenge(player, false))
+          return;
         if (gameWorldComponent.isRole(player, THRedHouseRoles.BAKA)) {
           player.displayClientMessage(
               Component.translatable("message.baka.problem_set.failed").withStyle(ChatFormatting.YELLOW), true);
