@@ -78,7 +78,7 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
 
         this.players.clear();
         for (ServerPlayer player : inputPlayers) {
-            this.players.add(new RoundEndData(player.getGameProfile(),
+            this.players.add(new RoundEndData(player.getGameProfile(), player.getDisplayName().copy(),
                     !io.wifi.starrailexpress.game.GameUtils.isPlayerAliveAndSurvival(player), false));
         }
         this.winStatus = winStatus;
@@ -92,7 +92,7 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
                         (uid) -> {
                             var p = world.getPlayerByUUID(uid);
                             if (p != null)
-                                return p.getName();
+                                return p.getDisplayName();
                             else
                                 return Component.literal("Unknown");
                         });
@@ -118,7 +118,7 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
         // for (Tag element : tag.getList("winners", 10))
         // this.CustomWinnerPlayers.add(NbtUtils.loadUUID((CompoundTag) element));
         for (Tag element : tag.getList("players", 10))
-            this.players.add(new RoundEndData((CompoundTag) element));
+            this.players.add(new RoundEndData((CompoundTag) element, registryLookup));
         this.winStatus = GameUtils.WinStatus.values()[tag.getInt("winstatus")];
         if (tag.contains("winner_title")) {
             String winner_title = tag.getString("winner_title");
@@ -156,7 +156,7 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
     public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         ListTag list = new ListTag();
         for (RoundEndData detail : this.players)
-            list.add(detail.writeToNbt());
+            list.add(detail.writeToNbt(registryLookup));
         // ListTag clist = new ListTag();
         // for (var detail : this.CustomWinnerPlayers)
         // clist.add(NbtUtils.createUUID(detail));
@@ -191,6 +191,7 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
 
     public class RoundEndData {
         public GameProfile player;
+        public Component displayName;
         public boolean wasDead;
         public boolean hasWin;
 
@@ -206,28 +207,48 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
             return this.player;
         }
 
+        public Component displayName() {
+            return this.displayName;
+        }
+
         public RoundEndData setHasWin(boolean hasWin) {
             this.hasWin = hasWin;
             return this;
         }
 
-        public RoundEndData(GameProfile player, boolean wasDead,
+        public RoundEndData(GameProfile player, Component displayName, boolean wasDead,
                 boolean hasWin) {
             this.player = player;
+            this.displayName = displayName;
             this.wasDead = wasDead;
             this.hasWin = hasWin;
         }
 
-        public RoundEndData(@NotNull CompoundTag tag) {
+        public RoundEndData(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
             this(new GameProfile(tag.getUUID("uuid"), tag.getString("name")),
+                    readDisplayName(tag, registryLookup),
                     tag.getBoolean("wasDead"),
                     tag.getBoolean("hasWin"));
         }
 
-        public @NotNull CompoundTag writeToNbt() {
+        private static Component readDisplayName(CompoundTag tag, HolderLookup.Provider registryLookup) {
+            if (!tag.contains("display_name")) {
+                return null;
+            }
+            try {
+                return Component.Serializer.fromJson(tag.getString("display_name"), registryLookup);
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+
+        public @NotNull CompoundTag writeToNbt(HolderLookup.Provider registryLookup) {
             CompoundTag tag = new CompoundTag();
             tag.putUUID("uuid", this.player.getId());
             tag.putString("name", this.player.getName());
+            if (this.displayName != null) {
+                tag.putString("display_name", Component.Serializer.toJson(this.displayName, registryLookup));
+            }
             tag.putBoolean("wasDead", this.wasDead);
             tag.putBoolean("hasWin", this.hasWin);
             return tag;

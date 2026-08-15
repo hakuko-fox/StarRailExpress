@@ -393,9 +393,9 @@ public class RoundTextRenderer {
                             context.pose().popPose();
                         }
 
-                        Component nameText = null;
+                        Component nameText = entry.displayName();
                         Player targetPlayer = client.level.getPlayerByUUID(entry.player().getId());
-                        if (targetPlayer != null) {
+                        if (nameText == null && targetPlayer != null) {
                             nameText = targetPlayer.getDisplayName();
                         }
                         if (nameText == null) {
