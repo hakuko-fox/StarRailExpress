@@ -366,65 +366,63 @@ public class RoundTextRenderer {
                         context.pose().popPose();
                     }
                     PlayerInfo playerListEntry = ClientSkinCache.getCachedPlayerInfo(entry.player().getId());
-                    if (playerListEntry != null) {
-                        GameProfile playerProfile = playerListEntry.getProfile();
-                        ResourceLocation texture = playerListEntry.getSkin().texture();
+                    GameProfile playerProfile = playerListEntry != null ? playerListEntry.getProfile() : entry.player();
+                    ResourceLocation texture = playerListEntry != null ? playerListEntry.getSkin().texture() : null;
 
-                        if (texture != null) {
-                            float offColour = entry.wasDead() ? 0.4f : 1f;
-                            RenderSystem.enableBlend();
-                            context.pose().pushPose();
-                            context.pose().translate(8, 0, 0);
-                            context.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f,
-                                    offColour, offColour, 1f);
-                            context.pose().translate(-0.5, -0.5, 0);
-                            context.pose().scale(1.125f, 1.125f, 1f);
-                            context.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f,
-                                    offColour, offColour, 1f);
-                            context.pose().popPose();
-                        }
+                    if (texture != null) {
+                        float offColour = entry.wasDead() ? 0.4f : 1f;
+                        RenderSystem.enableBlend();
+                        context.pose().pushPose();
+                        context.pose().translate(8, 0, 0);
+                        context.innerBlit(texture, 0, 8, 0, 8, 0, 8 / 64f, 16 / 64f, 8 / 64f, 16 / 64f, 1f,
+                                offColour, offColour, 1f);
+                        context.pose().translate(-0.5, -0.5, 0);
+                        context.pose().scale(1.125f, 1.125f, 1f);
+                        context.innerBlit(texture, 0, 8, 0, 8, 0, 40 / 64f, 48 / 64f, 8 / 64f, 16 / 64f, 1f,
+                                offColour, offColour, 1f);
+                        context.pose().popPose();
+                    }
 
-                        if (entry.hasWin) {
-                            context.pose().pushPose();
-                            context.pose().translate(14, -2, 0);
-                            context.pose().scale(0.5f, 0.5f, 1f);
-                            context.drawString(renderer, Component.literal("👑").withStyle(ChatFormatting.GOLD), 0, 0,
-                                    0);
-                            context.pose().popPose();
-                        }
+                    if (entry.hasWin) {
+                        context.pose().pushPose();
+                        context.pose().translate(14, -2, 0);
+                        context.pose().scale(0.5f, 0.5f, 1f);
+                        context.drawString(renderer, Component.literal("👑").withStyle(ChatFormatting.GOLD), 0, 0,
+                                0);
+                        context.pose().popPose();
+                    }
 
-                        Component nameText = entry.displayName();
-                        Player targetPlayer = client.level.getPlayerByUUID(entry.player().getId());
-                        if (nameText == null && targetPlayer != null) {
-                            nameText = targetPlayer.getDisplayName();
+                    Component nameText = entry.displayName();
+                    Player targetPlayer = client.level.getPlayerByUUID(entry.player().getId());
+                    if (nameText == null && playerListEntry != null) {
+                        nameText = playerListEntry.getTabListDisplayName();
+                    }
+                    if (nameText == null && targetPlayer != null) {
+                        nameText = targetPlayer.getDisplayName();
+                    }
+                    if (nameText == null && playerProfile != null) {
+                        String p_name = playerProfile.getName();
+                        if (p_name.length() >= 10) {
+                            p_name = p_name.substring(0, 9) + "...";
                         }
-                        if (nameText == null) {
-                            nameText = playerListEntry.getTabListDisplayName();
-                        }
-                        if (nameText == null && playerProfile != null) {
-                            String p_name = playerProfile.getName();
-                            if (p_name.length() >= 10) {
-                                p_name = p_name.substring(0, 9) + "...";
-                            }
-                            nameText = Component.literal(p_name);
-                        }
-                        if (nameText != null) {
-                            int nameWidth = getOrCacheWidth(renderer, nameText);
+                        nameText = Component.literal(p_name);
+                    }
+                    if (nameText != null) {
+                        int nameWidth = getOrCacheWidth(renderer, nameText);
 
-                            context.pose().pushPose();
-                            context.pose().scale(0.2f, 0.2f, 1f);
-                            context.pose().translate(60, 44, 200);
-                            context.drawString(renderer, nameText, -nameWidth / 2, 0, 0xffffff);
-                            context.pose().popPose();
-                        }
+                        context.pose().pushPose();
+                        context.pose().scale(0.2f, 0.2f, 1f);
+                        context.pose().translate(60, 44, 200);
+                        context.drawString(renderer, nameText, -nameWidth / 2, 0, 0xffffff);
+                        context.pose().popPose();
+                    }
 
-                        if (entry.wasDead()) {
-                            context.pose().translate(13, 0, 0);
-                            context.pose().scale(2f, 1f, 1f);
-                            int xWidth = renderer.width("x");
-                            context.drawString(renderer, "x", -xWidth / 2, 0, 0xE10000, false);
-                            context.drawString(renderer, "x", -xWidth / 2, 1, 0x550000, false);
-                        }
+                    if (entry.wasDead()) {
+                        context.pose().translate(13, 0, 0);
+                        context.pose().scale(2f, 1f, 1f);
+                        int xWidth = renderer.width("x");
+                        context.drawString(renderer, "x", -xWidth / 2, 0, 0xE10000, false);
+                        context.drawString(renderer, "x", -xWidth / 2, 1, 0x550000, false);
                     }
                     context.pose().popPose();
                 }

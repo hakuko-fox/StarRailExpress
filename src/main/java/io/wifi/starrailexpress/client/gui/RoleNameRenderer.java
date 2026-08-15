@@ -29,7 +29,9 @@ import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -359,6 +361,13 @@ public class RoleNameRenderer {
     }
 
     private static Component getDisplayName(Player target) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() != null) {
+            PlayerInfo playerInfo = client.getConnection().getPlayerInfo(target.getUUID());
+            if (playerInfo != null && playerInfo.getTabListDisplayName() != null) {
+                return playerInfo.getTabListDisplayName();
+            }
+        }
         return target.getDisplayName();
     }
 

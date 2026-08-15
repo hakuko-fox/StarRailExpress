@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(Player.class)
+@Mixin(value = Player.class, priority = 1100)
 public class PlayerPrefixMixin {
     @Unique
     private static MutableComponent somePrefix(Player mainPlayer) {
@@ -40,8 +40,8 @@ public class PlayerPrefixMixin {
     @Inject(method = "getDisplayName", at = @At("HEAD"), cancellable = true)
     public void getDisplayName(CallbackInfoReturnable<Component> cir) {
         Player mainPlayer = (Player) (Object) this;
-        if (mainPlayer instanceof ServerPlayer ){
-            Component originalName = cir.getReturnValue();
+        if (mainPlayer instanceof ServerPlayer serverPlayer) {
+            Component originalName = serverPlayer.getTabListDisplayName();
             if (originalName == null) {
                 originalName = Component.literal(mainPlayer.getName().getString());
             }
