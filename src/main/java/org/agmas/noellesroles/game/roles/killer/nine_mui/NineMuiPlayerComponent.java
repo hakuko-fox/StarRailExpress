@@ -35,7 +35,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
     private static final int PETRIFY_DURATION_TICKS = 10 * 20;
 
     public static final ComponentKey<NineMuiPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "nine_mui"),
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "9muimui"),
             NineMuiPlayerComponent.class);
 
     private final Player player;

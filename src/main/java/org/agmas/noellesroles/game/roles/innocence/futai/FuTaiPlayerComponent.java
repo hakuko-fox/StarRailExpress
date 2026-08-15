@@ -30,7 +30,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 public class FuTaiPlayerComponent implements RoleComponent, ServerTickingComponent {
 
     public static final ComponentKey<FuTaiPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "futai"),
+            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "fu_tai"),
             FuTaiPlayerComponent.class);
 
     private final Player player;
