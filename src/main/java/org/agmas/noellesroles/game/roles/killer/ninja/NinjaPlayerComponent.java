@@ -118,7 +118,7 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
             return false;
         }
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
-        if (gameWorld.getRole(player.getUUID()) != ModRoles.NINJA)
+        if (gameWorld.getRole(player) != ModRoles.NINJA)
             return false;
 
         this.hasShield = true;
@@ -173,6 +173,9 @@ public class NinjaPlayerComponent implements RoleComponent, ServerTickingCompone
                 hasShield = false;
                 shieldUsed = false;
                 cooldown = ABILITY_COOLDOWN;
+                player.displayClientMessage(
+                        Component.translatable("message.noellesroles.ninja.block_over").withStyle(ChatFormatting.GOLD),
+                        true);
                 sync();
             } else if (duration % 200 == 0) {
                 sync();
