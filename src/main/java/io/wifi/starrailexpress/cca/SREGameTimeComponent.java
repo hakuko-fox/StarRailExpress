@@ -19,9 +19,6 @@ import io.wifi.starrailexpress.SRE;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
-
-import org.agmas.noellesroles.component.DeathPenaltyComponent;
-import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -38,6 +35,7 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
     public long startWorldTick = 0;
     public boolean timeFrozen = false;
     public boolean levelGameTimeFrozen = false;
+    protected long tickCount = 0;
 
     public SREGameTimeComponent(Level world) {
         this.world = world;
@@ -53,6 +51,7 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
         this.setServerFrozen(false);
         this.setTime(this.resetTime);
         this.levelGameTimeFrozen = false;
+        this.tickCount = 0;
     }
 
     public int getResetTime() {
@@ -94,11 +93,9 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
     @Override
     public void tick() {
         if (isTimeFrozen()) {
-            if (this.timeFrozen) {
-                delayerCCA();
-            }
             return;
         }
+        tickCount++;
         if (!SREGameWorldComponent.KEY.get(this.world).isRunning())
             return;
         if (this.time <= 0)
@@ -107,25 +104,6 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
         // 从每400tick增加到每600tick同步（30秒）
         if (this.time % 600 == 0)
             this.sync();
-    }
-
-    private void delayerCCA() {
-        for (final var p : this.world.players()) {
-            {
-                final var cca = DefibrillatorComponent.KEY.get(p);
-                if (cca.protectionExpiry > 0)
-                    cca.protectionExpiry++;
-                if (cca.resurrectionTime > 0) {
-                    cca.resurrectionTime++;
-                }
-            }
-            
-            {
-                final var cca = DeathPenaltyComponent.KEY.get(p);
-                if (cca.penaltyExpiry > 0)
-                    cca.penaltyExpiry++;
-            }
-        }
     }
 
     public boolean hasTime() {
@@ -156,16 +134,21 @@ public class SREGameTimeComponent implements AutoSyncedComponent, CommonTickingC
         tag.putInt("resetTime", this.resetTime);
         tag.putInt("time", this.time);
         tag.putLong("startWorldTick", this.startWorldTick);
+        tag.putLong("tickCount", this.tickCount);
     }
 
     @Override
     public void readFromNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
-
+        this.tickCount = tag.contains("tickCount") ? tag.getLong("tickCount") : 0;
         this.timeFrozen = tag.contains("frozen") && tag.getBoolean("frozen");
         this.levelGameTimeFrozen = tag.contains("lt_frozen") && tag.getBoolean("lt_frozen");
 
         this.resetTime = tag.contains("resetTime") ? tag.getInt("resetTime") : 0;
         this.time = tag.contains("time") ? tag.getInt("time") : 0;
         this.startWorldTick = tag.contains("startWorldTick") ? tag.getLong("startWorldTick") : 0L;
+    }
+
+    public long getTicksFromGameStart() {
+        return this.tickCount;
     }
 }

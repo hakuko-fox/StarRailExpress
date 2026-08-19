@@ -15,6 +15,7 @@
 
 package pro.fazeclan.river.stupid_express.modifier.knight;
 
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,7 +31,10 @@ public class KnightHandler {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getTickCount() % 20 != 0)
                 return;
-
+            // 侠客不在时停时传送
+            if (SREGameTimeComponent.KEY.get(server.overworld()).isTimeFrozen()) {
+                return;
+            }
             List<ServerPlayer> knights = new ArrayList<>();
             List<ServerPlayer> targets = new ArrayList<>();
 

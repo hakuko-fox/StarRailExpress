@@ -70,10 +70,8 @@ public class SREWorldBlackoutComponent implements AutoSyncedComponent, ServerTic
 
     @Override
     public void serverTick() {
-        if (!world.isClientSide) {
-            if (world.getServer().tickRateManager().isFrozen()) {
-                return;
-            }
+        if (SREGameTimeComponent.KEY.get(world).isTimeFrozen()) {
+            return;
         }
         this.blackOutRemainingTicks = 0;
         if (!this.blackouts.isEmpty()) {

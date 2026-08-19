@@ -47,7 +47,6 @@ import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
-
 import io.wifi.starrailexpress.api.InstinctType;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
@@ -90,7 +89,6 @@ import pro.fazeclan.river.stupid_express.role.arsonist.cca.DousedPlayerComponent
  */
 public class RoleInstinctRegister {
     public static void registerInstinctEvents() {
-        // TODO: 自定义角色的逻辑 待修改 @haiman233
         CustomRoleLoader.registerClientInstinctHandler();
         // 注册使用新 API 的看人 / 被看逻辑
         registerObserverHighlights();

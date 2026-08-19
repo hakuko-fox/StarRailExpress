@@ -59,6 +59,7 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
@@ -222,6 +223,7 @@ public class SREClient implements ClientModInitializer {
     public static WorldModifierComponent modifierComponent;
     public static AreasWorldComponent areaComponent;
     public static SRETrainWorldComponent trainComponent;
+    public static SREGameTimeComponent timeComponent;
     public static SREPlayerMoodComponent moodComponent;
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
@@ -457,13 +459,14 @@ public class SREClient implements ClientModInitializer {
         // ───── 场景背景音效系统 ─────
         // 列车内部（看不到天空时，仅 train 类型生效）
         OutsideSoundManager.registerEvents();
-       
+
         // Caching components
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
             gameComponent = SREGameWorldComponent.KEY.get(clientWorld);
             modifierComponent = WorldModifierComponent.KEY.get(clientWorld);
             areaComponent = AreasWorldComponent.KEY.get(clientWorld);
             trainComponent = SRETrainWorldComponent.KEY.get(clientWorld);
+            timeComponent = SREGameTimeComponent.KEY.get(clientWorld);
             moodComponent = SREPlayerMoodComponent.KEY.get(Minecraft.getInstance().player);
         });
 
@@ -473,6 +476,7 @@ public class SREClient implements ClientModInitializer {
             areaComponent = null;
             trainComponent = null;
             moodComponent = null;
+            timeComponent = null;
         });
         // Lock options
         OptionLocker.overrideOption("gamma", 0d);
@@ -981,38 +985,38 @@ public class SREClient implements ClientModInitializer {
 
         // Instinct keybind
         instinctKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".instinct",
+                "key.starrailexpress.instinct",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_LEFT_ALT,
-                "category." + SRE.MOD_ID + ".keybinds"));
+                "category.starrailexpress.keybinds"));
 
         // Register stats keybind
         statsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".stats",
+                "key.starrailexpress.stats",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_O, // 默认热键 'O'
-                "category." + SRE.MOD_ID + ".keybinds"));
+                "category.starrailexpress.keybinds"));
 
         // Register skins keybind
         skinsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".skins",
+                "key.starrailexpress.skins",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_N, // 默认热键 'N'
-                "category." + SRE.MOD_ID + ".keybinds"));
+                "category.starrailexpress.keybinds"));
 
         // 路径点管理 GUI（默认未绑定，OP 在按键设置里自行绑定）
         manageWaypointsKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".manage_waypoints",
+                "key.starrailexpress.manage_waypoints",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
-                "category." + SRE.MOD_ID + ".keybinds"));
+                "category.starrailexpress.keybinds"));
 
         // 看向删除路径点（默认未绑定）
         deleteLookedWaypointKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key." + SRE.MOD_ID + ".delete_looked_waypoint",
+                "key.starrailexpress.delete_looked_waypoint",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
-                "category." + SRE.MOD_ID + ".keybinds"));
+                "category.starrailexpress.keybinds"));
         // Initialize Command UI system
         // TMMCommandUI.init();
         // KeyPressHandler.register();
@@ -1441,5 +1445,11 @@ public class SREClient implements ClientModInitializer {
         if (gameComponent != null)
             return gameComponent.isRunning();
         return false;
+    }
+
+    public static long getTicksFromGameStart() {
+        if (timeComponent == null)
+            return 0;
+        return timeComponent.getTicksFromGameStart();
     }
 }

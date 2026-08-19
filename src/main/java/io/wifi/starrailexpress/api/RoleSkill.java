@@ -443,6 +443,13 @@ public final class RoleSkill {
         if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.SKILL_FREEZED)) {
             return true;
         }
+        // 退出重进过的人无法使用技能
+        if (SREAbilityPlayerComponent.KEY.get(player).hasExited()) {
+            player.displayClientMessage(
+                    Component.translatable("skill.noellesroles.unable_to_use_exited").withStyle(ChatFormatting.RED),
+                    true);
+            return true;
+        }
         if (!player.isSpectator()) {
             return false;
         }

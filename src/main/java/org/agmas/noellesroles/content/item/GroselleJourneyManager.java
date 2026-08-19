@@ -15,6 +15,7 @@
 
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.event.EarlyKillPlayer;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -138,7 +139,7 @@ public final class GroselleJourneyManager {
         NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
         ServerLevel originLevel = target.serverLevel();
 
-        long now = System.currentTimeMillis();
+        long now = SRE.getTicksFromGameStart();
 
         // 记录放逐前位置与放逐时间。
         banished.put(target.getUUID(), new Banishment(banisher.getUUID(), originLevel.dimension(),
@@ -155,6 +156,8 @@ public final class GroselleJourneyManager {
                 config.grosellTravelogBanishZ + 0.5,
                 Set.of(), target.getYRot(), target.getXRot());
         applyRestrictions(target);
+        // 进入游记即一次性授予 10 秒领域标记（3 级 / amplifier 2），由 tick 每 5 秒刷新
+        target.addEffect(new MobEffectInstance(ModEffects.DOMAIN_MARK, -1, 2, false, false, true));
 
         // 目的地粒子与声音。
         spawnBanishFx(target.serverLevel(), target.getX(), target.getY() + 1.0, target.getZ());
@@ -219,9 +222,11 @@ public final class GroselleJourneyManager {
         if (banished.isEmpty()) {
             return;
         }
+        if (GameUtils.isTimeFrozen(server.overworld()))
+            return;
         NoellesRolesConfig config = NoellesRolesConfig.HANDLER.instance();
-        long autoReturnMillis = config.grosellTravelogAutoReturnSeconds * 1000L;
-        long now = System.currentTimeMillis();
+        long autoReturnMillis = config.grosellTravelogAutoReturnSeconds * 20;
+        long now = SRE.getTicksFromGameStart();
 
         for (UUID id : List.copyOf(banished.keySet())) {
             ServerPlayer player = server.getPlayerList().getPlayer(id);
@@ -245,6 +250,11 @@ public final class GroselleJourneyManager {
             }
             // 持续封禁技能 / 物品 / 背包。
             applyRestrictions(player);
+
+            // 领域标记每 10 秒刷新一次，保持 -1 秒时长（避免每 tick 覆盖，减少抖动）
+            if (player.serverLevel().getGameTime() % 200 == 0) {
+                player.addEffect(new MobEffectInstance(ModEffects.DOMAIN_MARK, -1, 2, false, false, true));
+            }
 
             // 60 秒后自动回归被放逐前的位置。
             Banishment b = banished.get(id);
@@ -293,6 +303,7 @@ public final class GroselleJourneyManager {
         player.removeEffect(ModEffects.SKILL_BANED);
         player.removeEffect(ModEffects.USED_BANED);
         player.removeEffect(ModEffects.INVENTORY_BANED);
+        player.removeEffect(ModEffects.DOMAIN_MARK);
     }
 
     private static void addHiddenEffect(ServerPlayer player, Holder<MobEffect> effect) {

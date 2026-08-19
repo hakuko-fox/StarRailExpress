@@ -359,10 +359,15 @@ public class SmallDoorBlock extends DoorPartBlock {
                 boolean canBeAffectedByLock = false;
                 // 如果该物品会被锁影响，就在LockEntityManager构造函数的列表添加即可，然后在下面的if语句里具体操作
                 // NOTE: 如果只在这里添加不在底下if处理，会导致锁把该物品屏蔽，该物品将对带锁的门毫无效果
-                for (var iiiit : LockEntityManager.getInstance().getCanBeAffectedItems()) {
-                    if (player.getMainHandItem().is(iiiit)) {
-                        canBeAffectedByLock = true;
-                        break;
+
+                if (mainhandItem.getItem() instanceof LockpickItem) {
+                    canBeAffectedByLock = true;
+                } else {
+                    for (var iiiit : LockEntityManager.getInstance().getCanBeAffectedItems()) {
+                        if (mainhandItem.is(iiiit)) {
+                            canBeAffectedByLock = true;
+                            break;
+                        }
                     }
                 }
                 if (canBeAffectedByLock) {
@@ -401,10 +406,14 @@ public class SmallDoorBlock extends DoorPartBlock {
                     if (lockPos != null && LockEntityManager.getInstance().getLockEntity(lockPos) != null) {
                         // 根据手中物品决定锁的影响
                         boolean canUnLock = false;
-                        for (var item : LockEntityManager.getInstance().getCanBeUsedToUnLock()) {
-                            if (player.getMainHandItem().is(item)) {
-                                canUnLock = true;
-                                break;
+                        if (mainhandItem.getItem() instanceof LockpickItem) {
+                            canUnLock = true;
+                        } else {
+                            for (var item : LockEntityManager.getInstance().getCanBeUsedToUnLock()) {
+                                if (mainhandItem.is(item)) {
+                                    canUnLock = true;
+                                    break;
+                                }
                             }
                         }
                         if (canUnLock) {

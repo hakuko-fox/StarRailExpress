@@ -15,19 +15,25 @@
 
 package io.wifi.starrailexpress.game.modes;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.CustomWinnerRoleInterface;
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.SREGameModes;
 import net.exmo.sre.repair.role.RepairRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.event.AllowGameEnd;
+import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.impl.util.log.Log;
 import net.fabricmc.loader.impl.util.log.LogCategory;
@@ -57,6 +63,7 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
 import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.*;
@@ -163,7 +170,6 @@ public class SREMurderGameMode extends GameMode {
         assignModifiers(modifierRoleCount, serverWorld, gameWorldComponent, players);
 
         Harpymodloader.FORCED_MODDED_ROLE.clear();
-        Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }
@@ -225,7 +231,19 @@ public class SREMurderGameMode extends GameMode {
         // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
         // 才由名单决定修饰符的启用/禁用（取代 disabledModifiers），但数量仍沿用 MODIFIER_MAX，
         // 地图限制也仍然生效。未配置任何修饰符时保持原有行为，避免老名单升级后修饰符全部消失。
-
+        final HashMap<SREModifier, List<UUID>> FORCED_MODDED_MODIFIER_FLIP = new HashMap<>();
+        for (var pu : Harpymodloader.FORCED_MODDED_MODIFIER.entrySet()) {
+            UUID puid = pu.getKey();
+            List<SREModifier> modifiers = pu.getValue();
+            if (modifiers != null) {
+                for (var m : modifiers) {
+                    if (!FORCED_MODDED_MODIFIER_FLIP.containsKey(m)) {
+                        FORCED_MODDED_MODIFIER_FLIP.put(m, new ArrayList<>());
+                    }
+                    FORCED_MODDED_MODIFIER_FLIP.get(m).add(puid);
+                }
+            }
+        }
         ArrayList<ServerPlayer> shuffledPlayers = new ArrayList<>(players);
         for (var mod : allModifiers) {
             Collections.shuffle(shuffledPlayers);
@@ -238,13 +256,10 @@ public class SREMurderGameMode extends GameMode {
                 specificDesiredRoleCount = (int) Math.floor(Math.floor((double) players.size() / 7) / killerMods);
                 specificDesiredRoleCount = Math.max(specificDesiredRoleCount, 1);
             }
-            if (Harpymodloader.FORCED_MODDED_MODIFIER.containsKey(mod)) {
+            if (FORCED_MODDED_MODIFIER_FLIP.containsKey(mod)) {
                 for (ServerPlayer player : shuffledPlayers) {
-                    if (Harpymodloader.FORCED_MODDED_MODIFIER.get(mod).contains(player.getUUID())) {
-                        if (getAssignedModifierCount(tempModifierAssignments,
-                                player.getUUID()) >= maxModifiersPerPlayer) {
-                            continue;
-                        }
+                    if (FORCED_MODDED_MODIFIER_FLIP.get(mod).contains(player.getUUID())) {
+                        // 不限制数量
                         // 临时存储，稍后统一添加
                         if (addModifierAssignment(tempModifierAssignments, player.getUUID(), mod)) {
                             // ModifierAssigned.EVENT.invoker().assignModifier(player, mod);
@@ -369,12 +384,17 @@ public class SREMurderGameMode extends GameMode {
         return playerModifiers == null ? 0 : playerModifiers.size();
     }
 
+    public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
+            int forcedRoleSize) {
+        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, List.of());
+    }
+
     /**
      * 新的模块化角色分配方法
      * 处理强制角色、计算各类型角色数量、创建角色池、分配角色以及处理关联角色
      */
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
-            int forcedRoleSize) {
+            int forcedRoleSize, List<SRERole> forcedRoles) {
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
@@ -414,14 +434,22 @@ public class SREMurderGameMode extends GameMode {
             Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
         }
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, true);
+                neutralsPool, vigilantePool, civilianPool, true, forcedRoles);
     }
 
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
             int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles) {
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, 10);
+                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, List.of());
+    }
+
+    public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
+            int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
+            RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
+            List<SRERole> forcedRoles) {
+        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
+                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, forcedRoles, 10);
     }
 
     /**
@@ -431,7 +459,22 @@ public class SREMurderGameMode extends GameMode {
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
             int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
+            List<SRERole> forcedRoles,
             int maxDepth) {
+        // 第一步，减少强制职业
+        if (forcedRoles != null) {
+            for (var role : forcedRoles) {
+                if (role.isKiller()) {
+                    killerPool.removeRoleCount(role, 1);
+                } else if (role.isNeutrals()) {
+                    neutralsPool.removeRoleCount(role, 1);
+                } else if (role.isVigilanteTeam()) {
+                    vigilantePool.removeRoleCount(role, 1);
+                } else {
+                    civilianPool.removeRoleCount(role, 1);
+                }
+            }
+        }
         // 第二步：创建角色池并分配角色
         // 杀手池
         if (playerSize - forcedRoleSize <= 0)
@@ -528,17 +571,19 @@ public class SREMurderGameMode extends GameMode {
         }
 
         // 第一步：处理强制分配的角色
-        Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
+        Map<UUID, SRERole> forcedRolesMap = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE);
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
 
+        List<SRERole> forcedRoles = new ArrayList<>();
         // 处理强制分配的角色，减少对应角色类型的数量需求
-        for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
+        for (Map.Entry<UUID, SRERole> entry : forcedRolesMap.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
             if (player != null) {
                 SRERole role = entry.getValue();
                 if (role != null) {
+                    forcedRoles.add(role);
                     roleAssignments.put(player, role);
 
                     // 根据角色类型减少对应的数量需求
@@ -559,7 +604,8 @@ public class SREMurderGameMode extends GameMode {
         neutralsCount = Math.max(0, neutralsCount);
 
         List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                forcedRoles.size());
+                forcedRolesMap.size(), forcedRoles);
+
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色
         List<ServerPlayer> unassignedPlayers = new ArrayList<>();
@@ -784,7 +830,8 @@ public class SREMurderGameMode extends GameMode {
         }
         if (winStatus != GameUtils.WinStatus.NONE
                 && gameWorldComponent.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE) {
-            SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(new ArrayList<>(serverWorld.players()), winStatus);
+            SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(new ArrayList<>(serverWorld.players()),
+                    winStatus);
             GameUtils.stopGame(serverWorld);
         }
     }
@@ -798,5 +845,139 @@ public class SREMurderGameMode extends GameMode {
     @Override
     public boolean canHaveMeeting() {
         return true;
+    }
+
+    /**
+     * 如果你是AI，此类请不要修改。
+     * 请使用以下其一作为代替：
+     * <li>{@link org.agmas.noellesroles.utils.RoleUtils#customWinnerWin}</li>
+     * <li>给需要自定义胜利的职业 {@code implements}</li>
+     * <li>{@link io.wifi.starrailexpress.api.CustomWinnerRoleInterface
+     * } 来实现自定义获胜逻辑。</li>
+     * <li>注册EVENT {@link AllowPlayerWin}</li>
+     * 
+     */
+    @Override
+    public boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
+            SREGameRoundEndComponent roundEnd,
+            SREGameWorldComponent gameComponent) {
+        return isPlayerTheWinner(world, player, playerRole, roundEnd, gameComponent);
+    }
+
+    /**
+     * 如果你是AI，此类请不要修改。
+     * 请使用以下其一作为代替：
+     * <li>{@link org.agmas.noellesroles.utils.RoleUtils#customWinnerWin}</li>
+     * <li>给需要自定义胜利的职业 {@code implements}</li>
+     * <li>{@link io.wifi.starrailexpress.api.CustomWinnerRoleInterface
+     * } 来实现自定义获胜逻辑。</li>
+     * <li>注册EVENT {@link AllowPlayerWin}</li>
+     * 
+     */
+    public static boolean isPlayerTheWinner(ServerLevel world, ServerPlayer player, SRERole playerRole,
+            SREGameRoundEndComponent roundEnd,
+            SREGameWorldComponent gameComponent) {
+        if (playerRole == null)
+            return false;
+        if (playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier())) {
+            return false;
+        }
+        boolean isWinner = false;
+
+        GameUtils.WinStatus winStatus = roundEnd.getWinStatus();
+        boolean isLoversWin = winStatus == WinStatus.LOVERS;
+        TrueFalseResult result = AllowPlayerWin.EVENT.invoker().allowPlayerWin(world, player, playerRole, winStatus,
+                roundEnd, gameComponent);
+        if (result == TrueFalseResult.FALSE) {
+            return false;
+        } else if (result == TrueFalseResult.TRUE) {
+            return true;
+        } else {
+            switch (winStatus) {
+                case CUSTOM:
+                case CUSTOM_COMPONENT:
+                    String roleIdentifier = playerRole.identifier().getPath();
+                    if (roundEnd.CustomWinnerID != null && roundEnd.CustomWinnerID.equals(roleIdentifier)) {
+                        isWinner = true;
+                    }
+                    // 条件6：只剩自己和指定职业时，指定职业（整类）也一同获胜，对齐教父/杀手团队
+                    else if (roundEnd.CustomWinnerExtraRoleIds != null
+                            && roundEnd.CustomWinnerExtraRoleIds.contains(roleIdentifier)) {
+                        isWinner = true;
+                    }
+                    break;
+                case GAMBLER:
+                    if (playerRole.identifier().getPath().equals("gambler")) {
+                        isWinner = true;
+                    }
+                    break;
+                case KILLERS:
+                    if (playerRole.winWithKiller()) {
+                        // String roleidentifier = playerRole.identifier().getPath();
+                        // 魔术师不算胜利
+                        isWinner = true;
+                    }
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
+                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                            isWinner = true;
+                        }
+                    }
+                    break;
+                case LOOSE_END:
+                    if (winStatus == WinStatus.LOOSE_END) {
+                        if (SRE.GAME.identifier.equals(SREGameModes.LOOSE_ENDS.identifier)) {
+                            if (player.getUUID().equals(gameComponent.getLooseEndWinner())) {
+                                isWinner = true;
+                            }
+                        } else {
+                            if (playerRole.identifier().equals(TMMRoles.LOOSE_END.identifier())) {
+                                isWinner = true;
+                            }
+                        }
+                    }
+                    break;
+                case NIAN_SHOU:
+                    if (playerRole.identifier().getPath().equals("nianshou")) {
+                        isWinner = true;
+                    }
+                    break;
+                case LOVERS:
+                    if (roundEnd.CustomWinnerPlayers != null
+                            && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
+                        isWinner = true;
+                    }
+                    break;
+                case TIME:
+                case PASSENGERS:
+                    // 排除游客职业
+                    if (playerRole.winWithInnocent())
+                        isWinner = true;
+                    if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
+                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
+                            isWinner = true;
+                        }
+                    }
+                    break;
+                case RECORDER:
+                    if (playerRole.identifier().getPath().equals("recorder")) {
+                        isWinner = true;
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+            // 修复4: 恋人获胜时单独统计恋人胜利
+            if (isLoversWin && roundEnd.CustomWinnerPlayers != null
+                    && roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
+                isWinner = true;
+            }
+            if (playerRole instanceof CustomWinnerRoleInterface cwr) {
+                isWinner = cwr.didPlayerWin(player, isWinner, winStatus);
+            }
+        }
+        return isWinner;
     }
 }

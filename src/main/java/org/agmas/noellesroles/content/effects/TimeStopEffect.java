@@ -15,6 +15,7 @@
 
 package org.agmas.noellesroles.content.effects;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -32,7 +33,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.phys.Vec3;
-import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.NRSounds;
@@ -40,27 +41,28 @@ import org.agmas.noellesroles.packet.CanMoveInTimeStopS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 
-import pro.fazeclan.river.stupid_express.constants.SEModifiers;
-
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TimeStopEffect extends MobEffect {
     public static List<UUID> canMovePlayers = new ArrayList<>();
-    public static Map<UUID, Vec3> clientPositions = new java.util.HashMap<>();
+    public static Set<UUID> clientCanMovePlayers = ConcurrentHashMap.newKeySet();
+    public static Map<UUID, Vec3> clientPositions = new ConcurrentHashMap<>();
     public static int freezeTime = 0;
     public static int freezeStatedTime = 0;
     public static int freezeMaxTime = 0;
-//
-//    public static boolean hasCooldown(Player player){
-//        return player.getCooldowns().isOnCooldown(Items.BIRCH_LOG);
-//    }
-//    public static void setCooldown (Player player, int time){
-//        player.getCooldowns().addCooldown(Items.BIRCH_LOG, time);
-//    }
+    //
+    // public static boolean hasCooldown(Player player){
+    // return player.getCooldowns().isOnCooldown(Items.BIRCH_LOG);
+    // }
+    // public static void setCooldown (Player player, int time){
+    // player.getCooldowns().addCooldown(Items.BIRCH_LOG, time);
+    // }
 
     public TimeStopEffect() {
         super(MobEffectCategory.NEUTRAL, Color.white.getRGB());
@@ -83,7 +85,9 @@ public class TimeStopEffect extends MobEffect {
         canMovePlayers.add(serverPlayer.getUUID());
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverPlayer.level());
         var broadcastMessage = displaySkillTitle;
-
+        if (serverPlayer != null) {
+            SRE.REPLAY_MANAGER.recordSkillUsed(serverPlayer.getUUID(), Noellesroles.id("time_stop"), false);
+        }
         SREGameTimeComponent gameTimeComponent = SREGameTimeComponent.KEY.get(serverPlayer.level());
         gameTimeComponent.setTime(gameTimeComponent.time + time);
         ServerPlayNetworking.send(serverPlayer, new TriggerStatusBarPayload("Time_Stop"));
@@ -98,19 +102,13 @@ public class TimeStopEffect extends MobEffect {
                     BroadcastCommand.BroadcastMessage(player, broadcastMessage);
 
                     if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-                        if (WorldModifierComponent.KEY.get(player.level()).isModifier(player,
-                                SEModifiers.SPLIT_PERSONALITY)) {
-
-                        } else {
+                        {
                             canMovePlayers.add(player.getUUID());
                         }
                     } else {
                         if (gameWorldComponent.isRole(player, THRedHouseRoles.MAID_SAKUYA)) {
                             canMovePlayers.add(player.getUUID());
                         }
-                        // if (gameWorldComponent.isRole(player, ModRoles.JOJO)) {
-                        // canMovePlayers.add(player.getUUID());
-                        // }
                         if (gameWorldComponent.isRole(player, ModRoles.CLOCKMAKER)) {
                             canMovePlayers.add(player.getUUID());
                         }

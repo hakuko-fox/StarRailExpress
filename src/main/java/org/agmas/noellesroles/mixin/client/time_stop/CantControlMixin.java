@@ -73,7 +73,7 @@ public abstract class CantControlMixin {
                 && SREClient.isPlayerAliveAndInSurvival()
                 && player.hasEffect((ModEffects.TIME_STOP))) {
 
-            if (TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+            if (TimeStopEffect.clientCanMovePlayers.contains(player.getUUID())) {
                 return false;
             }
             for (var hotbarSlot : options.keyHotbarSlots) {
@@ -102,16 +102,16 @@ public abstract class CantControlMixin {
 
     @ModifyReturnValue(method = "consumeClick", at = @At("RETURN"))
     private boolean noe$restrainWasPressedKeys(boolean original) {
-        return !this.shouldSuppressKey() && original;
+        return original && !this.shouldSuppressKey();
     }
 
     @ModifyReturnValue(method = "isDown", at = @At("RETURN"))
     private boolean noe$restrainIsPressedKeys(boolean original) {
-        return !this.shouldSuppressKey() && original;
+        return original && !this.shouldSuppressKey();
     }
 
     @ModifyReturnValue(method = "matches", at = @At("RETURN"))
     private boolean noe$restrainMatchesKey(boolean original) {
-        return !this.shouldSuppressKey() && original;
+        return original && !this.shouldSuppressKey();
     }
 }

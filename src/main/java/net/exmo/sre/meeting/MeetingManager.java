@@ -35,9 +35,11 @@ import io.wifi.starrailexpress.event.MeetingStartEvent;
 import io.wifi.starrailexpress.event.MeetingVoteEndEvent;
 import io.wifi.starrailexpress.event.MeetingVoteOutEvent;
 import io.wifi.starrailexpress.event.OnGameEnd;
+import io.wifi.starrailexpress.event.OnMeetingStart;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMEntities;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.exmo.sre.meeting.network.MeetingSkipStateS2CPayload;
 import net.exmo.sre.meeting.network.MeetingStateS2CPayload;
 import net.exmo.sre.meeting.network.MeetingVoteResultS2CPayload;
@@ -64,9 +66,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
-import org.agmas.noellesroles.game.roles.innocence.fool.FoolPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
@@ -212,6 +211,12 @@ public final class MeetingManager {
         return Set.copyOf(reportedBodies);
     }
 
+    public static void addReportedBody(UUID bodyUid) {
+        if (bodyUid == null)
+            return;
+        reportedBodies.add(bodyUid);
+    }
+
     /** 尸体被右键：满足条件则召开会议。返回是否已消费该交互。 */
     public static boolean tryReportBody(ServerPlayer reporter, PlayerBodyEntity body) {
         // SRE.LOGGER.info("[MEETING] Try report body");
@@ -298,20 +303,11 @@ public final class MeetingManager {
                     Component.translatable("meeting.sre.report_failed").withStyle(ChatFormatting.RED), true);
             return false;
         }
-        // 愚者会议取消，愚者的开会时间恢复。
-        if (TarotAssemblyManager.havingMeeting) {
-            final var gameComponent = SREGameWorldComponent.KEY.get(serverLevel);
-            ServerPlayer fool = TarotAssemblyManager.findFoolPlayer(serverLevel, gameComponent);
-            if (fool == null) {
-                TarotAssemblyManager.havingMeeting = false;
-            } else {
-                TarotAssemblyManager.endMeeting(fool);
-                FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(fool);
-                comp.tarotCooldownEndTick = 0;
-                comp.sync();
-            }
-        }
         if (!SREGameWorldComponent.KEY.get(serverLevel).getGameMode().canHaveMeeting()) {
+            return false;
+        }
+        if (OnMeetingStart.ALLOW_MEETING.invoker().allowMeeting(serverLevel, reporter, victim,
+                emergency) == TrueFalseResult.FALSE) {
             return false;
         }
         skipVoters.clear();
@@ -386,6 +382,7 @@ public final class MeetingManager {
             participant.removeEffect(MobEffects.INVISIBILITY);
             participant.removeEffect(MobEffects.GLOWING);
             participant.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, -1, 0, false, false, false));
+            participant.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 0, false, false, false));
             participant.addEffect(new MobEffectInstance(ModEffects.USED_BANED, -1, 0, false, false, false));
             participant.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, -1, 0, false, false, false));
             participant
@@ -429,6 +426,7 @@ public final class MeetingManager {
             participant.removeEffect(ModEffects.SKILL_BANED);
             participant.removeEffect(ModEffects.SKILL_FREEZED);
             participant.removeEffect(ModEffects.CCA_FREEZED);
+            participant.removeEffect(MobEffects.NIGHT_VISION);
             if (!participant.isSpectator()) {
                 ReturnPos pos = entry.getValue();
                 participant.teleportTo(serverLevel, pos.x(), pos.y(), pos.z(), Set.of(), pos.yaw(), pos.pitch());

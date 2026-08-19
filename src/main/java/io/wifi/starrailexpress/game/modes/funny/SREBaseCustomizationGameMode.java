@@ -16,11 +16,14 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.util.TickTimer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -156,5 +159,11 @@ public class SREBaseCustomizationGameMode extends GameMode {
     @Override
     public boolean canHaveMeeting() {
         return false;
+    }
+
+    @Override
+    public boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
+            SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
+        return SREMurderGameMode.isPlayerTheWinner(world, player, playerRole, roundEnd, gameComponent);
     }
 }

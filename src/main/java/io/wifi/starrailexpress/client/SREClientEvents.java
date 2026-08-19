@@ -23,6 +23,7 @@ import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.content.item.DisguiseEffectSync;
+import io.wifi.starrailexpress.event.client.OnGameFinishedClient;
 import io.wifi.starrailexpress.event.client.OnGameStartedClient;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName.RenderPlayerNameInterface;
@@ -97,10 +98,14 @@ public class SREClientEvents {
     public static void registerClientEvents() {
         registerRoleNameRendererEvents();
         OnGameStartedClient.EVENT.register(() -> {
+            NoellesrolesClient.clearTimeStopCache();
             if (!Minecraft.getInstance().isLocalServer()) {
                 SRE.LOGGER.info("[CLIENT] Re-register shop entries.");
                 RoleShopHandler.shopRegister();
             }
+        });
+        OnGameFinishedClient.EVENT.register(() -> {
+            NoellesrolesClient.clearTimeStopCache();
         });
     }
 
@@ -131,6 +136,9 @@ public class SREClientEvents {
                 if (SREClient.gameComponent.isRole(target, ModRoles.MAGICIAN)
                         || SREClient.gameComponent.isRole(target, THLostForestRoles.KAGUYA)) {
                     var roleR = MagicianPlayerComponent.KEY.get(target).getDisguiseRoleId();
+                    if (roleR == null) {
+                        roleR = SERoles.NECROMANCER.getIdentifier();
+                    }
                     if (SREClient.isPlayerSpectatingOrCreative()) {
                         return TrueFalseAndCustomResult.custom(Component.translatable(
                                 "message.magician.magician_are_playing_as",
@@ -170,7 +178,7 @@ public class SREClientEvents {
             if (SREClient.modifierComponent != null) {
                 if (SREClient.modifierComponent.isModifier(player, SEModifiers.SPLIT_PERSONALITY)) {
                     var splitComponent = SplitPersonalityComponent.KEY.get(player);
-                    if (splitComponent != null && !splitComponent.isDeath()) {
+                    if (splitComponent.isDeath()) {
                         return TrueFalseResult.FALSE;
                     }
                 }

@@ -129,6 +129,7 @@ import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.agmas.noellesroles.client.RicesRoleRhapsodyClient.*;
 import static org.agmas.noellesroles.content.effects.TimeStopEffect.clientPositions;
@@ -138,25 +139,26 @@ import static org.agmas.noellesroles.game.roles.killer.insane_killer.InsaneKille
 public class NoellesrolesClient implements ClientModInitializer {
     public static boolean hasInitStatusBar = false;
     public static int insanityTime = 0;
+    private static AtomicBoolean hasTimeStop = new AtomicBoolean(false);
     private static BlockPos repairHeldSearchTarget = null;
     public static KeyMapping roleIntroClientBind = KeyBindingHelper
-            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".role_intro",
+            .registerKeyBinding(new KeyMapping("key.noellesroles.role_intro",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, "category.starrailexpress.keybinds"));
     public static KeyMapping mapIntroClientBind = KeyBindingHelper
-            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".map_intro",
+            .registerKeyBinding(new KeyMapping("key.noellesroles.map_intro",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_COMMA, "category.starrailexpress.keybinds"));
     public static KeyMapping roleGuessNoteClientBind = KeyBindingHelper
-            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".guess_role_note",
+            .registerKeyBinding(new KeyMapping("key.noellesroles.guess_role_note",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, "category.starrailexpress.keybinds"));
     public static KeyMapping abilityBind = KeyBindingHelper
-            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".ability",
+            .registerKeyBinding(new KeyMapping("key.noellesroles.ability",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "category.starrailexpress.keybinds"));
 
     public static KeyMapping taskInstinctOptionBind = KeyBindingHelper
-            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".task_instinct_option",
+            .registerKeyBinding(new KeyMapping("key.noellesroles.task_instinct_option",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "category.starrailexpress.keybinds"));
     public static KeyMapping nextAbilityBind = KeyBindingHelper
-            .registerKeyBinding(new KeyMapping("key." + Noellesroles.MOD_ID + ".next_ability",
+            .registerKeyBinding(new KeyMapping("key.noellesroles.next_ability",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, "category.starrailexpress.keybinds"));
     public static KeyMapping taskInstinctBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key.noellesroles.taskinstinct",
@@ -912,33 +914,35 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(CanMoveInTimeStopS2CPacket.ID, (payload, context) -> {
             clientPositions.clear();
-            LocalPlayer player = context.player();
-            Level level = player.level();
-            TimeStopEffect.freezeStatedTime = SREGameTimeComponent.KEY.get(level).time;
-            TimeStopEffect.freezeMaxTime = payload.times();
-            lastTimeStopRenderPlayer.clear();
-            ClientLevel clientLevel = Minecraft.getInstance().level;
-            if (clientLevel != null) {
-                clientLevel.players().forEach(p -> {
-                    RemotePlayer value = new RemotePlayer(clientLevel, p.getGameProfile());
-                    value.setPos(p.position());
-                    value.setYRot(p.getYRot());
-                    value.setXRot(p.getXRot());
-                    value.setYBodyRot(p.yBodyRot);
-                    value.setYHeadRot(p.getYHeadRot());
+            context.client().execute(() -> {
+                LocalPlayer player = context.player();
+                Level level = player.level();
+                TimeStopEffect.freezeStatedTime = SREGameTimeComponent.KEY.get(level).time;
+                TimeStopEffect.freezeMaxTime = payload.times();
+                lastTimeStopRenderPlayer.clear();
+                ClientLevel clientLevel = Minecraft.getInstance().level;
+                if (clientLevel != null) {
+                    clientLevel.players().forEach(p -> {
+                        RemotePlayer value = new RemotePlayer(clientLevel, p.getGameProfile());
+                        value.setPos(p.position());
+                        value.setYRot(p.getYRot());
+                        value.setXRot(p.getXRot());
+                        value.setYBodyRot(p.yBodyRot);
+                        value.setYHeadRot(p.getYHeadRot());
 
-                    value.setItemInHand(InteractionHand.MAIN_HAND, p.getItemInHand(InteractionHand.MAIN_HAND));
-                    value.setPose(p.getPose());
+                        value.setItemInHand(InteractionHand.MAIN_HAND, p.getItemInHand(InteractionHand.MAIN_HAND));
+                        value.setPose(p.getPose());
 
-                    lastTimeStopRenderPlayer.put(p.getUUID(), value);
-                    clientPositions.put(p.getUUID(), p.position());
-                });
-            }
-            player.stopUsingItem();
-            TimeStopEffect.effectStatedTime = payload.times();
+                        lastTimeStopRenderPlayer.put(p.getUUID(), value);
+                        clientPositions.put(p.getUUID(), p.position());
+                    });
+                }
+                player.stopUsingItem();
+                TimeStopEffect.effectStatedTime = payload.times();
 
-            TimeStopEffect.canMovePlayers.clear();
-            TimeStopEffect.canMovePlayers.addAll(payload.uuids());
+                TimeStopEffect.clientCanMovePlayers.clear();
+                TimeStopEffect.clientCanMovePlayers.addAll(payload.uuids());
+            });
         });
 
         // 注册打开物品展示 ui网络包处理
@@ -1129,19 +1133,31 @@ public class NoellesrolesClient implements ClientModInitializer {
                         }));
             }
         });
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || SREClient.gameComponent == null)
                 return;
             if (client.level != null) {
-                client.level.players().forEach(
-                        player -> {
-                            if (client.player.hasEffect((ModEffects.TIME_STOP))) {
+                boolean currentHasTimeStop = client.player.hasEffect(ModEffects.TIME_STOP); // 当前状态
+                boolean previousHasTimeStop = hasTimeStop.get(); // 上 tick 状态
+                if (currentHasTimeStop) {
+                    if (!clientPositions.isEmpty()) {
+                        for (final var player : client.level.players()) {
+                            {
                                 if (clientPositions.containsKey(player.getUUID())
-                                        && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+                                        && !TimeStopEffect.clientCanMovePlayers.contains(player.getUUID())) {
                                     player.setPos(clientPositions.get(player.getUUID()));
                                 }
                             }
-                        });
+                        }
+                    }
+                }
+
+                // 检测状态切换：从有→无时清除缓存
+                if (previousHasTimeStop && !currentHasTimeStop) {
+                    clearTimeStopCache();
+                }
+                hasTimeStop.set(currentHasTimeStop);
             }
         });
         // 操纵师附身：相机绑定到目标 + 远程驱动目标移动
@@ -1505,7 +1521,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                                 return new MutableComponentResult(
                                         Component
                                                 .translatable("message.tip.death_penalty_with_timeout",
-                                                        (dpcca.penaltyExpiry - minecraft.level.getGameTime()) / 20)
+                                                        (dpcca.penaltyExpiry - SREClient.getTicksFromGameStart()) / 20)
                                                 .withStyle(ChatFormatting.YELLOW));
                             } else {
                                 return new MutableComponentResult(
@@ -1727,5 +1743,14 @@ public class NoellesrolesClient implements ClientModInitializer {
             repairHeldSearchTarget = pos;
             ClientPlayNetworking.send(new RepairSearchBeginC2SPacket(pos));
         }
+    }
+
+    public static void clearTimeStopCache() {
+        Minecraft.getInstance().execute(() -> {
+            clientPositions.clear();
+            TimeStopEffect.clientCanMovePlayers.clear();
+            TimeStopEffect.freezeStatedTime = 0;
+            TimeStopEffect.freezeMaxTime = 0;
+        });
     }
 }

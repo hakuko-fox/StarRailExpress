@@ -17,6 +17,7 @@ package io.wifi.starrailexpress.cca;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.AreasSettings.BackgroundAmbienceSound;
+import io.wifi.starrailexpress.event.OnGameServerTick;
 import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
@@ -40,6 +41,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
@@ -87,6 +89,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     // 通用物证（第4批·拖痕）：被葬仪曳柩拖动过的尸体（按尸体主人UUID记录），同步给客户端供尸检显示
     private Set<UUID> draggedCorpseOwners = new HashSet<>();
+
+    public void clear() {
+        this.looseEndWinner = null;
+    }
 
     public static class PlayerBannedBlockTimeInfo {
         public long standonTick = 0;
@@ -316,6 +322,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             return null;
         return b.areasSettings.sceneOutsideSound;
     }
+
     public boolean isOutsideSoundsAvailable() {
         var b = AreasWorldComponent.KEY.get(world);
         if (b.areasSettings == null)
@@ -724,7 +731,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             this.gameMode.writeToNbt(gameModeTag, wrapperLookup);
             nbtCompound.put("GameModeData", gameModeTag);
 
-            if ((this.gameMode.isLooseEndMode() || this.gameMode.onlyOneWinner()) && this.looseEndWinner != null)
+            if (this.looseEndWinner != null)
                 nbtCompound.putUUID("LooseEndWinner", this.looseEndWinner);
         }
         if (gameStatus == GameStatus.INACTIVE) {
@@ -808,6 +815,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     GameUtils.stopGame(serverWorld);
                     return;
                 }
+
                 for (ServerPlayer player : serverWorld.players()) {
                     if (!GameUtils.isPlayerAliveAndSurvival(player) && isBound()
                             && !player.isCreative()) {
@@ -843,12 +851,12 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 // run game loop logic
                 gameMode.tickServerGameLoop(serverWorld, this);
 
+                if (!SREGameTimeComponent.KEY.get(serverWorld).isTimeFrozen()) {
+                    OnGameServerTick.EVENT.invoker().onGameServerTick(serverWorld);
+                }
+
                 tickBlood(serverWorld);
             }
-
-            // if (serverWorld.getGameTime() % 40 == 0) {
-            // this.sync();
-            // }
         }
     }
 
@@ -974,6 +982,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     public static boolean isInDarkness(ServerPlayer player) {
         final var level = player.serverLevel();
+        if (player.hasEffect(MobEffects.NIGHT_VISION)) {
+            return false;
+        }
         if (player.getMainHandItem().is(ModItems.FLASHLIGHT)) {
             if (player.getMainHandItem().getOrDefault(SREDataComponentTypes.STATUS, false))
                 return false;

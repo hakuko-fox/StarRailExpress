@@ -20,6 +20,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+
+import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.client.event.CommonHudRenderCallback;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.game.roles.innocence.fool.ExecutionerGunItem;
@@ -44,17 +46,22 @@ public abstract class FoolHud {
         CommonHudRenderCallback.EVENT.register((context, tickCounter) -> {
             Minecraft client = Minecraft.getInstance();
             LocalPlayer player = client.player;
-            if (player == null || client.level == null) return;
-            if (SREClient.isPlayerSpectator()) return;
-            if (SREClient.gameComponent != null && SREClient.gameComponent.isRole(player, ModRoles.THE_FOOL)) return;
+            if (player == null || client.level == null)
+                return;
+            if (SREClient.isPlayerSpectator())
+                return;
+            if (SREClient.gameComponent != null && SREClient.gameComponent.isRole(player, ModRoles.THE_FOOL))
+                return;
 
             FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(player);
-            if (!player.hasEffect(ModEffects.TAROT_ASSEMBLY) || !comp.voteInProgress || comp.voteEndTick <= 0) return;
+            if (!player.hasEffect(ModEffects.TAROT_ASSEMBLY) || !comp.voteInProgress || comp.voteEndTick <= 0)
+                return;
 
-            long remainingTicks = Math.max(0, comp.voteEndTick - client.level.getGameTime());
+            long remainingTicks = Math.max(0, comp.voteEndTick - SREClient.getTicksFromGameStart());
             Component meetingText = Component.translatable("hud.noellesroles.fool.member_meeting_active",
                     remainingTicks / 20);
-            Component hintText = Component.translatable("hud.noellesroles.fool.member_vote_hint");
+            Component hintText = Component.translatable("hud.noellesroles.fool.member_vote_hint",
+                    NoellesrolesClient.foolPrayerBind.getTranslatedKeyMessage());
 
             Font renderer = client.font;
             int x = 10;
@@ -67,7 +74,8 @@ public abstract class FoolHud {
             Minecraft client = Minecraft.getInstance();
             final Font renderer = client.font;
             final LocalPlayer player = client.player;
-            if (player == null) return;
+            if (player == null)
+                return;
 
             FoolPlayerComponent comp = FoolPlayerComponent.KEY.get(player);
 
@@ -79,10 +87,11 @@ public abstract class FoolHud {
             int xOffset = screenWidth - 200;
             int lineHeight = 12;
 
-                boolean hasGun = ExecutionerGunItem.hasExecutionerGun(player);
-                Component bulletText = Component.translatable("hud.noellesroles.fool.gun",
-                    Component.translatable(hasGun ? "hud.noellesroles.fool.gun_ready" : "hud.noellesroles.fool.gun_missing"));
-                context.drawString(renderer, bulletText, xOffset, yOffset, hasGun ? 0x55FF55 : 0xFF5555);
+            boolean hasGun = ExecutionerGunItem.hasExecutionerGun(player);
+            Component bulletText = Component.translatable("hud.noellesroles.fool.gun",
+                    Component.translatable(
+                            hasGun ? "hud.noellesroles.fool.gun_ready" : "hud.noellesroles.fool.gun_missing"));
+            context.drawString(renderer, bulletText, xOffset, yOffset, hasGun ? 0x55FF55 : 0xFF5555);
             yOffset += lineHeight;
 
             // 塔罗会成员数
@@ -103,15 +112,17 @@ public abstract class FoolHud {
 
             // 会议状态
             if (comp.inMeeting) {
-                long gameTime = client.level != null ? client.level.getGameTime() : 0;
-                long remainingTicks = Math.max(0, comp.meetingEndTick - gameTime);
+                long now = SREClient.getTicksFromGameStart();
+                long remainingTicks = Math.max(0, comp.meetingEndTick - now);
                 Component meetingText = Component.translatable("hud.noellesroles.fool.meeting_active",
-                        remainingTicks / 20);
+                        remainingTicks / 20,
+                        NoellesrolesClient.abilityBind.getTranslatedKeyMessage(),
+                        NoellesrolesClient.foolPrayerBind.getTranslatedKeyMessage());
                 context.drawString(renderer, meetingText, xOffset, yOffset, 0xFFD700);
                 yOffset += lineHeight;
 
                 if (comp.voteInProgress && comp.voteEndTick > 0 && comp.voteEndTick != comp.meetingEndTick) {
-                    long voteRemainingTicks = Math.max(0, comp.voteEndTick - gameTime);
+                    long voteRemainingTicks = Math.max(0, comp.voteEndTick - now);
                     Component voteText = Component.translatable("hud.noellesroles.fool.vote_active",
                             voteRemainingTicks / 20);
                     context.drawString(renderer, voteText, xOffset, yOffset, 0xFFAA55);
@@ -121,8 +132,8 @@ public abstract class FoolHud {
 
             // 冷却
             if (comp.tarotCooldownEndTick > 0) {
-                long gameTime = client.level != null ? client.level.getGameTime() : 0;
-                long remaining = Math.max(0, (comp.tarotCooldownEndTick - gameTime) / 20);
+                long now = SREClient.getTicksFromGameStart();
+                long remaining = Math.max(0, (comp.tarotCooldownEndTick - now) / 20);
                 if (remaining > 0) {
                     Component cdText = Component.translatable("hud.noellesroles.fool.cooldown", remaining);
                     context.drawString(renderer, cdText, xOffset, yOffset, 0xAAAAAA);
