@@ -1689,6 +1689,8 @@
   "screen.roleintroduce.flag.mafia_team": "Mafia 家族",
      "screen.roleintroduce.flag.creator_team": "制作组成员相关",
    "screen.roleintroduce.flag.hkvtuber": "香港 VTuber",
+   "screen.roleintroduce.flag.myvtuber": "马来西亚 VTuber",
+   "screen.roleintroduce.flag.twvtuber": "台湾 VTuber",
    "screen.roleintroduce.flag.vtuber": "VTuber",
   "====== filter flag 显示区域结束 ======": "",
   "gui.roleintroduce.details.tip": "%s【%s】\n\n%s",
