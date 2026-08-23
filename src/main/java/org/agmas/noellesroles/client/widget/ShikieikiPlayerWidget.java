@@ -32,7 +32,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 
-import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.packet.AbilityWithTargetC2SPacket;
 
@@ -91,13 +90,8 @@ public class ShikieikiPlayerWidget extends Button {
         if (targetPlayer == null)
             return;
 
-        VoodooPlayerComponent voodooPlayerComponent = (VoodooPlayerComponent) VoodooPlayerComponent.KEY.get(player);
-
         final var abilityPlayerComponent = SREAbilityPlayerComponent.KEY.get(player);
         if (abilityPlayerComponent == null)
-            return;
-        final var target = voodooPlayerComponent.target;
-        if (target == null)
             return;
 
         // 检查皮肤纹理是否存在，避免空指针异常
@@ -119,13 +113,6 @@ public class ShikieikiPlayerWidget extends Button {
                             this.getY() - 9);
                 }
             }
-
-            if (target.equals(targetUUID)) {
-                var text = Component.translatable("widget.general.select");
-                context.renderTooltip(textRenderer, text,
-                        this.getX() - 4 - textRenderer.width(text) / 2, this.getY() - 9);
-                this.drawShopSlotHighlight(context, this.getX(), this.getY(), 0);
-            }
         }
 
         if (abilityPlayerComponent.cooldown > 0) {
@@ -136,12 +123,6 @@ public class ShikieikiPlayerWidget extends Button {
                 this.drawShopSlotHighlight(context, this.getX(), this.getY(), 0);
             }
 
-            if (target.equals(targetUUID)) {
-                var text = Component.translatable("widget.general.selected");
-                context.renderTooltip(textRenderer, text,
-                        this.getX() - 4 - textRenderer.width(text) / 2, this.getY() - 9);
-                this.drawShopSlotHighlight(context, this.getX(), this.getY(), 0);
-            }
             context.setColor(1f, 1f, 1f, 1f);
             context.drawString(textRenderer, abilityPlayerComponent.cooldown / 20 + "", this.getX(), this.getY(),
                     Color.RED.getRGB(), true);

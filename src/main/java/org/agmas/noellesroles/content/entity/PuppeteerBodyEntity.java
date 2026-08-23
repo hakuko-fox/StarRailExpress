@@ -255,7 +255,11 @@ public class PuppeteerBodyEntity extends LivingEntity {
                 PuppeteerPlayerComponent puppeteerComp = ModComponents.PUPPETEER.get(owner);
                 puppeteerComp.onBodyDeath(player, deathReason);
             } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
-                ModComponents.RAVEN.get(owner).onBodyDeath(player, deathReason);
+                var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                        org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
+                if (ravenData != null) {
+                    ravenData.onBodyDeath(player, deathReason);
+                }
             } else {
                 owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
                 // ModEffects.pierceDeath = true;
@@ -302,7 +306,11 @@ public class PuppeteerBodyEntity extends LivingEntity {
                 if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
                     ModComponents.PUPPETEER.get(owner).onBodyDeath();
                 } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
-                    ModComponents.RAVEN.get(owner).onBodyDeath(null, Noellesroles.id("raven_body_death"));
+                    var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                            org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
+                    if (ravenData != null) {
+                        ravenData.onBodyDeath(null, Noellesroles.id("raven_body_death"));
+                    }
                 } else {
                     owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
                     // ModEffects.pierceDeath = true;
@@ -342,7 +350,11 @@ public class PuppeteerBodyEntity extends LivingEntity {
             if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
                 ModComponents.PUPPETEER.get(owner).onBodyDeath();
             } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
-                ModComponents.RAVEN.get(owner).onBodyDeath(null, Noellesroles.id("raven_body_death"));
+                var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                        org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
+                if (ravenData != null) {
+                    ravenData.onBodyDeath(null, Noellesroles.id("raven_body_death"));
+                }
             }
         }
     }

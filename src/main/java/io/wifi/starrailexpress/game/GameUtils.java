@@ -33,6 +33,7 @@ import org.agmas.harpymodloader.commands.ListRolesCommand;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.harpymodloader.events.ResetPlayerEvent;
+import org.agmas.noellesroles.api.time.TimeRewindPlayback;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
@@ -1335,7 +1336,7 @@ public class GameUtils {
     }
 
     public static boolean isPlayerEliminated(Player player) {
-        if (isPlayerSplitPersonalityAndSurvive(player) == SPAliveResult.ALIVE)
+        if (isPlayerReallyAliveOrDead(player) == SPAliveResult.ALIVE)
             return false;
         return player == null || !player.isAlive() || player.isCreative() || player.isSpectator();
     }
@@ -1412,7 +1413,7 @@ public class GameUtils {
     public static boolean isPlayerSpectator(Player p) {
         if (p == null)
             return false;
-        if (isPlayerSplitPersonalityAndSurvive(p) == SPAliveResult.ALIVE)
+        if (isPlayerReallyAliveOrDead(p) == SPAliveResult.ALIVE)
             return false;
         return p.isSpectator();
     }
@@ -1424,7 +1425,7 @@ public class GameUtils {
     public static boolean isPlayerAliveAndSurvival(Player player, WorldModifierComponent worldModifierComponent) {
         if (player == null)
             return false;
-        if (isPlayerSplitPersonalityAndSurvive(player, worldModifierComponent) == SPAliveResult.ALIVE)
+        if (isPlayerReallyAliveOrDead(player, worldModifierComponent) == SPAliveResult.ALIVE)
             return true;
         return isPlayerAliveAndSurvivalIgnoreShitSplit(player);
     }
@@ -1443,7 +1444,7 @@ public class GameUtils {
     public static boolean isPlayerSpectatingOrCreative(Player player) {
         if (player == null)
             return false;
-        if (isPlayerSplitPersonalityAndSurvive(player) == SPAliveResult.ALIVE)
+        if (isPlayerReallyAliveOrDead(player) == SPAliveResult.ALIVE)
             return false;
         return isPlayerSpectatingOrCreativeIgnoreShitSplit(player);
     }
@@ -1452,17 +1453,20 @@ public class GameUtils {
         ALIVE, DEAD, NOT
     }
 
-    public static SPAliveResult isPlayerSplitPersonalityAndSurvive(Player player) {
+    public static SPAliveResult isPlayerReallyAliveOrDead(Player player) {
         if (player == null)
             return SPAliveResult.DEAD;
         var worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
-        return isPlayerSplitPersonalityAndSurvive(player, worldModifierComponent);
+        return isPlayerReallyAliveOrDead(player, worldModifierComponent);
     }
 
-    public static SPAliveResult isPlayerSplitPersonalityAndSurvive(Player player,
+    public static SPAliveResult isPlayerReallyAliveOrDead(Player player,
             WorldModifierComponent worldModifierComponent) {
         if (player == null)
             return SPAliveResult.DEAD;
+        if (player.hasEffect(ModEffects.TIME_REWIND_MARK) || TimeRewindPlayback.isActive(player.getUUID())) {
+            return SPAliveResult.ALIVE;
+        }
         if (worldModifierComponent.isModifier(player, SEModifiers.SPLIT_PERSONALITY)) {
             if (player.isSpectator()) {
                 if (!SplitPersonalityComponent.KEY.get(player).isDeath()) {
@@ -1578,7 +1582,7 @@ public class GameUtils {
         }
         TrainVoicePlugin.resetPlayer(player.getUUID());
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
-
+        player.addEffect(ModEffects.of(ModEffects.SAFE_TIME, 10, 1, false, false, true));
         if (MeetingManager.isActive()) {
             DefibrillatorComponent.KEY.get(player).triggerDeath(10, null, player.position());
         }
@@ -1597,6 +1601,7 @@ public class GameUtils {
                 gravityAttr.addOrReplacePermanentModifier(gravityModifier);
             }
         }
+        player.addEffect(ModEffects.of(ModEffects.SAFE_TIME, 10, 1, false, false, true));
         player.teleportTo(x, y, z);
         player.setGameMode(GameType.ADVENTURE);
         TrainVoicePlugin.resetPlayer(player.getUUID());

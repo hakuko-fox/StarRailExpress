@@ -17,6 +17,7 @@ package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.api.RoleSkill.AnnounceInfo.AnnounceContext;
 import io.wifi.starrailexpress.api.RoleSkill.AnnounceInfo.AnnounceType;
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.SkillState;
@@ -185,7 +186,9 @@ public final class RoleSkill {
             boolean modeSwitch,
             boolean showOnHud,
             boolean withTarget,
-            Handler handler) {
+            boolean haveRecord,
+            Handler handler,
+            Component recordName) {
         public Definition {
             if (id == null || nameKey == null || handler == null) {
                 throw new IllegalArgumentException("Skill id, name key and handler are required");
@@ -208,6 +211,7 @@ public final class RoleSkill {
         private final Handler handler;
         private int cooldownTicks;
         private boolean noCastCCA = false;
+        private boolean haveRecord = false;
         private boolean withTarget = false;
         private int maxCharges = -1;
         private boolean continuous;
@@ -217,11 +221,21 @@ public final class RoleSkill {
         private boolean shifted;
         private boolean modeSwitch;
         private boolean showOnHud = false;
+        private Component recordName;
 
         private Builder(ResourceLocation id, String nameKey, Handler handler) {
             this.id = id;
             this.nameKey = nameKey;
             this.handler = handler;
+        }
+
+        public Builder recordReplay() {
+            return recordReplay(true);
+        }
+
+        public Builder recordReplay(boolean flag) {
+            haveRecord = flag;
+            return this;
         }
 
         public Builder withTarget(boolean flag) {
@@ -338,10 +352,20 @@ public final class RoleSkill {
             return this;
         }
 
+        /**
+         * 指定技能的字面显示名（用于回放直接显示用户填写的技能名，而非当作翻译键解析）。
+         * 可为 null / 空串，此时回放回退用 nameKey 翻译。
+         */
+        public Builder recordName(Component recordName) {
+            this.recordName = recordName;
+            return this;
+        }
+
         public Definition build() {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
                     holdIntervalTicks, noCastCCA, announceInfo, toggleable, shifted, modeSwitch, showOnHud, withTarget,
-                    handler);
+                    haveRecord,
+                    handler, recordName);
         }
     }
 
@@ -352,6 +376,22 @@ public final class RoleSkill {
     private static final Map<ResourceLocation, Consumer<RoleSkillContext>> LEGACY_SKILLS = new HashMap<>();
     private static final Map<ResourceLocation, List<Definition>> UNIFIED_SKILLS = new HashMap<>();
     private static final Map<ResourceLocation, SkillEntry> SKILL_REGISTRY = new HashMap<>();
+    /**
+     * 已在组件内部直接调用 onPlayerUsedSkill 记录技能释放的职业，
+     * 统一技能入口记录时需排除，避免同一技能双重记录。
+     */
+    private static final java.util.Set<String> ROLE_SKILL_REPLAY_EXCLUDED = java.util.Set.of(
+            "noellesroles:thief",
+            "noellesroles:candlebearer",
+            "noellesroles:bomber",
+            "noellesroles:blood_feudist",
+            "noellesroles:clockmaker",
+            "noellesroles:fortuneteller",
+            "noellesroles:noisemaker",
+            "noellesroles:builder",
+            "noellesroles:trapper",
+            "noellesroles:musician_phantom",
+            "xiaoheihand:super_loose_end");
 
     private RoleSkill() {
     }
@@ -607,6 +647,16 @@ public final class RoleSkill {
         definition.announceInfo().doAnnounce(player, definition, ability.getSkillState(definition.id()),
                 skillReady, target);
         afterUse(player, role);
+        // 回放记录：玩家释放技能（统一技能系统入口；以下角色已在组件内部记录，避免重复）
+        if (!ROLE_SKILL_REPLAY_EXCLUDED.contains(role.identifier().toString()) && !definition.toggleable() && definition.haveRecord() && !definition.modeSwitch()) {
+            Component literalName = definition.recordName();
+            if (literalName != null) {
+                // 自定义职业等：优先显示用户填写的技能名（字面文本）
+                SRE.REPLAY_MANAGER.recordSkillUsed(player, literalName);
+            } else {
+                SRE.REPLAY_MANAGER.recordSkillUsedId(player, definition.nameKey());
+            }
+        }
         return true;
     }
 

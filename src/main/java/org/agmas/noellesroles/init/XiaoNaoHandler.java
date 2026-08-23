@@ -25,10 +25,10 @@ import io.wifi.starrailexpress.game.TeamKillViolationHandler;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.component.ModComponents;
+import io.wifi.starrailexpress.api.data.RoleData;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.game.roles.innocence.avenger.AvengerPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.blood_feudist.BloodFeudistPlayerComponent;
+import org.agmas.noellesroles.role_data.killer.BloodFeudistRoleData;
+import org.agmas.noellesroles.role_data.innocence.AvengerRoleData;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -43,9 +43,12 @@ public class XiaoNaoHandler {
         OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> {
             if (killer == null)
                 return;
+            if (victim.getUUID().equals(killer.getUUID()))
+                return;
+
+            final SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
             if (GameUtils.isPlayerAliveAndSurvival(killer)) {
                 if (isInnocent) {
-                    SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
                     if (gameWorldComponent.isRole(victim, TMMRoles.DISCOVERY_CIVILIAN)) {
                         // 跳过游客惩罚
                         return;
@@ -65,7 +68,7 @@ public class XiaoNaoHandler {
                     }
                     // 检查是否是复仇者击杀复仇目标的凶手，如果是则不算误杀
                     if (gameWorldComponent.isRole(killer, ModRoles.AVENGER)) {
-                        AvengerPlayerComponent avengerComp = ModComponents.AVENGER.get(killer);
+                        AvengerRoleData avengerComp = RoleData.getNullable(AvengerRoleData.class, killer);
                         if (avengerComp != null && avengerComp.killerUuid != null
                                 && avengerComp.killerUuid.equals(victim.getUUID())) {
                             // 复仇者击杀的是杀死复仇目标的凶手，不算误杀
@@ -100,12 +103,30 @@ public class XiaoNaoHandler {
                             // 仇杀客事件：误杀发生时强化仇杀客
                             for (ServerPlayer player : victim.serverLevel().players()) {
                                 if (gameWorldComponent.isRole(player, ModRoles.BLOOD_FEUDIST)) {
-                                    BloodFeudistPlayerComponent bfComp = ModComponents.BLOOD_FEUDIST.get(player);
-                                    if (bfComp != null) {
-                                        bfComp.onAccidentalKill();
+                                    var bfData = RoleData.getNullable(BloodFeudistRoleData.class, player);
+                                    if (bfData != null) {
+                                        bfData.onAccidentalKill();
                                     }
                                 }
                             }
+                        }
+                    }
+                } else {
+                    var victimRole = gameWorldComponent.getRole(victim);
+                    var killerRole = gameWorldComponent.getRole(victim);
+                    if (victimRole == null || killerRole == null)
+                        return;
+                    if (victimRole.isKiller() && !victimRole.isNeutrals() && killerRole.isKiller()
+                            && !killerRole.isNeutrals()) {
+                        if (victimRole.canBeXiaonao(victim, killer, deathReason))
+                            return;
+                        if (killerRole.canXiaonao(victim, killer, deathReason))
+                            return;
+                        if (deathReason.getPath().equals("trident")
+                                || deathReason.getPath().equals("knife_stab")
+                                || deathReason.getPath().equals("stalker_knife")
+                                || deathReason.getPath().equals("knife")) {
+                            TeamKillViolationHandler.handle(victim, killer, isInnocent, deathReason);
                         }
                     }
                 }
@@ -118,7 +139,6 @@ public class XiaoNaoHandler {
                 || deathReason.getPath().equals("fall_damage")
                 || deathReason.getPath().equals("cant_swim_drowned")
                 || deathReason.getPath().equals("swim_in_lava")
-                || deathReason.getPath().equals("general_attack")
                 || deathReason.getPath().equals("sniper_rifle")
                 || deathReason.getPath().equals("nunchuck_hit")
                 || deathReason.getPath().equals("bat_hit")
@@ -141,12 +161,11 @@ public class XiaoNaoHandler {
                 || deathReason.getPath().equals("fire_axe")
                 || deathReason.getPath().equals("ninja_knife_kill")
                 || deathReason.getPath().equals("ninja_shuriken")
-                || deathReason.getPath().equals("ninja_shuriken_kill")
                 || deathReason.getPath().equals("short_shotgun")
-                || deathReason.getPath().equals("grenade")
                 || deathReason.getPath().equals("danmuku")
                 || deathReason.getPath().equals("zero_one_five_shot")
                 || deathReason.getPath().equals("incinerator_pushed")
+                || deathReason.getPath().equals("general_attack")
                 || deathReason.getPath().equals("manhole_suffocation")
                 || deathReason.getPath().equals("stalactite_impale")
                 || deathReason.getPath().equals("flamethrower_burned")

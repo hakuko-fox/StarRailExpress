@@ -15,6 +15,9 @@
 
 package org.agmas.noellesroles.game.roles.killer.warlock;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.data.RoleData;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -26,6 +29,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import org.agmas.noellesroles.role_data.killer.WarlockRoleData;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -109,9 +113,9 @@ public final class WarlockDomainManager {
 
     /**
      * 对指定目标展开领域（仅拉入这一人）。返回 false 表示条件不满足（不消耗冷却）。
-     * 校验（角色/存活/冷却/目标处于诅咒中）由 {@link WarlockPlayerComponent#tryOpenDomainOn} 负责。
+     * 校验（角色/存活/冷却/目标处于诅咒中）由 {@link WarlockRoleData#tryOpenDomainOn} 负责。
      */
-    public static boolean open(ServerPlayer warlock, WarlockPlayerComponent comp, ServerPlayer victim) {
+    public static boolean open(ServerPlayer warlock, WarlockRoleData comp, ServerPlayer victim) {
         if (ACTIVE.containsKey(warlock.getUUID()))
             return false;
         if (victim == null || !GameUtils.isPlayerAliveAndSurvival(victim)) {
@@ -146,6 +150,11 @@ public final class WarlockDomainManager {
         warlock.displayClientMessage(Component
                 .translatable("message.noellesroles.warlock.domain_open")
                 .withStyle(ChatFormatting.DARK_PURPLE), true);
+        // 回放记录：咒术师将玩家拉入角斗领域
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+            Component.translatable("replay.event.warlock.pull_arena",
+                GameReplayUtils.getReplayPlayerDisplayText(warlock, true),
+                GameReplayUtils.getReplayPlayerDisplayText(victim, true)));
         return true;
     }
 
@@ -269,7 +278,7 @@ public final class WarlockDomainManager {
 
         ServerPlayer warlock = server.getPlayerList().getPlayer(domain.warlock);
         if (warlock != null) {
-            WarlockPlayerComponent comp = WarlockPlayerComponent.KEY.maybeGet(warlock).orElse(null);
+            WarlockRoleData comp = RoleData.getNullable(WarlockRoleData.class, warlock);
             if (comp != null) {
                 comp.domainOpen = false;
                 comp.domainEndTick = 0;

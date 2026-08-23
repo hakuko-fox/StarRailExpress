@@ -32,7 +32,6 @@ import org.agmas.harpymodloader.events.ModifierRemoved;
 import org.agmas.harpymodloader.events.ResetPlayerEvent;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
-import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -267,13 +266,6 @@ public class SEModifiers {
                     b.clear();
                 }
             }
-        });
-        /// BLACK_WHITE
-        ModifierAssigned.EVENT.register((player, modifier) -> {
-            if (!modifier.equals(BLACK_WHITE)) {
-                return;
-            }
-            MonokumaPlayerComponent.KEY.get(player).init();
         });
         /// LOVERS
         ModifierAssigned.EVENT.register(((player, modifier) -> {

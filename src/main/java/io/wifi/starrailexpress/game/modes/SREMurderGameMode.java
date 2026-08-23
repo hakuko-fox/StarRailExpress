@@ -63,7 +63,7 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.commands.BroadcastCommand;
-import org.agmas.noellesroles.game.roles.neutral.mercenary.MercenaryPlayerComponent;
+import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role.ModRoles;
 
 import java.util.*;
@@ -743,28 +743,30 @@ public class SREMurderGameMode extends GameMode {
         boolean civilianAlive = false;
         boolean killerAlive = false;
         boolean anyAlive = false;
-        for (ServerPlayer player : serverWorld.players()) {
-            // passive money
-            if (gameWorldComponent.canAutoAddMoney(player)) {
-                Integer balanceToAdd = GameConstants.getPassiveMoneyTicker().apply(serverWorld.getGameTime());
-                if (balanceToAdd > 0)
-                    SREPlayerShopComponent.KEY.get(player).addToBalance(balanceToAdd);
-            }
-            if (gameWorldComponent.isRole(player, TMMRoles.VIGILANTE)
-                    && !GameUtils.isPlayerEliminated(player)
-                    && serverWorld.getGameTime() % VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS == 0) {
-                SREPlayerShopComponent.KEY.get(player).addToBalance(VIGILANTE_PASSIVE_MONEY_AMOUNT);
-            }
+        if (!SREGameTimeComponent.KEY.get(serverWorld).levelGameTimeFrozen) {
+            for (ServerPlayer player : serverWorld.players()) {
+                // passive money
+                if (gameWorldComponent.canAutoAddMoney(player)) {
+                    Integer balanceToAdd = GameConstants.getPassiveMoneyTicker().apply(serverWorld.getGameTime());
+                    if (balanceToAdd > 0)
+                        SREPlayerShopComponent.KEY.get(player).addToBalance(balanceToAdd);
+                }
+                if (gameWorldComponent.isRole(player, TMMRoles.VIGILANTE)
+                        && !GameUtils.isPlayerEliminated(player)
+                        && serverWorld.getGameTime() % VIGILANTE_PASSIVE_MONEY_INTERVAL_TICKS == 0) {
+                    SREPlayerShopComponent.KEY.get(player).addToBalance(VIGILANTE_PASSIVE_MONEY_AMOUNT);
+                }
 
-            // check if some civilians are still alive
-            if (gameWorldComponent.canIncreaseSurvivingInnocents(player) && !GameUtils.isPlayerEliminated(player)) {
-                civilianAlive = true;
-            }
-            if (gameWorldComponent.canIncreaseSurvivingKillers(player) && !GameUtils.isPlayerEliminated(player)) {
-                killerAlive = true;
-            }
-            if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                anyAlive = true;
+                // check if some civilians are still alive
+                if (gameWorldComponent.canIncreaseSurvivingInnocents(player) && !GameUtils.isPlayerEliminated(player)) {
+                    civilianAlive = true;
+                }
+                if (gameWorldComponent.canIncreaseSurvivingKillers(player) && !GameUtils.isPlayerEliminated(player)) {
+                    killerAlive = true;
+                }
+                if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                    anyAlive = true;
+                }
             }
         }
 
@@ -918,7 +920,7 @@ public class SREMurderGameMode extends GameMode {
                         isWinner = true;
                     }
                     if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
-                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        var mercenary = io.wifi.starrailexpress.api.data.RoleData.getNullable(MercenaryRoleData.class, player);
                         if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
                             isWinner = true;
                         }
@@ -954,7 +956,7 @@ public class SREMurderGameMode extends GameMode {
                     if (playerRole.winWithInnocent())
                         isWinner = true;
                     if (!isWinner && playerRole.identifier().equals(ModRoles.MERCENARY_ID)) {
-                        var mercenary = MercenaryPlayerComponent.KEY.maybeGet(player).orElse(null);
+                        var mercenary = io.wifi.starrailexpress.api.data.RoleData.getNullable(MercenaryRoleData.class, player);
                         if (mercenary != null && mercenary.canFollowFactionWin(winStatus)) {
                             isWinner = true;
                         }

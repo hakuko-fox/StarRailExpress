@@ -53,11 +53,11 @@ public class SRERoleDataPlayerComponent
     }
 
     @Override
-    public boolean shouldSyncWith(ServerPlayer player) {
-        if (roleData != null && !initSync) {
-            return roleData.shouldSyncWith(player);
+    public boolean shouldSyncWith(ServerPlayer p) {
+        if (roleData != null) {
+            return roleData.shouldSyncWith(p);
         }
-        return this.getPlayer() == player;
+        return player == p;
     }
 
     /**
@@ -106,6 +106,8 @@ public class SRERoleDataPlayerComponent
         final var roleDataFunc = playerRole.getRoleDataFunc();
         final RoleDataContext ctx = new RoleDataContext(player, playerRole, () -> {
             sync();
+        }, (p) -> {
+            syncTo(p);
         });
         if (roleDataFunc != null) {
             roleData = roleDataFunc.apply(ctx);
@@ -113,6 +115,7 @@ public class SRERoleDataPlayerComponent
         if (roleData != null) {
             initSync = true;
             sync();
+            initSync = false;
             roleData.init();
         }
     }
@@ -125,18 +128,30 @@ public class SRERoleDataPlayerComponent
             return;
         }
         final var roleDataFunc = playerRole.getRoleDataFunc();
-        final RoleDataContext ctx = new RoleDataContext(player, playerRole, null);
+        final RoleDataContext ctx = new RoleDataContext(player, playerRole, null, null);
         if (roleDataFunc != null) {
             roleData = roleDataFunc.apply(ctx);
+            roleData.initOnClient();
         }
     }
 
     @Override
     public void clear() {
+        if (roleData != null) {
+            roleData.clear();
+        }
         playerRole = null;
         roleData = null;
         initSync = false;
         sync();
+    }
+
+    /**
+     * 同步到指定玩家客户端
+     */
+    public void syncTo(ServerPlayer p) {
+        initSync = false;
+        KEY.syncWith(p, player.asComponentProvider());
     }
 
     /**
@@ -163,6 +178,7 @@ public class SRERoleDataPlayerComponent
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, Provider registryLookup) {
+
         if (tag.contains("__init__")) {
             clientInit();
             return;
@@ -170,14 +186,16 @@ public class SRERoleDataPlayerComponent
             clear();
             return;
         }
+        if (roleData == null) {
+            clientInit();
+        }
+
         if (roleData != null) {
             roleData.readFromSyncNbt(tag, registryLookup);
         }
     }
 
     public void onRemoveRole() {
-        if (roleData != null)
-            roleData.clear();
         this.clear();
     }
 

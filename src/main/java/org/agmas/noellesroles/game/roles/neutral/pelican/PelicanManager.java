@@ -22,6 +22,8 @@ import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.server.MinecraftServer;
@@ -31,11 +33,15 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+
+import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
+import org.agmas.noellesroles.role_data.killer.ExecutionerRoleData;
+import org.agmas.noellesroles.role_data.neutral.PelicanRoleData;
+import io.wifi.starrailexpress.api.data.RoleData;
 import org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
@@ -58,6 +64,7 @@ public final class PelicanManager {
 
     public static void register() {
         ServerTickEvents.END_WORLD_TICK.register(PelicanManager::tick);
+        registerEvents();
     }
 
     private static void tick(ServerLevel world) {
@@ -97,6 +104,70 @@ public final class PelicanManager {
                 target.connection.send(new ClientboundSetCameraPacket(pelican));
             }
         }
+    }
+
+    public static void registerEvents() {
+        registerChatEvents();
+    }
+
+    public static void registerChatEvents() {
+        // PelicanManager.isStashed
+        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, serverPlayer, bound) -> {
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverPlayer.level());
+            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(serverPlayer)) {
+                return true;
+            }
+            if (gameWorldComponent.isRole(serverPlayer, ModRoles.PELICAN)) {
+                { // pelican->肚子里的人
+                    var broadcastMessage = Component
+                            .translatable("message.pelican.broadcast_prefix",
+                                    Component.literal("").append(serverPlayer.getDisplayName())
+                                            .withStyle(ChatFormatting.GREEN),
+                                    Component.literal(message.signedContent()).withStyle(ChatFormatting.WHITE))
+                            .withStyle(ChatFormatting.YELLOW);
+
+                    BroadcastCommand.BroadcastMessage(serverPlayer, broadcastMessage);
+                    serverPlayer.getServer().getPlayerList().getPlayers().forEach((p) -> {
+                        var role = gameWorldComponent.getRole(p.getUUID());
+                        if (role == null)
+                            return;
+                        if (PelicanManager.isStashed(p)) {
+                            BroadcastCommand.BroadcastMessage(p, broadcastMessage);
+                            p.displayClientMessage(broadcastMessage, false);
+                            return;
+                        }
+                    });
+                }
+            }
+            return true;
+        });
+        // 肚中人说话
+        ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, serverPlayer, bound) -> {
+            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverPlayer.level());
+            if (gameWorldComponent.isRole(serverPlayer, ModRoles.PELICAN))
+                return true;
+            if (!PelicanManager.isStashed(serverPlayer)) {
+                return true;
+            }
+            var broadcastMessage = Component
+                    .translatable("message.pelican.recieve_broadcast_prefix",
+                            Component.literal("").append(serverPlayer.getDisplayName())
+                                    .withStyle(ChatFormatting.GREEN),
+                            Component.literal(message.signedContent()).withStyle(ChatFormatting.WHITE))
+                    .withStyle(ChatFormatting.DARK_PURPLE);
+            // BroadcastCommand.BroadcastMessage(serverPlayer, broadcastMessage);
+            serverPlayer.server.getPlayerList().getPlayers().forEach((p) -> {
+                if (gameWorldComponent.isRole(p, ModRoles.PELICAN)) {
+                    { // 鹈鹕
+                        BroadcastCommand.BroadcastMessage(p, broadcastMessage);
+                    }
+                } else if (PelicanManager.isStashed(p)) {
+                    BroadcastCommand.BroadcastMessage(p, broadcastMessage);
+                }
+            });
+            return true;
+
+        });
     }
 
     public static void stashPlayer(ServerPlayer pelican, ServerPlayer target) {
@@ -175,8 +246,8 @@ public final class PelicanManager {
             if (candidateWorld == null || !candidateWorld.isRole(candidate, ModRoles.EXECUTIONER)) {
                 continue;
             }
-            ExecutionerPlayerComponent executioner = ExecutionerPlayerComponent.KEY.get(candidate);
-            if (stashedTargetId.equals(executioner.target)) {
+            ExecutionerRoleData executioner = RoleData.getNullable(ExecutionerRoleData.class, candidate);
+            if (executioner != null && stashedTargetId.equals(executioner.target)) {
                 executioner.target = pelican.getUUID();
                 executioner.targetSelected = true;
                 executioner.sync();
@@ -232,11 +303,11 @@ public final class PelicanManager {
         NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
     }
 
-    private static void releasePlayerFromTick(ServerPlayer target) {
-        // Deprecated: tick now calls releasePlayer directly. Keep method as shim to
-        // preserve compatibility but delegate to releasePlayer.
-        releasePlayer(target);
-    }
+    // private static void releasePlayerFromTick(ServerPlayer target) {
+    // // Deprecated: tick now calls releasePlayer directly. Keep method as shim to
+    // // preserve compatibility but delegate to releasePlayer.
+    // releasePlayer(target);
+    // }
 
     public static void releaseAllForPelican(UUID pelicanId, MinecraftServer server) {
         releaseAllForPelican(pelicanId, server, null);
@@ -269,10 +340,12 @@ public final class PelicanManager {
 
         // 同步清理鹈鹕组件中的肚内玩家列表，防止再次按技能键时重复显示"吐出玩家"
         if (pelican != null) {
-            PelicanPlayerComponent comp = PelicanPlayerComponent.KEY.get(pelican);
-            comp.bellyPlayerIds.clear();
-            comp.bellyNames.clear();
-            comp.sync();
+            PelicanRoleData comp = RoleData.getNullable(PelicanRoleData.class, pelican);
+            if (comp != null) {
+                comp.bellyPlayerIds.clear();
+                comp.bellyNames.clear();
+                comp.sync();
+            }
         }
 
         // 如果被释放的玩家中有疫使，重新检查疫使时刻触发条件
@@ -290,7 +363,7 @@ public final class PelicanManager {
     }
 
     public static boolean isStashed(Player player) {
-        return player != null && pelicanByStashed.containsKey(player.getUUID());
+        return player != null && isStashed(player.getUUID());
     }
 
     public static boolean isStashed(UUID playerId) {
@@ -394,30 +467,30 @@ public final class PelicanManager {
                 target.removeEffect(ModEffects.SKILL_BANED);
                 target.removeEffect(ModEffects.CHAT_BAN);
                 target.removeEffect(ModEffects.USED_BANED);
-            // 如果该玩家在肚内已死亡，跳过复活/改模式/传送。
-            if (stashedDead.contains(targetId)) {
-                stashedDead.remove(targetId);
-                target.setInvisible(false);
-                target.connection.send(new ClientboundSetCameraPacket(target));
-                NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
-                target.displayClientMessage(
-                    Component.translatable("message.noellesroles.pelican.spat_out_dead"),
-                    true);
-            } else {
-                target.setGameMode(GameType.ADVENTURE);
-                target.setInvisible(false);
-                target.teleportTo(pelican.serverLevel(), pelican.getX(), pelican.getY(), pelican.getZ(),
-                    pelican.getYRot(), pelican.getXRot());
-                target.connection.send(new ClientboundSetCameraPacket(target));
-                NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
-                target.displayClientMessage(
-                    Component.translatable("message.noellesroles.pelican.spat_out_dead"),
-                    true);
-                // 记录回放：鹈鹕死亡，肚内玩家被吐出
-                SRE.REPLAY_MANAGER.recordCustomEvent(Component.translatable("replay.pelican.spit_death",
-                        GameReplayUtils.getReplayPlayerDisplayText(pelican, true),
-                        GameReplayUtils.getReplayPlayerDisplayText(target, true)));
-            }
+                // 如果该玩家在肚内已死亡，跳过复活/改模式/传送。
+                if (stashedDead.contains(targetId)) {
+                    stashedDead.remove(targetId);
+                    target.setInvisible(false);
+                    target.connection.send(new ClientboundSetCameraPacket(target));
+                    NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
+                    target.displayClientMessage(
+                            Component.translatable("message.noellesroles.pelican.spat_out_dead"),
+                            true);
+                } else {
+                    target.setGameMode(GameType.ADVENTURE);
+                    target.setInvisible(false);
+                    target.teleportTo(pelican.serverLevel(), pelican.getX(), pelican.getY(), pelican.getZ(),
+                            pelican.getYRot(), pelican.getXRot());
+                    target.connection.send(new ClientboundSetCameraPacket(target));
+                    NoellesrolesVoiceChatPlugin.onPelicanRelease(targetId);
+                    target.displayClientMessage(
+                            Component.translatable("message.noellesroles.pelican.spat_out_dead"),
+                            true);
+                    // 记录回放：鹈鹕死亡，肚内玩家被吐出
+                    SRE.REPLAY_MANAGER.recordCustomEvent(Component.translatable("replay.pelican.spit_death",
+                            GameReplayUtils.getReplayPlayerDisplayText(pelican, true),
+                            GameReplayUtils.getReplayPlayerDisplayText(target, true)));
+                }
             }
             belly.remove(targetId);
         }

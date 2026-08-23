@@ -57,6 +57,7 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.THMountainRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.role.touhou.THMagicForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
@@ -135,6 +136,9 @@ public class TouhouHandlers {
     OnPlayerDeathWithBody.EVENT.register((victim, killer, deathReason, body) -> {
       if (killer == null)
         return;
+      if (RoleUtils.isPlayerTheJob(victim, ModRoles.DOOMED_SINNER)) {
+        return;
+      }
       if (RoleUtils.isPlayerTheJob(killer, THRedHouseRoles.REMILIA)) {
         final var cdcca = SREAbilityPlayerComponent.KEY.get(killer);
         if (cdcca.hasCooldown()) {
@@ -203,6 +207,20 @@ public class TouhouHandlers {
         return TrueFalseResult.FALSE;
       }
       return TrueFalseResult.PASS;
+    });
+
+    // 四季
+    AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReasosn) -> {
+      if (killer == null)
+        return true;
+      if (!RoleUtils.isPlayerTheJob(victim, THMiscRoles.SHIKIEIKI))
+        return true;
+      if (SREAbilityPlayerComponent.KEY.get(victim).targetUUID == null)
+        return true;
+      if (SREAbilityPlayerComponent.KEY.get(victim).targetUUID == killer.getUUID() && SREAbilityPlayerComponent.KEY.get(victim).hasDuration()) {
+        return false;
+      }
+      return true;
     });
     // 天子&小町
     OnPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {

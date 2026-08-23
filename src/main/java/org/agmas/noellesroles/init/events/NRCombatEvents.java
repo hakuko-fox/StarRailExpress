@@ -22,7 +22,6 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
-import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,11 +30,9 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
-import org.agmas.noellesroles.game.roles.killer.executioner.ExecutionerPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.executioner.ShootingFrenzyPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.watcher.WatcherPlayerComponent;
-import org.agmas.noellesroles.game.roles.neutral.raven.RavenPlayerComponent;
-import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.role_data.killer.ExecutionerRoleData;
+import io.wifi.starrailexpress.api.data.RoleData;
+import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
 import org.agmas.noellesroles.content.item.*;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPunchHandler;
 import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
@@ -70,24 +67,15 @@ public class NRCombatEvents {
     private static void registerAllowPlayerPunching() {
         // 渡鸦狩猎期间允许空手攻击
         AllowPlayerPunching.EVENT.register(player -> {
-            RavenPlayerComponent raven = ModComponents.RAVEN.get(player);
-            return SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.RAVEN) && raven.isHunting();
+            RavenRoleData raven = RoleData.getNullable(RavenRoleData.class, player);
+            return SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.RAVEN)
+                    && raven != null && raven.isHunting();
         });
     }
 
     // --- AllowShootRevolverDrop ---
 
     private static void registerAllowShootRevolverDrop() {
-        // 观者冷静姿态不掉枪
-        AllowShootRevolverDrop.EVENT.register((player, target) -> {
-            var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            ItemStack mainHandStack = player.getMainHandItem();
-            if (!mainHandStack.is(TMMItems.DERRINGER) && gameWorldComponent.isRole(target, ModRoles.WATCHER)) {
-                if (WatcherPlayerComponent.KEY.get(target).isInCalmStance())
-                    return TrueFalseResult.TRUE;
-            }
-            return TrueFalseResult.PASS;
-        });
     }
 
     // --- OnRevolverUsed (合并为单一注册) ---
@@ -212,10 +200,10 @@ public class NRCombatEvents {
     // --- 战斗相关的角色事件 ---
 
     private static void registerCombatRoleEvents() {
-        ShootingFrenzyPlayerComponent.registerGunNoDropEvent();
-        ExecutionerPlayerComponent.registerBackfireEvent();
-        ShootingFrenzyPlayerComponent.registerFrenzyCooldownEvent();
-        org.agmas.noellesroles.game.roles.killer.spellbreaker.SpellbreakerPlayerComponent.registerEvents();
+        ExecutionerRoleData.registerGunNoDropEvent();
+        ExecutionerRoleData.registerBackfireEvent();
+        ExecutionerRoleData.registerFrenzyCooldownEvent();
+        org.agmas.noellesroles.role_data.killer.SpellbreakerRoleData.registerEvents();
         VoodooDeathHandler.registerEvents();
     }
 }

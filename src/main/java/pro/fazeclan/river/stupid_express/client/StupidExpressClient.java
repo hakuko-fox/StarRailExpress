@@ -37,6 +37,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.PlayerSkin.Model;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import io.wifi.starrailexpress.event.client.LimitedInventoryScreenEvents;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -44,11 +45,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role_data.neutral.LeaderRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
 import pro.fazeclan.river.stupid_express.client.keybinds.SplitPersonalityKeybinds;
+import pro.fazeclan.river.stupid_express.client.modifier.split_personality.SplitPersonalityInventoryScreenExtension;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
@@ -273,6 +276,10 @@ public class StupidExpressClient implements ClientModInitializer {
                 return OnGettingPlayerSkin.PlayerSkinResult
                         .playerSkin(SRE.id("textures/entity/custom_psycho/th_sariel.png"), Model.SLIM);
             }
+            if (SREClient.cached_player != null && SREClient.cached_player.hasEffect(ModEffects.SKIN_MASK)) {
+                return OnGettingPlayerSkin.PlayerSkinResult
+                        .playerSkin(SRE.id("textures/entity/custom_psycho/th_sariel.png"), Model.SLIM);
+            }
             return null;
         });
         // 使用 Fabric Events 来处理按键按下事件
@@ -321,7 +328,11 @@ public class StupidExpressClient implements ClientModInitializer {
     }
 
     private static void registerInventoryEvents() {
-
+        // 双重人格：背包界面（LimitedInventoryScreen）选择按钮 + 提示文本（旧版
+        // InventoryScreenSplitPersonalityMixin）
+        LimitedInventoryScreenEvents.INIT.register(SplitPersonalityInventoryScreenExtension.INSTANCE::onInit);
+        LimitedInventoryScreenEvents.RENDER_TAIL
+                .register(SplitPersonalityInventoryScreenExtension.INSTANCE::onRenderTail);
     }
 
     /** 本地玩家是否为领袖追随者（纵火犯 HUD 同步：追随者点燃所需 -2 人） */

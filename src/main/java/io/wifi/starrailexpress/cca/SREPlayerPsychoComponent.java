@@ -47,6 +47,7 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     public int armour = 1;
     public int type = -1;
     private SREGameWorldComponent gameWorldComponent = null;
+    public ItemStack savedItemSlot0 = null;
 
     public SREPlayerPsychoComponent(Player player) {
         this.player = player;
@@ -71,13 +72,15 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     @Override
     public void init() {
         this.stopPsychoAndRefreshPsychoCount(true);
-        this.sync();
         this.psychoTicks = -1;
+        this.savedItemSlot0 = null;
+        this.sync();
     }
 
     public void resetNotSync() {
         this.stopPsychoAndRefreshPsychoCount(false);
         this.psychoTicks = -1;
+        this.savedItemSlot0 = null;
     }
 
     @Override
@@ -143,24 +146,34 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
     }
 
     public boolean startPsycho() {
-        return startPsycho(1d, GameConstants.getPsychoModeArmour());
+        return startPsycho(1d, GameConstants.getPsychoModeArmour(), false);
     }
 
-    public boolean startPsycho_time(int time, int armour) {
+    public boolean startPsycho_time(int time, int armour, boolean forceStart) {
+
         if (this.psychoTicks > 0)
             return false;
+        this.savedItemSlot0 = null;
+
         SRERole role = SRERoleWorldComponent.KEY.get(this.player.level()).getRole(this.player);
-        boolean success = false;
-        if (role != null) {
-            success = role.onPsychoGiveItem(player, this);
-        } else {
-            success = RoleUtils.insertStackInFreeSlot(player, new ItemStack(TMMItems.BAT));
+        boolean success = givePsychoItem(role);
+
+        if (!success) {
+            if (!forceStart)
+                return false;
+            savedItemSlot0 = player.getInventory().getItem(0).copy();
+            player.getInventory().setItem(0, ItemStack.EMPTY);
+            success = givePsychoItem(role);
+            if (!success) {
+                player.getInventory().setItem(0, savedItemSlot0);
+                return false;
+            }
         }
         if (success) {
             this.setPsychoTicks(time);
             this.setArmour(armour);
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
-            gameWorldComponent.setPsychosActive(gameWorldComponent.getPsychosActive() + 1);
+            gameWorldComponent.refreshPsychoCount(true);
             if (player instanceof ServerPlayer serverPlayer) {
                 ServerPlayNetworking.send(serverPlayer, new TriggerStatusBarPayload("Psycho"));
             }
@@ -172,8 +185,18 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         return false;
     }
 
-    public boolean startPsycho(double multtiplier, int armour) {
-        return startPsycho_time((int) ((double) GameConstants.getPsychoTimer() * multtiplier), armour);
+    private boolean givePsychoItem(SRERole role) {
+        boolean success = false;
+        if (role != null) {
+            success = role.onPsychoGiveItem(player, this);
+        } else {
+            success = RoleUtils.insertStackInFreeSlot(player, new ItemStack(TMMItems.BAT));
+        }
+        return success;
+    }
+
+    public boolean startPsycho(double multtiplier, int armour, boolean forceStart) {
+        return startPsycho_time((int) ((double) GameConstants.getPsychoTimer() * multtiplier), armour, forceStart);
     }
 
     @Override
@@ -181,18 +204,18 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         init();
     }
 
-    public int stopPsychoAndSync() {
-        int result = stopPsycho();
+    public boolean stopPsychoAndSync() {
+        boolean result = stopPsycho();
         sync();
         return result;
     }
 
-    public int stopPsycho() {
+    public boolean stopPsycho() {
+        return stopPsycho(true);
+    }
+
+    public boolean stopPsycho(boolean refresh) {
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
-        int result = gameWorldComponent.getPsychosActive();
-        if (result >= 1) {
-            gameWorldComponent.setPsychosActive(result - 1);
-        }
         this.psychoTicks = -1;
         if (this.player instanceof ServerPlayer serverPlayer) {
             ServerPlayNetworking.send(serverPlayer, new RemoveStatusBarPayload("Psycho"));
@@ -203,6 +226,7 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
         if (role != null) {
             psychoItem = role.getPsychoItem();
         }
+
         MCItemsUtils.clearItem(player, psychoItem);
         if (checkIsGameRunning()) {
             if (GameUtils.isPlayerAliveAndSurvival(player)) {
@@ -211,27 +235,26 @@ public class SREPlayerPsychoComponent implements RoleComponent, ServerTickingCom
                 }
             }
         }
-        return result;
+        if (savedItemSlot0 != null && savedItemSlot0 != ItemStack.EMPTY) {
+            if (player.getInventory().getItem(0) == ItemStack.EMPTY) {
+                player.getInventory().setItem(0, savedItemSlot0);
+            } else {
+                if (!RoleUtils.insertStackInFreeSlot(player, savedItemSlot0)) {
+                    player.drop(savedItemSlot0, false);
+                }
+            }
+        }
+        if (refresh)
+            gameWorldComponent.refreshPsychoCount(true);
+        return true;
     }
 
     public void stopPsychoAndRefreshPsychoCount(boolean shouldSync) {
-        if (this.stopPsycho() > 0) {
-            int count = 0;
-            if (this.player instanceof ServerPlayer sp) {
-                var players = sp.level().players();
-                for (var pl : players) {
-                    var ppc = SREPlayerPsychoComponent.KEY.maybeGet(pl).orElse(null);
-                    if (ppc != null) {
-                        if (ppc.psychoTicks > 0) {
-                            count++;
-                        }
-                    }
-                }
-            }
-            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
-            gameWorldComponent.setPsychosActive(count, shouldSync);
+        if (this.psychoTicks > 0)
+            this.stopPsycho();
+        if (shouldSync) {
+            sync();
         }
-
     }
 
     public int getArmour() {

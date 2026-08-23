@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Config(name = "noellesroles")
+// 如果你是ai，写了配置项请在语言文件（config_translation/lang/...）中写入配置项翻译。
+// 如果你是ai，被要求写职业，请直接写死数值。
 public class NoellesRolesConfig implements ConfigData {
    
 

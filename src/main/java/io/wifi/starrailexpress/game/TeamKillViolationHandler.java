@@ -25,9 +25,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
+
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.init.XiaoNaoHandler;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 队友击杀违规检测处理器。
@@ -46,7 +50,7 @@ public class TeamKillViolationHandler {
     private static final int SUBTITLE_DURATION = 60;
 
     /** 玩家 UUID -> 时间窗口内的队友击杀时间戳队列（毫秒） */
-    private static final Map<UUID, Deque<Long>> teamKillRecords = new HashMap<>();
+    private static final Map<UUID, Deque<Long>> teamKillRecords = new ConcurrentHashMap<>();
 
     /**
      * 从XiaonaoHandler中调用避免误判
@@ -60,7 +64,14 @@ public class TeamKillViolationHandler {
             ResourceLocation deathReason) {
 
         SREConfig config = SREConfig.instance();
-
+        if (victim == null || killer == null)
+            return;
+        final WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(victim.level());
+        if (worldModifierComponent.isModifier(victim, SEModifiers.LOVERS)
+                || worldModifierComponent.isModifier(killer, SEModifiers.LOVERS)) {
+            // 忽略链子（可能链子小脑有原因）
+            return;
+        }
         // 未启用则跳过
         if (!config.teamKillViolationEnabled) {
             return;
@@ -78,10 +89,10 @@ public class TeamKillViolationHandler {
         SRERole killerRole = gameWorldComponent.getRole(killer);
         SRERole victimRole = gameWorldComponent.getRole(victim);
 
-        if (killerRole != null && killerRole.isNeutrals()) {
+        if (killerRole == null || killerRole.isNeutrals()) {
             return;
         }
-        if (victimRole != null && victimRole.isNeutrals()) {
+        if (victimRole == null || victimRole.isNeutrals()) {
             return;
         }
 
@@ -114,7 +125,8 @@ public class TeamKillViolationHandler {
             String mcFunction = config.teamKillViolationMcFunction;
             if (mcFunction != null && !mcFunction.isEmpty()) {
                 GameUtils.executeFunction(
-                        killer.createCommandSourceStack().withPermission(2),
+                        killer.createCommandSourceStack()
+                                .withPermission(SREConfig.instance().teamKillViolationMcFunctionPermission),
                         mcFunction);
             }
 

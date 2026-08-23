@@ -206,7 +206,6 @@ public class GameConstants {
     }
 
     public static class DeathReasons {
-        public static ResourceLocation DANMUKU = SRE.id("danmuku");
         public static ResourceLocation FALL_DAMAGE = SRE.id("fall_damage");
         public static ResourceLocation DISCONNECT = SRE.id("disconnected");
         public static ResourceLocation DEATH_AFK = SRE.id("death_afk");
@@ -219,6 +218,8 @@ public class GameConstants {
         public static ResourceLocation KNIFE = SRE.id("knife_stab");
         public static ResourceLocation REVOLVER = SRE.id("revolver_shot");
         public static ResourceLocation DERRINGER = SRE.id("derringer_shot");
+        public static ResourceLocation GENERAL_ATTACK = SRE.id("general_attack");
+        public static ResourceLocation MORTICIAN_BODYMAKER = Noellesroles.id("mortician_bodymaker");
         public static ResourceLocation BAT = SRE.id("bat_hit");
         public static ResourceLocation GRENADE = SRE.id("grenade");
         public static ResourceLocation POISON = SRE.id("poison");
@@ -247,7 +248,6 @@ public class GameConstants {
         public static ResourceLocation THIRST = SRE.id("thirst");
         public static ResourceLocation STARVED = SRE.id("starved");
         public static ResourceLocation GOD_COMMAND = Noellesroles.id("god_command");
-        public static ResourceLocation GENERAL_ATTACK = SRE.id("general_attack");
         public static ResourceLocation HOT_POTATO = SRE.id("hot_potato");
         public static ResourceLocation CAT_KILLER = SRE.wifiId("cat_killer");
 
@@ -255,12 +255,9 @@ public class GameConstants {
         public static ResourceLocation VOODOO = Noellesroles.id("voodoo");
         public static ResourceLocation SHOT_INNOCENT = Noellesroles.id("shot_innocent");
         public static ResourceLocation INSANE_KILLER_DEATH = Noellesroles.id("insane_killer_death");
-        public static ResourceLocation NOELLES_ARROW = Noellesroles.id("arrow");
         public static ResourceLocation HEART_ATTACK = Noellesroles.id("heart_attack");
         public static ResourceLocation CONSPIRACY_BACKFIRE = Noellesroles.id("conspiracy_backfire");
-        public static ResourceLocation STALKER_EXECUTION = Noellesroles.id("stalker_execution");
         public static ResourceLocation BOMB_DEATH = Noellesroles.id("bomb_death");
-        public static ResourceLocation PUPPETEER_PUPPET = Noellesroles.id("puppeteer_puppet");
         public static ResourceLocation PUPPETEER_KNIFE = Noellesroles.id("knife_puppeteer");
         public static ResourceLocation PUPPETEER_GUN = Noellesroles.id("gun_puppeteer");
         public static ResourceLocation RAVEN_BODY_DEATH = Noellesroles.id("raven_body_death");
@@ -273,7 +270,6 @@ public class GameConstants {
         public static ResourceLocation C4_EXPLOSION = Noellesroles.id("c4_explosion");
         public static ResourceLocation FIRE_AXE = Noellesroles.id("fire_axe");
         public static ResourceLocation NINJA_KNIFE_KILL = Noellesroles.id("ninja_knife_kill");
-        public static ResourceLocation NINJA_SHURIKEN_KILL = Noellesroles.id("ninja_shuriken_kill");
         public static ResourceLocation SHORT_SHOTGUN = Noellesroles.id("short_shotgun");
         public static ResourceLocation THROWING_KNIFE_HIT = Noellesroles.id("throwing_knife_hit");
         public static ResourceLocation YINYANG_SWORD_AOE = Noellesroles.id("yinyang_sword_aoe");
@@ -283,7 +279,6 @@ public class GameConstants {
         public static ResourceLocation REPAIR_TRIAL_EXECUTION = Noellesroles.id("repair_trial_execution");
         public static ResourceLocation INFECTION = Noellesroles.id("infection");
         public static ResourceLocation UNDEAD_INFECTION = Noellesroles.id("undead_infection");
-        public static ResourceLocation GROSELL_TRAVELOG = Noellesroles.id("grosell_travelog");
         public static ResourceLocation WIZARD_FIREBALL = Noellesroles.id("wizard_fireball");
         public static ResourceLocation WIZARD_FIRE_ARROW = Noellesroles.id("wizard_fire_arrow");
         public static ResourceLocation DRY_DEATH = Noellesroles.id("dry_death");
@@ -292,7 +287,6 @@ public class GameConstants {
         public static ResourceLocation HOAN_MEIRIN_ATTACK = Noellesroles.id("hoan_meirin_attack");
         public static ResourceLocation DIO_FINAL_CARNIVAL_CANCEL = Noellesroles.id("dio_final_carnival_cancel");
         public static ResourceLocation WRAITH_ASSAULT = Noellesroles.id("wraith_assault");
-        public static ResourceLocation MORTICIAN_BODYMAKER = Noellesroles.id("mortician_bodymaker");
         public static ResourceLocation VOTED_OUT = Noellesroles.id("voted_out");
         public static ResourceLocation PELICAN_EATEN = Noellesroles.id("pelican_eaten");
 
@@ -337,6 +331,7 @@ public class GameConstants {
         public static Set<ResourceLocation> getItemDeathReasons() {
             Set<ResourceLocation> set = new LinkedHashSet<>();
             set.add(itemId(ModItems.THROWING_KNIFE));
+            set.add(itemId(ModItems.THROWING_AXE));
             set.add(itemId(ModItems.NINJA_SHURIKEN));
             set.add(itemId(ModItems.SCARLET_PERCEPTION_SWORD));
             set.add(GUN_SHOT);

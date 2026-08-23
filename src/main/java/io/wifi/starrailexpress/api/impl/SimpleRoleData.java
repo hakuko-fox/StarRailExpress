@@ -18,6 +18,7 @@ package io.wifi.starrailexpress.api.impl;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 /**
@@ -52,21 +53,30 @@ public class SimpleRoleData implements RoleData {
         ctx.sync();
     }
 
+    public void syncTo(ServerPlayer serverPlayer) {
+        ctx.syncTo(serverPlayer);
+    }
+
+    @Override
     public void clientTick() {
     }
 
+    @Override
     public void serverTick() {
     }
 
     /**
      * 当玩家赋予该职业时触发
      */
+    @Override
     public void init() {
+        // 不需要初始化各field也不需要同步，服务端和客户端均会使用该类初始值作为玩家变成此职业后的初始值。
     }
 
     /**
      * 当玩家离开此职业时触发
      */
+    @Override
     public void clear() {
     }
 }

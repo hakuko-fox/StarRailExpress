@@ -138,8 +138,12 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         }
         // 巫师专属：正向金额转换为魔素
         if (role == org.agmas.noellesroles.role.ModRoles.WIZARD && amount > 0) {
-            org.agmas.noellesroles.component.ModComponents.WIZARD.get(this.player).addMana(
-                    amount * org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().wizardManaPerCoin);
+            var wizardData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                    org.agmas.noellesroles.role_data.killer.WizardRoleData.class, this.player);
+            if (wizardData != null) {
+                wizardData.addMana(
+                        amount * org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().wizardManaPerCoin);
+            }
         }
         if (this.balance != 0) {
             this.balance = 0;
@@ -355,7 +359,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
      * @return
      */
     public static boolean usePsychoMode(@NotNull Player player, double multtiplier, int armour) {
-        boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho(multtiplier, armour);
+        boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho(multtiplier, armour, false);
         if (started) {
             player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
                     GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
@@ -376,7 +380,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
     public static boolean usePsychoMode_time(@NotNull Player player, int time, int armour) {
         player.getCooldowns().addCooldown(TMMItems.PSYCHO_MODE,
                 GameConstants.ITEM_COOLDOWNS.getOrDefault(TMMItems.PSYCHO_MODE, 0));
-        boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho_time(time, armour);
+        boolean started = SREPlayerPsychoComponent.KEY.get(player).startPsycho_time(time, armour, false);
         if (started) {
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.PSYCHO_MODE));
         }

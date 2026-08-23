@@ -89,7 +89,7 @@ public class RoleMethodDispatcher {
                 shopComponent.addToBalance(
                         (int) ((SREConfig.instance().civilianTaskReward + streakBonus) * rewardMultiplier));
             } else if (role.isKiller() && !role.isNeutrals() && !role.isInnocent()) {
-                // 任意平民/中立完成一个任务 -> 每个杀手获得 killerTaskIncome
+                // 任意杀手完成一个任务 -> 每个杀手获得 killerTaskIncome
                 int killerGain = (int) (SREConfig.instance().killerTaskIncome * rewardMultiplier);
                 if (killerGain > 0) {
                     player.level().players().forEach(a -> {
@@ -148,9 +148,6 @@ public class RoleMethodDispatcher {
         
         SRERole role = getCurrentRole(player);
         if (role != null) {
-            if (role.cantPickupItem(player).test(item.getItem())) {
-                return TrueFalseResult.FALSE;
-            }
             return role.onPickUpItem(player, item);
         }
         return TrueFalseResult.PASS;

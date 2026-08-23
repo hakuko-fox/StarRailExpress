@@ -15,8 +15,11 @@
 
 package org.agmas.noellesroles.game.roles.neutral.gambler;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.data.RoleData;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -41,6 +44,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role_data.neutral.GamblerRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
@@ -69,12 +73,12 @@ public class GamblerHandler {
         if (!SREGameWorldComponent.KEY.get(victim.level()).isSkillAvailable){
             return true;
         }
-        GamblerPlayerComponent gamblerPlayerComponent = GamblerPlayerComponent.KEY.get(victim);
+        GamblerRoleData gamblerPlayerComponent = RoleData.getNullable(GamblerRoleData.class, victim);
         // 掉枪
         RoleUtils.dropAndClearAllSatisfiedItems((ServerPlayer) victim, TMMItemTags.GUNS);
 
         // 如果已经使用过能力，则正常死亡
-        if (gamblerPlayerComponent.usedAbility) {
+        if (gamblerPlayerComponent == null || gamblerPlayerComponent.usedAbility) {
             return true;
         }
 
@@ -277,6 +281,11 @@ public class GamblerHandler {
 
         // 6. 补充 CustomWinnerID: gambler
         RoleUtils.customWinnerWin(serverWorld, GameUtils.WinStatus.GAMBLER, "gambler", null);
+
+        // 7. 回放记录：赌徒触发 1% 奇迹
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.gambler.miracle",
+                        GameReplayUtils.getReplayPlayerDisplayText(victim, true)));
     }
 
     private static void spawnLightning(ServerLevel level, Vec3 pos) {
