@@ -30,8 +30,8 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * 主動技1（G）：獸化之力（可隨時關閉）冷卻180秒。變身成獸化型態—雪狐：
  *   - 無法攻擊
  *   - 所受攻擊不會使你死亡
- *   - 獲得 速度II、跳躍II
- * 主動技2（Shift+G）：瞬真的。冷卻60秒，消耗100金幣，令其他玩家緩速、失明、無法跳躍5秒。
+ *   - 獲得速度II
+ * 主動技2（Shift+G）：瞬結。冷卻60秒，消耗100金幣，令其他玩家緩速、失明3秒。
  * 被動技（修仙成狐）：開局時失明60秒，60秒後自動化身為獸化型態。
  * 標籤：香港Vtuber
  */
@@ -88,6 +88,10 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         return beastFormActive;
     }
 
+    public boolean isCultivating() {
+        return cultivating;
+    }
+
     public boolean isDisguised() {
         return beastFormActive;
     }
@@ -121,7 +125,6 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             }
         }
         sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, -1, 1, false, false, true));
-        sp.addEffect(new MobEffectInstance(MobEffects.JUMP, -1, 1, false, false, true));
         sp.refreshDimensions();
 
         sp.serverLevel().playSound(null, sp.getX(), sp.getY(), sp.getZ(),
@@ -137,6 +140,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         // 離開型態時清除被動倒數（防禦性：正常流程已在 enterBeastForm 清除）
         cultivating = false;
         cultivateEndTime = 0;
+        sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0, false, false, true));
         sp.refreshDimensions();
         sync();
     }
@@ -178,9 +182,8 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         ServerLevel level = sp.serverLevel();
         for (ServerPlayer other : level.players()) {
             if (other == sp) continue;
-            other.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 255, false, false, true));
-            other.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 0, false, false, true));
-            other.addEffect(new MobEffectInstance(MobEffects.JUMP, 100, 128, false, false, true));
+            other.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3 * 20, 0, false, false, true));
+            other.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 3 * 20, 0, false, false, true));
             other.displayClientMessage(
                     Component.translatable("skill.noellesroles.hakukofox.freeze_notify"), true);
         }
@@ -198,10 +201,6 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
             var speed = sp.getEffect(MobEffects.MOVEMENT_SPEED);
             if (speed != null && speed.getDuration() < 0 && speed.getAmplifier() == 1) {
                 sp.removeEffect(MobEffects.MOVEMENT_SPEED);
-            }
-            var jump = sp.getEffect(MobEffects.JUMP);
-            if (jump != null && jump.getDuration() < 0 && jump.getAmplifier() == 1) {
-                sp.removeEffect(MobEffects.JUMP);
             }
         }
     }

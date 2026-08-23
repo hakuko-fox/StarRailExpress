@@ -22,9 +22,14 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.agmas.noellesroles.Noellesroles;
 
-public record ProblemScreenOpenC2SPacket(boolean forced, int maxTrial, int timeLimitSeconds) implements CustomPacketPayload {
+public record ProblemScreenOpenC2SPacket(boolean forced, int maxTrial, int timeLimitSeconds,
+        boolean consecutive) implements CustomPacketPayload {
     public ProblemScreenOpenC2SPacket(boolean forced, int maxTrial) {
-        this(forced, maxTrial, 0);
+        this(forced, maxTrial, 0, false);
+    }
+
+    public ProblemScreenOpenC2SPacket(boolean forced, int maxTrial, int timeLimitSeconds) {
+        this(forced, maxTrial, timeLimitSeconds, false);
     }
     public static final ResourceLocation ABILITY_PAYLOAD_ID = ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID,
             "problem_set_open");
@@ -39,10 +44,11 @@ public record ProblemScreenOpenC2SPacket(boolean forced, int maxTrial, int timeL
         buf.writeBoolean(forced());
         buf.writeInt(maxTrial());
         buf.writeInt(timeLimitSeconds());
+        buf.writeBoolean(consecutive());
     }
 
     public static ProblemScreenOpenC2SPacket read(FriendlyByteBuf buf) {
-        return new ProblemScreenOpenC2SPacket(buf.readBoolean(), buf.readInt(), buf.readInt());
+        return new ProblemScreenOpenC2SPacket(buf.readBoolean(), buf.readInt(), buf.readInt(), buf.readBoolean());
     }
 
     static {

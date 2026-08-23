@@ -119,8 +119,11 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         return;
 
                     if (!player.isCreative()) {
-                        player.getCooldowns().addCooldown(mainHandStack.getItem(),
-                                GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 0));
+                        int cooldown = SREGameWorldComponent.KEY.get(player.level()).isRole(player,
+                                org.agmas.noellesroles.role.ModRoles.HOSHIZORA)
+                                        ? 20 * 20
+                                        : GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 0);
+                        player.getCooldowns().addCooldown(mainHandStack.getItem(), cooldown);
                     }
 
                     SniperRifleItem.consumeAmmo(mainHandStack);
@@ -154,19 +157,21 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                             }
                         }
 
-                        // 星空宙：同一目標第一次命中只造成受傷提示，第二次命中才死亡。
+                        // 星空宙：同一目標第一次命中只造成受傷提示，第二次命中才嘗試致命。
+                        // 若致命傷被護盾否決，保留命中狀態，下一槍會再次嘗試致命。
+                        String zoraHitKey = null;
                         if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.HOSHIZORA.identifier())) {
                             String hitKey = player.getUUID() + ":" + target.getUUID();
                             if (!ZORA_TARGET_HITS.getOrDefault(hitKey, false)) {
                                 ZORA_TARGET_HITS.put(hitKey, true);
                                 target.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                                        net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
+                                        net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 60, 1));
                                 target.displayClientMessage(
                                         net.minecraft.network.chat.Component.translatable(
                                                 "message.noellesroles.zora.first_hit"), true);
                                 return;
                             }
-                            ZORA_TARGET_HITS.remove(hitKey);
+                            zoraHitKey = hitKey;
                         }
 
                         double distance = player.distanceTo(target);
@@ -192,11 +197,17 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         } else if (dropresult.equals(TrueFalseResult.TRUE)) {
                             shouldDropRevolver = true;
                         }
+                        boolean requireEliminationForDrop = role != null
+                                && role.identifier().equals(
+                                        org.agmas.noellesroles.role.ModRoles.HOSHIZORA.identifier());
                         if (backfire) {
                             GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.SNIPER_RIFLE_BACKFIRE);
                         } else if (shouldDropRevolver) {
                             Scheduler.schedule(() -> {
                                 {
+                                    if (requireEliminationForDrop && !GameUtils.isPlayerEliminated(target)) {
+                                        return;
+                                    }
                                     boolean flag = false;
                                     if (player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
                                         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -220,10 +231,15 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                             }, 1);
                         }
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
+                        if (zoraHitKey != null && GameUtils.isPlayerEliminated(target)) {
+                            ZORA_TARGET_HITS.remove(zoraHitKey);
+                        }
                     } else {
                         if (SREGameWorldComponent.KEY.get(player.level()).isRole(player,
                                 org.agmas.noellesroles.role.ModRoles.HOSHIZORA)) {
                             int misses = ZORA_MISSES.merge(player.getUUID(), 1, Integer::sum);
+                            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                                    "message.noellesroles.zora.miss_remaining", Math.max(0, 5 - misses)), true);
                             if (misses >= 5) {
                                 GameUtils.killPlayer(player, true, null,
                                         GameConstants.DeathReasons.SNIPER_RIFLE_BACKFIRE);

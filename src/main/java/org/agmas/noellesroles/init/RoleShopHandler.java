@@ -3520,11 +3520,28 @@ public class RoleShopHandler {
         // 修車麟阿麟商店：一次性修門工具與破門工具
         {
             var ALIN_SHOP = new ArrayList<ShopEntry>();
-            ALIN_SHOP.add(new ShopEntry(ModItems.REPAIR_CROWBAR.getDefaultInstance(), 130,
+            ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_WRENCH.getDefaultInstance(), 130,
                     ShopEntry.Type.TOOL));
             ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_SCREWDRIVER.getDefaultInstance(), 130,
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.ALIN_ID, ALIN_SHOP);
+        }
+        {
+            var YUYUE_SHOP = new ArrayList<ShopEntry>();
+            YUYUE_SHOP.add(new ShopEntry(ModItems.YUYUE_NOTE.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.YUYUE_ID, YUYUE_SHOP);
+        }
+        {
+            var FU_TAI_SHOP = new ArrayList<ShopEntry>();
+            FU_TAI_SHOP.add(new ShopEntry(TMMItems.DEFENSE_VIAL.getDefaultInstance(), 500,
+                    ShopEntry.Type.POISON));
+            ShopContent.customEntries.put(ModRoles.FU_TAI_ID, FU_TAI_SHOP);
+        }
+        {
+            var HOSHIZORA_SHOP = new ArrayList<ShopEntry>();
+            HOSHIZORA_SHOP.add(new ShopEntry(new ItemStack(TMMItems.MAGNUM_BULLET, 5), 50,
+                    ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.HOSHIZORA_ID, HOSHIZORA_SHOP);
         }
     }
 

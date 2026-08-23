@@ -112,6 +112,8 @@ public class InstinctManager {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(Minecraft.getInstance().player.level());
         // if (target instanceof PlayerBodyEntity) return 0x606060;
+        if (target instanceof org.agmas.noellesroles.content.entity.FuTaiGlitchEntity)
+            return OptionalInt.empty();
         if (target instanceof ItemEntity || target instanceof NoteEntity || target instanceof FirecrackerEntity)
             return OptionalInt.of(0xDB9D00);
         // 渲染傀儡高亮

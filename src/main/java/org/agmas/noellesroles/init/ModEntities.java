@@ -30,6 +30,15 @@ import org.agmas.noellesroles.content.block_entity.DevilRouletteTableEntity;
 import org.agmas.noellesroles.content.entity.*;
 
 public class ModEntities {
+    public static final EntityType<FuTaiGlitchEntity> FU_TAI_GLITCH = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("fu_tai_glitch"),
+            EntityType.Builder.<FuTaiGlitchEntity>of(FuTaiGlitchEntity::new, MobCategory.MISC)
+                    .sized(0.25F, 0.25F)
+                    .clientTrackingRange(8)
+                    .updateInterval(2)
+                    .build("fu_tai_glitch"));
+
     public static final EntityType<RoleMineEntity> ROLE_MINE_ENTITY_ENTITY_TYPE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "cube"),

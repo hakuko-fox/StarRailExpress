@@ -204,6 +204,48 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               }
             }
             if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)) {
+              if (gameWorldComponent.isRole(player, ModRoles.LUNA)
+                  || gameWorldComponent.isRole(player, ModRoles.YORU)) {
+                var counterpartRole = gameWorldComponent.isRole(player, ModRoles.LUNA)
+                    ? ModRoles.YORU : ModRoles.LUNA;
+                player.serverLevel().players().stream()
+                    .filter(receiver -> GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(receiver)
+                        && gameWorldComponent.isRole(receiver, counterpartRole)
+                        && player.distanceTo(receiver) > api.getVoiceChatDistance())
+                    .findFirst()
+                    .ifPresent(receiver -> {
+                      VoicechatConnection receiverConnection = api.getConnectionOf(receiver.getUUID());
+                      if (receiverConnection != null && receiverConnection.isInstalled()
+                          && receiverConnection.isConnected()
+                          && !shouldBanVoice(connection, receiverConnection)) {
+                        api.sendLocationalSoundPacketTo(receiverConnection, event.getPacket()
+                            .locationalSoundPacketBuilder()
+                            .position(api.createPosition(receiver.getX(), receiver.getY(), receiver.getZ()))
+                            .distance((float) api.getVoiceChatDistance())
+                            .build());
+                      }
+                    });
+              }
+              if (gameWorldComponent.isRole(player, ModRoles.XIAOYE)) {
+                event.cancel();
+                for (ServerPlayer receiver : player.serverLevel().players()) {
+                  if (receiver.getUUID().equals(player.getUUID())) {
+                    continue;
+                  }
+                  VoicechatConnection receiverConnection = api.getConnectionOf(receiver.getUUID());
+                  if (receiverConnection == null || !receiverConnection.isInstalled()
+                      || !receiverConnection.isConnected()
+                      || shouldBanVoice(connection, receiverConnection)) {
+                    continue;
+                  }
+                  api.sendLocationalSoundPacketTo(receiverConnection, event.getPacket()
+                      .locationalSoundPacketBuilder()
+                      .position(api.createPosition(receiver.getX(), receiver.getY(), receiver.getZ()))
+                      .distance((float) api.getVoiceChatDistance())
+                      .build());
+                }
+                return;
+              }
               float voiceRangeMultiplier = ModEffects.getVoiceRangeMultiplier(player);
               if (voiceRangeMultiplier > 1.0f) {
                 event.cancel();

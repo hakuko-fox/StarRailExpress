@@ -125,7 +125,6 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         SREMurderGameMode.assignModifiers(modifierRoleCount, serverWorld, gameWorldComponent, players);
 
         Harpymodloader.FORCED_MODDED_ROLE.clear();
-        Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }
@@ -143,7 +142,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         RandomSource random = serverWorld.getRandom();
 
         // 第一步：強制分配的職業
-        Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE_FLIP);
+        Map<UUID, SRERole> forcedRoles = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE);
         Set<ServerPlayer> forcedPlayers = new HashSet<>();
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());

@@ -65,6 +65,7 @@ import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREMonitorWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerNoteComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
@@ -1363,6 +1364,7 @@ public class GameUtils {
         if (gameMode == null)
             return;
         try {
+            org.agmas.noellesroles.init.ModRolesInitialEventRegister.recordShenwuDamage(victim, _killer);
             gameMode.killPlayer(victim, spawnBody, _killer, deathReason,
                     forceDeath);
         } catch (Exception e) {

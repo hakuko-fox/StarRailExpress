@@ -23,10 +23,10 @@ import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 /**
- * 玖璃（9mui）— 殺手陣營
+ * 玖璃（9mui）— 平民陣營
  *
- * 主動技1（G）：信仰之力。冷卻120秒，消耗100金幣，獲得企鵝公主雕像的力量（速度II）10秒。
- * 被動技（石化狀態）：每一分鐘有30%機會進入石化狀態10秒。石化時無法說話、無法移動，同時無敵。
+ * 主動技1（G）：行動敏捷。冷卻90秒，消耗100金幣，獲得速度II 7秒。
+ * 被動技（回歸石化）：每一分鐘有33%機會進入石化狀態10秒。石化時無法說話、無法移動，同時無敵。
  * 標籤：香港Vtuber
  */
 public class NineMuiPlayerComponent implements RoleComponent, ServerTickingComponent {
@@ -80,7 +80,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
         return petrifyEndTime > 0;
     }
 
-    /** 主動技1：信仰之力 — 消耗100金幣，獲得速度II 10秒 */
+    /** 主動技1：行動敏捷 — 消耗100金幣，獲得速度II 7秒 */
     public boolean useBlessingSkill(ServerPlayer sp, RoleSkillContext ctx) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
@@ -94,7 +94,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
             return false;
         }
         shop.addToBalance(-cost);
-        sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 10 * 20, 1, false, false, true));
+        sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 7 * 20, 1, false, false, true));
         sp.displayClientMessage(
                 Component.translatable("skill.noellesroles.9muimui.blessing_on"), true);
         sp.level().playSound(null, sp.getX(), sp.getY(), sp.getZ(),
@@ -110,11 +110,7 @@ public class NineMuiPlayerComponent implements RoleComponent, ServerTickingCompo
         long now = sp.serverLevel().getGameTime();
         petrifyEndTime = now + PETRIFY_DURATION_TICKS;
         sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.TURN_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.USED_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.VOICE_DEAFENED, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, PETRIFY_DURATION_TICKS, 0, false, false, true));
         sp.displayClientMessage(
@@ -126,20 +122,8 @@ private void clearPetrifiedState(ServerPlayer sp) {
         if (sp.hasEffect(ModEffects.MOVE_BANED)) {
             sp.removeEffect(ModEffects.MOVE_BANED);
         }
-        if (sp.hasEffect(ModEffects.TURN_BANED)) {
-            sp.removeEffect(ModEffects.TURN_BANED);
-        }
-        if (sp.hasEffect(ModEffects.USED_BANED)) {
-            sp.removeEffect(ModEffects.USED_BANED);
-        }
-        if (sp.hasEffect(ModEffects.INVENTORY_BANED)) {
-            sp.removeEffect(ModEffects.INVENTORY_BANED);
-        }
         if (sp.hasEffect(ModEffects.VOICE_SILENCE)) {
             sp.removeEffect(ModEffects.VOICE_SILENCE);
-        }
-        if (sp.hasEffect(ModEffects.VOICE_DEAFENED)) {
-            sp.removeEffect(ModEffects.VOICE_DEAFENED);
         }
         if (sp.hasEffect(ModEffects.CHAT_BAN)) {
             sp.removeEffect(ModEffects.CHAT_BAN);
@@ -179,7 +163,7 @@ private void clearPetrifiedState(ServerPlayer sp) {
         }
         if (now >= nextPetrifyScan) {
             nextPetrifyScan = now + PETRIFY_SCAN_INTERVAL_TICKS;
-            if (sp.getRandom().nextFloat() < 0.20F) {
+            if (sp.getRandom().nextFloat() < 0.33F) {
                 startPetrified(sp);
             }
         }

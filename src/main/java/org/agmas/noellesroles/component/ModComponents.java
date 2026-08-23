@@ -61,6 +61,7 @@ import org.agmas.noellesroles.game.roles.innocence.super_star.SuperStarPlayerCom
 import org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.everly.EverlyPlayerComponent;
+import org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.telegrapher.TelegrapherPlayerComponent;
 import org.agmas.noellesroles.game.roles.innocence.voodoo.VoodooPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.bandit.BanditPlayerComponent;
@@ -513,6 +514,7 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<NineMuiPlayerComponent> NINE_MUI = NineMuiPlayerComponent.KEY;
   public static final ComponentKey<EverlyPlayerComponent> EVERLY = EverlyPlayerComponent.KEY;
   public static final ComponentKey<FuTaiPlayerComponent> FU_TAI = FuTaiPlayerComponent.KEY;
+  public static final ComponentKey<VtuberRolePlayerComponent> VTUBER_ROLE = VtuberRolePlayerComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -1043,6 +1045,10 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, FU_TAI)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(FuTaiPlayerComponent::new);
+
+    registry.beginRegistration(Player.class, VTUBER_ROLE)
+        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
+        .end(VtuberRolePlayerComponent::new);
 
     // ==================== 示例：注册更多组件 ====================
     //

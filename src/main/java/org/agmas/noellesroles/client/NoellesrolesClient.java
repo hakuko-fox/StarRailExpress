@@ -153,7 +153,6 @@ public class NoellesrolesClient implements ClientModInitializer {
     public static KeyMapping abilityBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key.noellesroles.ability",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "category.starrailexpress.keybinds"));
-
     public static KeyMapping taskInstinctOptionBind = KeyBindingHelper
             .registerKeyBinding(new KeyMapping("key.noellesroles.task_instinct_option",
                     InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "category.starrailexpress.keybinds"));
@@ -410,6 +409,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.MINECART,
                 (c) -> new MinecartRenderer<SREMinecart>(c, ModelLayers.MINECART));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.FU_TAI_GLITCH,
+                net.minecraft.client.renderer.entity.ItemEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
                 org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_LOG,
@@ -594,7 +595,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 if (client.screen != null && !(client.screen instanceof MathSolverScreen)) {
                     client.screen.onClose();
                 }
-                client.setScreen(new MathSolverScreen(payload.forced(), payload.maxTrial(), payload.timeLimitSeconds()));
+                client.setScreen(new MathSolverScreen(payload.forced(), payload.maxTrial(), payload.timeLimitSeconds(),
+                        payload.consecutive()));
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(ScanAllTaskPointsPayload.ID, (payload, context) -> {
@@ -1221,6 +1223,20 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
             if (client == null || client.player == null)
                 return;
+
+            // These roles use the inventory key as their dedicated E-menu. Registering a
+            // second KeyMapping on the same key does not work because Minecraft keeps only
+            // one mapping per physical key, so replace the inventory screen after it opens.
+            if (client.screen instanceof LimitedInventoryScreen && SREClient.gameComponent != null
+                    && SREClient.gameComponent.isRunning()) {
+                if (SREClient.gameComponent.isRole(client.player, ModRoles.YUYUE)) {
+                    client.setScreen(new io.wifi.starrailexpress.client.gui.screen.ingame.NoteScreen());
+                } else if (SREClient.gameComponent.isRole(client.player, ModRoles.KANA)) {
+                    client.setScreen(new VtuberPlayerSelectScreen(1, false));
+                } else if (SREClient.gameComponent.isRole(client.player, ModRoles.MAOLUN)) {
+                    client.setScreen(new VtuberPlayerSelectScreen(2, false));
+                }
+            }
 
             // jeb_ modifier: refresh only jeb_ players' skin targets every 5 seconds.
             jebShuffleTime++;

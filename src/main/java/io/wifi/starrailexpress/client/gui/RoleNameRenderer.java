@@ -45,6 +45,7 @@ import net.minecraft.world.phys.EntityHitResult;
 
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -104,6 +105,7 @@ public class RoleNameRenderer {
         }
 
         Component nametag = Component.empty();
+        Player targetedPlayer = null;
         float range = getPlayerRange(self);
         if (component.isRunning()) {
             Optional<Float> result = OnRenderRoleName.RENDER_RANGE.invoker().getPlayerRange(self, range);
@@ -119,6 +121,7 @@ public class RoleNameRenderer {
                     range) instanceof EntityHitResult entityHitResult
                     && entityHitResult.getEntity() instanceof Player) {
                 target = (Player) entityHitResult.getEntity();
+                targetedPlayer = target;
                 {
                     var result = OnRenderRoleName.RENDER_PLAYER.invoker().allowRender(self, target, ctx,
                             tickCounter, font);
@@ -299,7 +302,7 @@ public class RoleNameRenderer {
                             ctx, tickCounter,
                             font);
                     if (result.isPass()) {
-                        if (!GameUtils.isPlayerSpectatingOrCreative(self)) {
+                        if (!pbe.isHalicDecoy() && !GameUtils.isPlayerSpectatingOrCreative(self)) {
                             return;
                         }
                     } else if (result.isFalse()) {
@@ -317,8 +320,10 @@ public class RoleNameRenderer {
                         .withStyle(ChatFormatting.GRAY);
                 ctx.drawString(font, name2, -nameWidth2 / 2, 16,
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
-                ctx.drawString(font, tipC, -font.width(tipC) / 2, 4,
-                        Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
+                if (!pbe.isHalicDecoy()) {
+                    ctx.drawString(font, tipC, -font.width(tipC) / 2, 4,
+                            Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
+                }
                 ctx.pose().popPose();
             }
 
@@ -339,13 +344,18 @@ public class RoleNameRenderer {
             ctx.pose().pushPose();
             ctx.pose().translate(ctx.guiWidth() / 2f, ctx.guiHeight() / 2f + 6, 0);
             ctx.pose().scale(SREClient.playerHUDScale, SREClient.playerHUDScale, 1f);
+            String attachedPlayerUuid = notee.getAttached(ModRoles.ENTITY_NOTE_MAKER);
+            int startY = targetedPlayer != null
+                    && targetedPlayer.getUUID().toString().equals(attachedPlayerUuid)
+                            ? 16 + font.lineHeight + 2
+                            : 16;
             int k = 0;
             for (int i = 0; i < note.length; i++) {
                 Component line = note[i];
                 if (line == null)
                     continue;
                 int lineWidth = font.width(line);
-                ctx.drawString(font, line, -lineWidth / 2, 16 + (k * (font.lineHeight + 2)),
+                ctx.drawString(font, line, -lineWidth / 2, startY + (k * (font.lineHeight + 2)),
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
                 k++;
             }

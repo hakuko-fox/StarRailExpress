@@ -17,6 +17,7 @@ package org.agmas.noellesroles.content.entity;
 
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -27,7 +28,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -35,6 +35,7 @@ import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jspecify.annotations.Nullable;
 
@@ -58,18 +59,22 @@ public class PuppeteerBodyEntity extends LivingEntity {
     /** 所有者 UUID */
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(
             PuppeteerBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    private static final EntityDataAccessor<Boolean> HALIC_DECOY = SynchedEntityData.defineId(
+            PuppeteerBodyEntity.class, EntityDataSerializers.BOOLEAN);
     // 不会被自然刷新
     private boolean persistenceRequired = false;
 
     /** 是否為 Halic 的分身（永久存在，被攻擊即消失） */
-    private boolean halicDecoy = false;
-
     public boolean isHalicDecoy() {
-        return halicDecoy;
+        return this.entityData.get(HALIC_DECOY);
     }
 
     public void setHalicDecoy(boolean halicDecoy) {
-        this.halicDecoy = halicDecoy;
+        this.entityData.set(HALIC_DECOY, halicDecoy);
+        if (halicDecoy && !ownerName.isBlank()) {
+            super.setCustomName(Component.literal(ownerName));
+            super.setCustomNameVisible(false);
+        }
     }
 
     /** 皮肤 GameProfile（用于渲染玩家皮肤） */
@@ -93,7 +98,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     /** 是否压制自定义名显示（傀儡师玩法默认压制；假人等子类可覆盖恢复）。 */
     protected boolean suppressCustomName() {
-        return true;
+        return !isHalicDecoy();
     }
 
     @Override
@@ -130,6 +135,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(OWNER_UUID, Optional.empty());
+        builder.define(HALIC_DECOY, false);
     }
 
     /**
@@ -146,8 +152,10 @@ public class PuppeteerBodyEntity extends LivingEntity {
                 this.skinProfile = serverPlayer.getGameProfile();
             }
 
-            // 设置自定义名称
-            this.setCustomName(Component.translatable("entity.manipulator_body.name", owner.getName()));
+            // 哈力克分身指向時只顯示擁有者名稱；傀儡師本體仍沿用原本的隱藏名稱行為。
+            this.setCustomName(isHalicDecoy()
+                    ? owner.getName()
+                    : Component.translatable("entity.manipulator_body.name", owner.getName()));
             this.setCustomNameVisible(false);
             this.setPose(owner.getPose());
         }
@@ -231,9 +239,9 @@ public class PuppeteerBodyEntity extends LivingEntity {
         if (level().isClientSide())
             return false;
 
-        if (halicDecoy) {
+        if (isHalicDecoy()) {
             if (player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 0, false, false, true));
+                punishHalicDecoyAttacker(serverPlayer);
             }
             discard();
             return true;
@@ -264,9 +272,9 @@ public class PuppeteerBodyEntity extends LivingEntity {
         if (level().isClientSide())
             return false;
 
-        if (halicDecoy) {
+        if (isHalicDecoy()) {
             if (source.getEntity() instanceof ServerPlayer attacker) {
-                attacker.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 0, false, false, true));
+                punishHalicDecoyAttacker(attacker);
             }
             discard();
             return true;
@@ -314,6 +322,15 @@ public class PuppeteerBodyEntity extends LivingEntity {
         return result;
     }
 
+    private static void punishHalicDecoyAttacker(ServerPlayer attacker) {
+        final int duration = 20 * 3;
+        attacker.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, duration, 0, false, false, true));
+        attacker.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
+        attacker.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
+        var weapon = attacker.getMainHandItem().getItem();
+        Scheduler.schedule(() -> attacker.getCooldowns().removeCooldown(weapon), 1);
+    }
+
     @Override
     public void die(DamageSource damageSource) {
         super.die(damageSource);
@@ -344,7 +361,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
         }
         // SkinProfile 通过 OwnerUUID 在客户端动态获取，不需要从 NBT 加载
         this.lifetime = nbt.contains("Lifetime") ? nbt.getInt("Lifetime") : 0;
-        this.halicDecoy = nbt.getBoolean("HalicDecoy");
+        setHalicDecoy(nbt.getBoolean("HalicDecoy"));
     }
 
     @Override
@@ -357,7 +374,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
         nbt.putString("OwnerName", this.ownerName);
         // SkinProfile 通过 OwnerUUID 在客户端动态获取，不需要保存到 NBT
         nbt.putInt("Lifetime", this.lifetime);
-        nbt.putBoolean("HalicDecoy", this.halicDecoy);
+        nbt.putBoolean("HalicDecoy", isHalicDecoy());
     }
 
     @Override
@@ -367,7 +384,19 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     @Override
     public boolean isPushable() {
-        return false; // 不能被推动
+        return isHalicDecoy();
+    }
+
+    @Override
+    public boolean canBeCollidedWith() {
+        return isHalicDecoy() || super.canBeCollidedWith();
+    }
+
+    @Override
+    public void push(double x, double y, double z) {
+        if (!isHalicDecoy()) {
+            super.push(x, y, z);
+        }
     }
 
     @Override

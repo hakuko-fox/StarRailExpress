@@ -54,6 +54,7 @@ public class FoodDrinkGlowComponent implements RoleComponent, ServerTickingCompo
         var gameWorldComponent = SREGameWorldComponent.KEY.get(p.level());
         if (!gameWorldComponent.isRunning())
             return;
+        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.onConsume(p, item);
         SRERole pRole = gameWorldComponent.getRole(p);
         if (pRole != null) {
             pRole.onDrink(p, item);
@@ -71,6 +72,7 @@ public class FoodDrinkGlowComponent implements RoleComponent, ServerTickingCompo
         var gameWorldComponent = SREGameWorldComponent.KEY.get(p.level());
         if (!gameWorldComponent.isRunning())
             return;
+        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.onConsume(p, item);
 
         SRERole pRole = gameWorldComponent.getRole(p);
         if (pRole != null) {

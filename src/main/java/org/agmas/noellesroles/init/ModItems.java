@@ -154,7 +154,7 @@ public class ModItems {
             new RepairRouteItem("gear_handle", new Item.Properties().stacksTo(4)),
             "repair_gear_handle", REPAIR_MODE_GROUP);
     public static final Item REPAIR_CROWBAR = register(
-            new AlinDoorToolItem(AlinDoorToolItem.Mode.REPAIR, new Item.Properties().stacksTo(1)),
+            new RepairRouteItem("crowbar", new Item.Properties().stacksTo(1).durability(24)),
             "repair_crowbar", REPAIR_MODE_GROUP);
     public static final Item REPAIR_LOCKPICK = register(
             new RepairRouteItem("lockpick", new Item.Properties().stacksTo(8)),
@@ -286,7 +286,7 @@ public class ModItems {
             new StalkerKnifeItem(new Item.Properties().stacksTo(1)),
             "stalker_knife_offhand", WEAPONS_GROUP);
     public static final Item FAKE_REVOLVER = register(
-            new FakeRevolverItem(new Item.Properties().stacksTo(1).durability(4)),
+            new FakeRevolverItem(new Item.Properties().stacksTo(1)),
             "fake_revolver", WEAPONS_GROUP);
 
     public static final Item FAKE_BAT = register(
@@ -509,6 +509,10 @@ public class ModItems {
             new ScrewdriverItem(new Item.Properties().stacksTo(16)),
             "screwdriver", ROLE_ITEMS_GROUP);
 
+    public static final Item ALIN_WRENCH = register(
+            new AlinDoorToolItem(AlinDoorToolItem.Mode.REPAIR, new Item.Properties().stacksTo(1)),
+            "alin_wrench", ROLE_ITEMS_GROUP);
+
     public static final Item ALIN_SCREWDRIVER = register(
             new AlinDoorToolItem(AlinDoorToolItem.Mode.BREAK, new Item.Properties().stacksTo(1)),
             "alin_screwdriver", ROLE_ITEMS_GROUP);
@@ -641,6 +645,12 @@ public class ModItems {
     public static final Item GIANT_NOTE = register(
             new GiantNoteItem(new Item.Properties().stacksTo(1)),
             "giant_note", ROLE_ITEMS_GROUP);
+    public static final Item YUYUE_NOTE = register(
+            new org.agmas.noellesroles.content.item.YuyueNoteItem(new Item.Properties().stacksTo(4)),
+            "yuyue_note", ROLE_ITEMS_GROUP);
+    public static final Item TOY_HAMMER = register(
+            new org.agmas.noellesroles.content.item.ToyHammerItem(new Item.Properties().stacksTo(1)),
+            "toy_hammer", ROLE_ITEMS_GROUP);
     /**
      * 炸弹
      * - 炸弹客专属物品
@@ -1319,6 +1329,7 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEALER_PACKAGE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.HONORED_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SPIRIT_CLOAK);
+        TMMItems.INVISIBLE_ITEMS.add(TMMItems.SNIPER_RIFLE);
         // TMMItems.INVISIBLE_ITEMS.add(TMMItems.KNIFE);
 
         // 为潜水靴添加深海探索者3附魔

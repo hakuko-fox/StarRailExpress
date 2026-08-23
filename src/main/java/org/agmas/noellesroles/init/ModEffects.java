@@ -350,6 +350,9 @@ public class ModEffects {
     /** Prevents the affected player from receiving voice-chat audio. */
     public static final Holder<MobEffect> VOICE_DEAFENED = register("voice_deafened",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x606060));
+    /** Server-synced marker used to hide Nine One from killer instinct while doing tasks. */
+    public static final Holder<MobEffect> NINE_ONE_TASK_CONCEALMENT = register("nine_one_task_concealment",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     /**
      * 蜂鸣音效：把说话者的声音替换成跟随语调起伏的纯正弦音（pitch-tracking sine vocoder）。
      * 听不出具体内容，但能感知语调与情绪起伏。客户端处理见

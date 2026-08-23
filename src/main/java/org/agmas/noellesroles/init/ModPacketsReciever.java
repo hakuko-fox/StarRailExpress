@@ -98,6 +98,11 @@ import java.util.function.Predicate;
 public class ModPacketsReciever {
   public static void registerPackets() {
 
+    ServerPlayNetworking.registerGlobalReceiver(VtuberRoleMenuC2SPacket.ID, (payload, context) ->
+        context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.handleMenuSelection(
+                context.player(), payload.first(), payload.second())));
+
     // 幽露：自由摄像机位置上报（服务端按最大距离校验后保存）
     ServerPlayNetworking.registerGlobalReceiver(YouluCamPosC2SPacket.ID, (payload, context) -> {
       context.server().execute(() -> {
@@ -250,9 +255,15 @@ public class ModPacketsReciever {
                 player.getRandom().nextLong()));
     });
     ServerPlayNetworking.registerGlobalReceiver(ProblemSetEventC2SPacket.ID, (payload, context) -> {
+      ServerPlayer player = context.player();
+      // A Meowlen challenge is already active before SAFE_TIME can be checked. Always
+      // settle (or swallow a just-expired result) first so the target is not stranded.
+      if (ModRolesInitialEventRegister.finishMaolunChallenge(player, payload.success()))
+        return;
+      if (ModRolesInitialEventRegister.consumeResolvedMaolunChallengeResult(player))
+        return;
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
-      ServerPlayer player = context.player();
       boolean isForced = payload.forced();
       var mainHandItem = player.getMainHandItem();
       var offHandItem = player.getOffhandItem();
@@ -266,8 +277,6 @@ public class ModPacketsReciever {
       var gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
 
       if (payload.success()) {
-        if (ModRolesInitialEventRegister.finishMaolunChallenge(player, true))
-          return;
         var psc = SREPlayerShopComponent.KEY.get(player);
         if (isForced) {
           player.displayClientMessage(
@@ -286,8 +295,6 @@ public class ModPacketsReciever {
           }
         }
       } else {
-        if (ModRolesInitialEventRegister.finishMaolunChallenge(player, false))
-          return;
         if (gameWorldComponent.isRole(player, THRedHouseRoles.BAKA)) {
           player.displayClientMessage(
               Component.translatable("message.baka.problem_set.failed").withStyle(ChatFormatting.YELLOW), true);

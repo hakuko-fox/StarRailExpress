@@ -13,7 +13,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
-import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
@@ -47,10 +46,19 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
         List<SRERole> roles = TMMRoles.ROLES.values().stream()
                 .filter(role -> role.isFlag(roleFlag))
                 .filter(role -> !role.isOtherModeRole())
-                .filter(role -> !SREDisableManager.isRoleDisabled(role))
+                // GameInitializeEvent already resolves map-specific roles into ROLE_MAX.
+                // Respect that result here too, otherwise flagged modes can draw a role
+                // on a map where its special-map category is disabled (for example Zora).
+                .filter(role -> !role.isSpecialMapRole()
+                        || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 0) > 0)
+                // Companion roles are inserted by expandWithCompanionRoles; drawing them
+                // directly can split a required pair (for example Luna/Yoru).
+                .filter(role -> role.occupationedRoles.isEmpty())
                 .collect(Collectors.toList());
         if (roles.isEmpty())
             roles = List.of(TMMRoles.CIVILIAN);
+        else
+            Collections.shuffle(roles);
 
         List<ServerPlayer> remaining = new ArrayList<>();
         List<ServerPlayer> shuffled = new ArrayList<>(players);
@@ -106,7 +114,6 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
         }
 
         Harpymodloader.FORCED_MODDED_ROLE.clear();
-        Harpymodloader.FORCED_MODDED_ROLE_FLIP.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
         PlayerRoleWeightManager.ForcePlayerTeam.clear();
     }

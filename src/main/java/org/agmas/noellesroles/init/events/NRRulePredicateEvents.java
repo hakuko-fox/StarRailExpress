@@ -120,8 +120,9 @@ public class NRRulePredicateEvents {
                     || a.hasEffect(ModEffects.NO_COLLIDE);
         });
 
-        // 傀儡身体不可被推动
-        CollisionRules.cantPushableBy.add(entity -> entity instanceof PuppeteerBodyEntity);
+        // 一般傀儡身體不參與碰撞；哈力克分身則保留實體碰撞以阻擋玩家。
+        CollisionRules.cantPushableBy.add(entity -> entity instanceof PuppeteerBodyEntity body
+                && !body.isHalicDecoy());
         CollisionRules.cantPushableBy.add(entity -> entity instanceof SREMinecart);
         // 多种条件不可被推动
         CollisionRules.cantPushableBy.add(entity -> {

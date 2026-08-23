@@ -102,6 +102,23 @@ public class RoleInstinctRegister {
     // ---------- 看人高亮（OBSERVER） ----------
     private static void registerObserverHighlights() {
 
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.LUNA_ID,
+                (client, self, target, hasInstinct) -> {
+                    if (target instanceof Player targetPlayer
+                            && SREClient.gameComponent.isRole(targetPlayer, ModRoles.YORU)) {
+                        return TrueFalseAndCustomResult.custom(ModRoles.YORU.color());
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.YORU_ID,
+                (client, self, target, hasInstinct) -> {
+                    if (target instanceof Player targetPlayer
+                            && SREClient.gameComponent.isRole(targetPlayer, ModRoles.LUNA)) {
+                        return TrueFalseAndCustomResult.custom(ModRoles.LUNA.color());
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
+
         // 验尸官
         RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.CORONER_ID,
                 (client, self, target, hasInstinct) -> {
@@ -688,6 +705,19 @@ public class RoleInstinctRegister {
 
     // ---------- 被看高亮（TARGET） ----------
     private static void registerTargetHighlights() {
+
+        RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(ModRoles.SEPTEMBER_ONE_ID,
+                (client, viewer, target, hasInstinct) -> {
+                    if (!(target instanceof Player targetPlayer)) {
+                        return TrueFalseAndCustomResult.pass();
+                    }
+                    SRERole viewerRole = SREClient.gameComponent.getRole(viewer);
+                    if (viewerRole != null && viewerRole.isKillerTeam()
+                            && targetPlayer.hasEffect(ModEffects.NINE_ONE_TASK_CONCEALMENT)) {
+                        return TrueFalseAndCustomResult.disallow();
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
 
         RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(ModRoles.MERCENARY_ID,
                 (client, self, target, hasInstinct) -> {

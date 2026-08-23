@@ -168,35 +168,51 @@ import java.util.UUID;
  * | 邪恶乘客 | true | true | 乘客阵营但有杀手能力（特殊） |
  */
 public class ModRoles {
-    private static final HashMap<UUID, Vec3> LAFINA_CHARGES = new HashMap<>();
+    private static final HashMap<UUID, LafinaCharge> LAFINA_CHARGES = new HashMap<>();
+
+    private record LafinaCharge(Vec3 direction, java.util.Set<UUID> hitPlayers) {
+    }
 
     public static void beginLafinaCharge(ServerPlayer player) {
         Vec3 direction = player.getLookAngle().multiply(1, 0, 1).normalize();
         if (direction.lengthSqr() < 0.01D) {
             direction = new Vec3(0, 0, 1);
         }
-        LAFINA_CHARGES.put(player.getUUID(), direction);
+        LAFINA_CHARGES.put(player.getUUID(), new LafinaCharge(direction, new java.util.HashSet<>()));
+    }
+
+    public static boolean isLafinaCharging(Player player) {
+        return player != null && LAFINA_CHARGES.containsKey(player.getUUID());
     }
 
     private static void tickLafinaCharge(ServerPlayer player) {
-        Vec3 direction = LAFINA_CHARGES.get(player.getUUID());
-        if (direction == null) {
+        LafinaCharge charge = LAFINA_CHARGES.get(player.getUUID());
+        if (charge == null) {
             return;
         }
-        if (player.horizontalCollision || player.verticalCollision) {
+        if (player.horizontalCollision) {
             LAFINA_CHARGES.remove(player.getUUID());
             player.setDeltaMovement(Vec3.ZERO);
+            player.removeEffect(MobEffects.MOVEMENT_SPEED);
             return;
         }
+        Vec3 direction = charge.direction();
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 5, 2,
+                false, false, true));
         player.setDeltaMovement(direction.scale(1.15D).add(0, player.getDeltaMovement().y, 0));
         player.hurtMarked = true;
         for (Player target : player.level().players()) {
-            if (target == player || target.distanceToSqr(player) > 3.0D) {
+            if (target == player || target.distanceToSqr(player) > 3.0D
+                    || !charge.hitPlayers().add(target.getUUID())) {
                 continue;
             }
             target.push(direction.x * 1.3D, 0.35D, direction.z * 1.3D);
-            target.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.MOVE_BANED,
-                    3 * 20, 0, false, true, true));
+            if (target instanceof ServerPlayer serverTarget) {
+                serverTarget.connection.send(
+                        new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(serverTarget));
+            }
+            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION,
+                    3 * 20, 0, false, false, true));
         }
     }
 
@@ -1113,7 +1129,7 @@ public class ModRoles {
             new Color(120, 190, 255).getRGB(), // 淡藍色 - 代表科技感
             true,  // isInnocent = 乘客陣營
             false, // canUseKiller = 無殺手能力
-            SRERole.MoodType.REAL, // 真實心情
+            SRERole.MoodType.NONE, // 非有機生物：無視理智值
             TMMRoles.CIVILIAN.getMaxSprintTime(),
             false  // 不隱藏計分板
     ) {
@@ -1121,7 +1137,7 @@ public class ModRoles {
         public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
             return SRE.id("textures/entity/custom_psycho/halic.png");
         }
-    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(1).setDefaultEnableChance(7000).addFlag("hkvtuber")
+    }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(0)
             .setAllBeSeenInstinctType(InstinctType.NONE);
 
     // 搜救员角色 - 乘客阵营
@@ -1402,16 +1418,28 @@ public class ModRoles {
 
     public static SRERole HAKUKO_FOX = TMMRoles
             .registerRole(new NormalRole(HAKUKO_FOX_ID, new Color(255, 200, 200).getRGB(), false,
-                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
-            .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
+                @Override
+                public boolean onUseGun(Player player) {
+                    return !org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent
+                            .isDisguised(player);
+                }
+
+                @Override
+                public boolean onUseKnife(Player player) {
+                    return !org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent
+                            .isDisguised(player);
+                }
+            })
+            .setComponentKey(ModComponents.HAKUKO_FOX).setCanSeeCoin(true).setDefaultMax(0).addFlag("hkvtuber");
 
     // ==================== 玖/愛 系列新角色 ====================
 
-    // 玖璃（9mui）角色 ID — 殺手陣營
+    // 玖璃（9mui）角色 ID — 平民陣營
     public static final ResourceLocation NINE_MUI_ID = Noellesroles.id("9muimui");
     public static SRERole NINE_MUI = TMMRoles
-            .registerRole(new NormalRole(NINE_MUI_ID, new Color(170, 110, 200).getRGB(), false,
-                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .registerRole(new NormalRole(NINE_MUI_ID, new Color(170, 110, 200).getRGB(), true,
+                    false, SRERole.MoodType.NONE, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setComponentKey(ModComponents.NINE_MUI).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
 
     // 芙妮（Everly）角色 ID：警長陣營
@@ -1420,7 +1448,7 @@ public class ModRoles {
             .registerRole(new NormalRole(EVERLY_ID, new Color(225, 170, 90).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)
                     .setVigilanteTeam(true))
-            .setCanSeeCoin(true).setComponentKey(ModComponents.EVERLY).setDefaultMax(1)
+            .setCanSeeCoin(true).setComponentKey(ModComponents.EVERLY).setDefaultMax(0)
             .setCanPickUpRevolver(true).addFlag("hkvtuber");
 
     // 風太（Fu_Tai）：平民陣營
@@ -1428,7 +1456,7 @@ public class ModRoles {
     public static SRERole FU_TAI = TMMRoles
             .registerRole(new NormalRole(FU_TAI_ID, new Color(232, 90, 90).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
-            .setComponentKey(ModComponents.FU_TAI).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber");
+            .setComponentKey(ModComponents.FU_TAI).setCanSeeCoin(true).setDefaultMax(1);
 
     // Vtuber 角色擴充：先註冊角色身份；各角色技能依其規格接入對應系統。
     public static final ResourceLocation ALIN_ID = Noellesroles.id("hkc_alan");
@@ -1438,10 +1466,25 @@ public class ModRoles {
     public static final ResourceLocation SHENWU_BINGFENG_ID = Noellesroles.id("kamikiri_ice");
     public static final ResourceLocation MAOLUN_ID = Noellesroles.id("meowlen");
     public static final ResourceLocation YOZORA_ID = Noellesroles.id("yozora");
+    public static final ResourceLocation AMI_ID = Noellesroles.id("amimi");
+    public static final ResourceLocation XIAOYE_ID = Noellesroles.id("xiaoye");
+    public static final ResourceLocation XIANMIAO_ID = Noellesroles.id("xianmiao");
+    public static final ResourceLocation YUYUE_ID = Noellesroles.id("yuyue");
+    public static final ResourceLocation BLOOD_FOX_ID = Noellesroles.id("blood_fox");
+    public static final ResourceLocation MOCHEN_ID = Noellesroles.id("mochen");
+    public static final ResourceLocation TINALIS_ID = Noellesroles.id("tinalis");
+    public static final ResourceLocation LUNA_ID = Noellesroles.id("luna");
+    public static final ResourceLocation YORU_ID = Noellesroles.id("yoru");
+    public static final ResourceLocation YOUJIN_ID = Noellesroles.id("youjin");
+    public static final ResourceLocation KANA_ID = Noellesroles.id("kana");
+    public static final ResourceLocation YUZU_FENGLING_ID = Noellesroles.id("yuzu_fengling");
+    public static final ResourceLocation JUKA_ID = Noellesroles.id("juka");
+    public static final ResourceLocation BAIYU_ID = Noellesroles.id("baiyu");
+    public static final ResourceLocation AYERS_ID = Noellesroles.id("ayers");
 
     public static SRERole ALIN = TMMRoles.registerRole(new NormalRole(ALIN_ID, new Color(140, 180, 110).getRGB(),
             true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
-            .setCanSeeCoin(true).setCanPickUpRevolver(false).setDefaultMax(1).addFlag("hkvtuber");
+            .setCanSeeCoin(true).setCanPickUpRevolver(false).setDefaultMax(1);
     public static SRERole LAFINA = TMMRoles.registerRole(new NormalRole(LAFINA_ID, new Color(230, 190, 230).getRGB(),
             true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setServerGameTickEvent((player, game) -> tickLafinaCharge(player))
@@ -1450,9 +1493,14 @@ public class ModRoles {
             false, true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
                 @Override
                 public boolean onUseGun(net.minecraft.world.entity.player.Player player) {
-                    return player.level().players().stream()
-                            .filter(other -> other != player && other.isAlive())
-                            .noneMatch(other -> other.distanceToSqr(player) <= 400.0D);
+                    return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
+                            .canHoshizoraUseWeapon(player);
+                }
+
+                @Override
+                public boolean onUseKnife(net.minecraft.world.entity.player.Player player) {
+                    return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
+                            .canHoshizoraUseWeapon(player);
                 }
 
                 @Override
@@ -1460,9 +1508,11 @@ public class ModRoles {
                     return item -> item != TMMItems.SNIPER_RIFLE && isNewRoleWeapon(item);
                 }
             })
-            .setCanSeeCoin(true).setCanUseKiller(true).setDefaultMax(1).addFlag("hkvtuber");
+            .setCanSeeCoin(true).setCanUseKiller(true)
+            .setSpecialMapRole(SRERole.SpecialMapRoleMap.BIGMAP)
+            .setDefaultMax(1).addFlag("hkvtuber");
     public static SRERole SEPTEMBER_ONE = TMMRoles.registerRole(new CustomWinnerRole(SEPTEMBER_ONE_ID,
-            new Color(210, 150, 90).getRGB(), false, false, SRERole.MoodType.REAL,
+            new Color(210, 150, 90).getRGB(), false, false, SRERole.MoodType.NONE,
             TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
                 @Override
                 public void onFinishQuest(Player player, String quest) {
@@ -1474,8 +1524,8 @@ public class ModRoles {
                     ability.sync();
                     serverPlayer.displayClientMessage(Component.translatable(
                             "message.noellesroles.nine_one.task_progress",
-                            Component.literal(Integer.toString(ability.status)), Component.literal("10")), true);
-                    if (ability.status >= 10) {
+                            Component.literal(Integer.toString(ability.status)), Component.literal("15")), true);
+                    if (ability.status >= 15) {
                         win(serverPlayer);
                     }
                 }
@@ -1483,7 +1533,7 @@ public class ModRoles {
                 @Override
                   public io.wifi.starrailexpress.game.GameUtils.WinStatus checkWin(ServerPlayer player,
                         io.wifi.starrailexpress.game.GameUtils.WinStatus winStatus) {
-                    return io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(player).status >= 10
+                    return io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(player).status >= 15
                             ? io.wifi.starrailexpress.game.GameUtils.WinStatus.CUSTOM
                             : io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
                   }
@@ -1525,8 +1575,22 @@ public class ModRoles {
             .setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
             .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
             .setDefaultMax(1).addFlag("hkvtuber");
-    public static SRERole MAOLUN = TMMRoles.registerRole(new NormalRole(MAOLUN_ID, new Color(170, 150, 100).getRGB(),
+    public static SRERole MAOLUN = TMMRoles.registerRole(new CustomWinnerRole(MAOLUN_ID,
+            new Color(170, 150, 100).getRGB(),
             false, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+                @Override
+                public io.wifi.starrailexpress.game.GameUtils.WinStatus checkWin(ServerPlayer player,
+                        io.wifi.starrailexpress.game.GameUtils.WinStatus winStatus) {
+                    if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                        return io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
+                    }
+                    boolean isOnlySurvivor = player.serverLevel().players().stream()
+                            .noneMatch(other -> other != player && GameUtils.isPlayerAliveAndSurvival(other));
+                    return isOnlySurvivor
+                            ? io.wifi.starrailexpress.game.GameUtils.WinStatus.CUSTOM
+                            : io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
+                }
+
                 @Override
                 public boolean onUseGun(Player player) { return false; }
 
@@ -1543,43 +1607,149 @@ public class ModRoles {
             .setDefaultMax(1).addFlag("vtuber");
     public static SRERole YOZORA = TMMRoles.registerRole(new NormalRole(YOZORA_ID, new Color(100, 130, 190).getRGB(),
             true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
-                private final HashMap<UUID, Integer> nearbyTicks = new HashMap<>();
-
                 @Override
                 public boolean onUseGun(Player player) {
-                    return !player.hasEffect(MobEffects.INVISIBILITY);
+                    return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isAnimalDisguised(player);
                 }
 
                 @Override
                 public boolean onUseKnife(Player player) {
-                    return !player.hasEffect(MobEffects.INVISIBILITY);
+                    return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isAnimalDisguised(player);
                 }
 
                 @Override
                 public java.util.function.Predicate<Item> cantPickupItem(Player player) {
-                    return item -> player.hasEffect(MobEffects.INVISIBILITY) && isNewRoleWeapon(item);
+                    return item -> org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
+                            .isAnimalDisguised(player) && isNewRoleWeapon(item);
                 }
 
-                @Override
-                public void serverTick(ServerPlayer player) {
-                    if (!player.hasEffect(MobEffects.INVISIBILITY)) {
-                        nearbyTicks.remove(player.getUUID());
-                        return;
-                    }
-                    boolean nearby = player.level().players().stream()
-                            .anyMatch(other -> other != player && other.isAlive()
-                                    && other.distanceToSqr(player) <= 9.0D);
-                    int ticks = nearby ? nearbyTicks.merge(player.getUUID(), 1, Integer::sum) : 0;
-                    if (!nearby) {
-                        nearbyTicks.remove(player.getUUID());
-                    } else if (ticks >= 5 * 20 && ticks % 20 == 0) {
-                        SREPlayerMoodComponent.KEY.get(player).addMood(-0.01F);
-                    }
-                }
             }
                     .setVigilanteTeam(true))
+            .setComponentKey(ModComponents.VTUBER_ROLE)
             .setCanSeeCoin(true).setCanPickUpRevolver(true).setCanUseInstinctAndNightVision(false)
-            .setDefaultMax(1).addFlag("hkvtuber");
+            .setDefaultMax(1);
+
+    public static SRERole AMI = registerVtuberCivilian(AMI_ID, 0xD6A8E8, "hkvtuber");
+    public static SRERole XIAOYE = registerVtuberCivilian(XIAOYE_ID, 0x6E4A8E);
+    public static SRERole XIANMIAO = registerVtuberCivilian(XIANMIAO_ID, 0xEAA6C8);
+    public static SRERole YUYUE = registerVtuberCivilian(YUYUE_ID, 0xE8D59A);
+    public static SRERole BLOOD_FOX = registerVtuberCivilian(BLOOD_FOX_ID, 0xB52B3A)
+            .setComponentKey(ModComponents.VTUBER_ROLE);
+    public static SRERole MOCHEN = registerVtuberCivilian(MOCHEN_ID, 0x607A9E);
+    public static SRERole TINALIS = registerVtuberCivilian(TINALIS_ID, 0x7850A8);
+    public static SRERole LUNA = registerVtuberCivilian(LUNA_ID, 0xE9D5FF)
+            .setOccupiedRoleCount(2).setDefaultMax(0);
+    public static SRERole YORU = registerVtuberCivilian(YORU_ID, 0x475B8F).setDefaultMax(0);
+    public static SRERole YOUJIN = registerVtuberCivilian(YOUJIN_ID, 0xD67A42);
+    public static SRERole KANA = registerVtuberKiller(KANA_ID, 0xC84278, "hkvtuber");
+    public static SRERole YUZU_FENGLING = registerVtuberKiller(YUZU_FENGLING_ID, 0x83A86B);
+    public static SRERole JUKA = TMMRoles.registerRole(new CustomWinnerRole(JUKA_ID, 0xE7B85A,
+            false, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+        @Override
+        public io.wifi.starrailexpress.game.GameUtils.WinStatus checkWin(ServerPlayer player,
+                io.wifi.starrailexpress.game.GameUtils.WinStatus winStatus) {
+            if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                return io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
+            }
+            SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+            boolean civilianAlive = player.serverLevel().players().stream()
+                    .filter(GameUtils::isPlayerAliveAndSurvival)
+                    .map(game::getRole)
+                    .anyMatch(role -> role != null && role.isInnocent() && !role.isVigilanteTeam());
+            return civilianAlive
+                    ? io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY
+                    : io.wifi.starrailexpress.game.GameUtils.WinStatus.CUSTOM;
+        }
+
+        @Override
+        public boolean onUseGun(Player player) { return false; }
+
+        @Override
+        public boolean onUseKnife(Player player) { return false; }
+
+        @Override
+        public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+            return ModRoles::isNewRoleWeapon;
+        }
+    }).setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
+            .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1).addFlag("vtuber");
+    public static SRERole BAIYU = registerVtuberVigilante(BAIYU_ID, 0xD8E8F0);
+    public static SRERole AYERS = registerVtuberVigilante(AYERS_ID, 0x678BD4);
+
+    static {
+        LUNA.addOccupationRoleOnce(YORU);
+        io.wifi.starrailexpress.event.OnGameTrueStarted.EVENT.register(level -> LAFINA_CHARGES.clear());
+        io.wifi.starrailexpress.event.OnGameEnd.EVENT.register((level, game) -> LAFINA_CHARGES.clear());
+    }
+
+    private static SRERole registerVtuberCivilian(ResourceLocation id, int color) {
+        return registerVtuberCivilian(id, color, "vtuber");
+    }
+
+    private static SRERole registerVtuberCivilian(ResourceLocation id, int color, String flag) {
+        return TMMRoles.registerRole(new NormalRole(id, color, true, false, SRERole.MoodType.REAL,
+                TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+            @Override
+            public boolean onUseGun(Player player) {
+                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
+            }
+
+            @Override
+            public boolean onUseKnife(Player player) {
+                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
+            }
+        })
+                .setCanSeeCoin(true).setDefaultMax(1).addFlag(flag);
+    }
+
+    private static SRERole registerVtuberKiller(ResourceLocation id, int color) {
+        return registerVtuberKiller(id, color, "vtuber");
+    }
+
+    private static SRERole registerVtuberKiller(ResourceLocation id, int color, String flag) {
+        return TMMRoles.registerRole(new NormalRole(id, color, false, true, SRERole.MoodType.FAKE,
+                Integer.MAX_VALUE, true) {
+            @Override
+            public boolean onUseGun(Player player) {
+                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
+            }
+
+            @Override
+            public boolean onUseKnife(Player player) {
+                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
+            }
+        })
+                .setCanSeeCoin(true).setCanUseKiller(true).setDefaultMax(1).addFlag(flag);
+    }
+
+    private static SRERole registerVtuberNeutral(ResourceLocation id, int color) {
+        return TMMRoles.registerRole(new NormalRole(id, color, false, false, SRERole.MoodType.REAL,
+                TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
+            @Override
+            public boolean onUseGun(Player player) {
+                return false;
+            }
+
+            @Override
+            public boolean onUseKnife(Player player) {
+                return false;
+            }
+
+            @Override
+            public java.util.function.Predicate<Item> cantPickupItem(Player player) {
+                return ModRoles::isNewRoleWeapon;
+            }
+        }).setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
+                .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
+                .setDefaultMax(1).addFlag("vtuber");
+    }
+
+    private static SRERole registerVtuberVigilante(ResourceLocation id, int color) {
+        return TMMRoles.registerRole(new NormalRole(id, color, true, false, SRERole.MoodType.REAL,
+                TMMRoles.CIVILIAN.getMaxSprintTime(), false).setVigilanteTeam(true))
+                .setCanSeeCoin(true).setCanPickUpRevolver(true).setDefaultMax(1).addFlag("vtuber");
+    }
 
     private static boolean isNewRoleWeapon(Item item) {
         return item.builtInRegistryHolder().is(TMMItemTags.GUNS)

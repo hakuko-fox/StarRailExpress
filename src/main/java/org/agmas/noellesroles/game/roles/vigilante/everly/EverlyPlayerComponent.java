@@ -3,6 +3,7 @@ package org.agmas.noellesroles.game.roles.vigilante.everly;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,8 +19,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 /**
  * 芙妮（Everly）— 警長陣營
  *
- * 主動技1（G）：時間停止。使全場時間停止3秒，每局遊戲最多使用2次（由 charges(2) 控制），冷卻60秒。
- * 被動技：由於身為時間管理局成員，無視所有時間停止技能。
+ * 主動技1（G）：時間停止。使全場時間停止5秒，每局遊戲最多使用1次。
  * 標籤：香港Vtuber
  */
 public class EverlyPlayerComponent implements RoleComponent, ServerTickingComponent {
@@ -58,22 +58,23 @@ public class EverlyPlayerComponent implements RoleComponent, ServerTickingCompon
         init();
     }
 
-    /** 主動技1：時間停止 — 全場停止3秒（每局最多2次，由 charges(2) 控制） */
+    /** 主動技1：時間停止 — 全場停止5秒，每局最多1次 */
     public boolean useTimeStop(ServerPlayer sp, RoleSkillContext ctx) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
         }
-        boolean ok = TimeStopEffect.tryTriggerStart(sp, 3 * 20,
+        var shop = SREPlayerShopComponent.KEY.get(sp);
+        if (shop.balance < 200) {
+            sp.displayClientMessage(Component.translatable(
+                    "message.noellesroles.vtuber.not_enough_coins", 200), true);
+            return false;
+        }
+        boolean ok = TimeStopEffect.tryTriggerStart(sp, 5 * 20,
                 Component.translatable("skill.noellesroles.everly.timestop"));
         if (!ok) {
             return false;
         }
-        // 次數上限由 charges(2) 控制；最後一次使用時提示
-        var state = ctx.skillState();
-        if (state != null && state.charges <= 1) {
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.everly.timestop_final"), true);
-        }
+        shop.addToBalance(-200);
         return true;
     }
 

@@ -122,6 +122,7 @@
     "client.roles.jester.JesterMoodRenderer",
     "client.roles.leather_pig.LeatherPigPlayerRenderMixin",
     "client.roles.leather_pig.LeatherPigSelfRenderMixin",
+    "client.roles.lafina.LafinaPlayerRenderMixin",
     "client.roles.ma_chen_xu.OtherworldShaderMixin",
     "client.roles.manipulator.CameraMixin",
     "client.roles.manipulator.KeyBindingMixin",

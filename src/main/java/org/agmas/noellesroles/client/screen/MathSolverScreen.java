@@ -47,6 +47,7 @@ public class MathSolverScreen extends Screen {
     private boolean failed = false;
     private boolean forced = false;
     private int timeLimitSeconds = 0;
+    private boolean consecutive = false;
 
     public MathSolverScreen() {
         this(false, 1);
@@ -57,10 +58,15 @@ public class MathSolverScreen extends Screen {
     }
 
     public MathSolverScreen(boolean forced, int maxTrial, int timeLimitSeconds) {
+        this(forced, maxTrial, timeLimitSeconds, false);
+    }
+
+    public MathSolverScreen(boolean forced, int maxTrial, int timeLimitSeconds, boolean consecutive) {
         super(Component.translatable("screen.math_solver.title"));
         this.forced = forced;
         this.maxTrial = maxTrial;
         this.timeLimitSeconds = timeLimitSeconds;
+        this.consecutive = consecutive;
         hasStarted = false;
         currentIndex = -1;
         startTime = 0;
@@ -133,7 +139,18 @@ public class MathSolverScreen extends Screen {
     public void tick() {
         if (this.currentIndex >= 0 && this.hasStarted && !this.failed && this.currentIndex < this.totalPages
                 && this.startTime + this.maxTime <= this.minecraft.level.getGameTime()) {
-            solveFailed();
+            if (consecutive) {
+                failConsecutiveImmediately();
+            } else {
+                solveFailed();
+            }
+        }
+    }
+
+    private void failConsecutiveImmediately() {
+        solveFailed_and_sendPacket();
+        if (minecraft != null) {
+            minecraft.setScreen(null);
         }
     }
 
@@ -172,6 +189,10 @@ public class MathSolverScreen extends Screen {
         super.init();
         this.clearWidgets();
 
+        if (forced && !hasStarted && this.currentIndex == -1) {
+            startMathSolving();
+            return;
+        }
         if (this.currentIndex == -1) {
             initStart();
         } else if (this.currentIndex == -2 && this.failed) {
@@ -375,6 +396,14 @@ public class MathSolverScreen extends Screen {
         var currentMath = this.MathProblems.get(this.currentIndex);
         if (currentMath.getCorrectIndex() + 1 == selectionIndex) {
             this.nextProblem();
+        } else if (consecutive) {
+            maxTrial--;
+            if (maxTrial <= 0) {
+                failConsecutiveImmediately();
+            } else {
+                currentIndex = -1;
+                nextProblem();
+            }
         } else {
             this.solveFailed();
         }
