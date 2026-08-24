@@ -21,6 +21,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableAABB;
+import io.wifi.starrailexpress.api.AreasSettingUtils.StoreableVec3;
 import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.util.NbtSerializer;
 import net.fabricmc.api.EnvType;
@@ -58,6 +60,38 @@ public class AreasWorldComponent implements AutoSyncedComponent {
     private final Level world;
 
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final NbtSerializer AREAS_SETTINGS_SERIALIZER = NbtSerializer.builder()
+            .addAdapter(StoreableVec3.class,
+                    (value, serializer) -> {
+                        CompoundTag tag = new CompoundTag();
+                        tag.putDouble("x", value.x);
+                        tag.putDouble("y", value.y);
+                        tag.putDouble("z", value.z);
+                        return tag;
+                    },
+                    tag -> {
+                        CompoundTag compound = (CompoundTag) tag;
+                        return new StoreableVec3(compound.getDouble("x"), compound.getDouble("y"),
+                                compound.getDouble("z"));
+                    })
+            .addAdapter(StoreableAABB.class,
+                    (value, serializer) -> {
+                        CompoundTag tag = new CompoundTag();
+                        tag.putDouble("minX", value.minX);
+                        tag.putDouble("minY", value.minY);
+                        tag.putDouble("minZ", value.minZ);
+                        tag.putDouble("maxX", value.maxX);
+                        tag.putDouble("maxY", value.maxY);
+                        tag.putDouble("maxZ", value.maxZ);
+                        return tag;
+                    },
+                    tag -> {
+                        CompoundTag compound = (CompoundTag) tag;
+                        return new StoreableAABB(compound.getDouble("minX"), compound.getDouble("minY"),
+                                compound.getDouble("minZ"), compound.getDouble("maxX"),
+                                compound.getDouble("maxY"), compound.getDouble("maxZ"));
+                    })
+            .build();
 
     public static enum ScrollAxis {
         X, Y, Z, NONE
@@ -561,9 +595,9 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         if (tag.contains("AreasSettings")) {
             CompoundTag settingsTag = tag.getCompound("AreasSettings");
             try {
-                areasSettings = NbtSerializer.DEFAULT.deserializeFromTag(settingsTag, AreasSettings.class);
+                areasSettings = AREAS_SETTINGS_SERIALIZER.deserializeFromTag(settingsTag, AreasSettings.class);
             } catch (Exception e) {
-                // 处理异常
+                SRE.LOGGER.error("Failed to deserialize area settings; keeping defaults", e);
             }
         }
     }
@@ -662,7 +696,7 @@ public class AreasWorldComponent implements AutoSyncedComponent {
         // tag.put("SabotageMinigameIds", sabotageMinigameIdsList);
 
         // 写入额外数据
-        CompoundTag settingsTag = NbtSerializer.DEFAULT.serializeToTag(areasSettings);
+        CompoundTag settingsTag = AREAS_SETTINGS_SERIALIZER.serializeToTag(areasSettings);
         tag.put("AreasSettings", settingsTag);
     }
 

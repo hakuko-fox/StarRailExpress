@@ -58,8 +58,10 @@ public class DynamiclightsEntry implements DynamicLightsInitializer {
         });
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void onInitializeDynamicLights(ItemLightSourceManager itemLightSourceManager) {
+        // Required by the Minecraft 1.21.1 API; initialization uses the context overload below.
     }
 
     @Override

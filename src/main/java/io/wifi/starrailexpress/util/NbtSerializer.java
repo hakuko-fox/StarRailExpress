@@ -42,7 +42,7 @@ import java.util.function.Predicate;
  * <ul>
  * <li>基本类型及包装类、String、枚举、原始数组</li>
  * <li>集合、Map（保留泛型嵌套）</li>
- * <li>自定义 POJO、record（无默认构造/有 final 字段）</li>
+ * <li>有无参数构造函数的自定义 POJO，以及 record</li>
  * <li>Optional、原子类、UUID、日期时间等</li>
  * <li>实现 {@link NbtSerializable} 接口的类可自定义读写逻辑</li>
  * </ul>
@@ -52,72 +52,18 @@ public final class NbtSerializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(NbtSerializer.class);
     private static final Gson GSON = new Gson();
 
-    // ========== Unsafe 实例 ==========
-    private static final sun.misc.Unsafe UNSAFE;
-
-    static {
-        sun.misc.Unsafe unsafe = null;
-        try {
-            Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            unsafe = (sun.misc.Unsafe) f.get(null);
-        } catch (Exception e) {
-            LOGGER.warn("sun.misc.Unsafe is not available", e);
-        }
-        UNSAFE = unsafe;
+    private static Object instantiate(Class<?> clazz) throws ReflectiveOperationException {
+        Constructor<?> constructor = clazz.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
     }
 
-    private static Object allocateInstance(Class<?> clazz) {
-        if (UNSAFE != null) {
-            try {
-                return UNSAFE.allocateInstance(clazz);
-            } catch (Exception e) {
-                throw new RuntimeException("Cannot allocate " + clazz.getName(), e);
-            }
-        }
-        try {
-            return clazz.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot instantiate " + clazz.getName(), e);
-        }
-    }
-
-    @SuppressWarnings("removal")
     private static void setFieldValue(Object instance, Field field, Object value) throws Exception {
-        if (!Modifier.isFinal(field.getModifiers())) {
-            field.set(instance, value);
-        } else if (UNSAFE != null) {
-            long offset = UNSAFE.objectFieldOffset(field);
-            Class<?> type = field.getType();
-            if (type == boolean.class)
-                UNSAFE.putBoolean(instance, offset, (Boolean) value);
-            else if (type == byte.class)
-                UNSAFE.putByte(instance, offset, (Byte) value);
-            else if (type == short.class)
-                UNSAFE.putShort(instance, offset, (Short) value);
-            else if (type == int.class)
-                UNSAFE.putInt(instance, offset, (Integer) value);
-            else if (type == long.class)
-                UNSAFE.putLong(instance, offset, (Long) value);
-            else if (type == float.class)
-                UNSAFE.putFloat(instance, offset, (Float) value);
-            else if (type == double.class)
-                UNSAFE.putDouble(instance, offset, (Double) value);
-            else if (type == char.class)
-                UNSAFE.putChar(instance, offset, (Character) value);
-            else
-                UNSAFE.putObject(instance, offset, value);
-        } else {
-            // 最后的救命稻草：尝试移除 final 修饰符（JDK < 21 有效）
-            try {
-                Field modifiersField = Field.class.getDeclaredField("modifiers");
-                modifiersField.setAccessible(true);
-                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-                field.set(instance, value);
-            } catch (NoSuchFieldException ex) {
-                throw new RuntimeException("Cannot set final field " + field.getName() + " without Unsafe", ex);
-            }
+        if (Modifier.isFinal(field.getModifiers())) {
+            throw new IllegalArgumentException("Cannot set final field " + field.getName()
+                    + "; use a record or register a serializer adapter");
         }
+        field.set(instance, value);
     }
 
     // ========== 循环引用检测 ==========
@@ -155,7 +101,7 @@ public final class NbtSerializer {
         if (tag.contains("_root") && isSimpleType(targetClass)) {
             return (T) deserializeObject(tag.get("_root"), targetClass, null);
         }
-        T instance = targetClass.getDeclaredConstructor().newInstance();
+        T instance = targetClass.cast(instantiate(targetClass));
         deserializeFields(tag, instance);
         return instance;
     }
@@ -538,12 +484,7 @@ public final class NbtSerializer {
 
             // 实现了 NbtSerializable 接口
             if (NbtSerializable.class.isAssignableFrom(targetType)) {
-                Object instance;
-                try {
-                    instance = targetType.getDeclaredConstructor().newInstance();
-                } catch (NoSuchMethodException e) {
-                    instance = allocateInstance(targetType);
-                }
+                Object instance = instantiate(targetType);
                 ((NbtSerializable) instance).readNbt(ct);
                 return instance;
             }
@@ -554,12 +495,7 @@ public final class NbtSerializer {
             }
 
             // 普通 POJO
-            Object instance;
-            try {
-                instance = targetType.getDeclaredConstructor().newInstance();
-            } catch (NoSuchMethodException e) {
-                instance = allocateInstance(targetType);
-            }
+            Object instance = instantiate(targetType);
             deserializeFields(ct, instance);
             return instance;
         }
