@@ -22,7 +22,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.client.widget.ShikieikiPlayerWidget;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 
@@ -35,9 +34,8 @@ import java.util.stream.Collectors;
  * 四季映姬背包界面扩展：在背包界面列出可审判的玩家（UUID 列表）。
  */
 public final class ShikieikiRoleScreenExtension extends PlayerListRoleScreenExtension<UUID> {
-    public static final ShikieikiRoleScreenExtension INSTANCE = new ShikieikiRoleScreenExtension();
 
-    private ShikieikiRoleScreenExtension() {
+    public ShikieikiRoleScreenExtension() {
     }
 
     @Override
@@ -81,8 +79,7 @@ public final class ShikieikiRoleScreenExtension extends PlayerListRoleScreenExte
         if (client.player == null) {
             return;
         }
-        ConfigWorldComponent configComponent = ConfigWorldComponent.KEY.get(client.player.level());
-        if (!configComponent.naturalVoodoosAllowed) {
+        {
             Component text = Component.translatable("hud.shikieiki.tip");
             int textWidth = client.font.width(text);
             context.drawString(client.font, text,

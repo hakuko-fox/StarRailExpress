@@ -88,6 +88,8 @@ public class TMMItemTooltips {
             addTooltipForItem(ModItems.MINI_BAGUALU, itemStack, tooltipList);
             addTooltipForItem(FunnyItems.SUIKA_GOURD, itemStack, tooltipList);
             addTooltipForItem(FunnyItems.SUIKA_PILL, itemStack, tooltipList);
+            addTooltipForItem(FunnyItems.DOREMY_GHOST, itemStack, tooltipList);
+            addTooltipForItem(FunnyItems.ICE_RED_TEA, itemStack, tooltipList);
         });
     }
 
