@@ -158,8 +158,7 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                         }
 
                         // 星空宙：同一目標第一次命中只造成受傷提示，第二次命中才嘗試致命。
-                        // 若致命傷被護盾否決，保留命中狀態，下一槍會再次嘗試致命。
-                        String zoraHitKey = null;
+                        // 命中狀態保留到本局結束；護盾、免疫或死亡後復活都不得重置次數。
                         if (role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.HOSHIZORA.identifier())) {
                             String hitKey = player.getUUID() + ":" + target.getUUID();
                             if (!ZORA_TARGET_HITS.getOrDefault(hitKey, false)) {
@@ -171,7 +170,6 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                                                 "message.noellesroles.zora.first_hit"), true);
                                 return;
                             }
-                            zoraHitKey = hitKey;
                         }
 
                         double distance = player.distanceTo(target);
@@ -231,9 +229,6 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                             }, 1);
                         }
                         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.SNIPER_RIFLE);
-                        if (zoraHitKey != null && GameUtils.isPlayerEliminated(target)) {
-                            ZORA_TARGET_HITS.remove(zoraHitKey);
-                        }
                     } else {
                         if (SREGameWorldComponent.KEY.get(player.level()).isRole(player,
                                 org.agmas.noellesroles.role.ModRoles.HOSHIZORA)) {

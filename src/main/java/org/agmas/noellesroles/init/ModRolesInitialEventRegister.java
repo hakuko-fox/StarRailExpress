@@ -24,6 +24,7 @@ import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -120,6 +121,7 @@ public class ModRolesInitialEventRegister {
     private static final Map<UUID, Integer> MAOLUN_FAILURES = new HashMap<>();
     private static final Map<UUID, Set<ShenwuDamageGroup>> SHENWU_DAMAGE_GROUPS = new HashMap<>();
     private static final Set<UUID> NINE_ONE_FATAL_SHIELD_USED = new java.util.HashSet<>();
+    private static final Set<UUID> NINE_ONE_ATTACKED = new java.util.HashSet<>();
 
     private enum ShenwuDamageGroup {
         CIVILIAN,
@@ -404,6 +406,7 @@ public class ModRolesInitialEventRegister {
             }
             if (role.identifier().equals(ModRoles.SEPTEMBER_ONE.identifier())) {
                 NINE_ONE_FATAL_SHIELD_USED.remove(player.getUUID());
+                NINE_ONE_ATTACKED.remove(player.getUUID());
                 var ability = SREAbilityPlayerComponent.KEY.get(player);
                 ability.init(false);
                 ability.status = 0;
@@ -570,9 +573,21 @@ public class ModRolesInitialEventRegister {
             return;
         var game = SREGameWorldComponent.KEY.get(victim.level());
         if (game.isRole(damaged, ModRoles.SEPTEMBER_ONE)) {
+            if (NINE_ONE_ATTACKED.add(damaged.getUUID())) {
+                SREPlayerTaskComponent tasks = SREPlayerTaskComponent.KEY.get(damaged);
+                tasks.currentTaskAge = 0;
+                tasks.nextTaskTimer = 40 * 20;
+                tasks.sync();
+            }
             damaged.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, Integer.MAX_VALUE, 0,
                     false, false, true));
+            damaged.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, Integer.MAX_VALUE, 0,
+                    false, false, true));
         }
+    }
+
+    public static boolean hasNineOneBeenAttacked(Player player) {
+        return player != null && NINE_ONE_ATTACKED.contains(player.getUUID());
     }
 
     private static ShenwuDamageGroup getShenwuDamageGroup(SRERole attackerRole) {
@@ -692,6 +707,7 @@ public class ModRolesInitialEventRegister {
         MAOLUN_FAILURES.clear();
         SHENWU_DAMAGE_GROUPS.clear();
         NINE_ONE_FATAL_SHIELD_USED.clear();
+        NINE_ONE_ATTACKED.clear();
     }
 
     private static boolean hasNonKillerPlayerBesides(ServerPlayer shenwu) {
@@ -1631,8 +1647,11 @@ public class ModRolesInitialEventRegister {
         // Halic 被動：無法購買武器
         OnVendingMachinesBuyItems.EVENT.register((player, entry) -> {
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
+            if (gameWorldComponent.isRole(player, ModRoles.HOSHIZORA)) {
+                return entry.type() != dev.doctor4t.wathe.util.ShopEntry.Type.WEAPON
+                        || entry.stack().is(TMMItems.SNIPER_RIFLE);
+            }
             if (gameWorldComponent.isRole(player, ModRoles.HALIC)
-                    || gameWorldComponent.isRole(player, ModRoles.HOSHIZORA)
                     || gameWorldComponent.isRole(player, ModRoles.SEPTEMBER_ONE)
                     || gameWorldComponent.isRole(player, ModRoles.SHENWU_BINGFENG)
                     || gameWorldComponent.isRole(player, ModRoles.MAOLUN)
@@ -1669,9 +1688,14 @@ public class ModRolesInitialEventRegister {
                 }).charges(1).shifted(true).showOnHud(true).build());
 
         RoleSkill.register(ModRoles.MOCHEN,
-                RoleSkill.skill(SRE.id("mochen_time_reversal"), "skill.noellesroles.mochen.time_reversal", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useRewind(context.player(), 3))
+                RoleSkill.skill(SRE.id("mochen_time_reversal"), "skill.noellesroles.mochen.time_reversal", context -> {
+                    boolean rewound = org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
+                            .useRewind(context.player(), 3);
+                    if (!rewound) {
+                        context.setSkillCooldown(5 * 20);
+                    }
+                    return rewound;
+                })
                         .cooldownSeconds(180).showOnHud(true).build());
 
         // ==================== 風太 技能註冊 ====================
@@ -1749,7 +1773,7 @@ public class ModRolesInitialEventRegister {
                 RoleSkill.skill(SRE.id("baiyu_record"), "skill.noellesroles.baiyu.record", context ->
                         org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
                                 .useBaiyuExamine(context.player()))
-                        .cooldownSeconds(30).showOnHud(true).build());
+                        .cooldownSeconds(120).showOnHud(true).build());
 
     }
 

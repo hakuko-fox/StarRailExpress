@@ -415,7 +415,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 (c) -> new MinecartRenderer<SREMinecart>(c, ModelLayers.MINECART));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.FU_TAI_GLITCH,
-                net.minecraft.client.renderer.entity.ItemEntityRenderer::new);
+                net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
                 org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_LOG,

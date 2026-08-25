@@ -60,6 +60,11 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+            final var role = game.getRole(player);
+            if (role != null && !role.onUseKnife(player)) {
+                return;
+            }
             Entity targetEntity = player.serverLevel().getEntity(payload.target());
             ServerPlayer target = null;
             if ((targetEntity instanceof ServerPlayer ts)) {
@@ -108,8 +113,6 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                         Component.translatable("message.sre.knife.depleted").withStyle(ChatFormatting.DARK_RED), true);
                 return;
             }
-            SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
-            final var role = game.getRole(player);
             if (role != null) {
                 if (!role.onUseKnifeHit(player, target)) {
                     return;

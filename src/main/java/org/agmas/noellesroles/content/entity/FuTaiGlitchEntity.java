@@ -9,25 +9,26 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.projectile.ItemSupplier;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent;
 
 /** A round-scoped redstone glitch that can only be collected by its FuTai owner. */
-public class FuTaiGlitchEntity extends ItemEntity {
+public class FuTaiGlitchEntity extends Entity implements ItemSupplier {
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(
             FuTaiGlitchEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
-    public FuTaiGlitchEntity(EntityType<? extends ItemEntity> entityType, Level level) {
+    public FuTaiGlitchEntity(EntityType<? extends FuTaiGlitchEntity> entityType, Level level) {
         super(entityType, level);
-        setItem(Items.REDSTONE.getDefaultInstance());
-        setNeverPickUp();
-        setUnlimitedLifetime();
+        setNoGravity(true);
+        noPhysics = true;
     }
 
-    public FuTaiGlitchEntity(EntityType<? extends ItemEntity> entityType, Level level,
+    public FuTaiGlitchEntity(EntityType<? extends FuTaiGlitchEntity> entityType, Level level,
             double x, double y, double z, UUID ownerUuid) {
         this(entityType, level);
         setPos(x, y, z);
@@ -35,8 +36,18 @@ public class FuTaiGlitchEntity extends ItemEntity {
     }
 
     @Override
+    public ItemStack getItem() {
+        return Items.REDSTONE.getDefaultInstance();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        setDeltaMovement(0.0D, 0.0D, 0.0D);
+    }
+
+    @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
         builder.define(OWNER_UUID, Optional.empty());
     }
 
@@ -51,10 +62,11 @@ public class FuTaiGlitchEntity extends ItemEntity {
             return false;
         }
         FuTaiPlayerComponent component = FuTaiPlayerComponent.KEY.maybeGet(attacker).orElse(null);
-        if (component != null && component.tryCollectGlitch(attacker)) {
+        boolean collected = component != null && component.tryCollectGlitch(attacker);
+        if (collected) {
             discard();
         }
-        return false;
+        return collected;
     }
 
     @Override
@@ -69,18 +81,15 @@ public class FuTaiGlitchEntity extends ItemEntity {
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
         entityData.get(OWNER_UUID).ifPresent(uuid -> tag.putUUID("FuTaiOwner", uuid));
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
         if (tag.hasUUID("FuTaiOwner")) {
             entityData.set(OWNER_UUID, Optional.of(tag.getUUID("FuTaiOwner")));
         }
-        setItem(Items.REDSTONE.getDefaultInstance());
-        setNeverPickUp();
-        setUnlimitedLifetime();
+        setNoGravity(true);
+        noPhysics = true;
     }
 }

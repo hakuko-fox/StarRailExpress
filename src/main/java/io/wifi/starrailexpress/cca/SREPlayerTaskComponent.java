@@ -108,8 +108,7 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
         this.moodWhenTaskAssigned = 1f;
         this.parallelTaskGenerated = false;
         this.parallelTaskTypes.clear();
-        this.nextTaskTimer = SREGameWorldComponent.KEY.get(this.player.level()).isRole(this.player, ModRoles.SEPTEMBER_ONE)
-                ? 40 * 20 : GameConstants.TIME_TO_FIRST_TASK;
+        this.nextTaskTimer = GameConstants.TIME_TO_FIRST_TASK;
         SceneTaskManager.clear(this.player);
         this.sync();
 
@@ -141,6 +140,11 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
     @Override
     public void clear() {
         this.init();
+    }
+
+    private boolean isNineOneTaskCycleActive() {
+        return SREGameWorldComponent.KEY.get(this.player.level()).isRole(this.player, ModRoles.SEPTEMBER_ONE)
+                && org.agmas.noellesroles.init.ModRolesInitialEventRegister.hasNineOneBeenAttacked(this.player);
     }
 
     @Override
@@ -225,19 +229,19 @@ public class SREPlayerTaskComponent implements RoleComponent, ServerTickingCompo
             if (rotationActive && !parallelMinigame) {
                 this.nextTaskTimer = (int) (this.nextTaskTimer * GameConstants.MINIGAME_ROTATION_REFRESH_SLOWDOWN);
             }
-            this.nextTaskTimer = SREGameWorldComponent.KEY.get(this.player.level()).isRole(this.player, ModRoles.SEPTEMBER_ONE)
+            this.nextTaskTimer = isNineOneTaskCycleActive()
                     ? 40 * 20 : Math.max(this.nextTaskTimer, 2);
             shouldSync = true;
         }
 
-        if (gameWorldComponent.isRole(this.player, ModRoles.SEPTEMBER_ONE)
+        if (isNineOneTaskCycleActive()
                 && !this.tasks.isEmpty() && this.currentTaskAge >= 40 * 20) {
             this.tasks.clear();
             this.parallelTaskTypes.clear();
             this.parallelTaskGenerated = false;
             this.currentTaskAge = 0;
             SceneTaskManager.clear(this.player);
-            this.nextTaskTimer = 40 * 20;
+            this.nextTaskTimer = 0;
             shouldSync = true;
         }
 

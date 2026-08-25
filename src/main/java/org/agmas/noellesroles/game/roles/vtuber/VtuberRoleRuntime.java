@@ -67,7 +67,6 @@ public final class VtuberRoleRuntime {
     private static final Map<GlobalPos, UUID> FOOD_TRAPS = new HashMap<>();
     private static final Map<UUID, Long> BLOOD_FOX_LAST_CONSUME = new HashMap<>();
     private static final Map<UUID, Long> HOSHIZORA_WEAPON_BLOCKED_UNTIL = new HashMap<>();
-    private static final Map<UUID, BaiyuExamination> BAIYU_EXAMINATIONS = new HashMap<>();
     private static final Set<UUID> SYMBIOSIS_GUARD = new HashSet<>();
     private static boolean registered;
 
@@ -77,9 +76,6 @@ public final class VtuberRoleRuntime {
     private record PlayerSnapshot(long tick, Vec3 position, float yRot, float xRot, float health,
             List<MobEffectInstance> effects, List<ItemStack> inventory, int selectedSlot,
             int balance, boolean alive) {
-    }
-
-    private record BaiyuExamination(UUID bodyUuid, Vec3 startPosition, long completesAt) {
     }
 
     private VtuberRoleRuntime() {
@@ -266,11 +262,17 @@ public final class VtuberRoleRuntime {
                     "message.noellesroles.baiyu.no_body"), true);
             return false;
         }
-        BAIYU_EXAMINATIONS.put(player.getUUID(), new BaiyuExamination(
-                body.getUUID(), player.position(), player.level().getGameTime() + 20L * 10L));
-        player.displayClientMessage(Component.translatable(
-                "message.noellesroles.baiyu.recording"), true);
+        displayBaiyuDeathReason(player, body);
         return true;
+    }
+
+    private static void displayBaiyuDeathReason(ServerPlayer player, PlayerBodyEntity body) {
+        String reason = body.getDeathReason();
+        Component reasonText = reason == null || reason.isBlank()
+                ? Component.translatable("message.death_reason.null")
+                : Component.translatable("death_reason." + reason.replace(':', '.'));
+        player.displayClientMessage(Component.translatable(
+                "message.noellesroles.baiyu.result", reasonText), false);
     }
 
     public static void onConsume(Player consumer, ItemStack stack) {
@@ -449,7 +451,6 @@ public final class VtuberRoleRuntime {
             long now = player.level().getGameTime();
             captureSnapshot(player, now);
             if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-                BAIYU_EXAMINATIONS.remove(player.getUUID());
                 continue;
             }
             tickNineOneTaskConcealment(player, game);
@@ -459,7 +460,6 @@ public final class VtuberRoleRuntime {
             tickAyers(player, game, now);
             updateKanaPartyMode(player, game);
             tickHoshizora(player, game, now);
-            tickBaiyuExamination(player, game, now);
             tickPasserby(player, game);
             tickBloodFox(player, game);
             tickNocturnalAndStableSan(player, game);
@@ -486,35 +486,6 @@ public final class VtuberRoleRuntime {
         if (nearby) {
             HOSHIZORA_WEAPON_BLOCKED_UNTIL.put(player.getUUID(), now + 20L);
         }
-    }
-
-    private static void tickBaiyuExamination(ServerPlayer player, SREGameWorldComponent game, long now) {
-        BaiyuExamination examination = BAIYU_EXAMINATIONS.get(player.getUUID());
-        if (examination == null) {
-            return;
-        }
-        if (!game.isRole(player, ModRoles.BAIYU)
-                || player.position().distanceToSqr(examination.startPosition()) > 0.01D) {
-            BAIYU_EXAMINATIONS.remove(player.getUUID());
-            player.displayClientMessage(Component.translatable(
-                    "message.noellesroles.baiyu.moved"), true);
-            return;
-        }
-        if (now < examination.completesAt()) {
-            return;
-        }
-        BAIYU_EXAMINATIONS.remove(player.getUUID());
-        if (!(player.serverLevel().getEntity(examination.bodyUuid()) instanceof PlayerBodyEntity body)) {
-            player.displayClientMessage(Component.translatable(
-                    "message.noellesroles.baiyu.body_missing"), true);
-            return;
-        }
-        String reason = body.getDeathReason();
-        Component reasonText = reason == null || reason.isBlank()
-                ? Component.translatable("message.death_reason.null")
-                : Component.translatable("death_reason." + reason.replace(':', '.'));
-        player.displayClientMessage(Component.translatable(
-                "message.noellesroles.baiyu.result", reasonText), false);
     }
 
     private static void tickBloodFox(ServerPlayer player, SREGameWorldComponent game) {
@@ -832,7 +803,6 @@ public final class VtuberRoleRuntime {
         FOOD_TRAPS.clear();
         BLOOD_FOX_LAST_CONSUME.clear();
         HOSHIZORA_WEAPON_BLOCKED_UNTIL.clear();
-        BAIYU_EXAMINATIONS.clear();
         SYMBIOSIS_GUARD.clear();
         if (server != null) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {

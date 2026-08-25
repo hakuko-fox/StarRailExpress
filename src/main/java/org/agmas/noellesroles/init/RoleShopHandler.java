@@ -22,6 +22,7 @@ import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.content.item.KnifeItem;
+import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -126,6 +127,58 @@ public class RoleShopHandler {
             }
         });
         return entries;
+    }
+
+    private static void registerDefaultKillerShopWithCrowbar(ResourceLocation roleId) {
+        var entries = new ArrayList<>(ShopContent.getDefaultKnifeEntries());
+        boolean hasCrowbar = entries.stream().anyMatch(entry -> entry.stack().is(TMMItems.CROWBAR));
+        if (!hasCrowbar) {
+            entries.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+        }
+        ShopContent.customEntries.put(roleId, entries);
+    }
+
+    private static ShopEntry maxOneItemEntry(ItemStack stack, int price, ShopEntry.Type type) {
+        return new ShopEntry(stack, price, type) {
+            @Override
+            public boolean canBuy(@NotNull Player player) {
+                return super.canBuy(player) && !SREItemUtils.hasItem(player, stack.getItem());
+            }
+
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+                return !SREItemUtils.hasItem(player, stack.getItem()) && super.onBuy(player);
+            }
+        };
+    }
+
+    private static ShopEntry maxOneScopeEntry(int price) {
+        return new ShopEntry(TMMItems.SCOPE.getDefaultInstance(), price, ShopEntry.Type.TOOL) {
+            private boolean hasScopeOrAttached(Player player) {
+                if (SREItemUtils.hasItem(player, TMMItems.SCOPE)) {
+                    return true;
+                }
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    ItemStack inventoryStack = player.getInventory().getItem(i);
+                    if (inventoryStack.is(TMMItems.SNIPER_RIFLE)
+                            && SniperRifleItem.hasScopeAttached(inventoryStack)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public boolean canBuy(@NotNull Player player) {
+                return super.canBuy(player) && !hasScopeOrAttached(player);
+            }
+
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+                return !hasScopeOrAttached(player) && super.onBuy(player);
+            }
+        };
     }
 
     public static void resetOldmanEasterEggState() {
@@ -3555,10 +3608,18 @@ public class RoleShopHandler {
                     ShopEntry.Type.POISON));
             ShopContent.customEntries.put(ModRoles.FU_TAI_ID, FU_TAI_SHOP);
         }
+        registerDefaultKillerShopWithCrowbar(ModRoles.YUZU_FENGLING_ID);
+        registerDefaultKillerShopWithCrowbar(ModRoles.HAKUKO_FOX_ID);
+        registerDefaultKillerShopWithCrowbar(ModRoles.KANA_ID);
         {
             var HOSHIZORA_SHOP = new ArrayList<ShopEntry>();
             HOSHIZORA_SHOP.add(new ShopEntry(new ItemStack(TMMItems.MAGNUM_BULLET, 5), 50,
                     ShopEntry.Type.TOOL));
+            HOSHIZORA_SHOP.add(maxOneScopeEntry(25));
+            HOSHIZORA_SHOP.add(maxOneItemEntry(TMMItems.SNIPER_RIFLE.getDefaultInstance(), 400,
+                    ShopEntry.Type.WEAPON));
+            HOSHIZORA_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.HOSHIZORA_ID, HOSHIZORA_SHOP);
         }
 
