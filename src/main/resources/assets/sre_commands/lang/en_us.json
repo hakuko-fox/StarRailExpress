@@ -151,7 +151,7 @@
     "sre_commands.changemodifier.name": "Changemodifier",
     "sre_commands.changemodifier.desc": "Add, remove or switch modifier for players.",
     "sre_commands.forcerole.name": "Forcerole",
-    "sre_commands.forcerole.desc": "Force role assignment for player in next allocation.",
+    "sre_commands.forcerole.desc": "Force this role every round; the system selects an eligible player until reset.",
     "sre_commands.forcemodifier.name": "Forcemodifier",
     "sre_commands.forcemodifier.desc": "Force distribution of modifier for players.",
     "sre_commands.setrolecount.name": "Set role quantity",

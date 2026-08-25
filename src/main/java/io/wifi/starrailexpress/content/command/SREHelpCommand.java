@@ -71,6 +71,7 @@ public class SREHelpCommand {
                 new Entry("/tmm:skinsync", "tmm.skinsync"),
                 new Entry("/tmm:skins", "tmm.skins"),
                 new Entry("/forceTeam", "forceteam"),
+                new Entry("/force-role <role> | list | reset", "forcerole"),
                 new Entry("/listGameRoles", "listgameroles"),
                 new Entry("/stop_when_over", "stop_when_over"),
                 new Entry("/sre:narrator", "sre.narrator"),

@@ -159,7 +159,7 @@
   "sre_commands.changemodifier.name": "改变修饰符",
   "sre_commands.changemodifier.desc": "为玩家添加、移除或切换修饰符。",
   "sre_commands.forcerole.name": "强制职业",
-  "sre_commands.forcerole.desc": "为玩家在下次分配中强制指定职业。",
+  "sre_commands.forcerole.desc": "每回合强制出现此职业，由系统分配给符合条件的玩家，直到重置。",
   "sre_commands.forcemodifier.name": "强制修饰符",
   "sre_commands.forcemodifier.desc": "为玩家强制分配修饰符。",
   "sre_commands.setrolecount.name": "设置职业数量",

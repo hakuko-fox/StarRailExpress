@@ -31,6 +31,8 @@ import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.argument.RoleArgumentType;
 
+import java.util.List;
+
 public class ForceRoleCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("forceRole")
@@ -40,6 +42,13 @@ public class ForceRoleCommand {
                         .then(Commands.literal("clear").executes(ForceRoleCommand::clear))
                         .then(Commands.argument("role", RoleArgumentType.create())
                                 .executes(ForceRoleCommand::execute))));
+
+        dispatcher.register(Commands.literal("force-role")
+                .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().forceRoleRequiredPermission))
+                .then(Commands.literal("list").executes(ForceRoleCommand::listPersistent))
+                .then(Commands.literal("reset").executes(ForceRoleCommand::resetPersistent))
+                .then(Commands.argument("role", RoleArgumentType.create())
+                        .executes(ForceRoleCommand::executePersistent)));
     }
 
     private static int query(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -75,5 +84,38 @@ public class ForceRoleCommand {
         
         context.getSource().sendSuccess(() -> Component.translatable("commands.forcerole.success.clear", targetPlayer.getName()), true);
         return 1;
+    }
+
+    private static int executePersistent(CommandContext<CommandSourceStack> context) {
+        SRERole role = RoleArgumentType.getRole(context, "role");
+        Harpymodloader.addPersistentForcedRole(role);
+        final MutableComponent roleText = Harpymodloader.getRoleName(role).withColor(role.color()).withStyle(style ->
+                style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(role.identifier().toString()))));
+        context.getSource().sendSuccess(() -> Component.translatable("commands.forcerole.persistent.success", roleText), true);
+        return 1;
+    }
+
+    private static int resetPersistent(CommandContext<CommandSourceStack> context) {
+        Harpymodloader.resetPersistentForcedRoles();
+        context.getSource().sendSuccess(() -> Component.translatable("commands.forcerole.persistent.reset"), true);
+        return 1;
+    }
+
+    private static int listPersistent(CommandContext<CommandSourceStack> context) {
+        List<SRERole> roles = Harpymodloader.getPersistentForcedRoles();
+        if (roles.isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.translatable("commands.forcerole.persistent.list.empty"), false);
+            return 0;
+        }
+
+        MutableComponent message = Component.translatable("commands.forcerole.persistent.list.header");
+        for (SRERole role : roles) {
+            Component roleText = Harpymodloader.getRoleName(role).withColor(role.color()).withStyle(style ->
+                    style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                            Component.literal(role.identifier().toString()))));
+            message.append("\n- ").append(roleText);
+        }
+        context.getSource().sendSuccess(() -> message, false);
+        return roles.size();
     }
 }

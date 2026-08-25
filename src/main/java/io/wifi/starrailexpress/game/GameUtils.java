@@ -649,6 +649,8 @@ public class GameUtils {
 
         RoleMethodDispatcher.onStartGame(serverWorld);
         ArrayList<ServerPlayer> readyPlayerList = new ArrayList<>(getStartingPlayers(serverWorld));
+        // Resolve persistent /force-role rules to eligible players for this round.
+        org.agmas.harpymodloader.Harpymodloader.assignPersistentForcedRoles(serverWorld, readyPlayerList);
         // 记录开局玩家数量，供基于开局人数的逻辑使用
         gameComponent.setStartingPlayerCount(readyPlayerList.size());
         clearForcedReadyPlayers();

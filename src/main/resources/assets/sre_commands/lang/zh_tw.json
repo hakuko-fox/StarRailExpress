@@ -159,7 +159,7 @@
   "sre_commands.changemodifier.name": "改變修飾符",
   "sre_commands.changemodifier.desc": "為玩家添加、移除或切換修飾符。",
   "sre_commands.forcerole.name": "強制職業",
-  "sre_commands.forcerole.desc": "為玩家在下次分配中強制指定職業。",
+  "sre_commands.forcerole.desc": "每回合強制出現此角色，由系統分配給符合條件的玩家，直到重置。",
   "sre_commands.forcemodifier.name": "強制修飾符",
   "sre_commands.forcemodifier.desc": "為玩家強制分配修飾符。",
   "sre_commands.setrolecount.name": "設置職業數量",

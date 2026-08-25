@@ -27,6 +27,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.commands.*;
 import org.agmas.harpymodloader.commands.argument.ModifierArgumentType;
@@ -39,8 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 public class Harpymodloader implements ModInitializer {
@@ -64,6 +68,9 @@ public class Harpymodloader implements ModInitializer {
     public static HashMap<ResourceLocation, Integer> MODIFIER_MAX = new HashMap<>();
 
     public static HashMap<UUID, SRERole> FORCED_MODDED_ROLE = new HashMap<>();
+
+    /** Roles that must be present in every subsequent round until explicitly reset. */
+    public static ArrayList<SRERole> PERSISTENT_FORCED_ROLES = new ArrayList<>();
 
     public static HashMap<UUID, List<SREModifier>> FORCED_MODDED_MODIFIER = new HashMap<>();
 
@@ -134,6 +141,40 @@ public class Harpymodloader implements ModInitializer {
     }
     public static void addToForcedRoles(SRERole role, Player player) {
         FORCED_MODDED_ROLE.put(player.getUUID(), role);
+    }
+
+    public static void addPersistentForcedRole(SRERole role) {
+        if (role != null)
+            PERSISTENT_FORCED_ROLES.add(role);
+    }
+
+    public static void resetPersistentForcedRoles() {
+        PERSISTENT_FORCED_ROLES.clear();
+    }
+
+    public static List<SRERole> getPersistentForcedRoles() {
+        return List.copyOf(PERSISTENT_FORCED_ROLES);
+    }
+
+    /** Resolves persistent role rules to ready players for the current round. */
+    public static void assignPersistentForcedRoles(ServerLevel serverWorld, List<ServerPlayer> readyPlayers) {
+        if (PERSISTENT_FORCED_ROLES.isEmpty() || readyPlayers.isEmpty())
+            return;
+
+        List<ServerPlayer> candidates = new ArrayList<>(readyPlayers);
+        candidates.removeIf(player -> FORCED_MODDED_ROLE.containsKey(player.getUUID()));
+        Collections.shuffle(candidates, new Random(serverWorld.getGameTime()));
+
+        for (SRERole role : PERSISTENT_FORCED_ROLES) {
+            if (candidates.isEmpty()) {
+                LOGGER.warn("Unable to assign persistent forced role {}: no eligible player remains.", role.identifier());
+                break;
+            }
+            ServerPlayer selectedPlayer = candidates.remove(candidates.size() - 1);
+            FORCED_MODDED_ROLE.put(selectedPlayer.getUUID(), role);
+            LOGGER.debug("Persistent forced role {} assigned to {} for this round.",
+                    role.identifier(), selectedPlayer.getName().getString());
+        }
     }
 
     public static void setModifierMaximum(SREModifier modifier, Integer max) {
