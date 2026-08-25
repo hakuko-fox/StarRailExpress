@@ -2444,6 +2444,7 @@ public class ModRoles {
             return PUPPETEER_COLOR.getOrRandomColor();
         }
     }).setComponentKey(PuppeteerPlayerComponent.KEY).setAutoReset(false).setNeutralForKiller(true)
+            .setHiddenForRoleRotation(true)
             .setCanUseInstinctAndNightVision(true);
 
     /**
