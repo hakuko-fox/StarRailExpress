@@ -45,6 +45,8 @@ public class ForceRoleCommand {
 
         dispatcher.register(Commands.literal("force-role")
                 .requires(serverCommandSource -> serverCommandSource.hasPermission(SREConfig.instance().forceRoleRequiredPermission))
+                .then(Commands.literal("enable").executes(context -> setPersistentEnabled(context, true)))
+                .then(Commands.literal("disable").executes(context -> setPersistentEnabled(context, false)))
                 .then(Commands.literal("list").executes(ForceRoleCommand::listPersistent))
                 .then(Commands.literal("reset").executes(ForceRoleCommand::resetPersistent))
                 .then(Commands.argument("role", RoleArgumentType.create())
@@ -91,13 +93,22 @@ public class ForceRoleCommand {
         Harpymodloader.addPersistentForcedRole(role);
         final MutableComponent roleText = Harpymodloader.getRoleName(role).withColor(role.color()).withStyle(style ->
                 style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(role.identifier().toString()))));
-        context.getSource().sendSuccess(() -> Component.translatable("commands.forcerole.persistent.success", roleText), true);
+        context.getSource().sendSuccess(() -> Component.translatable(
+                "commands.forcerole.persistent.success", roleText,
+                Harpymodloader.getOccupationRoleGroup(role).size() - 1), true);
         return 1;
     }
 
     private static int resetPersistent(CommandContext<CommandSourceStack> context) {
         Harpymodloader.resetPersistentForcedRoles();
         context.getSource().sendSuccess(() -> Component.translatable("commands.forcerole.persistent.reset"), true);
+        return 1;
+    }
+
+    private static int setPersistentEnabled(CommandContext<CommandSourceStack> context, boolean enabled) {
+        Harpymodloader.setPersistentForcedRolesEnabled(enabled);
+        context.getSource().sendSuccess(() -> Component.translatable(
+                enabled ? "commands.forcerole.persistent.enable" : "commands.forcerole.persistent.disable"), true);
         return 1;
     }
 
@@ -108,7 +119,11 @@ public class ForceRoleCommand {
             return 0;
         }
 
-        MutableComponent message = Component.translatable("commands.forcerole.persistent.list.header");
+        MutableComponent message = Component.translatable(
+                "commands.forcerole.persistent.list.header",
+                Component.translatable(Harpymodloader.PERSISTENT_FORCED_ROLES_ENABLED
+                        ? "commands.forcerole.persistent.status.enabled"
+                        : "commands.forcerole.persistent.status.disabled"));
         for (SRERole role : roles) {
             Component roleText = Harpymodloader.getRoleName(role).withColor(role.color()).withStyle(style ->
                     style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,

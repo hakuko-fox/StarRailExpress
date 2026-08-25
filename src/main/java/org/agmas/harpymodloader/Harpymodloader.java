@@ -42,9 +42,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 public class Harpymodloader implements ModInitializer {
@@ -71,6 +74,7 @@ public class Harpymodloader implements ModInitializer {
 
     /** Roles that must be present in every subsequent round until explicitly reset. */
     public static ArrayList<SRERole> PERSISTENT_FORCED_ROLES = new ArrayList<>();
+    public static boolean PERSISTENT_FORCED_ROLES_ENABLED = true;
 
     public static HashMap<UUID, List<SREModifier>> FORCED_MODDED_MODIFIER = new HashMap<>();
 
@@ -144,21 +148,46 @@ public class Harpymodloader implements ModInitializer {
     }
 
     public static void addPersistentForcedRole(SRERole role) {
-        if (role != null)
-            PERSISTENT_FORCED_ROLES.add(role);
+        if (role == null)
+            return;
+
+        for (SRERole linkedRole : getOccupationRoleGroup(role)) {
+            if (!PERSISTENT_FORCED_ROLES.contains(linkedRole))
+                PERSISTENT_FORCED_ROLES.add(linkedRole);
+        }
     }
 
     public static void resetPersistentForcedRoles() {
         PERSISTENT_FORCED_ROLES.clear();
+        PERSISTENT_FORCED_ROLES_ENABLED = true;
+    }
+
+    public static void setPersistentForcedRolesEnabled(boolean enabled) {
+        PERSISTENT_FORCED_ROLES_ENABLED = enabled;
     }
 
     public static List<SRERole> getPersistentForcedRoles() {
         return List.copyOf(PERSISTENT_FORCED_ROLES);
     }
 
+    /** Returns the complete connected group of mutually linked occupation roles. */
+    public static List<SRERole> getOccupationRoleGroup(SRERole role) {
+        Set<SRERole> linkedRoles = new LinkedHashSet<>();
+        ArrayDeque<SRERole> pendingRoles = new ArrayDeque<>();
+        pendingRoles.add(role);
+        while (!pendingRoles.isEmpty()) {
+            SRERole currentRole = pendingRoles.removeFirst();
+            if (!linkedRoles.add(currentRole))
+                continue;
+            pendingRoles.addAll(currentRole.occupationRoles);
+            pendingRoles.addAll(currentRole.occupationedRoles);
+        }
+        return List.copyOf(linkedRoles);
+    }
+
     /** Resolves persistent role rules to ready players for the current round. */
     public static void assignPersistentForcedRoles(ServerLevel serverWorld, List<ServerPlayer> readyPlayers) {
-        if (PERSISTENT_FORCED_ROLES.isEmpty() || readyPlayers.isEmpty())
+        if (!PERSISTENT_FORCED_ROLES_ENABLED || PERSISTENT_FORCED_ROLES.isEmpty() || readyPlayers.isEmpty())
             return;
 
         List<ServerPlayer> candidates = new ArrayList<>(readyPlayers);
