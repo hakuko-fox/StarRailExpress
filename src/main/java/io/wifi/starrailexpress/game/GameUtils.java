@@ -101,6 +101,7 @@ import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.exmo.sre.meeting.MeetingManager;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
+import net.exmo.sre.nametag.TitleUnlockManager;
 import net.exmo.sre.subtitle.SubtitleS2CPayload;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -1260,6 +1261,7 @@ public class GameUtils {
                 }
                 ProgressionDataManager.onRoundSettled(player, playerRole, isWinner);
             }
+            TitleUnlockManager.processRound(world, roundEnd, gameComponent);
         }
     }
 

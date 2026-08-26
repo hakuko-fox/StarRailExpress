@@ -19,11 +19,13 @@ import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.client.gui.anim.GuiAnim;
 import io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache;
+import io.wifi.starrailexpress.client.stats.ClientPlayerStatsCache;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.UpdateNameTagSelectedPayload;
 import io.wifi.starrailexpress.network.UpdateSkinSelectedPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
+import net.exmo.sre.nametag.NameTagTitleCatalog;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -48,10 +50,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import io.wifi.starrailexpress.stats.PlayerStats;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * 皮肤装备界面（复古列车风格重写版）。
@@ -369,12 +375,24 @@ public class SkinManagementScreen extends Screen {
 
     // ─── 名片数据 ────────────────────────────────────────────────────────────
 
-    List<String> getNameTags() {
-        List<String> tags = new ArrayList<>();
+    private record NameTagView(String id, boolean unlocked,
+            NameTagTitleCatalog.TitleDefinition definition) {
+    }
+
+    List<NameTagView> getNameTags() {
+        List<NameTagView> tags = new ArrayList<>();
         NameTagInventoryComponent component = player == null ? null
                 : NameTagInventoryComponent.KEY.get(player);
-        if (component != null) {
-            tags.addAll(component.nameTags);
+        Set<String> unlocked = component == null ? Set.of() : new HashSet<>(component.nameTags);
+        Set<String> catalogIds = new HashSet<>();
+        for (NameTagTitleCatalog.TitleDefinition definition : NameTagTitleCatalog.all()) {
+            catalogIds.add(definition.id());
+            tags.add(new NameTagView(definition.id(), unlocked.contains(definition.id()), definition));
+        }
+        for (String customTitle : unlocked) {
+            if (!catalogIds.contains(customTitle)) {
+                tags.add(new NameTagView(customTitle, true, null));
+            }
         }
         return tags;
     }
@@ -400,6 +418,51 @@ public class SkinManagementScreen extends Screen {
             return Component.translatableWithFallback(tagId, tagRl.getPath());
         }
         return Component.translatableWithFallback(tagId, tagId);
+    }
+
+    Component getNameTagRequirement(NameTagView tag) {
+        if (tag.unlocked()) {
+            return Component.translatable("screen.sre.skins.title_unlocked");
+        }
+        if (tag.definition() == null || player == null) {
+            return Component.empty();
+        }
+
+        PlayerStats stats = ClientPlayerStatsCache.getOrEmpty(player.getUUID());
+        NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(player);
+        NameTagTitleCatalog.TitleDefinition definition = tag.definition();
+        if (definition.criterion() == NameTagTitleCatalog.Criterion.LOW_WIN_RATE) {
+            double winRate = stats.getTotalGamesPlayed() == 0 ? 0.0
+                    : stats.getTotalWins() * 100.0 / stats.getTotalGamesPlayed();
+            return Component.translatable("screen.sre.skins.title_requirement.low_win_rate",
+                    stats.getTotalGamesPlayed(), definition.threshold(), String.format(Locale.ROOT, "%.1f", winRate));
+        }
+        if (definition.criterion() == NameTagTitleCatalog.Criterion.FIRST_DEATH
+                || definition.criterion() == NameTagTitleCatalog.Criterion.KILLER_PERFECT_WIN
+                || definition.criterion() == NameTagTitleCatalog.Criterion.POLICE_PERFECT_WIN
+                || definition.criterion() == NameTagTitleCatalog.Criterion.ADMIN_GRANTED) {
+            return Component.translatable("screen.sre.skins.title_requirement."
+                    + definition.criterion().name().toLowerCase(Locale.ROOT));
+        }
+
+        int current = switch (definition.criterion()) {
+            case KILLER_WINS -> stats.getTotalKillerWins();
+            case POLICE_WINS -> stats.getTotalSheriffWins();
+            case NEUTRAL_WINS -> stats.getTotalNeutralWins();
+            case GAMES_PLAYED -> stats.getTotalGamesPlayed();
+            case KILLER_STREAK -> component.getKillerWinStreak();
+            case POLICE_STREAK -> component.getPoliceWinStreak();
+            case NEUTRAL_STREAK -> component.getNeutralWinStreak();
+            case ALL_FACTION_WINS -> Math.min(stats.getTotalKillerWins(),
+                    Math.min(stats.getTotalSheriffWins(), stats.getTotalNeutralWins()));
+            case LOSS_STREAK -> component.getLossStreak();
+            case FIRST_DEATH_STREAK -> component.getFirstDeathStreak();
+            default -> 0;
+        };
+        Component condition = Component.translatable("screen.sre.skins.title_condition."
+                + definition.criterion().name().toLowerCase(Locale.ROOT));
+        return Component.translatable("screen.sre.skins.title_requirement.progress",
+                condition, current, definition.threshold());
     }
 
     // ─── 按钮区 ─────────────────────────────────────────────────────────────
@@ -453,6 +516,12 @@ public class SkinManagementScreen extends Screen {
         float dt = GuiAnim.frameDeltaSeconds();
         renderPreviewPanel(graphics, mouseX, mouseY, dt, openProgress);
         renderFooterStats(graphics);
+        if (nameTagList != null) {
+            Component tooltip = nameTagList.getHoveredTooltip();
+            if (tooltip != null) {
+                graphics.renderTooltip(font, font.split(tooltip, 280), mouseX, mouseY);
+            }
+        }
     }
 
     // ─── 背景渲染 ───────────────────────────────────────────────────────────
@@ -921,6 +990,7 @@ public class SkinManagementScreen extends Screen {
 
         private final SkinManagementScreen parentScreen;
         private boolean draggingScrollbar = false;
+        private NameTagEntry hoveredEntry;
 
         // 复古主题色
         private static final int BG_COLOR = 0x801A1008;
@@ -946,20 +1016,21 @@ public class SkinManagementScreen extends Screen {
 
         public void rebuild(String filter) {
             clearEntries();
-            List<String> tags = parentScreen.getNameTags();
+            List<NameTagView> tags = parentScreen.getNameTags();
             String current = parentScreen.getCurrentNameTag();
-            String f = filter != null ? filter.toLowerCase() : "";
-            for (String tag : tags) {
+            String f = filter != null ? filter.toLowerCase(Locale.ROOT) : "";
+            for (NameTagView tag : tags) {
                 if (!f.isEmpty()) {
-                    Component display = parentScreen.getNameTagDisplayText(tag);
-                    if (!tag.toLowerCase().contains(f) && !display.getString().toLowerCase().contains(f)) {
+                    Component display = parentScreen.getNameTagDisplayText(tag.id());
+                    if (!tag.id().toLowerCase(Locale.ROOT).contains(f)
+                            && !display.getString().toLowerCase(Locale.ROOT).contains(f)) {
                         continue;
                     }
                 }
-                addEntry(new NameTagEntry(tag, tag.equals(current)));
+                addEntry(new NameTagEntry(tag.id(), tag.id().equals(current), !tag.unlocked(), tag));
             }
             if (tags.isEmpty() || (filter != null && !filter.isEmpty() && children().isEmpty())) {
-                addEntry(new NameTagEntry("__empty__", false));
+                addEntry(new NameTagEntry("__empty__", false, false, null));
             }
         }
 
@@ -989,10 +1060,18 @@ public class SkinManagementScreen extends Screen {
 
         @Override
         public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            hoveredEntry = null;
             renderListBackground(g);
             g.enableScissor(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1);
             super.renderWidget(g, mouseX, mouseY, partialTick);
             g.disableScissor();
+        }
+
+        Component getHoveredTooltip() {
+            if (hoveredEntry == null || hoveredEntry.view == null) {
+                return null;
+            }
+            return parentScreen.getNameTagRequirement(hoveredEntry.view);
         }
 
         @Override
@@ -1046,11 +1125,15 @@ public class SkinManagementScreen extends Screen {
         public class NameTagEntry extends ObjectSelectionList.Entry<NameTagEntry> {
             final String tagId;
             final boolean isCurrent;
+            final boolean locked;
+            final NameTagView view;
             float hoverAnim = 0f;
 
-            NameTagEntry(String tagId, boolean isCurrent) {
+            NameTagEntry(String tagId, boolean isCurrent, boolean locked, NameTagView view) {
                 this.tagId = tagId;
                 this.isCurrent = isCurrent;
+                this.locked = locked;
+                this.view = view;
             }
 
             @Override
@@ -1059,6 +1142,9 @@ public class SkinManagementScreen extends Screen {
                     int mouseX, int mouseY, boolean hovered, float partialTick) {
                 float dt = GuiAnim.currentDelta();
                 hoverAnim = GuiAnim.toggle(hoverAnim, hovered, 14f, dt);
+                if (hovered) {
+                    NameTagList.this.hoveredEntry = this;
+                }
 
                 if ("__empty__".equals(tagId)) {
                     g.drawCenteredString(Minecraft.getInstance().font,
@@ -1068,12 +1154,13 @@ public class SkinManagementScreen extends Screen {
                 }
 
                 // 背景
-                int bg = GuiAnim.blend(ENTRY_BG, ENTRY_BG_HOVER, hoverAnim);
+                int bg = locked ? 0x88120E0A : GuiAnim.blend(ENTRY_BG, ENTRY_BG_HOVER, hoverAnim);
                 if (isCurrent) bg = GuiAnim.blend(bg, ENTRY_BG_SELECTED, 0.5f + hoverAnim * 0.3f);
                 g.fill(x + 2, y + 2, x + entryWidth - 4, y + entryHeight - 2, bg);
 
                 // 边框
-                int border = GuiAnim.blend(0x308B6914, 0xFFD4AF37, hoverAnim);
+                int border = locked ? GuiAnim.blend(0x304A4030, 0xFF786B55, hoverAnim)
+                        : GuiAnim.blend(0x308B6914, 0xFFD4AF37, hoverAnim);
                 if (isCurrent) border = GuiAnim.blend(border, 0xFFD4AF37, 0.6f);
                 g.fill(x + 2, y + 2, x + entryWidth - 4, y + 3, border);
                 g.fill(x + 2, y + entryHeight - 3, x + entryWidth - 4, y + entryHeight - 2, border);
@@ -1087,16 +1174,22 @@ public class SkinManagementScreen extends Screen {
 
                 // 文字
                 Component display = parentScreen.getNameTagDisplayText(tagId);
-                int textColor = isCurrent ? TEXT_SELECTED
+                int textColor = locked ? 0xFF776F64 : isCurrent ? TEXT_SELECTED
                         : (int) GuiAnim.blend(0xFF9E8B6E, 0xFFFFF4DC, hoverAnim);
                 var font = Minecraft.getInstance().font;
-                g.drawString(font, font.plainSubstrByWidth(display.getString(), entryWidth - 30),
-                        x + (isCurrent ? 14 : 6), y + (entryHeight - 8) / 2, textColor, false);
+                int textX = x + (isCurrent ? 14 : 6);
+                if (locked) {
+                    g.drawString(font, "🔒", textX, y + (entryHeight - 8) / 2, 0xFF8A8174, false);
+                    textX += font.width("🔒") + 4;
+                }
+                g.drawString(font, font.plainSubstrByWidth(display.getString(), x + entryWidth - 8 - textX),
+                        textX, y + (entryHeight - 8) / 2, textColor, false);
             }
 
             @Override
             public boolean mouseClicked(double mouseX, double mouseY, int button) {
                 if ("__empty__".equals(tagId)) return false;
+                if (locked) return true;
                 if (button == 0) {
                     Minecraft.getInstance().getSoundManager().play(
                             net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
@@ -1110,7 +1203,11 @@ public class SkinManagementScreen extends Screen {
 
             @Override
             public @NotNull Component getNarration() {
-                return parentScreen.getNameTagDisplayText(tagId);
+                Component narration = parentScreen.getNameTagDisplayText(tagId);
+                if (locked && view != null) {
+                    narration = narration.copy().append(". ").append(parentScreen.getNameTagRequirement(view));
+                }
+                return narration;
             }
         }
     }

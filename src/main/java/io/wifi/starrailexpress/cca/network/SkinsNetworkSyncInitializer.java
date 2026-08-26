@@ -45,8 +45,9 @@ public class SkinsNetworkSyncInitializer {
      */
     public static void registerEvents() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayer player = handler.getPlayer();
+            NameTagInventoryComponent.KEY.get(player).restoreLocalData();
             if (isEnabled) {
-                ServerPlayer player = handler.getPlayer();
                 onPlayerJoin(player);
             }
         });

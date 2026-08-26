@@ -32,6 +32,7 @@ public class NameTagCommand {
         // /nametag add <nameTag> [target] - 添加名片
         dispatcher.register(Commands.literal("nametag:add").requires(source -> source.hasPermission(2))
                 .then(Commands.argument("nameTag", ComponentArgument.textComponent(registryAccess))
+                        .executes(context -> addNametag(context, context.getSource().getPlayerOrException()))
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(
                                         context -> addNametag(context, EntityArgument.getPlayer(context, "target"))))));
@@ -39,7 +40,7 @@ public class NameTagCommand {
         // /nametag remove <nameTag> [target] - 移除名片
         dispatcher.register(Commands.literal("nametag:remove").requires(source -> source.hasPermission(2))
                 .then(Commands.argument("nameTag", ComponentArgument.textComponent(registryAccess))
-                        .executes(context -> removeNametag(context, EntityArgument.getPlayer(context, "target")))
+                        .executes(context -> removeNametag(context, context.getSource().getPlayerOrException()))
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(context -> removeNametag(context,
                                         EntityArgument.getPlayer(context, "target"))))));
@@ -47,14 +48,14 @@ public class NameTagCommand {
         // /nametag set <nameTag> [target] - 设置当前名片
         dispatcher.register(Commands.literal("nametag:set").requires(source -> source.hasPermission(2))
                 .then(Commands.argument("nameTag", ComponentArgument.textComponent(registryAccess))
-                        .executes(context -> setNametag(context, EntityArgument.getPlayer(context, "target")))
+                        .executes(context -> setNametag(context, context.getSource().getPlayerOrException()))
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(
                                         context -> setNametag(context, EntityArgument.getPlayer(context, "target"))))));
 
         // /nametag get [target] - 获取当前名片
         dispatcher.register(Commands.literal("nametag:get").requires(source -> source.hasPermission(2))
-                .executes(context -> getNametag(context, EntityArgument.getPlayer(context, "target")))
+                .executes(context -> getNametag(context, context.getSource().getPlayerOrException()))
                 .then(Commands.argument("target", EntityArgument.player())
                         .executes(context -> getNametag(context, EntityArgument.getPlayer(context, "target")))));
 
@@ -66,7 +67,7 @@ public class NameTagCommand {
 
         // /nametag clear [target] - 清空所有名片
         dispatcher.register(Commands.literal("nametag:clear").requires(source -> source.hasPermission(2))
-                .executes(context -> clearNametags(context, EntityArgument.getPlayer(context, "target")))
+                .executes(context -> clearNametags(context, context.getSource().getPlayerOrException()))
                 .then(Commands.argument("target", EntityArgument.player())
                         .executes(context -> clearNametags(context, EntityArgument.getPlayer(context, "target")))));
 
@@ -85,7 +86,7 @@ public class NameTagCommand {
             var nameTag = ComponentArgument.getComponent(context, "nameTag");
             NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(target);
 
-            component.addNameTag(nameTag.getString());
+            component.addNameTag(NameTagTitleCatalog.resolveCommandInput(nameTag.getString()));
 
             context.getSource().sendSuccess(() -> Component.literal("已为玩家 ")
                     .append(target.getName())
@@ -106,8 +107,9 @@ public class NameTagCommand {
         var nameTag = ComponentArgument.getComponent(context, "nameTag");
         NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(target);
 
-        if (component.nameTags.contains(nameTag.getString())) {
-            component.removeNameTag(nameTag.getString());
+        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(nameTag.getString());
+        if (component.nameTags.contains(resolvedNameTag)) {
+            component.removeNameTag(resolvedNameTag);
             context.getSource().sendSuccess(() -> Component.literal("已从玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 移除名片: "))
@@ -129,8 +131,9 @@ public class NameTagCommand {
         var nameTag = ComponentArgument.getComponent(context, "nameTag");
         NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(target);
 
-        if (component.nameTags.contains(nameTag.getString())) {
-            component.setCurrentNameTag(nameTag.getString());
+        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(nameTag.getString());
+        if (component.nameTags.contains(resolvedNameTag)) {
+            component.setCurrentNameTag(resolvedNameTag);
             context.getSource().sendSuccess(() -> Component.literal("已将玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 的当前名片设置为: "))

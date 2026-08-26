@@ -20,8 +20,10 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleComponent;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -53,6 +55,11 @@ public class NameTagInventoryComponent implements RoleComponent {
     private final Player player;
     public ArrayList<String> nameTags = new ArrayList<>();
     public String CurrentNameTag = "";
+    private int killerWinStreak;
+    private int policeWinStreak;
+    private int neutralWinStreak;
+    private int lossStreak;
+    private int firstDeathStreak;
 
     private boolean isNetworkSyncEnabled = false;
     private boolean databaseLoadPending = false;
@@ -117,6 +124,7 @@ public class NameTagInventoryComponent implements RoleComponent {
                             Map<String, Object> nametagData = GSON.fromJson(record.payload(), Map.class);
                             if (nametagData != null) {
                                 this.applyNetworkNametagData(nametagData);
+                                this.persistLocal();
                                 this.sync();
                                 logger.debug("玩家 {} 的名片数据已从 MySQL 拉取", this.player.getName().getString());
                             }
@@ -161,6 +169,11 @@ public class NameTagInventoryComponent implements RoleComponent {
         nameTags.addAll(compoundTag.getList("nameTags", 8).stream().map(Tag::getAsString).toList());
 
         CurrentNameTag = compoundTag.getString("CurrentNameTag");
+        killerWinStreak = compoundTag.getInt("KillerWinStreak");
+        policeWinStreak = compoundTag.getInt("PoliceWinStreak");
+        neutralWinStreak = compoundTag.getInt("NeutralWinStreak");
+        lossStreak = compoundTag.getInt("LossStreak");
+        firstDeathStreak = compoundTag.getInt("FirstDeathStreak");
     }
 
     @Override
@@ -174,6 +187,11 @@ public class NameTagInventoryComponent implements RoleComponent {
 
         // 保存当前选中的名片
         compoundTag.putString("CurrentNameTag", CurrentNameTag);
+        compoundTag.putInt("KillerWinStreak", killerWinStreak);
+        compoundTag.putInt("PoliceWinStreak", policeWinStreak);
+        compoundTag.putInt("NeutralWinStreak", neutralWinStreak);
+        compoundTag.putInt("LossStreak", lossStreak);
+        compoundTag.putInt("FirstDeathStreak", firstDeathStreak);
     }
 
     @Override
@@ -191,6 +209,8 @@ public class NameTagInventoryComponent implements RoleComponent {
     @Override
     public void clear() {
         this.init();
+        this.persistLocal();
+        this.syncToNetwork();
     }
 
     /**
@@ -207,8 +227,29 @@ public class NameTagInventoryComponent implements RoleComponent {
         if (!nameTags.contains(nameTag)) {
             nameTags.add(nameTag);
             this.sync();
+            this.persistLocal();
+            this.broadcastUnlock(nameTag);
             // 触发网络同步
             syncToNetwork();
+        }
+    }
+
+    private void broadcastUnlock(String nameTag) {
+        if (!(this.player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null) {
+            return;
+        }
+        serverPlayer.getServer().getPlayerList().broadcastSystemMessage(
+                Component.translatable("message.sre.nametag.global_unlocked",
+                        serverPlayer.getName(), Component.translatableWithFallback(nameTag, nameTag)),
+                false);
+        Component title = Component.translatable("message.sre.nametag.title_unlocked", serverPlayer.getName())
+                .withStyle(ChatFormatting.GOLD);
+        Component subtitle = Component.translatableWithFallback(nameTag, nameTag)
+                .withStyle(ChatFormatting.YELLOW);
+        for (ServerPlayer viewer : serverPlayer.getServer().getPlayerList().getPlayers()) {
+            SRENetworkMessageUtils.sendTitleTime(viewer, 10, 60, 20);
+            SRENetworkMessageUtils.sendTitle(viewer, title);
+            SRENetworkMessageUtils.sendSubtitle(viewer, subtitle);
         }
     }
 
@@ -222,6 +263,7 @@ public class NameTagInventoryComponent implements RoleComponent {
                 CurrentNameTag = "";
             }
             this.sync();
+            this.persistLocal();
             // 触发网络同步
             syncToNetwork();
         }
@@ -234,6 +276,7 @@ public class NameTagInventoryComponent implements RoleComponent {
         if (nameTags.contains(nameTag)) {
             CurrentNameTag = nameTag;
             this.sync();
+            this.persistLocal();
             // 触发网络同步
             syncToNetwork();
         }
@@ -289,15 +332,21 @@ public class NameTagInventoryComponent implements RoleComponent {
                             newNameTags.add((String) item);
                         }
                     }
-                    this.nameTags.clear();
-                    this.nameTags.addAll(newNameTags);
+                    for (String nameTag : newNameTags) {
+                        if (!this.nameTags.contains(nameTag)) {
+                            this.nameTags.add(nameTag);
+                        }
+                    }
                 }
             }
 
             if (nametagData.containsKey("currentNametag")) {
                 Object currentNametag = nametagData.get("currentNametag");
                 if (currentNametag instanceof String) {
-                    this.CurrentNameTag = (String) currentNametag;
+                    String selected = (String) currentNametag;
+                    if (this.nameTags.contains(selected)) {
+                        this.CurrentNameTag = selected;
+                    }
                 }
             }
 
@@ -369,9 +418,84 @@ public class NameTagInventoryComponent implements RoleComponent {
         Map<String, Object> nametagData = new HashMap<>();
         nametagData.put("nameTags", new ArrayList<>(this.nameTags));
         nametagData.put("currentNametag", this.CurrentNameTag);
+        nametagData.put("killerWinStreak", this.killerWinStreak);
+        nametagData.put("policeWinStreak", this.policeWinStreak);
+        nametagData.put("neutralWinStreak", this.neutralWinStreak);
+        nametagData.put("lossStreak", this.lossStreak);
+        nametagData.put("firstDeathStreak", this.firstDeathStreak);
         nametagData.put("version", System.currentTimeMillis());
         nametagData.put("timestamp", System.currentTimeMillis());
         return nametagData;
+    }
+
+    public void restoreLocalData() {
+        if (this.player instanceof ServerPlayer serverPlayer) {
+            NameTagDataStore.restore(serverPlayer, this);
+            this.sync();
+        }
+    }
+
+    void mergeLocalData(NameTagDataStore.PlayerData data) {
+        if (data.nameTags != null) {
+            for (String nameTag : data.nameTags) {
+                if (nameTag != null && !nameTag.isBlank() && !this.nameTags.contains(nameTag)) {
+                    this.nameTags.add(nameTag);
+                }
+            }
+        }
+        if ((this.CurrentNameTag == null || this.CurrentNameTag.isBlank())
+                && data.currentNameTag != null && this.nameTags.contains(data.currentNameTag)) {
+            this.CurrentNameTag = data.currentNameTag;
+        }
+        this.killerWinStreak = Math.max(this.killerWinStreak, data.killerWinStreak);
+        this.policeWinStreak = Math.max(this.policeWinStreak, data.policeWinStreak);
+        this.neutralWinStreak = Math.max(this.neutralWinStreak, data.neutralWinStreak);
+        this.lossStreak = Math.max(this.lossStreak, data.lossStreak);
+        this.firstDeathStreak = Math.max(this.firstDeathStreak, data.firstDeathStreak);
+    }
+
+    public void updateAchievementStreaks(boolean killerRound, boolean policeRound, boolean neutralRound,
+            boolean won, boolean firstDeath) {
+        if (killerRound) {
+            this.killerWinStreak = won ? this.killerWinStreak + 1 : 0;
+        }
+        if (policeRound) {
+            this.policeWinStreak = won ? this.policeWinStreak + 1 : 0;
+        }
+        if (neutralRound) {
+            this.neutralWinStreak = won ? this.neutralWinStreak + 1 : 0;
+        }
+        this.lossStreak = won ? 0 : this.lossStreak + 1;
+        this.firstDeathStreak = firstDeath ? this.firstDeathStreak + 1 : 0;
+        this.sync();
+        this.persistLocal();
+        this.syncToNetwork();
+    }
+
+    public int getKillerWinStreak() {
+        return killerWinStreak;
+    }
+
+    public int getPoliceWinStreak() {
+        return policeWinStreak;
+    }
+
+    public int getNeutralWinStreak() {
+        return neutralWinStreak;
+    }
+
+    public int getLossStreak() {
+        return lossStreak;
+    }
+
+    public int getFirstDeathStreak() {
+        return firstDeathStreak;
+    }
+
+    private void persistLocal() {
+        if (this.player instanceof ServerPlayer serverPlayer) {
+            NameTagDataStore.save(serverPlayer, this);
+        }
     }
 
     @Override
