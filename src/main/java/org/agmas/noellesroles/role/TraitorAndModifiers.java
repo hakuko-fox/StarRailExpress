@@ -731,4 +731,27 @@ public class TraitorAndModifiers {
     public static int calculateStingyRefund(int originalPrice) {
         return (int) (originalPrice * 0.2);
     }
+    static {
+        TRAITOR.setAddedVersion("4.2");
+        SNEAKY.setAddedVersion("4.2");
+        BUTTER_FINGERS.setAddedVersion("4.2");
+        STRONG.setAddedVersion("4.2");
+        NIGHT_OWL.setAddedVersion("4.2");
+        GENEROUS.setAddedVersion("4.2");
+        BRAVE.setAddedVersion("4.2");
+        WORKAHOLIC.setAddedVersion("4.2");
+        BIG_EATER.setAddedVersion("4.2");
+        MANIC.setAddedVersion("4.2");
+        LAST_GASP.setAddedVersion("4.2");
+        REBEL.setAddedVersion("4.2");
+        HEMOPHOBIA.setAddedVersion("4.2");
+        MONEY_GRUBBER.setAddedVersion("4.2");
+        VEGETARIAN.setAddedVersion("4.2");
+        DWARF.setAddedVersion("4.2");
+        DESPERATE_FAITH.setAddedVersion("4.2");
+        STINGY.setAddedVersion("4.2");
+        CORRUPTED.setAddedVersion("4.2");
+        FLEXIBLE.setAddedVersion("4.2");
+        ANTI_NEWTON.setAddedVersion("4.2");
+    }
 }

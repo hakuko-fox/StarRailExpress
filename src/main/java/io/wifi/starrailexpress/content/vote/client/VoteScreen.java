@@ -16,13 +16,14 @@
 package io.wifi.starrailexpress.content.vote.client;
 
 import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.client.util.PinYinUtils;
 import io.wifi.starrailexpress.content.vote.ClientPlayerOption;
 import io.wifi.starrailexpress.content.vote.VoteOption;
 import io.wifi.starrailexpress.content.vote.network.VoteCastC2SPacket;
 import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -55,6 +56,9 @@ public class VoteScreen extends Screen {
     private static final int ICON_SIZE = 16;
     private static final int CONFIRM_W = 126;
     private static final int CONFIRM_H = 24;
+    // 搜索框：固定在头部与列表之间，不随滚动条滚动；下方空间容纳提示文本与分割条
+    private static final int SEARCH_BOX_H = 20;
+    private static final int SEARCH_GAP = 24;
 
     // 弃票按钮：固定在屏幕左下角，贴边显示（与玩家列表分离）
     private static final int ABSTAIN_W = 124;
@@ -77,7 +81,7 @@ public class VoteScreen extends Screen {
     private static final int COL_TITLE = 0xFFFFE3A3;
     private static final int COL_TEXT_NORMAL = 0xFFE5C98B;
     private static final int COL_TEXT_MUTED = 0xFF98734A;
-    private static final int COL_TEXT_DARK = 0xFF2A1809;
+    private static final int COL_TEXT_DARK = 0xffffffff;
     private static final int COL_TEXT_HOVER = 0xFFFFFFFF;
     private static final int COL_TEXT_SELECTED = 0xFFFFF2C8;
     private static final int COL_TEXT_HINT = 0xFFC79C61;
@@ -136,6 +140,9 @@ public class VoteScreen extends Screen {
     private final List<Integer> abstainIndices = new ArrayList<>();
     private boolean hasVoted;
 
+    private EditBox searchBox;
+    private String searchText = "";
+
     private final Set<Integer> selectedIndices = new LinkedHashSet<>();
     private boolean multiSelectMode;
     private int maxSelect;
@@ -154,6 +161,7 @@ public class VoteScreen extends Screen {
         }
 
         updateLayout();
+        initSearchBox();
         restoreStateFromCache();
         rebuildWidgets(true);
     }
@@ -177,24 +185,86 @@ public class VoteScreen extends Screen {
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
-        super.resize(minecraft, width, height);
+    protected void repositionElements() {
+        // 1.21.1 的窗口尺寸变化走 resize → repositionElements → rebuildWidgets 链路，
+        // 这里必须在重算布局后同步重定位搜索框，否则 EditBox 会停留在旧坐标（点击失焦、文字错位）
         updateLayout();
+        initSearchBox();
         rebuildWidgets();
     }
 
     private void updateLayout() {
         contentX = (width - BUTTON_WIDTH) / 2;
         panelW = BUTTON_WIDTH + PANEL_PAD_X * 2;
-        panelH = Math.min(height - 18, Math.max(146, height - 24));
+        panelH = Math.min(height - 18, Math.max(190, height - 24));
         panelX = (width - panelW) / 2;
         panelY = Math.max(8, (height - panelH) / 2);
-        contentY = panelY + HEADER_H + PANEL_PAD_Y;
+        // 搜索框占据头部到列表之间的一段固定空间，列表整体下移
+        contentY = panelY + HEADER_H + PANEL_PAD_Y + SEARCH_BOX_H + SEARCH_GAP;
+    }
+
+    /**
+     * 搜索框纵坐标：与列表顶固定保持 SEARCH_GAP 间距（单选/多选一致，下方容纳提示与分割条）。
+     */
+    private int searchBoxY() {
+        return contentY - SEARCH_BOX_H - SEARCH_GAP;
+    }
+
+    private void initSearchBox() {
+        int x = contentX;
+        int y = searchBoxY();
+        if (searchBox == null) {
+            searchBox = new EditBox(font, x, y, BUTTON_WIDTH, SEARCH_BOX_H, Component.empty());
+            // 保持默认带边框样式：文字/提示带 4px 内边距且垂直居中（setBordered(false) 会贴左上角）
+            searchBox.setMaxLength(64);
+            searchBox.setTextColor(COL_TEXT_NORMAL);
+            searchBox.setHint(Component.translatable("vote.search_hint"));
+            searchBox.setResponder(text -> {
+                searchText = text;
+                scrollOffset = 0;
+                rebuildWidgets();
+            });
+            // 只注册事件（children），不加入 renderables，渲染在 drawSearchBox 中手动进行
+            addWidget(searchBox);
+        } else {
+            searchBox.setPosition(x, y);
+            searchBox.setWidth(BUTTON_WIDTH);
+            searchBox.setHeight(SEARCH_BOX_H);
+        }
+    }
+
+    private boolean matchesSearch(VoteOption opt) {
+        if (searchText == null || searchText.isEmpty()) {
+            return true;
+        }
+        String q = searchText.toLowerCase();
+        String name = opt.display().getString();
+        if (name.toLowerCase().contains(q)) {
+            return true;
+        }
+        if (opt instanceof VoteOption.ItemOption itemOpt) {
+            String itemId = itemOpt.typeId().toString(); // 物品注册 id，如 minecraft:diamond_sword
+            return itemId.toLowerCase().contains(q)
+                    || PinYinUtils.contains(q, name)
+                    || PinYinUtils.contains(q, itemId);
+        }
+        return PinYinUtils.contains(q, name);
     }
 
     public void updateData(VoteSyncS2CPacket packet) {
         restoreStateFromCache();
         rebuildWidgets();
+    }
+
+    /**
+     * 仅重建选项按钮列表，不清空控件/焦点。
+     * 必须显式覆盖原版 {@link Screen#rebuildWidgets()}：否则无参调用（搜索输入响应、
+     * repositionElements 等）会走原版 clearWidgets + clearFocus + init，
+     * 把搜索框从事件链中移除并清掉焦点，导致输入一次后失焦且无法再点击聚焦。
+     */
+    @Override
+    public void rebuildWidgets() {
+        rebuildWidgets(false);
     }
 
     public void rebuildWidgets(boolean init) {
@@ -207,7 +277,7 @@ public class VoteScreen extends Screen {
                     && (to.resultId().equals("inner.cancel") || to.resultId().equals("inner.skip"))) {
                 // 弃票选项（弃票/跳过）单独显示在左下角
                 abstainIndices.add(i);
-            } else {
+            } else if (matchesSearch(opt)) {
                 buttons.add(new WidgetButton(i));
             }
         }
@@ -243,19 +313,34 @@ public class VoteScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+    public void renderBackground(GuiGraphics g, int i, int j, float f) {
+        super.renderBackground(g, i, j, f);
         drawBackdrop(g);
+
+        drawPanel(g);
+        drawHeader(g);
+    }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
 
         int scrollH = scrollAreaH();
-        drawPanel(g);
-        drawHeader(g);
+        drawSearchBox(g, mouseX, mouseY, partialTick);
 
-        if (multiSelectMode) {
-            Component hint = Component.translatable("vote.multi_select_hint", maxSelect, selectedIndices.size());
-            drawSmallCaps(g, hint.getString(), contentX, contentY - 12, BUTTON_WIDTH, COL_TEXT_HINT);
-        }
+        // 搜索区与列表之间的固定分割条（单选/多选都绘制），沿用原多选提示的分割条样式
+        int sepY = contentY - 8;
+        g.fill(contentX + 32, sepY, contentX + BUTTON_WIDTH - 32, sepY + 1, COL_BRASS_DARK);
+
+        Component revoteStatus = Component.translatable(ClientVoteCache.isAllowReVote()
+                ? "vote.revote.allowed"
+                : "vote.revote.not_allowed");
+        Component hint = multiSelectMode
+                ? Component.translatable("vote.multi_select_hint", maxSelect, selectedIndices.size(), revoteStatus)
+                : Component.translatable("vote.single_select_hint", revoteStatus);
+        // 纯居中文字，位于搜索框与分割条之间，不与分割条重合
+        g.drawCenteredString(font, hint.getString(), contentX + BUTTON_WIDTH / 2, contentY - SEARCH_GAP + 4,
+                COL_TEXT_HINT);
 
         drawOptionList(g, mouseX, mouseY, scrollH);
 
@@ -411,10 +496,8 @@ public class VoteScreen extends Screen {
         g.drawCenteredString(font, clipped, x + w / 2 + 3, y + 3, accent);
     }
 
-    private void drawSmallCaps(GuiGraphics g, String text, int x, int y, int w, int color) {
-        String clipped = clipText(text, w - 20);
-        g.fill(x + 32, y + 4, x + w - 32, y + 5, COL_BRASS_DARK);
-        g.drawCenteredString(font, clipped, x + w / 2, y, color);
+    private void drawSearchBox(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        searchBox.render(g, mouseX, mouseY, partialTick);
     }
 
     private void drawOptionList(GuiGraphics g, int mouseX, int mouseY, int scrollH) {
@@ -436,7 +519,10 @@ public class VoteScreen extends Screen {
         int y = contentY + Math.max(0, scrollH / 2 - 12);
         g.fill(contentX, y - 10, contentX + BUTTON_WIDTH, y + 22, 0x66211509);
         g.renderOutline(contentX, y - 10, BUTTON_WIDTH, 32, COL_BTN_BOR);
-        g.drawCenteredString(font, Component.literal("NO OPTIONS"), contentX + BUTTON_WIDTH / 2, y + 2, COL_TEXT_MUTED);
+        Component msg = (searchText == null || searchText.isEmpty())
+                ? Component.translatable("vote.no_options")
+                : Component.translatable("vote.no_matches");
+        g.drawCenteredString(font, msg, contentX + BUTTON_WIDTH / 2, y + 2, COL_TEXT_MUTED);
     }
 
     private void drawScrollbar(GuiGraphics g, int scrollH) {
@@ -727,10 +813,17 @@ public class VoteScreen extends Screen {
             g.fill(x + 5, y + 5, x + 7, y + h - 5, selected ? COL_BRASS_LIGHT : COL_BRASS_DIM);
 
             VoteOption option = ClientVoteCache.getOptions().get(optionIndex);
-            drawOptionIcon(g, option, x + 14, y + (h - ICON_SIZE) / 2);
-            drawOptionText(g, option, x, y, w, h, selected, hovered);
-            drawResultBar(g, x, y, w, h, selected);
-            drawSelectionMark(g, x, y, w, h, selected);
+            // 结果条占据按钮底部 7px，图标/文本/选中标记在刨除结果条后的剩余区域内垂直居中
+            int contentH = ClientVoteCache.isShowResults() ? h - 7 : h;
+            drawOptionIcon(g, option, x + 14, y + (contentH - ICON_SIZE) / 2 + contentShift());
+            drawOptionText(g, option, x, y, w, h, selected, hovered, contentH);
+            drawResultBar(g, x, y, w, h, selected, contentH);
+            drawSelectionMark(g, x, y, w, h, selected, contentH);
+        }
+
+        // 结果条在按钮底部，内容在剩余区域内居中后再整体下移 2px，避免视觉上偏高
+        private int contentShift() {
+            return ClientVoteCache.isShowResults() ? 2 : 0;
         }
 
         private void drawOptionIcon(GuiGraphics g, VoteOption option, int iconX, int iconY) {
@@ -746,7 +839,7 @@ public class VoteScreen extends Screen {
         }
 
         private void drawOptionText(GuiGraphics g, VoteOption option, int x, int y, int w, int h,
-                boolean selected, boolean hovered) {
+                boolean selected, boolean hovered, int contentH) {
             boolean hasIcon = option instanceof VoteOption.ItemOption || option instanceof ClientPlayerOption;
             int voteReserve = ClientVoteCache.isShowResults() ? 38 : 0;
             int checkReserve = selected ? 18 : 0;
@@ -754,14 +847,16 @@ public class VoteScreen extends Screen {
             String display = clipText(option.display().getString(),
                     w - (hasIcon ? 62 : 34) - voteReserve - checkReserve);
 
+            // 文本与 16px 图标都在剩余区域（按钮高度刨除底部结果条）内垂直居中
+            int textY = y + (contentH - font.lineHeight) / 2 + contentShift();
             if (hasIcon) {
-                g.drawString(font, display, x + 36, y + 7, textColor);
+                g.drawString(font, display, x + 36, textY, textColor);
             } else {
-                g.drawString(font, display, x + 16, y + 7, textColor);
+                g.drawString(font, display, x + 16, textY, textColor);
             }
         }
 
-        private void drawResultBar(GuiGraphics g, int x, int y, int w, int h, boolean selected) {
+        private void drawResultBar(GuiGraphics g, int x, int y, int w, int h, boolean selected, int contentH) {
             if (!ClientVoteCache.isShowResults()) {
                 return;
             }
@@ -787,10 +882,11 @@ public class VoteScreen extends Screen {
             }
 
             String voteStr = String.valueOf(votes);
-            g.drawString(font, voteStr, x + w - 12 - font.width(voteStr), y + 7, COL_TEXT_MUTED);
+            g.drawString(font, voteStr, x + w - 12 - font.width(voteStr),
+                    y + (contentH - font.lineHeight) / 2 + contentShift(), COL_TEXT_MUTED);
         }
 
-        private void drawSelectionMark(GuiGraphics g, int x, int y, int w, int h, boolean selected) {
+        private void drawSelectionMark(GuiGraphics g, int x, int y, int w, int h, boolean selected, int contentH) {
             if (!selected) {
                 return;
             }
@@ -798,7 +894,7 @@ public class VoteScreen extends Screen {
             float pulse = 1.0f + 0.05f * Mth.sin((tickCounter * 0.15f) % Mth.TWO_PI);
             int markW = (int) (12 * pulse);
             int markX = x + w - 23;
-            int markY = y + (h - 12) / 2;
+            int markY = y + (contentH - 12) / 2 + contentShift();
 
             g.fill(markX, markY, markX + 14, markY + 12, 0xFF2A1809);
             g.renderOutline(markX, markY, 14, 12, COL_BRASS_LIGHT);

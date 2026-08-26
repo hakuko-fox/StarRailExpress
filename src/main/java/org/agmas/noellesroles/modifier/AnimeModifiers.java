@@ -89,4 +89,7 @@ public class AnimeModifiers {
                     Component.translatable("message.anime.re0_486.trigger.time_stop"));
         });
     }
+    static {
+        RE0_486.setAddedVersion("4.4");
+    }
 }

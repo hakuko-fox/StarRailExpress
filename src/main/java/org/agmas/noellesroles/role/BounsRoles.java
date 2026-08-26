@@ -32,6 +32,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import org.agmas.noellesroles.role_data.innocence.DiscMasterRoleData;
 import org.agmas.noellesroles.role_data.innocence.TelegrapherRoleData;
 import org.agmas.noellesroles.role_data.killer.CreeperRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -58,6 +59,7 @@ public class BounsRoles {
     public static final ResourceLocation BASEBALL_PLAYER_ID = id("baseball_player");
     public static final ResourceLocation CREEPER_ID = id("creeper");
     public static final ResourceLocation TELEGRAPHER_ID = id("telegrapher");
+    public static final ResourceLocation DISC_MASTER_ID = id("disc_master");
 
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(NAMESPACE, path);
@@ -128,6 +130,16 @@ public class BounsRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setDefaultEnableChance(200);
+    // 唱片师角色 - 平民阵营（彩蛋职业，1% 概率刷新）
+    public static SRERole DISC_MASTER = TMMRoles.registerRole(new EggRole(
+            DISC_MASTER_ID, // 角色 ID
+            new Color(255, 87, 34).getRGB(), // 橙红色 - 代表唱片/音乐
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            false // 不隐藏计分板
+    )).setCanSeeCoin(true).setRoleData(DiscMasterRoleData::new).setDefaultEnableChance(100);
     /**
      * 电报员角色
      * - 属于乘客阵营 (isInnocent = true)
@@ -261,5 +273,17 @@ public class BounsRoles {
             return true;
         });
 
+    }
+    static {
+        BASEBALL_PLAYER.setAddedVersion("4.1");
+        CREEPER.setAddedVersion("4.1");
+        WRITER.setAddedVersion("3.3");
+        TELEGRAPHER.setAddedVersion("2.x");
+        CAT_KILLER.setAddedVersion("4.1");
+        CAT_NECROMANCER.setAddedVersion("4.1");
+        BEST_VIGILANTE.setAddedVersion("2.x");
+        LENGXIAO.setAddedVersion("4.3");
+        LAO_DA.setAddedVersion("4.4");
+        DISC_MASTER.setAddedVersion("4.4");
     }
 }

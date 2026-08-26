@@ -51,6 +51,11 @@ public class SREModifier extends SREAbstractInfoClass {
     public boolean isOtherModeRole = false;
     public ArrayList<String> defaultSpawnMaps = new ArrayList<>();
 
+    @Override
+    public SREModifier setAddedVersion(String versionName) {
+        super.setAddedVersion(versionName);
+        return this;
+    }
     /**
      * 添加与此相关的职业。互相添加。用于职业介绍。
      * 
@@ -175,6 +180,17 @@ public class SREModifier extends SREAbstractInfoClass {
             test.remove("inner.disable");
             if (!SREDisableManager.isModifierDisabled(this))
                 return false;
+        }
+        
+        Optional<String> versionTag = test.stream().filter((t) -> t.startsWith("inner.version.")).findFirst();
+        if (versionTag.isPresent()) {
+            String judgeVersion = versionTag.get();
+            String version = judgeVersion.substring("inner.version.".length());
+            if (this.addedVersion.equals(version)) {
+                test.remove(judgeVersion);
+            } else {
+                return false;
+            }
         }
         return this.flags.containsAll(test);
     }

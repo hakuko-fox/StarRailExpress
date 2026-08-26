@@ -100,6 +100,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.roleDataFunc;
     }
 
+    @Override
+    public SRERole setAddedVersion(String versionName) {
+        super.setAddedVersion(versionName);
+        return this;
+    }
+
     /**
      * 职业数据。用于替代CCA。
      * 
@@ -392,6 +398,16 @@ public abstract class SRERole extends SREAbstractInfoClass {
             test.remove("inner.disable");
             if (!SREDisableManager.isRoleDisabled(this))
                 return false;
+        }
+        Optional<String> versionTag = test.stream().filter((t) -> t.startsWith("inner.version.")).findFirst();
+        if (versionTag.isPresent()) {
+            String judgeVersion = versionTag.get();
+            String version = judgeVersion.substring("inner.version.".length());
+            if (this.addedVersion.equals(version)) {
+                test.remove(judgeVersion);
+            } else {
+                return false;
+            }
         }
         return this.flags.containsAll(test);
     }
@@ -1172,10 +1188,11 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     /**
      * 当赋予modifier时调用，如果需要操作modifiers列表可以直接操纵，不需要同步，也不需要调用WorldModifierComponent的sync
+     * 
      * @param player
      * @param modifiers
      */
-    public void onAssignedModifiers(ServerPlayer player, Set<SREModifier> modifiers){
+    public void onAssignedModifiers(ServerPlayer player, Set<SREModifier> modifiers) {
     };
 
     public static SREAbilityPlayerComponent getAbilityComponent(Player player) {

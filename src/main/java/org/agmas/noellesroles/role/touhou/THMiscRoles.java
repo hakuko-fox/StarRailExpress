@@ -150,9 +150,11 @@ public class THMiscRoles {
             new Color(169, 80, 101).getRGB(), false, true, MoodType.FAKE, Integer.MAX_VALUE, true))
             .setDefaultEnableNeededPlayerCount(16)
             .setDefaultEnableChance(500)
-            .setOccupiedRoleCount(2)
             .setRoleData(DoremyRoleData::new)
-            .setCanBeRandomedByOtherRoles(false);
+            .setCanBeRandomedByOtherRoles(false)
+            .addTwoWayOpposingRole(ModRoles.DELAYER);
+            
+
     // 火焰猫燐 kaenbyou_rin
     public static SRERole KAENBYOU_RIN = TMMRoles.registerRole(new THKaenbyouRinRole(id("kaenbyou_rin"),
             new Color(169, 80, 101).getRGB(), true, false, MoodType.REAL,
@@ -164,5 +166,21 @@ public class THMiscRoles {
             .setCanBeRandomedByOtherRoles(true);
 
     public static void init() {
+    }
+    static {
+        MAMIZOU.setAddedVersion("4.4");
+        IBUKI_SUIKA.setAddedVersion("4.4");
+        HAKUREI_REIMU.setAddedVersion("4.3");
+        REIUJI_UTSUHO.setAddedVersion("4.4");
+        SHIKIEIKI.setAddedVersion("4.3");
+        KOMACHI.setAddedVersion("4.3");
+        TENSHI.setAddedVersion("4.3");
+        RINNOSUKE.setAddedVersion("4.3");
+        KIJIN_SEIJA.setAddedVersion("4.4");
+        HOUJUU_NUE.setAddedVersion("4.4");
+        IBARAKI_KASEN.setAddedVersion("4.4");
+        KONPAKU_YOUMU.setAddedVersion("4.4");
+        DOREMY.setAddedVersion("4.4");
+        KAENBYOU_RIN.setAddedVersion("4.4");
     }
 }

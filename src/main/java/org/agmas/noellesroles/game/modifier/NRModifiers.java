@@ -47,6 +47,7 @@ public class NRModifiers {
             null,
             false,
             false))
+            .setAddedVersion("3.2")
             .setDefaultEnableChance(5000);
 
     /** 内向修饰符 */
@@ -182,5 +183,11 @@ public class NRModifiers {
                 // 玩家可能没有 expedition 组件，忽略错误
             }
         });
+    }
+    static {
+        INTROVERTED.setAddedVersion("4.0");
+        TAXED.setAddedVersion("4.0");
+        HUNGRY.setAddedVersion("4.3");
+        HOARSE.setAddedVersion("4.3");
     }
 }

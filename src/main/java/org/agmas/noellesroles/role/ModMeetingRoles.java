@@ -84,4 +84,10 @@ public class ModMeetingRoles {
     public static void init() {
         // 静态初始化即触发注册
     }
+    static {
+        CANADA_GOOSE.setAddedVersion("4.3");
+        DUMMY_BIRD.setAddedVersion("4.3");
+        POLITICIAN.setAddedVersion("4.3");
+        MISSIONARY.setAddedVersion("4.3");
+    }
 }

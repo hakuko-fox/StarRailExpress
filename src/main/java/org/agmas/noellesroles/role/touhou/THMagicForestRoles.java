@@ -41,4 +41,7 @@ public class THMagicForestRoles {
 
     public static void init() {
     }
+    static {
+        KIRISAME_MARISA.setAddedVersion("4.3");
+    }
 }

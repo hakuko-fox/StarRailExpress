@@ -139,7 +139,7 @@ public class SEModifiers {
             false,
             false))
             .setDefaultMax(1)
-            .setDefaultEnableChance(6000);
+            .setDefaultEnableChance(4000);
     public static SREModifier ALLERGIST = HMLModifiers.registerModifier(new SREModifier(
             StupidExpress.id("allergist"),
             new Color(112, 255, 162).getRGB(),
@@ -585,5 +585,25 @@ public class SEModifiers {
             splitPersonalityComponent.sync();
         });
 
+    }
+    static {
+        LOVERS.setAddedVersion("2.x");
+        REFUGEE.setAddedVersion("3.1");
+        TINY.setAddedVersion("3.1");
+        TALL.setAddedVersion("3.1");
+        FEATHER.setAddedVersion("3.1");
+        MAGNATE.setAddedVersion("3.1");
+        TASKMASTER.setAddedVersion("3.1");
+        JEB_.setAddedVersion("4.0");
+        DINNERBONE.setAddedVersion("4.4");
+        ALLERGIST.setAddedVersion("3.1");
+        CURSED.setAddedVersion("3.1");
+        SECRETIVE.setAddedVersion("3.1");
+        KNIGHT.setAddedVersion("3.1");
+        SPLIT_PERSONALITY.setAddedVersion("3.1");
+        VIGOROUS.setAddedVersion("4.1");
+        UNYIELDING.setAddedVersion("4.1");
+        BLACK_WHITE.setAddedVersion("4.1");
+        PARANOID.setAddedVersion("4.1");
     }
 }

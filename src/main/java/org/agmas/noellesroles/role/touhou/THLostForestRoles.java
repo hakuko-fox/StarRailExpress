@@ -113,4 +113,8 @@ public class THLostForestRoles {
           GameReplayUtils.getReplayPlayerDisplayText(victim, true)));
     }
   }
+    static {
+        KAGUYA.setAddedVersion("4.4");
+        MOKOU.setAddedVersion("4.4");
+    }
 }

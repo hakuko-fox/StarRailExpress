@@ -201,4 +201,9 @@ public class THMountainRoles {
         // 强制交易：Nitori
         TouhouHandlers.register();
     }
+    static {
+        NITORI.setAddedVersion("4.3");
+        AYA.setAddedVersion("4.3");
+        HATATE.setAddedVersion("4.3");
+    }
 }

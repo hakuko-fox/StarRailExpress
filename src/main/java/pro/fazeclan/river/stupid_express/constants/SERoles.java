@@ -130,4 +130,11 @@ public class SERoles {
         return role;
     }
 
+    static {
+        AMNESIAC.setAddedVersion("2.x");
+        ARSONIST.setAddedVersion("2.x");
+        AVARICIOUS.setAddedVersion("2.x");
+        NECROMANCER.setAddedVersion("2.x");
+        INITIATE.setAddedVersion("2.x");
+    }
 }
