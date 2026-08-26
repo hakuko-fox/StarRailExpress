@@ -16,7 +16,9 @@ import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -71,10 +73,36 @@ public final class TitleUnlockManager {
         }
     }
 
+    /** Grants every title that can be proven from the player's stored data. */
+    public static List<String> backfillStoredTitles(ServerPlayer player) {
+        NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(player);
+        PlayerStats stats = PlayerStatsManager.get(player);
+        List<String> eligibleTitles = new ArrayList<>();
+        for (NameTagTitleCatalog.TitleDefinition title : NameTagTitleCatalog.all()) {
+            if (meetsStoredRequirement(title, stats, component)) {
+                eligibleTitles.add(title.id());
+            }
+        }
+        return component.addNameTagsSilently(eligibleTitles);
+    }
+
     private static boolean meetsRequirement(NameTagTitleCatalog.TitleDefinition title, PlayerStats stats,
             NameTagInventoryComponent component, boolean killer, boolean police, boolean won,
             boolean wasFirstDeath, boolean playerDead, boolean hasKiller,
             boolean allKillersAlive, boolean allKillersDead) {
+        if (meetsStoredRequirement(title, stats, component)) {
+            return true;
+        }
+        return switch (title.criterion()) {
+            case FIRST_DEATH -> wasFirstDeath;
+            case KILLER_PERFECT_WIN -> killer && won && hasKiller && allKillersAlive;
+            case POLICE_PERFECT_WIN -> police && won && !playerDead && hasKiller && allKillersDead;
+            default -> false;
+        };
+    }
+
+    private static boolean meetsStoredRequirement(NameTagTitleCatalog.TitleDefinition title, PlayerStats stats,
+            NameTagInventoryComponent component) {
         int minimumWins = Math.min(stats.getTotalKillerWins(),
                 Math.min(stats.getTotalSheriffWins(), stats.getTotalNeutralWins()));
         return switch (title.criterion()) {
@@ -89,11 +117,8 @@ public final class TitleUnlockManager {
             case LOSS_STREAK -> component.getLossStreak() >= title.threshold();
             case LOW_WIN_RATE -> stats.getTotalGamesPlayed() >= title.threshold()
                     && (long) stats.getTotalWins() * 10L <= stats.getTotalGamesPlayed();
-            case FIRST_DEATH -> wasFirstDeath;
             case FIRST_DEATH_STREAK -> component.getFirstDeathStreak() >= title.threshold();
-            case KILLER_PERFECT_WIN -> killer && won && hasKiller && allKillersAlive;
-            case POLICE_PERFECT_WIN -> police && won && !playerDead && hasKiller && allKillersDead;
-            case ADMIN_GRANTED -> false;
+            case FIRST_DEATH, KILLER_PERFECT_WIN, POLICE_PERFECT_WIN, ADMIN_GRANTED -> false;
         };
     }
 

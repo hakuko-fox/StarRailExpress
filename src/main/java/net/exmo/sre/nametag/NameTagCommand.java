@@ -19,12 +19,16 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.stats.PlayerStatsManager;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.util.Collection;
+import java.util.List;
 
 public class NameTagCommand {
 
@@ -75,6 +79,14 @@ public class NameTagCommand {
         dispatcher.register(Commands.literal("nametag:sync").requires(source -> source.hasPermission(2))
                 .then(Commands.argument("target", EntityArgument.player())
                         .executes(context -> syncFromServer(context, EntityArgument.getPlayer(context, "target")))));
+
+        // /nametag:backfill [targets] - 补发可由现有数据验证的称号
+        dispatcher.register(Commands.literal("nametag:backfill").requires(source -> source.hasPermission(2))
+                .executes(context -> backfillNametags(context,
+                        List.of(context.getSource().getPlayerOrException())))
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .executes(context -> backfillNametags(context,
+                                EntityArgument.getPlayers(context, "targets")))));
     }
 
     /**
@@ -275,5 +287,28 @@ public class NameTagCommand {
         }
 
         return 1;
+    }
+
+    private static int backfillNametags(CommandContext<CommandSourceStack> context,
+            Collection<ServerPlayer> targets) {
+        int processed = 0;
+        for (ServerPlayer target : targets) {
+            if (!PlayerStatsManager.isReadyForTitleBackfill(target)) {
+                context.getSource().sendFailure(Component.translatable(
+                        "command.sre.nametag.backfill.not_ready", target.getDisplayName()));
+                continue;
+            }
+
+            List<String> added = TitleUnlockManager.backfillStoredTitles(target);
+            if (added.isEmpty()) {
+                context.getSource().sendSuccess(() -> Component.translatable(
+                        "command.sre.nametag.backfill.none", target.getDisplayName()), false);
+            } else {
+                context.getSource().sendSuccess(() -> Component.translatable(
+                        "command.sre.nametag.backfill.success", added.size(), target.getDisplayName()), false);
+            }
+            processed++;
+        }
+        return processed;
     }
 }

@@ -235,6 +235,26 @@ public class NameTagInventoryComponent implements RoleComponent {
         }
     }
 
+    /** Adds a batch of recovered titles without emitting global unlock announcements. */
+    public List<String> addNameTagsSilently(Iterable<String> recoveredNameTags) {
+        ArrayList<String> added = new ArrayList<>();
+        for (String nameTag : recoveredNameTags) {
+            if (nameTag != null && !nameTag.isBlank()
+                    && !this.nameTags.contains(nameTag) && !added.contains(nameTag)) {
+                added.add(nameTag);
+            }
+        }
+        if (added.isEmpty()) {
+            return List.of();
+        }
+
+        this.nameTags.addAll(added);
+        this.sync();
+        this.persistLocal();
+        syncToNetwork();
+        return List.copyOf(added);
+    }
+
     private void broadcastUnlock(String nameTag) {
         if (!(this.player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null) {
             return;

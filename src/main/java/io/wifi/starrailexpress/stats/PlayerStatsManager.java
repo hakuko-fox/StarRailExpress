@@ -75,6 +75,12 @@ public final class PlayerStatsManager {
         return STATS.computeIfAbsent(playerUuid, PlayerStatsManager::newEntry).stats;
     }
 
+    public static boolean isReadyForTitleBackfill(ServerPlayer player) {
+        Entry entry = STATS.get(player.getUUID());
+        return isOnlineEntry(entry) && entry.localLoaded
+                && (!isDatabaseEnabled() || entry.databaseLoaded);
+    }
+
     public static void syncTo(ServerPlayer viewer, UUID targetUuid) {
         Entry entry = STATS.get(targetUuid);
         if (entry == null) {
