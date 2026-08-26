@@ -32,6 +32,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -238,15 +239,19 @@ public class NameTagInventoryComponent implements RoleComponent {
         if (!(this.player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null) {
             return;
         }
-        serverPlayer.getServer().getPlayerList().broadcastSystemMessage(
+        broadcastUnlock(serverPlayer.getServer(), serverPlayer.getName(), nameTag);
+    }
+
+    public static void broadcastUnlock(MinecraftServer server, Component playerName, String nameTag) {
+        server.getPlayerList().broadcastSystemMessage(
                 Component.translatable("message.sre.nametag.global_unlocked",
-                        serverPlayer.getName(), Component.translatableWithFallback(nameTag, nameTag)),
+                        playerName, Component.translatableWithFallback(nameTag, nameTag)),
                 false);
-        Component title = Component.translatable("message.sre.nametag.title_unlocked", serverPlayer.getName())
+        Component title = Component.translatable("message.sre.nametag.title_unlocked", playerName)
                 .withStyle(ChatFormatting.GOLD);
         Component subtitle = Component.translatableWithFallback(nameTag, nameTag)
                 .withStyle(ChatFormatting.YELLOW);
-        for (ServerPlayer viewer : serverPlayer.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
             SRENetworkMessageUtils.sendTitleTime(viewer, 10, 60, 20);
             SRENetworkMessageUtils.sendTitle(viewer, title);
             SRENetworkMessageUtils.sendSubtitle(viewer, subtitle);

@@ -16,12 +16,12 @@
 package net.exmo.sre.nametag;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.SRE;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,15 +31,15 @@ public class NameTagCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess) {
         // /nametag add <nameTag> [target] - 添加名片
         dispatcher.register(Commands.literal("nametag:add").requires(source -> source.hasPermission(2))
-                .then(Commands.argument("nameTag", ComponentArgument.textComponent(registryAccess))
+                .then(Commands.argument("nameTag", StringArgumentType.string())
                         .executes(context -> addNametag(context, context.getSource().getPlayerOrException()))
-                        .then(Commands.argument("target", EntityArgument.player())
-                                .executes(
-                                        context -> addNametag(context, EntityArgument.getPlayer(context, "target"))))));
+                        .then(Commands.argument("target", StringArgumentType.word())
+                                .executes(context -> addNametagOfflineAware(context,
+                                        StringArgumentType.getString(context, "target"))))));
 
         // /nametag remove <nameTag> [target] - 移除名片
         dispatcher.register(Commands.literal("nametag:remove").requires(source -> source.hasPermission(2))
-                .then(Commands.argument("nameTag", ComponentArgument.textComponent(registryAccess))
+                .then(Commands.argument("nameTag", StringArgumentType.string())
                         .executes(context -> removeNametag(context, context.getSource().getPlayerOrException()))
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(context -> removeNametag(context,
@@ -47,7 +47,7 @@ public class NameTagCommand {
 
         // /nametag set <nameTag> [target] - 设置当前名片
         dispatcher.register(Commands.literal("nametag:set").requires(source -> source.hasPermission(2))
-                .then(Commands.argument("nameTag", ComponentArgument.textComponent(registryAccess))
+                .then(Commands.argument("nameTag", StringArgumentType.string())
                         .executes(context -> setNametag(context, context.getSource().getPlayerOrException()))
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(
@@ -83,15 +83,15 @@ public class NameTagCommand {
     private static int addNametag(CommandContext<CommandSourceStack> context, ServerPlayer target) {
         try {
 
-            var nameTag = ComponentArgument.getComponent(context, "nameTag");
+            String nameTag = StringArgumentType.getString(context, "nameTag");
             NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(target);
 
-            component.addNameTag(NameTagTitleCatalog.resolveCommandInput(nameTag.getString()));
+            component.addNameTag(NameTagTitleCatalog.resolveCommandInput(nameTag));
 
             context.getSource().sendSuccess(() -> Component.literal("已为玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 添加名片: "))
-                    .append((nameTag)), true);
+                    .append(Component.literal(nameTag)), true);
 
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("添加名片失败"));
@@ -100,26 +100,63 @@ public class NameTagCommand {
         return 1;
     }
 
+    private static int addNametagOfflineAware(CommandContext<CommandSourceStack> context, String targetName) {
+        ServerPlayer onlinePlayer = context.getSource().getServer().getPlayerList().getPlayerByName(targetName);
+        if (onlinePlayer != null) {
+            return addNametag(context, onlinePlayer);
+        }
+
+        var profileCache = context.getSource().getServer().getProfileCache();
+        var profile = profileCache == null ? java.util.Optional.<com.mojang.authlib.GameProfile>empty()
+                : profileCache.get(targetName);
+        NameTagDataStore.StoredPlayer storedPlayer;
+        if (profile.isPresent() && profile.get().getId() != null) {
+            storedPlayer = new NameTagDataStore.StoredPlayer(profile.get().getId(), profile.get().getName());
+        } else {
+            storedPlayer = NameTagDataStore.findStoredPlayer(targetName).orElse(null);
+        }
+        if (storedPlayer == null) {
+            context.getSource().sendFailure(Component.literal("找不到玩家紀錄: " + targetName));
+            return 0;
+        }
+
+        String inputNameTag = StringArgumentType.getString(context, "nameTag");
+        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(inputNameTag);
+        boolean added = NameTagDataStore.addOfflineNameTag(
+                storedPlayer.uuid(), storedPlayer.playerName(), resolvedNameTag);
+        if (!added) {
+            context.getSource().sendFailure(Component.literal("玩家 " + storedPlayer.playerName()
+                    + " 已擁有稱號: " + inputNameTag));
+            return 0;
+        }
+
+        NameTagInventoryComponent.broadcastUnlock(context.getSource().getServer(),
+                Component.literal(storedPlayer.playerName()), resolvedNameTag);
+        context.getSource().sendSuccess(() -> Component.literal("已為離線玩家 " + storedPlayer.playerName()
+                + " 添加稱號: " + inputNameTag), true);
+        return 1;
+    }
+
     /**
      * 移除名片
      */
     private static int removeNametag(CommandContext<CommandSourceStack> context, ServerPlayer target) {
-        var nameTag = ComponentArgument.getComponent(context, "nameTag");
+        String nameTag = StringArgumentType.getString(context, "nameTag");
         NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(target);
 
-        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(nameTag.getString());
+        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(nameTag);
         if (component.nameTags.contains(resolvedNameTag)) {
             component.removeNameTag(resolvedNameTag);
             context.getSource().sendSuccess(() -> Component.literal("已从玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 移除名片: "))
-                    .append((nameTag)), true);
+                    .append(Component.literal(nameTag)), true);
             return 1;
         } else {
             context.getSource().sendFailure(Component.literal("玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 没有该名片: "))
-                    .append((nameTag)));
+                    .append(Component.literal(nameTag)));
             return 0;
         }
     }
@@ -128,22 +165,22 @@ public class NameTagCommand {
      * 设置当前名片
      */
     private static int setNametag(CommandContext<CommandSourceStack> context, ServerPlayer target) {
-        var nameTag = ComponentArgument.getComponent(context, "nameTag");
+        String nameTag = StringArgumentType.getString(context, "nameTag");
         NameTagInventoryComponent component = NameTagInventoryComponent.KEY.get(target);
 
-        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(nameTag.getString());
+        String resolvedNameTag = NameTagTitleCatalog.resolveCommandInput(nameTag);
         if (component.nameTags.contains(resolvedNameTag)) {
             component.setCurrentNameTag(resolvedNameTag);
             context.getSource().sendSuccess(() -> Component.literal("已将玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 的当前名片设置为: "))
-                    .append(nameTag), true);
+                    .append(Component.literal(nameTag)), true);
             return 1;
         } else {
             context.getSource().sendFailure(Component.literal("玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 没有该名片，无法设置: "))
-                    .append((nameTag)));
+                    .append(Component.literal(nameTag)));
             return 0;
         }
     }

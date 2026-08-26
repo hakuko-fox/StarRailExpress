@@ -24,6 +24,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Server-local nametag persistence. This file is independent of a map save,
@@ -63,6 +65,40 @@ public final class NameTagDataStore {
         data.updatedAt = System.currentTimeMillis();
         rootData.players.put(player.getUUID().toString(), data);
         writeFile();
+    }
+
+    public static synchronized boolean addOfflineNameTag(UUID playerUuid, String playerName, String nameTag) {
+        ensureLoaded();
+        PlayerData data = rootData.players.computeIfAbsent(playerUuid.toString(), ignored -> new PlayerData());
+        if (data.nameTags == null) {
+            data.nameTags = new ArrayList<>();
+        }
+        if (data.nameTags.contains(nameTag)) {
+            return false;
+        }
+        data.playerName = playerName;
+        data.nameTags.add(nameTag);
+        data.updatedAt = System.currentTimeMillis();
+        writeFile();
+        return true;
+    }
+
+    public static synchronized Optional<StoredPlayer> findStoredPlayer(String playerName) {
+        ensureLoaded();
+        for (Map.Entry<String, PlayerData> entry : rootData.players.entrySet()) {
+            PlayerData data = entry.getValue();
+            if (data != null && data.playerName != null && data.playerName.equalsIgnoreCase(playerName)) {
+                try {
+                    return Optional.of(new StoredPlayer(UUID.fromString(entry.getKey()), data.playerName));
+                } catch (IllegalArgumentException ignored) {
+                    SRE.LOGGER.warn("Ignoring invalid player UUID {} in local nametag data", entry.getKey());
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public record StoredPlayer(UUID uuid, String playerName) {
     }
 
     private static void ensureLoaded() {
