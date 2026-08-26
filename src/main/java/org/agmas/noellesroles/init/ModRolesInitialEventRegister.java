@@ -1699,7 +1699,7 @@ public class ModRolesInitialEventRegister {
                         .cooldownSeconds(180).showOnHud(true).build());
 
         // ==================== 風太 技能註冊 ====================
-        // 技能1（G）：神諭。收集五個異常紅石前消耗200金幣、冷卻150秒；之後免費、冷卻120秒。
+        // 技能1（G）：神諭。固定消耗 200 金幣，冷卻 150 秒。
         RoleSkill.register(ModRoles.FU_TAI,
                 RoleSkill.skill(SRE.id("fu_tai_oracle"), "skill.noellesroles.fu_tai.oracle", context -> {
                     ServerPlayer player = context.player();

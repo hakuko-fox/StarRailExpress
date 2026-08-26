@@ -25,12 +25,14 @@ function Assert-Matches([string] $text, [string] $pattern, [string] $message) {
     }
 }
 
-$fuTaiEntity = Read-Utf8 'src/main/java/org/agmas/noellesroles/content/entity/FuTaiGlitchEntity.java'
-Assert-Contains $fuTaiEntity 'extends Entity implements ItemSupplier' '風太紅石必須是可攻擊的一般實體，不可使用會被伺服器拒絕攻擊的 ItemEntity。'
-Assert-NotContains $fuTaiEntity 'extends ItemEntity' '風太紅石仍繼承 ItemEntity，攻擊會觸發「試圖攻擊無效的實體」。'
+$fuTai = Read-Utf8 'src/main/java/org/agmas/noellesroles/game/roles/innocence/futai/FuTaiPlayerComponent.java'
+Assert-NotContains $fuTai 'spawnRoundGlitches' '風太的新版本仍會生成舊版異常紅石。'
+Assert-NotContains $fuTai 'collectedGlitches' '風太的新版本仍保留異常紅石收集與神諭升級狀態。'
+Assert-Contains $fuTai 'int cost = 200;' '風太神諭應固定消耗 200 金幣。'
+Assert-Contains $fuTai 'nextOracleTick = now + 20L * 150L;' '風太神諭應固定冷卻 150 秒。'
 
 $client = Read-Utf8 'src/main/java/org/agmas/noellesroles/client/NoellesrolesClient.java'
-Assert-Contains $client 'net.minecraft.client.renderer.entity.ThrownItemRenderer::new' '風太紅石改為 ItemSupplier 後必須使用 ThrownItemRenderer。'
+Assert-Matches $client '(?s)isRole\(client\.player, ModRoles\.KANA\).*?new VtuberPlayerSelectScreen\(1, false\)' '佳奈按 E 後未開啟排除自己的單人選擇選單。'
 
 $knifePayload = Read-Utf8 'src/main/java/io/wifi/starrailexpress/network/original/KnifeStabPayload.java'
 Assert-Contains $knifePayload '!role.onUseKnife(player)' '刀擊封包缺少伺服器端 onUseKnife 驗證，柚封凌的禁用狀態可被繞過。'
@@ -47,6 +49,9 @@ Assert-Contains $taskComponent 'this.nextTaskTimer = 0;' '九月一任務過期�
 
 $runtime = Read-Utf8 'src/main/java/org/agmas/noellesroles/game/roles/vtuber/VtuberRoleRuntime.java'
 Assert-Contains $runtime 'KANA_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 30L);' '佳奈拖放技能冷卻不是 30 秒。'
+Assert-Matches $runtime '(?s)selectKanaTarget\(ServerPlayer caster, ServerPlayer target.*?target == caster.*?KANA_MENU_COOLDOWN\.put\(caster\.getUUID\(\), now \+ 20L \* 30L\)' '佳奈選擇技能未在伺服器排除自己，或成功選擇後未套用 30 秒冷卻。'
+Assert-Matches $runtime '(?s)long cooldownUntil = KANA_MENU_COOLDOWN\.getOrDefault.*?if \(now < cooldownUntil\).*?return;.*?target\.removeEffect' '佳奈冷卻期間仍可把效果套用到其他玩家。'
+Assert-Matches $runtime '(?s)tickNocturnalAndStableSan\(ServerPlayer player.*?game\.isRole\(player, ModRoles\.FU_TAI\).*?player\.removeEffect\(MobEffects\.BLINDNESS\)' '風太被動「夜行性動物」未移除失明。'
 Assert-NotContains $runtime 'BAIYU_EXAMINATIONS' '白御仍使用延遲 10 秒且要求站定的舊版檢查流程。'
 Assert-Contains $runtime 'displayBaiyuDeathReason(player, body);' '白御未在對屍體使用技能後立即顯示死因。'
 
@@ -77,7 +82,11 @@ foreach ($language in @('zh_tw', 'zh_cn', 'en_us')) {
     if (-not ([string] $intro['info.screen.roleid.kamikiri_ice.simple']).StartsWith('中立陣營')) {
         $failures.Add("$language 的神霧冰封簡介仍標成非中立陣營。")
     }
-    Assert-Contains ([string] $intro['info.screen.roleid.fu_tai']) '該紅石掉落物消失' "$language 的風太詳細說明漏掉紅石消失。"
+    Assert-NotContains ([string] $intro['info.screen.roleid.fu_tai']) '填補漏洞' "$language 的風太詳細說明仍保留舊版紅石被動。"
+    Assert-NotContains ([string] $intro['info.screen.roleid.fu_tai']) '紅石掉落物' "$language 的風太詳細說明仍保留舊版紅石內容。"
+    Assert-Contains ([string] $intro['info.screen.roleid.fu_tai']) '被動技〖夜行性動物〗' "$language 的風太詳細說明缺少新版被動。"
+    Assert-Contains ([string] $intro['info.screen.roleid.fu_tai']) '無視失明' "$language 的風太詳細說明缺少無視失明效果。"
+    Assert-Contains ([string] $intro['info.screen.roleid.kana']) '按下E打開選單可選擇1位不同玩家為目標 〖冷卻時間為30秒〗' "$language 的佳奈詳細說明未同步 E 選單與 30 秒冷卻。"
     Assert-Contains ([string] $intro['info.screen.roleid.nine_one']) '被攻擊後任務會每40秒刷新一次' "$language 的九月一詳細說明未同步 x.x.1。"
     Assert-Contains ([string] $intro['info.screen.roleid.baiyu']) '冷卻時間120秒' "$language 的白御詳細說明仍是舊冷卻。"
     Assert-Contains ([string] $intro['info.screen.roleid.baiyu']) '立即知道死者死因' "$language 的白御詳細說明仍是舊版 10 秒流程。"

@@ -333,8 +333,14 @@ public final class VtuberRoleRuntime {
 
     private static void selectKanaTarget(ServerPlayer caster, ServerPlayer target, SREGameWorldComponent game) {
         long now = caster.level().getGameTime();
-        if (target == null || target == caster || !GameUtils.isPlayerAliveAndSurvival(target)
-                || now < KANA_MENU_COOLDOWN.getOrDefault(caster.getUUID(), 0L)) {
+        if (target == null || target == caster || !GameUtils.isPlayerAliveAndSurvival(target)) {
+            return;
+        }
+        long cooldownUntil = KANA_MENU_COOLDOWN.getOrDefault(caster.getUUID(), 0L);
+        if (now < cooldownUntil) {
+            long remainingSeconds = (cooldownUntil - now + 19L) / 20L;
+            caster.displayClientMessage(Component.translatable(
+                    "message.sre.skill.cooldown", remainingSeconds), true);
             return;
         }
         target.removeEffect(ModEffects.VOICE_HELIUM);
