@@ -25,6 +25,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.player.LocalPlayer;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.init.ModEffects;
@@ -36,6 +37,16 @@ import org.agmas.noellesroles.utils.RoleUtils;
 public class InvisbleHandItem {
 
     public static void register() {
+        // Hoshizora's sniper rifle is invisible to other players, but remains visible to its holder.
+        AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            if (mainHand && !(player instanceof LocalPlayer)
+                    && itemStack.is(TMMItems.SNIPER_RIFLE)
+                    && SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.HOSHIZORA)) {
+                return ItemStack.EMPTY;
+            }
+            return null;
+        });
+
         // 怀旧者里世界：隐藏手持物品（主手 + 副手）
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
             if (SREClient.gameComponent != null && SREClient.gameComponent.getRole(player) != null) {
