@@ -62,6 +62,8 @@ public class NRSounds {
     public static final SoundEvent FLOWER_OUTDOOR = registrar.create("noellesroles.flower_outdoor");
     public static final SoundEvent MUSIC_INDOOR = registrar.create("noellesroles.music_indoor");
     public static final SoundEvent ODO = registrar.create("noellesroles.odo");
+    public static final SoundEvent HALIC_HELLO = registrar.create("noellesroles.halic_hello");
+    public static final SoundEvent HALIC_ARRR = registrar.create("noellesroles.halic_arrr");
 
     // 未使用
     public static final SoundEvent MUSIC_SAKURA_MOYU = registrar.create("music.sakura_moyu");

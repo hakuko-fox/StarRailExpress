@@ -18,6 +18,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
+import org.agmas.noellesroles.init.NRSounds;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -107,6 +108,8 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
         decoy.setPersistenceRequired();
         level.addFreshEntity(decoy);
 
+        playSoundToPlayers(level, sp.getX(), sp.getY(), sp.getZ(), 5.0, NRSounds.HALIC_HELLO);
+
         level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
                 SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
         sp.displayClientMessage(
@@ -158,6 +161,15 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
             }
         }
 
+        var soundRecipients = new java.util.HashSet<ServerPlayer>();
+        addSoundRecipients(soundRecipients, sp.serverLevel(), sp.getX(), sp.getY(), sp.getZ(), range);
+        for (var decoy : decoys) {
+            addSoundRecipients(soundRecipients, sp.serverLevel(), decoy.getX(), decoy.getY(), decoy.getZ(), range);
+        }
+        for (ServerPlayer recipient : soundRecipients) {
+            recipient.playNotifySound(NRSounds.HALIC_ARRR, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+
         int count = 0;
         for (ServerPlayer target : targets) {
             target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 140, 0, false, false, true));
@@ -171,6 +183,25 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
                 Component.translatable("message.noellesroles.halic.electrocuted", count),
                 true);
         return true;
+    }
+
+    private static void playSoundToPlayers(ServerLevel level, double x, double y, double z,
+            double range, net.minecraft.sounds.SoundEvent sound) {
+        var recipients = new java.util.HashSet<ServerPlayer>();
+        addSoundRecipients(recipients, level, x, y, z, range);
+        for (ServerPlayer recipient : recipients) {
+            recipient.playNotifySound(sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+    }
+
+    private static void addSoundRecipients(java.util.Set<ServerPlayer> recipients, ServerLevel level,
+            double x, double y, double z, double range) {
+        double rangeSquared = range * range;
+        for (ServerPlayer recipient : level.players()) {
+            if (recipient.distanceToSqr(x, y, z) <= rangeSquared) {
+                recipients.add(recipient);
+            }
+        }
     }
 
     @Override

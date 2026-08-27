@@ -1,0 +1,8 @@
+{
+  "halic_hello": {
+    "sounds": ["noellesroles:halic_hello"]
+  },
+  "halic_arrr": {
+    "sounds": ["noellesroles:halic_arrr"]
+  }
+}
