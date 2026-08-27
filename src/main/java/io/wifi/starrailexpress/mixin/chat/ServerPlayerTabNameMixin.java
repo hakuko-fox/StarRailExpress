@@ -17,23 +17,21 @@ package io.wifi.starrailexpress.mixin.chat;
 
 import net.exmo.sre.nametag.PlayerDisplayNameHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = Player.class, priority = 1100)
-public class PlayerPrefixMixin {
-    @Inject(method = "getDisplayName", at = @At("RETURN"), cancellable = true)
-    public void getDisplayName(CallbackInfoReturnable<Component> cir) {
-        Player mainPlayer = (Player) (Object) this;
-        if (!mainPlayer.level().isClientSide()) {
-            Component currentName = cir.getReturnValue();
-            Component composedName = PlayerDisplayNameHelper.compose(mainPlayer, currentName);
-            if (composedName != currentName) {
-                cir.setReturnValue(composedName);
-            }
+@Mixin(value = ServerPlayer.class, priority = 1100)
+public class ServerPlayerTabNameMixin {
+    @Inject(method = "getTabListDisplayName", at = @At("RETURN"), cancellable = true)
+    private void starRailExpress$tabName(CallbackInfoReturnable<Component> cir) {
+        ServerPlayer player = (ServerPlayer) (Object) this;
+        Component currentName = cir.getReturnValue();
+        Component composedName = PlayerDisplayNameHelper.composeForTabList(player, currentName);
+        if (composedName != currentName) {
+            cir.setReturnValue(composedName);
         }
     }
 }
