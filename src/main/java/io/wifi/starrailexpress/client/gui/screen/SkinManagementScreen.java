@@ -42,7 +42,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -413,11 +412,7 @@ public class SkinManagementScreen extends Screen {
     }
 
     Component getNameTagDisplayText(String tagId) {
-        ResourceLocation tagRl = ResourceLocation.tryParse(tagId);
-        if (tagRl != null) {
-            return Component.translatableWithFallback(tagId, tagRl.getPath());
-        }
-        return Component.translatableWithFallback(tagId, tagId);
+        return NameTagTitleCatalog.displayText(tagId);
     }
 
     Component getNameTagRequirement(NameTagView tag) {
@@ -463,6 +458,17 @@ public class SkinManagementScreen extends Screen {
                 + definition.criterion().name().toLowerCase(Locale.ROOT));
         return Component.translatable("screen.sre.skins.title_requirement.progress",
                 condition, current, definition.threshold());
+    }
+
+    Component getNameTagTooltip(NameTagView tag) {
+        NameTagTitleCatalog.TitleTier tier = NameTagTitleCatalog.tierOf(tag.id());
+        Component requirement = getNameTagRequirement(tag);
+        var tooltip = Component.translatable("screen.sre.skins.title_tier",
+                NameTagTitleCatalog.tierLabel(tier));
+        if (!requirement.getString().isEmpty()) {
+            tooltip.append("\n").append(requirement);
+        }
+        return tooltip;
     }
 
     // ─── 按钮区 ─────────────────────────────────────────────────────────────
@@ -663,7 +669,9 @@ public class SkinManagementScreen extends Screen {
                     ? Component.translatable("screen.sre.skins.no_title")
                     : getNameTagDisplayText(current);
             graphics.drawCenteredString(font, displayText,
-                    rightPanelX + rightPanelWidth / 2, nameTagY - 4, NAME_TAG_COLOR);
+                    rightPanelX + rightPanelWidth / 2, nameTagY - 4,
+                    current.isEmpty() ? NAME_TAG_COLOR
+                            : 0xFF000000 | NameTagTitleCatalog.tierOf(current).color());
         } else {
             // 非名片页：在预览上方显示当前装备的皮肤名
             int labelY = listTop + 30;
@@ -1071,7 +1079,7 @@ public class SkinManagementScreen extends Screen {
             if (hoveredEntry == null || hoveredEntry.view == null) {
                 return null;
             }
-            return parentScreen.getNameTagRequirement(hoveredEntry.view);
+            return parentScreen.getNameTagTooltip(hoveredEntry.view);
         }
 
         @Override
@@ -1174,8 +1182,9 @@ public class SkinManagementScreen extends Screen {
 
                 // 文字
                 Component display = parentScreen.getNameTagDisplayText(tagId);
-                int textColor = locked ? 0xFF776F64 : isCurrent ? TEXT_SELECTED
-                        : (int) GuiAnim.blend(0xFF9E8B6E, 0xFFFFF4DC, hoverAnim);
+                int tierColor = 0xFF000000 | NameTagTitleCatalog.tierOf(tagId).color();
+                int textColor = locked ? 0xFF776F64
+                        : (int) GuiAnim.blend(tierColor, 0xFFFFFFFF, hoverAnim * 0.2f);
                 var font = Minecraft.getInstance().font;
                 int textX = x + (isCurrent ? 14 : 6);
                 if (locked) {
@@ -1204,8 +1213,8 @@ public class SkinManagementScreen extends Screen {
             @Override
             public @NotNull Component getNarration() {
                 Component narration = parentScreen.getNameTagDisplayText(tagId);
-                if (locked && view != null) {
-                    narration = narration.copy().append(". ").append(parentScreen.getNameTagRequirement(view));
+                if (view != null) {
+                    narration = narration.copy().append(". ").append(parentScreen.getNameTagTooltip(view));
                 }
                 return narration;
             }

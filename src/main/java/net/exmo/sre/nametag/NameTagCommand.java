@@ -20,6 +20,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.stats.PlayerStatsManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -103,7 +104,7 @@ public class NameTagCommand {
             context.getSource().sendSuccess(() -> Component.literal("已为玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 添加名片: "))
-                    .append(Component.literal(nameTag)), true);
+                    .append(NameTagTitleCatalog.displayText(NameTagTitleCatalog.resolveCommandInput(nameTag))), true);
 
         } catch (Exception e) {
             context.getSource().sendFailure(Component.literal("添加名片失败"));
@@ -145,7 +146,7 @@ public class NameTagCommand {
         NameTagInventoryComponent.broadcastUnlock(context.getSource().getServer(),
                 Component.literal(storedPlayer.playerName()), resolvedNameTag);
         context.getSource().sendSuccess(() -> Component.literal("已為離線玩家 " + storedPlayer.playerName()
-                + " 添加稱號: " + inputNameTag), true);
+                + " 添加稱號: ").append(NameTagTitleCatalog.displayText(resolvedNameTag)), true);
         return 1;
     }
 
@@ -186,7 +187,7 @@ public class NameTagCommand {
             context.getSource().sendSuccess(() -> Component.literal("已将玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 的当前名片设置为: "))
-                    .append(Component.literal(nameTag)), true);
+                    .append(NameTagTitleCatalog.displayText(resolvedNameTag)), true);
             return 1;
         } else {
             context.getSource().sendFailure(Component.literal("玩家 ")
@@ -212,7 +213,7 @@ public class NameTagCommand {
             context.getSource().sendSuccess(() -> Component.literal("玩家 ")
                     .append(target.getName())
                     .append(Component.literal(" 的当前名片为: "))
-                    .append(Component.literal(currentNametag)), false);
+                    .append(NameTagTitleCatalog.displayText(currentNametag)), false);
         }
 
         return 1;
@@ -238,8 +239,10 @@ public class NameTagCommand {
                 .append(Component.literal("):"));
 
         for (String nameTag : component.nameTags) {
-            String marker = nameTag.equals(component.CurrentNameTag) ? " §e[当前]§r" : "";
-            message.append(Component.literal("\n - ").append(Component.literal(nameTag + marker)));
+            message.append(Component.literal("\n - ")).append(NameTagTitleCatalog.displayText(nameTag));
+            if (nameTag.equals(component.CurrentNameTag)) {
+                message.append(Component.literal(" [当前]").withStyle(ChatFormatting.YELLOW));
+            }
         }
 
         context.getSource().sendSuccess(() -> message, false);

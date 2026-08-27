@@ -27,6 +27,7 @@ import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
+import net.exmo.sre.nametag.NameTagTitleCatalog;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -369,14 +370,23 @@ public class RoleNameRenderer {
     }
 
     private static Component getDisplayName(Player target) {
+        Component displayName = target.getDisplayName();
         Minecraft client = Minecraft.getInstance();
         if (client.getConnection() != null) {
             PlayerInfo playerInfo = client.getConnection().getPlayerInfo(target.getUUID());
             if (playerInfo != null && playerInfo.getTabListDisplayName() != null) {
-                return playerInfo.getTabListDisplayName();
+                displayName = playerInfo.getTabListDisplayName();
             }
         }
-        return target.getDisplayName();
+
+        String title = displayTags.get(target.getUUID());
+        if (title == null || title.isBlank()) {
+            return displayName;
+        }
+        return Component.literal("[")
+                .append(NameTagTitleCatalog.displayText(title))
+                .append("] ")
+                .append(displayName);
     }
 
     public enum TrainRole {

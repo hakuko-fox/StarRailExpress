@@ -22,6 +22,7 @@ import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -38,11 +39,13 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.agmas.noellesroles.packet.NameTagSyncPayload;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class NameTagInventoryComponent implements RoleComponent {
     private static final Logger logger = LoggerFactory.getLogger(NameTagInventoryComponent.class);
@@ -127,6 +130,7 @@ public class NameTagInventoryComponent implements RoleComponent {
                                 this.applyNetworkNametagData(nametagData);
                                 this.persistLocal();
                                 this.sync();
+                                syncSelectedNameTags(serverPlayer.getServer());
                                 logger.debug("玩家 {} 的名片数据已从 MySQL 拉取", this.player.getName().getString());
                             }
                         }
@@ -149,12 +153,12 @@ public class NameTagInventoryComponent implements RoleComponent {
         }
         // ComponentUtils.formatList(toAddNameTags);
         if (CurrentNameTag != null && !CurrentNameTag.isEmpty() && !CurrentNameTag.isBlank()) {
-            toAddNameTags.add(Component.translatable(CurrentNameTag));
+            toAddNameTags.add(NameTagTitleCatalog.displayText(CurrentNameTag));
         }
         if (!toAddNameTags.isEmpty()) {
             return ComponentUtils.formatList(toAddNameTags, Component.literal(" "), (t) -> {
                 return t;
-            }).copy().append(" ");
+            }).copy();
         }
         return null;
     }
@@ -265,12 +269,11 @@ public class NameTagInventoryComponent implements RoleComponent {
     public static void broadcastUnlock(MinecraftServer server, Component playerName, String nameTag) {
         server.getPlayerList().broadcastSystemMessage(
                 Component.translatable("message.sre.nametag.global_unlocked",
-                        playerName, Component.translatableWithFallback(nameTag, nameTag)),
+                        playerName, NameTagTitleCatalog.displayText(nameTag)),
                 false);
         Component title = Component.translatable("message.sre.nametag.title_unlocked", playerName)
                 .withStyle(ChatFormatting.GOLD);
-        Component subtitle = Component.translatableWithFallback(nameTag, nameTag)
-                .withStyle(ChatFormatting.YELLOW);
+        Component subtitle = NameTagTitleCatalog.displayText(nameTag);
         for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
             SRENetworkMessageUtils.sendTitleTime(viewer, 10, 60, 20);
             SRENetworkMessageUtils.sendTitle(viewer, title);
@@ -291,6 +294,28 @@ public class NameTagInventoryComponent implements RoleComponent {
             this.persistLocal();
             // 触发网络同步
             syncToNetwork();
+            if (this.player instanceof ServerPlayer serverPlayer) {
+                syncSelectedNameTags(serverPlayer.getServer());
+            }
+        }
+    }
+
+    public static void syncSelectedNameTags(MinecraftServer server) {
+        if (server == null || !SREConfig.instance().isItemSkinEnabled) {
+            return;
+        }
+
+        Map<UUID, String> selectedNameTags = new HashMap<>();
+        for (ServerPlayer onlinePlayer : server.getPlayerList().getPlayers()) {
+            String selected = KEY.get(onlinePlayer).CurrentNameTag;
+            if (selected != null && !selected.isBlank()) {
+                selectedNameTags.put(onlinePlayer.getUUID(), selected);
+            }
+        }
+
+        NameTagSyncPayload payload = new NameTagSyncPayload(selectedNameTags);
+        for (ServerPlayer onlinePlayer : server.getPlayerList().getPlayers()) {
+            ServerPlayNetworking.send(onlinePlayer, payload);
         }
     }
 
@@ -457,6 +482,7 @@ public class NameTagInventoryComponent implements RoleComponent {
         if (this.player instanceof ServerPlayer serverPlayer) {
             NameTagDataStore.restore(serverPlayer, this);
             this.sync();
+            syncSelectedNameTags(serverPlayer.getServer());
         }
     }
 

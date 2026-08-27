@@ -749,7 +749,10 @@ public class NoellesrolesClient implements ClientModInitializer {
                     () -> BloodParticle.clearParticlesInRange(payload.x(), payload.y(), payload.z(), payload.range()));
         });
         ClientPlayNetworking.registerGlobalReceiver(NameTagSyncPayload.ID, (payload, context) -> {
-            RoleNameRenderer.displayTags.putAll(payload.nametags());
+            context.client().execute(() -> {
+                RoleNameRenderer.displayTags.clear();
+                RoleNameRenderer.displayTags.putAll(payload.nametags());
+            });
         });
         ClientPlayNetworking.registerGlobalReceiver(RepairCoinRewardS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> RepairEscapeHud.pushCoinToast(payload.amount(), payload.sourceKey()));

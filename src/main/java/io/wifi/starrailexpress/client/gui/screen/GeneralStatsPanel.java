@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.stats.PlayerStats;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
+import net.exmo.sre.nametag.NameTagTitleCatalog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -207,9 +208,10 @@ public class GeneralStatsPanel extends AbstractWidget {
         String currentNameTag = NameTagInventoryComponent.KEY
                 .get(Minecraft.getInstance().player).CurrentNameTag;
         if (currentNameTag != null && !currentNameTag.isEmpty()) {
+            int titleColor = NameTagTitleCatalog.tierOf(currentNameTag).color();
             g.drawString(font,
-                    Component.translatable(currentNameTag).withStyle(s -> s.withColor(0xFF55FF55)),
-                    x + 55, y + 22, 0xFF55FF55);
+                    NameTagTitleCatalog.displayText(currentNameTag),
+                    x + 55, y + 22, 0xFF000000 | titleColor);
         }
 
         return y + cardHeight;

@@ -18,7 +18,6 @@ package io.wifi.starrailexpress.mixin.chat;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -30,22 +29,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class PlayerPrefixMixin {
     @Unique
     private static MutableComponent somePrefix(Player mainPlayer) {
-        if (mainPlayer instanceof ServerPlayer){
-            var component = NameTagInventoryComponent.KEY.get(mainPlayer).generate();
-            return component != null ? component : Component.literal("");
-        }
-        return Component.literal("");
+        var component = NameTagInventoryComponent.KEY.get(mainPlayer).generate();
+        return component != null
+                ? Component.literal("[").append(component.copy()).append("] ")
+                : null;
     }
 
-    @Inject(method = "getDisplayName", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getDisplayName", at = @At("RETURN"), cancellable = true)
     public void getDisplayName(CallbackInfoReturnable<Component> cir) {
         Player mainPlayer = (Player) (Object) this;
-        if (mainPlayer instanceof ServerPlayer serverPlayer) {
-            Component originalName = serverPlayer.getTabListDisplayName();
-            if (originalName == null) {
-                originalName = Component.literal(mainPlayer.getName().getString());
+        if (!mainPlayer.level().isClientSide()) {
+            MutableComponent prefix = somePrefix(mainPlayer);
+            if (prefix != null) {
+                cir.setReturnValue(prefix.append(cir.getReturnValue()));
             }
-            cir.setReturnValue(somePrefix(mainPlayer).append(originalName));
         }
     }
 }
