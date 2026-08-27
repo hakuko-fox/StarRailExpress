@@ -40,6 +40,7 @@ public final class RoleScreenRegister {
         ModMeetingRoles.MISSIONARY.setInventoryScreenExtensionFactory(MissionaryRoleScreenExtension::new);
         ModRoles.MORPHLING.setInventoryScreenExtensionFactory(MorphlingRoleScreenExtension::new);
         ModRoles.PARTY_KILLER.setInventoryScreenExtensionFactory(PartyKillerRoleScreenExtension::new);
+        ModRoles.KANA.setInventoryScreenExtensionFactory(KanaRoleScreenExtension::new);
         THMiscRoles.SHIKIEIKI.setInventoryScreenExtensionFactory(ShikieikiRoleScreenExtension::new);
         ModRoles.SILENCER.setInventoryScreenExtensionFactory(SilencerRoleScreenExtension::new);
         ModRoles.SWAPPER.setInventoryScreenExtensionFactory(SwapperRoleScreenExtension::new);
