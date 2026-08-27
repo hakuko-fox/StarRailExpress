@@ -29,6 +29,7 @@ import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import io.wifi.starrailexpress.game.data.ModifierRotationSavedData;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
@@ -227,6 +228,20 @@ public class SREMurderGameMode extends GameMode {
         var allModifiers = new ArrayList<>(HMLModifiers.MODIFIERS);
         int killerMods = (int) allModifiers.stream().filter(modifier -> modifier.killerOnly).count();
         Collections.shuffle(allModifiers);
+        ModifierRotationSavedData modifierRotation = ModifierRotationSavedData.get(serverWorld);
+        if (modifierRotation.isEnabled()) {
+            allModifiers.sort(Comparator
+                    .comparingInt((SREModifier modifier) -> {
+                        ModifierRotationSavedData.ModifierTrack track = modifierRotation
+                                .getTrackOrNull(modifier.identifier().toString());
+                        return track == null ? 0 : track.playedCount;
+                    })
+                    .thenComparingLong(modifier -> {
+                        ModifierRotationSavedData.ModifierTrack track = modifierRotation
+                                .getTrackOrNull(modifier.identifier().toString());
+                        return track == null ? 0L : track.lastPlayedRound;
+                    }));
+        }
 
         // 修饰符轮换名单接管：仅当名单启用且管理员已在名单中配置了至少一个修饰符时，
         // 才由名单决定修饰符的启用/禁用（取代 disabledModifiers），但数量仍沿用 MODIFIER_MAX，
@@ -321,6 +336,15 @@ public class SREMurderGameMode extends GameMode {
         }
         // 等所有修饰符都添加完成后，再同步整个组件
         worldModifierComponent.sync();
+
+        if (modifierRotation.isEnabled()) {
+            Set<SREModifier> assignedThisRound = tempModifierAssignments.values().stream()
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+            for (SREModifier modifier : assignedThisRound)
+                modifierRotation.markPlayed(modifier.identifier().toString());
+            modifierRotation.advanceRound();
+        }
 
         for (ServerPlayer player : players) {
             var modifiers = worldModifierComponent.getDisplayableModifiers(player);
