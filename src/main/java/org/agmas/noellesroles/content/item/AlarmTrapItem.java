@@ -16,6 +16,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.content.block.LockableButtonBlock;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
 import io.wifi.starrailexpress.content.block.TrainDoorBlock;
@@ -111,8 +112,10 @@ public class AlarmTrapItem extends Item implements AdventureUsable {
                 setDoorAlarmTrap(doorEntity, true);
 
                 if (!world.isClientSide) {
-                    SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(),
-                            BuiltInRegistries.ITEM.getKey(this));
+                    // 工程会刷屏
+                    if (SREConfig.instance().recordEngineerEvents)
+                        SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(),
+                                BuiltInRegistries.ITEM.getKey(this));
 
                     world.playSound(null, lowerPos.getX() + 0.5, lowerPos.getY() + 1, lowerPos.getZ() + 0.5,
                             SoundEvents.TRIPWIRE_ATTACH, SoundSource.BLOCKS, 0.7f, 1.2f);

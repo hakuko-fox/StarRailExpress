@@ -16,6 +16,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.block.LockableButtonBlock;
 import io.wifi.starrailexpress.content.block.SmallDoorBlock;
@@ -250,8 +251,10 @@ public class ReinforcementItem extends Item implements AdventureUsable {
                 // 加固门
                 setDoorReinforced(doorEntity, true);
                 if (world instanceof ServerLevel) {
-                    SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(),
-                            BuiltInRegistries.ITEM.getKey(this));
+                    // 工程会刷屏
+                    if (SREConfig.instance().recordEngineerEvents)
+                        SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(),
+                                BuiltInRegistries.ITEM.getKey(this));
                 }
                 // 只在客户端播放声音
                 if (world.isClientSide) {

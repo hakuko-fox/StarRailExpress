@@ -24,12 +24,10 @@ import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import net.minecraft.server.level.ServerPlayer;
-import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
 import org.agmas.noellesroles.role_data.neutral.CuckooRoleData;
-import org.agmas.noellesroles.role_data.neutral.PelicanRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
-import org.agmas.noellesroles.role_data.neutral.ThiefRoleData;
+import org.agmas.noellesroles.handler.utils.BeeFamilyManager;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -152,6 +150,11 @@ public class CustomWinnerClass {
 
             // 鹈鹕存活时检查独立胜利
             if (org.agmas.noellesroles.role_data.neutral.PelicanRoleData.checkPelicanVictory(serverLevel)) {
+                return WinStatus.CUSTOM;
+            }
+            
+            // 蜜蜂家族独立胜利
+            if (BeeFamilyManager.checkBeeFamilyVictory(serverLevel)) {
                 return WinStatus.CUSTOM;
             }
 

@@ -17,6 +17,8 @@ package io.wifi.rhythm.client.screen;
 
 import io.wifi.rhythm.client.utils.OggPlayer;
 import io.wifi.rhythm.data.*;
+import io.wifi.starrailexpress.client.api.InvNoMoveScreen;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -30,17 +32,22 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+
+import org.agmas.noellesroles.packet.RhythmGameResultC2SPacket;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 
-public class RhythmGameScreen extends Screen {
+public class RhythmGameScreen extends Screen implements InvNoMoveScreen {
     private static final float NOTE_SPEED = 0.2F;
     private static final int JUDGE_LINE_X = 60;
     private static final int PERFECT_WINDOW = 80;
     private static final int GOOD_WINDOW = 150;
     private static final int MISS_THRESHOLD = 50;
     private static final int ADVANCE_DISPLAY_TIME = 3900;
+    private static final int MYSTIA_NEED_TIME = 30 * 1000;
+    // 在类中添加字段
+    private boolean isAutoFinish = false;
 
     private static final SoundEvent CLICK_SOUND = SoundEvents.NOTE_BLOCK_SNARE.value();
     private static final SoundEvent HIT_SOUND = SoundEvents.NOTE_BLOCK_IRON_XYLOPHONE.value();
@@ -90,6 +97,12 @@ public class RhythmGameScreen extends Screen {
 
     private Screen parent = null;
     private Button startButton;
+    private boolean shouldSendResult = false;
+
+    public RhythmGameScreen(RhythmMapData map, boolean shouldSendResult) {
+        this(map);
+        this.shouldSendResult = shouldSendResult;
+    }
 
     public RhythmGameScreen(RhythmMapData map) {
         super(Component.empty());
@@ -167,6 +180,28 @@ public class RhythmGameScreen extends Screen {
             musicPlayer.stop();
         minecraft.getSoundManager().stop(null, net.minecraft.sounds.SoundSource.VOICE);
         minecraft.setScreen(parent);
+        if (shouldSendResult) {
+            ClientPlayNetworking.send(new RhythmGameResultC2SPacket(getFinalScore()));
+        }
+    }
+
+    // 修改 getFinalScore()
+    private int getFinalScore() {
+        if (this.currentMap == null) {
+            return 0;
+        }
+        int denominator;
+        if (isAutoFinish) {
+            // 自动结束：只按已判定音符计算理论满分
+            int judgedNotes = perfectCount + goodCount + missCount;
+            denominator = judgedNotes * 100;
+        } else {
+            // 主动退出：按完整谱面计算
+            denominator = this.currentMap.Notes.size() * 100;
+        }
+        if (denominator == 0)
+            return 0;
+        return (int) (100f * score / denominator);
     }
 
     @Override
@@ -197,6 +232,16 @@ public class RhythmGameScreen extends Screen {
                 smoothedTimeDrift = (long) (smoothedTimeDrift * 0.95 + diff * 0.05);
                 lastCalibrationTime = now;
             }
+        }
+
+        // 新增：shouldSendResult 模式下音乐超过30秒自动结算
+        if (shouldSendResult && musicPlayed && musicPlayer.isPlaying() && smoothTime >= MYSTIA_NEED_TIME) {
+            isAutoFinish = true; // 标记为自动结束
+            gameState = GameState.FINISHED;
+            if (musicPlayer != null) {
+                musicPlayer.stop();
+            }
+            return;
         }
 
         // 谱面时间：统一使用平滑模拟时间（音乐开始前使用游戏时间模拟）
@@ -368,9 +413,10 @@ public class RhythmGameScreen extends Screen {
                 renderGameTime += (long) (partialTick * 50);
             renderMusicTime = renderGameTime - MUSIC_DELAY_MS;
         }
-
-        for (LiveNote ln : activeNotes) {
-            drawNote(graphics, ln, renderMusicTime);
+        if (gameState != GameState.FINISHED) {
+            for (LiveNote ln : activeNotes) {
+                drawNote(graphics, ln, renderMusicTime);
+            }
         }
 
         // 击中特效（优化淡出，无闪烁）
@@ -457,7 +503,7 @@ public class RhythmGameScreen extends Screen {
         graphics.drawString(font, Component.translatable("gui.rhythm.combo", combo), 10, 24, 0xFFFFAA00);
         int total = perfectCount + goodCount + missCount;
         if (total > 0) {
-            double accuracy = (perfectCount * 100.0 + goodCount * 70.0) / total;
+            double accuracy = (perfectCount * 100.0 + goodCount * 50.0) / total;
             graphics.drawString(font, Component.translatable("gui.rhythm.accuracy", String.format("%.1f%%", accuracy)),
                     10, 38, 0xFFFFFF);
         }
@@ -565,7 +611,7 @@ public class RhythmGameScreen extends Screen {
     // ==================== 判定 ====================
     private void hitNote(LiveNote note, boolean perfect, long musicTime) {
         note.state = NoteState.HIT;
-        score += (perfect ? 100 : 70) * comboMultiplier();
+        score += (perfect ? 100 : 50) * comboMultiplier();
         if (perfect)
             perfectCount++;
         else
@@ -596,7 +642,7 @@ public class RhythmGameScreen extends Screen {
 
     private void completeHold(LiveNote note) {
         note.state = NoteState.HIT;
-        score += 200 * comboMultiplier();
+        score += 50 * comboMultiplier();
         combo++;
         maxCombo = Math.max(maxCombo, combo);
     }
@@ -609,6 +655,9 @@ public class RhythmGameScreen extends Screen {
     }
 
     private int comboMultiplier() {
+        if (shouldSendResult) {
+            return 1;
+        }
         return combo >= 100 ? 2 : 1;
     }
 

@@ -15,11 +15,11 @@
 
 package org.agmas.noellesroles.handler;
 
+import org.agmas.noellesroles.handler.utils.BeeFamilyManager;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.role.bouns.roles.HengXingTiRole;
 import org.agmas.noellesroles.role_data.neutral.LinFamilyRoleData;
-
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -34,7 +34,9 @@ import net.minecraft.world.phys.Vec3;
 public class BounsHandlers {
 
     public static void register() {
+        BeeFamilyManager.registerEvents();
         LinFamilyRoleData.registerEvents();
+
         RoleSkill.register(BounsRoles.HENG_XING_TI,
                 RoleSkill.skill(SRE.id("heng_xing_ti"), "skill.noellesroles.heng_xing_ti", (ctx) -> {
                     return HengXingTiRole.triggerSkill(ctx);
@@ -63,7 +65,7 @@ public class BounsHandlers {
                             double strength = 1.4;
                             target.push(to.x / dist * strength, 0.42D, to.z / dist * strength);
                             if (target instanceof ServerPlayer stp) {
-                                stp.setLastHurtByPlayer(serverPlayer);
+                                stp.setLastHurtByMob(serverPlayer);
                                 stp.hurtMarked = true;
                                 stp.connection.send(
                                         new ClientboundSetEntityMotionPacket(stp.getId(), stp.getDeltaMovement()));

@@ -47,12 +47,16 @@ import net.minecraft.world.item.Items;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
 
+import java.util.Random;
+
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.BowenBadgeItem;
 import org.agmas.noellesroles.content.item.RopeItem;
+import org.agmas.noellesroles.handler.utils.THYukariPortalManager;
+import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.touhou.THMountainRoles;
@@ -68,11 +72,15 @@ import org.agmas.noellesroles.role.touhou.roles.THReimuRole;
 import org.agmas.noellesroles.role.touhou.roles.THRemiliaRole;
 import org.agmas.noellesroles.role.touhou.roles.THSuikaRole;
 import org.agmas.noellesroles.role.touhou.roles.THUtsuhoRole;
+import org.agmas.noellesroles.role.touhou.roles.THYukariRole;
 import org.agmas.noellesroles.role_data.killer.DoremyRoleData;
 import org.agmas.noellesroles.utils.MCItemsUtils;
+import org.agmas.noellesroles.utils.OpenScreenManager;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class TouhouHandlers {
+  public static final Random RANDOM = new Random();
+
   public static void register() {
     registerSkills();
     registerEvents();
@@ -80,6 +88,7 @@ public class TouhouHandlers {
   }
 
   public static void registerInitEvents() {
+    THYukariPortalManager.registerEvents();
     ModdedRoleRemoved.EVENT.register((player, role) -> {
       if (!(player instanceof ServerPlayer sp)) {
         return;
@@ -272,7 +281,76 @@ public class TouhouHandlers {
     });
   }
 
+  public static void handleMystiaResult(ServerPlayer player, final int score) {
+    player.displayClientMessage(
+        Component.translatable("skill.noellesroles.mystia.score", score).withStyle(ChatFormatting.AQUA),
+        true);
+    if (!RoleUtils.isPlayerTheJob(player, THMiscRoles.MYSTIA)) {
+      return;
+    }
+    if (score >= 85) {
+      SREPlayerMoodComponent.KEY.get(player).addMood(0.4f);
+      {
+        SREPlayerShopComponent.KEY.get(player).addToBalance(25);
+        SREPlayerTaskComponent taskcca = SREPlayerTaskComponent.KEY.get(player);
+        if (!taskcca.tasks.isEmpty()) {
+          taskcca.tasks.clear();
+          taskcca.parallelTaskTypes.clear();
+          taskcca.parallelTaskGenerated = false;
+          taskcca.nextTaskTimer = 20;
+          taskcca.currentTaskAge = 0;
+          taskcca.sync();
+        }
+
+        player.displayClientMessage(
+            Component.translatable("skill.noellesroles.mystia.san", score).withStyle(ChatFormatting.AQUA),
+            true);
+      }
+      if (score >= 95) {
+        int choice = RANDOM.nextInt(1, 4);
+        /*
+         * ├─ 1. 获得一份烤八目海鳗，可丢出，食用可以获得夜视。
+         * ├─ 2. 使自身半径5格内持续失明和失去透视，持续10s。
+         * └─ 3. 获得速度2，持续30s。
+         */
+        if (choice == 1) {
+
+          player.displayClientMessage(
+              Component.translatable("skill.noellesroles.mystia.haiman", score).withStyle(ChatFormatting.AQUA),
+              true);
+          RoleUtils.insertOrDropItem(player, FunnyItems.COOKED_HAIMAN.getDefaultInstance());
+        } else if (choice == 2) {
+
+          player.displayClientMessage(
+              Component.translatable("skill.noellesroles.mystia.self.blindness", score).withStyle(ChatFormatting.AQUA),
+              true);
+          for (ServerPlayer p : player.serverLevel().players()) {
+            if (p.isSpectator() || p.isCreative())
+              continue;
+            if (p.equals(player))
+              continue;
+            p.addEffect(ModEffects.of(ModEffects.NO_INSTINCT, 10 * 20, 1, false, false, true));
+            p.addEffect(ModEffects.of(MobEffects.BLINDNESS, 10 * 20, 1, false, false, true));
+            p.addEffect(ModEffects.of(MobEffects.DARKNESS, 10 * 20, 1, false, false, true));
+            p.displayClientMessage(
+                Component.translatable("skill.noellesroles.mystia.blindness").withStyle(ChatFormatting.RED), true);
+          }
+        } else if (choice == 3) {
+          player.displayClientMessage(
+              Component.translatable("skill.noellesroles.mystia.self.speed", score).withStyle(ChatFormatting.AQUA),
+              true);
+          player.addEffect(ModEffects.of(MobEffects.MOVEMENT_SPEED, 30 * 20, 1, false, true, true));
+        }
+      }
+    }
+  }
+
   public static void registerSkills() {
+    THYukariRole.registerSkills();
+    RoleSkill.register(THMiscRoles.MYSTIA, RoleSkill.skill(SRE.id("mystia"), "skill.noellesroles.mystia", (ctx) -> {
+      OpenScreenManager.openScreen(ctx.player(), OpenScreenManager.RHYTHM_GAME_SCREEN_ROLE);
+      return true;
+    }).showOnHud(true).cooldownSeconds(90).announceToSelf().build());
     RoleSkill.register(THMiscRoles.KIJIN_SEIJA,
         RoleSkill.skill(SRE.id("kijin_seija_upside_down"), "skill.noellesroles.seija.upside_down", (ctx) -> {
           final int DISTANCE = 8;
