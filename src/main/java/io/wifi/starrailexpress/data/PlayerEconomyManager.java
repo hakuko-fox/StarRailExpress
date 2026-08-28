@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
+import io.wifi.starrailexpress.hat.HatEquipmentManager;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
@@ -99,11 +100,15 @@ public final class PlayerEconomyManager {
 
     public static void setEquippedSkinForItemType(Player player, String itemType, String skinName) {
         String normalizedType = normalizeItemName(itemType);
+        String normalizedSkin = skinName == null || skinName.isBlank() ? "default" : skinName;
         Entry entry = get(player.getUUID());
-        entry.state.equipped.put(normalizedType, skinName == null || skinName.isBlank() ? "default" : skinName);
+        entry.state.equipped.put(normalizedType, normalizedSkin);
         markDirty(player, entry);
-        mirrorToSkinsComponent(player, sc -> sc.setEquippedSkinForItemType(normalizedType,
-                skinName == null || skinName.isBlank() ? "default" : skinName));
+        mirrorToSkinsComponent(player, sc -> sc.setEquippedSkinForItemType(normalizedType, normalizedSkin));
+        ItemSkinManager.applySkinToExistingItems(player, normalizedType, normalizedSkin);
+        if (player instanceof ServerPlayer serverPlayer && HatEquipmentManager.HAT_TYPE.equals(normalizedType)) {
+            HatEquipmentManager.broadcastCurrentHat(serverPlayer);
+        }
     }
 
     public static boolean isSkinUnlocked(Player player, ItemStack stack, String skinName) {

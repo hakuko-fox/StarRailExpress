@@ -111,6 +111,20 @@ public final class HatEquipmentManager {
     }
 
     /**
+     * 在玩家更换帽子时立即向所有兼容客户端广播服务端权威状态。
+     * 周期扫描保留为外部数据变更的兜底，不再承担正常装备操作的延迟同步。
+     */
+    public static void broadcastCurrentHat(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return;
+        }
+        String current = getServerHatSkinName(player);
+        LAST_KNOWN.put(player.getUUID(), current);
+        broadcastChanges(server, Map.of(player.getUUID(), current));
+    }
+
+    /**
      * 每 {@value #SCAN_INTERVAL_TICKS} tick（5 秒）扫描一次在线玩家的帽子装备变化。
      * 仅在发生变化时才组包，且只发给能接收的客户端；无变化零发包。
      */
@@ -137,6 +151,10 @@ public final class HatEquipmentManager {
         if (changes == null || changes.isEmpty()) {
             return;
         }
+        broadcastChanges(server, changes);
+    }
+
+    private static void broadcastChanges(MinecraftServer server, Map<UUID, String> changes) {
         // 先筛出能接收的客户端，没有可接收者则连包都不用组
         List<ServerPlayer> recipients = null;
         for (ServerPlayer recipient : server.getPlayerList().getPlayers()) {

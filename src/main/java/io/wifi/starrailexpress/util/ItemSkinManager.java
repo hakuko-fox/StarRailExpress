@@ -21,12 +21,14 @@ import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * 皮肤管理工具类，用于处理物品皮肤相关的操作
@@ -330,6 +332,36 @@ public class ItemSkinManager {
      */
     public static void setEquippedSkinForItemType(Player player, String itemTypeName, String skinName) {
         PlayerEconomyManager.setEquippedSkinForItemType(player, itemTypeName, skinName);
+    }
+
+    /**
+     * 将新选择的皮肤立即应用到玩家当前背包内同类型的可换肤物品。
+     * <p>
+     * 物品上的 {@link SREDataComponentTypes#SKIN} 优先于玩家的装备映射，
+     * 因此只更新映射会令已经持有的物品继续显示旧皮肤。
+     */
+    public static void applySkinToExistingItems(Player player, String itemTypeName, String skinName) {
+        if (player == null || player.level().isClientSide()) {
+            return;
+        }
+        boolean changed = false;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (!(stack.getItem() instanceof SkinableItem)
+                    || !Objects.equals(getItemTypeName(stack), itemTypeName)) {
+                continue;
+            }
+            if (!Objects.equals(stack.get(SREDataComponentTypes.SKIN), skinName)) {
+                stack.set(SREDataComponentTypes.SKIN, skinName);
+                changed = true;
+            }
+        }
+        if (changed && player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.inventoryMenu.broadcastChanges();
+            if (serverPlayer.containerMenu != serverPlayer.inventoryMenu) {
+                serverPlayer.containerMenu.broadcastChanges();
+            }
+        }
     }
 
     /**

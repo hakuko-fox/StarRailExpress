@@ -46,7 +46,7 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
         if (MODEL_ID == null) {
             return null;
         }
-        if (skin == "default") {
+        if ("default".equals(skin)) {
             return MODEL_ID.id().withPath(path -> "item/%s".formatted(MODEL_ID.id().getPath()));
         }
         var skinPart = "%s".formatted(skin);
@@ -61,7 +61,10 @@ public class GeneralModelLoadingPlugin implements ModelLoadingPlugin {
         for (var entry : ItemSkinManager.getSkins().entrySet()) {
             for (ItemSkinManager.Skin skin : entry.getValue().values()) {
                 for (Variant variant : Variant.values()) {
-                    pluginContext.addModels(getModelLocation(entry.getKey(), skin.getName(), variant));
+                    ResourceLocation modelLocation = getModelLocation(entry.getKey(), skin.getName(), variant);
+                    if (modelLocation != null) {
+                        pluginContext.addModels(modelLocation);
+                    }
                 }
             }
         }
