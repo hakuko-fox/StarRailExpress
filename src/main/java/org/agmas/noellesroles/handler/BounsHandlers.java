@@ -16,14 +16,22 @@
 package org.agmas.noellesroles.handler;
 
 import org.agmas.noellesroles.handler.utils.BeeFamilyManager;
+import org.agmas.noellesroles.game.roles.neutral.leader.LeaderFollowerEffects;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.role.bouns.roles.HengXingTiRole;
 import org.agmas.noellesroles.role_data.neutral.LinFamilyRoleData;
+import org.agmas.noellesroles.utils.RoleUtils;
+
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
+import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
+import io.wifi.starrailexpress.event.OnRoleSkillUse;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.forensic.ForensicCategory;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -42,6 +50,35 @@ public class BounsHandlers {
                     return HengXingTiRole.triggerSkill(ctx);
                 }).showOnHud(true)
                         .recordReplay().cooldownSeconds(240).announceToSelf().build());
+        // 避免恒星体导致玩家落入虚空
+        OnKillPlayerTriggered.EVENT.register((victim, spawnBody, killer, deathReasosn, forceKill) -> {
+            if (killer == null || RoleUtils.isPlayerTheJob(killer, BounsRoles.HENG_XING_TI)) {
+                if (ForensicCategory.fromDeathReason(deathReasosn).equals(ForensicCategory.ENVIRONMENT)) {
+                    if (victim.getKillCredit() instanceof ServerPlayer sp) {
+                        if (RoleUtils.isPlayerTheJob(sp, BounsRoles.HENG_XING_TI)) {
+                            victim.setLastHurtByMob(null);
+                            victim.setLastHurtByPlayer(null);
+                            GameUtils.teleportBackToRoom(victim);
+                            return TrueFalseResult.FALSE;
+                        }
+                    }
+                }
+            }
+            return TrueFalseResult.PASS;
+        });
+        // 领袖对恒星体释放技能后：恒星体技能冷却减半（OnRoleSkillUse.AFTER 在 markSkillUsed 之后触发，可覆盖完整冷却）
+        OnRoleSkillUse.AFTER.register((player, role) -> {
+            if (LeaderFollowerEffects.HENG_XING_TI_COOLDOWN_HALVED
+                    && BounsRoles.HENG_XING_TI.equals(role)
+                    && player instanceof ServerPlayer sp) {
+                SREAbilityPlayerComponent ability = SREAbilityPlayerComponent.KEY.get(sp);
+                for (var def : RoleSkill.getDefinitions(role)) {
+                    ability.setSkillCooldown(def.id(), def.cooldownTicks() / 2);
+                }
+            }
+            return true;
+        });
+
         RoleSkill.register(BounsRoles.LAO_DA,
                 RoleSkill.skill(SRE.id("lao_da"), "skill.noellesroles.lao_da.zhouji", (ctx) -> {
                     final var serverPlayer = ctx.player();

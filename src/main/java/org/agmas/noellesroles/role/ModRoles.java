@@ -1824,13 +1824,20 @@ public class ModRoles {
     // 疫使与毒师互斥生成
     public static SRERole INFECTED = TMMRoles
             .registerRole(new NormalRole(INFECTED_ID, new Color(66, 181, 0).getRGB(), false,
-                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+                    false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
+                // 阻止只存在疫使结束游戏
+                @Override
+                public boolean canIncreaseSurvivingKillers() {
+                    return true;
+                }
+            })
             .setNeutralForKiller(true)
             .setCanUseInstinctAndNightVision(true)
             .setDefaultMax(1)
             .setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(false)
-            .setDefaultEnableChance(5000).setDefaultEnableNeededPlayerCount(12);
+            .setDefaultEnableChance(5000)
+            .setDefaultEnableNeededPlayerCount(12);
 
     /**
      * 葬仪角色 - 杀手方中立阵营
@@ -3158,6 +3165,7 @@ public class ModRoles {
     public static ArrayList<SRERole> getAllMafiaRoles() {
         return TMMRoles.CACHE.MAFIA_ROLES;
     }
+
     static {
         PILOT.setAddedVersion("4.2");
         SHADOW_FALCON.setAddedVersion("4.2");
@@ -3178,7 +3186,7 @@ public class ModRoles {
         FORTUNETELLER.setAddedVersion("3.2");
         DIVINER.setAddedVersion("4.3");
         SALTED_FISH.setAddedVersion("4.3");
-        RETURN_TRAVELER.setAddedVersion("4.3");
+        RETURN_TRAVELER.setAddedVersion("4.4");
         LEATHER_PIG.setAddedVersion("4.3");
         NINJA.setAddedVersion("4.1");
         NOSTALGIST.setAddedVersion("4.3");
@@ -3186,7 +3194,7 @@ public class ModRoles {
         DELAYER.setAddedVersion("4.2");
         ELF.setAddedVersion("3.1");
         GUARD.setAddedVersion("4.2");
-        SHERIFF.setAddedVersion("2.x");
+        SHERIFF.setAddedVersion("4.1");
         GHOST_EYE.setAddedVersion("4.3");
         WIND_YAOSE.setAddedVersion("3.2");
         CHEF.setAddedVersion("3.2");
@@ -3226,7 +3234,7 @@ public class ModRoles {
         SWAPPER.setAddedVersion("2.x");
         EXECUTIONER.setAddedVersion("2.x");
         GAMBLER.setAddedVersion("2.x");
-        LEADER.setAddedVersion("4.3");
+        LEADER.setAddedVersion("4.4");
         TAMER.setAddedVersion("4.3");
         HUNTER.setAddedVersion("4.3");
         POISONER.setAddedVersion("2.x");
@@ -3272,10 +3280,10 @@ public class ModRoles {
         CANDLE_BEARER.setAddedVersion("4.0");
         RAVEN.setAddedVersion("4.3");
         REASONER.setAddedVersion("4.3");
-        VOICE_CHANGER.setAddedVersion("4.3");
+        VOICE_CHANGER.setAddedVersion("4.4");
         AMON.setAddedVersion("4.3");
         DOOMED_SINNER.setAddedVersion("4.3");
-        LIN_FAMILY.setAddedVersion("4.3");
+        LIN_FAMILY.setAddedVersion("4.4");
         MAGICIAN.setAddedVersion("3.2");
         CLOCKMAKER.setAddedVersion("3.2");
         BANDIT.setAddedVersion("3.2");
@@ -3283,7 +3291,7 @@ public class ModRoles {
         FITTER.setAddedVersion("4.3");
         BLOOD_FEUDIST.setAddedVersion("3.2");
         WATCHER.setAddedVersion("4.0");
-        YOULU.setAddedVersion("4.3");
+        YOULU.setAddedVersion("4.4");
         IMITATOR.setAddedVersion("4.1");
         THE_FOOL.setAddedVersion("4.1");
         MONOKUMA.setAddedVersion("4.1");
