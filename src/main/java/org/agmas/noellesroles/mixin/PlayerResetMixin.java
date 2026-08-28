@@ -87,7 +87,8 @@ public abstract class PlayerResetMixin {
     private static void clearAllComponents(ServerPlayer player) {
         RoleUtils.removeAllPlayerAttributes(player);
         RoleUtils. removeAllEffects(player);
-        player.setLastHurtMob(null);
+        player.setLastHurtByMob(null);
+        player.setLastHurtByPlayer(null);
         TemporaryEffectPlayerComponent.KEY.get(player).init();
         SplitPersonalityComponent.KEY.get(player).clear();
         SkinSplitPersonalityComponent.KEY.get(player).clear();

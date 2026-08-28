@@ -370,15 +370,15 @@ public class RoleNameRenderer {
     }
 
     private static Component getDisplayName(Player target) {
-        Component displayName = target.getDisplayName();
         Minecraft client = Minecraft.getInstance();
         if (client.getConnection() != null) {
             PlayerInfo playerInfo = client.getConnection().getPlayerInfo(target.getUUID());
             if (playerInfo != null && playerInfo.getTabListDisplayName() != null) {
-                displayName = playerInfo.getTabListDisplayName();
+                return playerInfo.getTabListDisplayName();
             }
         }
 
+        Component displayName = target.getDisplayName();
         String title = displayTags.get(target.getUUID());
         if (title == null || title.isBlank()) {
             return displayName;

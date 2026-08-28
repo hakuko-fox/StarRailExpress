@@ -16,6 +16,7 @@
 package org.agmas.noellesroles.content.item;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.content.block.LockableButtonBlock;
 import io.wifi.starrailexpress.content.block.TrainDoorBlock;
 import io.wifi.starrailexpress.content.block_entity.DoorBlockEntity;
@@ -141,9 +142,10 @@ public class LockItem extends Item implements AdventureUsable {
                 // 在门上方一格记录锁
                 LockEntityManager.getInstance().addLockEntity(doorEntity.getBlockPos().above(), lockEntity);
                 if (!player.isCreative()) {
-                    // 回放记录
-                    SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(),
-                            BuiltInRegistries.ITEM.getKey(this));
+                    // 回放记录 工程会刷屏
+                    if (SREConfig.instance().recordEngineerEvents)
+                        SRE.REPLAY_MANAGER.recordItemUse(player.getUUID(),
+                                BuiltInRegistries.ITEM.getKey(this));
                     // 添加锁成功且非创造模式：消耗门锁
                     player.getItemInHand(context.getHand()).shrink(1);
                 }

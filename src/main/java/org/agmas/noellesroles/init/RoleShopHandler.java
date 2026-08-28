@@ -76,7 +76,6 @@ import org.agmas.noellesroles.role_data.neutral.PhantomMusicianRoleData;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
-
 import net.exmo.sre.repair.role.RepairRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -2033,12 +2032,18 @@ public class RoleShopHandler {
                     Items.MUSIC_DISC_PRECIPICE
             };
             SoundEvent[] sounds = {
-                    SoundEvents.MUSIC_DISC_13.value(), SoundEvents.MUSIC_DISC_CAT.value(), SoundEvents.MUSIC_DISC_BLOCKS.value(),
-                    SoundEvents.MUSIC_DISC_CHIRP.value(), SoundEvents.MUSIC_DISC_FAR.value(), SoundEvents.MUSIC_DISC_MALL.value(),
-                    SoundEvents.MUSIC_DISC_MELLOHI.value(), SoundEvents.MUSIC_DISC_STAL.value(), SoundEvents.MUSIC_DISC_STRAD.value(),
-                    SoundEvents.MUSIC_DISC_WARD.value(), SoundEvents.MUSIC_DISC_11.value(), SoundEvents.MUSIC_DISC_WAIT.value(),
-                    SoundEvents.MUSIC_DISC_PIGSTEP.value(), SoundEvents.MUSIC_DISC_OTHERSIDE.value(), SoundEvents.MUSIC_DISC_5.value(),
-                    SoundEvents.MUSIC_DISC_RELIC.value(), SoundEvents.MUSIC_DISC_CREATOR.value(), SoundEvents.MUSIC_DISC_CREATOR_MUSIC_BOX.value(),
+                    SoundEvents.MUSIC_DISC_13.value(), SoundEvents.MUSIC_DISC_CAT.value(),
+                    SoundEvents.MUSIC_DISC_BLOCKS.value(),
+                    SoundEvents.MUSIC_DISC_CHIRP.value(), SoundEvents.MUSIC_DISC_FAR.value(),
+                    SoundEvents.MUSIC_DISC_MALL.value(),
+                    SoundEvents.MUSIC_DISC_MELLOHI.value(), SoundEvents.MUSIC_DISC_STAL.value(),
+                    SoundEvents.MUSIC_DISC_STRAD.value(),
+                    SoundEvents.MUSIC_DISC_WARD.value(), SoundEvents.MUSIC_DISC_11.value(),
+                    SoundEvents.MUSIC_DISC_WAIT.value(),
+                    SoundEvents.MUSIC_DISC_PIGSTEP.value(), SoundEvents.MUSIC_DISC_OTHERSIDE.value(),
+                    SoundEvents.MUSIC_DISC_5.value(),
+                    SoundEvents.MUSIC_DISC_RELIC.value(), SoundEvents.MUSIC_DISC_CREATOR.value(),
+                    SoundEvents.MUSIC_DISC_CREATOR_MUSIC_BOX.value(),
                     SoundEvents.MUSIC_DISC_PRECIPICE.value()
             };
             for (int i = 0; i < discs.length; i++) {
@@ -2053,7 +2058,8 @@ public class RoleShopHandler {
                     @Override
                     public boolean onBuy(@NotNull Player player) {
                         DiscMasterRoleData data = RoleData.getNullable(DiscMasterRoleData.class, player);
-                        if (data == null) return false;
+                        if (data == null)
+                            return false;
                         return data.playDisc(sound);
                     }
                 });
@@ -2625,6 +2631,18 @@ public class RoleShopHandler {
                     ModRoles.MORPHLING_ID, entries);
         }
 
+        // bee商店：开锁器
+        {
+            ShopContent.customEntries.put(
+                    BounsRoles.BEE_QUEEN.identifier(),
+                    List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
+            ShopContent.customEntries.put(
+                    BounsRoles.BEE_WORKER.identifier(),
+                    List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
+            ShopContent.customEntries.put(
+                    BounsRoles.BEE_WASP.identifier(),
+                    List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
+        }
         // 静语者商店：默认杀手刀具列表
         {
             ShopContent.customEntries.put(
@@ -2685,7 +2703,7 @@ public class RoleShopHandler {
         // 牢大商店
         {
             List<ShopEntry> entries = new ArrayList<>();
-            
+
             entries.add(new ShopEntry(FunnyItems.ICE_RED_TEA.getDefaultInstance(), 200,
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(
@@ -3349,8 +3367,8 @@ public class RoleShopHandler {
                         }
                         // 回放记录：诡客购买净雨符关闭里世界
                         SRE.REPLAY_MANAGER.recordCustomEvent(
-                            Component.translatable("replay.event.trickster.close_shadow",
-                                GameReplayUtils.getReplayPlayerDisplayText(player, true)));
+                                Component.translatable("replay.event.trickster.close_shadow",
+                                        GameReplayUtils.getReplayPlayerDisplayText(player, true)));
                         return true;
                     }
                 });
@@ -3414,14 +3432,16 @@ public class RoleShopHandler {
                     new KillerKnifeShopEntry(SREConfig.instance().knifePrice) {
                         @Override
                         public boolean canDisplay(Player player) {
-                            return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                            return !RoleData.getOptional(WatcherRoleData.class, player)
+                                    .map(WatcherRoleData::isInCalmStance).orElse(true);
                         }
                     });
             // 左轮手枪 - 285金币（愤怒姿态）
             shop.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 285, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
+                            .orElse(true);
                 }
             });
             // 手榴弹
@@ -3429,14 +3449,16 @@ public class RoleShopHandler {
                     ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
+                            .orElse(true);
                 }
             });
             shop.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(),
                     SREConfig.instance().psychoModePrice, ShopEntry.Type.WEAPON) {
                 @Override
                 public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
+                            .orElse(true);
                 }
 
                 @Override
@@ -3448,7 +3470,8 @@ public class RoleShopHandler {
                     SREConfig.instance().firecrackerPrice, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
+                            .orElse(true);
                 }
             });
             shop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), SREConfig.instance().lockpickPrice,
@@ -3463,21 +3486,24 @@ public class RoleShopHandler {
                             ShopEntry.Type.TOOL) {
                         @Override
                         public boolean canDisplay(Player player) {
-                            return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                            return !RoleData.getOptional(WatcherRoleData.class, player)
+                                    .map(WatcherRoleData::isInCalmStance).orElse(true);
                         }
                     });
             shop.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), SREConfig.instance().bodyBagPrice,
                     ShopEntry.Type.TOOL) {
                 @Override
                 public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
+                            .orElse(true);
                 }
             });
             shop.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
                     ShopEntry.Type.TOOL) {
                 @Override
                 public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance).orElse(true);
+                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
+                            .orElse(true);
                 }
 
                 @Override

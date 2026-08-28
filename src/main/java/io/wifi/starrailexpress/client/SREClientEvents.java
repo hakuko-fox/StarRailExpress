@@ -16,6 +16,8 @@
 package io.wifi.starrailexpress.client;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -336,7 +338,6 @@ public class SREClientEvents {
         });
         OnRenderRoleName.RENDER_END.register((player, range, context,
                 tickCounter, font) -> {
-
             if (NoellesrolesClient.targetPlayer == null) {
                 return;
             }
@@ -344,10 +345,12 @@ public class SREClientEvents {
             if (SREClient.isPlayerSpectatingOrCreative()) {
                 return;
             }
+            final float scale = SREClientConfig.instance().playerHudScale;
+
             if (SREClient.isRole(SERoles.ARSONIST)) {
                 context.pose().pushPose();
                 context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
-                context.pose().scale(0.6f, 0.6f, 1.0f);
+                context.pose().scale(scale, scale, 1.0f);
 
                 DousedPlayerComponent component = DousedPlayerComponent.KEY.get(NoellesrolesClient.targetPlayer);
                 Component status = Component
@@ -364,6 +367,7 @@ public class SREClientEvents {
             if (NoellesrolesClient.targetBody == null) {
                 return;
             }
+            final float scale = SREClientConfig.instance().bodyHudScale;
 
             if (SREClient.isPlayerSpectatingOrCreative()) {
                 return;
@@ -372,7 +376,7 @@ public class SREClientEvents {
                 var wayC = RoleData.getNullable(WayfarerRoleData.class, player);
                 context.pose().pushPose();
                 context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 24.0f, 0.0f);
-                context.pose().scale(0.6f, 0.6f, 1.0f);
+                context.pose().scale(scale, scale, 1.0f);
                 if (wayC != null && wayC.phase != 0) {
                     context.pose().popPose();
                     return;
@@ -389,7 +393,7 @@ public class SREClientEvents {
             } else if (SREClient.isRole(SERoles.AMNESIAC)) {
                 context.pose().pushPose();
                 context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
-                context.pose().scale(0.6f, 0.6f, 1.0f);
+                context.pose().scale(scale, scale, 1.0f);
 
                 Component status = Component.translatable("hud.stupid_express.amnesiac.select_body");
                 context.drawString(font, status, -font.width(status) / 2, 32, 0x9baae8);
@@ -398,7 +402,7 @@ public class SREClientEvents {
                     || SREClient.isRole(BounsRoles.CAT_NECROMANCER)) {
                 context.pose().pushPose();
                 context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
-                context.pose().scale(0.6f, 0.6f, 1.0f);
+                context.pose().scale(scale, scale, 1.0f);
 
                 Component status = Component.translatable("hud.stupid_express.necromancer.possible_revive");
 
@@ -415,6 +419,33 @@ public class SREClientEvents {
 
                 context.pose().popPose();
 
+            } else if (SREClient.isRole(BounsRoles.BEE_QUEEN)) {
+                var cdCca = SREAbilityPlayerComponent.KEY.get(player);
+                if (cdCca.hasCooldown()) {
+
+                    context.pose().pushPose();
+                    context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
+                    context.pose().scale(scale, scale, 1.0f);
+
+                    Component status = Component.translatable("hud.noellesroles.bee_queen.cooldown",
+                            String.format("%.1f", cdCca.getCooldownSeconds())).withStyle(ChatFormatting.RED);
+                    context.drawString(font, status, -font.width(status) / 2, 32, 0xffffffff);
+                    context.pose().popPose();
+                } else {
+
+                    SRERole reviveRole = BounsRoles.BEE_WORKER;
+                    if (cdCca.status == 1) {
+                        reviveRole = BounsRoles.BEE_WASP;
+                    }
+                    context.pose().pushPose();
+                    context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
+                    context.pose().scale(scale, scale, 1.0f);
+
+                    Component status = Component.translatable("hud.noellesroles.bee_queen.select",
+                            reviveRole.getDisplayNameWithColor()).withStyle(ChatFormatting.GOLD);
+                    context.drawString(font, status, -font.width(status) / 2, 32, 0xffffffff);
+                    context.pose().popPose();
+                }
             }
         });
     }

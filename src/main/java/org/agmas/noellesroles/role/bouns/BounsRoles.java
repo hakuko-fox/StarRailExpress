@@ -231,8 +231,7 @@ public class BounsRoles {
         }
     }, "creator_team").setDefaultEnableChance(1000).addRelatedRole(ModRoles.VOODOO);
     public static SRERole LAO_DA = TMMRoles.registerRole(new EggRole(id("lao_da"), new Color(236, 209, 72).getRGB(),
-            true, false, SRERole.MoodType.REAL,
-            TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, false) {
+            true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, false) {
         @Override
         public InteractionResult onDropItem(Player player, ItemStack item) {
             if (item.is(FunnyItems.ICE_RED_TEA))
@@ -252,20 +251,65 @@ public class BounsRoles {
             }
             return;
         }
-    }).setDefaultEnableChance(100);
+    }).setDefaultEnableChance(100)
+            .setAddedVersion("4.3");
+
+    public static SRERole BEE_QUEEN = TMMRoles.registerRole(new BeeFamilyRole(id("bee_queen"),
+            new Color(255, 242, 0).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            false))
+            .setCanBeRandomedByOtherRoles(false)
+            .setNeutrals(true)
+            .setDefaultEnableNeededPlayerCount(16)
+            .setDefaultEnableChance(2000)
+            .setCanUseInstinctAndNightVision(true)
+            .setAddedVersion("4.3");
+
+    public static SRERole BEE_WASP = TMMRoles.registerRole(new BeeFamilyRole(id("bee_wasp"),
+            new Color(255, 242, 0).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            false))
+            .setCanBeRandomedByOtherRoles(false)
+            .setNeutrals(true)
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultMax(0)
+            .addBothRelatedRole(BEE_QUEEN)
+            .setCanUseInstinctAndNightVision(true)
+            .setAddedVersion("4.3");
+    public static SRERole BEE_WORKER = TMMRoles.registerRole(new BeeFamilyRole(id("bee_worker"),
+            new Color(255, 242, 0).getRGB(),
+            false,
+            false,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            false))
+            .setCanBeRandomedByOtherRoles(false)
+            .setNeutrals(true)
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultMax(0)
+            .addBothRelatedRole(BEE_QUEEN)
+            .setCanUseInstinctAndNightVision(true)
+            .setAddedVersion("4.3");
 
     public static SRERole HENG_XING_TI = TMMRoles.registerRole(
             new HengXingTiRole(
                     id("heng_xing_ti"),
                     new Color(100, 100, 0).getRGB(),
-                    true,
+                    false,
                     false,
                     SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN_MAX_SPRINT_TICKS,
                     false))
             .setBeSeenInstinctType(InstinctType.DEFAULT, InstinctType.TARGET_ROLE_COLOR)
             .setDefaultEnableChance(10)
-            .setNeutralForInnocent(true);
+            .setNeutralForInnocent(true)
+            .setAddedVersion("4.3");
 
     public static void init() {
         THRedHouseRoles.init();
@@ -298,7 +342,6 @@ public class BounsRoles {
         CAT_NECROMANCER.setAddedVersion("4.1");
         BEST_VIGILANTE.setAddedVersion("2.x");
         LENGXIAO.setAddedVersion("4.3");
-        LAO_DA.setAddedVersion("4.4");
-        DISC_MASTER.setAddedVersion("4.4");
+        DISC_MASTER.setAddedVersion("4.3");
     }
 }

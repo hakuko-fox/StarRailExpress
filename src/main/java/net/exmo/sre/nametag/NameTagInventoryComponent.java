@@ -32,6 +32,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +132,7 @@ public class NameTagInventoryComponent implements RoleComponent {
                                 this.applyNetworkNametagData(nametagData);
                                 this.persistLocal();
                                 this.sync();
-                                syncSelectedNameTags(serverPlayer.getServer());
+                                syncSelectedNameTagDisplay();
                                 logger.debug("玩家 {} 的名片数据已从 MySQL 拉取", this.player.getName().getString());
                             }
                         }
@@ -216,6 +218,7 @@ public class NameTagInventoryComponent implements RoleComponent {
         this.init();
         this.persistLocal();
         this.syncToNetwork();
+        this.syncSelectedNameTagDisplay();
     }
 
     /**
@@ -294,9 +297,7 @@ public class NameTagInventoryComponent implements RoleComponent {
             this.persistLocal();
             // 触发网络同步
             syncToNetwork();
-            if (this.player instanceof ServerPlayer serverPlayer) {
-                syncSelectedNameTags(serverPlayer.getServer());
-            }
+            this.syncSelectedNameTagDisplay();
         }
     }
 
@@ -329,7 +330,20 @@ public class NameTagInventoryComponent implements RoleComponent {
             this.persistLocal();
             // 触发网络同步
             syncToNetwork();
+            this.syncSelectedNameTagDisplay();
         }
+    }
+
+    private void syncSelectedNameTagDisplay() {
+        if (!(this.player instanceof ServerPlayer serverPlayer) || serverPlayer.getServer() == null) {
+            return;
+        }
+        MinecraftServer server = serverPlayer.getServer();
+        syncSelectedNameTags(server);
+        ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(
+                EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME),
+                List.of(serverPlayer));
+        server.getPlayerList().broadcastAll(packet);
     }
 
     /**
@@ -482,7 +496,7 @@ public class NameTagInventoryComponent implements RoleComponent {
         if (this.player instanceof ServerPlayer serverPlayer) {
             NameTagDataStore.restore(serverPlayer, this);
             this.sync();
-            syncSelectedNameTags(serverPlayer.getServer());
+            this.syncSelectedNameTagDisplay();
         }
     }
 
