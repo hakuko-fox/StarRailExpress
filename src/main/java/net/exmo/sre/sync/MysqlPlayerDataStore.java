@@ -159,25 +159,40 @@ public final class MysqlPlayerDataStore {
 
     public static CompletableFuture<Boolean> saveBatchAsync(UUID playerUuid, Map<String, String> payloads,
             long updatedAt) {
-        return saveBatchAsync(playerUuid, payloads, updatedAt, false);
+        return saveBatchAsync(playerUuid, payloads, updatedAt, false, null);
+    }
+
+    /**
+     * 以呼叫方讀取資料時取得的版本執行條件式寫入。
+     * <p>
+     * 這個方法用於明確的 read-modify-write 流程，避免同一 JVM 內另一個讀取或寫入更新
+     * {@link #KNOWN_REVISIONS} 後，讓舊 payload 誤用較新的版本並覆蓋遠端變更。
+     */
+    public static CompletableFuture<Boolean> saveBatchAsyncIfVersions(UUID playerUuid,
+            Map<String, String> payloads, long updatedAt, Map<String, Long> expectedRevisions) {
+        if (expectedRevisions == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return saveBatchAsync(playerUuid, payloads, updatedAt, false, Map.copyOf(expectedRevisions));
     }
 
     public static CompletableFuture<Boolean> saveBatchForceAsync(UUID playerUuid, Map<String, String> payloads,
             long updatedAt) {
-        return saveBatchAsync(playerUuid, payloads, updatedAt, true);
+        return saveBatchAsync(playerUuid, payloads, updatedAt, true, null);
     }
 
     private static CompletableFuture<Boolean> saveBatchAsync(UUID playerUuid, Map<String, String> payloads,
-            long updatedAt, boolean force) {
+            long updatedAt, boolean force, Map<String, Long> expectedRevisions) {
         Map<String, String> normalizedPayloads = normalizePayloads(payloads);
         if (playerUuid == null || normalizedPayloads.isEmpty() || dataSource == null) {
             return CompletableFuture.completedFuture(false);
         }
         if (shutdownFlushMode) {
-            return CompletableFuture.completedFuture(saveBatch(playerUuid, normalizedPayloads, updatedAt, force));
+            return CompletableFuture.completedFuture(
+                    saveBatch(playerUuid, normalizedPayloads, updatedAt, force, expectedRevisions));
         }
-        return CompletableFuture.supplyAsync(() -> saveBatch(playerUuid, normalizedPayloads, updatedAt, force),
-                EXECUTOR);
+        return CompletableFuture.supplyAsync(
+                () -> saveBatch(playerUuid, normalizedPayloads, updatedAt, force, expectedRevisions), EXECUTOR);
     }
 
     public static boolean saveBatchBlocking(UUID playerUuid, Map<String, String> payloads, long updatedAt,
@@ -196,7 +211,7 @@ public final class MysqlPlayerDataStore {
             return false;
         }
         try {
-            return saveBatchAsync(playerUuid, payloads, updatedAt, force).get(Math.max(1000L, timeoutMs),
+            return saveBatchAsync(playerUuid, payloads, updatedAt, force, null).get(Math.max(1000L, timeoutMs),
                     TimeUnit.MILLISECONDS);
         } catch (Exception exception) {
             logger.warn("等待 MySQL 数据同步完成时失败，玩家 {}。", playerUuid, exception);
@@ -251,7 +266,8 @@ public final class MysqlPlayerDataStore {
         return records;
     }
 
-    private static boolean saveBatch(UUID playerUuid, Map<String, String> payloads, long updatedAt, boolean force) {
+    private static boolean saveBatch(UUID playerUuid, Map<String, String> payloads, long updatedAt, boolean force,
+            Map<String, Long> expectedRevisions) {
         HikariDataSource source = dataSource;
         if (source == null || isFastFailActive()) {
             return false;
@@ -275,7 +291,10 @@ public final class MysqlPlayerDataStore {
                 for (var entry : payloads.entrySet()) {
                     long expectedRevision = force
                             ? UNKNOWN_REVISION
-                            : KNOWN_REVISIONS.getOrDefault(new RecordKey(playerUuid, entry.getKey()), PRESERVE_REVISION);
+                            : expectedRevisions != null
+                                    ? expectedRevisions.getOrDefault(entry.getKey(), PRESERVE_REVISION)
+                                    : KNOWN_REVISIONS.getOrDefault(new RecordKey(playerUuid, entry.getKey()),
+                                            PRESERVE_REVISION);
                     statement.setString(1, playerUuid.toString());
                     statement.setString(2, entry.getKey());
                     statement.setString(3, entry.getValue());

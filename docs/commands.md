@@ -768,9 +768,14 @@
 - **用途**: 物品皮肤远程同步管理
 
 ### `tmm:skins` — 皮肤管理
-- **权限**: `2`
-- **结构**: `[player]` (GameProfile)
-- **用途**: 管理物品皮肤 (查看玩家皮肤)
+- **权限**: 无（查看自己）、`2`（查看他人）、`3`（管理員解鎖）
+- **结构**:
+  - `[player]` — 開啟自己或指定線上玩家的皮膚介面
+  - `unlock <player> <type> <skin>` — 為線上玩家解鎖一個已註冊皮膚
+  - `unlock <player> <type> all` — 解鎖該類型的全部已註冊皮膚
+  - `lock <player> <type> all` — 鎖定該類型的全部已註冊皮膚；若目前裝備其中之一，會退回 `default`
+- **用途**: 管理物品皮肤。管理員變更時，若 MySQL 皮膚同步已設定且連線可用，會安全合併並儲存到 `skins` 資料；鎖定操作需要退回預設裝備時，也會在同一交易更新 `equipped_skins`。若未設定 MySQL，則只套用於目前遊戲狀態。若已設定但連線不可用，指令不會套用變更。`all` 只影響遊戲端已註冊的皮膚 ID，不刪除未知或網站自訂 ID。
+- **示例**: `/tmm:skins unlock Steve knife ruby`、`/tmm:skins unlock Steve knife all`、`/tmm:skins lock Steve knife all`
 
 ---
 

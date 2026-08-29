@@ -33,9 +33,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -146,6 +149,25 @@ public final class PlayerEconomyManager {
         mirrorToSkinsComponent(player, sc -> sc.unlockSkinForItemType(normalizedType, skinName));
     }
 
+    public static void unlockSkinsForItemType(Player player, String itemType, Collection<String> skinNames) {
+        Set<String> requestedSkins = normalizedSkinNames(skinNames);
+        if (requestedSkins.isEmpty()) {
+            return;
+        }
+        String normalizedType = normalizeItemName(itemType);
+        Entry entry = get(player.getUUID());
+        Map<String, Boolean> skins = entry.state.unlocked
+                .computeIfAbsent(normalizedType, ignored -> new ConcurrentHashMap<>());
+        boolean changed = false;
+        for (String skinName : requestedSkins) {
+            changed |= !Boolean.TRUE.equals(skins.put(skinName, true));
+        }
+        if (changed) {
+            markDirty(player, entry);
+        }
+        mirrorToSkinsComponent(player, sc -> sc.unlockSkinsForItemType(normalizedType, requestedSkins));
+    }
+
     public static void lockSkinForItemType(Player player, String itemType, String skinName) {
         String normalizedType = normalizeItemName(itemType);
         Entry entry = get(player.getUUID());
@@ -160,6 +182,43 @@ public final class PlayerEconomyManager {
         mirrorToSkinsComponent(player, sc -> sc.lockSkinForItemType(normalizedType, skinName));
     }
 
+    public static void lockSkinsForItemType(Player player, String itemType, Collection<String> skinNames) {
+        Set<String> requestedSkins = normalizedSkinNames(skinNames);
+        if (requestedSkins.isEmpty()) {
+            return;
+        }
+        String normalizedType = normalizeItemName(itemType);
+        Entry entry = get(player.getUUID());
+        boolean changed = false;
+        Map<String, Boolean> skins = entry.state.unlocked.get(normalizedType);
+        if (skins != null) {
+            for (String skinName : requestedSkins) {
+                changed |= skins.remove(skinName) != null;
+            }
+            if (skins.isEmpty()) {
+                entry.state.unlocked.remove(normalizedType);
+            }
+        }
+
+        String equippedSkin = entry.state.equipped.get(normalizedType);
+        boolean resetEquipped = equippedSkin != null && requestedSkins.contains(equippedSkin);
+        if (resetEquipped) {
+            entry.state.equipped.put(normalizedType, "default");
+            changed = true;
+        }
+        if (changed) {
+            markDirty(player, entry);
+        }
+        mirrorToSkinsComponent(player, sc -> sc.lockSkinsForItemType(normalizedType, requestedSkins));
+
+        if (resetEquipped) {
+            ItemSkinManager.applySkinToExistingItems(player, normalizedType, "default");
+            if (player instanceof ServerPlayer serverPlayer && HatEquipmentManager.HAT_TYPE.equals(normalizedType)) {
+                HatEquipmentManager.broadcastCurrentHat(serverPlayer);
+            }
+        }
+    }
+
     public static Map<String, String> getEquippedSkins(Player player) {
         return new HashMap<>(get(player.getUUID()).state.equipped);
     }
@@ -168,6 +227,16 @@ public final class PlayerEconomyManager {
         Map<String, Map<String, Boolean>> copy = new HashMap<>();
         get(player.getUUID()).state.unlocked.forEach((type, skins) -> copy.put(type, new HashMap<>(skins)));
         return copy;
+    }
+
+    /**
+     * 建立完整的 skins 分區快照，供管理員明確發放皮膚時建立尚不存在的遠端記錄。
+     * 回傳的是複本，不會修改目前玩家狀態的版本或 dirty 標記。
+     */
+    public static String createSkinDataSnapshot(Player player, long updatedAt) {
+        EconomyState snapshot = new EconomyState();
+        snapshot.copyFrom(get(player.getUUID()).state);
+        return toJson(snapshot, updatedAt);
     }
 
     public static boolean flushBlocking(UUID playerUuid) {
@@ -317,6 +386,19 @@ public final class PlayerEconomyManager {
         }
         var id = net.minecraft.resources.ResourceLocation.tryParse(itemTypeName);
         return id == null ? itemTypeName : id.getPath();
+    }
+
+    private static Set<String> normalizedSkinNames(Collection<String> skinNames) {
+        Set<String> result = new HashSet<>();
+        if (skinNames == null) {
+            return result;
+        }
+        for (String skinName : skinNames) {
+            if (skinName != null && !skinName.isBlank()) {
+                result.add(skinName);
+            }
+        }
+        return result;
     }
 
     private static EconomyState fromJson(String json) {

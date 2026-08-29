@@ -194,6 +194,17 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
     }
 
     /**
+     * 批次解鎖指定物品類型的皮膚，只觸發一次客戶端同步。
+     */
+    public void unlockSkinsForItemType(String itemTypeName, Collection<String> skinNames) {
+        String normalizedItemName = normalizeItemName(itemTypeName);
+        Map<String, Boolean> skinsForItem = unlockedSkins.computeIfAbsent(normalizedItemName,
+                ignored -> new HashMap<>());
+        skinNames.forEach(skinName -> skinsForItem.put(skinName, true));
+        markSkinDataChanged();
+    }
+
+    /**
      * 锁定一个皮肤（移除解锁状态）
      */
     public void lockSkin(ItemStack itemStack, String skinName) {
@@ -231,6 +242,25 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
             if (skinsForItem.isEmpty()) {
                 unlockedSkins.remove(normalizedItemName);
             }
+        }
+        markSkinDataChanged();
+    }
+
+    /**
+     * 批次鎖定指定物品類型的已註冊皮膚，並在需要時退回預設皮膚。
+     */
+    public void lockSkinsForItemType(String itemTypeName, Collection<String> skinNames) {
+        String normalizedItemName = normalizeItemName(itemTypeName);
+        Map<String, Boolean> skinsForItem = unlockedSkins.get(normalizedItemName);
+        if (skinsForItem != null) {
+            skinNames.forEach(skinsForItem::remove);
+            if (skinsForItem.isEmpty()) {
+                unlockedSkins.remove(normalizedItemName);
+            }
+        }
+        String equippedSkin = equippedSkins.get(normalizedItemName);
+        if (equippedSkin != null && skinNames.contains(equippedSkin)) {
+            equippedSkins.put(normalizedItemName, "default");
         }
         markSkinDataChanged();
     }

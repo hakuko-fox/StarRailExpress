@@ -111,12 +111,16 @@ AFK管理
   - `setTime <seconds> [targets]`: 设置AFK时间
 - **示例**: `/tmm:afk setTime 300 @a`
 
-### `tmm:skins [player]`
+### `tmm:skins [player]` / `tmm:skins unlock|lock ...`
 皮肤管理
-- **权限**: 无 (查看自己), 2 (查看他人)
+- **权限**: 无 (查看自己), 2 (查看他人), 3 (管理員解鎖)
 - **参数**:
   - `player`: 指定玩家 (可选，需权限2)
-- **示例**: `/tmm:skins Steve`
+  - `unlock <player> <type> <skin>`: 解鎖一個已註冊皮膚
+  - `unlock <player> <type> all`: 解鎖該類型的全部已註冊皮膚
+  - `lock <player> <type> all`: 鎖定該類型的全部已註冊皮膚，並將受影響的裝備皮膚退回 `default`
+- **MySQL**: 同步已設定時會安全合併寫入；鎖定後的裝備重設會同一交易更新 `skins` 與 `equipped_skins`；`all` 不刪除未知或網站自訂皮膚 ID
+- **示例**: `/tmm:skins Steve`, `/tmm:skins unlock Steve knife ruby`, `/tmm:skins unlock Steve knife all`, `/tmm:skins lock Steve knife all`
 
 ## 地图管理命令
 
