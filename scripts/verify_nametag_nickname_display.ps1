@@ -59,11 +59,19 @@ Assert-Contains $component 'ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISP
 Assert-Contains $component 'syncSelectedNameTagDisplay();' 'Selected-title changes must synchronize both title render data and the TAB display name.'
 
 $renderer = Read-Utf8 $root 'src/main/java/io/wifi/starrailexpress/client/gui/RoleNameRenderer.java'
-$tabReturn = $renderer.IndexOf('return playerInfo.getTabListDisplayName();')
-$fallbackTitle = $renderer.IndexOf('String title = displayTags.get(target.getUUID());')
-if ($tabReturn -lt 0 -or $fallbackTitle -lt 0 -or $tabReturn -gt $fallbackTitle) {
-    $failures.Add('The nearby-player HUD must prefer the fully composed TAB display name before the legacy title fallback.')
-}
+Assert-Contains $renderer 'return playerInfo.getTabListDisplayName();' 'The nearby-player HUD must read the synchronized TAB display name.'
+Assert-Contains $renderer 'String title = displayTags.get(playerId);' 'The nearby-player HUD must resolve the synchronized title separately.'
+Assert-Contains $renderer 'PlayerNameLines nameLines = getDisplayName(target);' 'The nearby-player HUD must resolve the title and player name as separate lines.'
+Assert-Contains $renderer 'titleTag = nameLines.title();' 'The nearby-player HUD must keep the title separate from the player name.'
+Assert-Contains $renderer 'ctx.drawString(font, titleTag,' 'The nearby-player HUD must draw the title on its own row.'
+Assert-Contains $renderer 'ctx.drawString(font, nametag, -nameWidth / 2, nameY,' 'The nearby-player HUD must draw the nickname or username on a second row.'
+Assert-Contains $renderer 'headerExtraLines * (font.lineHeight + 2)' 'Role and participation text must move down when the title adds a row.'
+Assert-Contains $renderer 'record PlayerNameLines(Component title, Component name)' 'The nearby-player HUD and end-game report must model title and name rows separately.'
+
+$roundRenderer = Read-Utf8 $root 'src/main/java/io/wifi/starrailexpress/client/gui/RoundTextRenderer.java'
+Assert-Contains $roundRenderer 'RoleNameRenderer.PlayerNameLines nameLines = RoleNameRenderer.getDisplayName(' 'The end-game report must use the same title and player-name line resolver as the nearby-player HUD.'
+Assert-Contains $roundRenderer 'context.drawString(renderer, nameLines.title(),' 'The end-game report must draw the title on its own row.'
+Assert-Contains $roundRenderer 'context.drawString(renderer, nameLines.name(),' 'The end-game report must draw the nickname or username on a second row.'
 
 if ($failures.Count -gt 0) {
     foreach ($failure in $failures) {

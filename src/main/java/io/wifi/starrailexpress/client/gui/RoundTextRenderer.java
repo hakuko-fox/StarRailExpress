@@ -407,15 +407,23 @@ public class RoundTextRenderer {
                         }
                         nameText = Component.literal(p_name);
                     }
-                    if (nameText != null) {
-                        int nameWidth = getOrCacheWidth(renderer, nameText);
-
+                    RoleNameRenderer.PlayerNameLines nameLines = RoleNameRenderer.getDisplayName(
+                            entry.player().getId(), targetPlayer, nameText, playerProfile);
+                    if (nameLines.title() != null) {
+                        int titleWidth = getOrCacheWidth(renderer, nameLines.title());
                         context.pose().pushPose();
                         context.pose().scale(0.2f, 0.2f, 1f);
-                        context.pose().translate(60, 44, 200);
-                        context.drawString(renderer, nameText, -nameWidth / 2, 0, 0xffffff);
+                        context.pose().translate(60, 33, 200);
+                        context.drawString(renderer, nameLines.title(), -titleWidth / 2, 0, 0xffffff);
                         context.pose().popPose();
                     }
+
+                    int nameWidth = getOrCacheWidth(renderer, nameLines.name());
+                    context.pose().pushPose();
+                    context.pose().scale(0.2f, 0.2f, 1f);
+                    context.pose().translate(60, 44, 200);
+                    context.drawString(renderer, nameLines.name(), -nameWidth / 2, 0, 0xffffff);
+                    context.pose().popPose();
 
                     if (entry.wasDead()) {
                         context.pose().translate(13, 0, 0);

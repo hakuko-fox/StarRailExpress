@@ -15,6 +15,7 @@
 
 package io.wifi.starrailexpress.client.gui;
 
+import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
@@ -106,6 +107,7 @@ public class RoleNameRenderer {
         }
 
         Component nametag = Component.empty();
+        Component titleTag = null;
         Player targetedPlayer = null;
         float range = getPlayerRange(self);
         if (component.isRunning()) {
@@ -153,7 +155,9 @@ public class RoleNameRenderer {
                     } else if (result.isCustom()) {
                         nametag = result.getContent().orElse(Component.empty());
                     } else {
-                        nametag = getDisplayName(target);
+                        PlayerNameLines nameLines = getDisplayName(target);
+                        titleTag = nameLines.title();
+                        nametag = nameLines.name();
                     }
                 }
                 if (SREClient.modifierComponent != null) {
@@ -196,20 +200,31 @@ public class RoleNameRenderer {
                 ctx.pose().pushPose();
                 ctx.pose().translate(ctx.guiWidth() / 2f, ctx.guiHeight() / 2f + 6, 0);
                 ctx.pose().scale(SREClient.playerHUDScale, SREClient.playerHUDScale, 1f);
+                int headerExtraLines = 0;
+                int nameY = 16;
+                if (titleTag != null) {
+                    int titleWidth = font.width(titleTag);
+                    ctx.drawString(font, titleTag, -titleWidth / 2, nameY,
+                            Mth.color(1f, 1f, 1f) | (255 << 24));
+                    nameY += font.lineHeight + 2;
+                    headerExtraLines++;
+                }
                 int nameWidth = font.width(nametag);
-                ctx.drawString(font, nametag, -nameWidth / 2, 16,
+                ctx.drawString(font, nametag, -nameWidth / 2, nameY,
                         Mth.color(1f, 1f, 1f) | ((int) (1 * 255) << 24));
                 // 游戏未开始且不在大厅时，在名字下方提示该玩家是否参与本局
-                if (!component.isRunning() && !SREClient.isInLobby()
-                        && !ParticipationComponent.KEY.get(self.level()).isParticipating(target)) {
+                boolean showParticipation = !component.isRunning() && !SREClient.isInLobby()
+                        && !ParticipationComponent.KEY.get(self.level()).isParticipating(target);
+                if (showParticipation) {
                     MutableComponent partTag = Component
                             .translatable("hud.sre.participation.not_participating")
                             .withStyle(ChatFormatting.GOLD);
                     int partWidth = font.width(partTag);
-                    ctx.drawString(font, partTag, -partWidth / 2, 16 + font.lineHeight + 2,
+                    ctx.drawString(font, partTag, -partWidth / 2, nameY + font.lineHeight + 2,
                             Mth.color(1f, 0.69f, 0f) | (255 << 24));
+                    headerExtraLines++;
                 }
-                ctx.pose().translate(0, 20, 0);
+                ctx.pose().translate(0, 20 + headerExtraLines * (font.lineHeight + 2), 0);
                 {
                     TrainRole selfRoleType = TrainRole.BYSTANDER;
                     if (component.canUseKillerFeatures(self))
@@ -369,7 +384,7 @@ public class RoleNameRenderer {
         }
     }
 
-    private static Component getDisplayName(Player target) {
+    private static Component getSyncedDisplayName(Player target) {
         Minecraft client = Minecraft.getInstance();
         if (client.getConnection() != null) {
             PlayerInfo playerInfo = client.getConnection().getPlayerInfo(target.getUUID());
@@ -378,15 +393,46 @@ public class RoleNameRenderer {
             }
         }
 
-        Component displayName = target.getDisplayName();
-        String title = displayTags.get(target.getUUID());
-        if (title == null || title.isBlank()) {
-            return displayName;
+        return target.getDisplayName();
+    }
+
+    private static PlayerNameLines getDisplayName(Player target) {
+        Component displayName = getSyncedDisplayName(target);
+        return getDisplayName(target.getUUID(), target, displayName, target.getGameProfile());
+    }
+
+    static PlayerNameLines getDisplayName(UUID playerId, Player target, Component displayName,
+            GameProfile playerProfile) {
+        Component fallbackName = displayName;
+        if (fallbackName == null && target != null) {
+            fallbackName = target.getDisplayName();
         }
-        return Component.literal("[")
+        if (fallbackName == null && playerProfile != null) {
+            fallbackName = Component.literal(playerProfile.getName());
+        }
+        if (fallbackName == null) {
+            fallbackName = Component.empty();
+        }
+
+        String title = displayTags.get(playerId);
+        if (title == null || title.isBlank()) {
+            return new PlayerNameLines(null, fallbackName);
+        }
+
+        Component titleTag = Component.literal("[")
                 .append(NameTagTitleCatalog.displayText(title))
-                .append("] ")
-                .append(displayName);
+                .append("]");
+        Component playerName = fallbackName;
+        if (target != null) {
+            Component customName = target.getCustomName();
+            playerName = customName != null ? customName : target.getName();
+        } else if (playerProfile != null) {
+            playerName = Component.literal(playerProfile.getName());
+        }
+        return new PlayerNameLines(titleTag, playerName);
+    }
+
+    record PlayerNameLines(Component title, Component name) {
     }
 
     public enum TrainRole {
