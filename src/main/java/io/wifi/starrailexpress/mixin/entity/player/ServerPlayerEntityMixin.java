@@ -27,6 +27,7 @@ import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.util.ServerDropManager;
 import io.wifi.starrailexpress.util.SkinUtils;
+import net.exmo.sre.nametag.PlayerDisplayNameHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -35,6 +36,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
@@ -47,6 +49,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerPlayer.class)
 public class ServerPlayerEntityMixin {
+    @Inject(method = "setGameMode", at = @At("RETURN"))
+    private void starRailExpress$refreshTabNameAfterGameModeChange(GameType gameMode,
+            CallbackInfoReturnable<Boolean> cir) {
+        if (!cir.getReturnValue()) {
+            return;
+        }
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        PlayerDisplayNameHelper.syncTabListDisplayName(self);
+    }
+
     @Inject(method = "drop(Z)Z", at = @At("HEAD"), cancellable = true)
     public void onDrop(boolean dropAll, CallbackInfoReturnable<Boolean> cir) {
         if (ServerDropManager.onDrop((ServerPlayer) (Object) this, dropAll)) {

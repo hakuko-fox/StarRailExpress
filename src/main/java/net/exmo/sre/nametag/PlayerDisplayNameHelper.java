@@ -18,8 +18,12 @@ package net.exmo.sre.nametag;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+
+import java.util.EnumSet;
+import java.util.List;
 
 public final class PlayerDisplayNameHelper {
     private static final String OFFLINE_NICKNAMES_MOD_ID = "nickname";
@@ -45,20 +49,38 @@ public final class PlayerDisplayNameHelper {
     public static Component composeForTabList(ServerPlayer player, Component fallbackName) {
         Component nickname = getOfflineNickname(player);
         MutableComponent title = NameTagInventoryComponent.KEY.get(player).generate();
-        if (nickname == null && title == null) {
-            return fallbackName;
+        Component composedName = fallbackName;
+        if (nickname != null || title != null) {
+            Component baseName = nickname != null
+                    ? nickname
+                    : fallbackName != null ? fallbackName : player.getName();
+            composedName = title == null
+                    ? baseName
+                    : Component.literal("[")
+                            .append(title.copy())
+                            .append("] ")
+                            .append(baseName.copy());
         }
 
-        Component baseName = nickname != null
-                ? nickname
-                : fallbackName != null ? fallbackName : player.getName();
-        if (title == null) {
-            return baseName;
+        if (!player.isSpectator()) {
+            return composedName;
         }
-        return Component.literal("[")
-                .append(title.copy())
-                .append("] ")
+
+        Component baseName = composedName != null ? composedName : player.getName();
+        return Component.empty()
+                .append(Component.translatable("starrailexpress.tag.spectator"))
+                .append(" ")
                 .append(baseName.copy());
+    }
+
+    public static void syncTabListDisplayName(ServerPlayer player) {
+        if (player.getServer() == null) {
+            return;
+        }
+        ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(
+                EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME),
+                List.of(player));
+        player.getServer().getPlayerList().broadcastAll(packet);
     }
 
     private static Component getOfflineNickname(ServerPlayer player) {

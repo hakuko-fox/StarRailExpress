@@ -39,6 +39,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -405,7 +406,7 @@ public class RoleNameRenderer {
 
     static PlayerNameLines getDisplayName(UUID playerId, Player target, Component displayName,
             GameProfile playerProfile) {
-        Component fallbackName = displayName;
+        Component fallbackName = removeTabOnlySpectatorTag(displayName);
         if (fallbackName == null && target != null) {
             fallbackName = target.getDisplayName();
         }
@@ -437,6 +438,28 @@ public class RoleNameRenderer {
             playerName = Component.literal(playerProfile.getName());
         }
         return new PlayerNameLines(titleTag, playerName);
+    }
+
+    private static Component removeTabOnlySpectatorTag(Component displayName) {
+        if (displayName == null
+                || !(displayName.getContents() instanceof PlainTextContents.LiteralContents literal)
+                || !literal.text().isEmpty()) {
+            return displayName;
+        }
+
+        List<Component> siblings = displayName.getSiblings();
+        if (siblings.size() < 3
+                || !(siblings.get(0).getContents() instanceof TranslatableContents translatable)
+                || !"starrailexpress.tag.spectator".equals(translatable.getKey())
+                || !" ".equals(siblings.get(1).getString())) {
+            return displayName;
+        }
+
+        MutableComponent withoutSpectatorTag = siblings.get(2).copy();
+        for (int i = 3; i < siblings.size(); i++) {
+            withoutSpectatorTag.append(siblings.get(i).copy());
+        }
+        return withoutSpectatorTag;
     }
 
     private static PlayerNameLines splitStoredDisplayName(Component fallbackName) {
