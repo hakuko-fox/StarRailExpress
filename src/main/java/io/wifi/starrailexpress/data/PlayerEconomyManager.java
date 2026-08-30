@@ -23,6 +23,7 @@ import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.hat.HatEquipmentManager;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
+import net.exmo.sre.sync.EquippedSkinsDatabaseSync;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -249,6 +250,10 @@ public final class PlayerEconomyManager {
     private static void onJoin(ServerPlayer player) {
         Entry entry = get(player.getUUID());
         entry.online = true;
+        SREPlayerSkinsComponent localSkins = SREPlayerSkinsComponent.KEY.get(player);
+        if (localSkins != null) {
+            entry.state.equipped = new ConcurrentHashMap<>(localSkins.getEquippedSkins());
+        }
         send(player, entry);
         if (!isDatabaseEnabled()) {
             return;
@@ -264,7 +269,8 @@ public final class PlayerEconomyManager {
         // 同时加载 economy 和 skins 分区：skins 分区是网站端/mysql-viewer 的权威源，
         // economy 分区是游戏内历史写入。优先采用 skins 分区的数据（版本更新），
         // 避免"网站端修改抽数但游戏内仍显示旧值"。
-        MysqlPlayerDataStore.loadBatchAsync(player.getUUID(), List.of(PART, "skins"))
+        MysqlPlayerDataStore.loadBatchAsync(player.getUUID(),
+                List.of(PART, "skins", EquippedSkinsDatabaseSync.DATA_KEY))
                 .whenComplete((records, throwable) -> {
                     entry.loadInFlight = false;
                     MinecraftServer server = player.getServer();
@@ -286,11 +292,22 @@ public final class PlayerEconomyManager {
                                 && !skinsRecord.payload().isBlank())
                                         ? skinsRecord
                                         : economyRecord;
+                        Map<String, String> localEquipped = new HashMap<>(entry.state.equipped);
+                        Map<String, String> legacyRemoteEquipped = null;
                         if (primary != null && primary.payload() != null && !primary.payload().isBlank()) {
                             EconomyState loaded = fromJson(primary.payload());
+                            legacyRemoteEquipped = loaded.equipped;
                             entry.state.copyFrom(loaded);
                             entry.updatedAt = Math.max(entry.updatedAt, primary.updatedAt());
                             entry.dirty = false;
+                        }
+                        MysqlPlayerDataStore.SyncRecord equippedRecord = records
+                                .get(EquippedSkinsDatabaseSync.DATA_KEY);
+                        String equippedPayload = equippedRecord == null ? null : equippedRecord.payload();
+                        entry.state.equipped = new ConcurrentHashMap<>(EquippedSkinSelectionPersistence.resolve(
+                                localEquipped, legacyRemoteEquipped, equippedPayload));
+                        if (equippedRecord != null) {
+                            entry.updatedAt = Math.max(entry.updatedAt, equippedRecord.updatedAt());
                         }
                         send(player, entry);
                     });

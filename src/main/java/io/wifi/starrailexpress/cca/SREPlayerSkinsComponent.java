@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.data.EquippedSkinSelectionPersistence;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.sync.EquippedSkinsDatabaseSync;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
@@ -399,19 +400,28 @@ public class SREPlayerSkinsComponent implements AutoSyncedComponent, ServerTicki
             return;
         }
 
-        MysqlPlayerDataStore.loadBatchAsync(this.player.getUUID(), List.of(DATABASE_SYNC_KEY))
+        MysqlPlayerDataStore.loadBatchAsync(this.player.getUUID(),
+                List.of(DATABASE_SYNC_KEY, EquippedSkinsDatabaseSync.DATA_KEY))
                 .thenAccept(records -> {
                     MysqlPlayerDataStore.SyncRecord record = records.get(DATABASE_SYNC_KEY);
                     serverPlayer.getServer().execute(() -> {
+                        Map<String, String> localEquipped = new HashMap<>(this.equippedSkins);
+                        Map<String, String> legacyRemoteEquipped = null;
                         if (record != null && record.payload() != null && !record.payload().isBlank()) {
                             @SuppressWarnings("unchecked")
                             Map<String, Object> skinData = GSON.fromJson(record.payload(), Map.class);
                             if (skinData != null) {
                                 this.applyNetworkSkinData(skinData);
-                                this.sync();
-                                logger.debug("玩家 {} 的皮肤数据已从 MySQL 拉取", this.player.getName().getString());
+                                legacyRemoteEquipped = new HashMap<>(this.equippedSkins);
                             }
                         }
+                        MysqlPlayerDataStore.SyncRecord equippedRecord = records
+                                .get(EquippedSkinsDatabaseSync.DATA_KEY);
+                        String equippedPayload = equippedRecord == null ? null : equippedRecord.payload();
+                        this.equippedSkins = EquippedSkinSelectionPersistence.resolve(
+                                localEquipped, legacyRemoteEquipped, equippedPayload);
+                        this.sync();
+                        logger.debug("玩家 {} 的皮肤数据已从 MySQL 拉取", this.player.getName().getString());
                         if (this.databaseSyncQueued) {
                             // 只读策略：不再将本地数据写入远程数据库。
                             this.databaseSyncQueued = false;
