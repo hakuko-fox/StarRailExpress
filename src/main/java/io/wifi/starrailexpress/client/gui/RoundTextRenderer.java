@@ -58,6 +58,10 @@ public class RoundTextRenderer {
     private static final Map<String, Optional<GameProfile>> failCache = new HashMap<>();
     private static final int WELCOME_DURATION = 200 + GameConstants.FADE_TIME * 2;
     private static final int END_DURATION = 200;
+    private static final float ROUND_END_CONTENT_SCALE = 1.2f;
+    private static final float PLAYER_CARD_TEXT_SCALE = 0.2f;
+    private static final float PLAYER_CARD_TEXT_MAX_WIDTH = 10f;
+    private static final float PLAYER_CARD_TEXT_CENTER_X = 12f;
     private static RoleAnnouncementTexts.RoleAnnouncementText roleTexts = RoleAnnouncementTexts.DEFAULT;
     public static int welcomeTime = 0;
     public static int killers = 0;
@@ -189,6 +193,7 @@ public class RoundTextRenderer {
 
             context.pose().pushPose();
             context.pose().translate(centerX, centerY, 0);
+            context.pose().scale(ROUND_END_CONTENT_SCALE, ROUND_END_CONTENT_SCALE, 1f);
 
             context.pose().pushPose();
             context.pose().scale(2.6f, 2.6f, 1f);
@@ -351,7 +356,7 @@ public class RoundTextRenderer {
                     if (role1 != null) {
                         context.pose().pushPose();
                         context.pose().scale(0.32f, 0.32f, 1f);
-                        context.pose().translate(38, 36, 200);
+                        context.pose().translate(38, 40, 200);
                         var text = RoleUtils.getRoleName(role1.getIdentifier());
                         int textWidth = getOrCacheWidth(renderer, text);
                         context.drawString(renderer, text, -textWidth / 2, 0, role1.getColor());
@@ -359,7 +364,7 @@ public class RoundTextRenderer {
                     } else {
                         context.pose().pushPose();
                         context.pose().scale(0.32f, 0.32f, 1f);
-                        context.pose().translate(38, 36, 200);
+                        context.pose().translate(38, 40, 200);
                         var text = Component.translatable("announcement.star.role.unknown");
                         int textWidth = getOrCacheWidth(renderer, text);
                         context.drawString(renderer, text, -textWidth / 2, 0, 0xffffff);
@@ -410,20 +415,10 @@ public class RoundTextRenderer {
                     RoleNameRenderer.PlayerNameLines nameLines = RoleNameRenderer.getDisplayName(
                             entry.player().getId(), targetPlayer, nameText, playerProfile);
                     if (nameLines.title() != null) {
-                        int titleWidth = getOrCacheWidth(renderer, nameLines.title());
-                        context.pose().pushPose();
-                        context.pose().scale(0.2f, 0.2f, 1f);
-                        context.pose().translate(60, 33, 200);
-                        context.drawString(renderer, nameLines.title(), -titleWidth / 2, 0, 0xffffff);
-                        context.pose().popPose();
+                        drawPlayerCardText(context, renderer, nameLines.title(), 8.5f, 0xffffff);
                     }
 
-                    int nameWidth = getOrCacheWidth(renderer, nameLines.name());
-                    context.pose().pushPose();
-                    context.pose().scale(0.2f, 0.2f, 1f);
-                    context.pose().translate(60, 44, 200);
-                    context.drawString(renderer, nameLines.name(), -nameWidth / 2, 0, 0xffffff);
-                    context.pose().popPose();
+                    drawPlayerCardText(context, renderer, nameLines.name(), 10.5f, 0xffffff);
 
                     if (entry.wasDead()) {
                         context.pose().translate(13, 0, 0);
@@ -438,6 +433,20 @@ public class RoundTextRenderer {
             }
         }
 
+    }
+
+    private static void drawPlayerCardText(FakeGuiGraphics context, Font renderer, Component text, float y,
+            int color) {
+        int textWidth = getOrCacheWidth(renderer, text);
+        if (textWidth <= 0) {
+            return;
+        }
+        float scale = Math.min(PLAYER_CARD_TEXT_SCALE, PLAYER_CARD_TEXT_MAX_WIDTH / textWidth);
+        context.pose().pushPose();
+        context.pose().translate(PLAYER_CARD_TEXT_CENTER_X, y, 200);
+        context.pose().scale(scale, scale, 1f);
+        context.drawString(renderer, text, -textWidth / 2, 0, color);
+        context.pose().popPose();
     }
 
     private static Component getEndText(SRERole role, WinStatus winStatus, Component winner,

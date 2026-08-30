@@ -70,8 +70,14 @@ Assert-Contains $renderer 'record PlayerNameLines(Component title, Component nam
 
 $roundRenderer = Read-Utf8 $root 'src/main/java/io/wifi/starrailexpress/client/gui/RoundTextRenderer.java'
 Assert-Contains $roundRenderer 'RoleNameRenderer.PlayerNameLines nameLines = RoleNameRenderer.getDisplayName(' 'The end-game report must use the same title and player-name line resolver as the nearby-player HUD.'
-Assert-Contains $roundRenderer 'context.drawString(renderer, nameLines.title(),' 'The end-game report must draw the title on its own row.'
-Assert-Contains $roundRenderer 'context.drawString(renderer, nameLines.name(),' 'The end-game report must draw the nickname or username on a second row.'
+Assert-Contains $roundRenderer 'private static final float ROUND_END_CONTENT_SCALE = 1.2f;' 'The complete end-game report must render 20 percent larger.'
+Assert-Contains $roundRenderer 'context.pose().scale(ROUND_END_CONTENT_SCALE, ROUND_END_CONTENT_SCALE, 1f);' 'The end-game report scale must apply around its center without changing the internal layout.'
+Assert-Contains $roundRenderer 'drawPlayerCardText(context, renderer, nameLines.title(), 8.5f,' 'The end-game report title must start below the player head.'
+Assert-Contains $roundRenderer 'drawPlayerCardText(context, renderer, nameLines.name(), 10.5f,' 'The end-game report nickname or username must render below the title.'
+Assert-Contains $roundRenderer 'context.pose().translate(38, 40, 200);' 'The role name must move below the title and player-name rows.'
+Assert-Contains $roundRenderer 'PLAYER_CARD_TEXT_MAX_WIDTH / textWidth' 'Long end-game report text must scale down before it can overlap adjacent cards.'
+Assert-Contains $renderer 'PlayerNameLines storedNameLines = splitStoredDisplayName(fallbackName);' 'The end-game report must split the stored composed display name when the live title map is unavailable.'
+Assert-Contains $renderer 'fallbackName.getSiblings()' 'The stored end-game display name must be split from its structured Component children.'
 
 if ($failures.Count -gt 0) {
     foreach ($failure in $failures) {

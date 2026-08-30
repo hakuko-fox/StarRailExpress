@@ -38,6 +38,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -52,6 +53,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -414,6 +416,11 @@ public class RoleNameRenderer {
             fallbackName = Component.empty();
         }
 
+        PlayerNameLines storedNameLines = splitStoredDisplayName(fallbackName);
+        if (storedNameLines != null) {
+            return storedNameLines;
+        }
+
         String title = displayTags.get(playerId);
         if (title == null || title.isBlank()) {
             return new PlayerNameLines(null, fallbackName);
@@ -428,6 +435,25 @@ public class RoleNameRenderer {
             playerName = customName != null ? customName : target.getName();
         } else if (playerProfile != null) {
             playerName = Component.literal(playerProfile.getName());
+        }
+        return new PlayerNameLines(titleTag, playerName);
+    }
+
+    private static PlayerNameLines splitStoredDisplayName(Component fallbackName) {
+        List<Component> siblings = fallbackName.getSiblings();
+        if (!(fallbackName.getContents() instanceof PlainTextContents.LiteralContents literal)
+                || !"[".equals(literal.text())
+                || siblings.size() < 3
+                || !"] ".equals(siblings.get(1).getString())) {
+            return null;
+        }
+
+        MutableComponent titleTag = Component.literal("[")
+                .append(siblings.get(0).copy())
+                .append("]");
+        MutableComponent playerName = siblings.get(2).copy();
+        for (int i = 3; i < siblings.size(); i++) {
+            playerName.append(siblings.get(i).copy());
         }
         return new PlayerNameLines(titleTag, playerName);
     }
