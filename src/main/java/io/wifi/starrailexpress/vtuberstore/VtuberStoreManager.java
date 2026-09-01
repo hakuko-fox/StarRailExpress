@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.network.VtuberStoreCatalogPayload;
+import io.wifi.starrailexpress.network.VtuberStorePurchaseResultPayload;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.util.SREPlayerUtils;
@@ -73,29 +74,29 @@ public final class VtuberStoreManager {
     }
 
     public static void handlePurchase(ServerPlayer player, String productId) {
-        if (!SRE.isLobby) {
-            fail(player, "message.sre.vtuber_store.hub_only");
+        if (SREGameWorldComponent.KEY.get(player.serverLevel()).isRunning()) {
+            fail(player, productId, "message.sre.vtuber_store.game_running");
             return;
         }
         if (!BackpackManager.isLoaded(player.getUUID())) {
-            fail(player, "message.sre.vtuber_store.not_loaded");
+            fail(player, productId, "message.sre.vtuber_store.not_loaded");
             return;
         }
         CatalogProduct product = findProduct(productId);
         VtuberStoreConfig.ProductSetting setting = config.setting(productId);
         if (product == null || setting == null || !Boolean.TRUE.equals(setting.enabled)) {
-            fail(player, "message.sre.vtuber_store.unavailable");
+            fail(player, productId, "message.sre.vtuber_store.unavailable");
             return;
         }
 
         boolean purchased;
         if (product.kind() == CatalogProduct.Kind.SKIN) {
             if (!ItemSkinManager.getSkins(product.subtype()).containsKey(product.value())) {
-                fail(player, "message.sre.vtuber_store.unavailable");
+                fail(player, productId, "message.sre.vtuber_store.unavailable");
                 return;
             }
             if (ownsSkin(player, product.subtype(), product.value())) {
-                fail(player, "message.sre.vtuber_store.already_owned");
+                fail(player, productId, "message.sre.vtuber_store.already_owned");
                 return;
             }
             purchased = BackpackManager.tryBuyStoreSkin(player, product.subtype(), product.value(), setting.price);
@@ -104,13 +105,18 @@ public final class VtuberStoreManager {
         }
 
         if (!purchased) {
-            fail(player, "message.sre.vtuber_store.insufficient");
+            fail(player, productId, "message.sre.vtuber_store.insufficient");
             return;
         }
         Component name = Component.translatable(product.translationKey());
         player.sendSystemMessage(Component.translatable("message.sre.vtuber_store.purchased", name, setting.price));
         player.displayClientMessage(Component.translatable("message.sre.vtuber_store.purchased", name, setting.price),
                 true);
+        int cardCount = product.kind() == CatalogProduct.Kind.CARD
+                ? BackpackManager.getCardCount(player, product.cardType())
+                : -1;
+        ServerPlayNetworking.send(player, new VtuberStorePurchaseResultPayload(true, productId,
+                "message.sre.vtuber_store.purchased", BackpackManager.getVtuberCoins(player), cardCount));
     }
 
     public static boolean ownsSkin(ServerPlayer player, String skinType, String skinId) {
@@ -179,8 +185,11 @@ public final class VtuberStoreManager {
         }
     }
 
-    private static void fail(ServerPlayer player, String translationKey) {
+    private static void fail(ServerPlayer player, String productId, String translationKey) {
         player.displayClientMessage(Component.translatable(translationKey), true);
+        ServerPlayNetworking.send(player, new VtuberStorePurchaseResultPayload(false,
+                productId == null ? "" : productId, translationKey,
+                BackpackManager.isLoaded(player.getUUID()) ? BackpackManager.getVtuberCoins(player) : 0, -1));
     }
 
     public record CatalogSnapshot(List<CatalogEntry> products) {

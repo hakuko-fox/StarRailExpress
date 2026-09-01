@@ -278,7 +278,10 @@ public final class BackpackManager {
         entry.online = true;
         send(player, entry);
         if (!isDatabaseEnabled()) {
+            loadLocal(player, entry);
             entry.loaded = true;
+            entry.dirty = true;
+            send(player, entry);
             migrateIfNeeded(player);
             return;
         }
@@ -326,7 +329,10 @@ public final class BackpackManager {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
             entry.online = false;
-            if (!isDatabaseEnabled() || flushBlocking(player.getUUID())) {
+            if (!isDatabaseEnabled()) {
+                saveLocal(player, entry);
+                ENTRIES.remove(player.getUUID(), entry);
+            } else if (flushBlocking(player.getUUID())) {
                 ENTRIES.remove(player.getUUID(), entry);
             } else {
                 SRE.LOGGER.warn("Keeping unsaved backpack data for {} in memory after disconnect",
@@ -392,7 +398,28 @@ public final class BackpackManager {
         entry.updatedAt = Math.max(System.currentTimeMillis(), entry.updatedAt + 1L);
         entry.state.version = entry.updatedAt;
         entry.dirty = true;
+        saveLocal(player, entry);
         send(player, entry);
+    }
+
+    private static void loadLocal(ServerPlayer player, Entry entry) {
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return;
+        }
+        String json = BackpackSavedData.get(server).get(player.getUUID());
+        if (json == null || json.isBlank()) {
+            return;
+        }
+        entry.state = fromJson(json);
+        entry.updatedAt = Math.max(entry.updatedAt, entry.state.version);
+    }
+
+    private static void saveLocal(ServerPlayer player, Entry entry) {
+        MinecraftServer server = player.getServer();
+        if (server != null) {
+            BackpackSavedData.get(server).put(player.getUUID(), toJson(entry.state, entry.updatedAt));
+        }
     }
 
     private static void send(ServerPlayer player, Entry entry) {

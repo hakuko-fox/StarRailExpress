@@ -821,6 +821,10 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(VtuberStoreCatalogPayload.ID,
                 (payload, context) -> context.client().execute(() ->
                         io.wifi.starrailexpress.client.data.ClientVtuberStoreCache.update(payload.json())));
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.VtuberStorePurchaseResultPayload.ID,
+                (payload, context) -> context.client().execute(() ->
+                        io.wifi.starrailexpress.client.gui.screen.VtuberStoreScreen.handlePurchaseResult(payload)));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.HatEquipmentSyncPayload.ID,
                 (payload, context) -> context.client()
                         .execute(() -> io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.applySync(payload)));
