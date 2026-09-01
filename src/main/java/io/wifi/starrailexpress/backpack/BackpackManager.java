@@ -72,6 +72,94 @@ public final class BackpackManager {
         return getEntry(player.getUUID()).state.cards.getOrDefault(type, 0);
     }
 
+    public static int getVtuberCoins(ServerPlayer player) {
+        return getEntry(player.getUUID()).state.vtuberCoins;
+    }
+
+    public static boolean ownsStoreSkin(ServerPlayer player, String skinType, String skinId) {
+        return getEntry(player.getUUID()).state.purchasedSkins.contains(storeSkinKey(skinType, skinId));
+    }
+
+    public static boolean setVtuberCoins(ServerPlayer player, int amount) {
+        if (amount < 0 || !isLoaded(player.getUUID())) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        entry.state.vtuberCoins = amount;
+        markDirty(player, entry);
+        return true;
+    }
+
+    public static boolean addVtuberCoins(ServerPlayer player, int amount) {
+        if (!isLoaded(player.getUUID())) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        long next = (long) entry.state.vtuberCoins + amount;
+        if (next < 0L || next > Integer.MAX_VALUE) {
+            return false;
+        }
+        entry.state.vtuberCoins = (int) next;
+        markDirty(player, entry);
+        return true;
+    }
+
+    public static boolean awardVtuberCoins(ServerPlayer player, UUID roundId, int amount) {
+        if (roundId == null || amount < 0 || !isLoaded(player.getUUID())) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        String id = roundId.toString();
+        if (id.equals(entry.state.lastVtuberCoinRoundId)) {
+            return false;
+        }
+        long next = (long) entry.state.vtuberCoins + amount;
+        if (next > Integer.MAX_VALUE) {
+            return false;
+        }
+        entry.state.vtuberCoins = (int) next;
+        entry.state.lastVtuberCoinRoundId = id;
+        markDirty(player, entry);
+        return true;
+    }
+
+    public static boolean tryBuyStoreSkin(ServerPlayer player, String skinType, String skinId, int price) {
+        if (price < 0 || !isLoaded(player.getUUID())) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        String key = storeSkinKey(skinType, skinId);
+        if (entry.state.purchasedSkins.contains(key) || entry.state.vtuberCoins < price) {
+            return false;
+        }
+        entry.state.vtuberCoins -= price;
+        entry.state.purchasedSkins.add(key);
+        markDirty(player, entry);
+        return true;
+    }
+
+    public static boolean tryBuyFactionCard(ServerPlayer player, FactionCardType type, int price) {
+        if (type == FactionCardType.NONE || price < 0 || !isLoaded(player.getUUID())) {
+            return false;
+        }
+        Entry entry = getEntry(player.getUUID());
+        if (entry.state.vtuberCoins < price) {
+            return false;
+        }
+        int current = entry.state.cards.getOrDefault(type, 0);
+        if (current == Integer.MAX_VALUE) {
+            return false;
+        }
+        entry.state.vtuberCoins -= price;
+        entry.state.cards.put(type, current + 1);
+        markDirty(player, entry);
+        return true;
+    }
+
+    public static String storeSkinKey(String skinType, String skinId) {
+        return "skin:" + skinType + ":" + skinId;
+    }
+
     public static void addCard(ServerPlayer player, FactionCardType type, int count) {
         if (type == FactionCardType.NONE || count == 0) {
             return;
@@ -194,6 +282,9 @@ public final class BackpackManager {
             migrateIfNeeded(player);
             return;
         }
+        if (entry.loaded && entry.dirty) {
+            return;
+        }
         reloadFromDatabase(player, entry);
     }
 
@@ -202,6 +293,7 @@ public final class BackpackManager {
             return;
         }
         entry.loadInFlight = true;
+        entry.lastLoadAttemptAt = System.currentTimeMillis();
         MysqlPlayerDataStore.loadBatchAsync(player.getUUID(), List.of(PART))
                 .whenComplete((records, throwable) -> {
                     entry.loadInFlight = false;
@@ -233,10 +325,13 @@ public final class BackpackManager {
     private static void onDisconnect(ServerPlayer player) {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
-            // Use async flush to avoid blocking the network thread.
-            // Final data is guaranteed by SERVER_STOPPING → flushAllBlocking.
-            flushAsync(player, entry);
-            ENTRIES.remove(player.getUUID(), entry);
+            entry.online = false;
+            if (!isDatabaseEnabled() || flushBlocking(player.getUUID())) {
+                ENTRIES.remove(player.getUUID(), entry);
+            } else {
+                SRE.LOGGER.warn("Keeping unsaved backpack data for {} in memory after disconnect",
+                        player.getUUID());
+            }
         }
     }
 
@@ -244,7 +339,15 @@ public final class BackpackManager {
         long now = System.currentTimeMillis();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             Entry entry = ENTRIES.get(player.getUUID());
-            if (entry == null || !entry.online || !entry.dirty || entry.saveInFlight
+            if (entry == null || !entry.online) {
+                continue;
+            }
+            if (!entry.loaded && !entry.loadInFlight
+                    && now - entry.lastLoadAttemptAt >= FLUSH_INTERVAL_MS) {
+                reloadFromDatabase(player, entry);
+                continue;
+            }
+            if (!entry.dirty || entry.saveInFlight
                     || now - entry.lastFlushAt < FLUSH_INTERVAL_MS) {
                 continue;
             }
@@ -268,15 +371,16 @@ public final class BackpackManager {
                         if (throwable != null) {
                             SRE.LOGGER.warn("Failed to save backpack part for {}", player.getUUID(), throwable);
                         } else {
-                            reloadFromDatabase(player, entry);
+                            SRE.LOGGER.warn("Failed to save backpack part for {}; retaining local changes for retry",
+                                    player.getUUID());
                         }
                     }
                 });
     }
 
     private static void flushAllBlocking(MinecraftServer server) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            flushBlocking(player.getUUID());
+        for (UUID playerUuid : List.copyOf(ENTRIES.keySet())) {
+            flushBlocking(playerUuid);
         }
     }
 
@@ -324,5 +428,6 @@ public final class BackpackManager {
         private volatile boolean saveInFlight;
         private volatile long updatedAt;
         private volatile long lastFlushAt;
+        private volatile long lastLoadAttemptAt;
     }
 }

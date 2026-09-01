@@ -136,6 +136,7 @@ import io.wifi.starrailexpress.network.OnGameStartedPayload;
 import io.wifi.starrailexpress.network.OpenProgressionScreenPayload;
 import io.wifi.starrailexpress.network.OpenSkinScreenPaylod;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
+import io.wifi.starrailexpress.network.VtuberStoreCatalogPayload;
 import io.wifi.starrailexpress.network.PlayerDeathPayload;
 import io.wifi.starrailexpress.network.PlayerStatsSyncPayload;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
@@ -817,6 +818,9 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(PlayerDataPartSyncPayload.ID,
                 (payload, context) -> context.client().execute(() -> ClientPlayerDataCache.update(payload.playerUuid(),
                         payload.part(), payload.json(), payload.updatedAt())));
+        ClientPlayNetworking.registerGlobalReceiver(VtuberStoreCatalogPayload.ID,
+                (payload, context) -> context.client().execute(() ->
+                        io.wifi.starrailexpress.client.data.ClientVtuberStoreCache.update(payload.json())));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.HatEquipmentSyncPayload.ID,
                 (payload, context) -> context.client()
                         .execute(() -> io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.applySync(payload)));

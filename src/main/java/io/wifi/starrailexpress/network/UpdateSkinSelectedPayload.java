@@ -18,6 +18,7 @@ package io.wifi.starrailexpress.network;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.vtuberstore.VtuberStoreManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -52,7 +53,8 @@ public record UpdateSkinSelectedPayload(String id, String name) implements Custo
             context.server().execute(() -> {
                 SREPlayerSkinsComponent skincca = SREPlayerSkinsComponent.KEY.get(context.player());
                 if (!skincca.isSkinUnlockedForItemType(payload.id, payload.name) && !PlayerEconomyManager
-                        .isSkinUnlockedForItemType(context.player(), payload.id, payload.name)) {
+                        .isSkinUnlockedForItemType(context.player(), payload.id, payload.name)
+                        && !VtuberStoreManager.ownsSkin(context.player(), payload.id, payload.name)) {
                     return;
                 }
                 PlayerEconomyManager.setEquippedSkinForItemType(context.player(), payload.id, payload.name);

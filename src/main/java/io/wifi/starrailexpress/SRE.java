@@ -118,6 +118,7 @@ public class SRE extends StarRailExpressID implements ModInitializer {
         net.exmo.sre.sync.EquippedSkinsDatabaseSync.registerEvents();
         ProgressionDataManager.registerEvents();
         io.wifi.starrailexpress.backpack.BackpackManager.registerEvents();
+        io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.registerEvents();
         io.wifi.starrailexpress.roster.RoleRosterManager.registerEvents();
         SREPayloadRegister.registerPayloadTypes();
         SREReceiverRegister.registerGlobalReceivers();

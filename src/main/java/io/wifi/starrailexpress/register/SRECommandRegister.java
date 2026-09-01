@@ -90,6 +90,7 @@ public class SRECommandRegister {
             SkinsCommand.register(dispatcher);
             ProgressionCommand.register(dispatcher);
             BackpackCommand.register(dispatcher);
+            VtuberCoinCommand.register(dispatcher);
             RoleRosterCommand.register(dispatcher);
             ScheduleCommand.register(dispatcher);
             PlushCommand.register(dispatcher);

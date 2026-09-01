@@ -103,6 +103,8 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(TriggerScreenEdgeEffectPayload.ID,
                 TriggerScreenEdgeEffectPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(UpdateSkinSelectedPayload.ID, UpdateSkinSelectedPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(VtuberStorePurchasePayload.ID, VtuberStorePurchasePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(VtuberStoreCatalogPayload.ID, VtuberStoreCatalogPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(UpdateNameTagSelectedPayload.ID,
                 UpdateNameTagSelectedPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(RemoveStatusBarPayload.ID, RemoveStatusBarPayload.CODEC);

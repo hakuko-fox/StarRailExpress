@@ -18,7 +18,9 @@ package io.wifi.starrailexpress.backpack;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 场外背包数据模型（Gson POJO）。卡牌以计数形式存储，复用通行证的 {@link FactionCardType}。
@@ -26,6 +28,12 @@ import java.util.Map;
  */
 public final class BackpackState {
     public Map<FactionCardType, Integer> cards = new EnumMap<>(FactionCardType.class);
+    /** 跨局 Vtuber Coin。與局內 {@code SREPlayerShopComponent} 金幣完全分離。 */
+    public int vtuberCoins;
+    /** 商店購買的永久皮膚權益，元素格式為 {@code skin:<type>:<id>}。 */
+    public Set<String> purchasedSkins = new HashSet<>();
+    /** 最近一次已發獎的場次 UUID，防止同一結算重複入帳。 */
+    public String lastVtuberCoinRoundId = "";
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
     public boolean migrated = false;
     public long version;
@@ -51,6 +59,14 @@ public final class BackpackState {
         }
         // 钳制负值
         cards.replaceAll((type, count) -> count == null ? 0 : Math.max(0, count));
+        vtuberCoins = Math.max(0, vtuberCoins);
+        if (purchasedSkins == null) {
+            purchasedSkins = new HashSet<>();
+        }
+        purchasedSkins.removeIf(id -> id == null || id.isBlank());
+        if (lastVtuberCoinRoundId == null) {
+            lastVtuberCoinRoundId = "";
+        }
         return this;
     }
 
@@ -60,6 +76,11 @@ public final class BackpackState {
             this.cards.putAll(other.cards);
         }
         this.migrated = other.migrated;
+        this.vtuberCoins = other.vtuberCoins;
+        this.purchasedSkins = other.purchasedSkins == null
+                ? new HashSet<>()
+                : new HashSet<>(other.purchasedSkins);
+        this.lastVtuberCoinRoundId = other.lastVtuberCoinRoundId;
         this.version = other.version;
         normalized();
     }

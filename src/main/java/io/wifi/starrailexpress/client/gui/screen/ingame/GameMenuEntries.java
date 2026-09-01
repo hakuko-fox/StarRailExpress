@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.gui.screen.BackpackScreen;
 import io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen;
 import io.wifi.starrailexpress.client.gui.screen.SkinManagementScreen;
+import io.wifi.starrailexpress.client.gui.screen.VtuberStoreScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
 import io.wifi.starrailexpress.client.util.TaskInstinctManager;
@@ -139,6 +140,10 @@ public class GameMenuEntries {
         // 库存管理
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
             minecraft.setScreen(new BackpackScreen(parent));
+            toggleViewMenu.accept(false);
+        }));
+        entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.vtuber_store"), (btn) -> {
+            minecraft.setScreen(new VtuberStoreScreen(parent));
             toggleViewMenu.accept(false);
         }));
         

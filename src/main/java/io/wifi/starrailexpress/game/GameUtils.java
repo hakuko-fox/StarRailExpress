@@ -1249,6 +1249,8 @@ public class GameUtils {
                     }
                 }
                 ProgressionDataManager.onRoundSettled(player, playerRole, isWinner);
+                io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.rewardPlayerForRound(
+                        world, gameMode, roundEnd, gameComponent, player, playerRole, isWinner);
             }
             TitleUnlockManager.processRound(world, roundEnd, gameComponent);
         }

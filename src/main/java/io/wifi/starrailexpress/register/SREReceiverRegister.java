@@ -68,6 +68,10 @@ public class SREReceiverRegister {
                                 payload.skip())));
 
         UpdateSkinSelectedPayload.registerReceiver();
+        ServerPlayNetworking.registerGlobalReceiver(VtuberStorePurchasePayload.ID,
+                (payload, context) -> context.server().execute(() ->
+                        io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.handlePurchase(
+                                context.player(), payload.productId())));
         UpdateNameTagSelectedPayload.registerReceiver();
         // 服务端处理客户端投票包
         ServerPlayNetworking.registerGlobalReceiver(VoteCastC2SPacket.TYPE, (packet, context) -> {
