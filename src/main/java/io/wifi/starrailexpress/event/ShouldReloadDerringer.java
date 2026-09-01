@@ -22,32 +22,10 @@ import net.minecraft.world.entity.player.Player;
 
 import static net.fabricmc.fabric.api.event.EventFactory.createArrayBacked;
 
-/**
- * 事件接口：计算击杀者击杀玩家后应获得的金币奖励总量。
- * 所有监听器的返回值将被累加作为最终奖励金额。
- *
- * <p>
- * Event interface that computes the total balance (currency) to award to the
- * killer
- * when a player is killed. All listener return values are summed to produce the
- * final amount.
- */
 public interface ShouldReloadDerringer {
 
     /**
-     * 计算击杀者金币奖励的事件。
-     * 游戏当前定义的死亡类型名称有：
-     * 'fell_out_of_train'、'poison'、'grenade'、'bat_hit'、'gun_shot'、'knife_stab'。
-     * 其他未显式定义的死亡类型默认为 'generic'。
-     *
-     * <p>
-     * Event callback to calculate the balance reward for the killer.
-     * The game currently has the following death type names defined:
-     * 'fell_out_of_train', 'poison', 'grenade', 'bat_hit', 'gun_shot',
-     * 'knife_stab'.
-     * Any other death type not explicitly defined will default to 'generic'.
-     *
-     * @see io.wifi.starrailexpress.game.GameConstants.DeathReasons
+     * 是否奖励德林加补充
      */
     Event<ShouldReloadDerringer> EVENT = createArrayBacked(ShouldReloadDerringer.class,
             listeners -> (victim, killer, deathReason) -> {

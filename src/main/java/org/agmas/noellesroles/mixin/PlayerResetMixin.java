@@ -15,6 +15,7 @@
 
 package org.agmas.noellesroles.mixin;
 
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -30,11 +31,11 @@ import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
 import org.agmas.noellesroles.content.entity.MudTrapEntity;
 import org.agmas.noellesroles.content.entity.TripwireTrapEntity;
 import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.packet.PlayerResetS2CPacket;
+import org.agmas.noellesroles.role_data.innocence.CakeMakerRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -88,6 +89,7 @@ public abstract class PlayerResetMixin {
         RoleUtils.removeAllPlayerAttributes(player);
         RoleUtils. removeAllEffects(player);
         player.setLastHurtByMob(null);
+        player.setLastHurtMob(null);
         player.setLastHurtByPlayer(null);
         TemporaryEffectPlayerComponent.KEY.get(player).init();
         SplitPersonalityComponent.KEY.get(player).clear();
@@ -116,7 +118,10 @@ public abstract class PlayerResetMixin {
         puppeteerComp.clear();
 
         // 清除蛋糕师组件状态（移除烟熏炉和已放置的蛋糕，防止残留到下一局）
-        CakeMakerComponent.KEY.get(player).clear();
+        CakeMakerRoleData cakeMaker = RoleData.getNullable(CakeMakerRoleData.class, player);
+        if (cakeMaker != null) {
+            cakeMaker.clear();
+        }
         // 删除modifier
         // WorldModifierComponent worldModifierComponent =
         // WorldModifierComponent.KEY.get(player.level());

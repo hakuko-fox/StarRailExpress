@@ -16,7 +16,10 @@ import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
+import io.wifi.starrailexpress.event.OnGameServerTick;
+import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
@@ -32,13 +35,19 @@ import net.minecraft.world.InteractionResult;
 public class BeeFamilyManager {
 
     public static final int BEE_QUEEN_IMPROVE_PRICE = 150;
-    public static final int BEE_POISON_TICKS = 15 * 20;
+    public static final int BEE_QUEEN_SELECT_QUEEN_PRICE = 300;
+    public static final int BEE_POISON_TICKS = 20 * 20;
+    public static final int REVIVE_COST_MONEY = 75;
+    public static final int REVIVE_COOLDOWN = 60 * 20;
+    public static final int KILL_AWARD_TO_QUEEN = 50;
+    public static final int BEE_WORKER_DEATH_TIMEOUT_TICKS = 120 * 20;
 
     /**
      * 领袖已招募蜂后时置为 true：场上所有蜜蜂家族职业释放技能后，
      * 中毒致死时间减半。每局开始时由 {@link #resetQueenLeaderBonus()} 复位。
      */
     public static boolean QUEEN_LEADER_BONUS = false;
+    public static boolean pendingCheck = false;
 
     public static void setQueenLeaderBonus(boolean value) {
         QUEEN_LEADER_BONUS = value;
@@ -49,6 +58,7 @@ public class BeeFamilyManager {
     }
 
     public static void registerEvents() {
+        OnGameServerTick.EVENT.register((world) -> tick(world));
         // 蜜蜂频道
         ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, serverPlayer, bound) -> {
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverPlayer.level());
@@ -110,7 +120,7 @@ public class BeeFamilyManager {
                         .noAnnouncement()
                         .build());
         RoleSkill.register(BounsRoles.BEE_QUEEN,
-                RoleSkill.skill(SRE.id("bee_queen"), "skill.noellesroles.bee_queen", (ctx) -> {
+                RoleSkill.skill(SRE.id("bee_queen/improve"), "skill.noellesroles.bee_queen.improve", (ctx) -> {
                     final var player = ctx.player();
                     if (!MoneyUtils.hasBalance(player, BeeFamilyManager.BEE_QUEEN_IMPROVE_PRICE)) {
                         player.displayClientMessage(Component.translatable("skill.noellesroles.bee_queen.no_money",
@@ -126,9 +136,75 @@ public class BeeFamilyManager {
                     MoneyUtils.addToBalance(player, -BeeFamilyManager.BEE_QUEEN_IMPROVE_PRICE);
                     cca.status = 1;
                     return true;
-                }).noCastCCA(true).recordReplay().showOnHud(true).cooldownSeconds(30).announceToSelf().build(),
+                }).noCastCCA(true).recordReplay().showOnHud(true).cooldownSeconds(60).announceToSelf().build(),
+                RoleSkill.skill(SRE.id("bee_queen/mark"), "skill.noellesroles.bee_queen.mark", (ctx) -> {
+                    final var player = ctx.player();
+                    if (!MoneyUtils.hasBalance(player, BeeFamilyManager.BEE_QUEEN_SELECT_QUEEN_PRICE)) {
+                        player.displayClientMessage(
+                                Component.translatable("skill.noellesroles.bee_queen.select.no_money",
+                                        BeeFamilyManager.BEE_QUEEN_SELECT_QUEEN_PRICE).withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    final var roledata = RoleData.getNullable(BeeFamilyRoleData.class, player);
+                    if (roledata == null) {
+                        return false;
+                    }
+                    if (roledata.markTarget != null) {
+                        if (player.level().getPlayerByUUID(roledata.markTarget) != null) {
+                            player.displayClientMessage(
+                                    Component.translatable("skill.noellesroles.bee_queen.select.already")
+                                            .withStyle(ChatFormatting.RED),
+                                    true);
+                            return false;
+                        }
+                    }
+                    if (ctx.target() == null) {
+                        player.displayClientMessage(
+                                Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+
+                    if (!(ctx.player().serverLevel().getEntity(ctx.target()) instanceof PlayerBodyEntity be)) {
+                        player.displayClientMessage(
+                                Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    if (be.getPlayerUuid() == null) {
+                        player.displayClientMessage(
+                                Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    if (!(player.level()
+                            .getPlayerByUUID(be.getPlayerUuid()) instanceof ServerPlayer marktargetplayer)) {
+                        player.displayClientMessage(
+                                Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    if (GameUtils.isPlayerAliveAndSurvival(marktargetplayer)) {
+                        player.displayClientMessage(
+                                Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
+                    MoneyUtils.addToBalance(player, -BeeFamilyManager.BEE_QUEEN_SELECT_QUEEN_PRICE);
+                    roledata.markSuccessor(marktargetplayer.getUUID());
+                    return true;
+                }).noCastCCA(true)
+                        .withTarget()
+                        .recordReplay()
+                        .targetType((t) -> t instanceof PlayerBodyEntity)
+                        .showOnHud(true)
+                        .cooldownSeconds(60)
+                        .announceToSelf()
+                        .build(),
                 RoleSkill.skill(SRE.id("bee_channel"),
                         "skill.noellesroles.bee_channel", (ctx) -> changeChannel(ctx))
+                        .noCastCCA(true)
                         .cooldownTicks(1)
                         .showOnHud(true)
                         .toggleable(true)
@@ -181,13 +257,22 @@ public class BeeFamilyManager {
             if (cca.hasCooldown()) {
                 return InteractionResult.PASS;
             }
-            cca.setCooldown(60 * 20);
+            if (!MoneyUtils.hasBalance(interacting, REVIVE_COST_MONEY)) {
+                player.displayClientMessage(
+                        Component.translatable("hud.noellesroles.bee_family.money", REVIVE_COST_MONEY)
+                                .withStyle(ChatFormatting.RED),
+                        true);
+                return InteractionResult.PASS;
+            }
+            MoneyUtils.addToBalance(interacting, -REVIVE_COST_MONEY);
+            cca.setCooldown(REVIVE_COOLDOWN);
 
             SRERole reviveRole = BounsRoles.BEE_WORKER;
             if (cca.status == 1) {
                 reviveRole = BounsRoles.BEE_WASP;
                 cca.status = 0;
             }
+
             final SRERole selectedRole = reviveRole;
             serverLevel.players().forEach(
                     a -> {
@@ -200,14 +285,38 @@ public class BeeFamilyManager {
                         }
                     });
             revived.getInventory().clearContent();
+            final SRERole beforeRole = gameWorldComponent.getRole(revived);
             RoleUtils.changeRole(revived, selectedRole);
             GameUtils.revivePlayer(revived, body.getX(), body.getY(), body.getZ());
             body.discard(); // like it never existed
 
             RoleUtils.sendWelcomeAnnouncement(revived);
-
+            if (!(beforeRole instanceof BeeFamilyRole))
+                RoleData.ifPresent(BeeFamilyRoleData.class, revived, (data) -> data.beforeRole = beforeRole);
             return InteractionResult.CONSUME;
         }));
+        OnPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
+            if (RoleUtils.getPlayerRole(player) instanceof BeeFamilyRole) {
+                BeeFamilyRole.onDeath(player, killer, deathReason);
+            }
+        });
+        OnPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
+            if (killer == null) {
+                return;
+            }
+            var worldcca = SREGameWorldComponent.getInstance(player);
+            var role = worldcca.getRole(killer);
+            if (!(role instanceof BeeFamilyRole)) {
+                return;
+            }
+            for (final var p : player.level().players()) {
+                if (!GameUtils.isPlayerAliveAndSurvival(p))
+                    continue;
+                if (worldcca.isRole(p, BounsRoles.BEE_QUEEN)) {
+                    SREPlayerShopComponent.KEY.get(p).addToBalance(KILL_AWARD_TO_QUEEN);
+                }
+            }
+        });
     }
 
     private static boolean changeChannel(RoleSkillContext ctx) {
@@ -251,7 +360,7 @@ public class BeeFamilyManager {
                     Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED), true);
             return false;
         }
-        if (!(RoleUtils.getPlayerRole(target) instanceof BeeFamilyRole)) {
+        if ((RoleUtils.getPlayerRole(target) instanceof BeeFamilyRole)) {
             player.displayClientMessage(
                     Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED), true);
             return false;
@@ -267,5 +376,62 @@ public class BeeFamilyManager {
             GameUtils.forceKillPlayer(player, true, null, GameConstants.DeathReasons.BEE_USED_OUT_SKILL);
         }
         return true;
+    }
+
+    public static boolean shouldPreventGameEnd(ServerLevel serverLevel) {
+        var cca = SREGameWorldComponent.KEY.get(serverLevel);
+        for (ServerPlayer p : serverLevel.players())
+            if (GameUtils.isPlayerAliveAndSurvival(p) && cca.getRole(p) instanceof BeeFamilyRole)
+                return true;
+        return false;
+    }
+
+    /**
+     * 检查蜜蜂家族是否全体死亡。如果是恢复死者原本职业。
+     */
+    public static void checkBeeFamilyFailure(ServerLevel serverLevel) {
+        final var gamecca = SREGameWorldComponent.KEY.get(serverLevel);
+        int aliveBees = 0;
+        for (var player : serverLevel.players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                continue;
+            }
+            if (gamecca.getRole(player) instanceof BeeFamilyRole) {
+                aliveBees++;
+            }
+        }
+        if (aliveBees <= 0) {
+            beeFamilyFailed(serverLevel);
+        }
+    }
+
+    public static void tick(ServerLevel world) {
+        if(pendingCheck){
+            pendingCheck = false;
+            checkBeeFamilyFailure(world);
+        }
+    }
+
+    public static void beeFamilyFailed(ServerLevel serverLevel) {
+        SRE.LOGGER.info("Bee family failed! Try restore roles.");
+        final var gamecca = SREGameWorldComponent.KEY.get(serverLevel);
+        for (var player : serverLevel.players()) {
+            if (gamecca.getRole(player) instanceof BeeFamilyRole) {
+                RoleData.ifPresent(BeeFamilyRoleData.class, player, (data) -> {
+                    if (data.beforeRole != null && !(data.beforeRole instanceof BeeFamilyRole)) {
+                        // 变回原有角色！
+                        RoleUtils.changeRole(player, data.beforeRole, true, false, false, true);
+                    }
+                });
+            }
+        }
+    }
+
+    public static void pendingCheckFailure() {
+        pendingCheck = true;
+    }
+
+    public static void reset() {
+        pendingCheck = false;
     }
 }

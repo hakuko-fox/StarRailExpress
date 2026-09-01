@@ -244,6 +244,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         FakeSteveClient.register();
+        // ClientFakeSteveHuntState.register();
         TimeRewindClientEffect.initialize();
         DynamiclightsEntry.registerClientEvents();
         // 注册各职业的背包界面扩展（旧版 ScreenMixin 的替代：SRERole 钩子，客户端注册）
@@ -1198,25 +1199,30 @@ public class NoellesrolesClient implements ClientModInitializer {
                 manipulatorCameraBound = false;
             }
         });
-        // 鸟兽兽巡飞弹：相机绑定到弹体，弹体自动前进，按 A/W 左转、D 右转。
+        // 鸟兽兽巡飞弹：相机绑定到弹体，弹体自动前进并跟随玩家视野方向。
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.level == null) {
                 return;
             }
             if (client.getCameraEntity() instanceof org.agmas.noellesroles.content.entity.NiaoshoushouMissileEntity missile) {
-                if (missile.isRemoved()) {
+                // 导弹被移除、已从客户端世界消失（如飞出加载区块后实体冻结在原地，
+                // isRemoved 不会置位），或超出 128 格控制距离时，都必须把相机还给玩家，
+                // 否则视角会卡死在导弹最后停留的位置。
+                if (missile.isRemoved()
+                        || client.level.getEntity(missile.getId()) != missile
+                        || client.player.distanceToSqr(missile) > 128.0D * 128.0D) {
                     client.setCameraEntity(client.player);
                     return;
                 }
                 int steering = 0;
-                if (client.options.keyLeft.isDown() || client.options.keyUp.isDown()) {
+                if (client.options.keyLeft.isDown()) {
                     steering--;
                 }
                 if (client.options.keyRight.isDown()) {
                     steering++;
                 }
                 ClientPlayNetworking.send(new org.agmas.noellesroles.packet.NiaoshoushouMissileControlC2SPacket(
-                        missile.getId(), steering));
+                        missile.getId(), client.player.getYRot(), client.player.getXRot(), steering));
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

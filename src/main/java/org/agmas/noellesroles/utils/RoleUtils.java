@@ -24,6 +24,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SRERoleDataPlayerComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -330,6 +331,13 @@ public class RoleUtils extends MCItemsUtils {
         if (player instanceof ServerPlayer sp) {
             if (!noEventCall)
                 (ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(sp, role);
+            else {
+                // 还是需要初始化一下RoleData类
+                {
+                    final var cca = SRERoleDataPlayerComponent.KEY.get(player);
+                    cca.init();
+                }
+            }
         }
     }
 
@@ -661,6 +669,10 @@ public class RoleUtils extends MCItemsUtils {
 
     public static int getRoleType(SRERole role) {
         return PlayerRoleWeightManager.getRoleType(role);
+    }
+
+    public static int getRoleType(SRERole role, int nullRoleNumber) {
+        return PlayerRoleWeightManager.getRoleType(role, nullRoleNumber);
     }
 
     public static Component getRoleTypeName(SRERole role) {

@@ -31,12 +31,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.entity.WheelchairEntity;
 import org.agmas.noellesroles.role_data.vigilante.GhostEyeRoleData;
 import org.agmas.noellesroles.role_data.innocence.AdventurerRoleData;
+import org.agmas.noellesroles.role_data.innocence.CakeMakerRoleData;
 import org.agmas.noellesroles.role_data.innocence.JadeGeneralRoleData;
 import org.agmas.noellesroles.role_data.killer.DoremyRoleData;
 import org.agmas.noellesroles.role_data.killer.ImitatorRoleData;
@@ -407,7 +407,10 @@ public class AbilityHandler {
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.CAKE_MAKER)) {
-            ModComponents.CAKE_MAKER.get(player).useSmoker();
+            CakeMakerRoleData cakeMaker = RoleData.getNullable(CakeMakerRoleData.class, player);
+            if (cakeMaker != null) {
+                cakeMaker.useSmoker();
+            }
             return;
         }
         if (gameWorldComponent.isRole(player, ModRoles.ADVENTURER)) {
@@ -422,7 +425,7 @@ public class AbilityHandler {
                 var chairDurability = we.durability;
                 we.discard();
                 var it = ModItems.WHEELCHAIR.getDefaultInstance();
-                it.setDamageValue(it.getMaxDamage() - chairDurability);
+                it.setDamageValue(it.getMaxDamage() - chairDurability / 20);
                 RoleUtils.insertStackInFreeSlot(player, it);
                 player.stopRiding();
                 player.getCooldowns().addCooldown(ModItems.WHEELCHAIR, 40);
@@ -505,12 +508,12 @@ public class AbilityHandler {
                 return;
             }
             shopCca.addToBalance(-SKILL_COST);
-            if (DoremyRoleData.tryDream(sp, 30 * 20)) {
+            if (DoremyRoleData.tryDream(sp, 15 * 20)) {
                 player.displayClientMessage(
                         Component.translatable("skill.noellesroles.doremy_dream.success", sp.getName())
                                 .withStyle(ChatFormatting.GREEN),
                         true);
-                cca.cooldownForDoremyDream = 145 * 20;
+                cca.cooldownForDoremyDream = THDoremyRole.COOLDOWN_FOR_DREAM;
                 cca.sync();
             } else {
                 player.displayClientMessage(

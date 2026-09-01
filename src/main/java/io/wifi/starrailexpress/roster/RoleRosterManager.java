@@ -18,10 +18,15 @@ package io.wifi.starrailexpress.roster;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 
 import com.google.gson.Gson;
@@ -30,6 +35,7 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.network.RoleRosterSyncPayload;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -82,13 +88,13 @@ public final class RoleRosterManager {
     public static boolean isRoleEnabled(SRERole role) {
         if (!SREConfig.instance().enableRoster || !state.enabled)
             return true;
-        return state.roleCounts.getOrDefault(role.identifier().toString(), 1) > 0;
+        return state.roleCounts.getOrDefault(role.identifier().toString(), 0) > 0;
     }
 
     public static boolean isModifierEnabled(SREModifier modifier) {
         if (!SREConfig.instance().enableRoster || !state.enabled)
             return true;
-        return state.modifierCounts.getOrDefault(modifier.identifier().toString(), 1) > 0;
+        return state.modifierCounts.getOrDefault(modifier.identifier().toString(), 0) > 0;
     }
 
     public static boolean isEnabled() {
@@ -100,21 +106,36 @@ public final class RoleRosterManager {
     // ------------------------------------------------------------------
 
     private static void onServerStarted(MinecraftServer startedServer) {
-        if (!SREConfig.instance().enableRoster)
-            return;
         server = startedServer;
+        loadDataFromFile();
+        loadDataFromServer();
+    }
+
+    public static boolean loadDataFromFile() {
+
+        if (!SREConfig.instance().enableRoster)
+            return false;
         // 先读本地文件（即使数据库不可用也有配置可用）
         RoleRosterState local = readLocalFile();
         if (local != null) {
             state = local.normalized();
+        } else {
+            return false;
         }
         broadcast();
+        return true;
+    }
+
+    public static boolean loadDataFromServer() {
+
+        if (!SREConfig.instance().enableRoster)
+            return false;
         // 再尝试从数据库覆盖（数据库版本更新时为准）
         if (!isDatabaseEnabled()) {
-            return;
+            return false;
         }
         if (SREConfig.instance().ignoreMysqlRosterConfig) {
-            return;
+            return false;
         }
         MysqlPlayerDataStore.loadBatchAsync(CONFIG_UUID, List.of(PART))
                 .whenComplete((records, throwable) -> {
@@ -139,8 +160,8 @@ public final class RoleRosterManager {
                         }
                     });
                 });
+        return true;
     }
-
     // ------------------------------------------------------------------
     // 修改入口（均在服务端线程调用）
     // ------------------------------------------------------------------
@@ -190,7 +211,9 @@ public final class RoleRosterManager {
         state.version = Math.max(System.currentTimeMillis(), state.version + 1L);
         state.normalized();
         writeLocalFile();
-        saveToDatabase();
+        if (!SREConfig.instance().ignoreMysqlRosterConfig) {
+            saveToDatabase();
+        }
         broadcast();
     }
 
@@ -204,7 +227,7 @@ public final class RoleRosterManager {
     // ------------------------------------------------------------------
 
     private static void broadcast() {
-        if (!SREConfig.instance().enableRoster){
+        if (!SREConfig.instance().enableRoster) {
             return;
         }
         MinecraftServer srv = server;
@@ -233,7 +256,7 @@ public final class RoleRosterManager {
         if (!isDatabaseEnabled()) {
             return;
         }
-        
+
         if (SREConfig.instance().ignoreMysqlRosterConfig) {
             return;
         }
@@ -251,7 +274,7 @@ public final class RoleRosterManager {
         if (!isDatabaseEnabled()) {
             return;
         }
-        
+
         if (SREConfig.instance().ignoreMysqlRosterConfig) {
             return;
         }
@@ -292,5 +315,222 @@ public final class RoleRosterManager {
 
     private static String toJson(RoleRosterState value) {
         return GSON.toJson(value);
+    }
+
+    public static void randomRoster(int roleNum, int modifierNum) {
+        randomRoster(roleNum, modifierNum, false);
+    }
+
+    public static void randomRoster(int roleNum, int modifierNum, boolean forceCount) {
+        // state.version++;
+        state.roleCounts.clear();
+        state.modifierCounts.clear();
+
+        // 1. 计算各阵营目标数量
+        RoleCounts targets = computeTargetCounts(roleNum);
+        if (targets.isInvalid() || modifierNum <= 0) {
+            return;
+        }
+
+        // 2. 分类所有角色和修饰符
+        RolePools pools = classifyAllRoles();
+        List<SREModifier> allModifiers = new ArrayList<>(HMLModifiers.MODIFIERS);
+
+        // 3. 随机初选
+        Set<SRERole> selectedRoles = initialRoleSelection(pools, targets);
+        Set<SREModifier> selectedModifiers = initialModifierSelection(allModifiers, modifierNum);
+
+        // 4. 补充关联（职业/修饰符）
+        expandRelations(selectedRoles, selectedModifiers);
+
+        // 5. 删除多余项（保证数量不超目标）
+        if (forceCount) {
+            trimModifiers(selectedModifiers, modifierNum);
+            trimRoles(selectedRoles, targets, pools);
+        }
+
+        // 6. 应用结果并广播
+        applyResult(selectedRoles, selectedModifiers);
+    }
+
+    // ---------- 辅助数据结构 ----------
+    private static class RoleCounts {
+        final int killer;
+        final int neutrals;
+        final int vigilante;
+        final int innocent;
+
+        RoleCounts(int killer, int neutrals, int vigilante, int innocent) {
+            this.killer = killer;
+            this.neutrals = neutrals;
+            this.vigilante = vigilante;
+            this.innocent = innocent;
+        }
+
+        boolean isInvalid() {
+            return killer < 0 || neutrals < 0 || vigilante < 0 || innocent < 0;
+        }
+    }
+
+    public static class RolePools {
+        final List<SRERole> innocent;
+        final List<SRERole> neutrals;
+        final List<SRERole> vigilante;
+        final List<SRERole> killer;
+
+        RolePools(List<SRERole> innocent, List<SRERole> neutrals,
+                List<SRERole> vigilante, List<SRERole> killer) {
+            this.innocent = innocent;
+            this.neutrals = neutrals;
+            this.vigilante = vigilante;
+            this.killer = killer;
+        }
+
+        public boolean isEmpty() {
+            return innocent.isEmpty() || neutrals.isEmpty() ||
+                    vigilante.isEmpty() || killer.isEmpty();
+        }
+    }
+
+    // ---------- 步骤方法 ----------
+    private static RoleCounts computeTargetCounts(int roleNum) {
+        int killer = roleNum / 6;
+        int neutrals = roleNum / 6;
+        int vigilante = roleNum / 6;
+        int innocent = roleNum - killer - neutrals - vigilante;
+        return new RoleCounts(killer, neutrals, vigilante, innocent);
+    }
+
+    private static RolePools classifyAllRoles() {
+        List<SRERole> innocent = new ArrayList<>();
+        List<SRERole> neutrals = new ArrayList<>();
+        List<SRERole> vigilante = new ArrayList<>();
+        List<SRERole> killer = new ArrayList<>();
+
+        for (SRERole role : TMMRoles.ROLES.values()) {
+            if (role.canUseKiller() && !role.isNeutrals() && !role.isInnocent()) {
+                killer.add(role);
+            } else if (role.isNeutrals()) {
+                neutrals.add(role);
+            } else if (role.isVigilanteTeam()) {
+                vigilante.add(role);
+            } else {
+                innocent.add(role);
+            }
+        }
+        return new RolePools(innocent, neutrals, vigilante, killer);
+    }
+
+    private static Set<SRERole> initialRoleSelection(RolePools pools, RoleCounts targets) {
+        Collections.shuffle(pools.innocent);
+        Collections.shuffle(pools.vigilante);
+        Collections.shuffle(pools.neutrals);
+        Collections.shuffle(pools.killer);
+
+        Set<SRERole> selected = new HashSet<>();
+        selected.addAll(pools.innocent.subList(0, Math.min(pools.innocent.size(), targets.innocent)));
+        selected.addAll(pools.killer.subList(0, Math.min(pools.killer.size(), targets.killer)));
+        selected.addAll(pools.neutrals.subList(0, Math.min(pools.neutrals.size(), targets.neutrals)));
+        selected.addAll(pools.vigilante.subList(0, Math.min(pools.vigilante.size(), targets.vigilante)));
+        return selected;
+    }
+
+    private static Set<SREModifier> initialModifierSelection(List<SREModifier> allModifiers, int modifierNum) {
+        Collections.shuffle(allModifiers);
+        return new HashSet<>(allModifiers.subList(0, Math.min(allModifiers.size(), modifierNum)));
+    }
+
+    private static void expandRelations(Set<SRERole> selectedRoles, Set<SREModifier> selectedModifiers) {
+        // 由角色扩展
+        for (SRERole role : new ArrayList<>(selectedRoles)) {
+            selectedRoles.addAll(role.relatedRoles);
+            selectedRoles.addAll(role.occupationRoles);
+            selectedRoles.addAll(role.occupationedRoles);
+            selectedModifiers.addAll(role.relatedModifiers);
+        }
+        // 由修饰符扩展
+        for (SREModifier modifier : new ArrayList<>(selectedModifiers)) {
+            selectedRoles.addAll(modifier.relatedRoles);
+        }
+    }
+
+    private static void trimModifiers(Set<SREModifier> selectedModifiers, int targetCount) {
+        // 找出可删除的修饰符（无关联角色）
+        Set<SREModifier> removable = new HashSet<>();
+        for (SREModifier mod : selectedModifiers) {
+            if (mod.relatedRoles.isEmpty()) {
+                removable.add(mod);
+            }
+        }
+        List<SREModifier> removableList = new ArrayList<>(removable);
+        Collections.shuffle(removableList);
+
+        while (selectedModifiers.size() > targetCount && !removableList.isEmpty()) {
+            SREModifier toRemove = removableList.remove(0);
+            selectedModifiers.remove(toRemove);
+        }
+    }
+
+    private static void trimRoles(Set<SRERole> selectedRoles, RoleCounts targets, RolePools pools) {
+        // 收集各阵营当前数量及可删除角色
+        int nowKiller = 0, nowNeutrals = 0, nowVigilante = 0, nowInnocent = 0;
+        Set<SRERole> removableKiller = new HashSet<>();
+        Set<SRERole> removableNeutrals = new HashSet<>();
+        Set<SRERole> removableVigilante = new HashSet<>();
+        Set<SRERole> removableInnocent = new HashSet<>();
+
+        for (SRERole role : selectedRoles) {
+            // 统计当前数量
+            if (role.canUseKiller() && !role.isNeutrals() && !role.isInnocent()) {
+                nowKiller++;
+            } else if (role.isNeutrals()) {
+                nowNeutrals++;
+            } else if (role.isVigilanteTeam()) {
+                nowVigilante++;
+            } else {
+                nowInnocent++;
+            }
+
+            // 判断是否可删除（无任何关联）
+            if (role.occupationRoles.isEmpty() && role.occupationedRoles.isEmpty() && role.relatedRoles.isEmpty()
+                    && role.relatedModifiers.isEmpty()) {
+                if (role.canUseKiller() && !role.isNeutrals() && !role.isInnocent()) {
+                    removableKiller.add(role);
+                } else if (role.isNeutrals()) {
+                    removableNeutrals.add(role);
+                } else if (role.isVigilanteTeam()) {
+                    removableVigilante.add(role);
+                } else {
+                    removableInnocent.add(role);
+                }
+            }
+        }
+
+        // 分别按阵营删除多余（打乱后逐个移除）
+        trimRoleGroup(selectedRoles, removableKiller, nowKiller, targets.killer);
+        trimRoleGroup(selectedRoles, removableNeutrals, nowNeutrals, targets.neutrals);
+        trimRoleGroup(selectedRoles, removableVigilante, nowVigilante, targets.vigilante);
+        trimRoleGroup(selectedRoles, removableInnocent, nowInnocent, targets.innocent);
+    }
+
+    private static void trimRoleGroup(Set<SRERole> selected, Set<SRERole> removable,
+            int currentCount, int targetCount) {
+        List<SRERole> list = new ArrayList<>(removable);
+        Collections.shuffle(list);
+        while (currentCount > targetCount && !list.isEmpty()) {
+            SRERole toRemove = list.remove(0);
+            selected.remove(toRemove);
+            currentCount--;
+        }
+    }
+
+    private static void applyResult(Set<SRERole> selectedRoles, Set<SREModifier> selectedModifiers) {
+        for (SRERole role : selectedRoles) {
+            state.roleCounts.put(role.identifier().toString(), 1);
+        }
+        for (SREModifier modifier : selectedModifiers) {
+            state.modifierCounts.put(modifier.identifier().toString(), 1);
+        }
+        broadcast();
     }
 }

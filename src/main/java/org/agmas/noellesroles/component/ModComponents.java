@@ -24,9 +24,7 @@ import org.agmas.noellesroles.Noellesroles;
 import net.exmo.sre.repair.component.RepairRolePlayerComponent;
 import org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity;
 import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerComponent;
 import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.locksmith_inspiration.LocksmithInspirationComponent;
 import org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent;
 import org.agmas.noellesroles.game.roles.vigilante.everly.EverlyPlayerComponent;
@@ -105,12 +103,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   // 氦气变声组件 - 独立同步给所有玩家
   public static final ComponentKey<HeliumBuzzPlayerComponent> HELIUM_BUZZ = HeliumBuzzPlayerComponent.KEY;
 
-  public static final ComponentKey<LocksmithInspirationComponent> LOCKSMITH_INSPIRATION = ComponentRegistry
-      .getOrCreate(
-          ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "locksmith_inspiration"),
-          LocksmithInspirationComponent.class);
-
-
   public static final ComponentKey<RepairRolePlayerComponent> REPAIR_ROLES = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "repair_roles"),
       RepairRolePlayerComponent.class);
@@ -120,7 +112,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "infected"),
       InfectedPlayerComponent.class);
 
-  public static final ComponentKey<CakeMakerComponent> CAKE_MAKER = CakeMakerComponent.KEY;
   public static final ComponentKey<HalicPlayerComponent> HALIC = HalicPlayerComponent.KEY;
   public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent> HAKUKO_FOX =
       org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY;
@@ -198,11 +189,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(HeliumBuzzPlayerComponent::new);
 
-    // 注册锁匠灵感组件 - 存储灵感点数和看门进度
-    registry.beginRegistration(Player.class, LOCKSMITH_INSPIRATION)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(LocksmithInspirationComponent::new);
-
     // 注册FOOD & DRINK组件 - 存储到并非所有人身上
     registry.beginRegistration(Player.class, FoodDrinkGlowComponent.KEY)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
@@ -220,10 +206,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
     registry.beginRegistration(Player.class, INFECTED)
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(InfectedPlayerComponent::new);
-
-    registry.beginRegistration(Player.class, CAKE_MAKER)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(CakeMakerComponent::new);
 
     // 注册 Dream 虚拟血量：挂在所有玩家身上
     registry.beginRegistration(Player.class, DREAM_HEALTH)

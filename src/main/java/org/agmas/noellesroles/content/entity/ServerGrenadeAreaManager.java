@@ -34,23 +34,51 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.agmas.noellesroles.init.ModEffects;
+
 /**
  * 手雷落点地面区域管理器（燃烧弹 / 粘液弹通用）。
  * <ul>
- *   <li>{@link Type#FIRE} 燃烧弹：范围内玩家持续站立满 {@link #FIRE_KILL_TICKS}（2s）后死亡（离开即重置计时）。</li>
- *   <li>{@link Type#SLIME} 粘液弹：范围内玩家持续获得缓慢III + 无法跳跃（跳跃提升 128 级，负跳跃力）。</li>
+ * <li>{@link Type#FIRE} 燃烧弹：范围内玩家持续站立满
+ * {@link #FIRE_KILL_TICKS}（2s）后死亡（离开即重置计时）。</li>
+ * <li>{@link Type#SLIME} 粘液弹：范围内玩家持续获得缓慢III + 无法跳跃（跳跃提升 128 级，负跳跃力）。</li>
  * </ul>
  * 纯服务端；粒子由服务端 {@code sendParticles} 广播，无需客户端管理器。
  * 每 tick 由 {@code NRGameStateEvents} 调用 {@link #tick()}。
  */
 public class ServerGrenadeAreaManager {
 
-    public enum Type { FIRE, SLIME }
+    public enum Type {
+        FIRE, NIAOSHOU_FIRE, SLIME
+    }
 
     /** 燃烧弹：持续站立多少 tick 后死亡（2 秒）。 */
     private static final int FIRE_KILL_TICKS = 40;
+    /** 鸟兽兽燃烧弹：比普通燃烧弹快 40%（1.2 秒）。 */
+    private static final int NIAOSHOU_FIRE_KILL_TICKS = 24;
 
     private static final List<Area> activeAreas = new ArrayList<>();
+    private static final List<PendingFireKill> pendingFireKills = new ArrayList<>();
+
+    /** 在命中点记录范围内玩家，延迟点燃击杀；用于巡飞弹的瞬时范围伤害。 */
+    public static void scheduleFireKill(ServerLevel world, Vec3 position, double radius, int delayTicks,
+            UUID owner) {
+        AABB box = new AABB(position.x - radius, position.y - 1, position.z - radius,
+                position.x + radius, position.y + 3, position.z + radius);
+        List<UUID> targets = new ArrayList<>();
+        for (ServerPlayer player : world.getEntitiesOfClass(ServerPlayer.class, box,
+                GameUtils::isPlayerAliveAndSurvival)) {
+            double dx = player.getX() - position.x;
+            double dz = player.getZ() - position.z;
+            if (dx * dx + dz * dz <= radius * radius) {
+                player.setRemainingFireTicks(Math.max(player.getRemainingFireTicks(), delayTicks));
+                targets.add(player.getUUID());
+            }
+        }
+        if (!targets.isEmpty()) {
+            pendingFireKills.add(new PendingFireKill(world, targets, Math.max(1, delayTicks), owner));
+        }
+    }
 
     /** 创建一个地面区域。owner 可为 null（投掷者已下线）。 */
     public static void createArea(ServerLevel world, Vec3 position, double radius, int durationTicks,
@@ -60,6 +88,12 @@ public class ServerGrenadeAreaManager {
 
     /** 每服务端 tick 更新所有区域。 */
     public static void tick() {
+        Iterator<PendingFireKill> pendingIterator = pendingFireKills.iterator();
+        while (pendingIterator.hasNext()) {
+            if (pendingIterator.next().tick()) {
+                pendingIterator.remove();
+            }
+        }
         Iterator<Area> iterator = activeAreas.iterator();
         while (iterator.hasNext()) {
             if (iterator.next().tick()) {
@@ -71,6 +105,35 @@ public class ServerGrenadeAreaManager {
     /** 清除所有区域（如需在游戏结束时调用）。 */
     public static void clearAll() {
         activeAreas.clear();
+        pendingFireKills.clear();
+    }
+
+    private static class PendingFireKill {
+        private final ServerLevel world;
+        private final List<UUID> targets;
+        private final UUID owner;
+        private int remainingTicks;
+
+        PendingFireKill(ServerLevel world, List<UUID> targets, int remainingTicks, UUID owner) {
+            this.world = world;
+            this.targets = targets;
+            this.remainingTicks = remainingTicks;
+            this.owner = owner;
+        }
+
+        boolean tick() {
+            if (--remainingTicks > 0) {
+                return false;
+            }
+            ServerPlayer killer = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
+            for (UUID targetId : targets) {
+                ServerPlayer target = world.getServer().getPlayerList().getPlayer(targetId);
+                if (target != null && target.level() == world && GameUtils.isPlayerAliveAndSurvival(target)) {
+                    GameUtils.killPlayer(target, true, killer, GameConstants.DeathReasons.FLAMETHROWER_BURNED);
+                }
+            }
+            return true;
+        }
     }
 
     private static class Area {
@@ -136,8 +199,8 @@ public class ServerGrenadeAreaManager {
                 // 缓慢 III（放大值 2）
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2,
                         false, false, true));
-                // 无法跳跃：跳跃提升放大值 128（作为 byte 溢出为负，跳跃力为负 → 无法起跳）
-                player.addEffect(new MobEffectInstance(MobEffects.JUMP, 20, 128,
+                // 无法跳跃：0.1*11 <= 0
+                player.addEffect(new MobEffectInstance(ModEffects.JUMP_DECREASE, 20, 100,
                         false, false, false));
             }
         }
@@ -149,7 +212,8 @@ public class ServerGrenadeAreaManager {
                 // 视觉反馈：点燃
                 player.setRemainingFireTicks(Math.max(player.getRemainingFireTicks(), 20));
                 int ticks = standTicks.merge(player.getUUID(), 1, Integer::sum);
-                if (ticks >= FIRE_KILL_TICKS) {
+                int killTicks = type == Type.NIAOSHOU_FIRE ? NIAOSHOU_FIRE_KILL_TICKS : FIRE_KILL_TICKS;
+                if (ticks >= killTicks) {
                     standTicks.remove(player.getUUID());
                     ServerPlayer killer = owner == null ? null
                             : world.getServer().getPlayerList().getPlayer(owner);
@@ -161,7 +225,7 @@ public class ServerGrenadeAreaManager {
         }
 
         private void spawnParticles() {
-            if (type == Type.FIRE) {
+            if (type != Type.SLIME) {
                 for (int i = 0; i < 6; i++) {
                     double ox = (world.random.nextDouble() - 0.5) * radius * 2;
                     double oz = (world.random.nextDouble() - 0.5) * radius * 2;

@@ -56,6 +56,7 @@ import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,6 +92,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canBeXiaonao = false;
     protected boolean canXiaonao = false;
     protected Function<RoleDataContext, RoleData> roleDataFunc = null;
+
+    // ---------- 初始金币数 ----------
+    protected int initialCoinCount = -1; // -1 = 不修改
+    // ---------- 与结束游戏相关 ----------
+    protected boolean canIncreaseSurvivingInnocents = false;
+    protected boolean canIncreaseSurvivingKillers = false;
 
     /**
      * 获取职业数据。用于替代CCA。
@@ -786,8 +793,16 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.instinctNightVision;
     }
 
+    public boolean haveInstinctNightVision(Player player) {
+        return haveInstinctNightVision();
+    }
+
     public boolean canUseInstinct() {
         return this.canUseInstinct;
+    }
+
+    public boolean canUseInstinct(Player player) {
+        return canUseInstinct();
     }
 
     public SRERole setColor(int color) {
@@ -996,6 +1011,15 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return true;
     }
 
+    /**
+     * 在玩家变旁观前触发。
+     * 
+     * @param victim
+     * @param spawnBody
+     * @param killer
+     * @param deathReason
+     * @param forceDeath
+     */
     public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason,
             boolean forceDeath) {
         return;
@@ -1302,6 +1326,8 @@ public abstract class SRERole extends SREAbstractInfoClass {
         this.canEarnKillerCoinAwardsFromKills = this.canUseKiller && !this.isInnocent && !this.isNeutrals;
         this.canBeXiaonao = this.canUseKiller || !this.isInnocent || this.isNeutrals;
         this.canXiaonao = this.canUseKiller || !this.isInnocent || this.isNeutrals;
+        this.canIncreaseSurvivingInnocents = isInnocent();
+        this.canIncreaseSurvivingKillers = isKiller();
     }
 
     public SRERole setCanAutoAddMoney(boolean bl) {
@@ -1376,6 +1402,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     public int getMaxSprintTime(Player player) {
+        if (player.hasEffect(ModEffects.NO_STAMINA)) {
+            return 0;
+        }
         if (this.customSprintTimeGetter != null) {
             return this.customSprintTimeGetter.applyAsInt(player);
         }
@@ -2093,9 +2122,6 @@ public abstract class SRERole extends SREAbstractInfoClass {
         }
     }
 
-    // ---------- 初始金币数 ----------
-    protected int initialCoinCount = -1; // -1 = 不修改
-
     /** 设置该职业的初始金币数（-1 = 不覆盖默认值） */
     public SRERole setInitialCoinCount(int coins) {
         this.initialCoinCount = coins;
@@ -2142,12 +2168,22 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.isNeutralForInnocent() || this.isInnocent();
     }
 
+    public SRERole setCanIncreaseSurvivingInnocents(boolean flag) {
+        this.canIncreaseSurvivingInnocents = flag;
+        return this;
+    }
+
+    public SRERole setCanIncreaseSurvivingKillers(boolean flag) {
+        this.canIncreaseSurvivingKillers = flag;
+        return this;
+    }
+
     public boolean canIncreaseSurvivingInnocents() {
-        return isInnocent();
+        return this.canIncreaseSurvivingInnocents;
     }
 
     public boolean canIncreaseSurvivingKillers() {
-        return isKiller();
+        return this.canIncreaseSurvivingKillers;
     }
 
 }

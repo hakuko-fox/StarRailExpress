@@ -3,6 +3,8 @@ package org.agmas.noellesroles.game.fake_steve;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.event.OnGameEnd;
@@ -14,18 +16,23 @@ import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.init.ModEffects;
+// import org.agmas.noellesroles.packet.FakeSteveHuntS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -41,6 +48,8 @@ import java.util.UUID;
 public final class FakeSteveDirector {
     public static final String WINNER_ID = "fake_steve";
     private static final int CONTROL_EFFECT_TICKS = 30;
+    /** Longer than any round, without synchronizing the psycho component every tick. */
+    private static final int PERMANENT_PSYCHO_TICKS = Integer.MAX_VALUE;
     private static final Map<ResourceLocation, Session> SESSIONS = new HashMap<>();
     private static boolean registered;
 
@@ -67,6 +76,7 @@ public final class FakeSteveDirector {
                 session.active = true;
                 session.pendingEvents = 1;
                 session.activationSource = ActivationSource.NATURAL_ROLL;
+                announceNaturalEvent(level);
             }
         });
 
@@ -90,11 +100,25 @@ public final class FakeSteveDirector {
             return TrueFalseResult.PASS;
         });
 
-        AllowGameEnd.EVENT.register((level, proposed, looseEnds) -> {
+        AllowGameEnd.EVENT_END.register((level, proposed, looseEnds) -> {
             Session session = session(level);
-            if (session != null && session.active && !session.victoryDeclared && hasWon(level, session)) {
-                declareVictory(level, session);
-                return GameUtils.WinStatus.CUSTOM;
+            if (session == null || !session.active || session.victoryDeclared) {
+                return GameUtils.WinStatus.NOT_MODIFY;
+            }
+            if (!session.huntPhase && shouldStartHunt(level, session)) {
+                startHunt(level, session);
+            }
+            if (session.huntPhase) {
+                if (FakeSteveRules.shouldDeclareHuntVictory(livingHumanCount(level))) {
+                    declareVictory(level, session);
+                    return GameUtils.WinStatus.CUSTOM;
+                }
+                // While at least one possessed body remains, ordinary team win
+                // conditions cannot cut the hunt short. Timeouts and a wiped
+                // fake faction fall back to the normal game verdict.
+                if (livingFakeCount(level) > 0 && proposed != GameUtils.WinStatus.TIME) {
+                    return GameUtils.WinStatus.NONE;
+                }
             }
             return GameUtils.WinStatus.NOT_MODIFY;
         });
@@ -122,6 +146,12 @@ public final class FakeSteveDirector {
     public static boolean isActive(ServerLevel level) {
         Session session = session(level);
         return session != null && session.active;
+    }
+
+    /** True after the 60% threshold has converted the round into the final hunt. */
+    public static boolean isHuntPhase(ServerLevel level) {
+        Session session = session(level);
+        return session != null && session.huntPhase;
     }
 
     public static boolean activate(ServerLevel level, ActivationSource source) {
@@ -178,6 +208,10 @@ public final class FakeSteveDirector {
                 .translatable("message.noellesroles.fake_steve.victim.replaced").withStyle(ChatFormatting.RED));
         WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.serverLevel());
         modifiers.addModifier(player.getUUID(), NRModifiers.FAKE_STEVE_REPLACED);
+        var originalRole = SREGameWorldComponent.KEY.get(player.serverLevel()).getRole(player);
+        if (originalRole != null && originalRole.canUseKiller()) {
+            SREPlayerShopComponent.KEY.get(player).addToBalance(200);
+        }
         session.agents.put(player.getUUID(), new FakeSteveAgentState(player.getUUID(), cause));
         applyControl(player);
         checkVictory(player.serverLevel(), session);
@@ -236,15 +270,25 @@ public final class FakeSteveDirector {
         if (generating) {
             FakeSteveApparitions.tick(level, session.pendingEvents > 0);
         }
+        if (session.huntPhase && FakeSteveRules.shouldRecallHuntPlayers(level.getGameTime(),
+                session.nextHuntRecallTick)) {
+            recallHuntPlayers(level, session, true);
+            session.nextHuntRecallTick = level.getGameTime() + FakeSteveRules.HUNT_ROOM_RECALL_INTERVAL_TICKS;
+        }
         for (UUID id : Set.copyOf(session.agents.keySet())) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
             if (player == null || player.serverLevel() != level) {
                 continue;
             }
             if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                if (session.huntPhase) {
+                    enforcePermanentPsycho(player);
+                }
                 applyControl(player);
+                FakeSteveMotionController.applyServerMotion(player, session.agents.get(id));
                 FakeSteveAi.tick(level, player, session.agents.get(id));
             } else {
+                FakeSteveMotionController.clear(player, session.agents.get(id));
                 removeControl(player);
             }
         }
@@ -282,18 +326,25 @@ public final class FakeSteveDirector {
         Session removed = SESSIONS.remove(level.dimension().location());
         FakeSteveApparitions.cancelAll(level);
         FakeSteveVoiceDetector.clear();
+        if (removed != null && removed.huntPhase) {
+            sendHuntScene(level, false);
+        }
         if (removed != null) {
             for (UUID id : removed.agents.keySet()) {
                 ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
                 if (player != null) {
+                    FakeSteveMotionController.clear(player, removed.agents.get(id));
                     removeControl(player);
+                    if (removed.huntPhase) {
+                        player.removeEffect(MobEffects.MOVEMENT_SPEED);
+                    }
                 }
             }
         }
     }
 
     private static boolean isValidTarget(ServerPlayer target) {
-        return GameUtils.isPlayerAliveAndSurvival(target) && !isReplaced(target)
+        return !target.isSpectator() && GameUtils.isPlayerAliveAndSurvival(target) && !isReplaced(target)
                 && SREGameWorldComponent.KEY.get(target.serverLevel()).getRole(target) != null;
     }
 
@@ -327,14 +378,141 @@ public final class FakeSteveDirector {
         return count;
     }
 
-    private static boolean hasWon(ServerLevel level, Session session) {
-        return FakeSteveRules.hasWon(livingFakeCount(level), session.startingPlayers);
+    private static boolean shouldStartHunt(ServerLevel level, Session session) {
+        return FakeSteveRules.shouldStartHunt(livingFakeCount(level), livingPlayerCount(level));
+    }
+
+    private static void announceNaturalEvent(ServerLevel level) {
+        Component title = Component.translatable("message.noellesroles.fake_steve.event.title")
+                .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD);
+        Component subtitle = Component.translatable("message.noellesroles.fake_steve.event.subtitle")
+                .withStyle(ChatFormatting.GRAY);
+        Component broadcast = Component.translatable("message.noellesroles.fake_steve.event.broadcast")
+                .withStyle(ChatFormatting.RED);
+        for (ServerPlayer player : level.players()) {
+            SRENetworkMessageUtils.sendTitleTime(player, 10, 80, 20);
+            SRENetworkMessageUtils.sendTitle(player, title);
+            SRENetworkMessageUtils.sendSubtitle(player, subtitle);
+            SRENetworkMessageUtils.sendBroadcast(player, broadcast);
+            player.playNotifySound(SoundEvents.SCULK_SHRIEKER_SHRIEK,
+                    SoundSource.MASTER, 0.75F, 0.72F);
+        }
+    }
+
+    private static int livingPlayerCount(ServerLevel level) {
+        int count = 0;
+        for (ServerPlayer player : level.players()) {
+            if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int livingHumanCount(ServerLevel level) {
+        int count = 0;
+        for (ServerPlayer player : level.players()) {
+            if (GameUtils.isPlayerAliveAndSurvival(player) && !isReplaced(player)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static void checkVictory(ServerLevel level, Session session) {
-        if (!session.victoryDeclared && hasWon(level, session)) {
+        if (session.victoryDeclared) {
+            return;
+        }
+        if (!session.huntPhase && shouldStartHunt(level, session)) {
+            startHunt(level, session);
+        }
+        if (session.huntPhase && FakeSteveRules.shouldDeclareHuntVictory(livingHumanCount(level))) {
             declareVictory(level, session);
         }
+    }
+
+    /** Teleports the living cast home, then turns every possessed body into a permanent hunter. */
+    private static void startHunt(ServerLevel level, Session session) {
+        if (session.huntPhase) {
+            return;
+        }
+        session.huntPhase = true;
+        session.nextHuntRecallTick = level.getGameTime() + FakeSteveRules.HUNT_ROOM_RECALL_INTERVAL_TICKS;
+        Component title = Component.translatable("message.noellesroles.fake_steve.hunt.title")
+                .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD);
+        Component subtitle = Component.translatable("message.noellesroles.fake_steve.hunt.subtitle")
+                .withStyle(ChatFormatting.RED);
+        Component broadcast = Component.translatable("message.noellesroles.fake_steve.hunt.broadcast")
+                .withStyle(ChatFormatting.RED);
+        recallHuntPlayers(level, session, false);
+        sendHuntScene(level, true);
+        for (ServerPlayer player : level.players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                continue;
+            }
+            SRENetworkMessageUtils.sendTitleTime(player, 10, 80, 20);
+            SRENetworkMessageUtils.sendTitle(player, title);
+            SRENetworkMessageUtils.sendSubtitle(player, subtitle);
+            SRENetworkMessageUtils.sendBroadcast(player, broadcast);
+            player.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 0.7F, 0.75F);
+        }
+    }
+
+    /** Reunites the living cast in their own rooms and clears stale AI routes before every hunt cycle. */
+    private static void recallHuntPlayers(ServerLevel level, Session session, boolean announce) {
+        for (ServerPlayer player : level.players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                continue;
+            }
+            GameUtils.teleportBackToRoom(player);
+            if (isReplaced(player)) {
+                enforcePermanentPsycho(player);
+                resetHuntAgent(session.agents.get(player.getUUID()), level.getGameTime());
+            }
+            if (announce) {
+                SRENetworkMessageUtils.sendActionbar(player, Component
+                        .translatable("message.noellesroles.fake_steve.hunt.recall")
+                        .withStyle(ChatFormatting.DARK_RED));
+            }
+        }
+    }
+
+    private static void resetHuntAgent(FakeSteveAgentState state, long gameTime) {
+        if (state == null) {
+            return;
+        }
+        state.path.clear();
+        state.pathGoal = null;
+        state.focusTarget = null;
+        state.committedTarget = null;
+        state.ambushGoal = null;
+        state.ambushTarget = null;
+        state.nextPathTick = gameTime;
+        state.brain.disengage();
+    }
+
+    private static void sendHuntScene(ServerLevel level, boolean active) {
+        // FakeSteveHuntS2CPacket packet = new FakeSteveHuntS2CPacket(active);
+        // for (ServerPlayer player : level.players()) {
+        //     ServerPlayNetworking.send(player, packet);
+        // }
+    }
+
+    private static void enforcePermanentPsycho(ServerPlayer player) {
+        SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
+        if (!psycho.inPsycho()) {
+            psycho.startPsycho_time(PERMANENT_PSYCHO_TICKS,
+                    GameConstants.getPsychoModeArmour(), true);
+        }
+        // A pre-existing temporary psycho needs replacing once. The component
+        // then has years of ticks remaining, while round cleanup still resets it.
+        if (psycho.getPsychoTicks() < PERMANENT_PSYCHO_TICKS / 2) {
+            psycho.setPsychoTicks(PERMANENT_PSYCHO_TICKS);
+        }
+        // Amplifier 1 is Minecraft's Speed II. Renew with the other control
+        // effects so it lasts exactly for the hunt and never leaks to a round.
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED,
+                CONTROL_EFFECT_TICKS, 1, false, false, false));
     }
 
     private static void declareVictory(ServerLevel level, Session session) {
@@ -350,7 +528,9 @@ public final class FakeSteveDirector {
         private final int startingPlayers;
         private final Map<UUID, FakeSteveAgentState> agents = new HashMap<>();
         private boolean active;
+        private boolean huntPhase;
         private boolean victoryDeclared;
+        private long nextHuntRecallTick;
         private int pendingEvents;
         private ActivationSource activationSource;
 

@@ -83,8 +83,8 @@ public class GameConstants {
         ITEM_COOLDOWNS.put(TMMItems.NUNCHUCK, 160); // 8秒冷却
         ITEM_COOLDOWNS.put(TMMItems.SNIPER_RIFLE, 80); // 4秒冷却
 
-        SRE.LOGGER.debug("物品冷却时间已重载: 小刀={}秒, 左轮={}秒",
-                SREConfig.instance().knifeCooldown, SREConfig.instance().revolverCooldown);
+        SRE.LOGGER.debug("Item cooldown reloaded! Knife={}s, Revolver={}s", SREConfig.instance().knifeCooldown,
+                SREConfig.instance().revolverCooldown);
     }
 
     public static int JAMMED_DOOR_TIME = getInTicks(1, 0);
@@ -252,6 +252,9 @@ public class GameConstants {
         public static ResourceLocation HOT_POTATO = SRE.id("hot_potato");
         public static ResourceLocation CAT_KILLER = SRE.wifiId("cat_killer");
 
+        public static final ResourceLocation TARTAGLIA = Noellesroles.id("tartaglia");
+        public static final ResourceLocation TARTAGLIA_ARROW = Noellesroles.id("tartaglia_arrow");
+        public static final ResourceLocation FAKE_AI_BACKSTAB = Noellesroles.id("fake_steve_backstab");
         public static ResourceLocation SUIKA_RUSH = Noellesroles.id("suika_rush");
         public static ResourceLocation VOODOO = Noellesroles.id("voodoo");
         public static ResourceLocation SHOT_INNOCENT = Noellesroles.id("shot_innocent");
@@ -290,6 +293,7 @@ public class GameConstants {
         public static ResourceLocation WRAITH_ASSAULT = Noellesroles.id("wraith_assault");
         public static ResourceLocation VOTED_OUT = Noellesroles.id("voted_out");
         public static ResourceLocation PELICAN_EATEN = Noellesroles.id("pelican_eaten");
+        public static ResourceLocation YUYUKO_EATEN = Noellesroles.id("yuyuko_eaten");
 
         // Dream 特殊原版武器死因（伤害扣除虚拟血量），与铁斧/消防斧同类
         public static ResourceLocation DREAM_DIAMOND_SWORD = Noellesroles.id("dream_diamond_sword");

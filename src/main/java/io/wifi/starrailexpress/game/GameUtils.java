@@ -1030,18 +1030,6 @@ public class GameUtils {
             }
         }
 
-        // Don't set game status to ACTIVE here - it will be set after roles are
-        // assigned in initializeGame()
-        // Create a copy of entities to avoid concurrent modification issues
-        // List<net.minecraft.world.entity.Entity> entitiesToDiscard = new
-        // ArrayList<>();
-        // serverWorld.getAllEntities().forEach(entity -> {
-        // if (entity instanceof ItemEntity) {
-        // entitiesToDiscard.add(entity);
-        // }
-        // });
-        // entitiesToDiscard.forEach(net.minecraft.world.entity.Entity::discard);
-
         gameComponent.setJumpAvailable(areas.areasSettings.canJump);
 
         // 应用地图重力配置
@@ -1298,6 +1286,8 @@ public class GameUtils {
         player.setInvulnerable(false);
         // 体力重置。-1代表职业最大值
         StaminaCommand.setStamina(player, -1);
+        player.setLastHurtByMob(null);
+        player.setLastHurtByPlayer(null);
         // PlayerResetMixin插入位置
     }
 

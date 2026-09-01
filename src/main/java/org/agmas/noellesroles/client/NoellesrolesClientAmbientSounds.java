@@ -33,6 +33,11 @@ import org.agmas.noellesroles.role_data.innocence.GhostRoleData;
 public class NoellesrolesClientAmbientSounds {
 
   public static void register() {
+    // 伪人终局沿用亡命徒的环境音乐。场景状态来自服务端，故所有玩家同步听到。
+    // AmbienceUtil.registerBackgroundAmbience(
+    //     new BackgroundAmbience(NRSounds.MUSIC_UNWELCOME_SCHOOL,
+    //         player -> ClientFakeSteveHuntState.isActive(),
+    //         1));
     // 阿蒙终幕「阿蒙时刻」：使用 A_MENG 音乐，于终幕全程循环播放。
     AmbienceUtil.registerBackgroundAmbience(
         new BackgroundAmbience(NRSounds.A_MENG,

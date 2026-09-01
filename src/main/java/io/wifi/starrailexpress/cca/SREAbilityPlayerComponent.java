@@ -296,6 +296,11 @@ public class SREAbilityPlayerComponent
         sync();
     }
 
+    public void startContinuous(RoleSkill.Definition definition) {
+        castingSkill = definition.id();
+        lastHoldTick = Long.MIN_VALUE;
+    }
+
     public int getCastCount(ResourceLocation skillId) {
         return getSkillState(skillId).castCount;
     }
@@ -329,6 +334,9 @@ public class SREAbilityPlayerComponent
         if (definitions.isEmpty()) {
             return null;
         }
+        if (selectedSkill >= definitions.size()) {
+            selectedSkill = selectedSkill % definitions.size();
+        }
         var definition = definitions.get(selectedSkill);
         if (definition.noCastCCA()) {
             return null;
@@ -340,6 +348,9 @@ public class SREAbilityPlayerComponent
     private void mirrorSelectedSkill(List<RoleSkill.Definition> definitions) {
         if (definitions.isEmpty()) {
             return;
+        }
+        if (selectedSkill >= definitions.size()) {
+            selectedSkill = selectedSkill % definitions.size();
         }
         var definition = definitions.get(selectedSkill);
         if (definition.noCastCCA()) {

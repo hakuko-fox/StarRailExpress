@@ -77,6 +77,8 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import net.exmo.sre.repair.role.RepairRoles;
+
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -886,7 +888,6 @@ public class RoleShopHandler {
         // 强盗商店（已调整价格与条目）
         {
             BANDIT_SHOP.add(new KillerKnifeShopEntry(
-
                     200));
 
             // 匪徒短管霰弹枪 - 450金币
@@ -1667,24 +1668,9 @@ public class RoleShopHandler {
             axeLore.add(Component.translatable("item.noellesroles.dream_axe.shop_lore3")
                     .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
             axeDisplay.set(DataComponents.LORE, new ItemLore(axeLore));
-            DREAM_SHOP.add(new ShopEntry(axeDisplay,
-                    dreamConfig.dreamAxePrice, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    if (!SREItemUtils.insertStackInFreeSlot(player, this.stack().copy())) {
-                        return false;
-                    }
-                    DynamicShopComponent dynamicShop = DynamicShopComponent.KEY.get(player);
-                    ResourceLocation axeId = BuiltInRegistries.ITEM.getKey(ModItems.DREAM_AXE);
-                    if (dynamicShop.getPurchaseCount(axeId) == 0) {
-                        // 首购后挂 -50%：从第二把起半价
-                        dynamicShop.setPercentDiscount(axeId, 50);
-                    }
-                    dynamicShop.recordPurchase(axeId);
-                    return true;
-                }
-            });
-            // 巨幕面具 - 350金币：购买即进入狂暴（Psycho 逻辑，不给球棒/面具），冷却挂在面具物品上
+            DREAM_SHOP.add(new KillerKnifeShopEntry(axeDisplay,
+                    dreamConfig.dreamAxePrice, 50));
+            // 巨幕面具 - 400金币：购买即进入狂暴（Psycho 逻辑，不给球棒/面具），冷却挂在面具物品上
             ItemStack maskDisplay = ModItems.DREAM_MASK.getDefaultInstance();
             var maskLore = new ArrayList<Component>();
             maskLore.add(Component.translatable("item.noellesroles.dream_mask.lore1")
@@ -1725,17 +1711,11 @@ public class RoleShopHandler {
             DREAM_SHOP.add(new ShopEntry(boatDisplay,
                     dreamConfig.dreamBoatPrice, ShopEntry.Type.TOOL));
             // 范围关灯 - 150金币：购买即以自己为中心熄灭半径30格的灯，冷却与普通关灯一致
-            ItemStack blackoutDisplay = ModItems.DREAM_BLACKOUT.getDefaultInstance();
-            var blackoutLore = new ArrayList<Component>();
-            blackoutLore.add(Component.translatable("item.noellesroles.dream_blackout.lore1")
-                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
-            blackoutLore.add(Component.translatable("item.noellesroles.dream_blackout.lore2")
-                    .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
-            blackoutDisplay.set(DataComponents.LORE, new ItemLore(blackoutLore));
+            ItemStack blackoutDisplay = ModItems.AREA_BLACKOUT.getDefaultInstance();
             DREAM_SHOP.add(new ShopEntry(blackoutDisplay, dreamConfig.dreamBlackoutPrice, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
-                    if (player.getCooldowns().isOnCooldown(ModItems.DREAM_BLACKOUT)) {
+                    if (player.getCooldowns().isOnCooldown(ModItems.AREA_BLACKOUT)) {
                         return false;
                     }
                     SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(player.level());
@@ -1746,7 +1726,7 @@ public class RoleShopHandler {
                             NoellesRolesConfig.HANDLER.instance().dreamBlackoutRadius, true,
                             SREWorldBlackoutComponent.getMaxDuration(player.level()));
                     // 冷却与普通关灯一致
-                    player.getCooldowns().addCooldown(ModItems.DREAM_BLACKOUT,
+                    player.getCooldowns().addCooldown(ModItems.AREA_BLACKOUT,
                             Math.max(60 * 20, GameConstants.getBlackoutCooldownGlobal()));
                     return true;
                 }
@@ -3111,6 +3091,8 @@ public class RoleShopHandler {
         {
             ShopContent.customEntries.put(
                     ModRoles.PELICAN_ID, PELICAN_SHOP);
+            ShopContent.customEntries.put(
+                    THMiscRoles.YUYUKO.identifier(), PELICAN_SHOP);
         }
 
         // 教父商店
@@ -3565,11 +3547,11 @@ public class RoleShopHandler {
                 }
             });
             // 范围关灯（r=24） - 160金币：购买即以自己为中心熄灭半径24格的灯
-            YOULU_SHOP.add(new ShopEntry(ModItems.DREAM_BLACKOUT.getDefaultInstance(), 160,
+            YOULU_SHOP.add(new ShopEntry(ModItems.AREA_BLACKOUT.getDefaultInstance(), 160,
                     ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
-                    if (player.getCooldowns().isOnCooldown(ModItems.DREAM_BLACKOUT)) {
+                    if (player.getCooldowns().isOnCooldown(ModItems.AREA_BLACKOUT)) {
                         return false;
                     }
                     SREWorldBlackoutComponent blackout = SREWorldBlackoutComponent.KEY.get(player.level());
@@ -3580,7 +3562,7 @@ public class RoleShopHandler {
                             NoellesRolesConfig.HANDLER.instance().youluBlackoutRadius, true,
                             SREWorldBlackoutComponent.getMaxDuration(player.level()));
                     // 冷却与普通关灯一致
-                    player.getCooldowns().addCooldown(ModItems.DREAM_BLACKOUT,
+                    player.getCooldowns().addCooldown(ModItems.AREA_BLACKOUT,
                             Math.max(60 * 20, GameConstants.getBlackoutCooldownGlobal()));
                     return true;
                 }

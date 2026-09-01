@@ -292,9 +292,6 @@ public class ModItems {
     public static final Item NIAOSHOU_SHOU_MISSILE = register(
             new NiaoshoushouMissileItem(new Item.Properties().stacksTo(1)),
             "niaoshoushou_missile", WEAPONS_GROUP);
-    public static final Item NIAOSHOU_SHOU_BLACKOUT = register(
-            new NiaoshoushouBlackoutItem(new Item.Properties().stacksTo(1)),
-            "niaoshoushou_blackout", ROLE_ITEMS_GROUP);
     public static final Item STALKER_KNIFE = register(
             new StalkerKnifeItem(new Item.Properties().stacksTo(1)),
             "stalker_knife", WEAPONS_GROUP);
@@ -903,12 +900,12 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.DreamBoatItem(new Item.Properties().stacksTo(1)),
             "dream_boat", ROLE_ITEMS_GROUP);
     /**
-     * Dream 的范围关灯
+     * 范围关灯
      * - 右键：熄灭半径30格内的灯（一次性）
      */
-    public static final Item DREAM_BLACKOUT = register(
-            new org.agmas.noellesroles.content.item.DreamBlackoutItem(new Item.Properties().stacksTo(1)),
-            "dream_blackout", ROLE_ITEMS_GROUP);
+    public static final Item AREA_BLACKOUT = register(
+            new AreaBlackoutItem(new Item.Properties().stacksTo(1)),
+            "area_blackout", ROLE_ITEMS_GROUP);
 
     /**
      * Dream 酿的酒
@@ -1268,13 +1265,13 @@ public class ModItems {
 
     /**
      * 计算解药（Antidote）的冷却时间：
-     * - 医生职业：20秒
+     * - 医生职业：15秒
      * - 非医生职业：30秒
      * - 若场上存在疫使，冷却额外减少40%（无论是否医生）
      */
     public static int getAntidoteCooldown(ServerPlayer player) {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.serverLevel());
-        int cd = gameWorld.isRole(player, ModRoles.DOCTOR) ? getInTicks(0, 20) : getInTicks(0, 30);
+        int cd = gameWorld.isRole(player, ModRoles.DOCTOR) ? getInTicks(0, 15) : getInTicks(0, 30);
         for (ServerPlayer sp : player.serverLevel().players()) {
             if (gameWorld.isRole(sp, ModRoles.INFECTED)) {
                 cd = (int) (cd * 0.6);

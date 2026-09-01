@@ -50,6 +50,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.role_data.neutral.MonokumaRoleData;
 import org.agmas.noellesroles.api.time.TimeRewind;
@@ -61,6 +62,7 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEventsRegister;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
+import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
@@ -118,7 +120,6 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
     @Override
     public void serverTick() {
-
         if (isPendingRestore) {
             isPendingRestore = false;
             afterLooseEndTryRestore(pendingWho);
@@ -375,7 +376,14 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 finishLooseEndRestore(serverLevel, capturedArea, bodies);
             }
         };
-
+        // 给予 2 tick 的deathPenalty
+        for (var player : players) {
+            var dpc = DeathPenaltyComponent.KEY.get(player);
+            if (dpc.hasPenalty()) {
+                continue;
+            }
+            dpc.setPenalty(2, true);
+        }
         for (var player : players) {
             var ppc = SREPlayerPsychoComponent.KEY.get(player);
             if (ppc.psychoTicks > 0) {
@@ -478,6 +486,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         if (!(who instanceof ServerPlayer sp)) {
             return;
         }
+        MCItemsUtils.clearItem(who);
         SREGameTimeComponent gameTimeComponent = SREGameTimeComponent.KEY.get(sp.level());
         gameTimeComponent.setTime(lastTime);
         var gameWorldComponent = SREGameWorldComponent.KEY.get(sp.level());

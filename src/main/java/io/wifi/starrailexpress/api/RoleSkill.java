@@ -27,6 +27,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+
 import org.agmas.noellesroles.AbilityHandler;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Unified role skill registry.
@@ -85,7 +89,23 @@ public final class RoleSkill {
 
         @Nullable
         public ServerPlayer getTargetAsPlayer() {
+            if (target() == null)
+                return null;
             return player.serverLevel().getPlayerByUUID(target()) instanceof ServerPlayer sp ? sp : null;
+        }
+
+        @Nullable
+        public <T extends Entity> T getTargetAs(Class<T> clazz) {
+            final var level = player.serverLevel();
+            if (target() == null)
+                return null;
+            var entity = level.getEntity(target());
+            if (entity == null)
+                return null;
+            if (clazz.isInstance(entity)) {
+                return clazz.cast(entity);
+            }
+            return null;
         }
     }
 
@@ -186,6 +206,7 @@ public final class RoleSkill {
             boolean modeSwitch,
             boolean showOnHud,
             boolean withTarget,
+            Predicate<Entity> targetType,
             boolean haveRecord,
             Handler handler,
             Component recordName) {
@@ -222,6 +243,7 @@ public final class RoleSkill {
         private boolean modeSwitch;
         private boolean showOnHud = false;
         private Component recordName;
+        private Predicate<Entity> targetType = (entity) -> entity instanceof Player;
 
         private Builder(ResourceLocation id, String nameKey, Handler handler) {
             this.id = id;
@@ -240,6 +262,11 @@ public final class RoleSkill {
 
         public Builder withTarget(boolean flag) {
             withTarget = flag;
+            return this;
+        }
+
+        public Builder targetType(Predicate<Entity> test) {
+            targetType = test;
             return this;
         }
 
@@ -267,6 +294,9 @@ public final class RoleSkill {
             return this;
         }
 
+        /**
+         * 这个API很怪。想使用请尽量不要在Builder 设置 cd，否则无法使用。
+         */
         public Builder continuous(int intervalTicks) {
             this.continuous = true;
             this.holdIntervalTicks = intervalTicks;
@@ -364,6 +394,7 @@ public final class RoleSkill {
         public Definition build() {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
                     holdIntervalTicks, noCastCCA, announceInfo, toggleable, shifted, modeSwitch, showOnHud, withTarget,
+                    targetType,
                     haveRecord,
                     handler, recordName);
         }
@@ -474,13 +505,20 @@ public final class RoleSkill {
         return getDefinitions(role).stream().filter(Definition::modeSwitch).findFirst();
     }
 
+    public static boolean blockForSpectator(ServerPlayer player) {
+        return blockForSpectator(player, false);
+    }
+
     /**
      * 全局旁观者检查：回报该玩家是否为旁观者且不允许使用技能。
      * 返回 true = 被拦截（不应释放技能）。
      * 所有技能派发路径应在入口处调用此方法。
+     * 
+     * @param player       玩家
+     * @param ignoreEffect 忽略SKILL_BANED等技能effect
      */
-    public static boolean blockForSpectator(ServerPlayer player) {
-        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.SKILL_FREEZED)) {
+    public static boolean blockForSpectator(ServerPlayer player, boolean ignoreEffect) {
+        if (!ignoreEffect && (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.SKILL_FREEZED))) {
             return true;
         }
         // 退出重进过的人无法使用技能
@@ -529,7 +567,7 @@ public final class RoleSkill {
      * 以"被附身"方式释放该玩家技能：合法绕过 {@code SKILL_BANED} 拦截。
      * 用于操纵师附身期间，以目标身份释放目标自身的技能（冷却记在目标身上）。
      */
-    public static boolean beginUsePossessed(ServerPlayer player) {
+    public static boolean beginUseIgnoreSkillBannedEffects(ServerPlayer player) {
         return beginUse(player, null, -1, Phase.PRESS, player.isShiftKeyDown(), true);
     }
 
@@ -539,7 +577,7 @@ public final class RoleSkill {
     }
 
     public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase,
-            boolean shifted, boolean possessed) {
+            boolean shifted, boolean ignoreEffect) {
         if (player == null) {
             return false;
         }
@@ -548,10 +586,7 @@ public final class RoleSkill {
             return false;
         }
         // 旁观者模式禁止使用技能（通过 canUseSkillWhileSpectator() 标记豁免）
-        if (blockForSpectator(player)) {
-            return false;
-        }
-        if (player.hasEffect(ModEffects.SKILL_BANED) || player.hasEffect(ModEffects.SKILL_FREEZED)) {
+        if (blockForSpectator(player, ignoreEffect)) {
             return false;
         }
         List<Definition> definitions = getDefinitions(role);
@@ -569,9 +604,9 @@ public final class RoleSkill {
         if (consumer != null) {
             consumer.accept(new RoleSkillContext(player, target));
         } else if (target != null) {
-            AbilityHandler.handlerWithTarget(player, target, possessed);
+            AbilityHandler.handlerWithTarget(player, target, ignoreEffect);
         } else if (!RoleMethodDispatcher.callOnAbilityUse(player)) {
-            AbilityHandler.handler(player, possessed);
+            AbilityHandler.handler(player, ignoreEffect);
         }
         afterUse(player, role);
         return true;
@@ -601,7 +636,12 @@ public final class RoleSkill {
         Definition definition = applicable.get(slot);
         ability.ensureSkills(definitions);
 
+        boolean skillReady = ability.canUseSkill(definition.id());
+
         if (phase == Phase.HOLD && !definition.continuous()) {
+            return false;
+        }
+        if (phase == Phase.HOLD && !skillReady) {
             return false;
         }
         if (phase == Phase.HOLD && !ability.shouldRunHold(definition.id(), definition.holdIntervalTicks())) {
@@ -616,8 +656,6 @@ public final class RoleSkill {
             ability.stopCasting(definition.id());
             return false;
         }
-
-        boolean skillReady = ability.canUseSkill(definition.id());
 
         if (phase == Phase.PRESS && !skillReady) {
             // Toggleable skills can still fire while on cooldown (for deactivation)
@@ -636,7 +674,6 @@ public final class RoleSkill {
         if (!used) {
             return false;
         }
-
         // 只有 handler 真正执行成功时才消耗冷却/充能
         if (skillReady) {
             ability.markSkillUsed(definition);
@@ -655,7 +692,8 @@ public final class RoleSkill {
                 // 自定义职业等：优先显示用户填写的技能名（字面文本）
                 SRE.REPLAY_MANAGER.recordSkillUsed(player, literalName);
             } else {
-                SRE.REPLAY_MANAGER.recordSkillUsedId(player, definition.nameKey());
+                SRE.REPLAY_MANAGER.recordSkillUsedId(player, definition.nameKey(),
+                        definition.withTarget() ? target : null);
             }
         }
         return true;

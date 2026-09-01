@@ -19,11 +19,14 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.roles.*;
 import org.agmas.noellesroles.role_data.killer.DoremyRoleData;
 import org.agmas.noellesroles.role_data.killer.HoujuuNueRoleData;
+import org.agmas.noellesroles.role_data.neutral.THYuyukoRoleData;
+
+import io.wifi.starrailexpress.api.InstinctType;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
+import io.wifi.starrailexpress.api.NormalRole.RoleType;
 import io.wifi.starrailexpress.api.SRERole.MoodType;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.util.Color;
 import net.minecraft.resources.ResourceLocation;
 
@@ -99,29 +102,9 @@ public class THMiscRoles {
             .registerRole(new THTenshiRole(TENSHI_ID, new Color(89, 177, 250).getRGB(),
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime() * 2, false))
-            .setAddedVersion("4.4");
-    public static final ResourceLocation RINNOSUKE_ID = id("morichika_rinnosuke");
-    // 森近霖之助 Morichika Rinnosuke
-    public static SRERole RINNOSUKE = TMMRoles.registerRole(new THRinnosukeRole(
-            RINNOSUKE_ID, // 角色 ID
-            new Color(252, 250, 249).getRGB(),
-            false, // isInnocent = 乘客阵营
-            false, // canUseKiller = 无杀手能力
-            SRERole.MoodType.REAL, // 真实心情
-            Integer.MAX_VALUE, // 标准冲刺时间
-            true))
-            .setNeutrals(true)
-            .setDefaultEnableNeededPlayerCount(12)
-            .setDefaultEnableChance(100)
-            .setCanUseInstinctAndNightVision(false)
-            .setCanPickUpRevolver(false)
-            .addBothRelatedRole(THMountainRoles.NITORI)
-            .setServerGameTickEvent((player, cca) -> {
-                if (player.level().getGameTime() % (20 * 60) == 0) {
-                    SREPlayerShopComponent.KEY.get(player).addToBalance(50);
-                }
-            })
-            .setAddedVersion("4.4");
+            .setAddedVersion("4.4")
+            .setCanBePoisoned(false);
+    
 
     // 鬼人正邪 Kijin Seija
     public static SRERole KIJIN_SEIJA = TMMRoles.registerRole(new TouhouRole(id("kijin_seija"),
@@ -136,14 +119,7 @@ public class THMiscRoles {
             .setRoleData(HoujuuNueRoleData::new)
             .setDefaultEnableNeededPlayerCount(12)
             .setDefaultEnableChance(4000)
-            .setAddedVersion("4.4");
-
-    // 茨木华扇 Ibaraki Kasen
-    public static SRERole IBARAKI_KASEN = TMMRoles.registerRole(new THIbarakiKasenRole(id("ibaraki_kasen"),
-            new Color(216, 158, 159).getRGB(), true, false, MoodType.REAL,
-            TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, false))
-            .setDefaultEnableNeededPlayerCount(12)
-            .setDefaultEnableChance(5000)
+            .setHiddenForRoleRotation(true)
             .setAddedVersion("4.4");
 
     // 魂魄妖梦 Konpaku Youmu
@@ -155,6 +131,16 @@ public class THMiscRoles {
             .setVigilanteTeam(true)
             .setSpecialPolice(true)
             .setCanPickUpRevolver(true)
+            .setBeSeenInstinctType(InstinctType.DEFAULT,
+                    InstinctType.customWithFunction((self, target, selfRole, targetRole) -> {
+                        if (target == null || self == null) {
+                            return InstinctType.NONE;
+                        }
+                        if (target.isInvisible()) {
+                            return InstinctType.NONE;
+                        }
+                        return InstinctType.DEFAULT;
+                    }))
             .setAddedVersion("4.4");
 
     // 哆来咪 Doremy
@@ -162,6 +148,7 @@ public class THMiscRoles {
             new Color(169, 80, 101).getRGB(), false, true, MoodType.FAKE, Integer.MAX_VALUE, true))
             .setDefaultEnableNeededPlayerCount(16)
             .setDefaultEnableChance(500)
+            .setCanBeRandomedByOtherRoles(false)
             .setRoleData(DoremyRoleData::new)
             .addTwoWayOpposingRole(ModRoles.DELAYER)
             .setAddedVersion("4.4");
@@ -175,7 +162,8 @@ public class THMiscRoles {
 
     // 米斯蒂娅·萝蕾拉 Mystia Lorelei
     public static SRERole MYSTIA = TMMRoles.registerRole(new TouhouRole(id("mystia_lorelei"),
-            new Color(223, 177, 166).getRGB(), true, false, MoodType.REAL, TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, false))
+            new Color(223, 177, 166).getRGB(), true, false, MoodType.REAL,
+            TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, false))
             .setDefaultEnableChance(5000)
             .setAddedVersion("4.4");
 
@@ -184,9 +172,26 @@ public class THMiscRoles {
             new Color(169, 80, 101).getRGB(), true, false, MoodType.REAL,
             TMMRoles.CIVILIAN_MAX_SPRINT_TICKS, false))
             .setDefaultEnableNeededPlayerCount(16)
-            .setDefaultEnableChance(4000)
+            .setDefaultEnableChance(2000)
             .setHiddenForRoleRotation(true)
             .setCanBeRandomedByOtherRoles(true)
+            .setAddedVersion("4.4");
+
+    // 秦心 hata_no_kokoro
+    public static SRERole HATA_NO_KOKORO = TMMRoles.registerRole(new THHatanokokoroRole(id("hata_no_kokoro"),
+            new Color(245,226,241).getRGB(), RoleType.KILLER, MoodType.FAKE,Integer.MAX_VALUE, true))
+            .setDefaultEnableNeededPlayerCount(16)
+            .setDefaultEnableChance(3000)
+            .setAddedVersion("4.4");
+
+    // 西行寺幽幽子 saigyouji_yuyuko
+    public static SRERole YUYUKO = TMMRoles.registerRole(new THYuyukoRole(id("saigyouji_yuyuko"),
+            new Color(202,148,155).getRGB(), RoleType.NEUTRALS, MoodType.FAKE,Integer.MAX_VALUE, true))
+            .setCanUseInstinctAndNightVision(true)
+            .setDefaultEnableNeededPlayerCount(16)
+            .setDefaultEnableChance(1000)
+            .setHiddenForRoleRotation(true)
+            .setRoleData(THYuyukoRoleData::new)
             .setAddedVersion("4.4");
 
     public static void init() {

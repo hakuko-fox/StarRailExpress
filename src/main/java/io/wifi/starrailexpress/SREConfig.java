@@ -91,6 +91,10 @@ public class SREConfig implements ConfigData {
     // 随机地图设置
 
     @ConfigEntry.Category(value = "commands")
+    public int rosterCommandPermission = 3;
+    @ConfigEntry.Category(value = "commands")
+    public int scheduleCommandPermission = 3;
+    @ConfigEntry.Category(value = "commands")
     public int customRolePermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int entityInteractionBlockEntityPlayerPermission = 2;
@@ -319,7 +323,7 @@ public class SREConfig implements ConfigData {
     public boolean forensicShowWeaponCategory = false;
     @ConfigEntry.Category(value = "forensic")
     @ConfigSync(shouldSync = true)
-    public boolean forensicShowCorpseFacing = true;
+    public boolean forensicShowCorpseFacing = false;
     @ConfigEntry.Category(value = "forensic")
     public boolean forensicBloodTrail = true;
     @ConfigEntry.Category(value = "forensic")

@@ -69,7 +69,6 @@
     "roles.stalker.StalkerOffItemMixin",
     "roles.thief.DelayedCoinDisplayMixin",
     "roles.thief.ThiefsHonorMixin",
-    "roles.traitor.DesperateFaithKnifeCooldownMixin",
     "roles.trapper.TrapperTrapGunPayloadMixin",
     "roles.undead_lord.UndeadGunPayloadMixin",
     "roles.veteran.VeteranKnifeLeftClickMixin",
@@ -78,13 +77,14 @@
     "scene.SnowballWarmthMixin",
     "time_rewind.ServerPlayerTimeRewindMixin",
     "time_rewind.ServerGamePacketListenerTimeRewindMixin",
-    "time_stop.PlayerMixin",
+    "time_stop.DioSwimPoseMixin",
     "time_stop.ServerPacketBlocker"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
+    "client.fake_steve.FakeSteveClientInputMixin",
     "client.compat.inv_move.InvMoveBaned",
     "client.AbstractClientPlayerSkinMixin",
     "client.C4ItemEntityRendererMixin",
@@ -93,6 +93,7 @@
     "client.LamBugFix",
     "client.ManicTaskGlitchMixin",
     "client.game.ChairWheelKeyMappingMixin",
+    "client.general.UpsideDownEffectMouseMixin",
     "client.general.AmonHideTargetMixin",
     "client.general.BackworldOutlineGlowMixin",
     "client.general.ImmersiveFilterShaderMixin",

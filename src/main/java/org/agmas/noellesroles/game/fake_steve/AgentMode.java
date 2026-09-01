@@ -1,11 +1,10 @@
 package org.agmas.noellesroles.game.fake_steve;
 
 public enum AgentMode {
-    ROAM,
-    INTERACT,
+    DISGUISE_TASK,
+    DISGUISE_IDLE,
     STARE,
     STALK,
-    HUNT,
     ASSIMILATE,
     RECOVER
 }
