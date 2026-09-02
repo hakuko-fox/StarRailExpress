@@ -50,8 +50,15 @@ public final class BackpackCommand {
                 builder.suggest(type.questKey);
             }
         }
+        builder.suggest("role_choice");
         return builder.buildFuture();
     };
+
+    private record CardSpec(FactionCardType factionType, boolean roleChoice) {
+        static CardSpec roleChoiceSpec() {
+            return new CardSpec(FactionCardType.NONE, true);
+        }
+    }
 
     private enum Op { ADD, SET, REMOVE }
 
@@ -91,8 +98,8 @@ public final class BackpackCommand {
 
     private static int apply(CommandContext<CommandSourceStack> context, Op op) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
-        FactionCardType type = parseType(context, source);
-        if (type == null) {
+        CardSpec spec = parseType(context, source);
+        if (spec == null) {
             return 0;
         }
         Collection<ServerPlayer> targets = EntityArgument.getPlayers(context, "targets");
@@ -105,9 +112,9 @@ public final class BackpackCommand {
                 continue;
             }
             switch (op) {
-                case ADD -> BackpackManager.addCard(player, type, count);
-                case REMOVE -> BackpackManager.addCard(player, type, -count);
-                case SET -> BackpackManager.addCard(player, type, count - BackpackManager.getCardCount(player, type));
+                case ADD -> add(player, spec, count);
+                case REMOVE -> add(player, spec, -count);
+                case SET -> add(player, spec, count - getCount(player, spec));
             }
             affected++;
             last = player;
@@ -116,11 +123,11 @@ public final class BackpackCommand {
             return 0;
         }
 
-        Component cardName = Component.translatable(type.displayName);
+        Component cardName = cardName(spec);
         String base = "commands.sre.backpack.card." + op.name().toLowerCase(java.util.Locale.ROOT);
         if (affected == 1) {
             ServerPlayer only = last;
-            int now = BackpackManager.getCardCount(only, type);
+            int now = getCount(only, spec);
             source.sendSuccess(() -> Component.translatable(base,
                     only.getName().getString(), count, cardName, now)
                     .withStyle(style -> style.withColor(0x00FF00)), true);
@@ -134,16 +141,16 @@ public final class BackpackCommand {
 
     private static int get(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
-        FactionCardType type = parseType(context, source);
-        if (type == null) {
+        CardSpec spec = parseType(context, source);
+        if (spec == null) {
             return 0;
         }
         Collection<ServerPlayer> targets = EntityArgument.getPlayers(context, "targets");
-        Component cardName = Component.translatable(type.displayName);
+        Component cardName = cardName(spec);
 
         if (targets.size() == 1) {
             ServerPlayer only = targets.iterator().next();
-            int count = BackpackManager.getCardCount(only, type);
+            int count = getCount(only, spec);
             source.sendSuccess(() -> Component.translatable("commands.sre.backpack.card.get",
                     only.getName().getString(), count, cardName)
                     .withStyle(style -> style.withColor(0x00FF00)), false);
@@ -152,7 +159,7 @@ public final class BackpackCommand {
 
         int total = 0;
         for (ServerPlayer player : targets) {
-            total += BackpackManager.getCardCount(player, type);
+            total += getCount(player, spec);
         }
         int sum = total;
         source.sendSuccess(() -> Component.translatable("commands.sre.backpack.card.get.multiple",
@@ -161,14 +168,35 @@ public final class BackpackCommand {
         return total;
     }
 
-    private static FactionCardType parseType(CommandContext<CommandSourceStack> context, CommandSourceStack source) {
+    private static CardSpec parseType(CommandContext<CommandSourceStack> context, CommandSourceStack source) {
         String raw = StringArgumentType.getString(context, "type");
+        if ("role_choice".equalsIgnoreCase(raw)) {
+            return CardSpec.roleChoiceSpec();
+        }
         FactionCardType type = FactionCardType.fromString(raw);
         if (type == FactionCardType.NONE) {
             source.sendFailure(Component.translatable("commands.sre.backpack.card.invalid_type", raw));
             return null;
         }
-        return type;
+        return new CardSpec(type, false);
+    }
+
+    private static void add(ServerPlayer player, CardSpec spec, int amount) {
+        if (spec.roleChoice()) {
+            BackpackManager.addRoleChoiceCards(player, amount);
+        } else {
+            BackpackManager.addCard(player, spec.factionType(), amount);
+        }
+    }
+
+    private static int getCount(ServerPlayer player, CardSpec spec) {
+        return spec.roleChoice() ? BackpackManager.getRoleChoiceCards(player)
+                : BackpackManager.getCardCount(player, spec.factionType());
+    }
+
+    private static Component cardName(CardSpec spec) {
+        return spec.roleChoice() ? Component.translatable("sre.backpack.role_choice_card")
+                : Component.translatable(spec.factionType().displayName);
     }
 
     /** DB 同步开启时，玩家背包分区尚未加载完就写入会被随后完成的异步加载覆盖，故先拦下。 */

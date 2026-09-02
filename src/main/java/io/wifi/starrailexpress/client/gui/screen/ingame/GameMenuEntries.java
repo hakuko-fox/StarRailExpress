@@ -26,6 +26,7 @@ import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterEditScreen;
 import io.wifi.starrailexpress.client.gui.screen.roster.RoleRosterViewScreen;
 import io.wifi.starrailexpress.client.util.TaskInstinctManager;
 import io.wifi.starrailexpress.network.MapIntroRequestPayload;
+import io.wifi.starrailexpress.network.BackpackOpenRequestPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.exmo.sre.record.client.MatchRecordsScreen;
 import net.minecraft.ChatFormatting;
@@ -139,7 +140,7 @@ public class GameMenuEntries {
         }));
         // 库存管理
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.backpack"), (btn) -> {
-            minecraft.setScreen(new BackpackScreen(parent));
+            ClientPlayNetworking.send(new BackpackOpenRequestPayload());
             toggleViewMenu.accept(false);
         }));
         entries.add(new MenuEntry(Component.translatable("screen.limited_inventory.menu.vtuber_store"), (btn) -> {

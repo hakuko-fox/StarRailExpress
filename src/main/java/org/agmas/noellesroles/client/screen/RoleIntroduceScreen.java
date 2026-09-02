@@ -29,6 +29,7 @@ import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderType;
@@ -49,6 +50,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import org.agmas.harpymodloader.SREDisableManager;
+import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
@@ -65,6 +67,7 @@ import org.joml.Matrix4f;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 public class RoleIntroduceScreen extends Screen {
     /**
@@ -217,6 +220,9 @@ public class RoleIntroduceScreen extends Screen {
     private final Map<Object, Float> hoverAnims = new HashMap<>();
 
     private Object selectedRole = null;
+    private boolean roleSelectionMode = false;
+    private Consumer<SRERole> roleSelectionHandler;
+    private Button roleSelectButton;
     private int activeTabIndex = 0;
     private final List<DetailTab> tabs = new ArrayList<>();
 
@@ -273,6 +279,16 @@ public class RoleIntroduceScreen extends Screen {
 
     }
 
+    /** 職業自選卡使用的職業介紹頁：沿用完整介紹版面，右下角提供選擇按鈕。 */
+    public RoleIntroduceScreen(Screen parent, SRERole sreRole, Consumer<SRERole> onSelect) {
+        this();
+        this.parent = parent;
+        this.selectedRole = sreRole;
+        this.currentMode = IntroductionGameMode.ALL;
+        this.roleSelectionMode = true;
+        this.roleSelectionHandler = onSelect;
+    }
+
     public RoleIntroduceScreen(Screen parent, SREModifier modifier) {
         this();
         this.parent = parent;
@@ -320,6 +336,15 @@ public class RoleIntroduceScreen extends Screen {
             selectedRole = filteredItems.get(0);
         clearPrevStatus();
         onSelectionChanged();
+        if (roleSelectionMode) {
+            roleSelectButton = Button.builder(Component.translatable("gui.roleintroduce.select"), button -> {
+                if (selectedRole instanceof SRERole role && roleSelectionHandler != null) {
+                    roleSelectionHandler.accept(role);
+                }
+            }).bounds(rightX + rightW - PANEL_PAD - 86, panelY + panelH - 24, 86, 20).build();
+            addRenderableWidget(roleSelectButton);
+            updateRoleSelectButton();
+        }
         setFocusArea(FocusArea.SEARCH);
     }
 
@@ -389,6 +414,8 @@ public class RoleIntroduceScreen extends Screen {
         filteredItems.clear();
         RoleCategory cat = currentCategory();
         for (SRERole role : availableRoles) {
+            if (roleSelectionMode && !isRoleChoiceEligible(role))
+                continue;
             if (!cat.filter.test(role) || !matchesMode(role))
                 continue;
             String name = RoleUtils.getRoleName(role).getString();
@@ -433,6 +460,22 @@ public class RoleIntroduceScreen extends Screen {
         int totalH = filteredItems.size() * (CARD_H + CARD_SPACING) - CARD_SPACING;
         maxListScroll = Math.max(0, totalH - listAreaH());
         listScrollOffset = Mth.clamp(listScrollOffset, 0, maxListScroll);
+    }
+
+    private boolean isRoleChoiceEligible(SRERole role) {
+        if (role == null || role == TMMRoles.DISCOVERY_CIVILIAN || role == TMMRoles.LOOSE_END
+                || role.isOtherModeRole() || isRepairRole(role) || role.getOccupiedRoleCount() > 1
+                || SREDisableManager.isRoleDisabled(role)
+                || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 1) <= 0) {
+            return false;
+        }
+        var roster = io.wifi.starrailexpress.client.data.ClientRoleRosterCache.snapshot();
+        return !roster.enabled || roster.countFor(role.identifier().toString()) > 0;
+    }
+
+    private void updateRoleSelectButton() {
+        if (roleSelectButton != null)
+            roleSelectButton.active = selectedRole instanceof SRERole;
     }
 
     private boolean matchesMode(SRERole role) {
@@ -1612,6 +1655,7 @@ public class RoleIntroduceScreen extends Screen {
         activeTabIndex = tab;
         if (!tabs.isEmpty())
             tabs.get(activeTabIndex).onSwitchTo();
+        updateRoleSelectButton();
     }
 
     private void onSelectionChanged() {
@@ -1644,7 +1688,6 @@ public class RoleIntroduceScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
         renderLeftPanel(g, mouseX, mouseY);
         renderRightPanel(g, mouseX, mouseY);
         boolean isSmall = this.height <= 300;
@@ -1663,6 +1706,7 @@ public class RoleIntroduceScreen extends Screen {
                     Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY), width / 2,
                     height - 24, 0x9E8B6E);
         renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 2);
+        super.render(g, mouseX, mouseY, partialTick);
     }
 
     private boolean isSmallUI() {
@@ -1671,6 +1715,8 @@ public class RoleIntroduceScreen extends Screen {
 
     // 可重写此方法来定制哪些模式在小 UI 下隐藏
     protected boolean shouldHideModeButton(IntroductionGameMode mode) {
+        if (roleSelectionMode)
+            return true;
         if (SREClient.gameComponent != null && SREClient.gameComponent.isRunning()) {
             boolean dontShowCurrentRound = !SREClient.isPlayerSpectatingOrCreative() || SREClient.hasPenalty();
             if (SREClient.gameComponent.getGameMode().identifier.equals(SREGameModes.REPAIR_ESCAPE_ID)) {

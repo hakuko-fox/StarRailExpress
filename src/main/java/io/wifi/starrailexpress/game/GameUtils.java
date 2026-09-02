@@ -59,6 +59,7 @@ import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.RoleMethodDispatcher;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.ExtraSlotComponent;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
@@ -653,6 +654,8 @@ public class GameUtils {
         ArrayList<ServerPlayer> readyPlayerList = new ArrayList<>(getStartingPlayers(serverWorld));
         // Resolve persistent /force-role rules to eligible players for this round.
         org.agmas.harpymodloader.Harpymodloader.assignPersistentForcedRoles(serverWorld, readyPlayerList);
+        BackpackManager.prepareRoleChoices(serverWorld, readyPlayerList,
+                gameComponent.getGameMode().identifier.equals(SREGameModes.MURDER_ID));
         // 记录开局玩家数量，供基于开局人数的逻辑使用
         gameComponent.setStartingPlayerCount(readyPlayerList.size());
         clearForcedReadyPlayers();

@@ -66,6 +66,7 @@ public final class VtuberStoreManager {
         products.add(CatalogProduct.card("card:neutral", FactionCardType.NEUTRAL, 9));
         products.add(CatalogProduct.card("card:neutral_for_killer", FactionCardType.NEUTRAL_FOR_KILLER, 12));
         products.add(CatalogProduct.card("card:killer", FactionCardType.KILLER, 16));
+        products.add(CatalogProduct.roleChoiceCard("card:role_choice", 40));
         return List.copyOf(products);
     }
 
@@ -100,8 +101,10 @@ public final class VtuberStoreManager {
                 return;
             }
             purchased = BackpackManager.tryBuyStoreSkin(player, product.subtype(), product.value(), setting.price);
-        } else {
+        } else if (product.kind() == CatalogProduct.Kind.CARD) {
             purchased = BackpackManager.tryBuyFactionCard(player, product.cardType(), setting.price);
+        } else {
+            purchased = BackpackManager.tryBuyRoleChoiceCard(player, setting.price);
         }
 
         if (!purchased) {
@@ -114,7 +117,9 @@ public final class VtuberStoreManager {
                 true);
         int cardCount = product.kind() == CatalogProduct.Kind.CARD
                 ? BackpackManager.getCardCount(player, product.cardType())
-                : -1;
+                : product.kind() == CatalogProduct.Kind.ROLE_CHOICE_CARD
+                        ? BackpackManager.getRoleChoiceCards(player)
+                        : -1;
         ServerPlayNetworking.send(player, new VtuberStorePurchaseResultPayload(true, productId,
                 "message.sre.vtuber_store.purchased", BackpackManager.getVtuberCoins(player), cardCount));
     }

@@ -72,6 +72,31 @@ public class SREReceiverRegister {
                 (payload, context) -> context.server().execute(() ->
                         io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.handlePurchase(
                                 context.player(), payload.productId())));
+        ServerPlayNetworking.registerGlobalReceiver(BackpackOpenRequestPayload.ID,
+                (payload, context) -> context.server().execute(() -> {
+                    ServerPlayer player = context.player();
+                    if (!io.wifi.starrailexpress.backpack.BackpackManager.isLoaded(player.getUUID())) {
+                        player.displayClientMessage(
+                                Component.translatable("message.sre.backpack.choice.not_loaded"), true);
+                        return;
+                    }
+                    io.wifi.starrailexpress.backpack.BackpackManager.resend(player);
+                    ServerPlayNetworking.send(player, OpenBackpackScreenPayload.INSTANCE);
+                }));
+        ServerPlayNetworking.registerGlobalReceiver(BackpackRoleChoicePayload.ID,
+                (payload, context) -> context.server().execute(() -> {
+                    ServerPlayer player = context.player();
+                    var result = switch (payload.action()) {
+                        case "select" -> io.wifi.starrailexpress.backpack.BackpackManager
+                                .selectRole(player, payload.roleId());
+                        case "cancel" -> io.wifi.starrailexpress.backpack.BackpackManager.cancelSelection(player);
+                        default -> io.wifi.starrailexpress.backpack.BackpackManager.ChoiceResult.INVALID_ROLE;
+                    };
+                    ServerPlayNetworking.send(player, new BackpackRoleChoiceResultPayload(
+                            result == io.wifi.starrailexpress.backpack.BackpackManager.ChoiceResult.SUCCESS,
+                            result.messageKey(), payload.roleId()));
+                    player.displayClientMessage(Component.translatable(result.messageKey()), true);
+                }));
         UpdateNameTagSelectedPayload.registerReceiver();
         // 服务端处理客户端投票包
         ServerPlayNetworking.registerGlobalReceiver(VoteCastC2SPacket.TYPE, (packet, context) -> {

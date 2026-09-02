@@ -17,14 +17,18 @@ package io.wifi.starrailexpress.client.gui.screen;
 
 import io.wifi.starrailexpress.backpack.BackpackState;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
+import io.wifi.starrailexpress.network.BackpackRoleChoicePayload;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import org.agmas.noellesroles.utils.RoleUtils;
 
 /**
  * 场外背包 GUI：展示各阵营卡牌计数，点击非空卡可激活（沿用 {@code sre:pass activate} 路径）。
@@ -46,6 +50,7 @@ public class BackpackScreen extends Screen {
             FactionCardType.KILLER, FactionCardType.CIVILIAN,
             FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER };
     private static final int[] ACCENT = { 0xFFC75450, 0xFF5EB7D8, 0xFFE0AD5B, 0xFFB18AE6 };
+    private static final int ROLE_ACCENT = 0xFF8FC7A8;
 
     private static final int PAD = 8;
     private static final int HEADER_H = 34;
@@ -56,6 +61,7 @@ public class BackpackScreen extends Screen {
     private final LocalPlayer player;
     private BackpackState backpack;
     private Screen parent;
+    private Button cancelChoiceButton;
 
     private int panelX, panelY, panelW, panelH;
     private int rowX, rowW;
@@ -63,20 +69,28 @@ public class BackpackScreen extends Screen {
     public BackpackScreen(Screen parent) {
         super(Component.translatable("sre.backpack.title"));
         this.player = Minecraft.getInstance().player;
-        this.backpack = ClientPlayerDataCache.backpack(player.getUUID());
+        this.backpack = player == null ? BackpackState.createDefault()
+                : ClientPlayerDataCache.backpack(player.getUUID()).normalized();
         this.parent = parent;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.backpack = ClientPlayerDataCache.backpack(player.getUUID());
+        this.backpack = player == null ? BackpackState.createDefault()
+                : ClientPlayerDataCache.backpack(player.getUUID()).normalized();
         computeLayout();
+        cancelChoiceButton = addRenderableWidget(Button.builder(
+                Component.translatable("sre.backpack.cancel_choice"), button -> {
+                    ClientPlayNetworking.send(new BackpackRoleChoicePayload("cancel", ""));
+                    button.active = false;
+                }).bounds(rowX, rowY(DISPLAY_ORDER.length) + 9, 76, 20).build());
+        cancelChoiceButton.visible = hasPendingRole();
     }
 
     private void computeLayout() {
         panelW = Mth.clamp((int) (width * 0.55F), 260, 360);
-        panelH = PAD * 2 + HEADER_H + DISPLAY_ORDER.length * (ROW_H + ROW_GAP) - ROW_GAP + FOOTER_H;
+        panelH = PAD * 2 + HEADER_H + (DISPLAY_ORDER.length + 1) * (ROW_H + ROW_GAP) - ROW_GAP + FOOTER_H;
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         rowX = panelX + PAD;
@@ -91,14 +105,25 @@ public class BackpackScreen extends Screen {
         return backpack.cards.getOrDefault(type, 0);
     }
 
+    private boolean hasPendingRole() {
+        return backpack.pendingRoleId != null && !backpack.pendingRoleId.isBlank();
+    }
+
+    private Component pendingRoleName() {
+        var id = net.minecraft.resources.ResourceLocation.tryParse(backpack.pendingRoleId);
+        var role = id == null ? null : io.wifi.starrailexpress.api.TMMRoles.getRole(id);
+        return role == null ? Component.literal(backpack.pendingRoleId) : RoleUtils.getRoleName(role);
+    }
+
     // =========================================================================
     // 渲染
     // =========================================================================
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        
+        if (player != null) {
+            backpack = ClientPlayerDataCache.backpack(player.getUUID()).normalized();
+        }
         computeLayout();
 
         drawPanelBg(g, panelX, panelY, panelW, panelH);
@@ -110,6 +135,7 @@ public class BackpackScreen extends Screen {
         for (FactionCardType type : DISPLAY_ORDER) {
             total += count(type);
         }
+        total += backpack.roleChoiceCards;
         Component subtitle = Component.translatable("sre.backpack.subtitle", total).withStyle(ChatFormatting.GRAY);
         g.drawCenteredString(font, subtitle, panelX + panelW / 2, panelY + PAD + 18, MUTED);
         g.fill(panelX + PAD, panelY + PAD + HEADER_H - 4, panelX + panelW - PAD, panelY + PAD + HEADER_H - 3, 0x33FFE8C0);
@@ -118,11 +144,47 @@ public class BackpackScreen extends Screen {
         for (int i = 0; i < DISPLAY_ORDER.length; i++) {
             renderCardRow(g, i, mouseX, mouseY);
         }
+        renderRoleChoiceRow(g, mouseX, mouseY);
 
         // ---- 底部提示 ----
         g.drawCenteredString(font, Component.translatable("sre.backpack.hint").withStyle(ChatFormatting.GRAY),
                 panelX + panelW / 2, panelY + panelH - FOOTER_H + 6, MUTED);
 
+        if (cancelChoiceButton != null) {
+            cancelChoiceButton.setPosition(rowX + rowW - 78, rowY(DISPLAY_ORDER.length) + 9);
+            cancelChoiceButton.visible = hasPendingRole();
+            cancelChoiceButton.active = hasPendingRole();
+        }
+
+        // Widgets are rendered after the custom panel so the cancel action stays clickable.
+        super.render(g, mouseX, mouseY, partialTick);
+    }
+
+    private void renderRoleChoiceRow(GuiGraphics g, int mouseX, int mouseY) {
+        int index = DISPLAY_ORDER.length;
+        int count = backpack.roleChoiceCards;
+        boolean pending = hasPendingRole();
+        boolean actionable = count > 0 || pending;
+        int x = rowX;
+        int y = rowY(index);
+        boolean hovered = actionable && inside(mouseX, mouseY, x, y, rowW, ROW_H);
+        int background = hovered ? blendColors(PANEL_TOP, ROLE_ACCENT, 0.42F)
+                : actionable ? blendColors(PANEL_TOP, ROLE_ACCENT, 0.22F) : 0x66120A04;
+        g.fillGradient(x, y, x + rowW, y + ROW_H, background,
+                actionable ? blendColors(PANEL_BOTTOM, ROLE_ACCENT, 0.10F) : 0x66120A04);
+        g.renderOutline(x, y, rowW, ROW_H, hovered ? GOLD : (actionable ? 0xFF5A4530 : 0xFF3A2C1E));
+        g.fill(x + 1, y + 1, x + 4, y + ROW_H - 1,
+                actionable ? ROLE_ACCENT : (ROLE_ACCENT & 0x66FFFFFF));
+        g.drawString(font, Component.translatable("sre.backpack.role_choice"), x + 12, y + 8,
+                actionable ? TEXT : MUTED, false);
+        Component hint = pending
+                ? Component.translatable("sre.backpack.pending_role", pendingRoleName())
+                : Component.translatable(actionable ? "sre.backpack.click_choose_role" : "sre.backpack.unavailable");
+        g.drawString(font, hint, x + 12, y + 22, actionable ? 0xFFB8C9A8 : 0xFF6A5A48, false);
+        String countText = "×" + count;
+        int cw = font.width(countText);
+        g.drawString(font, countText, x + rowW - 14 - cw, y + 14,
+                actionable ? ROLE_ACCENT : MUTED, false);
     }
 
     private void renderCardRow(GuiGraphics g, int index, int mouseX, int mouseY) {
@@ -171,6 +233,9 @@ public class BackpackScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
         if (button == 0) {
             for (int i = 0; i < DISPLAY_ORDER.length; i++) {
                 FactionCardType type = DISPLAY_ORDER[i];
@@ -180,8 +245,21 @@ public class BackpackScreen extends Screen {
                     return true;
                 }
             }
+            int roleIndex = DISPLAY_ORDER.length;
+            if ((backpack.roleChoiceCards > 0 || hasPendingRole())
+                    && inside(mouseX, mouseY, rowX, rowY(roleIndex), rowW, ROW_H)) {
+                var roleId = net.minecraft.resources.ResourceLocation.tryParse(backpack.pendingRoleId);
+                var role = roleId == null ? null : io.wifi.starrailexpress.api.TMMRoles.getRole(roleId);
+                minecraft.setScreen(new org.agmas.noellesroles.client.screen.RoleIntroduceScreen(this, role,
+                        selected -> {
+                            ClientPlayNetworking.send(new BackpackRoleChoicePayload("select",
+                                    selected.identifier().toString()));
+                            onClose();
+                        }));
+                return true;
+            }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     @Override

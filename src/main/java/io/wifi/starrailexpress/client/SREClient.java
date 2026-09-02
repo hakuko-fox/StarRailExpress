@@ -898,8 +898,19 @@ public class SREClient implements ClientModInitializer {
             context.client().execute(() -> context.client().setScreen(new ProgressionPassScreen()));
         });
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.OpenBackpackScreenPayload.ID,
-                (payload, context) -> context.client().execute(() -> context.client()
-                        .setScreen(new io.wifi.starrailexpress.client.gui.screen.BackpackScreen((Screen) null))));
+                  (payload, context) -> context.client().execute(() -> context.client()
+                          .setScreen(new io.wifi.starrailexpress.client.gui.screen.BackpackScreen((Screen) null))));
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.BackpackRoleChoiceResultPayload.ID, (payload, context) -> {
+                    if (!payload.success()) {
+                        context.client().execute(() -> {
+                            if (context.client().player != null) {
+                                context.client().player.displayClientMessage(
+                                        Component.translatable(payload.messageKey()), true);
+                            }
+                        });
+                    }
+                });
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.RoleRosterSyncPayload.ID,
                 (payload, context) -> io.wifi.starrailexpress.client.data.ClientRoleRosterCache.update(payload.json()));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.sponsor.SponsorListPayload.ID,

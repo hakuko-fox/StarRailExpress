@@ -32,6 +32,12 @@ public final class BackpackState {
     public int vtuberCoins;
     /** 商店購買的永久皮膚權益，元素格式為 {@code skin:<type>:<id>}。 */
     public Set<String> purchasedSkins = new HashSet<>();
+    /** 可指定下一局具體職業的自選卡數量。 */
+    public int roleChoiceCards;
+    /** 已扣除但尚未結算的自選職業 ID；空字串表示沒有預約。 */
+    public String pendingRoleId = "";
+    /** 已啟用但尚未結算的陣營卡；與 pendingRoleId 互斥。 */
+    public FactionCardType pendingFactionCard = FactionCardType.NONE;
     /** 最近一次已發獎的場次 UUID，防止同一結算重複入帳。 */
     public String lastVtuberCoinRoundId = "";
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
@@ -60,12 +66,22 @@ public final class BackpackState {
         // 钳制负值
         cards.replaceAll((type, count) -> count == null ? 0 : Math.max(0, count));
         vtuberCoins = Math.max(0, vtuberCoins);
+        roleChoiceCards = Math.max(0, roleChoiceCards);
         if (purchasedSkins == null) {
             purchasedSkins = new HashSet<>();
         }
         purchasedSkins.removeIf(id -> id == null || id.isBlank());
         if (lastVtuberCoinRoundId == null) {
             lastVtuberCoinRoundId = "";
+        }
+        if (pendingRoleId == null) {
+            pendingRoleId = "";
+        }
+        if (pendingFactionCard == null) {
+            pendingFactionCard = FactionCardType.NONE;
+        }
+        if (!pendingRoleId.isBlank()) {
+            pendingFactionCard = FactionCardType.NONE;
         }
         return this;
     }
@@ -77,6 +93,9 @@ public final class BackpackState {
         }
         this.migrated = other.migrated;
         this.vtuberCoins = other.vtuberCoins;
+        this.roleChoiceCards = other.roleChoiceCards;
+        this.pendingRoleId = other.pendingRoleId;
+        this.pendingFactionCard = other.pendingFactionCard;
         this.purchasedSkins = other.purchasedSkins == null
                 ? new HashSet<>()
                 : new HashSet<>(other.purchasedSkins);

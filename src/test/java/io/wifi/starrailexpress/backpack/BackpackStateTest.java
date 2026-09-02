@@ -21,6 +21,10 @@ class BackpackStateTest {
         assertNotNull(state.purchasedSkins);
         assertTrue(state.purchasedSkins.isEmpty());
         assertEquals("", state.lastVtuberCoinRoundId);
+        assertEquals(0, state.roleChoiceCards);
+        assertEquals("", state.pendingRoleId);
+        assertEquals(io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.NONE,
+                state.pendingFactionCard);
         assertTrue(state.migrated);
     }
 
@@ -45,6 +49,8 @@ class BackpackStateTest {
         source.vtuberCoins = 12;
         source.purchasedSkins.add("skin:bat:bamboo");
         source.lastVtuberCoinRoundId = "round-1";
+        source.roleChoiceCards = 3;
+        source.pendingRoleId = "sre:doctor";
         BackpackState target = BackpackState.createDefault();
 
         target.copyFrom(source);
@@ -53,5 +59,35 @@ class BackpackStateTest {
         assertEquals(12, target.vtuberCoins);
         assertEquals(Set.of("skin:bat:bamboo"), target.purchasedSkins);
         assertEquals("round-1", target.lastVtuberCoinRoundId);
+        assertEquals(3, target.roleChoiceCards);
+        assertEquals("sre:doctor", target.pendingRoleId);
+    }
+
+    @Test
+    void pendingRoleAndFactionAreMutuallyExclusiveAfterNormalization() {
+        BackpackState state = BackpackState.createDefault();
+        state.pendingRoleId = "noellesroles:doctor";
+        state.pendingFactionCard = io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.KILLER;
+
+        state.normalized();
+
+        assertEquals(io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.NONE,
+                state.pendingFactionCard);
+    }
+
+    @Test
+    void roleChoiceResolverHonorsRemainingCapacityAndRefundsLosers() {
+        java.util.UUID first = java.util.UUID.randomUUID();
+        java.util.UUID second = java.util.UUID.randomUUID();
+        var requests = java.util.List.of(
+                new BackpackRoleChoiceResolver.Request(first, "sre:role"),
+                new BackpackRoleChoiceResolver.Request(second, "sre:role"));
+
+        var result = BackpackRoleChoiceResolver.resolve(requests,
+                java.util.Map.of("sre:role", 1), java.util.Map.of(), new java.util.Random(7));
+
+        assertEquals(1, result.winners().size());
+        assertEquals(1, result.losers().size());
+        assertTrue(result.winners().containsKey(first) || result.winners().containsKey(second));
     }
 }

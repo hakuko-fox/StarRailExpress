@@ -10,7 +10,7 @@ import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 
 public record CatalogProduct(String id, Kind kind, String subtype, String value, String translationKey,
         VtuberStoreRegistry.Rarity rarity, FactionCardType cardType, int defaultPrice) {
-    public enum Kind { SKIN, CARD }
+    public enum Kind { SKIN, CARD, ROLE_CHOICE_CARD }
 
     public static CatalogProduct skin(VtuberStoreRegistry.SkinProduct skin) {
         return new CatalogProduct(skin.productId(), Kind.SKIN, skin.skinType(), skin.skinId(),
@@ -20,5 +20,10 @@ public record CatalogProduct(String id, Kind kind, String subtype, String value,
     public static CatalogProduct card(String id, FactionCardType type, int price) {
         return new CatalogProduct(id, Kind.CARD, "card", type.questKey,
                 "sre.pass.faction." + type.questKey, null, type, price);
+    }
+
+    public static CatalogProduct roleChoiceCard(String id, int price) {
+        return new CatalogProduct(id, Kind.ROLE_CHOICE_CARD, "role_choice", "role_choice",
+                "sre.backpack.role_choice_card", null, null, price);
     }
 }

@@ -166,15 +166,21 @@ public final class VtuberStoreScreen extends Screen {
                     graphics.drawCenteredString(font,
                             Component.translatable("screen.sre.vtuber_store.confirm.price", product.price()),
                             width / 2, y + 60, TEXT_PRIMARY);
-                    if ("CARD".equals(product.kind())) {
+                    if (isCardProduct(product)) {
                         int current = cardCount(product, backpack());
+                        String countKey = "ROLE_CHOICE_CARD".equals(product.kind())
+                                ? "screen.sre.vtuber_store.confirm.role_choice_count"
+                                : "screen.sre.vtuber_store.confirm.card_count";
                         graphics.drawCenteredString(font,
-                                Component.translatable("screen.sre.vtuber_store.confirm.card_count", current, current + 1),
+                                Component.translatable(countKey, current, current + 1),
                                 width / 2, y + 80, TEXT_SECONDARY);
                     }
                 } else if (dialogState == DialogState.SUCCESS && dialogCardCount >= 0) {
+                    String countKey = "ROLE_CHOICE_CARD".equals(product.kind())
+                            ? "screen.sre.vtuber_store.result.role_choice_count"
+                            : "screen.sre.vtuber_store.result.card_count";
                     graphics.drawCenteredString(font,
-                            Component.translatable("screen.sre.vtuber_store.result.card_count", dialogCardCount),
+                            Component.translatable(countKey, dialogCardCount),
                             width / 2, y + 64, TEXT_OWNED);
                 } else if (dialogState == DialogState.FAILURE && !dialogMessageKey.isBlank()) {
                     graphics.drawCenteredString(font, Component.translatable(dialogMessageKey),
@@ -335,9 +341,12 @@ public final class VtuberStoreScreen extends Screen {
     }
 
     private Component productState(VtuberStoreManager.CatalogEntry product, BackpackState backpack) {
-        if ("CARD".equals(product.kind())) {
+        if (isCardProduct(product)) {
             int count = cardCount(product, backpack);
-            return Component.translatable("screen.sre.vtuber_store.card_count", count)
+            String countKey = "ROLE_CHOICE_CARD".equals(product.kind())
+                    ? "screen.sre.vtuber_store.role_choice_count"
+                    : "screen.sre.vtuber_store.card_count";
+            return Component.translatable(countKey, count)
                     .append(Component.literal("  ·  " + product.price() + " Vtuber Coin"));
         }
         return isOwned(product, backpack)
@@ -346,7 +355,14 @@ public final class VtuberStoreScreen extends Screen {
     }
 
     private int cardCount(VtuberStoreManager.CatalogEntry product, BackpackState backpack) {
+        if ("ROLE_CHOICE_CARD".equals(product.kind())) {
+            return backpack.roleChoiceCards;
+        }
         return backpack.cards.getOrDefault(FactionCardType.fromString(product.value()), 0);
+    }
+
+    private boolean isCardProduct(VtuberStoreManager.CatalogEntry product) {
+        return "CARD".equals(product.kind()) || "ROLE_CHOICE_CARD".equals(product.kind());
     }
 
     private int productStateColor(VtuberStoreManager.CatalogEntry product, BackpackState backpack) {
@@ -473,6 +489,9 @@ public final class VtuberStoreScreen extends Screen {
         VtuberStoreManager.CatalogEntry product = dialogProduct();
         if (payload.success() && product != null && "CARD".equals(product.kind()) && payload.cardCount() >= 0) {
             state.cards.put(FactionCardType.fromString(product.value()), payload.cardCount());
+        } else if (payload.success() && product != null && "ROLE_CHOICE_CARD".equals(product.kind())
+                && payload.cardCount() >= 0) {
+            state.roleChoiceCards = payload.cardCount();
         } else if (payload.success() && product != null && "SKIN".equals(product.kind())) {
             state.purchasedSkins.add(BackpackManager.storeSkinKey(product.subtype(), product.value()));
         }
@@ -543,7 +562,7 @@ public final class VtuberStoreScreen extends Screen {
     private List<VtuberStoreManager.CatalogEntry> filteredProducts() {
         return ClientVtuberStoreCache.products().stream()
                 .filter(product -> category == Category.INFO ? false : category == Category.CARD
-                        ? "CARD".equals(product.kind())
+                        ? isCardProduct(product)
                         : "SKIN".equals(product.kind()) && category.subtype.equals(product.subtype()))
                 .toList();
     }
