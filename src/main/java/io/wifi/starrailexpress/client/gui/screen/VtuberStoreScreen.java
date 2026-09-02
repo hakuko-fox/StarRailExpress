@@ -343,10 +343,7 @@ public final class VtuberStoreScreen extends Screen {
     private Component productState(VtuberStoreManager.CatalogEntry product, BackpackState backpack) {
         if (isCardProduct(product)) {
             int count = cardCount(product, backpack);
-            String countKey = "ROLE_CHOICE_CARD".equals(product.kind())
-                    ? "screen.sre.vtuber_store.role_choice_count"
-                    : "screen.sre.vtuber_store.card_count";
-            return Component.translatable(countKey, count)
+            return Component.translatable("screen.sre.vtuber_store.card_count", count)
                     .append(Component.literal("  ·  " + product.price() + " Vtuber Coin"));
         }
         return isOwned(product, backpack)

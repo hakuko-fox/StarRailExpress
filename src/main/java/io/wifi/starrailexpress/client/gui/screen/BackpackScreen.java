@@ -121,6 +121,8 @@ public class BackpackScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // Draw the backdrop before the cards; Screen.render() runs after the panel.
+        g.fillGradient(0, 0, width, height, 0xC0050302, 0xE00C0805);
         if (player != null) {
             backpack = ClientPlayerDataCache.backpack(player.getUUID()).normalized();
         }
@@ -224,7 +226,7 @@ public class BackpackScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        g.fillGradient(0, 0, width, height, 0xC0050302, 0xE00C0805);
+        // The backdrop is drawn at the start of render(), before custom content.
     }
 
     // =========================================================================

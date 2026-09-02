@@ -1688,6 +1688,8 @@ public class RoleIntroduceScreen extends Screen {
     // ══════════════════════════════════════════════════════════════════
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // Blur only the world, before drawing panels and foreground widgets.
+        super.renderBackground(g, mouseX, mouseY, partialTick);
         renderLeftPanel(g, mouseX, mouseY);
         renderRightPanel(g, mouseX, mouseY);
         boolean isSmall = this.height <= 300;
@@ -2042,7 +2044,8 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     private int getRightContentHeight() {
-        return panelY + panelH - getRightContentTop() - PANEL_PAD;
+        int footerHeight = roleSelectionMode ? 24 : 0;
+        return Math.max(0, panelY + panelH - getRightContentTop() - PANEL_PAD - footerHeight);
     }
 
     private void renderRightPanel(GuiGraphics g, int mouseX, int mouseY) {
@@ -2611,6 +2614,6 @@ public class RoleIntroduceScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(g, mouseX, mouseY, partialTick);
+        // Screen.render() draws widgets last; do not blur the completed panels again.
     }
 }
