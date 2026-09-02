@@ -70,5 +70,21 @@
   "commands.listroles.no.entries": "沒有可用的職業或修飾符！",
   "commands.setrolecount.set":"已設置 %s 的強制刷新數量為 %s！",
   "commands.setrolecount.reset":"已重置！現在刷新將根據玩家數量刷新（自動計算）！",
-  "commands.setrolecount.auto":"已設置 %s 的強制刷新數量為自動計算！"
+  "commands.setrolecount.auto":"已設置 %s 的強制刷新數量為自動計算！",
+  "commands.forcerole.success.clear": "已清除強制賦予給 %s 的乘客身份",
+  "commands.forcemodifier.success": "已強制賦予修飾符 %s 給玩家 %s",
+  "commands.forcemodifier.success.clear": "已清除強制賦予給 %s 的修飾符",
+  "commands.forcemodifier.remove": "已刪除強制賦予給 %s 的修飾符 %s",
+  "commands.forcemodifier.query": "玩家 %s 被強制賦予的修飾符：%s",
+  "commands.forcemodifier.query.none": "玩家 %s 還沒有被強制賦予修飾符",
+  "commands.listroles.status.unknown.text": "§7[未知狀態]",
+  "commands.listroles.status.unknown.hover": "當前狀態未知",
+  "commands.listroles.status.config_disabled.text": "§c[配置禁用]",
+  "commands.listroles.status.config_disabled.hover": "§a點擊切換至啟用狀態\n%s",
+  "commands.listroles.status.other_disabled.text": "§d[其他禁用]",
+  "commands.listroles.status.other_disabled.hover": "§e配置未禁用，但可能因為其他功能禁用了此職業（比如職業輪換、地圖禁用等）。\n§c點擊切換至配置禁用狀態\n%s",
+  "commands.listroles.status.all_disabled.text": "§4[配置+其他禁用]",
+  "commands.listroles.status.all_disabled.hover": "§e配置禁用，且其他功能同樣禁用了此職業（比如職業輪換、地圖禁用等）。\n§a點擊切換至啟用狀態\n%s",
+  "commands.listroles.type.role": "§6[職業/角色]",
+  "commands.listroles.type.modifier": "§3[修飾符]"
 }
