@@ -52,7 +52,6 @@ import org.agmas.noellesroles.role_data.neutral.CupidRoleData;
 import org.agmas.noellesroles.role_data.neutral.DoomedSinnerRoleData;
 import org.agmas.noellesroles.TrueKillerFinder;
 import org.agmas.noellesroles.role_data.neutral.GodfatherRoleData;
-import org.agmas.noellesroles.handler.THEventHandler;
 import org.agmas.noellesroles.ModDataComponentTypes;
 import org.agmas.noellesroles.init.*;
 import org.agmas.noellesroles.role.ModRoles;
@@ -329,7 +328,6 @@ public class NRInteractionEvents {
         GodfatherRoleData.registerEvents();
         StandardRevolverItem.registerEvents();
         RefugeeComponent.register();
-        THEventHandler.registerEvents();
         NinjaRoleData.registerEvents();
         org.agmas.noellesroles.role_data.killer.NostalgistRoleData.registerEvents();
         org.agmas.noellesroles.role_data.killer.WraithAssassinRoleData.registerEvents();

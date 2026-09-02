@@ -753,6 +753,7 @@ public class ModRoles {
             .setCanSeeCoin(true)
             .setDefaultMax(1)
             .setDefaultEnableChance(5000)
+            .addBothRelatedRole(ModRoles.DREAM)
             .setCanBeRandomedByOtherRoles(false);
 
     /**
@@ -2574,7 +2575,7 @@ public class ModRoles {
             true, // isInnocent = 乘客阵营
             false, // canUseKiller = 无杀手能力
             SRERole.MoodType.FAKE, // 小丑心情（假心情）
-            TMMRoles.CIVILIAN.getMaxSprintTime() * 2, // 双倍体力上限
+            TMMRoles.CIVILIAN.getMaxSprintTime() * 100, // 双倍体力上限
             false // 不隐藏计分板
     ), "slay_the_spire").setRoleData(GlitchRobotRoleData::new).setCanSeeCoin(true)
             .setCanBePoisoned(false)
@@ -3086,7 +3087,18 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 冲刺时间
             false // 不能看时间
     )).setDefaultMax(1).setCanSeeCoin(true);
-
+    // 观者投稿：静默猎手
+    public static SRERole SILENT_KILLER = TMMRoles.registerRole(new NormalRole(
+        id("silent_killer"),
+        new Color(206,206,175).getRGB(),
+        RoleType.KILLER,
+        MoodType.FAKE,
+        Integer.MAX_VALUE,
+        true
+    ),"slay_the_spire")
+            .setAddedVersion("4.4")
+            .setDefaultEnableNeededPlayerCount(18)
+            .setDefaultEnableChance(3000);
     // mobai 投稿：达达利亚（原神） tartaglia
     public static SRERole TARTAGLIA = TMMRoles
             .registerRole(new TartagliaRole(

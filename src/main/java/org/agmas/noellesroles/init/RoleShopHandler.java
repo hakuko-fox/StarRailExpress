@@ -26,7 +26,7 @@ import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.KillerKnifeShopEntry;
+import io.wifi.starrailexpress.game.DiscountShopEntry;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -100,7 +100,7 @@ public class RoleShopHandler {
     public static boolean haveRegistered = false;
 
     private static int banditBlackoutPrice() {
-        return (int) (SREConfig.instance().blackoutPrice * 1.275);
+        return (int) (SREConfig.instance().blackoutPrice * 1.5);
     }
 
     private static List<ShopEntry> createPoisonerShopEntries() {
@@ -574,7 +574,7 @@ public class RoleShopHandler {
                     100,
                     ShopEntry.Type.TOOL));
 
-            CONSPIRATOR_SHOP.add(new KillerKnifeShopEntry(
+            CONSPIRATOR_SHOP.add(new DiscountShopEntry(
 
                     120));
 
@@ -887,13 +887,13 @@ public class RoleShopHandler {
 
         // 强盗商店（已调整价格与条目）
         {
-            BANDIT_SHOP.add(new KillerKnifeShopEntry(
+            BANDIT_SHOP.add(new DiscountShopEntry(
                     200));
 
             // 匪徒短管霰弹枪 - 450金币
             BANDIT_SHOP.add(new ShopEntry(
                     ModItems.SHORT_SHOTGUN.getDefaultInstance(),
-                    450,
+                    500,
                     ShopEntry.Type.WEAPON));
 
             // 飞斧 - 首购同刀价格金币，二次起70%折扣（可穿透击杀2人、撞墙钉住5秒后消失）
@@ -905,7 +905,7 @@ public class RoleShopHandler {
                     600,
                     ShopEntry.Type.WEAPON));
 
-            // 关灯 - 配置价格 * 1.275 后取整
+            // 关灯 - 配置价格 * 1.5 后取整
             BANDIT_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), banditBlackoutPrice(),
                     ShopEntry.Type.TOOL) {
                 public boolean onBuy(@NotNull Player player) {
@@ -927,7 +927,7 @@ public class RoleShopHandler {
             });
 
             // 闪光弹
-            BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 30, ShopEntry.Type.TOOL) {
+            BANDIT_SHOP.add(new ShopEntry(ModItems.FLASH_GRENADE.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean canBuy(@NotNull Player player) {
                     return !(MCItemsUtils.countItem(player, ModItems.FLASH_GRENADE) > 0);
@@ -967,6 +967,43 @@ public class RoleShopHandler {
             TAMER_SHOP
                     .add(new ShopEntry(FunnyItems.SUPER_PIG_HORSESHOE.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.TAMER.getIdentifier(), TAMER_SHOP);
+        }
+        {
+            var SHOP = new ArrayList<ShopEntry>();
+
+            SHOP.add(new DiscountShopEntry(SREConfig.instance().knifePrice));
+            SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
+                    SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
+            SHOP.add(new DiscountShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(),
+                    SREConfig.instance().revolverPrice,
+                    25));
+            {
+                var potion = Items.POTION.getDefaultInstance();
+                potion.set(DataComponents.POTION_CONTENTS,
+                        new PotionContents(Optional.empty(), Optional.of(16185078),
+                                List.of(ModEffects.of(MobEffects.INVISIBILITY, 10 * 20, 0, false, false, true))));
+                SHOP.add(new ShopEntry(potion,
+                        150, ShopEntry.Type.TOOL));
+            }
+            SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(),
+                    SREConfig.instance().firecrackerPrice, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(),
+                    SREConfig.instance().lockpickPrice, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(),
+                    SREConfig.instance().bodyBagPrice, ShopEntry.Type.TOOL));
+            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
+                    SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    return SREPlayerShopComponent.useBlackout(player);
+                }
+            });
+            SHOP.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
+                    ShopEntry.Type.TOOL));
+
+            ShopContent.customEntries.put(ModRoles.SILENT_KILLER.getIdentifier(), SHOP);
         }
 
         // 猎人商店：随机马(40%彩虹/40%残月萨/20%超级猪) - 50金币；前人留下的马铠 - 185金币；毒箭 - 90金币；关灯 - 配置价格；监控失灵
@@ -1308,7 +1345,7 @@ public class RoleShopHandler {
 
         // 影隼商店
         {
-            SHADOW_FALCON_SHOP.add(new KillerKnifeShopEntry(
+            SHADOW_FALCON_SHOP.add(new DiscountShopEntry(
 
                     130));
             SHADOW_FALCON_SHOP.add(new ShopEntry(
@@ -1382,7 +1419,7 @@ public class RoleShopHandler {
         // ==================== 悍匪商店 ====================
         {
             // 刀 - 160金币
-            GANGSTERS_SHOP.add(new KillerKnifeShopEntry(
+            GANGSTERS_SHOP.add(new DiscountShopEntry(
 
                     160));
 
@@ -1514,7 +1551,7 @@ public class RoleShopHandler {
         // ==================== 家族教徒商店 ====================
         {
             // 刀 - 200金币
-            MAFIOSO_SHOP.add(new KillerKnifeShopEntry(200));
+            MAFIOSO_SHOP.add(new DiscountShopEntry(200));
             // 左轮手枪 - 300金币
             MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
         }
@@ -1615,7 +1652,7 @@ public class RoleShopHandler {
         // ==================== 咒法师商店 ====================
         {
             // 刀 - 130金币
-            WARLOCK_SHOP.add(new KillerKnifeShopEntry(130));
+            WARLOCK_SHOP.add(new DiscountShopEntry(130));
             // 撬棍 - 35金币
             WARLOCK_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
             // 开锁器 - 80金币
@@ -1668,7 +1705,7 @@ public class RoleShopHandler {
             axeLore.add(Component.translatable("item.noellesroles.dream_axe.shop_lore3")
                     .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
             axeDisplay.set(DataComponents.LORE, new ItemLore(axeLore));
-            DREAM_SHOP.add(new KillerKnifeShopEntry(axeDisplay,
+            DREAM_SHOP.add(new DiscountShopEntry(axeDisplay,
                     dreamConfig.dreamAxePrice, 50));
             // 巨幕面具 - 400金币：购买即进入狂暴（Psycho 逻辑，不给球棒/面具），冷却挂在面具物品上
             ItemStack maskDisplay = ModItems.DREAM_MASK.getDefaultInstance();
@@ -2055,7 +2092,7 @@ public class RoleShopHandler {
                     new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), SREConfig.instance().crowbarPrice,
                             ShopEntry.Type.TOOL));
             SHOP.add(
-                    new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
+                    new DiscountShopEntry(SREConfig.instance().knifePrice));
             SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), SREConfig.instance().revolverPrice,
                     ShopEntry.Type.WEAPON));
             SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), SREConfig.instance().shortShotgunPrice,
@@ -2173,7 +2210,7 @@ public class RoleShopHandler {
         // 滞时鬼（Delayer）商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new KillerKnifeShopEntry(130));
+            SHOP.add(new DiscountShopEntry(130));
             SHOP.add(new ShopEntry(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance(), 285,
                     ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(org.agmas.noellesroles.init.ModItems.SHORT_SHOTGUN.getDefaultInstance(), 300,
@@ -2232,7 +2269,7 @@ public class RoleShopHandler {
         // INITIATE的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new KillerKnifeShopEntry(200));
+            SHOP.add(new DiscountShopEntry(200));
             ShopContent.customEntries.put(SERoles.INITIATE.getIdentifier(), SHOP);
         }
 
@@ -2247,7 +2284,7 @@ public class RoleShopHandler {
         // EXAMPLER的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new KillerKnifeShopEntry(
+            SHOP.add(new DiscountShopEntry(
 
                     120));
             SHOP.add(new ShopEntry(
@@ -2478,7 +2515,7 @@ public class RoleShopHandler {
             shop.add(new ShopEntry(TMMItems.DERRINGER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
 
             // 刀 - 130金币
-            shop.add(new KillerKnifeShopEntry(130));
+            shop.add(new DiscountShopEntry(130));
 
             ShopContent.customEntries.put(ModRoles.MERCENARY_ID, shop);
         }
@@ -2621,7 +2658,7 @@ public class RoleShopHandler {
                     List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
             {
                 var waspShop = new ArrayList<ShopEntry>();
-                waspShop.add(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50));
+                waspShop.add(new DiscountShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50));
                 waspShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
                 ShopContent.customEntries.put(
                         BounsRoles.BEE_WASP.identifier(), waspShop);
@@ -2953,7 +2990,7 @@ public class RoleShopHandler {
         // 清道夫商店
         {
             var shopEntries = new ArrayList<ShopEntry>();
-            shopEntries.add(new KillerKnifeShopEntry(220));
+            shopEntries.add(new DiscountShopEntry(220));
             shopEntries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100,
                     ShopEntry.Type.TOOL));
             shopEntries.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 500, ShopEntry.Type.TOOL));
@@ -3415,7 +3452,7 @@ public class RoleShopHandler {
         {
             var shop = new ArrayList<ShopEntry>();
             shop.add(
-                    new KillerKnifeShopEntry(SREConfig.instance().knifePrice) {
+                    new DiscountShopEntry(SREConfig.instance().knifePrice) {
                         @Override
                         public boolean canDisplay(Player player) {
                             return !RoleData.getOptional(WatcherRoleData.class, player)
@@ -3512,7 +3549,7 @@ public class RoleShopHandler {
         {
             var YOULU_SHOP = new ArrayList<ShopEntry>();
             // 刀 - 默认价格（130）
-            YOULU_SHOP.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
+            YOULU_SHOP.add(new DiscountShopEntry(SREConfig.instance().knifePrice));
             // 零一五 - 275金币
             YOULU_SHOP.add(new ShopEntry(ModItems.ZERO_ONE_FIVE_GUN.getDefaultInstance(), 275,
                     ShopEntry.Type.WEAPON));

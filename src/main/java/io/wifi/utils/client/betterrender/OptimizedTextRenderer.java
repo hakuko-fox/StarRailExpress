@@ -133,6 +133,7 @@ public class OptimizedTextRenderer {
 
         final Font font = Minecraft.getInstance().font;
         final MultiBufferSource.BufferSource bufferSource = frameGraphics.bufferSource();
+        final TextBatchingBuffer textSink = new TextBatchingBuffer();
         final int size = tickCache.size();
 
         int i = 0;
@@ -153,7 +154,7 @@ public class OptimizedTextRenderer {
 
             // Batch consecutive TextActions
             if (action instanceof TextAction) {
-                i = flushBatchedText(i, size, font, bufferSource);
+                i = flushBatchedText(i, size, font, textSink);
                 continue;
             }
 
@@ -170,6 +171,8 @@ public class OptimizedTextRenderer {
 
         RenderSystem.disableDepthTest();
         bufferSource.endBatch();
+        // Text is drawn last, matching the original deferred flush order.
+        textSink.flush();
         RenderSystem.enableDepthTest();
     }
 
@@ -245,18 +248,21 @@ public class OptimizedTextRenderer {
     }
 
     /**
-     * Batch consecutive TextActions using shared buffer source.
+     * Renders consecutive TextActions through the vanilla {@link Font} pipeline
+     * into a per-render-type batching buffer. Only the vertex sink differs from
+     * vanilla — the string decomposition, glyph lookup and quad emission are
+     * byte-for-byte identical to a direct {@code drawInBatch} call.
      */
-    private int flushBatchedText(int start, int size, Font font, MultiBufferSource.BufferSource bufferSource) {
+    private int flushBatchedText(int start, int size, Font font, TextBatchingBuffer sink) {
         int i = start;
         while (i < size && tickCache.get(i) instanceof TextAction t) {
             if (t.seq != null) {
                 font.drawInBatch(t.seq, t.x, t.y, t.color, t.shadow,
-                        t.matrix, bufferSource, Font.DisplayMode.NORMAL, 0,
+                        t.matrix, sink, Font.DisplayMode.NORMAL, 0,
                         LightTexture.FULL_BRIGHT);
             } else if (t.text != null) {
                 font.drawInBatch(t.text, t.x, t.y, t.color, t.shadow,
-                        t.matrix, bufferSource, Font.DisplayMode.NORMAL, 0,
+                        t.matrix, sink, Font.DisplayMode.NORMAL, 0,
                         LightTexture.FULL_BRIGHT);
             }
             i++;

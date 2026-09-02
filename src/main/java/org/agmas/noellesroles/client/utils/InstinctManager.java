@@ -23,7 +23,6 @@ import org.agmas.noellesroles.content.entity.YouluAnchorEntity;
 import io.wifi.starrailexpress.api.data.RoleData;
 import org.agmas.noellesroles.role_data.innocence.MagicianRoleData;
 import org.agmas.noellesroles.role_data.killer.MaChenXuRoleData;
-import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
@@ -362,17 +361,6 @@ public class InstinctManager {
             }
         }
 
-        if (SREClient.gameComponent.isRole(self, THRedHouseRoles.REMILIA)) {
-            if (!self.hasEffect(ModEffects.SAFE_TIME)) {
-                if (target.distanceToSqr(self) <= 25) {
-                    if (RoleUtils.compareRole(target_role, THRedHouseRoles.PACHURI)) {
-                        return TrueFalseAndCustomResult.custom(THRedHouseRoles.PACHURI.color());
-                    } else if (RoleUtils.compareRole(target_role, THRedHouseRoles.FURANDORU)) {
-                        return TrueFalseAndCustomResult.custom(THRedHouseRoles.FURANDORU.color());
-                    }
-                }
-            }
-        }
         // 疫使：杀手本能中透视的框为深绿色
         if (SREClient.gameComponent.isRole(target_player, ModRoles.INFECTED)) {
             return TrueFalseAndCustomResult.custom(new Color(0, 100, 0).getRGB()); // 深绿色

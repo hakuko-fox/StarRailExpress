@@ -25,6 +25,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
@@ -34,6 +35,7 @@ import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -103,10 +105,12 @@ import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
+import org.agmas.noellesroles.utils.MoneyUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
@@ -243,6 +247,10 @@ public class ModRolesInitialEventRegister {
             }
             if (role.identifier().equals(ModRoles.BARTENDER.identifier())) {
                 FoodDrinkGlowComponent.KEY.get(player).init();
+            }
+
+            if (role.identifier().equals(ModRoles.SILENT_KILLER.identifier())) {
+                SREAbilityPlayerComponent.KEY.get(player).setSkillCooldown(SRE.id("silent_killer"), 60 * 20);
             }
             // 魔术师角色初始化
             if (role.identifier().equals(ModRoles.CHEF.identifier())) {
@@ -844,6 +852,31 @@ public class ModRolesInitialEventRegister {
                     return comp != null && comp.releaseLast();
                 }).shifted(true).announceToSelf(false).build());
 
+        // 静默杀手（观者投稿）
+        RoleSkill.register(ModRoles.SILENT_KILLER,
+                RoleSkill.skill(SRE.id("silent_killer"), "skill.noellesroles.silent_killer", (ctx) -> {
+                    final var player = ctx.player();
+                    if (MoneyUtils.getBalance(player) != 0) {
+                        player.displayClientMessage(Component.translatable("skill.noellesroles.silent_killer.failed")
+                                .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                    List<Player> victims = RoleUtils.getNearestPlayers(player, 4, 2.5);
+                    for (var p : victims) {
+                        GameUtils.killPlayer(p, true, player, GameConstants.DeathReasons.GRAND_FINISH);
+                    }
+                    player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP,
+                            SoundSource.MASTER, 0.8f, 1f);
+                    player.serverLevel().sendParticles(ParticleTypes.TOTEM_OF_UNDYING, player.getX(), player.getY(),
+                            player.getZ(),
+                            50, 1, 1, 1, 0);
+                    return true;
+                })
+                        .showOnHud(true)
+                        .cooldownSeconds(120)
+                        .recordReplay()
+                        .announceToSelf()
+                        .build());
         // 阿蒙技能：
         // - G 键：对准星玩家静默种下时之虫（附身期间也可为其他人种虫）
         // - 潜行+技能键 键：附身期间完成夺舍（变成目标、令其死亡、本体处生成尸体）
