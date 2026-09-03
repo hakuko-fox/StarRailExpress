@@ -15,18 +15,26 @@
 
 package org.agmas.noellesroles.content.item;
 
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.replay.GameReplayUtils;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.init.HSRConstants;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
 import org.jetbrains.annotations.NotNull;
 
 public class PillItem extends Item {
@@ -43,7 +51,7 @@ public class PillItem extends Item {
             poisonous = tag.getBoolean(ModItems.PILL_POISONOUS_KEY);
         }
         ItemStack result = super.finishUsingItem(stack, world, user);
-        if (user instanceof Player player && !world.isClientSide) {
+        if (user instanceof ServerPlayer player && !world.isClientSide) {
             if (poisonous) {
                 SREPlayerPoisonComponent.KEY.get(player).setPoisonTicks(HSRConstants.toxinPoisonTime, player.getUUID());
             } else {
@@ -51,6 +59,16 @@ public class PillItem extends Item {
                 // 治愈感染
                 InfectedPlayerComponent infectedComponent = ModComponents.INFECTED.get(player);
                 infectedComponent.cure();
+            }
+            var wmcca = WorldModifierComponent.getInstance(world);
+            if (wmcca.isModifier(player, NRModifiers.RABBIT_SHAPE)) {
+                SRE.REPLAY_MANAGER.recordCustomEvent(
+                        Component.translatable("replay.event.rabbit.restore",
+                                GameReplayUtils.getReplayPlayerDisplayText(player, true)));
+                wmcca.removeModifier(player, NRModifiers.RABBIT_SHAPE);
+
+                ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
+                player.refreshDimensions();
             }
         }
         return result;

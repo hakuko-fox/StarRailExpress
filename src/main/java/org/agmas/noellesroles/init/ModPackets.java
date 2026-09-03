@@ -52,6 +52,8 @@ public class ModPackets {
 
     public static void registerPackets() {
         PayloadTypeRegistry.playC2S().register(VtuberRoleMenuC2SPacket.ID, VtuberRoleMenuC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(RefreshDimensionsS2CPacket.ID,
+                RefreshDimensionsS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FakeSteveControlS2CPacket.ID,
                 FakeSteveControlS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FakeSteveApparitionS2CPacket.ID,

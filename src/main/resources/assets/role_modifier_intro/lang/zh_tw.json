@@ -543,5 +543,10 @@
   "info.screen.roleid.baiyu": "警察陣營\n開局時會獲得一把手槍\n\n主動技〖記錄二三事〗 (G鍵)：〖冷卻時間30秒〗\n\t標記面前最多一名玩家\n\t\t→ 該玩家死亡時獲得提示音效",
   "info.screen.roleid.baiyu.simple": "警察陣營\n台灣個人勢Vtuber\n\n作為世界管理者\n白御有能力得悉事件真相\n從而紀錄發生的經過",
   "info.screen.roleid.ayers": "警察陣營\n開局時會獲得一把手槍\n\n被動技〖雙面人生〗\n\t→ 每30秒2個模式自動切換\n\t\t→ 亢奮模式\n\t\t\t→ 速度 I\n\t\t→ 憂鬱模式\n\t\t\t→ 緩速 I\n\n被動技〖魔〗\n\t→ 死亡後觸發\n\t→ 所有玩家\n\t\t→ 無法使用技能 5秒",
-  "info.screen.roleid.ayers.simple": "警察陣營\n台灣個人勢Vtuber\n\n魔王當上警察的一刻\n就是一場很大的心理博弈\n導致他每隔一段時間\n會變了另一個模樣"
+  "info.screen.roleid.ayers.simple": "警察陣營\n台灣個人勢Vtuber\n\n魔王當上警察的一刻\n就是一場很大的心理博弈\n導致他每隔一段時間\n會變了另一個模樣",
+  "==================== 修飾符 ====================": "",
+  "=======修機模式/特殊模式=======": "",
+  "info.screen.roleid.witch_maiden": "",
+  "info.screen.roleid.witch_maiden.simple": "",
+  "info.screen.roleid.rabbit_wansui": ""
 }
