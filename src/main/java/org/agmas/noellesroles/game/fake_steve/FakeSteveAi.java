@@ -264,7 +264,7 @@ public class FakeSteveAi {
             } else {
                 lookAt(body, state, isolated.getEyePosition());
             }
-            if (FakeSteveRules.canAssimilate(livingFakesNear(level, isolated, 12.0),
+            if (FakeSteveRules.canAssimilate(FakeSteveDirector.fakeMembersNear(level, isolated, 12.0),
                     otherLivingHumansNear(level, isolated, 12.0), state.assimilationTicks)) {
                 FakeSteveDirector.replace(isolated, ReplacementCause.ASSIMILATION);
                 clearFocus(state);
@@ -524,7 +524,7 @@ public class FakeSteveAi {
     private static ServerPlayer isolatedTarget(ServerLevel level, ServerPlayer body) {
         ServerPlayer nearest = level.players().stream().filter(FakeSteveAi::isHuman)
                 .filter(FakeSteveAi::isEngageable).filter(p -> p.distanceToSqr(body) <= 144.0)
-                .filter(p -> livingFakesNear(level, p, 12.0) >= 2)
+                .filter(p -> FakeSteveDirector.fakeMembersNear(level, p, 12.0) >= 2)
                 .filter(p -> otherLivingHumansNear(level, p, 12.0) == 0)
                 .min(Comparator.comparingDouble(body::distanceToSqr)).orElse(null);
         if (nearest == null)
@@ -533,12 +533,6 @@ public class FakeSteveAi {
                 .filter(FakeSteveAi::isEngageable).filter(p -> p.distanceToSqr(nearest) <= 144.0)
                 .min(Comparator.comparingDouble(nearest::distanceToSqr)).orElse(null);
         return closestFake == body ? nearest : null;
-    }
-
-    private static int livingFakesNear(ServerLevel level, ServerPlayer target, double range) {
-        return (int) level.players().stream().filter(FakeSteveDirector::isReplaced)
-                .filter(FakeSteveAi::isEngageable)
-                .filter(p -> p.distanceToSqr(target) <= range * range).count();
     }
 
     private static int otherLivingHumansNear(ServerLevel level, ServerPlayer target, double range) {

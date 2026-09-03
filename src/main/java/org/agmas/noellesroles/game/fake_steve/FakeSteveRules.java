@@ -36,9 +36,9 @@ public final class FakeSteveRules {
         return currentTick >= nextRecallTick;
     }
 
-    public static boolean canAssimilate(int nearbyLivingFakes, int otherLivingHumans,
+    public static boolean canAssimilate(int nearbyFakeMembers, int otherLivingHumans,
             int uninterruptedTicks) {
-        return nearbyLivingFakes >= 2 && otherLivingHumans == 0
+        return nearbyFakeMembers >= 2 && otherLivingHumans == 0
                 && uninterruptedTicks >= ASSIMILATION_TICKS;
     }
 

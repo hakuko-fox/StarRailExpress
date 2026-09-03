@@ -10,6 +10,7 @@ import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
+import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
@@ -27,6 +28,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -48,6 +50,8 @@ import java.util.UUID;
 public final class FakeSteveDirector {
     public static final String WINNER_ID = "fake_steve";
     private static final int CONTROL_EFFECT_TICKS = 30;
+    private static final long VIRUS_REVIVAL_DELAY_TICKS = 30L * 20L;
+    private static final double VIRUS_HUMAN_CLEARANCE_RADIUS_SQR = 12.0D * 12.0D;
     /** Longer than any round, without synchronizing the psycho component every tick. */
     private static final int PERMANENT_PSYCHO_TICKS = Integer.MAX_VALUE;
     private static final Map<ResourceLocation, Session> SESSIONS = new HashMap<>();
@@ -82,6 +86,12 @@ public final class FakeSteveDirector {
 
         OnGameEnd.EVENT.register((level, game) -> clear(level));
         ServerTickEvents.END_WORLD_TICK.register(FakeSteveDirector::tick);
+
+        OnPlayerDeath.EVENT.register((victim, reason) -> {
+            if (victim instanceof ServerPlayer player) {
+                handleVirusDeath(player);
+            }
+        });
 
         OnKillPlayerTriggered.EVENT.register((victim, spawnBody, killer, reason, force) -> {
             if (!(victim instanceof ServerPlayer serverPlayer)) {
@@ -252,6 +262,31 @@ public final class FakeSteveDirector {
         }
     }
 
+    private static void handleVirusDeath(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        Session session = session(level);
+        if (session == null || !canGenerate(level) || !isRoundAcceptingCommands(level)
+                || !hasVirus(player) || isReplaced(player)
+                || !session.virusTriggered.add(player.getUUID())) {
+            return;
+        }
+
+        session.virusRevivals.put(player.getUUID(), new VirusRevival(
+                player.position(), GameUtils.getTicksFromGameStart(level) + VIRUS_REVIVAL_DELAY_TICKS));
+        if (!session.active) {
+            session.active = true;
+            session.pendingEvents = 1;
+            session.activationSource = ActivationSource.VIRUS_DEATH;
+            SRE.LOGGER.info("[Fake Steve] Virus death forced the event open for {}", player.getGameProfile().getName());
+            announceNaturalEvent(level);
+        }
+    }
+
+    private static boolean hasVirus(ServerPlayer player) {
+        return WorldModifierComponent.KEY.get(player.serverLevel())
+                .isModifier(player, NRModifiers.FAKE_STEVE_VIRUS);
+    }
+
     private static void tick(ServerLevel level) {
         Session session = session(level);
         if (session == null) {
@@ -260,12 +295,15 @@ public final class FakeSteveDirector {
         boolean generating = canGenerate(level);
         if (!generating) {
             session.pendingEvents = 0;
+            session.virusRevivals.clear();
             FakeSteveApparitions.cancelAll(level);
         }
         if (!session.active
                 || SREGameWorldComponent.KEY.get(level).getGameStatus() != SREGameWorldComponent.GameStatus.ACTIVE) {
             return;
         }
+
+        tickVirusRevivals(level, session);
 
         if (generating) {
             FakeSteveApparitions.tick(level, session.pendingEvents > 0);
@@ -326,6 +364,12 @@ public final class FakeSteveDirector {
         Session removed = SESSIONS.remove(level.dimension().location());
         FakeSteveApparitions.cancelAll(level);
         FakeSteveVoiceDetector.clear();
+        if (removed != null) {
+            for (String playerName : removed.virusRevivalLogs.values()) {
+                SRE.REPLAY_MANAGER.recordCustomEvent(Component.translatable(
+                        "message.noellesroles.fake_steve.virus_revival_log", playerName));
+            }
+        }
         if (removed != null && removed.huntPhase) {
             sendHuntScene(level, false);
         }
@@ -376,6 +420,62 @@ public final class FakeSteveDirector {
             }
         }
         return count;
+    }
+
+    /** Counts active Fake Steves plus dead virus holders waiting at their death positions. */
+    static int fakeMembersNear(ServerLevel level, ServerPlayer target, double range) {
+        double rangeSqr = range * range;
+        int count = 0;
+        for (ServerPlayer player : level.players()) {
+            if (isReplaced(player) && GameUtils.isPlayerAliveAndSurvival(player)
+                    && player.distanceToSqr(target) <= rangeSqr) {
+                count++;
+            }
+        }
+        Session session = session(level);
+        if (session != null) {
+            for (VirusRevival revival : session.virusRevivals.values()) {
+                if (revival.deathPosition.distanceToSqr(target.position()) <= rangeSqr) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private static void tickVirusRevivals(ServerLevel level, Session session) {
+        long now = GameUtils.getTicksFromGameStart(level);
+        for (UUID id : Set.copyOf(session.virusRevivals.keySet())) {
+            VirusRevival revival = session.virusRevivals.get(id);
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
+            if (revival == null || player == null || player.serverLevel() != level || !player.isSpectator()) {
+                session.virusRevivals.remove(id);
+                continue;
+            }
+            if (now < revival.reviveAtTick || humanNear(level, player, revival.deathPosition)) {
+                continue;
+            }
+
+            session.virusRevivals.remove(id);
+            GameUtils.revivePlayer(player, revival.deathPosition.x(), revival.deathPosition.y(),
+                    revival.deathPosition.z());
+            if (replace(player, ReplacementCause.VIRUS_REVIVAL)) {
+                session.virusRevivalLogs.put(id, player.getGameProfile().getName());
+            }
+        }
+    }
+
+    private static boolean humanNear(ServerLevel level, ServerPlayer deadVirusPlayer, Vec3 deathPosition) {
+        for (ServerPlayer candidate : level.players()) {
+            if (candidate == deadVirusPlayer || !GameUtils.isPlayerAliveAndSurvival(candidate)
+                    || isReplaced(candidate)) {
+                continue;
+            }
+            if (candidate.position().distanceToSqr(deathPosition) <= VIRUS_HUMAN_CLEARANCE_RADIUS_SQR) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean shouldStartHunt(ServerLevel level, Session session) {
@@ -527,6 +627,9 @@ public final class FakeSteveDirector {
     private static final class Session {
         private final int startingPlayers;
         private final Map<UUID, FakeSteveAgentState> agents = new HashMap<>();
+        private final Set<UUID> virusTriggered = new java.util.HashSet<>();
+        private final Map<UUID, VirusRevival> virusRevivals = new HashMap<>();
+        private final Map<UUID, String> virusRevivalLogs = new java.util.LinkedHashMap<>();
         private boolean active;
         private boolean huntPhase;
         private boolean victoryDeclared;
@@ -537,5 +640,8 @@ public final class FakeSteveDirector {
         private Session(int startingPlayers) {
             this.startingPlayers = Math.max(0, startingPlayers);
         }
+    }
+
+    private record VirusRevival(Vec3 deathPosition, long reviveAtTick) {
     }
 }
