@@ -617,7 +617,7 @@ public class ModRolesInitialEventRegister {
         if (!canStartMaolunChallenge(caster, target)) {
             return false;
         }
-        int duration = 80 * 20;
+        int duration = 60 * 20;
         MAOLUN_RESOLVED_RESULTS.remove(target.getUUID());
         MAOLUN_CHALLENGES.put(target.getUUID(), new MaolunChallenge(caster.getUUID(),
                 target.level().getGameTime() + duration));
@@ -626,7 +626,7 @@ public class ModRolesInitialEventRegister {
         target.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
         target.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(target,
-                new org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket(true, 3, 80, true));
+                new org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket(true, 3, 60, true));
         caster.displayClientMessage(Component.translatable("message.noellesroles.meowlen.challenge_started",
                 target.getName()), true);
         return true;
@@ -856,12 +856,12 @@ public class ModRolesInitialEventRegister {
         RoleSkill.register(ModRoles.SILENT_KILLER,
                 RoleSkill.skill(SRE.id("silent_killer"), "skill.noellesroles.silent_killer", (ctx) -> {
                     final var player = ctx.player();
-                    if (MoneyUtils.getBalance(player) != 0) {
+                    if (MoneyUtils.getBalance(player) > 5) {
                         player.displayClientMessage(Component.translatable("skill.noellesroles.silent_killer.failed")
                                 .withStyle(ChatFormatting.RED), true);
                         return false;
                     }
-                    List<Player> victims = RoleUtils.getNearestPlayers(player, 4, 2.5);
+                    List<Player> victims = RoleUtils.getNearestPlayers(player, 5, 2.5);
                     for (var p : victims) {
                         GameUtils.killPlayer(p, true, player, GameConstants.DeathReasons.GRAND_FINISH);
                     }
@@ -1740,7 +1740,7 @@ public class ModRolesInitialEventRegister {
                 }).charges(1).showOnHud(true).build(),
                 RoleSkill.skill(SRE.id("everly_time_reversal"), "skill.noellesroles.everly.time_reversal", context -> {
                     return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                            .useRewind(context.player(), 5);
+                            .useRewind(context.player(), 5, 150);
                 }).charges(1).shifted(true).showOnHud(true).build());
 
         RoleSkill.register(ModRoles.MOCHEN,
@@ -1752,10 +1752,10 @@ public class ModRolesInitialEventRegister {
                     }
                     return rewound;
                 })
-                        .cooldownSeconds(180).showOnHud(true).build());
+                        .cooldownSeconds(120).showOnHud(true).build());
 
         // ==================== 風太 技能註冊 ====================
-        // 技能1（G）：神諭。固定消耗 200 金幣，冷卻 150 秒。
+        // 技能1（G）：神諭。固定消耗 200 金幣，冷卻 120 秒。
         RoleSkill.register(ModRoles.FU_TAI,
                 RoleSkill.skill(SRE.id("fu_tai_oracle"), "skill.noellesroles.fu_tai.oracle", context -> {
                     ServerPlayer player = context.player();
@@ -1768,26 +1768,26 @@ public class ModRolesInitialEventRegister {
                 RoleSkill.skill(SRE.id("lavanaii_bear_charge"), "skill.noellesroles.lavanaii.bear_charge", context -> {
                     ServerPlayer player = context.player();
                     var shop = SREPlayerShopComponent.KEY.get(player);
-                    if (shop.balance < 200) {
+                    if (shop.balance < 150) {
                         player.displayClientMessage(Component.translatable("message.noellesroles.lavanaii.not_enough_coins"), true);
                         return false;
                     }
-                    shop.setBalance(shop.balance - 200);
+                    shop.addToBalance(-150);
                     org.agmas.noellesroles.role.ModRoles.beginLafinaCharge(player);
                     return true;
-                }).cooldownSeconds(100).showOnHud(true).build());
+                }).cooldownSeconds(70).showOnHud(true).build());
 
         RoleSkill.register(ModRoles.YOZORA,
                 RoleSkill.skill(SRE.id("yozora_cat_sixth_sense"), "skill.noellesroles.yozora.cat_sixth_sense", context -> {
                     return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
                             .toggleYozoraCat(context.player());
-                }).cooldownSeconds(120).toggleable(true).showOnHud(true).build());
+                }).cooldownSeconds(10).toggleable(true).showOnHud(true).build());
 
         RoleSkill.register(ModRoles.BLOOD_FOX,
                 RoleSkill.skill(SRE.id("blood_fox_transform"), "skill.noellesroles.blood_fox.transform", context ->
                         org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
                                 .toggleBloodFox(context.player()))
-                        .cooldownSeconds(90).toggleable(true).showOnHud(true).build());
+                        .cooldownSeconds(10).toggleable(true).showOnHud(true).build());
 
         RoleSkill.register(ModRoles.AMI,
                 RoleSkill.skill(SRE.id("amimi_repel"), "skill.noellesroles.amimi.repel", context ->
@@ -1829,7 +1829,7 @@ public class ModRolesInitialEventRegister {
                 RoleSkill.skill(SRE.id("baiyu_record"), "skill.noellesroles.baiyu.record", context ->
                         org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
                                 .useBaiyuExamine(context.player()))
-                        .cooldownSeconds(120).showOnHud(true).build());
+                        .cooldownSeconds(30).showOnHud(true).build());
 
     }
 

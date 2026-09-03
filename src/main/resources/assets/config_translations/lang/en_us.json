@@ -517,7 +517,14 @@
     "text.autoconfig.stupid_express.option.modifiersSection.loversSection.canLoverHaveMultipleLovers": "Allow lover entries to be bound repeatedly",
     "text.autoconfig.noellesroles.option.silencerMax": "Maximum number of whisperers",
     "text.autoconfig.noellesroles.option.chanceOfSilencer": "Probability of generating the Quiet One (%)",
-    "text.autoconfig.starrailexpress.category.dnf_meeting": "Meeting Settings (Deprecated)",
-    "text.autoconfig.starrailexpress.category.dnf_world": "World Settings (Deprecated)",
-    "text.autoconfig.starrailexpress.category.underworld": "Underworld Settings (Deprecated)"
+    "=== SODIUM-EXTRA 補充===": "",
+    "=== SODIUM補充 ===": "",
+    "=== 客戶端實用工具 ===": "",
+    "====== 遊戲模式 ======": "",
+    "====== 分類 ======": "",
+    "====== 其餘 ======": "",
+    "=== 角色刷新概率設置 ===": "",
+    "=== 修飾符配置 ===": "",
+    "=== StupidExpress 角色設置 ===": "",
+    "=== 叛徒擴展包修飾符 ===": ""
 }

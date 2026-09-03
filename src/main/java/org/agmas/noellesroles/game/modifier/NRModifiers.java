@@ -38,7 +38,18 @@ import java.util.List;
  * NoellesRoles 修饰符注册类
  */
 public class NRModifiers {
-
+    /** Runtime-only marker for a player cosplayed as a Rabbit. */
+    public static final SREModifier RABBIT_SHAPE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("rabbit_shape"),
+            0x303030,
+            null,
+            null,
+            false,
+            false))
+            .setCanSetSpawnInfoInConfig(false)
+            .setDefaultEnableChance(0)
+            .setDefaultMax(0)
+            .setAddedVersion("4.4");
     /** Runtime-only marker for a player body controlled by Fake Steve. */
     public static final SREModifier FAKE_STEVE_REPLACED = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("fake_steve_replaced"),
@@ -50,6 +61,20 @@ public class NRModifiers {
             .setCanSetSpawnInfoInConfig(false)
             .setDefaultEnableChance(0)
             .setDefaultMax(0)
+            .setAddedVersion("4.4");
+
+    /** Hidden round modifier that activates Fake Steve after its holder dies. */
+    public static final SREModifier FAKE_STEVE_VIRUS = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("fake_steve_virus"),
+            0x303030,
+            null,
+            null,
+            false,
+            false))
+            .setHidden(true)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(2000)
+            .setDefaultEnableNeededPlayerCount(6)
             .setAddedVersion("4.4");
 
     /** 远征队修饰符 */
@@ -114,6 +139,7 @@ public class NRModifiers {
      */
     public static void init() {
         FAKE_STEVE_REPLACED.addBothRelatedRole(ModRoles.FAKE_STEVE);
+        FAKE_STEVE_VIRUS.addBothRelatedRole(ModRoles.FAKE_STEVE);
         EXPEDITION.civilianOnly = true;
         EXPEDITION.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.GHOST));
         INTROVERTED.civilianOnly = true;

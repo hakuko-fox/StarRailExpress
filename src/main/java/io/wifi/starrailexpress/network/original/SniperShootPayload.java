@@ -43,6 +43,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.agmas.noellesroles.content.block.scene.TrainTargetBlock;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -138,15 +141,19 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
                     for (ServerPlayer tracking : PlayerLookup.tracking(player))
                         PacketTracker.sendToClient(tracking, new ShootMuzzleS2CPayload(player.getId()));
 
+                    // 伺服器重新計算射線，不能信任客戶端提交的目標 entity id／方塊位置。
+                    HitResult serverHit = SniperRifleItem.getGunTarget(player);
+
                     // 处理方块命中（列车标靶）
-                    if (payload.hitBlockPos() != null && player.serverLevel() != null
-                            && player.serverLevel().getBlockState(payload.hitBlockPos())
+                    if (serverHit instanceof BlockHitResult blockHit && player.serverLevel() != null
+                            && player.serverLevel().getBlockState(blockHit.getBlockPos())
                                     .getBlock() instanceof TrainTargetBlock) {
-                        TrainTargetBlock.onHit(player.serverLevel(), payload.hitBlockPos());
+                        TrainTargetBlock.onHit(player.serverLevel(), blockHit.getBlockPos());
                     }
 
                     // 处理实体命中
-                    Entity hitEntity = player.serverLevel().getEntity(payload.targetOrShooterId());
+                    Entity hitEntity = serverHit instanceof EntityHitResult entityHit
+                            ? entityHit.getEntity() : null;
                     if (hitEntity instanceof Player target && target.distanceTo(player) < 200.0) {
                         var game = SREGameWorldComponent.KEY.get(player.level());
 

@@ -64,9 +64,9 @@ public class EverlyPlayerComponent implements RoleComponent, ServerTickingCompon
             return false;
         }
         var shop = SREPlayerShopComponent.KEY.get(sp);
-        if (shop.balance < 200) {
+        if (shop.balance < 150) {
             sp.displayClientMessage(Component.translatable(
-                    "message.noellesroles.vtuber.not_enough_coins", 200), true);
+                    "message.noellesroles.vtuber.not_enough_coins", 150), true);
             return false;
         }
         boolean ok = TimeStopEffect.tryTriggerStart(sp, 5 * 20,
@@ -74,7 +74,7 @@ public class EverlyPlayerComponent implements RoleComponent, ServerTickingCompon
         if (!ok) {
             return false;
         }
-        shop.addToBalance(-200);
+        shop.addToBalance(-150);
         return true;
     }
 

@@ -1143,7 +1143,7 @@ public class ModRoles {
             return SRE.id("textures/entity/custom_psycho/halic.png");
         }
     }).setCanSeeCoin(true).setComponentKey(HalicPlayerComponent.KEY).setDefaultMax(0)
-            .setAllBeSeenInstinctType(InstinctType.NONE).addFlag("hkvtuber").addFlag("vtuber");
+            .addFlag("hkvtuber").addFlag("vtuber");
 
     // 搜救员角色 - 乘客阵营
     public static SRERole RESCUER = TMMRoles.registerRole(new NormalRole(
@@ -1664,11 +1664,11 @@ public class ModRoles {
                 return io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY;
             }
             SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
-            boolean civilianAlive = player.serverLevel().players().stream()
+            boolean civilianOrPoliceAlive = player.serverLevel().players().stream()
                     .filter(GameUtils::isPlayerAliveAndSurvival)
                     .map(game::getRole)
-                    .anyMatch(role -> role != null && role.isInnocent() && !role.isVigilanteTeam());
-            return civilianAlive
+                    .anyMatch(role -> role != null && (role.isInnocent() || role.isVigilanteTeam()));
+            return civilianOrPoliceAlive
                     ? io.wifi.starrailexpress.game.GameUtils.WinStatus.NOT_MODIFY
                     : io.wifi.starrailexpress.game.GameUtils.WinStatus.CUSTOM;
         }

@@ -60,6 +60,7 @@ public final class VtuberRoleRuntime {
     private static final Map<UUID, Long> LAST_DEATH_TICK = new HashMap<>();
     private static final Map<UUID, Deque<PlayerSnapshot>> PLAYER_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> KANA_AFFECTED = new HashMap<>();
+    private static final Map<UUID, UUID> BAIYU_MARKED_TARGETS = new HashMap<>();
     private static final Set<UUID> KANA_PARTY = new HashSet<>();
     private static final Map<UUID, Integer> KANA_INITIAL_PLAYERS = new HashMap<>();
     private static final Map<UUID, Long> KANA_MENU_COOLDOWN = new HashMap<>();
@@ -158,7 +159,7 @@ public final class VtuberRoleRuntime {
             caster.displayClientMessage(Component.translatable("message.noellesroles.luna_yoru.missing_pair"), true);
             return false;
         }
-        if (!deduct(caster, 250)) {
+        if (!deduct(caster, 200)) {
             return false;
         }
         if (caster.distanceToSqr(counterpart) > 9.0D) {
@@ -191,7 +192,7 @@ public final class VtuberRoleRuntime {
             return true;
         }
         component.setDisguise(VtuberRolePlayerComponent.YOZORA_CAT);
-        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, Integer.MAX_VALUE, 1,
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, Integer.MAX_VALUE, 2,
                 false, false, true));
         return true;
     }
@@ -202,13 +203,17 @@ public final class VtuberRoleRuntime {
     }
 
     public static boolean useRewind(ServerPlayer caster, int seconds) {
+        return useRewind(caster, seconds, 200);
+    }
+
+    public static boolean useRewind(ServerPlayer caster, int seconds, int cost) {
         if (!GameUtils.isPlayerAliveAndSurvival(caster)) {
             return false;
         }
         var casterShop = SREPlayerShopComponent.KEY.get(caster);
-        if (casterShop.balance < 200) {
+        if (casterShop.balance < cost) {
             caster.displayClientMessage(Component.translatable(
-                    "message.noellesroles.vtuber.not_enough_coins", 200), true);
+                    "message.noellesroles.vtuber.not_enough_coins", cost), true);
             return false;
         }
         long targetTick = caster.level().getGameTime() - 20L * seconds;
@@ -224,7 +229,7 @@ public final class VtuberRoleRuntime {
         if (restored == 0) {
             return false;
         }
-        SREPlayerShopComponent.KEY.get(caster).addToBalance(-200);
+        SREPlayerShopComponent.KEY.get(caster).addToBalance(-cost);
         caster.displayClientMessage(Component.translatable(
                 "message.noellesroles.time_rewind.restored", seconds, restored), true);
         return restored > 0;
@@ -255,14 +260,18 @@ public final class VtuberRoleRuntime {
 
     public static boolean useBaiyuExamine(ServerPlayer player) {
         var hit = ProjectileUtil.getHitResultOnViewVector(player,
-                entity -> entity instanceof PlayerBodyEntity, 5.0F);
+                entity -> entity instanceof ServerPlayer target
+                        && target != player
+                        && GameUtils.isPlayerAliveAndSurvival(target), 5.0F);
         if (!(hit instanceof EntityHitResult entityHit)
-                || !(entityHit.getEntity() instanceof PlayerBodyEntity body)) {
+                || !(entityHit.getEntity() instanceof ServerPlayer target)) {
             player.displayClientMessage(Component.translatable(
-                    "message.noellesroles.baiyu.no_body"), true);
+                    "message.noellesroles.baiyu.no_target"), true);
             return false;
         }
-        displayBaiyuDeathReason(player, body);
+        BAIYU_MARKED_TARGETS.put(player.getUUID(), target.getUUID());
+        player.displayClientMessage(Component.translatable(
+                "message.noellesroles.baiyu.marked", target.getName()), true);
         return true;
     }
 
@@ -350,7 +359,7 @@ public final class VtuberRoleRuntime {
                 Integer.MAX_VALUE, 0, false, false, true));
         KANA_AFFECTED.computeIfAbsent(caster.getUUID(), ignored -> new HashSet<>())
                 .add(target.getUUID());
-        KANA_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 30L);
+        KANA_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 15L);
         updateKanaPartyMode(caster, game);
     }
 
@@ -398,7 +407,7 @@ public final class VtuberRoleRuntime {
         }
         if (org.agmas.noellesroles.init.ModRolesInitialEventRegister
                 .startMaolunSelection(caster, first, second)) {
-            MEOWLEN_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 120L);
+            MEOWLEN_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 70L);
         }
     }
 
@@ -515,7 +524,7 @@ public final class VtuberRoleRuntime {
             return;
         }
         if (player.tickCount % 20 == 0) {
-            mood.addMood(-0.0033F);
+            mood.addMood(-0.005F);
             if (mood.getMood() < 0.5F) {
                 leaveAnimalForm(player);
                 player.displayClientMessage(Component.translatable(
@@ -695,7 +704,7 @@ public final class VtuberRoleRuntime {
         }
         boolean nearby = player.serverLevel().players().stream()
                 .anyMatch(other -> other != player && GameUtils.isPlayerAliveAndSurvival(other)
-                        && other.distanceToSqr(player) <= 4.0D);
+                        && other.distanceToSqr(player) <= 9.0D);
         if (!nearby) {
             PASSERBY_TICKS.remove(player.getUUID());
             return;
@@ -740,19 +749,33 @@ public final class VtuberRoleRuntime {
         }
         LAST_DEATH_TICK.put(dead.getUUID(), now);
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(dead.level());
+        for (var marked : new HashMap<>(BAIYU_MARKED_TARGETS).entrySet()) {
+            if (!dead.getUUID().equals(marked.getValue())) {
+                continue;
+            }
+            ServerPlayer baiyu = dead.getServer().getPlayerList().getPlayer(marked.getKey());
+            if (baiyu != null && GameUtils.isPlayerAliveAndSurvival(baiyu)
+                    && game.isRole(baiyu, ModRoles.BAIYU)) {
+                baiyu.playNotifySound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING.value(),
+                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+                baiyu.displayClientMessage(Component.translatable(
+                        "message.noellesroles.baiyu.target_died", dead.getName()), true);
+            }
+            BAIYU_MARKED_TARGETS.remove(marked.getKey());
+        }
         boolean demon = game.isRole(dead, ModRoles.XIAOYE)
                 || game.isRole(dead, ModRoles.TINALIS)
                 || game.isRole(dead, ModRoles.AYERS);
         boolean spirit = game.isRole(dead, ModRoles.YOUJIN)
                 || game.isRole(dead, ModRoles.SHENWU_BINGFENG);
         if (demon || spirit) {
-            int skillBanTicks = demon ? 20 * 5 : 20 * 3;
+            int skillBanTicks = demon ? 20 * 3 : 20 * 5;
             for (ServerPlayer player : dead.serverLevel().players()) {
                 if (GameUtils.isPlayerAliveAndSurvival(player)) {
                     player.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, skillBanTicks, 0,
                             false, false, true));
                     if (spirit) {
-                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 5, 0,
+                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 5, 2,
                                 false, false, true));
                     }
                 }
@@ -806,6 +829,7 @@ public final class VtuberRoleRuntime {
         KANA_INITIAL_PLAYERS.clear();
         KANA_MENU_COOLDOWN.clear();
         MEOWLEN_MENU_COOLDOWN.clear();
+        BAIYU_MARKED_TARGETS.clear();
         FOOD_TRAPS.clear();
         BLOOD_FOX_LAST_CONSUME.clear();
         HOSHIZORA_WEAPON_BLOCKED_UNTIL.clear();

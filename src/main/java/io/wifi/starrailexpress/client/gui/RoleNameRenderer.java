@@ -49,6 +49,7 @@ import net.minecraft.world.phys.EntityHitResult;
 
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -179,6 +180,12 @@ public class RoleNameRenderer {
                         MutableComponent temp = Component.literal("");
                         var modifiers = SREClient.modifierComponent.getModifiers(target);
                         for (SREModifier modifier : modifiers) {
+                            // The virus remains secret to its owner, but is visible
+                            // to other spectators regardless of the holder's state.
+                            if (modifier.equals(NRModifiers.FAKE_STEVE_VIRUS)
+                                    && self.getUUID().equals(target.getUUID())) {
+                                continue;
+                            }
                             temp = temp.append(Component.translatable(" [%s]", modifier.getName())
                                     .withColor(modifier.color));
                         }
