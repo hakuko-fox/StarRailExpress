@@ -95,7 +95,7 @@ public class FuTaiPlayerComponent implements RoleComponent {
                 killers++;
             }
         }
-        nextOracleTick = now + 20L * 150L;
+        nextOracleTick = now + 20L * 120L;
         user.displayClientMessage(Component.translatable(
                 "message.noellesroles.fu_tai.oracle_result", killers, neutrals), true);
         return true;

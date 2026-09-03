@@ -3699,7 +3699,7 @@ public class RoleShopHandler {
         }
         {
             var YUYUE_SHOP = new ArrayList<ShopEntry>();
-            YUYUE_SHOP.add(new ShopEntry(ModItems.YUYUE_NOTE.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            YUYUE_SHOP.add(new ShopEntry(ModItems.YUYUE_NOTE.getDefaultInstance(), 25, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.YUYUE_ID, YUYUE_SHOP);
         }
         {
