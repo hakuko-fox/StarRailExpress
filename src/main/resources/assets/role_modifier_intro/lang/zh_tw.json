@@ -462,6 +462,7 @@
   "info.screen.modifier.corrupted": "修飾符\n死亡後，你的屍體直接變成骷髏。",
   "info.screen.modifier.flexible": "修飾符\n你的潛行速度增加40%%。",
   "info.screen.modifier.anti_newton": "修飾符\n你的重力減少20%%。",
+  "info.screen.modifier.fake_steve_virus": "修飾符\n偽人病毒會感染玩家，讓被感染者成為偽人並由 AI 控制。",
   "info.screen.modifier.fake_steve_replaced": "隱藏修飾符（無法自然取得）\n你的職業不變，但身體由Fake Steve接管。你無法說話或操作，只能以第三人稱觀看AI行動；死亡後可旁觀，若復活則再次被接管。",
   "=======修机模式/特殊模式=======": "",
   "info.screen.roleid.repair_survivor": "逃脫陣營\n修滿 5 臺修機方塊後，前往逃脫大門離開。可用工具箱、零件加速修機，也能救援籠中的隊友。",

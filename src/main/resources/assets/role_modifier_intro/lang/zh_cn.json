@@ -462,6 +462,7 @@
   "info.screen.modifier.corrupted": "修饰符\n死亡后，你的尸体直接变成骷髅。",
   "info.screen.modifier.flexible": "修饰符\n你的潜行速度增加40%%。",
   "info.screen.modifier.anti_newton": "修饰符\n你的重力减少20%%。",
+  "info.screen.modifier.fake_steve_virus": "修饰符\n伪人病毒会感染玩家，让被感染者成为伪人并由 AI 控制。",
   "info.screen.modifier.fake_steve_replaced": "修饰符\n此修饰符无法自然获取\n你的职业不变，但身体由Fake Steve接管。你无法说话或操作，只能以第三人称观看AI行动；死亡后可旁观，若复活则再次被接管。",
   "=======修机模式/特殊模式=======": "",
   "info.screen.roleid.repair_survivor": "逃脱阵营\n修满 5 台修机方块后，前往逃脱大门离开。可用工具箱、零件加速修机，也能救援笼中的队友。",

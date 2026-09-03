@@ -504,6 +504,7 @@
     "info.screen.roleid.niaoshoushou.simple": "Killer team\nHunt with fire, cruise missiles, and temporary cover.",
     "info.screen.roleid.fake_steve": "Neutral faction (event role)\nThis role is never assigned to a player. When enabled, each round has a 10% chance to start the impostor event. Players with low sanity or near bodies may see a faceless Steve and be replaced after looking away. All impostors win when living impostors are strictly more than 60% of the current living players.",
     "info.screen.roleid.fake_steve.simple": "Neutral faction (event role)\nFaceless Steves replace players. All impostors win above 60% of the current living players.",
+    "info.screen.modifier.fake_steve_virus": "Modifier\nFake Steve Virus infects players, turning the infected player into a Fake Steve controlled by AI.",
     "info.screen.modifier.fake_steve_replaced": "Hidden modifier (never naturally assigned)\nYour original role remains, but Fake Steve controls your body. You cannot speak or act and can only watch the AI in third person. You regain spectator control when dead and are possessed again if revived.",
     "info.screen.roleid.bee_queen": "",
     "info.screen.roleid.bee_queen.simple": "",
