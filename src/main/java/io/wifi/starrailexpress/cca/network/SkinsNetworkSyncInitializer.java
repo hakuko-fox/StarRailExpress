@@ -63,6 +63,9 @@ public class SkinsNetworkSyncInitializer {
                 isEnabled = MysqlPlayerDataStore.isAvailable()
                         && (SREConfig.instance().itemSkinSyncServerEnabled
                                 || SREConfig.instance().progressionSyncServerEnabled);
+                if (MysqlPlayerDataStore.isAvailable()) {
+                    PlayerStatsManager.syncOfflineLocalDataToDatabase(server);
+                }
             } catch (Exception exception) {
                 isEnabled = false;
                 logger.error("初始化 MySQL 玩家同步失败，已跳过远端同步。", exception);

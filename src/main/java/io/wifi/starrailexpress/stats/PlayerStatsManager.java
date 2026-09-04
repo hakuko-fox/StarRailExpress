@@ -41,6 +41,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,6 +62,88 @@ public final class PlayerStatsManager {
         ServerTickEvents.END_SERVER_TICK.register(PlayerStatsManager::tick);
         ServerLifecycleEvents.SERVER_STOPPING.register(PlayerStatsManager::flushAllLocalBlocking);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> STATS.clear());
+    }
+
+    /**
+     * Upload local statistics for players who are not online yet.
+     *
+     * This is intentionally a one-way backfill from the local files. The
+     * remote record wins whenever it is newer, so starting the server cannot
+     * overwrite newer data from the website or another server.
+     */
+    public static void syncOfflineLocalDataToDatabase(MinecraftServer server) {
+        if (!isDatabaseEnabled()) {
+            return;
+        }
+
+        Path statsDirectory = FabricLoader.getInstance().getConfigDir().resolve(STATS_DIR);
+        if (!Files.isDirectory(statsDirectory)) {
+            return;
+        }
+
+        try (Stream<Path> files = Files.list(statsDirectory)) {
+            files.filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .forEach(path -> syncOfflineLocalFile(server, path));
+        } catch (IOException exception) {
+            SRE.LOGGER.warn("Failed to scan offline player stats for database sync", exception);
+        }
+    }
+
+    private static void syncOfflineLocalFile(MinecraftServer server, Path path) {
+        String fileName = path.getFileName().toString();
+        String uuidText = fileName.substring(0, fileName.length() - ".json".length());
+        UUID playerUuid;
+        try {
+            playerUuid = UUID.fromString(uuidText);
+        } catch (IllegalArgumentException ignored) {
+            return;
+        }
+
+        try {
+            String localJson = Files.readString(path, StandardCharsets.UTF_8);
+            PlayerStatsData data = PlayerStatsSerializer.fromJson(localJson);
+            long fileUpdatedAt = Files.getLastModifiedTime(path).toMillis();
+            long localUpdatedAt = data.getUpdatedAt() > 0L ? data.getUpdatedAt() : fileUpdatedAt;
+            if (localUpdatedAt <= 0L) {
+                return;
+            }
+
+            MysqlPlayerDataStore.loadBatchAsync(playerUuid, List.of(DATABASE_KEY))
+                    .whenComplete((records, throwable) -> {
+                        if (throwable != null) {
+                            SRE.LOGGER.warn("Failed to inspect offline player stats for {}", playerUuid, throwable);
+                            return;
+                        }
+                        server.execute(() -> {
+                            if (server.getPlayerList().getPlayer(playerUuid) != null) {
+                                return;
+                            }
+
+                            MysqlPlayerDataStore.SyncRecord remote = records.get(DATABASE_KEY);
+                            long remoteUpdatedAt = remote == null ? 0L : remote.updatedAt();
+                            if (remoteUpdatedAt >= localUpdatedAt) {
+                                return;
+                            }
+
+                            long expectedRevision = remote == null ? 0L : remote.recordVersion();
+                            MysqlPlayerDataStore.saveBatchAsyncIfVersions(
+                                    playerUuid,
+                                    Map.of(DATABASE_KEY, localJson),
+                                    localUpdatedAt,
+                                    Map.of(DATABASE_KEY, expectedRevision))
+                                    .whenComplete((success, saveError) -> {
+                                        if (saveError != null || !Boolean.TRUE.equals(success)) {
+                                            SRE.LOGGER.warn("Failed to sync offline player stats for {}", playerUuid,
+                                                    saveError);
+                                        } else {
+                                            SRE.LOGGER.info("Synced offline player stats for {} to MySQL", playerUuid);
+                                        }
+                                    });
+                        });
+                    });
+        } catch (IOException | JsonSyntaxException exception) {
+            SRE.LOGGER.warn("Failed to read offline player stats for {}", playerUuid, exception);
+        }
     }
 
     public static PlayerStats get(ServerPlayer player) {
