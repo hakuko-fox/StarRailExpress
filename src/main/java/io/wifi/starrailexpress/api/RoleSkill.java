@@ -207,6 +207,7 @@ public final class RoleSkill {
             boolean noCastCCA,
             AnnounceInfo announceInfo,
             boolean toggleable,
+            boolean manualCooldown,
             boolean shifted,
             boolean modeSwitch,
             boolean showOnHud,
@@ -244,6 +245,7 @@ public final class RoleSkill {
         private int holdIntervalTicks = 1;
         private AnnounceInfo announceInfo = AnnounceInfo.none();
         private boolean toggleable;
+        private boolean manualCooldown;
         private boolean shifted;
         private boolean modeSwitch;
         private boolean showOnHud = false;
@@ -396,9 +398,15 @@ public final class RoleSkill {
             return this;
         }
 
+        /** Let the handler start cooldown on deactivation instead of activation. */
+        public Builder manualCooldown() {
+            this.manualCooldown = true;
+            return this;
+        }
+
         public Definition build() {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
-                    holdIntervalTicks, noCastCCA, announceInfo, toggleable, shifted, modeSwitch, showOnHud, withTarget,
+                    holdIntervalTicks, noCastCCA, announceInfo, toggleable, manualCooldown, shifted, modeSwitch, showOnHud, withTarget,
                     targetType,
                     haveRecord,
                     handler, recordName);

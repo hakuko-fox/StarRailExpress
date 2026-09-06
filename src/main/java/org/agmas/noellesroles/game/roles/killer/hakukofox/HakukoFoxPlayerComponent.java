@@ -27,7 +27,7 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 /**
  * 白狐 2.0 — 殺手陣營
  *
- * 主動技1（G）：獸化之力（可隨時關閉）冷卻180秒。變身成獸化型態—雪狐：
+ * 主動技1（G）：獸化之力（可隨時關閉）關閉後冷卻20秒。變身成獸化型態—雪狐：
  *   - 無法攻擊
  *   - 所受攻擊不會使你死亡
  *   - 獲得速度II
@@ -151,7 +151,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         }
         if (beastFormActive) {
             leaveBeastForm(sp);
-            context.setSkillCooldown(180 * 20);
+            context.setSkillCooldown(20 * 20);
             return true;
         }
         if (cultivating) {

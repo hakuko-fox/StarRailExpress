@@ -93,6 +93,18 @@ public class SREAbilityPlayerComponent
         public int charges = -1;
         public int maxCharges = -1;
         public int castCount;
+
+        public void markUsed(RoleSkill.Definition definition) {
+            if (!definition.manualCooldown()) {
+                cooldown = definition.cooldownTicks();
+            }
+            if (maxCharges == -1 && definition.maxCharges() > 0) {
+                maxCharges = definition.maxCharges();
+                charges = definition.maxCharges();
+            }
+            if (charges > 0) charges--;
+            castCount++;
+        }
     }
 
     /**
@@ -278,15 +290,7 @@ public class SREAbilityPlayerComponent
 
     public void markSkillUsed(RoleSkill.Definition definition) {
         SkillState state = getSkillState(definition.id());
-        state.cooldown = definition.cooldownTicks();
-        if (state.maxCharges == -1 && definition.maxCharges() > 0) {
-            state.maxCharges = definition.maxCharges();
-            state.charges = definition.maxCharges();
-        }
-        if (state.charges > 0) {
-            state.charges--;
-        }
-        state.castCount++;
+        state.markUsed(definition);
         castingSkill = definition.continuous() ? definition.id() : null;
         if (!definition.noCastCCA()) {
             cooldown = state.cooldown;

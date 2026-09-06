@@ -125,6 +125,31 @@ public final class VtuberRoleRuntime {
                         .getOrDefault(player.getUUID(), 0L);
     }
 
+    /** A grant is valid only for the Kana who earned it in the current party. */
+    public static boolean canUseKanaKnife(Player player) {
+        ItemStack knife = player.getMainHandItem();
+        var tag = knife.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                net.minecraft.world.item.component.CustomData.EMPTY).copyTag();
+        boolean kana = SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.KANA);
+        if (!kana) {
+            return !tag.hasUUID("KanaKnifeGrant");
+        }
+        UUID grant = VtuberRolePlayerComponent.KEY.get(player).getKnifeGrant();
+        return knife.is(TMMItems.KNIFE) && grant != null && tag.hasUUID("KanaKnifeGrant")
+                && grant.equals(tag.getUUID("KanaKnifeGrant"));
+    }
+
+    public static void consumeKanaKnife(ServerPlayer player) {
+        if (SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.KANA)) {
+            player.getMainHandItem().shrink(1);
+            VtuberRolePlayerComponent.KEY.get(player).setKnifeGrant(null);
+        }
+    }
+
+    public static void finishKanaKnifeAttack(ServerPlayer player) {
+        handleKanaKill(player);
+    }
+
     public static boolean useAmiRepel(ServerPlayer caster) {
         if (!deduct(caster, 100)) {
             return false;
@@ -173,11 +198,15 @@ public final class VtuberRoleRuntime {
         return true;
     }
 
-    public static boolean toggleBloodFox(ServerPlayer player) {
+    public static boolean toggleBloodFox(io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext context) {
+        ServerPlayer player = context.player();
         VtuberRolePlayerComponent component = VtuberRolePlayerComponent.KEY.get(player);
         if (component.getDisguise() == VtuberRolePlayerComponent.BLOOD_FOX) {
             leaveAnimalForm(player);
             return true;
+        }
+        if (!context.skillReady()) {
+            return false;
         }
         component.setDisguise(VtuberRolePlayerComponent.BLOOD_FOX);
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, Integer.MAX_VALUE, 1,
@@ -185,11 +214,15 @@ public final class VtuberRoleRuntime {
         return true;
     }
 
-    public static boolean toggleYozoraCat(ServerPlayer player) {
+    public static boolean toggleYozoraCat(io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext context) {
+        ServerPlayer player = context.player();
         VtuberRolePlayerComponent component = VtuberRolePlayerComponent.KEY.get(player);
         if (component.getDisguise() == VtuberRolePlayerComponent.YOZORA_CAT) {
             leaveAnimalForm(player);
             return true;
+        }
+        if (!context.skillReady()) {
+            return false;
         }
         component.setDisguise(VtuberRolePlayerComponent.YOZORA_CAT);
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, Integer.MAX_VALUE, 2,
@@ -270,6 +303,7 @@ public final class VtuberRoleRuntime {
             return false;
         }
         BAIYU_MARKED_TARGETS.put(player.getUUID(), target.getUUID());
+        VtuberRolePlayerComponent.KEY.get(player).setMarkedTargetName(target.getGameProfile().getName());
         player.displayClientMessage(Component.translatable(
                 "message.noellesroles.baiyu.marked", target.getName()), true);
         return true;
@@ -360,6 +394,7 @@ public final class VtuberRoleRuntime {
         KANA_AFFECTED.computeIfAbsent(caster.getUUID(), ignored -> new HashSet<>())
                 .add(target.getUUID());
         KANA_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 15L);
+        VtuberRolePlayerComponent.KEY.get(caster).setMenuCooldownUntil(now + 20L * 15L);
         updateKanaPartyMode(caster, game);
     }
 
@@ -380,8 +415,20 @@ public final class VtuberRoleRuntime {
                 .filter(GameUtils::isPlayerAliveAndSurvival)
                 .allMatch(player -> player == caster || affectedByCaster.contains(player.getUUID()));
         if ((oneThird || lowAliveAllAffected) && KANA_PARTY.add(caster.getUUID())) {
-            if (!SREItemUtils.hasItem(caster, TMMItems.KNIFE)) {
-                caster.addItem(TMMItems.KNIFE.getDefaultInstance());
+            SREItemUtils.clearItem(caster, TMMItems.KNIFE);
+            UUID grant = UUID.randomUUID();
+            ItemStack knife = TMMItems.KNIFE.getDefaultInstance();
+            var tag = new net.minecraft.nbt.CompoundTag();
+            tag.putUUID("KanaKnifeGrant", grant);
+            knife.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                    net.minecraft.world.item.component.CustomData.of(tag));
+            knife.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                    Component.translatable("item.noellesroles.kana_single_use_knife"));
+            VtuberRolePlayerComponent.KEY.get(caster).setKnifeGrant(grant);
+            // Do not lose the earned knife when the inventory is full.
+            if (!caster.addItem(knife)) {
+                caster.drop(caster.getMainHandItem().copy(), false);
+                caster.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, knife);
             }
             caster.displayClientMessage(Component.translatable("message.noellesroles.kana.party_started"), false);
         }
@@ -408,6 +455,7 @@ public final class VtuberRoleRuntime {
         if (org.agmas.noellesroles.init.ModRolesInitialEventRegister
                 .startMaolunSelection(caster, first, second)) {
             MEOWLEN_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 70L);
+            VtuberRolePlayerComponent.KEY.get(caster).setMenuCooldownUntil(now + 20L * 70L);
         }
     }
 
@@ -430,6 +478,7 @@ public final class VtuberRoleRuntime {
             }
         }
         KANA_PARTY.remove(kana.getUUID());
+        VtuberRolePlayerComponent.KEY.get(kana).setKnifeGrant(null);
         SREItemUtils.clearItem(kana, TMMItems.KNIFE);
         kana.displayClientMessage(Component.translatable("message.noellesroles.kana.party_finished"), false);
     }
@@ -550,6 +599,13 @@ public final class VtuberRoleRuntime {
     }
 
     private static void leaveAnimalForm(ServerPlayer player) {
+        int disguise = VtuberRolePlayerComponent.KEY.get(player).getDisguise();
+        if (disguise != VtuberRolePlayerComponent.NONE) {
+            var skillId = io.wifi.starrailexpress.SRE.id(disguise == VtuberRolePlayerComponent.BLOOD_FOX
+                    ? "blood_fox_transform" : "yozora_cat_sixth_sense");
+            io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.KEY.get(player)
+                    .setSkillCooldown(skillId, 20 * 10);
+        }
         VtuberRolePlayerComponent.KEY.get(player).setDisguise(VtuberRolePlayerComponent.NONE);
         player.removeEffect(MobEffects.MOVEMENT_SPEED);
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0,
@@ -762,6 +818,9 @@ public final class VtuberRoleRuntime {
                         "message.noellesroles.baiyu.target_died", dead.getName()), true);
             }
             BAIYU_MARKED_TARGETS.remove(marked.getKey());
+            if (baiyu != null) {
+                VtuberRolePlayerComponent.KEY.get(baiyu).setMarkedTargetName("");
+            }
         }
         boolean demon = game.isRole(dead, ModRoles.XIAOYE)
                 || game.isRole(dead, ModRoles.TINALIS)
@@ -846,7 +905,7 @@ public final class VtuberRoleRuntime {
                     KANA_INITIAL_PLAYERS.put(player.getUUID(), game.getPlayerCount());
                 }
                 VtuberRolePlayerComponent.KEY.maybeGet(player)
-                        .ifPresent(component -> component.setDisguise(VtuberRolePlayerComponent.NONE));
+                        .ifPresent(VtuberRolePlayerComponent::init);
             }
         }
     }

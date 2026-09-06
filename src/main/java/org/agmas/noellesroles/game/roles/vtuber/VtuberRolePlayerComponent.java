@@ -22,6 +22,36 @@ public class VtuberRolePlayerComponent implements RoleComponent {
 
     private final Player player;
     private int disguise;
+    private long menuCooldownUntil;
+    private String markedTargetName = "";
+    private java.util.UUID knifeGrant;
+
+    public long getMenuCooldownSeconds() {
+        return Math.max(0L, (menuCooldownUntil - player.level().getGameTime() + 19L) / 20L);
+    }
+
+    public void setMenuCooldownUntil(long until) {
+        menuCooldownUntil = until;
+        KEY.sync(player);
+    }
+
+    public String getMarkedTargetName() {
+        return markedTargetName;
+    }
+
+    public void setMarkedTargetName(String name) {
+        markedTargetName = name;
+        KEY.sync(player);
+    }
+
+    public java.util.UUID getKnifeGrant() {
+        return knifeGrant;
+    }
+
+    public void setKnifeGrant(java.util.UUID grant) {
+        knifeGrant = grant;
+        KEY.sync(player);
+    }
 
     public VtuberRolePlayerComponent(Player player) {
         this.player = player;
@@ -52,6 +82,9 @@ public class VtuberRolePlayerComponent implements RoleComponent {
 
     @Override
     public void init() {
+        menuCooldownUntil = 0L;
+        markedTargetName = "";
+        knifeGrant = null;
         setDisguise(NONE);
     }
 
@@ -63,11 +96,19 @@ public class VtuberRolePlayerComponent implements RoleComponent {
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putInt("Disguise", disguise);
+        tag.putLong("MenuCooldownUntil", menuCooldownUntil);
+        tag.putString("MarkedTargetName", markedTargetName);
+        if (knifeGrant != null) {
+            tag.putUUID("KnifeGrant", knifeGrant);
+        }
     }
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
         disguise = tag.getInt("Disguise");
+        menuCooldownUntil = tag.getLong("MenuCooldownUntil");
+        markedTargetName = tag.getString("MarkedTargetName");
+        knifeGrant = tag.hasUUID("KnifeGrant") ? tag.getUUID("KnifeGrant") : null;
     }
 
     @Override

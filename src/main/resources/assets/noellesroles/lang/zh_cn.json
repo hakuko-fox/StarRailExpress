@@ -1,4 +1,8 @@
 {
+  "item.noellesroles.kana_single_use_knife": "一次性派对小刀",
+  "hud.noellesroles.vtuber.form_active": "变身中",
+  "hud.noellesroles.baiyu.no_target": "无",
+  "hud.noellesroles.baiyu.marked_target": "标记目标：%s",
   "entity.noellesroles.rainbow_horse": "海曼彩虹马",
   "item.noellesroles.rainbow_horseshoe": "彩虹马蹄铁",
   "item.noellesroles.rainbow_horseshoe.tooltip": "右键召唤一匹海曼彩虹马从天而降，可两人乘骑，120秒后消失",
