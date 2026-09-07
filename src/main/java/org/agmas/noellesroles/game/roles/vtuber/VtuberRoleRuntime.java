@@ -364,6 +364,10 @@ public final class VtuberRoleRuntime {
         if (!GameUtils.isPlayerAliveAndSurvival(caster)) {
             return;
         }
+        if (io.wifi.starrailexpress.api.RoleSkill.blockForSpectator(caster, false)) {
+            caster.displayClientMessage(Component.translatable("message.tip.cant_use_skill"), true);
+            return;
+        }
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(caster.level());
         ServerPlayer first = caster.getServer().getPlayerList().getPlayer(firstUuid);
         ServerPlayer second = secondUuid == null ? null : caster.getServer().getPlayerList().getPlayer(secondUuid);
@@ -436,8 +440,7 @@ public final class VtuberRoleRuntime {
 
     private static void selectMeowlenTargets(ServerPlayer caster, ServerPlayer first, ServerPlayer second) {
         long now = caster.level().getGameTime();
-        if (caster.hasEffect(ModEffects.SAFE_TIME)
-                || io.wifi.starrailexpress.api.RoleSkill.blockForSpectator(caster)) {
+        if (caster.hasEffect(ModEffects.SAFE_TIME)) {
             caster.displayClientMessage(Component.translatable("message.tip.cant_use_skill"), true);
             return;
         }
@@ -781,6 +784,7 @@ public final class VtuberRoleRuntime {
                 || game.isRole(player, ModRoles.LUNA)
                 || game.isRole(player, ModRoles.YORU)
                 || game.isRole(player, ModRoles.MAOLUN)
+                || game.isRole(player, ModRoles.BAIYU)
                 || game.isRole(player, ModRoles.YOZORA);
         if (nocturnal) {
             player.removeEffect(MobEffects.BLINDNESS);

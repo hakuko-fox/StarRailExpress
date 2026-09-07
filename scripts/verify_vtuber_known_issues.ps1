@@ -38,6 +38,7 @@ $knifePayload = Read-Utf8 'src/main/java/io/wifi/starrailexpress/network/origina
 Assert-Contains $knifePayload '!role.onUseKnife(player)' '刀擊封包缺少伺服器端 onUseKnife 驗證，柚封凌的禁用狀態可被繞過。'
 
 $roleEvents = Read-Utf8 'src/main/java/org/agmas/noellesroles/init/ModRolesInitialEventRegister.java'
+Assert-Matches $roleEvents '(?s)useOracleSkill\(player, context\);\s*\}\)\.cooldownSeconds\(120\)' '風太 HUD 未同步 120 秒技能冷卻。'
 Assert-Contains $roleEvents 'NINE_ONE_ATTACKED' '九月一缺少「受攻擊後」狀態，40 秒任務週期會在受攻擊前啟動。'
 Assert-Contains $roleEvents 'ModEffects.CHAT_BAN' '九月一受攻擊後只禁語音，未禁止文字聊天。'
 Assert-Contains $roleEvents 'context.setSkillCooldown(5 * 20)' '陌塵技能失敗後未套用 5 秒冷卻。'
@@ -86,7 +87,8 @@ foreach ($language in @('zh_tw', 'zh_cn', 'en_us')) {
     Assert-NotContains ([string] $intro['info.screen.roleid.fu_tai']) '紅石掉落物' "$language 的風太詳細說明仍保留舊版紅石內容。"
     Assert-Contains ([string] $intro['info.screen.roleid.fu_tai']) '被動技〖夜行性動物〗' "$language 的風太詳細說明缺少新版被動。"
     Assert-Contains ([string] $intro['info.screen.roleid.fu_tai']) '無視失明' "$language 的風太詳細說明缺少無視失明效果。"
-    Assert-Contains ([string] $intro['info.screen.roleid.kana']) '按下E打開選單可選擇1位不同玩家為目標 〖冷卻時間為15秒〗' "$language 的佳奈詳細說明未同步 E 選單與 15 秒冷卻。"
+    Assert-Contains ([string] $intro['info.screen.roleid.kana']) '詛咒選單｜E鍵｜冷卻時間15秒' "$language 的佳奈詳細說明未同步 E 選單與 15 秒冷卻。"
+    Assert-Contains ([string] $intro['info.screen.roleid.kana']) '選擇1名其他玩家' "$language 的佳奈詳細說明缺少目標限制。"
     Assert-Contains ([string] $intro['info.screen.roleid.nine_one']) '被攻擊後任務會每40秒刷新一次' "$language 的九月一詳細說明未同步 x.x.1。"
     Assert-Contains ([string] $intro['info.screen.roleid.baiyu']) '冷卻時間30秒' "$language 的白御詳細說明仍是舊冷卻。"
     Assert-Contains ([string] $intro['info.screen.roleid.baiyu']) '標記面前最多一名玩家' "$language 的白御詳細說明未改為單人標記。"
@@ -105,6 +107,8 @@ Assert-Contains $roleEvents '.cooldownSeconds(20).toggleable(true).manualCooldow
 Assert-Contains $roleEvents '.cooldownSeconds(10).toggleable(true).manualCooldown()' '血狐與夜空必須在解除後冷卻。'
 Assert-Contains $knifePayload 'consumeKanaKnife(player)' '佳奈小刀未在命中時消耗。'
 Assert-Contains $knifePayload 'canUseKanaKnife(player)' '佳奈小刀缺少伺服器來源檢查。'
+Assert-Matches $runtime '(?s)handleMenuSelection\(ServerPlayer caster.*?RoleSkill\.blockForSpectator\(caster, false\).*?return;.*?SREGameWorldComponent game' '佳奈及貓倫選單技能未檢查技能封鎖。'
+Assert-Matches $runtime '(?s)private static void tickNocturnalAndStableSan.*?game\.isRole\(player, ModRoles\.BAIYU\).*?player\.removeEffect\(MobEffects\.BLINDNESS\)' '白御被動「夜行性動物」未移除失明。'
 foreach ($language in @('zh_tw', 'zh_cn', 'en_us')) {
     $intro = (Read-Utf8 "src/main/resources/assets/role_modifier_intro/lang/$language.json") | ConvertFrom-Json -AsHashtable
     Assert-Contains $intro['info.screen.roleid.hakukofox'] '冷卻時間20秒' "$language 白狐說明仍是舊冷卻。"

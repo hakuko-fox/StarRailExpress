@@ -27,10 +27,10 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * 哈力克 2.0 — 平民陣營
  *
  * 主動技1（G）：如兔子般量產的威力。冷卻10秒（由框架 cooldownSeconds(10) 控制），消耗10金幣，
- *   生產一隻分身哈力克（直到遊戲結束）。分身被攻擊時分身會消失，攻擊者失明5秒。
+ *   生產一隻分身哈力克（直到遊戲結束）。分身受攻擊後消失，攻擊者停止行動3秒，武器不進入冷卻。
  * 主動技2（Shift+G）：漏電仿生人。每局遊戲最多1次（由框架 charges(1) 控制），消耗50金幣，
  *   令所有哈力克附近7格玩家停止行動7秒。
- * 被動技（和平統治）：如小透明般無法被殺手透視所在點，且無法購買武器。
+ * 被動技：拒絕交易（無法購買武器）、非有機生物（無視理智值）。
  * 標籤：香港Vtuber
  */
 public class HalicPlayerComponent implements RoleComponent, ServerTickingComponent {

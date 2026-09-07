@@ -1664,8 +1664,8 @@ public class ModRolesInitialEventRegister {
                 }).build());
 
         // ==================== Halic 技能注册 ====================
-        // 技能1（G）：每 10 秒消耗 10 金幣生產一隻永久存在的分身，分身被攻擊時使攻擊者失明 2 秒
-        // 技能2（Shift+G）：消耗 50 金幣電擊附近 10 格內玩家，使其停止行動 10 秒
+        // 技能1（G）：10金幣、冷卻10秒；分身受攻擊後消失，攻擊者停止行動3秒，武器不進入冷卻。
+        // 技能2（Shift+G）：每局1次、50金幣；本體與分身附近7格內的其他玩家停止行動7秒。
         RoleSkill.register(ModRoles.HALIC,
                 RoleSkill.skill(SRE.id("halic_decoy"), "skill.noellesroles.halic.decoy", context -> {
                     ServerPlayer player = context.player();
@@ -1682,8 +1682,8 @@ public class ModRolesInitialEventRegister {
 
         // ==================== HakukoFox 技能注册 ====================
         // 技能1（G）：獸化型態 — 變身為白色狐狸，獲得速度 II，無限時間
-        //   再按 G 回到人型，冷却 180 秒。
-        //   被动：兽化时免疫一次致命伤害（狐有九命）。
+        //   再按 G 回到人型，解除後才開始20秒冷卻。
+        //   獸化期間所受攻擊不會使你死亡。
         // 技能2（Shift+G）：瞬結 — 消耗100金令其他玩家緩速、失明3秒
         //   冷却 60 秒。
         RoleSkill.register(ModRoles.HAKUKO_FOX,
@@ -1755,14 +1755,14 @@ public class ModRolesInitialEventRegister {
                         .cooldownSeconds(120).showOnHud(true).build());
 
         // ==================== 風太 技能註冊 ====================
-        // 技能1（G）：神諭。固定消耗 200 金幣，冷卻 120 秒。
+        // 技能1（G）：占星探究。固定消耗200金幣，冷卻120秒並同步HUD倒數。
         RoleSkill.register(ModRoles.FU_TAI,
                 RoleSkill.skill(SRE.id("fu_tai_oracle"), "skill.noellesroles.fu_tai.oracle", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent.KEY.get(player)
                             .useOracleSkill(player, context);
-                }).showOnHud(true).build());
+                }).cooldownSeconds(120).showOnHud(true).build());
 
         RoleSkill.register(ModRoles.LAFINA,
                 RoleSkill.skill(SRE.id("lavanaii_bear_charge"), "skill.noellesroles.lavanaii.bear_charge", context -> {
