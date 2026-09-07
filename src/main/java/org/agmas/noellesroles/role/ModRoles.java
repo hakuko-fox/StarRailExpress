@@ -1724,12 +1724,20 @@ public class ModRoles {
                 Integer.MAX_VALUE, true) {
             @Override
             public boolean onUseGun(Player player) {
-                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
+                return !id.equals(KANA_ID)
+                        && !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
             }
 
             @Override
             public boolean onUseKnife(Player player) {
-                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player);
+                return !org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.isWeaponBlocked(player)
+                        && org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.canUseKanaKnife(player);
+            }
+
+            @Override
+            public TrueFalseResult onPickUpItem(Player player, ItemStack item) {
+                return id.equals(KANA_ID) && isNewRoleWeapon(item.getItem())
+                        ? TrueFalseResult.FALSE : TrueFalseResult.PASS;
             }
         })
                 .setCanSeeCoin(true).setCanUseKiller(true).setDefaultMax(1).addFlag(flag);

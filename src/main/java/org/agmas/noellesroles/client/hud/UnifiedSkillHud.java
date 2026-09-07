@@ -104,7 +104,9 @@ public final class UnifiedSkillHud {
             RoleSkill.Definition selectedDef = selectable.isEmpty() ? null
                     : selectable.get(Mth.clamp(ability.getSelectedSkill(), 0, selectable.size() - 1));
 
-            int rowCount = visible.size() + (passives.isEmpty() ? 0 : 1);
+            boolean baiyu = role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.BAIYU_ID);
+            var vtuberState = org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent.KEY.get(client.player);
+            int rowCount = visible.size() + (baiyu ? 1 : 0) + (passives.isEmpty() ? 0 : 1);
             Component[] names = new Component[rowCount];
             Component[] states = new Component[rowCount];
             int[] stateColors = new int[rowCount];
@@ -134,7 +136,13 @@ public final class UnifiedSkillHud {
                 Component stateText;
                 int stateColor;
                 float progress = -1.0F;
-                if (state.cooldown > 0) {
+                boolean formActive = skill.manualCooldown() && (vtuberState.isDisguised()
+                        || org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY
+                                .get(client.player).isBeastFormActive());
+                if (formActive) {
+                    stateText = Component.translatable("hud.noellesroles.vtuber.form_active");
+                    stateColor = GREEN;
+                } else if (state.cooldown > 0) {
                     stateText = Component.translatable("hud.sre.skill.cooldown",
                             String.format("%.1f", state.cooldown / 20.0F));
                     stateColor = BLUE;
@@ -159,6 +167,18 @@ public final class UnifiedSkillHud {
                 cooldownProgress[idx] = progress;
                 int rowW = client.font.width(name) + NAME_STATE_GAP + client.font.width(stateText);
                 maxRowW = Math.max(maxRowW, rowW);
+                idx++;
+            }
+
+            if (baiyu) {
+                Component target = vtuberState.getMarkedTargetName().isEmpty()
+                        ? Component.translatable("hud.noellesroles.baiyu.no_target")
+                        : Component.literal(vtuberState.getMarkedTargetName());
+                names[idx] = Component.translatable("hud.noellesroles.baiyu.marked_target", target);
+                states[idx] = null;
+                stateColors[idx] = MUTED;
+                cooldownProgress[idx] = -1.0F;
+                maxRowW = Math.max(maxRowW, client.font.width(names[idx]));
                 idx++;
             }
 

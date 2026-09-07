@@ -1,4 +1,8 @@
-﻿{
+{
+  "item.noellesroles.kana_single_use_knife": "Single-use Party Knife",
+  "hud.noellesroles.vtuber.form_active": "Transformed",
+  "hud.noellesroles.baiyu.no_target": "None",
+  "hud.noellesroles.baiyu.marked_target": "Marked: %s",
     "entity.noellesroles.rainbow_horse": "hayman rainbow horse",
     "item.noellesroles.rainbow_horseshoe": "rainbow horseshoe",
     "item.noellesroles.rainbow_horseshoe.tooltip": "Right-click to summon a Heyman rainbow horse to fall from the sky, which can be ridden by two people. It will disappear after 120 seconds.",

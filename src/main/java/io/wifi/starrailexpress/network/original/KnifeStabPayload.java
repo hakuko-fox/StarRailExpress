@@ -67,6 +67,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             }
             SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
             final var role = game.getRole(player);
+            if (!org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.canUseKanaKnife(player)) {
+                return;
+            }
             if (role != null && !role.onUseKnife(player)) {
                 return;
             }
@@ -77,7 +80,10 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             }
 
             if (targetEntity instanceof Fox fox) {
+                if (fox.distanceTo(player) > 4.0) return;
+                org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.consumeKanaKnife(player);
                 fox.hurt(player.damageSources().playerAttack(player), 999f);
+                org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.finishKanaKnifeAttack(player);
                 return;
             }
 
@@ -87,7 +93,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                     return;
 
                 // 对傀儡本体造成致命伤害（20点以上确保击杀）
+                org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.consumeKanaKnife(player);
                 bodyEntity.playerHurt(player, GameConstants.DeathReasons.PUPPETEER_KNIFE);
+                org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.finishKanaKnifeAttack(player);
 
                 bodyEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
                 player.swing(InteractionHand.MAIN_HAND);
@@ -131,7 +139,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                     deathReason = itemId;
                 }
             }
+            org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.consumeKanaKnife(player);
             GameUtils.killPlayer(target, true, player, deathReason);
+            org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.finishKanaKnifeAttack(player);
             target.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
             // 成功捅人后消耗 1 点耐久；耗尽时提示重新购买。
             // Consume one durability after a successful stab; warn when it becomes

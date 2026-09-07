@@ -626,7 +626,7 @@ public class ModRolesInitialEventRegister {
         target.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
         target.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(target,
-                new org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket(true, 3, 60, true));
+                new org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket(true, 2, 60, true));
         caster.displayClientMessage(Component.translatable("message.noellesroles.meowlen.challenge_started",
                 target.getName()), true);
         return true;
@@ -1692,7 +1692,7 @@ public class ModRolesInitialEventRegister {
                     if (player.isSpectator()) return false;
                     return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
                             .toggleBeastForm(player, context);
-                }).cooldownSeconds(180).toggleable(true).showOnHud(true).build(),
+                }).cooldownSeconds(20).toggleable(true).manualCooldown().showOnHud(true).build(),
                 RoleSkill.skill(SRE.id("hakukofox_freeze"), "skill.noellesroles.hakukofox.freeze", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
@@ -1780,14 +1780,14 @@ public class ModRolesInitialEventRegister {
         RoleSkill.register(ModRoles.YOZORA,
                 RoleSkill.skill(SRE.id("yozora_cat_sixth_sense"), "skill.noellesroles.yozora.cat_sixth_sense", context -> {
                     return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                            .toggleYozoraCat(context.player());
-                }).cooldownSeconds(10).toggleable(true).showOnHud(true).build());
+                            .toggleYozoraCat(context);
+                }).cooldownSeconds(10).toggleable(true).manualCooldown().showOnHud(true).build());
 
         RoleSkill.register(ModRoles.BLOOD_FOX,
                 RoleSkill.skill(SRE.id("blood_fox_transform"), "skill.noellesroles.blood_fox.transform", context ->
                         org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .toggleBloodFox(context.player()))
-                        .cooldownSeconds(10).toggleable(true).showOnHud(true).build());
+                                .toggleBloodFox(context))
+                        .cooldownSeconds(10).toggleable(true).manualCooldown().showOnHud(true).build());
 
         RoleSkill.register(ModRoles.AMI,
                 RoleSkill.skill(SRE.id("amimi_repel"), "skill.noellesroles.amimi.repel", context ->

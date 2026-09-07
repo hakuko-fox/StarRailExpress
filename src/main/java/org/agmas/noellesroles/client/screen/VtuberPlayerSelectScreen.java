@@ -20,6 +20,22 @@ public class VtuberPlayerSelectScreen extends Screen {
     private final int requiredSelections;
     private final boolean includeSelf;
     private final List<UUID> selected = new ArrayList<>();
+    private Button confirmButton;
+
+    private long cooldownSeconds() {
+        return minecraft == null || minecraft.player == null ? 0L
+                : org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent.KEY
+                        .get(minecraft.player).getMenuCooldownSeconds();
+    }
+
+    @Override
+    public void tick() {
+        boolean ready = cooldownSeconds() == 0L;
+        for (var child : children()) {
+            if (child instanceof PlayerTargetButton button) button.active = ready;
+        }
+        if (confirmButton != null) confirmButton.active = ready && selected.size() == requiredSelections;
+    }
 
     public VtuberPlayerSelectScreen(int requiredSelections, boolean includeSelf) {
         super(Component.translatable("screen.noellesroles.vtuber_player_select.title", requiredSelections));
@@ -53,12 +69,15 @@ public class VtuberPlayerSelectScreen extends Screen {
         Button confirm = Button.builder(Component.translatable("screen.noellesroles.vtuber_player_select.confirm"),
                 button -> submit()).bounds(width / 2 - 104, height - 34, 100, 20).build();
         confirm.active = selected.size() == requiredSelections;
+        confirmButton = confirm;
         addRenderableWidget(confirm);
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), button -> onClose())
                 .bounds(width / 2 + 4, height - 34, 100, 20).build());
+        tick();
     }
 
     private void toggle(UUID uuid) {
+        if (cooldownSeconds() > 0L) return;
         if (!selected.remove(uuid) && selected.size() < requiredSelections) {
             selected.add(uuid);
         }
@@ -66,7 +85,7 @@ public class VtuberPlayerSelectScreen extends Screen {
     }
 
     private void submit() {
-        if (selected.size() != requiredSelections) {
+        if (cooldownSeconds() > 0L || selected.size() != requiredSelections) {
             return;
         }
         ClientPlayNetworking.send(new VtuberRoleMenuC2SPacket(selected.get(0),
@@ -89,6 +108,11 @@ public class VtuberPlayerSelectScreen extends Screen {
         protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
             super.renderWidget(graphics, mouseX, mouseY, delta);
             PlayerFaceRenderer.draw(graphics, candidate.getSkin().texture(), getX() + 2, getY() + 2, 16);
+            long seconds = cooldownSeconds();
+            if (seconds > 0L) {
+                graphics.fill(getX() + 2, getY() + 2, getX() + 18, getY() + 18, 0xAA000000);
+                graphics.drawCenteredString(font, Long.toString(seconds), getX() + 10, getY() + 6, 0xFFFFFF);
+            }
             Component name = Component.nullToEmpty(candidate.getGameProfile().getName());
             graphics.drawString(font, name, getX() + 22, getY() + 6, chosen ? 0x55FF55 : 0xFFFFFF, true);
         }
