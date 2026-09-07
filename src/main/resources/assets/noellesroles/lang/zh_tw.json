@@ -4367,6 +4367,7 @@
   "screen.noellesroles.vtuber_player_select.confirm": "確認",
   "key.noellesroles.vtuber_menu": "角色目標選單",
   "item.noellesroles.yuyue_note": "羽月便利貼",
+  "gui.noellesroles.yuyue.edit_note": "編輯便利貼",
   "item.noellesroles.toy_hammer": "玩具槌",
   "message.noellesroles.alin.door_already_handled": "§c這道門已執行過相同操作。",
   "skill.noellesroles.hakukofox.no_weapon": "§c獸化型態無法使用武器。",

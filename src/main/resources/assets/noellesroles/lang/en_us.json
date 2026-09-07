@@ -4274,6 +4274,7 @@
     "screen.noellesroles.vtuber_player_select.confirm": "Confirm",
     "key.noellesroles.vtuber_menu": "Role Target Menu",
     "item.noellesroles.yuyue_note": "Yuyue Sticky Note",
+    "gui.noellesroles.yuyue.edit_note": "Edit Sticky Note",
     "item.noellesroles.toy_hammer": "Toy Hammer",
     "message.noellesroles.9muimui.not_enough_money": "§cNot enough coins. You need %s coins.",
     "message.noellesroles.alin.door_already_handled": "§cThis door has already received the same operation.",

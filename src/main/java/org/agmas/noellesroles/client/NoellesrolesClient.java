@@ -1259,9 +1259,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             // one mapping per physical key, so replace the inventory screen after it opens.
             if (client.screen instanceof LimitedInventoryScreen && SREClient.gameComponent != null
                     && SREClient.gameComponent.isRunning()) {
-                if (SREClient.gameComponent.isRole(client.player, ModRoles.YUYUE)) {
-                    client.setScreen(new io.wifi.starrailexpress.client.gui.screen.ingame.NoteScreen());
-                } else if (SREClient.gameComponent.isRole(client.player, ModRoles.MAOLUN)) {
+                if (SREClient.gameComponent.isRole(client.player, ModRoles.MAOLUN)) {
                     client.setScreen(new VtuberPlayerSelectScreen(2, false));
                 } else if (SREClient.gameComponent.isRole(client.player, ModRoles.KANA)) {
                     client.setScreen(new VtuberPlayerSelectScreen(1, false));
