@@ -187,8 +187,61 @@ remapJar {
     // archiveFileName = "${project.archives_base_name}.jar"
 }
 
-tasks.register('generateSha256') {
+tasks.register('verifyMixinClasses') {
+    group = 'verification'
+    description = 'Verifies that every declared mixin class exists in the remapped JAR.'
     dependsOn remapJar
+    inputs.file(remapJar.archiveFile)
+
+    doLast {
+        def jarFile = remapJar.archiveFile.get().asFile
+        def jar = new java.util.zip.ZipFile(jarFile)
+
+        try {
+            def json = new groovy.json.JsonSlurper()
+            def fabricEntry = jar.getEntry('fabric.mod.json')
+            if (fabricEntry == null) {
+                throw new GradleException("fabric.mod.json is missing from ${jarFile.name}")
+            }
+
+            def fabricMetadata = jar.getInputStream(fabricEntry).withReader('UTF-8') {
+                json.parse(it)
+            }
+            def missingClasses = []
+
+            (fabricMetadata.mixins ?: []).each { mixinConfigName ->
+                def configEntry = jar.getEntry(mixinConfigName as String)
+                if (configEntry == null) {
+                    throw new GradleException("Mixin config ${mixinConfigName} is missing from ${jarFile.name}")
+                }
+
+                def mixinConfig = jar.getInputStream(configEntry).withReader('UTF-8') {
+                    json.parse(it)
+                }
+                ['mixins', 'client', 'server'].each { side ->
+                    (mixinConfig[side] ?: []).findAll { it }.each { mixinName ->
+                        def className = "${mixinConfig.package}.${mixinName}"
+                        def classPath = className.replace('.', '/') + '.class'
+                        if (jar.getEntry(classPath) == null) {
+                            missingClasses.add("${mixinConfigName}:${side}:${mixinName}")
+                        }
+                    }
+                }
+            }
+
+            if (!missingClasses.isEmpty()) {
+                throw new GradleException(
+                        "Declared mixin classes are missing from ${jarFile.name}:\n" +
+                                missingClasses.collect { " - ${it}" }.join('\n'))
+            }
+        } finally {
+            jar.close()
+        }
+    }
+}
+
+tasks.register('generateSha256') {
+    dependsOn verifyMixinClasses
     doLast {
         // 1. 生成 SHA-256 校验和文件（ant 任务）
         def jarFile = remapJar.archiveFile.get().asFile
@@ -232,6 +285,7 @@ tasks.register('generateSha256') {
     }
 }
 build.finalizedBy(generateSha256)
+check.dependsOn(verifyMixinClasses)
 
 jar {
     from("LICENSE") {
