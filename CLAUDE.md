@@ -41,3 +41,6 @@ RoleData实例类：可以extends SimpleRoleData，或是 implements RoleData
 
 # 语言文件
 遵循使用翻译键，优先补全 `zh_tw.json`，其次 `zh_cn.json`
+
+# 测试/调试
+必须完成一个功能块再一次性进行test

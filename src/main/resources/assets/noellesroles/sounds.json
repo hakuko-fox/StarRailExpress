@@ -1,8 +1,18 @@
 {
-  "halic_hello": {
-    "sounds": ["noellesroles:halic_hello"]
-  },
-  "halic_arrr": {
-    "sounds": ["noellesroles:halic_arrr"]
-  }
+    "halic_hello": {
+        "sounds": [
+            "noellesroles:halic_hello"
+        ]
+    },
+    "halic_arrr": {
+        "sounds": [
+            "noellesroles:halic_arrr"
+        ]
+    },
+    "noellesroles.tomato_splat": {
+        "subtitle": "subtitles.noellesroles.tomato_splat",
+        "sounds": [
+            "noellesroles:noellesroles/tomato_splat"
+        ]
+    }
 }

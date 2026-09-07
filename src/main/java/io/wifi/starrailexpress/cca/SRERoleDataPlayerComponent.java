@@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
+import org.agmas.noellesroles.utils.RoleUtils;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
@@ -55,7 +56,7 @@ public class SRERoleDataPlayerComponent
     @Override
     public boolean shouldSyncWith(ServerPlayer p) {
         if (roleData != null) {
-            return roleData.shouldSyncWith(p);
+            return (initSync && p == player) || roleData.shouldSyncWith(p);
         }
         return player == p;
     }
@@ -74,6 +75,7 @@ public class SRERoleDataPlayerComponent
 
     // 持有该组件的玩家
     private final Player player;
+    private boolean forceClear = false;
 
     @Override
     public void clientTick() {
@@ -96,7 +98,7 @@ public class SRERoleDataPlayerComponent
         if (!player.level().isClientSide)
             serverInit();
         else
-            clientInit();
+            clientInit(RoleUtils.getPlayerRole(player));
     }
 
     public void serverInit() {
@@ -123,9 +125,7 @@ public class SRERoleDataPlayerComponent
         }
     }
 
-    public void clientInit() {
-        final var cca = SREGameWorldComponent.getInstance(player);
-        playerRole = cca.getRole(player);
+    public void clientInit(SRERole playerRole) {
         if (playerRole == null) {
             clear();
             return;
@@ -139,6 +139,7 @@ public class SRERoleDataPlayerComponent
     }
 
     @Override
+    /** 仅当玩家重置时使用，切换职业不使用 */
     public void clear() {
         if (roleData != null) {
             roleData.clear();
@@ -146,6 +147,7 @@ public class SRERoleDataPlayerComponent
         playerRole = null;
         roleData = null;
         initSync = false;
+        forceClear = true;
         sync();
     }
 
@@ -161,16 +163,20 @@ public class SRERoleDataPlayerComponent
      * 同步到客户端
      */
     public void sync() {
+        if (player.level().isClientSide)
+            return;
         KEY.sync(this.player);
         initSync = false;
+        forceClear = false;
     }
 
     @Override
     public void writeToSyncNbt(CompoundTag tag, Provider registryLookup) {
         if (initSync) {
-            tag.putBoolean("__init__", true);
+            tag.putString("__init__", playerRole != null ? playerRole.identifier().getPath() : "");
             return;
-        } else if (roleData == null) {
+        }
+        if (forceClear) {
             tag.putBoolean("__clear__", true);
             return;
         }
@@ -181,16 +187,21 @@ public class SRERoleDataPlayerComponent
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, Provider registryLookup) {
-
         if (tag.contains("__init__")) {
-            clientInit();
+            if (roleData != null) {
+                clear();
+            }
+            String rolePath = tag.getString("__init__");
+            playerRole = RoleUtils.getRoleByPath(rolePath);
+            clientInit(playerRole);
             return;
-        } else if (tag.contains("__clear__")) {
+        }
+        if (tag.contains("__clear__")) {
             clear();
             return;
         }
         if (roleData == null) {
-            clientInit();
+            clientInit(RoleUtils.getPlayerRole(player));
         }
 
         if (roleData != null) {
@@ -199,7 +210,14 @@ public class SRERoleDataPlayerComponent
     }
 
     public void onRemoveRole() {
-        this.clear();
+        if (roleData != null) {
+            roleData.clear();
+        }
+        playerRole = null;
+        roleData = null;
+        initSync = false;
+        forceClear = false;
+        // sync();
     }
 
 }

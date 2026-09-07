@@ -797,8 +797,6 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                 this.screen.renderLimitedInventoryTooltip(context, this.entry.stack());
                 drawShopSlotHighlight(context, this.getX(), this.getY(), 0);
             }
-            // \u663E\u793A\u52A8\u6001\u4EF7\u683C\uFF1A\u82E5\u88AB DynamicShopComponent
-            // \u6253\u6298\uFF0C\u5219\u7528\u7EFF\u8272\u5C55\u793A\u6298\u540E\u4EF7\u3002
             // Show the dynamic price: if discounted by DynamicShopComponent, render the
             // reduced price in green.
             // 取实时（已同步）的商店条目，使显示的基础价/折后价与服务端实际扣费价一致；
@@ -819,7 +817,14 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                         net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(liveEntry.stack().getItem()),
                         basePrice);
             }
-            MutableComponent price = Component.literal(effectivePrice + "\uE781");
+            // 价格按条目货币类型显示：默认金币（\uE781 图标）；游戏代币用对应翻译键（带代币图标字形）
+            ShopEntry.Currency currency = liveEntry.currency() == null
+                    ? ShopEntry.Currency.MONEY
+                    : liveEntry.currency();
+            MutableComponent price = currency == ShopEntry.Currency.MONEY
+                    ? Component.literal(effectivePrice + "\uE781")
+                    : Component.translatable(currency.priceTranslationKey(), effectivePrice)
+                            .withColor(currency.color());
             int displayX = this.getX() - 4 - this.screen.font.width(price) / 2;
             int displayY = this.getY() - 9;
             List<Component> renders = new ArrayList<>();

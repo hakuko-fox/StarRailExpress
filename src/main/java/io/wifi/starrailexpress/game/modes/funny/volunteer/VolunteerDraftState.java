@@ -26,6 +26,7 @@ import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -142,9 +143,9 @@ public class VolunteerDraftState {
 
             // 卡片用戶但池中無符合陣營的職業 → 退還卡片，改用預設（平民）池
             if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(pid) && factionPool.isEmpty()) {
-                Integer forced = PlayerRoleWeightManager.ForcePlayerTeam.remove(pid);
-                if (forced != null) {
-                    io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.refund(player, forced);
+                var forced = PlayerRoleWeightManager.ForcePlayerTeam.remove(pid);
+                if (forced != null && forced.type() == ForceTeamType.CARD) {
+                    io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.refund(player, forced.roleType());
                 }
                 factionPool = getFactionPool(player);
             }
@@ -200,10 +201,10 @@ public class VolunteerDraftState {
     }
 
     private List<SRERole> getFactionPool(ServerPlayer player) {
-        Integer forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+       var forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
         if (forced != null) {
             return globalRolePool.stream()
-                    .filter(r -> io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.roleMatchesCard(r, forced))
+                    .filter(r -> io.wifi.starrailexpress.game.modes.funny.FactionCardUtils.roleMatchesCard(r, forced.roleType()))
                     .collect(Collectors.toList());
         }
         return globalRolePool.stream()

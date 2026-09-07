@@ -455,6 +455,13 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         this.addRole(player.getUUID(), role, sync);
     }
 
+    public void syncRolesNow() {
+        if (roleWorldComponent == null) {
+            roleWorldComponent = SRERoleWorldComponent.KEY.get(world);
+        }
+        roleWorldComponent.syncNow();
+    }
+
     public void syncRoles() {
         if (roleWorldComponent == null) {
             roleWorldComponent = SRERoleWorldComponent.KEY.get(world);
@@ -825,6 +832,15 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
                         if (gameMode.enableEnvironmentDetection()) {
                             playerEnvironmentDetection(player, areas, this);
+                        }
+                        if (world.getGameTime() % 40 == 0) {
+                            if (GameUtils.isPlayerInLobby(player)) {
+                                SRE.LOGGER.info("Found a wrong player in lobby. Send it back to its houses: {}",
+                                        player.getScoreboardName());
+                                GameUtils.teleportBackToRoom(player);
+                                player.displayClientMessage(
+                                        Component.translatable("message.noellesroles.commands.stuck.success"), true);
+                            }
                         }
                     }
                 }
@@ -1217,19 +1233,25 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         }
         // fade and start / stop game
         if (this.getGameStatus() == GameStatus.STARTING || this.getGameStatus() == GameStatus.STOPPING) {
-            this.setFade(fade + 1);
+            boolean holdStop = this.getGameStatus() == GameStatus.STOPPING
+                    && org.agmas.noellesroles.game.MirrorReunionEndEgg.shouldHoldFade(world);
+            if (!holdStop) {
+                boolean snap = this.getGameStatus() == GameStatus.STOPPING
+                        && org.agmas.noellesroles.game.MirrorReunionEndEgg.consumeSnapFinalize(world);
+                this.setFade(snap ? GameConstants.FADE_TIME + GameConstants.FADE_PAUSE : fade + 1);
 
-            if (this.getFade() >= GameConstants.FADE_TIME + GameConstants.FADE_PAUSE) {
-                if (world instanceof ServerLevel serverWorld) {
-                    if (this.getGameStatus() == GameStatus.STARTING)
-                        GameUtils.initializeGame(serverWorld);
-                    if (this.getGameStatus() == GameStatus.STOPPING)
-                        GameUtils.finalizeGame(serverWorld);
-                } else {
-                    if (this.getGameStatus() == GameStatus.STARTING)
-                        this.setGameStatus(GameStatus.ACTIVE);
-                    if (this.getGameStatus() == GameStatus.STOPPING)
-                        this.setGameStatus(GameStatus.INACTIVE);
+                if (this.getFade() >= GameConstants.FADE_TIME + GameConstants.FADE_PAUSE) {
+                    if (world instanceof ServerLevel serverWorld) {
+                        if (this.getGameStatus() == GameStatus.STARTING)
+                            GameUtils.initializeGame(serverWorld);
+                        if (this.getGameStatus() == GameStatus.STOPPING)
+                            GameUtils.finalizeGame(serverWorld);
+                    } else {
+                        if (this.getGameStatus() == GameStatus.STARTING)
+                            this.setGameStatus(GameStatus.ACTIVE);
+                        if (this.getGameStatus() == GameStatus.STOPPING)
+                            this.setGameStatus(GameStatus.INACTIVE);
+                    }
                 }
             }
         } else if (this.fade > 0) {

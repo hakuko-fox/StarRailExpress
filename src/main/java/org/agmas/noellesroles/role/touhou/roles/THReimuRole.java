@@ -26,7 +26,8 @@ import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.DiscountShopEntry;
+import io.wifi.starrailexpress.game.KillerKnifeShopEntry;
+import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
@@ -57,9 +58,9 @@ public class THReimuRole extends TouhouRole {
     @Override
     public List<ShopEntry> getShopEntries() {
         ArrayList<ShopEntry> SHOP = new ArrayList<>();
-        SHOP.add(new DiscountShopEntry(ModItems.DANMUKU.getDefaultInstance(), SREConfig.instance().knifePrice + 50,
+        SHOP.add(new KillerKnifeShopEntry(ModItems.DANMUKU.getDefaultInstance(), SREConfig.instance().knifePrice + 50,
                 20));
-        SHOP.add(new DiscountShopEntry(TMMItems.KNIFE.getDefaultInstance(), SREConfig.instance().knifePrice, 50));
+        SHOP.add(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), SREConfig.instance().knifePrice, 50));
         SHOP.add(new ShopEntry(ModItems.FAKE_REVOLVER.getDefaultInstance(),
                 100, ShopEntry.Type.WEAPON));
         SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
@@ -100,13 +101,7 @@ public class THReimuRole extends TouhouRole {
                 SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
         SHOP.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(),
                 SREConfig.instance().bodyBagPrice, ShopEntry.Type.TOOL));
-        SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
-                SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
-            @Override
-            public boolean onBuy(@NotNull Player player) {
-                return SREPlayerShopComponent.useBlackout(player);
-            }
-        });
+        SHOP.add(ShopContent.getBlackoutShopEntry());
         SHOP.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
                 ShopEntry.Type.TOOL));
         return SHOP;

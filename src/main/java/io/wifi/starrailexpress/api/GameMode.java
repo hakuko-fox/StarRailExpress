@@ -805,6 +805,8 @@ public abstract class GameMode {
                 TrainVoicePlugin.addPlayer(victim.getUUID());
             }
             GameUtils.recordPlayerKill(killer, victim, deathReason, true);
+
+            OnPlayerDeathWithKiller.FINAL_EVENT.invoker().onPlayerDeath(victim, killer, deathReason);
         }
     }
 
@@ -850,4 +852,8 @@ public abstract class GameMode {
     public abstract boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
             SREGameRoundEndComponent roundEnd,
             SREGameWorldComponent gameComponent);
+
+    public boolean castAllSkill() {
+        return false;
+    }
 }

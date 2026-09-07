@@ -36,10 +36,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.SREDisableManager;
 import net.exmo.sre.repair.role.RepairRole;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -251,7 +254,7 @@ public final class BackpackManager {
             entry.state.pendingRoleId = "";
             entry.state.roleChoiceCards = Math.min(Integer.MAX_VALUE, entry.state.roleChoiceCards + 1);
         }
-        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), type.getTypeRoleId());
+        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), new ForceTeamInfo(type.getTypeRoleId(), ForceTeamType.CARD));
         entry.state.cards.put(type, current - 1);
         entry.state.pendingFactionCard = type;
         markDirty(player, entry);
@@ -350,7 +353,7 @@ public final class BackpackManager {
                 continue;
             }
             PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(),
-                    entry.state.pendingFactionCard.getTypeRoleId());
+                    new ForceTeamInfo(entry.state.pendingFactionCard.getTypeRoleId(), ForceTeamType.CARD));
             entry.state.pendingFactionCard = FactionCardType.NONE;
             markDirty(player, entry);
         }

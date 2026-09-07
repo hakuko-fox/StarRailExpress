@@ -51,7 +51,7 @@ public class ShopContent {
             // depleted
             // knives, and -50% after the first purchase. See KillerKnifeShopEntry /
             // DynamicShopComponent.
-            defaultKnifeEntries.add(new DiscountShopEntry(SREConfig.instance().knifePrice));
+            defaultKnifeEntries.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
             defaultKnifeEntries.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
                     SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
             defaultKnifeEntries.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(),
@@ -59,25 +59,7 @@ public class ShopContent {
 
             defaultKnifeEntries.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(),
                     SREConfig.instance().shortShotgunPrice, ShopEntry.Type.WEAPON));
-            defaultKnifeEntries.add(new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(),
-                    SREConfig.instance().psychoModePrice, ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean canBuy(@NotNull Player player) {
-                    if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
-                        return false;
-                    }
-                    return super.canBuy(player);
-                }
-
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
-                        return false;
-                    }
-
-                    return SREPlayerShopComponent.usePsychoMode(player);
-                }
-            });
+            defaultKnifeEntries.add(getPsychoShopEntry());
             defaultKnifeEntries.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(),
                     SREConfig.instance().firecrackerPrice, ShopEntry.Type.TOOL));
             defaultKnifeEntries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(),
@@ -86,16 +68,51 @@ public class ShopContent {
                     SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
             defaultKnifeEntries.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(),
                     SREConfig.instance().bodyBagPrice, ShopEntry.Type.TOOL));
-            defaultKnifeEntries.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
-                    SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            defaultKnifeEntries.add(getBlackoutShopEntry());
             defaultKnifeEntries.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
                     ShopEntry.Type.TOOL));
         }
+    }
+
+    public static ShopEntry getPsychoShopEntry() {
+        return new ShopEntry(TMMItems.PSYCHO_MODE.getDefaultInstance(),
+                SREConfig.instance().psychoModePrice, ShopEntry.Type.WEAPON) {
+            @Override
+            public boolean canBuy(@NotNull Player player) {
+                if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                    return false;
+                }
+                return super.canBuy(player);
+            }
+
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+                if (player.getCooldowns().isOnCooldown(TMMItems.PSYCHO_MODE)) {
+                    return false;
+                }
+
+                return SREPlayerShopComponent.usePsychoMode(player);
+            }
+        };
+    }
+
+    public static ShopEntry getBlackoutShopEntry() {
+        return getBlackoutShopEntry(1f);
+    }
+
+    /** 杀手关灯，每次加价20%，最多加价3次（120*1.2*1.2*1.2 = 207） */
+    public static ShopEntry getBlackoutShopEntry(float priceModifier) {
+        return new DiscountShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
+                (int) (SREConfig.instance().blackoutPrice * priceModifier), -20, 3, false, ShopEntry.Type.TOOL) {
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+                if (SREPlayerShopComponent.useBlackout(player)) {
+                    super.applyPurchaseDiscount(player);
+                    return true;
+                }
+                return false;
+            }
+        };
     }
 
     public static Map<ResourceLocation, List<ShopEntry>> customEntries = new HashMap<>();

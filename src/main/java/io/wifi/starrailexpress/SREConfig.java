@@ -88,6 +88,14 @@ public class SREConfig implements ConfigData {
 
     @ConfigEntry.Category(value = "gamemodes")
     public boolean roleRotationForceRoleSettings = false;
+
+    // 破镜重圆结束特效（服务端）：游戏结束进入黑幕收尾时是否播放破镜崩裂/还原。
+    // 可由命令 /sre:mirror_end_egg on|off 修改并保存到本配置。
+    @Tooltip
+    public boolean enableMirrorReunionEndEgg = false;
+    // 时长
+    public int mirrorReunionEndEggTime = 5 * 20;
+
     // 随机地图设置
 
     @ConfigEntry.Category(value = "commands")
@@ -238,7 +246,7 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "cooldowns")
     public int blackoutCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")
-    public int blackoutCooldownGlobal = 40;
+    public int blackoutGlobalCooldown = 40;
     @ConfigEntry.Category(value = "cooldowns")
     public int monitorBrokenCooldown = 180;
     @ConfigEntry.Category(value = "cooldowns")
@@ -454,6 +462,22 @@ public class SREConfig implements ConfigData {
     public int teamKillViolationMcFunctionPermission = 3;
 
     public boolean enableRoster = true;
+
+    // 技能释放通告 HUD（服务端控制，默认关闭）
+    @ConfigEntry.Category(value = "hud")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public boolean enableSkillCastAnnounceHud = false;
+
+    @ConfigEntry.Category(value = "hud")
+    @ConfigSync(shouldSync = true)
+    @Tooltip(count = 2)
+    public ArrayList<String> skillCastAnnounceWhitelist = new ArrayList<>();
+
+    @ConfigEntry.Category(value = "hud")
+    @ConfigSync(shouldSync = true)
+    @Tooltip(count = 2)
+    public ArrayList<String> skillCastAnnounceBlacklist = new ArrayList<>();
 
     public static boolean isUltraPerfMode() {
         return SREClientConfig.instance().ultraPerfMode;

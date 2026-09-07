@@ -22,6 +22,7 @@ import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent.SkillState;
 import io.wifi.starrailexpress.event.OnRoleSkillUse;
+import io.wifi.starrailexpress.game.SkillCastAnnounce;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -214,6 +215,7 @@ public final class RoleSkill {
             boolean withTarget,
             Predicate<Entity> targetType,
             boolean haveRecord,
+            boolean widgetSkill,
             Handler handler,
             Component recordName) {
         public Definition {
@@ -250,6 +252,7 @@ public final class RoleSkill {
         private boolean modeSwitch;
         private boolean showOnHud = false;
         private Component recordName;
+        private boolean widgetSkill = false;
         private Predicate<Entity> targetType = (entity) -> entity instanceof Player;
 
         private Builder(ResourceLocation id, String nameKey, Handler handler) {
@@ -274,6 +277,12 @@ public final class RoleSkill {
 
         public Builder targetType(Predicate<Entity> test) {
             targetType = test;
+            return this;
+        }
+
+        /** 背包物品栏中触发技能（或自定义技能处理） */
+        public Builder widgetSkill() {
+            widgetSkill = true;
             return this;
         }
 
@@ -408,7 +417,7 @@ public final class RoleSkill {
             return new Definition(id, nameKey, cooldownTicks, maxCharges, continuous,
                     holdIntervalTicks, noCastCCA, announceInfo, toggleable, manualCooldown, shifted, modeSwitch, showOnHud, withTarget,
                     targetType,
-                    haveRecord,
+                    haveRecord, widgetSkill,
                     handler, recordName);
         }
     }
@@ -444,11 +453,16 @@ public final class RoleSkill {
         return Definition.builder(id, nameKey, handler);
     }
 
+    /** 注册即能（会自动合并） */
     public static void register(ResourceLocation role, Definition... definitions) {
         if (role == null || definitions == null || definitions.length == 0) {
             throw new IllegalArgumentException("Role and at least one skill definition are required");
         }
+        List<Definition> presentSkills = UNIFIED_SKILLS.get(role);
         List<Definition> skills = new ArrayList<>();
+        if (presentSkills != null && !presentSkills.isEmpty()) {
+            SRE.LOGGER.error("The skills of the role {} has already been registered!", role.toString());
+        }
         Collections.addAll(skills, definitions);
         validateUniqueIds(role, skills);
         UNIFIED_SKILLS.put(role, List.copyOf(skills));
@@ -551,17 +565,9 @@ public final class RoleSkill {
         return true;
     }
 
-    public static boolean beginUse(ServerPlayer player) {
-        return beginUse(player, null, -1, Phase.PRESS, false);
-    }
-
-    public static boolean beginUseWithTarget(ServerPlayer player, UUID target) {
-        return beginUse(player, target, -1, Phase.PRESS, false);
-    }
-
     /** Convenience: use while respecting the player's current sneak state. */
     public static boolean beginUseShifted(ServerPlayer player) {
-        return beginUse(player, null, -1, Phase.PRESS, player.isShiftKeyDown());
+        return beginUse(player, null, -2, Phase.PRESS, player.isShiftKeyDown());
     }
 
     /**
@@ -569,7 +575,7 @@ public final class RoleSkill {
      * state.
      */
     public static boolean beginUseShiftedWithTarget(ServerPlayer player, UUID target) {
-        return beginUse(player, target, -1, Phase.PRESS, player.isShiftKeyDown());
+        return beginUse(player, target, -2, Phase.PRESS, player.isShiftKeyDown());
     }
 
     public static boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase) {
@@ -644,9 +650,19 @@ public final class RoleSkill {
         if (applicable.isEmpty()) {
             return false;
         }
-        int slot = requestedSlot < 0 ? ability.getSelectedSkill() : requestedSlot;
+        int slot = requestedSlot;
+        if (slot < 0) {
+            slot = ability.getSelectedSkill();
+        }
         slot = Math.floorMod(slot, applicable.size());
-        Definition definition = applicable.get(slot);
+        Definition definition = null;
+        final var skills = applicable;
+        if (requestedSlot == -2) {
+            definition = applicable.stream().filter((d) -> d.widgetSkill).findFirst().orElseGet(() -> skills.get(0));
+        } else {
+            definition = applicable.get(slot);
+        }
+
         ability.ensureSkills(definitions);
 
         boolean skillReady = ability.canUseSkill(definition.id());
@@ -696,6 +712,9 @@ public final class RoleSkill {
         }
         definition.announceInfo().doAnnounce(player, definition, ability.getSkillState(definition.id()),
                 skillReady, target);
+        if (phase == Phase.PRESS && skillReady) {
+            SkillCastAnnounce.tryAnnounce(player, role, definition);
+        }
         afterUse(player, role);
         // 回放记录：玩家释放技能（统一技能系统入口；以下角色已在组件内部记录，避免重复）
         if (!ROLE_SKILL_REPLAY_EXCLUDED.contains(role.identifier().toString()) && !definition.toggleable()

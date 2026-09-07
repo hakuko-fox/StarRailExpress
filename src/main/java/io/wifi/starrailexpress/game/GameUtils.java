@@ -599,7 +599,8 @@ public class GameUtils {
             clearForcedReadyPlayers();
             for (ServerPlayer player : players) {
                 player.displayClientMessage(
-                        Component.translatable("game.start_error.sre.not_enough_players", gameMode.minPlayerCount), true);
+                        Component.translatable("game.start_error.sre.not_enough_players", gameMode.minPlayerCount),
+                        true);
             }
             isStartingGame = false;
         }
@@ -614,6 +615,7 @@ public class GameUtils {
         SREWorldBlackoutComponent.KEY.get(world).reset();
         component.setGameStatus(SREGameWorldComponent.GameStatus.STOPPING);
         component.gameMode.stopGame(world);
+        org.agmas.noellesroles.game.MirrorReunionEndEgg.onGameStopping(world, component);
     }
 
     public static void executeFunction(MinecraftServer server, int permission, String function) {
@@ -915,8 +917,9 @@ public class GameUtils {
         Map<UUID, String> nameTagMap = new HashMap<>();
         for (ServerPlayer player : serverWorld.players()) {
             NameTagInventoryComponent nameTagInventoryComponent = NameTagInventoryComponent.KEY.get(player);
-            if (!nameTagInventoryComponent.CurrentNameTag.isEmpty()) {
-                nameTagMap.put(player.getUUID(), nameTagInventoryComponent.CurrentNameTag);
+            String effectiveNameTag = nameTagInventoryComponent.getEffectiveNameTag();
+            if (effectiveNameTag != null && !effectiveNameTag.isEmpty()) {
+                nameTagMap.put(player.getUUID(), effectiveNameTag);
             }
             player.removeVehicle();
             resetPlayer(player);
@@ -1202,7 +1205,7 @@ public class GameUtils {
         SRE.LOGGER.info("=".repeat(20));
 
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(world);
-        worldModifierComponent.modifiers.clear();
+        worldModifierComponent.clearAll();
         worldModifierComponent.sync();
         serverCacheKillState.clear();
     }
@@ -1293,6 +1296,7 @@ public class GameUtils {
         StaminaCommand.setStamina(player, -1);
         player.setLastHurtByMob(null);
         player.setLastHurtByPlayer(null);
+        player.refreshDimensions();
         // PlayerResetMixin插入位置
     }
 
@@ -1691,5 +1695,17 @@ public class GameUtils {
 
     public static long getTicksFromGameStart(Level world) {
         return SREGameTimeComponent.KEY.get(world).getTicksFromGameStart();
+    }
+
+    public static boolean isPlayerInLobby(ServerPlayer player) {
+        final ServerLevel serverWorld = player.serverLevel();
+        Vec3 playerPos = player.position();
+        BlockPos spawn = serverWorld.getSharedSpawnPos();
+        if (spawn.getX() - 200 < playerPos.x && playerPos.x < spawn.getX() + 200) {
+            if (spawn.getZ() - 200 < playerPos.z && playerPos.z < spawn.getZ() + 200) {
+                return true;
+            }
+        }
+        return false;
     }
 }

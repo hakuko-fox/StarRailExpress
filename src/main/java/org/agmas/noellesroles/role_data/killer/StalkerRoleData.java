@@ -15,34 +15,46 @@
 
 package org.agmas.noellesroles.role_data.killer;
 
+import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.ConfigWorldComponent;
+import org.agmas.noellesroles.content.item.StalkerKnifeItem;
+import org.agmas.noellesroles.gunfx.StalkerDashTrails;
+import org.agmas.noellesroles.gunfx.StalkerPierceFx;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.ToIntFunction;
 
 public class StalkerRoleData extends SimpleRoleData {
@@ -52,11 +64,27 @@ public class StalkerRoleData extends SimpleRoleData {
 
     // ==================== 常量定义 ====================
 
-    /** 三阶段初始时间（120秒 = 2400 tick） */
-    public static final int PHASE_3_TIME = 120 * 20;
+    /** 刺客形态持续时间（30秒） */
+    public static final int ASSASSIN_FORM_DURATION = 30 * 20;
 
-    /** 处决减少时间（60秒 = 1200 tick） */
-    public static final int EXECUTION_REDUCTION = 60 * 20;
+    /** 刺客形态购买冷却（2分30秒） */
+    public static final int ASSASSIN_FORM_COOLDOWN = 150 * 20;
+
+    /** 攻击冲刺回充时间（5秒） */
+    public static final int ATTACK_DASH_RECHARGE_TIME = 5 * 20;
+
+    public static final int MAX_NORMAL_DASH_CHARGES = 1;
+    public static final int MAX_ATTACK_DASH_CHARGES = 1;
+
+    /** 攻击蓄力释放后，技能冷却（3.5 秒） */
+    public static final int ATTACK_DASH_SKILL_COOLDOWN = 70;
+
+    /** 潜行者匕首固定攻击冷却（5秒，仅刺客形态命中时写入刀冷却） */
+    public static final int KNIFE_ATTACK_COOLDOWN = 5 * 20;
+
+    private static final double NORMAL_DASH_SPEED = 1.15;
+    private static final int NORMAL_DASH_TICKS = 7;
+    private static final int MAX_ATTACK_DASH_HITS = 2;
 
     /** 窥视视野角度（度数） */
     public static final double GAZE_ANGLE = 80.0;
@@ -64,7 +92,7 @@ public class StalkerRoleData extends SimpleRoleData {
     /** 窥视最大距离（格） */
     public static final double GAZE_DISTANCE = 48.0;
 
-    /** 最小蓄力时间（1秒 = 20 tick） */
+    /** 最小蓄力时间（0.5 秒） */
     public static final int MIN_CHARGE_TIME = 10;
 
     /** 最大蓄力时间（3秒 = 60 tick） */
@@ -76,18 +104,15 @@ public class StalkerRoleData extends SimpleRoleData {
     /** 每秒蓄力增加的突进距离（格）- 缩短距离 */
     public static final double DASH_DISTANCE_PER_SECOND = 6.0;
 
-    /** 二阶段攻击冷却（10秒 = 200 tick） */
-    public static final int PHASE_2_ATTACK_COOLDOWN = 200;
-
-    /** 三阶段突进冷却（2秒 = 40 tick） */
-    public static final int DASH_COOLDOWN = 20;
-
     public static final ToIntFunction<Player> MAX_SPRINT_TIME_IntSupplier = (player) -> {
         if (player == null)
             return Integer.MAX_VALUE;
         var spc = RoleData.getNullable(StalkerRoleData.class, player);
         if (!RoleData.isAttached(spc))
             return Integer.MAX_VALUE;
+        if (spc.isAssassinFormActive()) {
+            return Integer.MAX_VALUE;
+        }
         if (spc.phase >= 2) {
             return 0;
         } else {
@@ -137,6 +162,12 @@ public class StalkerRoleData extends SimpleRoleData {
     /** 突进方向 */
     public Vec3 dashDirection = Vec3.ZERO;
 
+    /** 向量冲刺的速度与剩余 tick，仅服务端使用。 */
+    private double dashSpeed = 0;
+    private int dashTicksLeft = 0;
+    private Vec3 lastDashPos = Vec3.ZERO;
+    private boolean dashHasTraveled = false;
+
     /** 是否已标记为跟踪者（用于在角色转换后仍能识别） */
     public boolean isStalkerMarked = false;
 
@@ -145,6 +176,33 @@ public class StalkerRoleData extends SimpleRoleData {
 
     /** 三阶段突进冷却计时器（tick） */
     public int dashCooldown = 0;
+
+    /** 刺客形态再次购买的剩余冷却 */
+    public int assassinFormCooldown = 0;
+
+    /** 普通冲刺储量；攻击冲刺击倒玩家时补充 */
+    public int normalDashCharges = 0;
+
+    /** 攻击冲刺储量；最多一层 */
+    public int attackDashCharges = 0;
+
+    /** 攻击冲刺下一次回充的剩余时间 */
+    public int attackDashRechargeTimer = 0;
+
+    /** 当前冲刺是否为会造成伤害的攻击冲刺 */
+    public boolean attackDashActive = false;
+
+    /** 当前攻击冲刺已命中的敌人数 */
+    public int attackDashHitCount = 0;
+
+    /** 是否正按住潜行键挂在墙上 */
+    public boolean wallHanging = false;
+
+    /** 墙面朝向玩家的法线，用于让视角随墙面方向对齐 */
+    public Vec3 wallNormal = Vec3.ZERO;
+
+    /** 服务端一次攻击冲刺内已经命中的玩家，防止重复命中。 */
+    private final Set<UUID> dashHitPlayers = new HashSet<>();
 
     /**
      * 构造函数
@@ -186,9 +244,22 @@ public class StalkerRoleData extends SimpleRoleData {
         this.isDashing = false;
         this.dashDistanceRemaining = 0;
         this.dashDirection = Vec3.ZERO;
+        this.dashSpeed = 0;
+        this.dashTicksLeft = 0;
+        this.lastDashPos = Vec3.ZERO;
+        this.dashHasTraveled = false;
         this.isStalkerMarked = true;
         this.energyTickCounter = 0;
         this.dashCooldown = 0;
+        this.assassinFormCooldown = 0;
+        this.normalDashCharges = 0;
+        this.attackDashCharges = 0;
+        this.attackDashRechargeTimer = 0;
+        this.attackDashActive = false;
+        this.attackDashHitCount = 0;
+        this.wallHanging = false;
+        this.wallNormal = Vec3.ZERO;
+        this.dashHitPlayers.clear();
         final var playerCount = getPlayerCount();
         int kills = (int) Math.ceil(playerCount / 6.0);
         this.ph2_kill_need = Math.max(1, (int) ((float) kills / 1.5));
@@ -220,9 +291,25 @@ public class StalkerRoleData extends SimpleRoleData {
         this.isDashing = false;
         this.dashDistanceRemaining = 0;
         this.dashDirection = Vec3.ZERO;
+        this.dashSpeed = 0;
+        this.dashTicksLeft = 0;
+        this.lastDashPos = Vec3.ZERO;
+        this.dashHasTraveled = false;
         this.isStalkerMarked = false;
         this.energyTickCounter = 0;
         this.dashCooldown = 0;
+        this.assassinFormCooldown = 0;
+        this.normalDashCharges = 0;
+        this.attackDashCharges = 0;
+        this.attackDashRechargeTimer = 0;
+        this.attackDashActive = false;
+        this.attackDashHitCount = 0;
+        this.wallHanging = false;
+        this.wallNormal = Vec3.ZERO;
+        this.dashHitPlayers.clear();
+        if (player != null) {
+            player.setNoGravity(false);
+        }
         this.sync();
     }
 
@@ -275,8 +362,6 @@ public class StalkerRoleData extends SimpleRoleData {
     public void checkPhaseAdvance() {
         if (phase == 1 && energy >= getPhase1EnergyRequired()) {
             advanceToPhase2();
-        } else if (phase == 2 && energy >= getPhase2EnergyRequired() && phase2Kills >= getPhase2KillsRequired()) {
-            advanceToPhase3();
         }
     }
 
@@ -321,10 +406,25 @@ public class StalkerRoleData extends SimpleRoleData {
     /**
      * 进入三阶段
      */
-    public void advanceToPhase3() {
+    public boolean activateAssassinForm() {
+        if (!canActivateAssassinForm()) {
+            return false;
+        }
+        SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
+        if (!psycho.startPsycho_time(ASSASSIN_FORM_DURATION, GameConstants.getPsychoModeArmour(), true)) {
+            return false;
+        }
         this.phase = 3;
-        this.phase3Timer = PHASE_3_TIME;
+        this.phase3Timer = psycho.getPsychoTicks();
+        this.assassinFormCooldown = ASSASSIN_FORM_COOLDOWN;
         this.dashModeActive = true;
+        this.normalDashCharges = 0;
+        this.attackDashCharges = MAX_ATTACK_DASH_CHARGES;
+        this.attackDashRechargeTimer = 0;
+        this.isCharging = false;
+        this.chargeTime = 0;
+        stopDash();
+        refreshNoCollide();
 
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.displayClientMessage(
@@ -338,12 +438,51 @@ public class StalkerRoleData extends SimpleRoleData {
         }
 
         this.sync();
+        return true;
+    }
+
+    public boolean canActivateAssassinForm() {
+        return isActiveStalker() && phase >= 2 && phase != 3 && assassinFormCooldown <= 0
+                && !SREPlayerPsychoComponent.KEY.get(player).inPsycho();
+    }
+
+    public boolean isAssassinFormActive() {
+        return phase == 3 && dashModeActive && phase3Timer > 0;
+    }
+
+    public float getAssassinFormCooldownSeconds() {
+        return assassinFormCooldown / 20.0F;
+    }
+
+    public float getAttackDashRechargeSeconds() {
+        return attackDashRechargeTimer / 20.0F;
+    }
+
+    /** 刺客形态结束时补回主手猎刀，避免 Psycho 回收把二阶段武器清掉。 */
+    public void ensureMainHuntingKnife() {
+        if (player == null || player.level().isClientSide) {
+            return;
+        }
+        if (player.getMainHandItem().is(ModItems.STALKER_KNIFE)
+                || player.getOffhandItem().is(ModItems.STALKER_KNIFE)) {
+            return;
+        }
+        for (int slot = 0; slot < player.getInventory().items.size(); slot++) {
+            if (player.getInventory().getItem(slot).is(ModItems.STALKER_KNIFE)) {
+                return;
+            }
+        }
+        player.addItem(ModItems.STALKER_KNIFE.getDefaultInstance());
     }
 
     /**
      * 退回二阶段
      */
     public void regressToPhase2() {
+        SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
+        if (psycho.inPsycho()) {
+            psycho.stopPsychoAndSync();
+        }
         this.phase = 2;
         this.dashModeActive = false;
         // 保留能量
@@ -351,7 +490,15 @@ public class StalkerRoleData extends SimpleRoleData {
         this.phase3Timer = 0;
         this.isCharging = false;
         this.chargeTime = 0;
-        this.isDashing = false;
+        this.normalDashCharges = 0;
+        this.attackDashCharges = 0;
+        this.attackDashRechargeTimer = 0;
+        stopDash();
+        setWallHanging(false, Vec3.ZERO);
+        if (player != null) {
+            player.removeEffect(ModEffects.NO_COLLIDE);
+        }
+        ensureMainHuntingKnife();
 
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.displayClientMessage(
@@ -369,8 +516,10 @@ public class StalkerRoleData extends SimpleRoleData {
     public void addKill() {
         if (phase >= 2) {
             this.phase2Kills++;
-            // 设置攻击冷却
-            // this.attackCooldown = PHASE_2_ATTACK_COOLDOWN;
+            if (isAssassinFormActive() && attackDashActive
+                    && normalDashCharges < MAX_NORMAL_DASH_CHARGES) {
+                normalDashCharges++;
+            }
 
             // 播放击杀音效
             player.level().playSound(null, player.blockPosition(),
@@ -396,19 +545,6 @@ public class StalkerRoleData extends SimpleRoleData {
     }
 
     /**
-     * 三阶段处决成功时调用
-     */
-    public void onExecution() {
-        if (phase == 3) {
-            this.phase3Timer -= EXECUTION_REDUCTION;
-            if (this.phase3Timer < 0) {
-                this.phase3Timer = 0;
-            }
-            this.sync();
-        }
-    }
-
-    /**
      * 开始窥视
      */
     public void startGazing() {
@@ -425,63 +561,174 @@ public class StalkerRoleData extends SimpleRoleData {
         this.sync();
     }
 
-    /**
-     * 开始蓄力（三阶段）
-     */
-    public void startCharging() {
-        if (phase != 3 || !dashModeActive)
-            return;
-        if (isDashing)
-            return;
-        if (dashCooldown > 0)
-            return; // 突进冷却中
-
-        this.isCharging = true;
-        this.chargeTime = 0;
-        this.sync();
+    public boolean canStartAttackDashCharge() {
+        return isAssassinFormActive() && !isDashing && !isCharging && hasReadyHuntingKnife()
+                && !isAttackDashSkillOnCooldown();
     }
 
-    /**
-     * 停止蓄力并释放突进
-     */
-    public void releaseCharge() {
-        if (!isCharging)
-            return;
+    /** 右键 usingItem 开始：进入攻击冲刺蓄力。 */
+    public boolean startAttackDashCharge() {
+        if (!canStartAttackDashCharge()) {
+            return false;
+        }
+        setWallHanging(false, Vec3.ZERO);
+        this.isCharging = true;
+        this.chargeTime = 0;
+        sync();
+        return true;
+    }
 
-        // 检查最小蓄力时间
-        if (chargeTime < MIN_CHARGE_TIME) {
+    /** 松开 usingItem：蓄力足够则向量冲刺，并让技能进入 3.5 秒冷却。 */
+    public boolean releaseAttackDash() {
+        int used = player != null && player.isUsingItem() ? player.getTicksUsingItem() : chargeTime;
+        return releaseAttackDash(used);
+    }
+
+    public boolean releaseAttackDash(int usedTicks) {
+        if (!isAssassinFormActive() || isDashing) {
             this.isCharging = false;
             this.chargeTime = 0;
-            this.sync();
+            return false;
+        }
+        this.chargeTime = usedTicks;
+        if (usedTicks < MIN_CHARGE_TIME || !hasReadyHuntingKnife() || isAttackDashSkillOnCooldown()) {
+            this.isCharging = false;
+            this.chargeTime = 0;
+            sync();
+            return false;
+        }
+        float charge = Mth.clamp(usedTicks / (float) MAX_CHARGE_TIME, 0.35F, 1.0F);
+        double speed = 1.20D + 0.55D * charge;
+        int ticks = 7 + Math.round(5.0F * charge);
+        beginDash(true, speed, ticks);
+        SRERole.getAbilityComponent(player).setCooldown(ATTACK_DASH_SKILL_COOLDOWN);
+        sync();
+        return true;
+    }
+
+    private boolean isAttackDashSkillOnCooldown() {
+        return player != null && SRERole.getAbilityComponent(player).hasCooldown();
+    }
+
+    /** Q键释放普通冲刺，储量来自攻击冲刺造成的真实击倒。 */
+    public boolean tryStartNormalDash() {
+        if (!isAssassinFormActive() || isDashing || normalDashCharges <= 0 || isAttackDashSkillOnCooldown()) {
+            return false;
+        }
+        this.isCharging = false;
+        this.chargeTime = 0;
+        normalDashCharges--;
+        beginDash(false, NORMAL_DASH_SPEED, NORMAL_DASH_TICKS);
+        sync();
+        return true;
+    }
+
+    private void beginDash(boolean attack, double speed, int ticks) {
+        setWallHanging(false, Vec3.ZERO);
+        Vec3 look = player.getViewVector(1.0f);
+        if (look.lengthSqr() < 1.0E-4) {
             return;
         }
-
-        // 计算突进距离
-        double chargeSeconds = Math.min(chargeTime, MAX_CHARGE_TIME) / 20.0;
-        double dashDistance = BASE_DASH_DISTANCE + (chargeSeconds - 1.0) * DASH_DISTANCE_PER_SECOND;
-
-        // 开始突进
         this.isCharging = false;
         this.chargeTime = 0;
         this.isDashing = true;
-        this.dashDistanceRemaining = dashDistance;
-        this.dashCooldown = DASH_COOLDOWN; // 设置突进冷却
-
-        // 获取水平方向（忽略Y分量，防止穿入地板）
-        Vec3 lookDir = player.getViewVector(1.0f);
-        Vec3 horizontalDir = new Vec3(lookDir.x, 0, lookDir.z).normalize();
-        // 如果玩家正好垂直看，使用前方向
-        if (horizontalDir.lengthSqr() < 0.001) {
-            float yaw = player.getYRot() * ((float) Math.PI / 180F);
-            horizontalDir = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
-        }
-        this.dashDirection = horizontalDir;
-
-        // 播放突进音效
+        this.attackDashActive = attack;
+        this.attackDashHitCount = 0;
+        this.dashHitPlayers.clear();
+        this.dashDirection = look.normalize();
+        this.dashSpeed = speed;
+        this.dashTicksLeft = ticks;
+        this.lastDashPos = player.position();
+        this.dashHasTraveled = false;
+        applyDashVelocity();
         player.level().playSound(null, player.blockPosition(),
-                SoundEvents.BREEZE_CHARGE, SoundSource.PLAYERS, 1.0F, 0.5F);
+                SoundEvents.BREEZE_CHARGE, SoundSource.PLAYERS, 1.0F, attack ? 0.7F : 1.2F);
+    }
 
-        this.sync();
+    private void stopDash() {
+        this.isDashing = false;
+        this.attackDashActive = false;
+        this.attackDashHitCount = 0;
+        this.dashDistanceRemaining = 0;
+        this.dashDirection = Vec3.ZERO;
+        this.dashSpeed = 0;
+        this.dashTicksLeft = 0;
+        this.lastDashPos = Vec3.ZERO;
+        this.dashHasTraveled = false;
+        this.dashHitPlayers.clear();
+    }
+
+    /** 主手持猎刀，或主手空着且副手持猎刀时，可以蓄力冲刺。 */
+    public static boolean isHoldingHuntingKnife(Player player) {
+        if (player == null) {
+            return false;
+        }
+        if (player.getMainHandItem().getItem() instanceof StalkerKnifeItem) {
+            return true;
+        }
+        return player.getMainHandItem().isEmpty()
+                && player.getOffhandItem().getItem() instanceof StalkerKnifeItem;
+    }
+
+    public boolean hasReadyHuntingKnife() {
+        return isEquippedKnifeReady(player.getMainHandItem())
+                || isEquippedKnifeReady(player.getOffhandItem())
+                || isHuntingKnifeReady(ModItems.STALKER_KNIFE)
+                || isHuntingKnifeReady(ModItems.STALKER_KNIFE_OFFHAND);
+    }
+
+    private boolean isEquippedKnifeReady(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof StalkerKnifeItem
+                && !player.getCooldowns().isOnCooldown(stack.getItem());
+    }
+
+    private boolean isHuntingKnifeReady(Item item) {
+        return player.getInventory().countItem(item) > 0 && !player.getCooldowns().isOnCooldown(item);
+    }
+
+    /** 命中时把一把尚未冷却的猎刀打上 5 秒冷却。 */
+    public boolean consumeReadyKnifeForAttack() {
+        if (isEquippedKnifeReady(player.getMainHandItem())) {
+            player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), KNIFE_ATTACK_COOLDOWN);
+            return true;
+        }
+        if (isEquippedKnifeReady(player.getOffhandItem())) {
+            player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), KNIFE_ATTACK_COOLDOWN);
+            return true;
+        }
+        if (isHuntingKnifeReady(ModItems.STALKER_KNIFE)) {
+            player.getCooldowns().addCooldown(ModItems.STALKER_KNIFE, KNIFE_ATTACK_COOLDOWN);
+            return true;
+        }
+        if (isHuntingKnifeReady(ModItems.STALKER_KNIFE_OFFHAND)) {
+            player.getCooldowns().addCooldown(ModItems.STALKER_KNIFE_OFFHAND, KNIFE_ATTACK_COOLDOWN);
+            return true;
+        }
+        return false;
+    }
+
+    private void refreshNoCollide() {
+        if (player == null || player.level().isClientSide) {
+            return;
+        }
+        int duration = Math.max(phase3Timer + 5, 20);
+        var existing = player.getEffect(ModEffects.NO_COLLIDE);
+        if (existing == null || existing.getDuration() < 15) {
+            player.addEffect(ModEffects.of(ModEffects.NO_COLLIDE, duration, 0, false, false, false));
+        }
+    }
+
+    private void applyDashVelocity() {
+        if (dashDirection.lengthSqr() < 1.0E-4D) {
+            return;
+        }
+        Vec3 velocity = dashDirection.scale(dashSpeed);
+        player.setDeltaMovement(velocity);
+        player.hurtMarked = true;
+        player.fallDistance = 0;
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer.getId(), velocity));
+        }
     }
 
     /**
@@ -543,73 +790,81 @@ public class StalkerRoleData extends SimpleRoleData {
     }
 
     /**
-     * 执行突进
+     * 执行突进：只维持速度向量，交给原版位移，不再每 tick 传送或强制 move。
      */
     private void performDash() {
-        if (!isDashing || dashDistanceRemaining <= 0) {
-            isDashing = false;
-            dashDistanceRemaining = 0;
+        if (!isDashing || dashTicksLeft <= 0) {
+            stopDash();
             sync();
             return;
         }
 
         if (!(player instanceof ServerPlayer serverPlayer)) {
-            isDashing = false;
+            stopDash();
             return;
         }
 
-        // 每 tick 移动一定距离
-        double movePerTick = 2.0; // 每 tick 移动2.0格（更快的突进速度）
-        double actualMove = Math.min(movePerTick, dashDistanceRemaining);
-
         Vec3 currentPos = player.position();
-        Vec3 newPos = currentPos.add(dashDirection.scale(actualMove));
+        if (lastDashPos == Vec3.ZERO) {
+            lastDashPos = currentPos;
+        }
+        Vec3 moved = currentPos.subtract(lastDashPos);
+        boolean movedThisTick = moved.lengthSqr() > 0.0025D;
 
-        // 检查是否撞到方块
-        ClipContext context = new ClipContext(
-                currentPos.add(0, 0.5, 0), newPos.add(0, 0.5, 0),
-                ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE,
-                player);
-        BlockHitResult hit = player.level().clip(context);
-
-        if (hit.getType() != HitResult.Type.MISS) {
-            // 撞到方块，停止突进
-            isDashing = false;
-            dashDistanceRemaining = 0;
+        Vec3 lookAhead = dashDirection.scale(Math.max(dashSpeed, 0.35D));
+        BlockHitResult wallHit = player.level().clip(new ClipContext(
+                currentPos.add(0, 0.5, 0), currentPos.add(lookAhead).add(0, 0.5, 0),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        if (wallHit.getType() != HitResult.Type.MISS
+                && wallHit.getLocation().distanceToSqr(currentPos.add(0, 0.5, 0)) < dashSpeed * dashSpeed) {
+            stopDash();
+            player.setDeltaMovement(Vec3.ZERO);
             sync();
             return;
         }
 
-        // 检查是否穿过玩家
-        for (Player target : player.level().players()) {
-            if (target.equals(player))
-                continue;
-            if (!GameUtils.isPlayerAliveAndSurvival(target))
-                continue;
-
-            // 检查目标是否在突进路径上
-            double distToTarget = currentPos.distanceTo(target.position());
-            if (distToTarget <= 2.5) {
-                // 命中玩家，执行处决
-                executePlayer(target);
-                isDashing = false;
-                dashDistanceRemaining = 0;
-                sync();
-                return;
-            }
+        if (dashHasTraveled && !movedThisTick) {
+            stopDash();
+            player.setDeltaMovement(Vec3.ZERO);
+            sync();
+            return;
         }
 
-        // 使用 teleport 移动玩家（正确同步到客户端）
-        serverPlayer.teleportTo(
-                serverPlayer.serverLevel(),
-                newPos.x, newPos.y, newPos.z,
-                serverPlayer.getYRot(), serverPlayer.getXRot());
+        if (movedThisTick) {
+            dashHasTraveled = true;
+            if (attackDashActive) {
+                var sweptBox = player.getBoundingBox()
+                        .expandTowards(-moved.x, -moved.y, -moved.z)
+                        .inflate(0.75);
+                var targets = player.level().players().stream()
+                        .filter(target -> !target.equals(player))
+                        .filter(GameUtils::isPlayerAliveAndSurvival)
+                        .filter(target -> !dashHitPlayers.contains(target.getUUID()))
+                        .filter(target -> sweptBox.intersects(target.getBoundingBox()))
+                        .sorted((a, b) -> Double.compare(a.distanceToSqr(player), b.distanceToSqr(player)))
+                        .toList();
+                for (Player target : targets) {
+                    if (!consumeReadyKnifeForAttack()) {
+                        break;
+                    }
+                    dashHitPlayers.add(target.getUUID());
+                    attackDashHitCount++;
+                    StalkerPierceFx.broadcast(serverPlayer, target, dashDirection);
+                    executePlayer(target);
+                    if (attackDashHitCount >= MAX_ATTACK_DASH_HITS) {
+                        break;
+                    }
+                }
+            }
+            StalkerDashTrails.broadcast(serverPlayer, lastDashPos, currentPos, attackDashActive);
+        }
 
-        dashDistanceRemaining -= actualMove;
+        applyDashVelocity();
+        lastDashPos = currentPos;
+        dashTicksLeft--;
 
-        if (dashDistanceRemaining <= 0) {
-            isDashing = false;
+        if (dashTicksLeft <= 0 || (attackDashActive && attackDashHitCount >= MAX_ATTACK_DASH_HITS)) {
+            stopDash();
             sync();
         }
     }
@@ -624,8 +879,10 @@ public class StalkerRoleData extends SimpleRoleData {
         // 使用刀刺死因
         GameUtils.killPlayer(target, true, player, GameConstants.DeathReasons.KNIFE);
 
-        // 减少三阶段倒计时
-        onExecution();
+        // 护盾或其它死亡否决生效时只算命中，不算击倒。
+        if (GameUtils.isPlayerAliveAndSurvival(target)) {
+            return;
+        }
 
         // 发送消息
         if (player instanceof ServerPlayer serverPlayer) {
@@ -638,6 +895,61 @@ public class StalkerRoleData extends SimpleRoleData {
         // 播放音效
         player.level().playSound(null, player.blockPosition(),
                 SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.0F, 1.5F);
+    }
+
+    /**
+     * 刺客形态按住 Shift 时寻找相邻墙面并挂住；松开 Shift 立即恢复重力。
+     * 墙面命中面的法线同时用于把玩家视角调整为背靠墙面的朝向。
+     */
+    private void updateWallHang() {
+        if (!isAssassinFormActive() || isDashing || !player.isShiftKeyDown()) {
+            setWallHanging(false, Vec3.ZERO);
+            return;
+        }
+
+        Vec3 normal = findAdjacentWallNormal();
+        if (normal == null) {
+            setWallHanging(false, Vec3.ZERO);
+            return;
+        }
+
+        boolean changedWall = !wallHanging || wallNormal.distanceToSqr(normal) > 0.01;
+        setWallHanging(true, normal);
+        player.setDeltaMovement(Vec3.ZERO);
+        player.fallDistance = 0;
+
+        if (changedWall && player instanceof ServerPlayer serverPlayer) {
+            float yaw = (float) Math.toDegrees(Math.atan2(-normal.x, normal.z));
+            serverPlayer.teleportTo(serverPlayer.serverLevel(), player.getX(), player.getY(), player.getZ(),
+                    yaw, player.getXRot());
+        }
+    }
+
+    private Vec3 findAdjacentWallNormal() {
+        Vec3 origin = player.position().add(0, player.getBbHeight() * 0.5, 0);
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            Vec3 end = origin.add(direction.getStepX() * 0.8, 0, direction.getStepZ() * 0.8);
+            BlockHitResult hit = player.level().clip(new ClipContext(origin, end,
+                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+            if (hit.getType() == HitResult.Type.BLOCK && hit.getDirection().getAxis().isHorizontal()) {
+                Direction face = hit.getDirection();
+                return new Vec3(face.getStepX(), 0, face.getStepZ());
+            }
+        }
+        return null;
+    }
+
+    private void setWallHanging(boolean hanging, Vec3 normal) {
+        boolean changed = this.wallHanging != hanging || this.wallNormal.distanceToSqr(normal) > 0.01;
+        this.wallHanging = hanging;
+        this.wallNormal = normal;
+        player.setNoGravity(hanging);
+        if (!hanging) {
+            player.fallDistance = 0;
+        }
+        if (changed && !player.level().isClientSide) {
+            sync();
+        }
     }
 
     /**
@@ -684,15 +996,14 @@ public class StalkerRoleData extends SimpleRoleData {
         if (!GameUtils.isPlayerAliveAndSurvival(player))
             return;
 
-        // 二阶段及以上禁止冲刺
-        if (phase >= 2 && player.isSprinting()) {
+        // 二阶段禁止奔跑；刺客形态可以跑
+        if (phase >= 2 && !isAssassinFormActive() && player.isSprinting()) {
             player.setSprinting(false);
         }
 
-        // 处理突进冷却倒计时
-        if (dashCooldown > 0) {
-            dashCooldown--;
-            if (dashCooldown == 0) {
+        if (assassinFormCooldown > 0) {
+            assassinFormCooldown--;
+            if (assassinFormCooldown == 0 || assassinFormCooldown % 200 == 0) {
                 sync();
             }
         }
@@ -702,32 +1013,49 @@ public class StalkerRoleData extends SimpleRoleData {
             updateGazing();
         }
 
-        // 三阶段倒计时
-        if (phase == 3) {
-            if (phase3Timer > 0) {
-                phase3Timer--;
-                // 每秒同步一次
+        // 刺客形态倒计时与攻击冲刺回充
+        if (isAssassinFormActive()) {
+            SREPlayerPsychoComponent psycho = SREPlayerPsychoComponent.KEY.get(player);
+            if (!psycho.inPsycho()) {
+                regressToPhase2();
+                return;
+            }
+            int psychoTicks = psycho.getPsychoTicks();
+            if (phase3Timer != psychoTicks) {
+                phase3Timer = psychoTicks;
                 if (phase3Timer % 200 == 0) {
                     sync();
                 }
             }
-            // 检查是否需要退回（分开检查，确保触发）
-            if (phase3Timer <= 0 && dashModeActive) {
-                regressToPhase2();
-                return; // 退回后立即返回，避免后续逻辑冲突
-            }
-        }
 
-        // 蓄力处理
-        if (isCharging) {
-            chargeTime++;
-            // 限制最大蓄力时间
-            if (chargeTime > MAX_CHARGE_TIME) {
-                chargeTime = MAX_CHARGE_TIME;
+            refreshNoCollide();
+
+            if (player.isUsingItem() && player.getUseItem().getItem() instanceof StalkerKnifeItem) {
+                chargeTime = player.getTicksUsingItem();
+                isCharging = true;
+                if (chargeTime >= MAX_CHARGE_TIME) {
+                    player.releaseUsingItem();
+                } else if (chargeTime % 4 == 0) {
+                    sync();
+                }
             }
-            // 蓄力时减速
-            player.addEffect(new MobEffectInstance(
-                    MobEffects.MOVEMENT_SLOWDOWN, 3, 1, false, false, false));
+
+            updateWallHang();
+            if (wallHanging && (isCharging || player.isUsingItem())) {
+                if (player.isUsingItem()) {
+                    player.stopUsingItem();
+                }
+                isCharging = false;
+                chargeTime = 0;
+                sync();
+            }
+
+            if (phase3Timer <= 0) {
+                regressToPhase2();
+                return;
+            }
+        } else if (wallHanging) {
+            setWallHanging(false, Vec3.ZERO);
         }
 
         // 突进处理
@@ -759,12 +1087,22 @@ public class StalkerRoleData extends SimpleRoleData {
         tag.putBoolean("isCharging", this.isCharging);
         tag.putInt("chargeTime", this.chargeTime);
         tag.putBoolean("isDashing", this.isDashing);
+        tag.putDouble("dashSpeed", this.dashSpeed);
         tag.putDouble("dashDistanceRemaining", this.dashDistanceRemaining);
         tag.putDouble("dashDirX", this.dashDirection.x);
         tag.putDouble("dashDirY", this.dashDirection.y);
         tag.putDouble("dashDirZ", this.dashDirection.z);
         tag.putBoolean("isStalkerMarked", this.isStalkerMarked);
         tag.putInt("dashCooldown", this.dashCooldown);
+        tag.putInt("assassinFormCooldown", this.assassinFormCooldown);
+        tag.putInt("normalDashCharges", this.normalDashCharges);
+        tag.putInt("attackDashCharges", this.attackDashCharges);
+        tag.putInt("attackDashRechargeTimer", this.attackDashRechargeTimer);
+        tag.putBoolean("attackDashActive", this.attackDashActive);
+        tag.putInt("attackDashHitCount", this.attackDashHitCount);
+        tag.putBoolean("wallHanging", this.wallHanging);
+        tag.putDouble("wallNormalX", this.wallNormal.x);
+        tag.putDouble("wallNormalZ", this.wallNormal.z);
         tag.putInt("ph1_energy_need", this.ph1_energy_need);
         tag.putInt("ph2_energy_need", this.ph2_energy_need);
         tag.putInt("ph2_kill_need", this.ph2_kill_need);
@@ -783,6 +1121,7 @@ public class StalkerRoleData extends SimpleRoleData {
         this.isCharging = tag.contains("isCharging") && tag.getBoolean("isCharging");
         this.chargeTime = tag.contains("chargeTime") ? tag.getInt("chargeTime") : 0;
         this.isDashing = tag.contains("isDashing") && tag.getBoolean("isDashing");
+        this.dashSpeed = tag.contains("dashSpeed") ? tag.getDouble("dashSpeed") : 0;
         this.dashDistanceRemaining = tag.contains("dashDistanceRemaining") ? tag.getDouble("dashDistanceRemaining") : 0;
         double dirX = tag.contains("dashDirX") ? tag.getDouble("dashDirX") : 0;
         double dirY = tag.contains("dashDirY") ? tag.getDouble("dashDirY") : 0;
@@ -790,6 +1129,16 @@ public class StalkerRoleData extends SimpleRoleData {
         this.dashDirection = new Vec3(dirX, dirY, dirZ);
         this.isStalkerMarked = tag.contains("isStalkerMarked") && tag.getBoolean("isStalkerMarked");
         this.dashCooldown = tag.contains("dashCooldown") ? tag.getInt("dashCooldown") : 0;
+        this.assassinFormCooldown = tag.contains("assassinFormCooldown") ? tag.getInt("assassinFormCooldown") : 0;
+        this.normalDashCharges = tag.contains("normalDashCharges") ? tag.getInt("normalDashCharges") : 0;
+        this.attackDashCharges = tag.contains("attackDashCharges") ? tag.getInt("attackDashCharges") : 0;
+        this.attackDashRechargeTimer = tag.contains("attackDashRechargeTimer")
+                ? tag.getInt("attackDashRechargeTimer") : 0;
+        this.attackDashActive = tag.contains("attackDashActive") && tag.getBoolean("attackDashActive");
+        this.attackDashHitCount = tag.contains("attackDashHitCount") ? tag.getInt("attackDashHitCount") : 0;
+        this.wallHanging = tag.contains("wallHanging") && tag.getBoolean("wallHanging");
+        this.wallNormal = new Vec3(tag.contains("wallNormalX") ? tag.getDouble("wallNormalX") : 0,
+                0, tag.contains("wallNormalZ") ? tag.getDouble("wallNormalZ") : 0);
         this.ph1_energy_need = tag.contains("ph1_energy_need") ? tag.getInt("ph1_energy_need") : 500;
         this.ph2_energy_need = tag.contains("ph2_energy_need") ? tag.getInt("ph2_energy_need") : 30;
         this.ph2_kill_need = tag.contains("ph2_kill_need") ? tag.getInt("ph2_kill_need") : 2;
@@ -809,12 +1158,22 @@ public class StalkerRoleData extends SimpleRoleData {
         tag.putBoolean("isCharging", this.isCharging);
         tag.putInt("chargeTime", this.chargeTime);
         tag.putBoolean("isDashing", this.isDashing);
+        tag.putDouble("dashSpeed", this.dashSpeed);
         tag.putDouble("dashDistanceRemaining", this.dashDistanceRemaining);
         tag.putDouble("dashDirX", this.dashDirection.x);
         tag.putDouble("dashDirY", this.dashDirection.y);
         tag.putDouble("dashDirZ", this.dashDirection.z);
         tag.putBoolean("isStalkerMarked", this.isStalkerMarked);
         tag.putInt("dashCooldown", this.dashCooldown);
+        tag.putInt("assassinFormCooldown", this.assassinFormCooldown);
+        tag.putInt("normalDashCharges", this.normalDashCharges);
+        tag.putInt("attackDashCharges", this.attackDashCharges);
+        tag.putInt("attackDashRechargeTimer", this.attackDashRechargeTimer);
+        tag.putBoolean("attackDashActive", this.attackDashActive);
+        tag.putInt("attackDashHitCount", this.attackDashHitCount);
+        tag.putBoolean("wallHanging", this.wallHanging);
+        tag.putDouble("wallNormalX", this.wallNormal.x);
+        tag.putDouble("wallNormalZ", this.wallNormal.z);
         tag.putInt("ph1_energy_need", this.ph1_energy_need);
         tag.putInt("ph2_energy_need", this.ph2_energy_need);
         tag.putInt("ph2_kill_need", this.ph2_kill_need);
@@ -834,6 +1193,7 @@ public class StalkerRoleData extends SimpleRoleData {
         this.isCharging = tag.contains("isCharging") && tag.getBoolean("isCharging");
         this.chargeTime = tag.contains("chargeTime") ? tag.getInt("chargeTime") : 0;
         this.isDashing = tag.contains("isDashing") && tag.getBoolean("isDashing");
+        this.dashSpeed = tag.contains("dashSpeed") ? tag.getDouble("dashSpeed") : 0;
         this.dashDistanceRemaining = tag.contains("dashDistanceRemaining") ? tag.getDouble("dashDistanceRemaining") : 0;
         double dirX = tag.contains("dashDirX") ? tag.getDouble("dashDirX") : 0;
         double dirY = tag.contains("dashDirY") ? tag.getDouble("dashDirY") : 0;
@@ -841,6 +1201,16 @@ public class StalkerRoleData extends SimpleRoleData {
         this.dashDirection = new Vec3(dirX, dirY, dirZ);
         this.isStalkerMarked = tag.contains("isStalkerMarked") && tag.getBoolean("isStalkerMarked");
         this.dashCooldown = tag.contains("dashCooldown") ? tag.getInt("dashCooldown") : 0;
+        this.assassinFormCooldown = tag.contains("assassinFormCooldown") ? tag.getInt("assassinFormCooldown") : 0;
+        this.normalDashCharges = tag.contains("normalDashCharges") ? tag.getInt("normalDashCharges") : 0;
+        this.attackDashCharges = tag.contains("attackDashCharges") ? tag.getInt("attackDashCharges") : 0;
+        this.attackDashRechargeTimer = tag.contains("attackDashRechargeTimer")
+                ? tag.getInt("attackDashRechargeTimer") : 0;
+        this.attackDashActive = tag.contains("attackDashActive") && tag.getBoolean("attackDashActive");
+        this.attackDashHitCount = tag.contains("attackDashHitCount") ? tag.getInt("attackDashHitCount") : 0;
+        this.wallHanging = tag.contains("wallHanging") && tag.getBoolean("wallHanging");
+        this.wallNormal = new Vec3(tag.contains("wallNormalX") ? tag.getDouble("wallNormalX") : 0,
+                0, tag.contains("wallNormalZ") ? tag.getDouble("wallNormalZ") : 0);
         this.ph1_energy_need = tag.contains("ph1_energy_need") ? tag.getInt("ph1_energy_need") : 500;
         this.ph2_energy_need = tag.contains("ph2_energy_need") ? tag.getInt("ph2_energy_need") : 30;
         this.ph2_kill_need = tag.contains("ph2_kill_need") ? tag.getInt("ph2_kill_need") : 2;
@@ -848,16 +1218,31 @@ public class StalkerRoleData extends SimpleRoleData {
 
     @Override
     public void clientTick() {
-        // 二阶段及以上禁止冲刺
-        if (phase >= 2 && player.isSprinting()) {
+        // 二阶段禁止奔跑；刺客形态可以跑
+        if (phase >= 2 && !isAssassinFormActive() && player.isSprinting()) {
             player.setSprinting(false);
         }
-        if (dashCooldown > 1) {
-            dashCooldown--;
+        if (assassinFormCooldown > 1) {
+            assassinFormCooldown--;
         }
-        if (phase == 3) {
+        if (isAssassinFormActive()) {
             if (phase3Timer > 1) {
                 phase3Timer--;
+            }
+            if (player.isUsingItem() && player.getUseItem().getItem() instanceof StalkerKnifeItem) {
+                chargeTime = player.getTicksUsingItem();
+                isCharging = true;
+            } else if (isCharging && chargeTime < MAX_CHARGE_TIME) {
+                chargeTime++;
+            }
+            if (isDashing && dashDirection.lengthSqr() > 1.0E-4D) {
+                double speed = dashSpeed > 0 ? dashSpeed : 1.15D;
+                player.setDeltaMovement(dashDirection.scale(speed));
+                player.fallDistance = 0;
+            }
+            if (wallHanging) {
+                player.setDeltaMovement(Vec3.ZERO);
+                player.fallDistance = 0;
             }
         }
     }

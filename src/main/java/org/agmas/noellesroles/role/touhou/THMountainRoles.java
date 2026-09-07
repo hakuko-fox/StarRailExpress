@@ -22,7 +22,8 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.TouhouRole;
 import io.wifi.starrailexpress.api.NormalRole.RoleType;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
-import io.wifi.starrailexpress.game.DiscountShopEntry;
+import io.wifi.starrailexpress.game.KillerKnifeShopEntry;
+import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.resources.ResourceLocation;
@@ -30,9 +31,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.agmas.noellesroles.game.roles.innocence.ayayaya.AyayayaPlayerComponent;
-import org.agmas.noellesroles.handler.TouhouHandlers;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role_data.innocence.AyayayaRoleData;
 import org.agmas.noellesroles.role.touhou.roles.THIbarakiKasenRole;
 import org.agmas.noellesroles.role.touhou.roles.THKyoukoRole;
 import org.agmas.noellesroles.role.touhou.roles.THRinnosukeRole;
@@ -86,7 +86,7 @@ public class THMountainRoles {
             SHOP.add(new ShopEntry(Items.BUNDLE.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
             // 报纸 - 50金币
             SHOP.add(new ShopEntry(ModItems.NEWSPAPER.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
-            SHOP.add(new DiscountShopEntry(SREConfig.instance().knifePrice));
+            SHOP.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
 
             SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
                     (int) ((float) SREConfig.instance().revolverPrice * 1.005f), ShopEntry.Type.WEAPON));
@@ -136,13 +136,7 @@ public class THMountainRoles {
             // SREConfig.instance().monitorBrokenDuration * 20);
             // }
             // });
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
-                    SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            SHOP.add(ShopContent.getBlackoutShopEntry());
             SHOP.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
                     ShopEntry.Type.TOOL));
         }
@@ -163,7 +157,7 @@ public class THMountainRoles {
         public InteractionResult onDropItem(Player player, ItemStack item) {
             return InteractionResult.PASS;
         }
-    }.setHiddenForRoleRotation(true).setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
+    }.setHiddenForRoleRotation(true).setRoleData(AyayayaRoleData::new), "th_mountain");
 
     public static SRERole HATATE = TMMRoles.registerRole(new TouhouRole(HATATE_ID, // 角色 ID
             new Color(123, 63, 158).getRGB(), // 黑色 - 代表乌鸦
@@ -199,7 +193,7 @@ public class THMountainRoles {
             return InteractionResult.PASS;
         }
 
-    }.setHiddenForRoleRotation(true).setComponentKey(AyayayaPlayerComponent.KEY), "th_mountain");
+    }.setHiddenForRoleRotation(true).setRoleData(AyayayaRoleData::new), "th_mountain");
 
     // 茨木华扇 Ibaraki Kasen
     public static SRERole IBARAKI_KASEN = TMMRoles.registerRole(new THIbarakiKasenRole(id("ibaraki_kasen"),
@@ -217,14 +211,13 @@ public class THMountainRoles {
             .setDefaultEnableChance(5000)
             .setAddedVersion("4.4");
 
-    public static void init() {
-        // 强制交易：Nitori
-        TouhouHandlers.register();
-    }
-
     static {
         NITORI.setAddedVersion("4.3");
         AYA.setAddedVersion("4.3");
         HATATE.setAddedVersion("4.3");
+    }
+
+    public static void init() {
+
     }
 }

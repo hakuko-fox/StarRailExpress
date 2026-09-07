@@ -59,7 +59,9 @@ public class InvisbleHandItem {
         });
         // 巡飞弹操控期间相机已经绑定到弹体，隐藏第一人称双手避免遮挡视野。
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
-            if (Minecraft.getInstance().getCameraEntity() instanceof NiaoshoushouMissileEntity) {
+            if (Minecraft.getInstance().getCameraEntity() instanceof NiaoshoushouMissileEntity
+                    || Minecraft.getInstance()
+                            .getCameraEntity() instanceof org.agmas.noellesroles.content.entity.MechanicalBirdEntity) {
                 return ItemStack.EMPTY;
             }
             return null;
@@ -81,13 +83,13 @@ public class InvisbleHandItem {
             }
             return null; // 不修改
         });
-        // 显示手铐
+        // 显示手铐（改由 HandCuffsFeatureRenderer 动态渲染，副手此处隐藏避免重复）
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
             if (mainHand)
                 return null;
             var item = ExtraSlotComponent.getSlot(player, HandCuffsItem.SLOT_HANDCUFFS);
             if (item.is(ModItems.HANDCUFFS)) {
-                return item;
+                return ItemStack.EMPTY;
             }
             return null; // 不修改
         });

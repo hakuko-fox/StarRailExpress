@@ -41,6 +41,7 @@ import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.init.ModEffects;
 import org.lwjgl.glfw.GLFW;
 
+import io.wifi.starrailexpress.api.AreasSettings.VoteResultProcessor;
 import io.wifi.starrailexpress.client.SREClient;
 
 import java.util.ArrayList;
@@ -167,9 +168,16 @@ public final class MeetingClientHandler {
         if (SREClient.areaComponent == null)
             return;
         String expelled = payload.expelledPlayerName();
+        VoteResultProcessor processorType = SREClient.areaComponent.areasSettings.meetingVoteProcessor;
+        boolean emergency = payload.emergency();
+        if (emergency) {
+            if (SREClient.areaComponent.areasSettings.emergencyMeetingVoteProcessor != VoteResultProcessor.DEFAULT) {
+                processorType = SREClient.areaComponent.areasSettings.emergencyMeetingVoteProcessor;
+            }
+        }
         Component title = expelled.isEmpty()
                 ? Component.translatable("meeting.vote.result.none_expelled")
-                : switch (SREClient.areaComponent.areasSettings.meetingVoteProcessor) {
+                : switch (processorType) {
                     case GLOWING -> Component.translatable("meeting.vote.result.glowing", expelled);
                     default -> Component.translatable("meeting.vote.result.expelled", expelled);
                 };
@@ -231,7 +239,7 @@ public final class MeetingClientHandler {
                     break;
                 }
                 var body = MeetingReportClientHandler.targetedBody(client);
-                if (body != null && MeetingReportClientHandler.canPrompt(client)
+                if (body != null && MeetingReportClientHandler.canPromptBodyMeeting(client)
                         && MeetingReportClientHandler.cooldownRemainingTicks(client) <= 0) {
                     ClientPlayNetworking.send(
                             new net.exmo.sre.meeting.network.MeetingReportC2SPayload(body.getId()));
@@ -355,5 +363,9 @@ public final class MeetingClientHandler {
         int bw = 150;
         int bh = 20;
         return new int[] { (w - bw) / 2, h - 70, bw, bh };
+    }
+
+    public static void clear() {
+        phase = MeetingManager.PHASE_NONE;
     }
 }

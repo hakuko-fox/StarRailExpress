@@ -73,6 +73,8 @@ import org.agmas.noellesroles.role_data.killer.StalkerRoleData;
 import org.agmas.noellesroles.role_data.killer.ManipulatorRoleData;
 import org.agmas.noellesroles.role_data.killer.InsaneKillerRoleData;
 import org.agmas.noellesroles.role_data.innocence.FortunetellerRoleData;
+import org.agmas.noellesroles.role_data.neutral.AnatmanRoleData;
+import org.agmas.noellesroles.role_data.neutral.AsatyaRoleData;
 import org.agmas.noellesroles.role_data.neutral.MorticianBodyMakerRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
 import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
@@ -348,7 +350,10 @@ public class NRDeathEvents {
             }
             if (gameWorldComponent.isRole(player, ModRoles.DOCTOR) && !ignoreDoctor) {
                 doctorAlive = true;
-            } else if (gameWorldComponent.isRole(player, ModRoles.CONSPIRATOR)) {
+            } else if (gameWorldComponent.isRole(player, ModRoles.CONSPIRATOR)
+                    // 无我或无妄存活时，与阴谋家一样进入死亡惩罚（视角限制）
+                    || gameWorldComponent.isRole(player, ModRoles.ANATMAN)
+                    || gameWorldComponent.isRole(player, ModRoles.ASATYA)) {
                 CONSPIRATOR_alive = true;
             }
             if (doctorAlive || CONSPIRATOR_alive) {
@@ -768,6 +773,32 @@ public class NRDeathEvents {
     // --- OnPlayerDeath ---
 
     private static void registerOnPlayerDeath() {
+        // 无妄死亡时，无我进入30秒疯狂模式（附带1层护盾）
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (!(victim instanceof ServerPlayer serverVictim) || victim.level().isClientSide()) {
+                return;
+            }
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (gameWorld != null && gameWorld.isRole(victim, ModRoles.ASATYA)) {
+                AnatmanRoleData.onAsatyaDeath(serverVictim);
+            }
+        });
+
+        // 无我死亡时，无妄叠加一层护盾（最多5层）
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            if (!(victim instanceof ServerPlayer serverVictim) || victim.level().isClientSide()) {
+                return;
+            }
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(victim.level());
+            if (gameWorld != null && gameWorld.isRole(victim, ModRoles.ANATMAN)) {
+                AsatyaRoleData.onAnatmanDeath(serverVictim);
+            }
+        });
+
+        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
+            org.agmas.noellesroles.game.roles.innocence.angler.AnglerWorldMemory.tryConvertFromDeath(victim);
+        });
+
         // 死亡掉枪 + 掉落自定义物品 + 角色清理
         OnPlayerDeath.EVENT.register((p, reason) -> {
             if (!(p instanceof ServerPlayer player))
@@ -858,6 +889,16 @@ public class NRDeathEvents {
             while (dropCount > 0) {
                 player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                 dropCount--;
+            }
+        }
+        // 网警：身上的 Dream 铁斧/钻石剑/重锤 掉落为左轮手枪（参考游侠弓弩）
+        if (gameWorldComponent.isRole(player, ModRoles.NET_COP)) {
+            int dreamWeaponCount = SREItemUtils.clearItem(player, ModItems.DREAM_AXE)
+                    + SREItemUtils.clearItem(player, ModItems.DREAM_DIAMOND_SWORD)
+                    + SREItemUtils.clearItem(player, ModItems.DREAM_MACE);
+            while (dreamWeaponCount > 0) {
+                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                dreamWeaponCount--;
             }
         }
         if (gameWorldComponent.isRole(player, ModRoles.MARTIAL_ARTS_INSTRUCTOR)) {
@@ -1509,7 +1550,7 @@ public class NRDeathEvents {
                 }
             }
             if (stack.is(ModItems.MASTER_KEY) || stack.is(Items.BUNDLE) ||
-                    stack.is(Items.WRITTEN_BOOK)) {
+                    stack.is(Items.WRITTEN_BOOK) || stack.is(ModItems.TOMATO)) {
                 return true;
             }
             return false;

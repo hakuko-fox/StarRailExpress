@@ -101,7 +101,9 @@ public abstract class StalkerLeftClickKillMixin {
         // 二阶段：左键直接击杀
         GameUtils.killPlayer(targetPlayer, true, attacker, GameConstants.DeathReasons.KNIFE);
 
-        attacker.getCooldowns().addCooldown(mainHand.getItem(), GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3);
+        // 二阶段保留改版前的左键刀冷却；5 秒只属于刺客形态。
+        attacker.getCooldowns().addCooldown(mainHand.getItem(),
+                GameConstants.ITEM_COOLDOWNS.get(TMMItems.KNIFE) / 3);
         // 触发攻击冷却
 //        stalkerComp.triggerAttackCooldown();
 

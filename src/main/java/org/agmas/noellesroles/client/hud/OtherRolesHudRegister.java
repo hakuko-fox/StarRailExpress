@@ -75,6 +75,7 @@ public class OtherRolesHudRegister {
         PartyKillerHud.register();
         MeatballHud.register();
         MorticianHud.register();
+        MediumHud.register();
         BuilderHud.register();
         PelicanHud.register();
         GodfatherHud.register();
@@ -94,11 +95,14 @@ public class OtherRolesHudRegister {
         UndeadLordHud.register();
         VeteranHud.register();
         CakeMakerHud.register();
+        ConductorHud.register();
         LeonHud.register();
         HunterHud.register();
         THReimuHud.register();
         LeaderHud.register();
         NiaoshoushouHud.register();
+        SilverWingHud.register();
+        AsatyaHud.register();
         // 自定义职业HUD
         CustomRoleHud.register();
     }

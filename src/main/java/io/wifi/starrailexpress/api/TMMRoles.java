@@ -27,6 +27,7 @@ import org.ladysnake.cca.api.v3.component.ComponentKey;
 import java.util.*;
 
 public class TMMRoles {
+    public static final Map<String, SRERole> ROLES_BY_PATH = new HashMap<>();
     public static final Map<ResourceLocation, SRERole> ROLES = new HashMap<>();
     private static final HashSet<String> CACHED_VERSIONS_LIST = new HashSet<>();
     public static final int CIVILIAN_MAX_SPRINT_TICKS = GameConstants.getInTicks(0, 10);
@@ -82,8 +83,34 @@ public class TMMRoles {
         return registerRole(role.addFlag(flags));
     }
 
+    public static SRERole registerCustomRole(SRERole role) {
+        if (ROLES_BY_PATH.containsKey(role.identifier.getPath())) {
+            SRE.LOGGER.error("[ROLE REGISTERER] Duplicated role identifier path found: {} and {}. Ignore the new one.",
+                    ROLES_BY_PATH.get(role.identifier.getPath()).identifier().toString(), role.identifier().toString());
+            return null;
+        }
+        return registerRole(role);
+    }
+
+    public static boolean unregisterCustomRole(SRERole role) {
+        if (role == null)
+            return false;
+        ROLES_BY_PATH.remove(role.identifier.getPath());
+        ROLES.remove(role.identifier());
+        return true;
+    }
+
     public static SRERole registerRole(SRERole role) {
+        if (ROLES_BY_PATH.containsKey(role.identifier.getPath())) {
+            // 拒绝注册
+            throw new IllegalArgumentException(String.format(
+                    "[ROLE REGISTERER] Duplicated role identifier path found: %s and %s. Ignore the new one.",
+                    ROLES_BY_PATH.get(role.identifier.getPath()).identifier().toString(),
+                    role.identifier().toString()));
+        }
         ROLES.put(role.identifier(), role);
+
+        ROLES_BY_PATH.put(role.identifier().getPath(), role);
         if (role.isMafiaTeam()) {
             CACHE.MAFIA_ROLES.add(role);
         }
@@ -123,5 +150,9 @@ public class TMMRoles {
             CACHED_VERSIONS_LIST.add(t.getAddedVersion());
         }
         return new HashSet<>(CACHED_VERSIONS_LIST);
+    }
+
+    public static SRERole getRoleByPath(String rolePath) {
+        return ROLES_BY_PATH.getOrDefault(rolePath, null);
     }
 }

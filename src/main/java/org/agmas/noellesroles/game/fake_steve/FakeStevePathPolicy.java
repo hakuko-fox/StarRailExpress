@@ -20,12 +20,50 @@ final class FakeStevePathPolicy {
     static boolean hasStalled(double previousDistanceSqr, double currentDistanceSqr,
                               long lastProgressTick, long now) {
         return currentDistanceSqr >= previousDistanceSqr - 0.15D
-                && now - lastProgressTick >= 40L;
+                && now - lastProgressTick >= 80L;
     }
 
     /** The body wants to move but its position barely changes between AI samples. */
     static boolean isStuck(double movedDistanceSqr, long sampleGap) {
-        return sampleGap >= 4L && movedDistanceSqr < 0.0025D;
+        return isStuck(movedDistanceSqr, sampleGap, false);
+    }
+
+    static boolean isStuck(double movedDistanceSqr, long sampleGap, boolean climbing) {
+        return !climbing && sampleGap >= 8L && movedDistanceSqr < 0.0025D;
+    }
+
+    static boolean feetCanOccupy(boolean collisionEmpty, double collisionMaxY,
+            boolean stair, boolean slab, boolean door) {
+        return collisionEmpty || collisionMaxY < 1.0D || stair || slab || door;
+    }
+
+    /** The next stair occupies the head cell but leaves a walkable gap. */
+    static boolean headCanOccupy(boolean collisionEmpty, boolean stair, boolean slab,
+            boolean door) {
+        return collisionEmpty || stair || slab || door;
+    }
+
+    /** A stair flight is a 1-block grid step but only a half-block vanilla step-up. */
+    static boolean canAscendWithoutJump(double verticalRise, boolean destinationIsStep) {
+        if (destinationIsStep && verticalRise <= 1.0D) {
+            return true;
+        }
+        return verticalRise <= 0.6D;
+    }
+
+    static boolean shouldFaceNextNode(float lookYaw, float nodeYaw) {
+        float delta = lookYaw - nodeYaw;
+        while (delta > 180.0F) {
+            delta -= 360.0F;
+        }
+        while (delta < -180.0F) {
+            delta += 360.0F;
+        }
+        return Math.abs(delta) > 40.0F;
+    }
+
+    static boolean shouldAbandonIdleGoal(int pathFailures) {
+        return pathFailures >= 4;
     }
 
     /** Route nodes beside an open drop cost more, so the body hugs the deck. */
@@ -34,7 +72,7 @@ final class FakeStevePathPolicy {
     }
 
     static boolean needsRecalculation(int stuckTicks) {
-        return stuckTicks >= 3;
+        return stuckTicks >= 6;
     }
 
     static boolean shouldAutoOpenSmallDoor(boolean open, boolean hardLocked) {
@@ -43,6 +81,27 @@ final class FakeStevePathPolicy {
 
     static boolean shouldSwimUp(boolean inWater, double bodyY, double targetY) {
         return inWater && targetY > bodyY + 0.2D;
+    }
+
+    /**
+     * Hold jump in water so the body does not sink. Shallow water that still
+     * has ground underfoot is walked; only a climb-out needs a hop there.
+     */
+    static boolean shouldHoldSwim(boolean inWater, boolean onGround, double bodyY,
+            double targetY) {
+        if (!inWater || targetY < bodyY - 0.35D) {
+            return false;
+        }
+        return !onGround || targetY > bodyY + 0.2D;
+    }
+
+    /** Open water (no floor) is legal but more expensive than a deck walk. */
+    static int swimPenalty(boolean openWater) {
+        return openWater ? 3 : 0;
+    }
+
+    static boolean countsAsClimbing(boolean verticalProgress, boolean inWater) {
+        return verticalProgress || inWater;
     }
 
     static boolean shouldSprintForPursuit(boolean pursuingHuman, boolean psychoActive,

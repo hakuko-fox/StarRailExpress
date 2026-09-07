@@ -23,6 +23,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.SkillCastAnnounce;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -58,6 +59,11 @@ import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.List;
 import java.util.UUID;
+
+// Purpose of this class reservation: to avoid conflicts between custom widgets and their RoleSkills.
+// Please do not delete
+// 本类保留目的：RoleSkill无法做到区分widget和RoleSkill技能
+// 请不要删除
 
 public class AbilityHandler {
 
@@ -144,6 +150,7 @@ public class AbilityHandler {
                 .get(player);
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
+        final var role = gameWorldComponent.getRole(player);
         if (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
             return;
         }
@@ -166,6 +173,9 @@ public class AbilityHandler {
                 if (cca.cooldown > 0) {
                     return;
                 }
+
+                SkillCastAnnounce.tryAnnounce(player, role, null);
+
                 player.addEffect(new MobEffectInstance(MobEffects.LEVITATION,
                         10 * 20, 1, true, false, true));
                 player.displayClientMessage(
@@ -195,6 +205,9 @@ public class AbilityHandler {
                     ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 3));
                 }
             });
+
+            SkillCastAnnounce.tryAnnounce(player, role, null);
+
             abilityPlayerComponent.setCooldown(180 * 20);
             ConfigWorldComponent.onPlayerUsedSkill(player);
             return;
@@ -294,6 +307,9 @@ public class AbilityHandler {
                         Component.translatable("message.noellesroles.leon.kick_hit")
                                 .withStyle(ChatFormatting.AQUA),
                         true);
+
+                SkillCastAnnounce.tryAnnounce(player, role, null);
+
                 ConfigWorldComponent.onPlayerUsedSkill(player);
             } else {
                 player.displayClientMessage(
@@ -343,6 +359,8 @@ public class AbilityHandler {
                     Component.translatable("message.noellesroles.morphling.dummy_spawned")
                             .withStyle(ChatFormatting.GREEN),
                     true);
+            SkillCastAnnounce.tryAnnounce(player, role, null);
+
             ConfigWorldComponent.onPlayerUsedSkill(player);
             return;
         }
@@ -361,6 +379,7 @@ public class AbilityHandler {
                 abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
                         NoellesRolesConfig.HANDLER.instance().recallerTeleportCooldown);
                 recallerPlayerComponent.teleport();
+                SkillCastAnnounce.tryAnnounce(player, role, null);
             }
             abilityPlayerComponent.sync();
         }
@@ -371,6 +390,8 @@ public class AbilityHandler {
             if (used) {
                 abilityPlayerComponent.cooldown = GameConstants.getInTicks(0, 35);
                 abilityPlayerComponent.sync();
+                SkillCastAnnounce.tryAnnounce(player, role, null);
+
                 ConfigWorldComponent.onPlayerUsedSkill(player);
             }
             return;
@@ -386,12 +407,12 @@ public class AbilityHandler {
                         Component.translatable("message.noellesroles.ghost_eye.domain_deployed")
                                 .withStyle(ChatFormatting.DARK_AQUA),
                         true);
+                SkillCastAnnounce.tryAnnounce(player, role, null);
+
                 ConfigWorldComponent.onPlayerUsedSkill(player);
             }
             return;
         }
-        // 滞时鬼（Delayer）已迁移至统一技能系统（见 ModRolesInitialEventRegister），
-        // 通过 RoleSkill.useUnified 分发并显示 HUD，此处不再单独处理。
         if (gameWorldComponent.isRole(player, ModRoles.WIZARD)) {
             RoleData.getOptional(WizardRoleData.class, player)
                     .ifPresent(WizardRoleData::castSelectedSpell);
@@ -409,7 +430,9 @@ public class AbilityHandler {
         if (gameWorldComponent.isRole(player, ModRoles.CAKE_MAKER)) {
             CakeMakerRoleData cakeMaker = RoleData.getNullable(CakeMakerRoleData.class, player);
             if (cakeMaker != null) {
-                cakeMaker.useSmoker();
+                if (cakeMaker.useSmoker()) {
+                    SkillCastAnnounce.tryAnnounce(player, role, null);
+                }
             }
             return;
         }
@@ -469,6 +492,7 @@ public class AbilityHandler {
                 .get(player);
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
+        final var role = gameWorldComponent.getRole(player);
         if (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
             return;
         }
@@ -509,6 +533,8 @@ public class AbilityHandler {
             }
             shopCca.addToBalance(-SKILL_COST);
             if (DoremyRoleData.tryDream(sp, 15 * 20)) {
+                SkillCastAnnounce.tryAnnounce(player, role, null);
+
                 player.displayClientMessage(
                         Component.translatable("skill.noellesroles.doremy_dream.success", sp.getName())
                                 .withStyle(ChatFormatting.GREEN),
@@ -546,6 +572,9 @@ public class AbilityHandler {
             ServerPlayNetworking.send(sp, new ProblemScreenOpenC2SPacket(true, 2));
             abilityPlayerComponent.setCooldown(90 * 20);
             // 回放记录：小镇做题家发放习题
+
+            SkillCastAnnounce.tryAnnounce(player, role, null);
+
             SRE.REPLAY_MANAGER.recordCustomEvent(
                     Component.translatable("replay.event.testmaker.assign_exam",
                             GameReplayUtils.getReplayPlayerDisplayText(player, true),

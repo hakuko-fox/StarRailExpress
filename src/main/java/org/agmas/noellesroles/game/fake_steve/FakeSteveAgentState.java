@@ -36,6 +36,7 @@ public final class FakeSteveAgentState {
     public int pathFailureCount;
     public int stuckTicks;
     public double lastMoveX;
+    public double lastMoveY;
     public double lastMoveZ;
     public long lastMoveTick;
     public BlockPos pathGoal;
@@ -82,6 +83,9 @@ public final class FakeSteveAgentState {
     public int holsterSlot = -1;
     public UUID grenadeChargeTarget;
     public long grenadeChargedAtTick;
+    public long nextSnackTick;
+    public BlockPos lastSnackPlate;
+    public boolean taskConsumeStarted;
 
     FakeSteveAgentState(UUID playerId, ReplacementCause cause) {
         this.playerId = playerId;

@@ -16,6 +16,7 @@
 package io.wifi.starrailexpress.api;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
@@ -27,6 +28,7 @@ import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.RoleInventoryScreenExtension;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.gui.PlayerBodyEntityContainer;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
 import io.wifi.starrailexpress.util.TrueFalseResult;
@@ -55,6 +57,7 @@ import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.config.SpawnInfoConfig.SpawnInfo;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -195,11 +198,17 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableChance = -1;
     public int defaultEnableNeedPlayerCount = -1;
     public int defaultEnableMaxPlayerCount = -1;
-    protected SpecialMapRoleMap specialMapRole = SpecialMapRoleMap.ALL;
+    protected MapSpecialFeatures specialMapRole = MapSpecialFeatures.ALL;
+    protected BiPredicate<String, AreasSettings> canSpawnInMapPredicate = null;
+
     protected boolean specialVigilante = false;
     protected boolean refreshableSpecialVigilante = false;
     protected int refreshableSpecialVigilanteChance = -1;
     protected int occupiedRoleCount = 1;
+    /**
+     * 小游戏任务独立计算：true 时该职业的小游戏任务不并入轮换派发，始终独立计时刷新（见 SREPlayerMinigameTaskComponent）。
+     */
+    protected boolean independentMinigameTiming = false;
     public BiConsumer<ServerPlayer, SREGameWorldComponent> serverTickEvent = null;
     public BiConsumer<Player, SREGameWorldComponent> clientTickEvent = null;
 
@@ -529,6 +538,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected final Set<SREPlayerTaskComponent.Task> unrefreshableTasks = new HashSet<>();
     /** 该职业仅可刷出的任务类型（白名单，为空表示不限制）。 */
     protected final Set<SREPlayerTaskComponent.Task> onlyRefreshableTasks = new HashSet<>();
+    protected Predicate<Set<MapSpecialFeatures>> specialMapRolesPredicate = null;
 
     /** 指定该职业不可刷出的任务类型（链式，可多次调用叠加）。 */
     public SRERole addUnrefreshableTasks(SREPlayerTaskComponent.Task... tasks) {
@@ -641,33 +651,38 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.occupiedRoleCount;
     }
 
-    public enum SpecialMapRoleMap {
-        ALL, QIYUCUN, BIGMAP, UNDERWATER, FLY, TRAP,
-        /** 仅可跳跃地图生成 */
-        CAN_JUMP,
-        /** 仅可召开会议地图生成 */
-        MEETING,
-        /** 仅可召开会议且启用了投票的地图生成 */
-        MEETING_VOTE,
-        /** 仅可游玩小游戏地图生成 */
-        MINIGAME_QUEST,
-        /** 仅拥有状态栏地图生成（mapStatusBar != NONE） */
-        MAP_STATUS_BAR,
-        /** 仅骑马地图生成（驯马师、猎人） */
-        HORSE
-    }
-
-    public SpecialMapRoleMap getSpecialMapRole() {
+    public MapSpecialFeatures getSpecialMapRole() {
         return this.specialMapRole;
     }
 
-    public SRERole setSpecialMapRole(SpecialMapRoleMap specialMapRole) {
-        this.specialMapRole = specialMapRole == null ? SpecialMapRoleMap.ALL : specialMapRole;
+    public SRERole setSpecialMapRole(MapSpecialFeatures specialMapRole) {
+        this.specialMapRole = specialMapRole == null ? MapSpecialFeatures.ALL : specialMapRole;
         return this;
     }
 
-    public boolean isSpecialMapRole() {
-        return this.specialMapRole != SpecialMapRoleMap.ALL;
+    /**
+     * 是否在指定 SpecialMapRoleMap 启用
+     * 
+     * @param predicate
+     * @return
+     */
+    public SRERole setSpecialMapRolesCondition(Predicate<Set<MapSpecialFeatures>> predicate) {
+        this.specialMapRolesPredicate = predicate;
+        return this;
+    }
+
+    /**
+     * 小游戏任务独立计算：设置该职业的小游戏任务是否不并入轮换派发，
+     * 始终按独立计时刷新（不受轮换模式普通任务数量限制，见 SREPlayerMinigameTaskComponent）。
+     */
+    public SRERole setIndependentMinigameTiming(boolean independentMinigameTiming) {
+        this.independentMinigameTiming = independentMinigameTiming;
+        return this;
+    }
+
+    /** 该职业的小游戏任务是否为独立计算（独立计时派发，不参与轮换）。默认 false。 */
+    public boolean hasIndependentMinigameTiming() {
+        return this.independentMinigameTiming;
     }
 
     public boolean isSpecialVigilante() {
@@ -1198,10 +1213,10 @@ public abstract class SRERole extends SREAbstractInfoClass {
     }
 
     /**
-     * 在HarpyModLoader中使用
+     * 初始物品。在HarpyModLoader中使用
      */
     public List<ItemStack> getDefaultItems() {
-        return new ArrayList<>();
+        return List.of();
     }
 
     /**
@@ -1405,6 +1420,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
         if (player.hasEffect(ModEffects.NO_STAMINA)) {
             return 0;
         }
+        if (player.hasEffect(ModEffects.INFINITE_STAMINA)) {
+            return Integer.MAX_VALUE;
+        }
         if (this.customSprintTimeGetter != null) {
             return this.customSprintTimeGetter.applyAsInt(player);
         }
@@ -1459,9 +1477,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @return
      */
     public int getRoundMaxCount(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
-            List<ServerPlayer> players, String mapName) {
+            List<ServerPlayer> players, String mapName, AreasSettings settings) {
         if (spawnInfo.maxSpawn == -1)
             return -1;
+        if (!canSpawnInMap(mapName, settings)) {
+            return 0;
+        }
         // 优先使用 spawnInfo（来自用户配置），若未设置则跳过
         int minPlayer = this.spawnInfo.minEnabledPlayer;
         if (minPlayer >= 0) {
@@ -1568,13 +1589,44 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * @return 是否成功给予。给予失败将不会启动疯魔
      */
     public boolean onPsychoGiveItem(Player player, SREPlayerPsychoComponent srePlayerPsychoComponent) {
-        return RoleUtils.insertStackInFreeSlot(player, new ItemStack(this.getPsychoItem()));
+        List<Item> weapons = getPsychoSupportedWeapons(player);
+        if (weapons.isEmpty() || weapons.get(0) == null) {
+            return false;
+        }
+        return RoleUtils.insertStackInFreeSlot(player, new ItemStack(weapons.get(0)));
     }
 
     /**
-     * 获取疯魔物品
+     * 返回该职业在 Psycho 模式中可以持有并切换的武器，按优先级排序。
+     * <p>
+     * Psycho 开始时会优先装备背包中已有的兼容武器；全部不存在时，
+     * {@link #onPsychoGiveItem(Player, SREPlayerPsychoComponent)} 默认发放列表中的第一件。
+     * 旧职业仍可只覆写 {@link #getPsychoItem()}。
+     */
+    public List<Item> getPsychoSupportedWeapons(Player player) {
+        Item weapon = getPsychoItem();
+        return weapon == null ? List.of() : List.of(weapon);
+    }
+
+    /** 判断物品是否是该职业的 Psycho 兼容武器。 */
+    public boolean isPsychoSupportedWeapon(Player player, ItemStack stack) {
+        return !stack.isEmpty() && getPsychoSupportedWeapons(player).stream()
+                .filter(Objects::nonNull)
+                .anyMatch(stack::is);
+    }
+
+    /**
+     * Psycho 结束时是否回收本次新发放的兼容武器。
+     * 默认回收（球棒等临时武器）；潜行者等职业武器应保留。
+     */
+    public boolean shouldClearGrantedPsychoWeapon(Player player, Item weapon) {
+        return true;
+    }
+
+    /**
+     * 获取旧版单一疯魔物品。
      * 
-     * @return
+     * @return 默认 Psycho 武器；多武器职业请覆写 {@link #getPsychoSupportedWeapons(Player)}
      */
     public Item getPsychoItem() {
         return TMMItems.BAT;
@@ -1608,6 +1660,73 @@ public abstract class SRERole extends SREAbstractInfoClass {
      */
     public int getRoleType() {
         return PlayerRoleWeightManager.getRoleType(this);
+    }
+
+    /**
+     * 自定义职业生成条件
+     * 
+     * @param condition
+     * @return
+     */
+    public SRERole setCanSpawnInMap(BiPredicate<String, AreasSettings> condition) {
+        this.canSpawnInMapPredicate = condition;
+        return this;
+    }
+
+    public boolean canSpawnInMap(String mapId, AreasSettings areasSettings) {
+        if (canSpawnInMapPredicate != null && !canSpawnInMapPredicate.test(mapId, areasSettings)) {
+            return false;
+        }
+        var features = getMapFeatures(mapId, areasSettings);
+        if (specialMapRole != null && !specialMapRole.equals(MapSpecialFeatures.ALL)
+                && !features.contains(specialMapRole)) {
+            return false;
+        }
+        if (specialMapRolesPredicate != null && !specialMapRolesPredicate.test(features)) {
+            return false;
+        }
+        return true;
+    }
+
+    public static Set<MapSpecialFeatures> getMapFeatures(String id, AreasSettings settings) {
+        Set<MapSpecialFeatures> result = new HashSet<>();
+        NoellesRolesConfig config = NoellesRolesConfig.instance();
+        if (config.airRolesMaps != null && config.airRolesMaps.contains(id)) {
+            result.add(MapSpecialFeatures.FLY);
+        }
+        if (config.trapRolesMaps != null && config.trapRolesMaps.contains(id)) {
+            result.add(MapSpecialFeatures.TRAP);
+        }
+        if (config.horseRolesMaps != null && config.horseRolesMaps.contains(id)) {
+            result.add(MapSpecialFeatures.HORSE);
+        }
+        if (config.underwaterRolesMaps != null && config.underwaterRolesMaps.contains(id)) {
+            result.add(MapSpecialFeatures.UNDERWATER);
+        }
+        if (config.maChenXuMaps != null && config.maChenXuMaps.contains(id)) {
+            result.add(MapSpecialFeatures.QIYUCUN);
+        }
+        if (config.swastMaps != null && config.swastMaps.contains(id)) {
+            result.add(MapSpecialFeatures.BIGMAP);
+        }
+        if (settings.canJump) {
+            result.add(MapSpecialFeatures.CAN_JUMP);
+        }
+        if (settings.mapStatusBar != null && settings.mapStatusBar != MapStatusBarType.NONE) {
+            result.add(MapSpecialFeatures.MAP_STATUS_BAR);
+        }
+        if (settings.meetingEnabled) {
+            result.add(MapSpecialFeatures.MEETING);
+            if (settings.meetingVoteEnabled || settings.emergencyMeetingVoteEnabled == TrueFalseResult.TRUE) {
+                result.add(MapSpecialFeatures.MEETING_VOTE);
+            }
+        }
+        if (settings.minigameQuestEnabled) {
+            result.add(MapSpecialFeatures.MINIGAME_QUEST);
+        }
+        if (settings.customMapFeatures != null)
+            result.addAll(settings.customMapFeatures);
+        return result;
     }
 
     public boolean canSeeBodyName() {
@@ -2186,4 +2305,7 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.canIncreaseSurvivingKillers;
     }
 
+    public boolean isHiddenForRoleRotation() {
+        return this.isFlag("inner.role_rotation.hidden");
+    }
 }

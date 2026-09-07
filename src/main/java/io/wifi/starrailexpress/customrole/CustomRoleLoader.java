@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.api.InstinctType;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -34,6 +35,7 @@ import io.wifi.starrailexpress.util.ShopEntry;
 import io.wifi.starrailexpress.util.TrueFalseAndCustomResult;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -94,10 +96,10 @@ public class CustomRoleLoader {
         gameEndCommandsByRoleId.clear();
         customWinDataMap.clear();
         // 先清除旧的自定义职业
-        List<String> toRemove = new ArrayList<>();
+        List<SRERole> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
             if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
-                toRemove.add(entry.getKey().toString());
+                toRemove.add(entry.getValue());
                 // 同时清除已注册的技能，避免 re-register 时报 "already registered"
                 RoleSkill.unregister(entry.getKey());
                 // 清除 INITIAL_ITEMS_MAP 中的条目
@@ -112,8 +114,8 @@ public class CustomRoleLoader {
                 removeRoleReferences(entry.getValue());
             }
         }
-        for (String key : toRemove) {
-            TMMRoles.ROLES.remove(ResourceLocation.parse(key));
+        for (SRERole key : toRemove) {
+            TMMRoles.unregisterCustomRole(key);
         }
         registeredRoles.clear();
         loadedRoles.clear();
@@ -138,7 +140,14 @@ public class CustomRoleLoader {
         for (CustomRoleData data : config.roles) {
             try {
                 SRERole role = createRole(data);
-                TMMRoles.registerRole(role);
+                var result = TMMRoles.registerCustomRole(role);
+                if (result == null) {
+                    server.getPlayerList().broadcastSystemMessage(
+                            Component.translatable("sre.custom_role.error.duplicated", data.displayName, data.englishId)
+                                    .withStyle(ChatFormatting.RED),
+                            false);
+                    continue;
+                }
                 registeredRoles.put(data.englishId, role);
                 loadedRoles.put(data.englishId, data);
 
@@ -165,11 +174,11 @@ public class CustomRoleLoader {
      */
     public static void reloadClient() {
         // 清除旧的客户端注册的自定义职业（包括技能注册，避免 re-register 抛异常）
-        List<String> toRemove = new ArrayList<>();
+        List<SRERole> toRemove = new ArrayList<>();
         List<SRERole> removedRoles = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
             if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
-                toRemove.add(entry.getKey().toString());
+                toRemove.add(entry.getValue());
                 removedRoles.add(entry.getValue());
                 RoleSkill.unregister(entry.getKey());
                 org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
@@ -186,7 +195,7 @@ public class CustomRoleLoader {
         for (SRERole oldRole : removedRoles) {
             removeRoleReferences(oldRole);
         }
-        toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
+        toRemove.forEach(role -> TMMRoles.unregisterCustomRole(role));
         registeredRoles.clear();
         loadedRoles.clear();
         instinctMaxRanges.clear();
@@ -201,7 +210,10 @@ public class CustomRoleLoader {
         for (CustomRoleData data : config.roles) {
             try {
                 SRERole role = createRole(data);
-                TMMRoles.registerRole(role);
+                var result = TMMRoles.registerCustomRole(role);
+                if (result == null) {
+                    continue;
+                }
                 loadedRoles.put(data.englishId, data);
                 registeredRoles.put(data.englishId, role);
 
@@ -234,10 +246,10 @@ public class CustomRoleLoader {
                 SRE.LOGGER.error("[CustomRole-Client] Failed to register: {}", data.englishId, e);
             }
         }
-        
+
         TMMRoles.refreshVersionTags();
         HMLModifiers.refreshVersionTags();
-        
+
         // 注册本能透视事件处理器（客户端，仅首次）
         registerClientInstinctHandler();
 
@@ -469,7 +481,7 @@ public class CustomRoleLoader {
             role.setHiddenForRoleRotation(data.hiddenForRoleRotation);
         if (data.specialMapRole != null && !"ALL".equalsIgnoreCase(data.specialMapRole)) {
             try {
-                role.setSpecialMapRole(SRERole.SpecialMapRoleMap.valueOf(data.specialMapRole.trim().toUpperCase()));
+                role.setSpecialMapRole(MapSpecialFeatures.valueOf(data.specialMapRole.trim().toUpperCase()));
             } catch (IllegalArgumentException ignored) {
             }
         }

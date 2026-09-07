@@ -26,7 +26,7 @@ import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.content.item.component.SREWrittenBookContent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.DiscountShopEntry;
+import io.wifi.starrailexpress.game.KillerKnifeShopEntry;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -98,10 +98,8 @@ public class RoleShopHandler {
     private static boolean oldmanEasterEggTriggeredInRound = false;
 
     public static boolean haveRegistered = false;
-
-    private static int banditBlackoutPrice() {
-        return (int) (SREConfig.instance().blackoutPrice * 1.5);
-    }
+    /** 商店内容版本号，客户端 tooltip 索引据此重建。 */
+    public static int shopVersion = 0;
 
     private static List<ShopEntry> createPoisonerShopEntries() {
         var entries = new ArrayList<ShopEntry>();
@@ -117,11 +115,7 @@ public class RoleShopHandler {
         entries.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), 10, ShopEntry.Type.TOOL));
         entries.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
         entries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
-        entries.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
-            public boolean onBuy(@NotNull Player player) {
-                return SREPlayerShopComponent.useBlackout(player);
-            }
-        });
+        entries.add(ShopContent.getBlackoutShopEntry());
         entries.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
             public boolean canDisplay(Player player) {
                 return SREMonitorWorldComponent.KEY.get(player.level()).hasMonitors;
@@ -574,7 +568,7 @@ public class RoleShopHandler {
                     100,
                     ShopEntry.Type.TOOL));
 
-            CONSPIRATOR_SHOP.add(new DiscountShopEntry(
+            CONSPIRATOR_SHOP.add(new KillerKnifeShopEntry(
 
                     120));
 
@@ -887,7 +881,7 @@ public class RoleShopHandler {
 
         // 强盗商店（已调整价格与条目）
         {
-            BANDIT_SHOP.add(new DiscountShopEntry(
+            BANDIT_SHOP.add(new KillerKnifeShopEntry(
                     200));
 
             // 匪徒短管霰弹枪 - 450金币
@@ -906,12 +900,7 @@ public class RoleShopHandler {
                     ShopEntry.Type.WEAPON));
 
             // 关灯 - 配置价格 * 1.5 后取整
-            BANDIT_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), banditBlackoutPrice(),
-                    ShopEntry.Type.TOOL) {
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            BANDIT_SHOP.add(ShopContent.getBlackoutShopEntry(1.5f));
 
             // 监控失灵 - 75金币（强盗专属）
             BANDIT_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 75, ShopEntry.Type.TOOL) {
@@ -968,13 +957,87 @@ public class RoleShopHandler {
                     .add(new ShopEntry(FunnyItems.SUPER_PIG_HORSESHOE.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.TAMER.getIdentifier(), TAMER_SHOP);
         }
+
+        // 网警商店：小游戏代币定价，依次购买 Dream 铁斧/钻石剑/重锤（购买重锤时副手给予4个风弹）
+        {
+            var NET_COP_SHOP = new ArrayList<ShopEntry>();
+
+            // Dream 的铁斧 - 2 游戏代币（已拥有时无法购买）
+            NET_COP_SHOP.add(new ShopEntry(ModItems.DREAM_AXE.getDefaultInstance(), 2,
+                    ShopEntry.Type.WEAPON, ShopEntry.Currency.MINIGAME_TOKEN) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    if (MCItemsUtils.hasItem(player, ModItems.DREAM_AXE)) {
+                        this.setFailedMessage(
+                                Component.translatable("message.noellesroles.net_cop.shop_already_owned"));
+                        return false;
+                    }
+                    return true;
+                }
+            });
+
+            // Dream 的钻石剑 - 5 游戏代币（须已持有铁斧；已拥有时无法购买）
+            NET_COP_SHOP.add(new ShopEntry(ModItems.DREAM_DIAMOND_SWORD.getDefaultInstance(), 5,
+                    ShopEntry.Type.WEAPON, ShopEntry.Currency.MINIGAME_TOKEN) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    if (MCItemsUtils.hasItem(player, ModItems.DREAM_DIAMOND_SWORD)) {
+                        this.setFailedMessage(
+                                Component.translatable("message.noellesroles.net_cop.shop_already_owned"));
+                        return false;
+                    }
+                    if (!MCItemsUtils.hasItem(player, ModItems.DREAM_AXE)) {
+                        this.setFailedMessage(Component.translatable("message.noellesroles.net_cop.shop_need_axe"));
+                        return false;
+                    }
+                    return true;
+                }
+            });
+
+            // Dream 的重锤 - 8 游戏代币（须同时持有铁斧与钻石剑；已拥有时无法购买；购买附赠4个风弹）
+            NET_COP_SHOP.add(new ShopEntry(ModItems.DREAM_MACE.getDefaultInstance(), 8,
+                    ShopEntry.Type.WEAPON, ShopEntry.Currency.MINIGAME_TOKEN) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    if (MCItemsUtils.hasItem(player, ModItems.DREAM_MACE)) {
+                        this.setFailedMessage(
+                                Component.translatable("message.noellesroles.net_cop.shop_already_owned"));
+                        return false;
+                    }
+                    if (!MCItemsUtils.hasItem(player, ModItems.DREAM_AXE)
+                            || !MCItemsUtils.hasItem(player, ModItems.DREAM_DIAMOND_SWORD)) {
+                        this.setFailedMessage(
+                                Component.translatable("message.noellesroles.net_cop.shop_need_axe_and_sword"));
+                        return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean onBuy(@NotNull Player player) {
+                    if (!super.onBuy(player)) {
+                        return false;
+                    }
+                    // 购买时副手给予 4 个原版风弹（副手被占用时放进背包空位）
+                    ItemStack windCharges = new ItemStack(Items.WIND_CHARGE, 4);
+                    if (player.getOffhandItem().isEmpty()) {
+                        player.setItemInHand(InteractionHand.OFF_HAND, windCharges);
+                    } else {
+                        RoleUtils.insertStackInFreeSlot(player, windCharges);
+                    }
+                    return true;
+                }
+            });
+
+            ShopContent.customEntries.put(ModRoles.NET_COP_ID, NET_COP_SHOP);
+        }
         {
             var SHOP = new ArrayList<ShopEntry>();
 
-            SHOP.add(new DiscountShopEntry(SREConfig.instance().knifePrice));
+            SHOP.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
             SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(),
                     SREConfig.instance().revolverPrice, ShopEntry.Type.WEAPON));
-            SHOP.add(new DiscountShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(),
+            SHOP.add(new KillerKnifeShopEntry(ModItems.THROWING_KNIFE.getDefaultInstance(),
                     SREConfig.instance().revolverPrice,
                     25));
             {
@@ -983,7 +1046,13 @@ public class RoleShopHandler {
                         new PotionContents(Optional.empty(), Optional.of(16185078),
                                 List.of(ModEffects.of(MobEffects.INVISIBILITY, 10 * 20, 0, false, false, true))));
                 SHOP.add(new ShopEntry(potion,
-                        150, ShopEntry.Type.TOOL));
+                        150, ShopEntry.Type.TOOL) {
+                    @Override
+                    public boolean onBuy(Player player) {
+                        player.addEffect(ModEffects.of(MobEffects.INVISIBILITY, 10 * 20, 0, false, false, true));
+                        return true;
+                    }
+                });
             }
             SHOP.add(new ShopEntry(TMMItems.FIRECRACKER.getDefaultInstance(),
                     SREConfig.instance().firecrackerPrice, ShopEntry.Type.TOOL));
@@ -993,13 +1062,7 @@ public class RoleShopHandler {
                     SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(),
                     SREConfig.instance().bodyBagPrice, ShopEntry.Type.TOOL));
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(),
-                    SREConfig.instance().blackoutPrice, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            SHOP.add(ShopContent.getBlackoutShopEntry());
             SHOP.add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
                     ShopEntry.Type.TOOL));
 
@@ -1060,13 +1123,7 @@ public class RoleShopHandler {
             });
 
             // 关灯 - 配置价格
-            HUNTER_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            HUNTER_SHOP.add(ShopContent.getBlackoutShopEntry());
 
             // 监控失灵 - 配置价格
             HUNTER_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(),
@@ -1345,7 +1402,7 @@ public class RoleShopHandler {
 
         // 影隼商店
         {
-            SHADOW_FALCON_SHOP.add(new DiscountShopEntry(
+            SHADOW_FALCON_SHOP.add(new KillerKnifeShopEntry(
 
                     130));
             SHADOW_FALCON_SHOP.add(new ShopEntry(
@@ -1419,7 +1476,7 @@ public class RoleShopHandler {
         // ==================== 悍匪商店 ====================
         {
             // 刀 - 160金币
-            GANGSTERS_SHOP.add(new DiscountShopEntry(
+            GANGSTERS_SHOP.add(new KillerKnifeShopEntry(
 
                     160));
 
@@ -1464,12 +1521,7 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
 
             // 关灯 - 使用配置价格
-            GANGSTERS_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            GANGSTERS_SHOP.add(ShopContent.getBlackoutShopEntry());
         }
 
         // ==================== 钳工商店 ====================
@@ -1551,7 +1603,7 @@ public class RoleShopHandler {
         // ==================== 家族教徒商店 ====================
         {
             // 刀 - 200金币
-            MAFIOSO_SHOP.add(new DiscountShopEntry(200));
+            MAFIOSO_SHOP.add(new KillerKnifeShopEntry(200));
             // 左轮手枪 - 300金币
             MAFIOSO_SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
         }
@@ -1652,7 +1704,7 @@ public class RoleShopHandler {
         // ==================== 咒法师商店 ====================
         {
             // 刀 - 130金币
-            WARLOCK_SHOP.add(new DiscountShopEntry(130));
+            WARLOCK_SHOP.add(new KillerKnifeShopEntry(130));
             // 撬棍 - 35金币
             WARLOCK_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), 35, ShopEntry.Type.TOOL));
             // 开锁器 - 80金币
@@ -1665,13 +1717,7 @@ public class RoleShopHandler {
                 }
             });
             // 关灯 - 使用配置价格
-            WARLOCK_SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            WARLOCK_SHOP.add(ShopContent.getBlackoutShopEntry());
             // 监控失灵 - 60金币
             WARLOCK_SHOP.add(new ShopEntry(TMMItems.MONITOR_BROKEN.getDefaultInstance(), 60, ShopEntry.Type.TOOL) {
                 @Override
@@ -1705,7 +1751,7 @@ public class RoleShopHandler {
             axeLore.add(Component.translatable("item.noellesroles.dream_axe.shop_lore3")
                     .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY));
             axeDisplay.set(DataComponents.LORE, new ItemLore(axeLore));
-            DREAM_SHOP.add(new DiscountShopEntry(axeDisplay,
+            DREAM_SHOP.add(new KillerKnifeShopEntry(axeDisplay,
                     dreamConfig.dreamAxePrice, 50));
             // 巨幕面具 - 400金币：购买即进入狂暴（Psycho 逻辑，不给球棒/面具），冷却挂在面具物品上
             ItemStack maskDisplay = ModItems.DREAM_MASK.getDefaultInstance();
@@ -1919,7 +1965,7 @@ public class RoleShopHandler {
                         c.psychoSoundPlayTimer = PhantomMusicianRoleData.PSYCHO_SOUND_PLAY_DURATION;
 
                         p.level().playSound(null, p.blockPosition(),
-                                io.wifi.starrailexpress.index.TMMSounds.AMBIENT_PSYCHO_DRONE, SoundSource.PLAYERS, 0.5F,
+                                io.wifi.starrailexpress.index.TMMSounds.AMBIENT_PSYCHO_DRONE, SoundSource.PLAYERS, 1F,
                                 1F);
                         // 使狂暴模式物品进入对应冷却
                         p.getCooldowns().addCooldown(io.wifi.starrailexpress.index.TMMItems.PSYCHO_MODE,
@@ -2092,7 +2138,7 @@ public class RoleShopHandler {
                     new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(), SREConfig.instance().crowbarPrice,
                             ShopEntry.Type.TOOL));
             SHOP.add(
-                    new DiscountShopEntry(SREConfig.instance().knifePrice));
+                    new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
             SHOP.add(new ShopEntry(TMMItems.REVOLVER.getDefaultInstance(), SREConfig.instance().revolverPrice,
                     ShopEntry.Type.WEAPON));
             SHOP.add(new ShopEntry(ModItems.SHORT_SHOTGUN.getDefaultInstance(), SREConfig.instance().shortShotgunPrice,
@@ -2102,13 +2148,7 @@ public class RoleShopHandler {
             SHOP.add(new ShopEntry(ModItems.SPELLBREAKER_POTION.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(ModItems.SILENCE_TOTEM.getDefaultInstance(), 130, ShopEntry.Type.TOOL));
             // 关灯 - 使用配置价格
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            SHOP.add(ShopContent.getBlackoutShopEntry());
             ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
         }
 
@@ -2186,21 +2226,7 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(TMMItems.BODY_BAG.getDefaultInstance(), SREConfig.instance().bodyBagPrice,
                     ShopEntry.Type.TOOL));
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                public boolean onBuy(@NotNull Player player) {
-                    player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
-                            60 * 20);
-                    boolean triggered = ((SREWorldBlackoutComponent) SREWorldBlackoutComponent.KEY
-                            .get(player.level()))
-                            .triggerBlackout();
-                    if (triggered) {
-                        SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(),
-                                BuiltInRegistries.ITEM.getKey(TMMItems.BLACKOUT));
-                    }
-                    return triggered;
-                }
-            });
+            SHOP.add(ShopContent.getBlackoutShopEntry());
 
             SHOP.add(new ShopEntry(Items.WIND_CHARGE.getDefaultInstance(), 50,
                     ShopEntry.Type.TOOL));
@@ -2210,7 +2236,7 @@ public class RoleShopHandler {
         // 滞时鬼（Delayer）商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new DiscountShopEntry(130));
+            SHOP.add(new KillerKnifeShopEntry(130));
             SHOP.add(new ShopEntry(io.wifi.starrailexpress.index.TMMItems.REVOLVER.getDefaultInstance(), 285,
                     ShopEntry.Type.TOOL));
             SHOP.add(new ShopEntry(org.agmas.noellesroles.init.ModItems.SHORT_SHOTGUN.getDefaultInstance(), 300,
@@ -2233,12 +2259,7 @@ public class RoleShopHandler {
                 }
             });
             // 关灯 - 使用配置价格
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            SHOP.add(ShopContent.getBlackoutShopEntry());
             SHOP.add(new ShopEntry(ModItems.CAMERA_SHEARS.getDefaultInstance(), 25, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean canDisplay(@NotNull Player player) {
@@ -2269,7 +2290,7 @@ public class RoleShopHandler {
         // INITIATE的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new DiscountShopEntry(200));
+            SHOP.add(new KillerKnifeShopEntry(200));
             ShopContent.customEntries.put(SERoles.INITIATE.getIdentifier(), SHOP);
         }
 
@@ -2284,7 +2305,7 @@ public class RoleShopHandler {
         // EXAMPLER的商店
         {
             var SHOP = new ArrayList<ShopEntry>();
-            SHOP.add(new DiscountShopEntry(
+            SHOP.add(new KillerKnifeShopEntry(
 
                     120));
             SHOP.add(new ShopEntry(
@@ -2295,12 +2316,7 @@ public class RoleShopHandler {
                     io.wifi.starrailexpress.index.TMMItems.LOCKPICK.getDefaultInstance(),
                     50,
                     ShopEntry.Type.TOOL));
-            SHOP.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            SHOP.add(ShopContent.getBlackoutShopEntry());
             var psychoItem = TMMItems.PSYCHO_MODE.getDefaultInstance();
             var examplerPsychoLore = new ItemLore(
                     List.of(Component.translatable(
@@ -2423,6 +2439,28 @@ public class RoleShopHandler {
             }
         }
 
+        // 黑警（Licensed Villain）商店
+        {
+            var LICENSED_VILLAIN_SHOP = new ArrayList<ShopEntry>();
+            // 制式左轮 - 150金币（已拥有则无法再次购买）
+            LICENSED_VILLAIN_SHOP.add(new ShopEntry(TMMItems.STANDARD_REVOLVER.getDefaultInstance(), 150,
+                    ShopEntry.Type.WEAPON) {
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                        if (player.getInventory().getItem(i).is(TMMItems.STANDARD_REVOLVER))
+                            return false;
+                    }
+                    return true;
+                }
+            });
+            // 手铐 - 150金币
+            LICENSED_VILLAIN_SHOP.add(new ShopEntry(ModItems.HANDCUFFS.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
+            // 开锁器 - 100金币
+            LICENSED_VILLAIN_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(BounsRoles.LICENSED_VILLAIN.getIdentifier(), LICENSED_VILLAIN_SHOP);
+        }
+
         // 忍者商店
         {
             var NINJA_SHOP = new ArrayList<ShopEntry>();
@@ -2515,7 +2553,7 @@ public class RoleShopHandler {
             shop.add(new ShopEntry(TMMItems.DERRINGER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
 
             // 刀 - 130金币
-            shop.add(new DiscountShopEntry(130));
+            shop.add(new KillerKnifeShopEntry(130));
 
             ShopContent.customEntries.put(ModRoles.MERCENARY_ID, shop);
         }
@@ -2651,23 +2689,23 @@ public class RoleShopHandler {
         {
             ShopContent.customEntries.put(
                     BounsRoles.RABBIT_WANSUI.identifier(),
-                    List.of(new DiscountShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50),
+                    List.of(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50),
                             new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
         }
         // bee商店：开锁器
         {
             ShopContent.customEntries.put(
                     BounsRoles.BEE_QUEEN.identifier(),
-                    List.of(new DiscountShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50),
+                    List.of(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50),
                             new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
             ShopContent.customEntries.put(
                     BounsRoles.BEE_WORKER.identifier(),
-                    List.of(new DiscountShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50),
+                    List.of(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), 300, 50),
                             new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100, ShopEntry.Type.TOOL)));
             {
                 var waspShop = new ArrayList<ShopEntry>();
-                waspShop.add(new DiscountShopEntry(TMMItems.KNIFE.getDefaultInstance(), 200, 50));
-                waspShop.add(new DiscountShopEntry(TMMItems.GRENADE.getDefaultInstance(), 600, 50));
+                waspShop.add(new KillerKnifeShopEntry(TMMItems.KNIFE.getDefaultInstance(), 200, 50));
+                waspShop.add(new KillerKnifeShopEntry(TMMItems.GRENADE.getDefaultInstance(), 600, 50));
                 waspShop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
                 ShopContent.customEntries.put(
                         BounsRoles.BEE_WASP.identifier(), waspShop);
@@ -2999,7 +3037,7 @@ public class RoleShopHandler {
         // 清道夫商店
         {
             var shopEntries = new ArrayList<ShopEntry>();
-            shopEntries.add(new DiscountShopEntry(220));
+            shopEntries.add(new KillerKnifeShopEntry(220));
             shopEntries.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 100,
                     ShopEntry.Type.TOOL));
             shopEntries.add(new ShopEntry(TMMItems.GRENADE.getDefaultInstance(), 500, ShopEntry.Type.TOOL));
@@ -3033,11 +3071,19 @@ public class RoleShopHandler {
 
         // 潜行者商店
         {
+            ItemStack assassinForm = new ItemStack(Items.ENDER_EYE);
+            assassinForm.set(DataComponents.ITEM_NAME,
+                    Component.translatable("item.noellesroles.stalker.assassin_form"));
+            assassinForm.set(DataComponents.LORE, new ItemLore(List.of(
+                    Component.translatable("item.noellesroles.stalker.assassin_form.lore1")
+                            .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY),
+                    Component.translatable("item.noellesroles.stalker.assassin_form.lore2")
+                            .setStyle(Style.EMPTY.withItalic(false)).withStyle(ChatFormatting.GRAY))));
             ShopContent.customEntries.put(
                     ModRoles.STALKER_ID,
                     List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75,
                             ShopEntry.Type.TOOL),
-                            new ShopEntry(ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance(), 325,
+                            new ShopEntry(ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance(), 350,
                                     ShopEntry.Type.WEAPON) {
                                 @Override
                                 public boolean canBuy(@NotNull Player player) {
@@ -3052,13 +3098,46 @@ public class RoleShopHandler {
 
                                 @Override
                                 public boolean onBuy(@NotNull Player player) {
-
-                                    boolean b = player.getOffhandItem().getItem() instanceof KnifeItem;
-                                    if (!b) {
-                                        player.setItemInHand(InteractionHand.OFF_HAND,
-                                                ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance());
+                                    if (player.getOffhandItem().getItem() instanceof KnifeItem) {
+                                        return false;
                                     }
-                                    return b;
+                                    player.setItemInHand(InteractionHand.OFF_HAND,
+                                            ModItems.STALKER_KNIFE_OFFHAND.getDefaultInstance());
+                                    return true;
+                                }
+                            },
+                            new ShopEntry(assassinForm, 400, ShopEntry.Type.WEAPON) {
+                                @Override
+                                public boolean canDisplay(@NotNull Player player) {
+                                    return RoleData.getOptional(StalkerRoleData.class, player)
+                                            .map(s -> s.phase >= 2).orElse(false);
+                                }
+
+                                @Override
+                                public boolean canBuy(@NotNull Player player) {
+                                    StalkerRoleData data = RoleData.getNullable(StalkerRoleData.class, player);
+                                    if (data == null || data.phase < 2) {
+                                        return false;
+                                    }
+                                    if (data.isAssassinFormActive()
+                                            || SREPlayerPsychoComponent.KEY.get(player).inPsycho()) {
+                                        setFailedMessage(Component.translatable(
+                                                "message.noellesroles.stalker.assassin_form.active"));
+                                        return false;
+                                    }
+                                    if (data.assassinFormCooldown > 0) {
+                                        setFailedMessage(Component.translatable(
+                                                "message.noellesroles.stalker.assassin_form.cooldown",
+                                                (int) Math.ceil(data.getAssassinFormCooldownSeconds())));
+                                        return false;
+                                    }
+                                    return true;
+                                }
+
+                                @Override
+                                public boolean onBuy(@NotNull Player player) {
+                                    StalkerRoleData data = RoleData.getNullable(StalkerRoleData.class, player);
+                                    return data != null && data.activateAssassinForm();
                                 }
                             }));
         }
@@ -3461,7 +3540,7 @@ public class RoleShopHandler {
         {
             var shop = new ArrayList<ShopEntry>();
             shop.add(
-                    new DiscountShopEntry(SREConfig.instance().knifePrice) {
+                    new KillerKnifeShopEntry(SREConfig.instance().knifePrice) {
                         @Override
                         public boolean canDisplay(Player player) {
                             return !RoleData.getOptional(WatcherRoleData.class, player)
@@ -3530,19 +3609,7 @@ public class RoleShopHandler {
                             .orElse(true);
                 }
             });
-            shop.add(new ShopEntry(TMMItems.BLACKOUT.getDefaultInstance(), SREConfig.instance().blackoutPrice,
-                    ShopEntry.Type.TOOL) {
-                @Override
-                public boolean canDisplay(Player player) {
-                    return !RoleData.getOptional(WatcherRoleData.class, player).map(WatcherRoleData::isInCalmStance)
-                            .orElse(true);
-                }
-
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    return SREPlayerShopComponent.useBlackout(player);
-                }
-            });
+            shop.add(ShopContent.getBlackoutShopEntry());
             shop
                     .add(new ShopEntry(new ItemStack(TMMItems.NOTE, 4), SREConfig.instance().notePrice,
                             ShopEntry.Type.TOOL) {
@@ -3558,7 +3625,7 @@ public class RoleShopHandler {
         {
             var YOULU_SHOP = new ArrayList<ShopEntry>();
             // 刀 - 默认价格（130）
-            YOULU_SHOP.add(new DiscountShopEntry(SREConfig.instance().knifePrice));
+            YOULU_SHOP.add(new KillerKnifeShopEntry(SREConfig.instance().knifePrice));
             // 零一五 - 275金币
             YOULU_SHOP.add(new ShopEntry(ModItems.ZERO_ONE_FIVE_GUN.getDefaultInstance(), 275,
                     ShopEntry.Type.WEAPON));
@@ -3731,6 +3798,14 @@ public class RoleShopHandler {
                     SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.HOSHIZORA_ID, HOSHIZORA_SHOP);
         }
+        {
+            ArrayList<ShopEntry> SILVER_WING_SHOP = new ArrayList<>();
+            SILVER_WING_SHOP.add(new ShopEntry(
+                    ModItems.MECHANICAL_BIRD.getDefaultInstance(),
+                    org.agmas.noellesroles.game.roles.neutral.silver_wing.SilverWingRules.BIRD_SHOP_PRICE,
+                    ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.SILVER_WING_ID, SILVER_WING_SHOP);
+        }
 
         // 林家子弟商店：一层护盾 - 400金币，已有护盾不可买，冷却60秒
         {
@@ -3774,6 +3849,7 @@ public class RoleShopHandler {
             });
             ShopContent.customEntries.put(ModRoles.LIN_FAMILY_ID, shop);
         }
+        shopVersion++;
     }
 
     /**

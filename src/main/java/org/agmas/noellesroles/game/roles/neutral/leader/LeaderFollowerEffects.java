@@ -26,6 +26,9 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.game.modifier.NRModifiers;
+import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,7 +45,7 @@ import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role_data.neutral.MonokumaRoleData;
 import org.agmas.noellesroles.role_data.neutral.NianShouRoleData;
 import org.agmas.noellesroles.game.fake_steve.FakeSteveDirector;
-import org.agmas.noellesroles.game.roles.neutral.panda.PandaComponent;
+import org.agmas.noellesroles.game.roles.neutral.panda.PandaState;
 import org.agmas.noellesroles.role_data.neutral.PelicanRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
 import org.agmas.noellesroles.role_data.neutral.ReasonerRoleData;
@@ -53,6 +56,8 @@ import org.agmas.noellesroles.role.ModMeetingRoles;
 import org.agmas.noellesroles.role.touhou.THMountainRoles;
 import org.agmas.noellesroles.role.touhou.THHumanVillageRoles;
 import org.agmas.noellesroles.role_data.neutral.LeaderRoleData;
+import org.agmas.noellesroles.role_data.neutral.AnatmanRoleData;
+import org.agmas.noellesroles.role_data.neutral.AsatyaRoleData;
 import org.agmas.noellesroles.role.bouns.roles.BeeFamilyRole;
 import org.agmas.noellesroles.handler.utils.BeeFamilyManager;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -170,7 +175,6 @@ public final class LeaderFollowerEffects {
 
         switch (path) {
             case "bee_queen" -> applyBeeQueen(leader, follower);
-            case "heng_xing_ti" -> applyHengXingTi(leader, follower);
             case "dummy_bird" -> applyDummyBird(leader, follower);
             case "amon" -> applyAmon(leader, follower);
             case "candlebearer" -> applyCandleBearer(leader, follower);
@@ -193,6 +197,10 @@ public final class LeaderFollowerEffects {
             case "morichika_rinnosuke", "kawashiro_nitori" -> applyCoinDependent(leader, follower);
             case "furandoru" -> applyFurandoru(leader, follower);
             case "lin_family" -> applyLinFamily(leader, follower);
+            case "saigyouji_yuyuko" -> applySaigyoujiYuyuko(leader, follower);
+            case "rabbit_wansui" -> applyRabbitWansui(leader, follower);
+            case "licensed_villain" -> applyLicensedVillain(leader, follower);
+            case "anatman", "asatya" -> applyAnatmanAsatya(leader, follower);
             default -> applyGeneric(leader, follower);
         }
     }
@@ -217,40 +225,6 @@ public final class LeaderFollowerEffects {
                 Component.translatable("message.noellesroles.leader.bee_queen_bonus_follower"));
         leader.sendSystemMessage(
                 Component.translatable("message.noellesroles.leader.bee_queen_bonus"));
-    }
-
-    /**
-     * 恒星体：领袖对恒星体释放技能后：
-     * - 恒星体的技能冷却缩短一半，直至本局游戏结束（全局标记，由 OnRoleSkillUse.AFTER 生效）；
-     * - 领袖获得一把刀；
-     * - 领袖本局随好人（乘客/好人阵营）胜利。
-     */
-    private static void applyHengXingTi(ServerPlayer leader, ServerPlayer follower) {
-        // 全局效果：恒星体技能冷却减半（直至本局结束）
-        HENG_XING_TI_COOLDOWN_HALVED = true;
-
-        // 领袖获得一把刀
-        giveItem(leader, TMMItems.KNIFE.getDefaultInstance());
-
-        // 领袖随好人胜利
-        RoleData.getNullable(LeaderRoleData.class, leader).withInnocent = true;
-
-        follower.sendSystemMessage(
-                Component.translatable("message.noellesroles.leader.heng_xing_ti_bonus_follower"));
-        leader.sendSystemMessage(
-                Component.translatable("message.noellesroles.leader.heng_xing_ti_bonus"));
-    }
-
-    // ==================== 静态标记与复位 ====================
-
-    /**
-     * 任意领袖对恒星体释放技能后置为 true：恒星体的技能冷却缩短一半，直至本局结束。
-     * 每局开始时由 {@link #resetHengXingTiBonus()} 复位。
-     */
-    public static boolean HENG_XING_TI_COOLDOWN_HALVED = false;
-
-    public static void resetHengXingTiBonus() {
-        HENG_XING_TI_COOLDOWN_HALVED = false;
     }
 
     // ==================== 具体效果 ====================
@@ -339,9 +313,7 @@ public final class LeaderFollowerEffects {
 
     /** 黑白：领袖变熊猫形态（含药水效果）；黑白获胜时领袖获胜（didPlayerWin） */
     private static void applyMonokuma(ServerPlayer leader, ServerPlayer follower) {
-        PandaComponent panda = PandaComponent.KEY.get(leader);
-        panda.isPanda = true;
-        panda.sync();
+        PandaState.setPanda(leader, true);
         MonokumaRoleData monokuma = RoleData.getNullable(MonokumaRoleData.class, follower);
         if (monokuma != null) {
             monokuma.phase = 3;
@@ -471,6 +443,57 @@ public final class LeaderFollowerEffects {
                 Component.translatable("message.noellesroles.leader.lin_family_shield"), true);
     }
 
+    // 追随者：西行寺幽幽子
+    private static void applySaigyoujiYuyuko(ServerPlayer leader, ServerPlayer follower) {
+        // 追随者获得永久夜视与速度 I（无图标、无粒子）
+        permanentEffect(follower, MobEffects.NIGHT_VISION, 0);
+        permanentEffect(follower, MobEffects.MOVEMENT_SPEED, 0);
+        // 领袖获得一把刀
+        giveItem(leader, TMMItems.KNIFE.getDefaultInstance());
+    }
+
+    // 追随者：兔兔万岁
+    private static void applyRabbitWansui(ServerPlayer leader, ServerPlayer follower) {
+        // 追随者立即获得 500 金币
+        SREPlayerShopComponent.KEY.get(follower).addToBalance(500);
+        // 领袖获得 rabbit_shape 修饰符
+        WorldModifierComponent.KEY.get(leader.level()).addModifier(leader, NRModifiers.RABBIT_SHAPE);
+        ServerPlayNetworking.send(leader, new RefreshDimensionsS2CPacket());
+        leader.refreshDimensions();
+    }
+
+    // 追随者：黑警
+    private static void applyLicensedVillain(ServerPlayer leader, ServerPlayer follower) {
+        // 追随者立即获得撬棍与 50 金币
+        SREPlayerShopComponent.KEY.get(follower).addToBalance(50);
+        giveItem(follower, TMMItems.CROWBAR.getDefaultInstance());
+        // 领袖获得制式手枪
+        giveItem(leader, TMMItems.STANDARD_REVOLVER.getDefaultInstance());
+    }
+
+    /**
+     * 追随者：无我 / 无妄（领袖对其中一人释放技能时，两人都会成为追随者并分别触发本效果）。
+     * <ul>
+     * <li>追随者无我：获得一层护盾</li>
+     * <li>追随者无妄：获得一把刀</li>
+     * <li>领袖奖励（开锁器+撬棍）在 {@link #tryRecruit} 的无我/无妄联动处只发放一次</li>
+     * </ul>
+     */
+    private static void applyAnatmanAsatya(ServerPlayer leader, ServerPlayer follower) {
+        String path = SREGameWorldComponent.KEY.get(follower.level()).getRole(follower).identifier().getPath();
+        if (path.equals("anatman")) {
+            // 追随者无我获得一层护盾
+            SREArmorPlayerComponent.KEY.get(follower).addArmor(1);
+            follower.displayClientMessage(
+                    Component.translatable("message.noellesroles.leader.anatman_shield"), false);
+        } else if (path.equals("asatya")) {
+            // 追随者无妄获得一把刀
+            giveItem(follower, TMMItems.KNIFE.getDefaultInstance());
+            follower.displayClientMessage(
+                    Component.translatable("message.noellesroles.leader.asatya_knife"), false);
+        }
+    }
+
     /** 在玩家脚下生成物品（背包满时的兜底） */
     private static void spawnAtFeet(ServerPlayer player, ItemStack stack) {
         net.minecraft.world.entity.item.ItemEntity entity = new net.minecraft.world.entity.item.ItemEntity(
@@ -557,6 +580,11 @@ public final class LeaderFollowerEffects {
                     || targetRole.isInnocent() || targetRole.canUseKiller()) {
                 return false;
             }
+            // 好人方中立（isNeutralForInnocent）：除失忆患者(amnesiac)与初学者(initiate)外禁止释放技能
+            if (targetRole.isNeutralForInnocent()
+                    && !path.equals("amnesiac") && !path.equals("initiate")) {
+                return false;
+            }
             // 蜜蜂家族：仅可对蜂后释放，其余蜜蜂家族职业（工蜂、胡蜂等）禁止
             if (targetRole instanceof BeeFamilyRole && !path.equals("bee_queen")) {
                 return false;
@@ -598,6 +626,23 @@ public final class LeaderFollowerEffects {
 
         // 施加追随者效果
         applyEffect(leader, target);
+
+        // 无我/无妄联动：对其中一人释放技能，两人都成为追随者，效果对两人分别生效（领袖奖励只发一次）
+        if (path.equals("anatman") || path.equals("asatya")) {
+            ServerPlayer partner = path.equals("anatman") ? AnatmanRoleData.findPartner(target)
+                    : AsatyaRoleData.findPartner(target);
+            if (partner != null && !partner.equals(leader)
+                    && GameUtils.isPlayerAliveAndSurvival(partner)) {
+                data.addFollower(partner, path.equals("anatman") ? "asatya" : "anatman");
+                notifyFollower(leader, partner);
+                applyEffect(leader, partner);
+            }
+            // 领袖获得一把开锁器和一把撬棍
+            giveItem(leader, TMMItems.LOCKPICK.getDefaultInstance());
+            giveItem(leader, TMMItems.CROWBAR.getDefaultInstance());
+            leader.displayClientMessage(
+                    Component.translatable("message.noellesroles.leader.anatman_asatya_leader_bonus"), false);
+        }
         return true;
     }
 

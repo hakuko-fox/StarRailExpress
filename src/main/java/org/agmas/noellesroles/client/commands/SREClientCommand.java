@@ -23,6 +23,7 @@ import io.wifi.rhythm.client.screen.RhythmGameScreen;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
 import io.wifi.starrailexpress.client.util.ClientScheduler;
+import io.wifi.starrailexpress.scenery.client.SceneAssetClient;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -31,6 +32,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import org.agmas.noellesroles.client.screen.GameManagementScreen;
+import org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
 
 import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -58,13 +60,7 @@ public class SREClientCommand {
                             ctx.getSource().getClient().gui.getChat().clearMessages(false);
                             return 1;
                           })))
-              .then(
-                  ClientCommandManager.literal("chat")
-                      .then(ClientCommandManager.literal("clear")
-                          .executes((ctx) -> {
-                            ctx.getSource().getClient().gui.getChat().clearMessages(false);
-                            return 1;
-                          })))
+              .then(SceneAssetClient.sceneSubcommand())
               .then(ClientCommandManager.literal("debug")
                   .then(ClientCommandManager.literal("rhythm_game")
                       .executes((ctx) -> {
@@ -142,6 +138,15 @@ public class SREClientCommand {
                         return 1;
                       })))
               .then(ClientCommandManager.literal("screen")
+                  .then(ClientCommandManager.literal("role_introduction").executes(context -> {
+                    {
+                      ClientScheduler.schedule(() -> {
+                        context.getSource().getClient()
+                            .setScreen(new RoleIntroduceScreen(context.getSource().getClient().player));
+                      }, 1);
+                    }
+                    return 1;
+                  }))
                   .then(ClientCommandManager.literal("GameManagePanel")
                       .executes(context -> {
                         if (context.getSource().getPlayer().hasPermissions(2)) {

@@ -33,6 +33,7 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
 import org.agmas.noellesroles.content.item.RadioItem;
+import org.agmas.noellesroles.role_data.innocence.MediumRoleData;
 import org.agmas.noellesroles.role_data.killer.EmbalmerRoleData;
 import org.agmas.noellesroles.role_data.killer.WraithAssassinRoleData;
 import org.agmas.noellesroles.game.roles.neutral.commander.CommanderHandler;
@@ -40,6 +41,7 @@ import org.agmas.noellesroles.game.roles.neutral.pelican.PelicanManager;
 import org.agmas.noellesroles.game.fake_steve.FakeSteveVoiceDetector;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role_data.neutral.PhantomSpiritRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
@@ -98,7 +100,8 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     if (receiverPlayer.hasEffect(ModEffects.PLAYER_ISOLATION) || senderPlayer.hasEffect(ModEffects.PLAYER_ISOLATION)) {
       return true;
     }
-    if (receiverPlayer.hasEffect(ModEffects.VOICE_DEAFENED)) {
+    if (receiverPlayer.hasEffect(ModEffects.VOICE_DEAFENED)
+        || receiverPlayer.hasEffect(ModEffects.DEAFNESS)) {
       return true;
     }
     if (SREGameWorldComponent.KEY.get(senderPlayer.level()).isRole(senderPlayer, ModRoles.WRAITH_ASSASSIN)) {
@@ -107,6 +110,9 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
           && !WraithAssassinRoleData.canPerceiveWraith(receiverPlayer)) {
         return true;
       }
+    }
+    if (MediumRoleData.isSeanceVoiceAllowed(senderPlayer, receiverPlayer)) {
+      return false;
     }
     var deathPenalty = ModComponents.DEATH_PENALTY.get(receiverPlayer);
     if (deathPenalty.hasPenalty()) {
@@ -176,6 +182,10 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
           if (gameWorldComponent != null) {
             // 检查沉默语音效果
             if (player != null && player.hasEffect(ModEffects.VOICE_SILENCE)) {
+              event.cancel();
+              return;
+            }
+            if (shouldMutePhantomSpirit(player, gameWorldComponent)) {
               event.cancel();
               return;
             }
@@ -378,6 +388,19 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     if (con != null) {
       con.setGroup(null);
     }
+  }
+
+  /**
+   * 幻灵只有靠近其他玩家（或骑在头上）才能用语音交流。
+   */
+  private static boolean shouldMutePhantomSpirit(ServerPlayer player, SREGameWorldComponent gameWorld) {
+    if (gameWorld == null || !gameWorld.isRunning() || !gameWorld.isRole(player, ModRoles.PHANTOM_SPIRIT)) {
+      return false;
+    }
+    if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+      return false;
+    }
+    return !PhantomSpiritRoleData.canCommunicate(player);
   }
 
   @Override

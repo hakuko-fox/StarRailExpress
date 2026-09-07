@@ -34,6 +34,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.NRSounds;
@@ -215,17 +216,26 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         // (discounts/reductions/etc.); it defaults to the base price when no modifier
         // exists.
         final int price = DynamicShopComponent.KEY.get(this.player).effectivePrice(entry);
-        if (FabricLoader.getInstance().isDevelopmentEnvironment() && this.balance < price)
+        // 条目货币类型：职业商店条目可指定货币（见 ShopEntry.Currency），默认金币（MONEY）。
+        // 指定为游戏代币（MINIGAME_TOKEN）时，从对应组件余额校验并扣除。
+        final ShopEntry.Currency currency = entry.currency() == null ? ShopEntry.Currency.MONEY : entry.currency();
+        if (FabricLoader.getInstance().isDevelopmentEnvironment() && currency == ShopEntry.Currency.MONEY
+                && this.balance < price)
             this.balance = price * 10;
         boolean isOnCooldown = this.player.getCooldowns().isOnCooldown(entry.stack().getItem());
-        boolean haveEnoughBalance = this.balance >= price;
+        boolean haveEnoughBalance = currency.getBalance(this.player) >= price;
         // 重置错误信息
         entry.setFailedMessage(null);
         if (haveEnoughBalance && !isOnCooldown
                 && entry.canDisplay(this.player) && entry.canBuy(this.player) && !entry.isSafeTime(this.player)
                 && entry.onBuy(this.player)) {
-            this.total_cost += price;
-            this.balance -= price;
+            // 金币消费才计入 total_cost（金币消费统计）；代币消费只扣对应货币余额
+            if (currency == ShopEntry.Currency.MONEY) {
+                this.total_cost += price;
+                this.balance -= price;
+            } else {
+                currency.add(this.player, -price);
+            }
             // 手榴弹购买后记录购买时间
             if (entry.stack().is(TMMItems.GRENADE)) {
                 this.grenadeLastPurchaseTime = player.level().getGameTime();
@@ -244,7 +254,9 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
             if (isOnCooldown) {
                 reason = Component.translatable("message.tip.purchase_failed.cooldown");
             } else if (!haveEnoughBalance) {
-                reason = Component.translatable("message.tip.purchase_failed.not_enough_money");
+                reason = Component.translatable(currency == ShopEntry.Currency.MINIGAME_TOKEN
+                        ? "noellesroles.not_enough_minigame_token"
+                        : "message.tip.purchase_failed.not_enough_money");
             } else {
                 reason = entry.getFailedMessage();
             }
@@ -295,6 +307,22 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
                 (int) ((double) SREWorldBlackoutComponent.getMaxDuration(player.level()) * multtiplier));
     }
 
+    public static void addGlobalBlackoutCooldown(Level world) {
+        final int globalCooldown = GameConstants.getBlackoutCooldownGlobal();
+        for (var p : world.players()) {
+            var cooldowns = p.getCooldowns();
+            if (cooldowns.isOnCooldown(TMMItems.BLACKOUT)) {
+                var cooldownInstance = cooldowns.cooldowns.get(TMMItems.BLACKOUT);
+                if (cooldownInstance != null) {
+                    int leftTicks = cooldownInstance.endTime - cooldowns.tickCount;
+                    if (leftTicks >= globalCooldown)
+                        continue;
+                }
+            }
+            cooldowns.addCooldown(TMMItems.BLACKOUT, globalCooldown);
+        }
+    }
+
     public static boolean useBlackout(@NotNull Player player, int duration) {
         SREWorldBlackoutComponent blackCCA = SREWorldBlackoutComponent.KEY.get(player.level());
         if (blackCCA.blackOutRemainingTicks > 0)
@@ -302,8 +330,7 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
         boolean triggered = blackCCA.triggerBlackout(true, duration);
         if (triggered) {
             // 公共 Cooldown
-            player.level().players().forEach(
-                    p -> p.getCooldowns().addCooldown(TMMItems.BLACKOUT, GameConstants.getBlackoutCooldownGlobal()));
+            addGlobalBlackoutCooldown(player.level());
 
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(), BuiltInRegistries.ITEM.getKey(TMMItems.BLACKOUT));
             player.getCooldowns().addCooldown(TMMItems.BLACKOUT,
@@ -323,8 +350,11 @@ public class SREPlayerShopComponent implements RoleComponent, ServerTickingCompo
 
             // 公共 Cooldown
             player.level().players().forEach(
-                    p -> p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
-                            GameConstants.getMonitorBrokenCooldownGlobal()));
+                    p -> {
+                        if (!p.getCooldowns().isOnCooldown(TMMItems.MONITOR_BROKEN))
+                            p.getCooldowns().addCooldown(TMMItems.MONITOR_BROKEN,
+                                    GameConstants.getMonitorBrokenCooldownGlobal());
+                    });
 
             SRE.REPLAY_MANAGER.recordSkillUsed(player.getUUID(),
                     BuiltInRegistries.ITEM.getKey(TMMItems.MONITOR_BROKEN));

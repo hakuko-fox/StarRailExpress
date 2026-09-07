@@ -133,6 +133,79 @@ public class GameReplayData {
         this.playerRoles = playerRoles;
     }
 
+    /**
+     * 开局记录的职业；若开局未写入，则回退到该玩家第一条换职记录的旧职业。
+     */
+    public String getInitialPlayerRoleId(UUID playerUid) {
+        if (playerUid == null) {
+            return null;
+        }
+        String roleId = playerRoles == null ? null : playerRoles.get(playerUid);
+        if (roleId != null && !roleId.isBlank()) {
+            return roleId;
+        }
+        if (timeline == null) {
+            return null;
+        }
+        for (ReplayEvent event : timeline) {
+            String[] parts = parseChangeRoleMessage(event, playerUid);
+            if (parts != null && !parts[0].isBlank()) {
+                return parts[0];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 还原玩家在时间线某条事件发生时的职业。
+     * ReplayEvent 记录了相关玩家当时的职业
+     */
+    public String resolvePlayerRoleId(UUID playerUid, GameReplayData.ReplayEvent event) {
+        if (playerUid == null) {
+            return null;
+        }
+        String roleId = getInitialPlayerRoleId(playerUid);
+        if (event == null) {
+            return null;
+        }
+        if (event.roles != null && event.roles.containsKey(playerUid)) {
+            return event.roles.get(playerUid).toString();
+        }
+        return roleId;
+    }
+
+    public String resolvePlayerRoleId(UUID playerUid, TimelineReplayEvent event) {
+        if (playerUid == null) {
+            return null;
+        }
+        String roleId = getInitialPlayerRoleId(playerUid);
+        if (event == null) {
+            return null;
+        }
+        if (event.roles() != null && event.roles().containsKey(playerUid)) {
+            return event.roles().get(playerUid).toString();
+        }
+        return roleId;
+    }
+
+    private static String[] parseChangeRoleMessage(ReplayEvent event, UUID playerUid) {
+        if (event == null || event.getType() != EventType.CHANGE_ROLE) {
+            return null;
+        }
+        if (!playerUid.equals(event.getSourcePlayer())) {
+            return null;
+        }
+        String message = event.getMessage();
+        if (message == null || message.isBlank()) {
+            return null;
+        }
+        String[] parts = message.split("===", 2);
+        if (parts.length == 2) {
+            return parts;
+        }
+        return new String[] { "", message };
+    }
+
     public static final Map<ResourceLocation, Item> DEATH_REASON_TO_ITEM = new HashMap<>();
 
     static {
@@ -148,7 +221,7 @@ public class GameReplayData {
     }
 
     public Component toText(GameReplayManager manager, GameReplayData replayData,
-            io.wifi.starrailexpress.api.replay.ReplayEvent event) {
+            io.wifi.starrailexpress.api.replay.TimelineReplayEvent event) {
         if (event == null)
             return null;
         UUID sourcePlayer = null;
@@ -203,15 +276,23 @@ public class GameReplayData {
         } else if (event.details() instanceof PlayerRevivalDetails revivalDetails) {
             sourcePlayer = revivalDetails.player();
             String r = revivalDetails.role();
-            if (!r.isBlank()) {
-                Role_1 = GameReplayUtils.getRoleNameWithSourceTMMColor(r);
-            } else {
-                SRERole trole = SREGameWorldComponent.KEY.get(SRE.SERVER.overworld()).getRole(sourcePlayer);
+            if (r == null || r.isBlank()) {
+                r = replayData.resolvePlayerRoleId(sourcePlayer, event);
+            }
+            if (r == null || r.isBlank()) {
+                SRERole trole = null;
+                try {
+                    if (SRE.SERVER != null) {
+                        trole = SREGameWorldComponent.KEY.get(SRE.SERVER.overworld()).getRole(sourcePlayer);
+                    }
+                } catch (Exception ignored) {
+                }
                 if (trole == null) {
                     trole = TMMRoles.CIVILIAN;
                 }
-                Role_1 = GameReplayUtils.getRoleNameWithSourceTMMColor(trole.identifier().toString());
+                r = trole.identifier().toString();
             }
+            Role_1 = GameReplayUtils.getRoleNameWithSourceTMMColor(r);
 
             // message = ;
         } else if (event.details() instanceof ArmorBreakDetails ambd) {
@@ -230,9 +311,9 @@ public class GameReplayData {
                 : Component.translatable("sre.replay.event.unknown_player").withStyle(ChatFormatting.OBFUSCATED)
                         .withStyle(ChatFormatting.GRAY);
 
-        // 获取角色信息并设置颜色
-        sourceName = GameReplayUtils.getReplayPlayerDisplayText(sourcePlayer, manager, replayData, false);
-        targetName = GameReplayUtils.getReplayPlayerDisplayText(targetPlayer, manager, replayData, true);
+        // 按该事件发生时的职业显示，而不是终局职业
+        sourceName = GameReplayUtils.getReplayPlayerDisplayText(sourcePlayer, manager, replayData, false, event);
+        targetName = GameReplayUtils.getReplayPlayerDisplayText(targetPlayer, manager, replayData, true, event);
 
         return switch (event.eventType()) {
             // 主要事件
@@ -431,35 +512,19 @@ public class GameReplayData {
         public final String itemUsed;
         public final String message;
         public final long timestamp;
-        public final String text_a;
-        public final String text_b;
         public final boolean hidden;
-
-        public ReplayEvent(EventType type, UUID sourcePlayer, UUID targetPlayer, String itemUsed, String message) {
-            this(type, sourcePlayer, targetPlayer, itemUsed, message, "", "", false);
-        }
+        public final Map<UUID, ResourceLocation> roles;
 
         public ReplayEvent(EventType type, UUID sourcePlayer, UUID targetPlayer, String itemUsed, String message,
-                String text_a, String text_b) {
-            this(type, sourcePlayer, targetPlayer, itemUsed, message, text_a, text_b, false);
-        }
-
-        public ReplayEvent(EventType type, UUID sourcePlayer, UUID targetPlayer, String itemUsed, String message,
-                boolean hidden) {
-            this(type, sourcePlayer, targetPlayer, itemUsed, message, "", "", hidden);
-        }
-
-        public ReplayEvent(EventType type, UUID sourcePlayer, UUID targetPlayer, String itemUsed, String message,
-                String text_a, String text_b, boolean hidden) {
+                boolean hidden, Map<UUID, ResourceLocation> roles) {
             this.type = type;
             this.sourcePlayer = sourcePlayer;
             this.targetPlayer = targetPlayer;
             this.itemUsed = itemUsed;
             this.message = message;
             this.timestamp = System.currentTimeMillis();
-            this.text_a = text_a;
-            this.text_b = text_b;
             this.hidden = hidden;
+            this.roles = roles;
         }
 
         public EventType getType() {

@@ -15,6 +15,7 @@
 
 package io.wifi.starrailexpress.game;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.DynamicShopComponent;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
@@ -26,36 +27,76 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 二次购买会打折的动态商店条目。
- * <p>
- * 这是 {@link DynamicShopComponent} 的示例落地，仅在 murder 或继承 murder 的模式下生效：
- * <ul>
- * <li>购买的刀拥有 {@link KillerKnifeDurability#MAX_DURABILITY} 点耐久；</li>
- * <li>若背包内已有「耐久耗尽」的刀，则原地替换为满耐久（而非再发一把）；</li>
- * <li>否则按原逻辑发放一把新刀；</li>
- * <li>首次购买刀后，后续购买价格 -50%（写入玩家的 {@link DynamicShopComponent}）。</li>
- * </ul>
- *
- * <p>
- * 在非 murder 模式下，行为与普通 {@link ShopEntry} 完全一致（发放一把无耐久的刀）。
- * Outside murder modes this behaves exactly like a plain {@link ShopEntry}
- * (gives a normal,
- * durability-less knife).
+ * 二次购买价格会改变的动态商店条目。
  */
 public class DiscountShopEntry extends ShopEntry {
-    public int discount = 50;
+    /** 是否按照原价计算discount */
+    public boolean discountAsOriginal = false;
+    public int discount = 0;
+    public int maxDiscountCount = 1;
+    public int maxPrice = Integer.MAX_VALUE;
+    public int minPrice = 0;
 
-    public DiscountShopEntry(int price) {
-        this(TMMItems.KNIFE.getDefaultInstance(), price);
-    }
-
+    /**
+     * 第二次半价的 ShopEntry
+     * 
+     * @param stack 物品
+     * @param price 原价
+     */
     public DiscountShopEntry(ItemStack stack, int price) {
-        this(stack, price, 50);
+        this(stack, price, 50, false, ShopEntry.Type.WEAPON);
     }
 
-    public DiscountShopEntry(ItemStack stack, int price, int discount) {
-        super(stack, price, ShopEntry.Type.WEAPON);
+    /**
+     * 可打折 ShopEntry
+     * 
+     * @param stack              物品
+     * @param price              原价
+     * @param discount           打折力度（%）
+     * @param discountAsOriginal 按照原价打折
+     * @param type
+     */
+    public DiscountShopEntry(ItemStack stack, int price, int discount, boolean discountAsOriginal,
+            ShopEntry.Type type) {
+        super(stack, price, type);
+        this.discountAsOriginal = discountAsOriginal;
         this.discount = discount;
+    }
+
+    /**
+     * 可打折 ShopEntry
+     * 
+     * @param stack              物品
+     * @param price              原价
+     * @param discount           打折力度（%）
+     * @param maxDiscountCount   最大打折次数
+     * @param discountAsOriginal 按照原价打折
+     * @param type               物品类型
+     */
+    public DiscountShopEntry(ItemStack stack, int price, int discount, int maxDiscountCount, boolean discountAsOriginal,
+            ShopEntry.Type type) {
+        this(stack, price, discount, discountAsOriginal, type);
+        this.maxDiscountCount = maxDiscountCount;
+    }
+
+    public DiscountShopEntry(ItemStack stack, int price, int discount, int maxDiscountCount, int minPrice, int maxPrice,
+            boolean discountAsOriginal,
+            ShopEntry.Type type) {
+        this(stack, price, discount, maxDiscountCount, discountAsOriginal, type);
+        this.minPrice = minPrice;
+        this.maxPrice = maxPrice;
+    }
+
+    public int minPrice() {
+        return minPrice;
+    }
+
+    public int maxPrice() {
+        return maxPrice;
+    }
+
+    public int maxDiscountCount() {
+        return maxDiscountCount;
     }
 
     public int discount() {
@@ -64,7 +105,6 @@ public class DiscountShopEntry extends ShopEntry {
 
     @Override
     public boolean onBuy(@NotNull Player player) {
-        boolean murder = KillerKnifeDurability.isMurderMode(player.level());
         boolean durabilityMode = KillerKnifeDurability.isDurabilityModeEnabled(player.level());
 
         boolean success;
@@ -88,8 +128,8 @@ public class DiscountShopEntry extends ShopEntry {
         // 首购 -50% 折扣仍由 murder 模式决定（与耐久开关解耦）。
         // The first-purchase -50% discount is still gated by murder mode (decoupled
         // from the durability toggle).
-        if (success && murder) {
-            applyFirstPurchaseDiscount(player);
+        if (success) {
+            applyPurchaseDiscount(player);
         }
         return success;
     }
@@ -98,15 +138,48 @@ public class DiscountShopEntry extends ShopEntry {
      * 首次购买后为后续购买挂上 -50% 折扣。 / After the first purchase, attach a -50% discount for
      * later buys.
      */
-    private void applyFirstPurchaseDiscount(@NotNull Player player) {
-        if (this.stack().is(TMMItems.KNIFE) && !KillerKnifeDurability.isDurabilityModeEnabled(player.level())) {
-            return;
-        }
+    public void applyPurchaseDiscount(@NotNull Player player) {
         DynamicShopComponent dynamicShop = DynamicShopComponent.KEY.get(player);
-        ResourceLocation knifeId = BuiltInRegistries.ITEM.getKey(this.stack().getItem());
-        if (dynamicShop.getPurchaseCount(knifeId) == 0) {
-            dynamicShop.setPercentDiscount(knifeId, discount);
+        ResourceLocation stackId = BuiltInRegistries.ITEM.getKey(this.stack().getItem());
+        int buyCount = dynamicShop.getPurchaseCount(stackId);
+        if (buyCount < maxDiscountCount) {
+            try {
+                if (discountAsOriginal) {
+                    int discountPercent = calcDiscountPercent(buyCount + 1);
+                    int truePrice = price() * (100 - discountPercent) / 100;
+
+                    if (truePrice > maxPrice) {
+                        discountPercent = ((price() - maxPrice) * 100 / price());
+                    } else if (truePrice < minPrice) {
+                        discountPercent = ((price() - minPrice) * 100 / price());
+                    }
+                    dynamicShop.setPercentDiscount(stackId, discountPercent);
+                } else {
+
+                    int nowDiscount = calcDiscountPercent(buyCount);
+                    int nowPrice = price() * (100 - nowDiscount) / 100;
+                    int truePrice = nowPrice * (100 - discount) / 100;
+
+                    if (truePrice > maxPrice) {
+                        truePrice = maxPrice;
+                    } else if (truePrice < minPrice) {
+                        truePrice = minPrice;
+                    }
+                    int discountPercent = (price() - truePrice) * 100 / price();
+                    dynamicShop.setPercentDiscount(stackId, discountPercent);
+                }
+            } catch (ArithmeticException e) {
+                SRE.LOGGER.error(
+                        "Error while calc discount! Infomation: Stack {}, Original Price {}, Buy Count {}, Max Discount Count {}, Discount Percent Per {}, Min Price {}, Max Price {}",
+                        stackId.toString(), price(), buyCount, maxDiscountCount, discount, minPrice, maxPrice, e);
+                maxDiscountCount = buyCount;
+                // 已经报错了，不能再打折买了。
+            }
         }
-        dynamicShop.recordPurchase(knifeId);
+        dynamicShop.recordPurchase(stackId);
+    }
+
+    private int calcDiscountPercent(int buyCount) {
+        return (buyCount) * discount;
     }
 }

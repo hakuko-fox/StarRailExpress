@@ -38,6 +38,18 @@ import java.util.List;
  * NoellesRoles 修饰符注册类
  */
 public class NRModifiers {
+    /** 体弱修饰符。拥有此修饰符的无需完成跑步任务：它会自动完成。 */
+    public static final SREModifier FRAIL = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("frail"),
+            0x303030,
+            null,
+            null,
+            false,
+            false))
+            .setCanSetSpawnInfoInConfig(true)
+            .setDefaultEnableChance(1000)
+            .setDefaultMax(1)
+            .setAddedVersion("4.4");
     /** Runtime-only marker for a player cosplayed as a Rabbit. */
     public static final SREModifier RABBIT_SHAPE = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("rabbit_shape"),
@@ -121,6 +133,18 @@ public class NRModifiers {
             false))
             .setDefaultMax(2)
             .setDefaultEnableChance(5000);
+
+    /** 封印遗物：开局获得一件封印物 */
+    public static SREModifier SEALED_RELICS = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("sealed_relics"),
+            0x6B3FA0,
+            null,
+            null,
+            false,
+            false))
+            .setDefaultMax(2)
+            .setDefaultEnableChance(1500)
+            .setAddedVersion("4.4"); // versiontag 4.4
 
     /** 沙哑修饰符：嗓音十分低沉 */
     public static SREModifier HOARSE = HMLModifiers.registerModifier(new SREModifier(

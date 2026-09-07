@@ -16,6 +16,7 @@
 package org.agmas.noellesroles.init.events;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
@@ -25,6 +26,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.ServerTaskInfoClasses;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.RemoveStatusBarPayload;
+import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -32,6 +34,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -71,9 +74,9 @@ import org.agmas.noellesroles.init.RoleShopHandler;
 import org.agmas.noellesroles.packet.BloodConfigS2CPacket;
 import org.agmas.noellesroles.packet.EmbalmerSkinSwapS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.RoleTickers;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.handler.utils.BeeFamilyManager;
-import org.agmas.noellesroles.game.roles.neutral.leader.LeaderFollowerEffects;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 
@@ -99,6 +102,7 @@ public class NRGameStateEvents {
         registerServerTick();
         registerPlayerConnection();
         CustomWinnerClass.registerEvents();
+        org.agmas.noellesroles.game.roles.innocence.angler.AnglerWorldMemory.register();
     }
 
     // --- OnGameStarted ---
@@ -108,10 +112,9 @@ public class NRGameStateEvents {
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
+            org.agmas.noellesroles.game.roles.innocence.angler.AnglerWorldMemory.reset(serverLevel);
             // 复位蜂后领袖加成（蜜蜂家族中毒致死时间减半）
             BeeFamilyManager.resetQueenLeaderBonus();
-            // 复位恒星体领袖加成（恒星体技能冷却减半）
-            LeaderFollowerEffects.resetHengXingTiBonus();
             // 重置疫使时刻状态
             org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.resetAcceleratedState();
 
@@ -149,6 +152,7 @@ public class NRGameStateEvents {
             nianShouFirecrackersDistributedThisGame = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
+            org.agmas.noellesroles.game.roles.innocence.angler.AnglerWorldMemory.reset(world);
             DelayerRoleData.timeBoostTriggered = false;
 
             // 清除感染状态
@@ -238,10 +242,69 @@ public class NRGameStateEvents {
 
     private static void registerOnGameTrueStarted() {
         OnGameTrueStarted.EVENT.register((serverLevel) -> {
+            var areacca = AreasWorldComponent.KEY.get(serverLevel);
+            if (areacca.areasSettings != null) {
+                if (areacca.areasSettings.meetingEnabled) {
+                    Component meetingType = null;
+                    MutableComponent meetingResultMsg = Component.literal("").withStyle(ChatFormatting.GOLD);
+                    MutableComponent startCooldownMsg = Component.literal("").withStyle(ChatFormatting.GOLD);
+                    if (areacca.areasSettings.bodyMeetingEnabled) {
+                        meetingType = Component.translatable("meeting.sre.body_meeting").withStyle(ChatFormatting.AQUA);
+                        startCooldownMsg.append("\n").append(Component.translatable("meeting.sre.entry.is_comming",
+                                Component.translatable("meeting.sre.body_meeting").withStyle(ChatFormatting.AQUA),
+                                Component.literal(String.format("%d", areacca.areasSettings.meetingStartCooldown))
+                                        .withStyle(ChatFormatting.GREEN)));
+                        meetingResultMsg.append("\n").append(Component.translatable("meeting.sre.entry.processor",
+                                Component.translatable("meeting.sre.body_meeting").withStyle(ChatFormatting.AQUA),
+                                getProcessorType(areacca.areasSettings, false))
+                                .withStyle(ChatFormatting.GREEN));
+
+                    }
+                    {
+                        meetingType = meetingType == null
+                                ? Component
+                                        .translatable(
+                                                areacca.areasSettings.bellMeetingEnabled ? "meeting.sre.bell_meeting"
+                                                        : "meeting.sre.emergency_meeting")
+                                        .withStyle(ChatFormatting.YELLOW)
+                                : Component.translatable("meeting.sre.entry.and", meetingType,
+                                        Component
+                                                .translatable(areacca.areasSettings.bellMeetingEnabled
+                                                        ? "meeting.sre.bell_meeting"
+                                                        : "meeting.sre.emergency_meeting")
+                                                .withStyle(ChatFormatting.YELLOW))
+                                        .withStyle(ChatFormatting.GOLD);
+                        if (areacca.areasSettings.bellMeetingEnabled)
+                            startCooldownMsg.append("\n").append(Component.translatable("meeting.sre.entry.is_comming",
+                                    Component.translatable("meeting.sre.bell_meeting").withStyle(ChatFormatting.YELLOW),
+                                    Component
+                                            .literal(
+                                                    String.format("%d", areacca.areasSettings.bellMeetingStartCooldown))
+                                            .withStyle(ChatFormatting.GREEN)));
+
+                        meetingResultMsg.append("\n").append(Component.translatable("meeting.sre.entry.processor",
+                                Component.translatable(areacca.areasSettings.bellMeetingEnabled
+                                        ? "meeting.sre.bell_meeting"
+                                        : "meeting.sre.emergency_meeting").withStyle(ChatFormatting.YELLOW),
+                                getProcessorType(areacca.areasSettings, true))
+                                .withStyle(ChatFormatting.GREEN));
+                    }
+                    if (meetingType != null) {
+                        final var entryMeetingMessage = Component.translatable("meeting.sre.start_game_broadcast",
+                                Component.translatable(areacca.mapDisplayName).withStyle(ChatFormatting.GREEN),
+                                meetingType, meetingResultMsg,
+                                startCooldownMsg).withStyle(ChatFormatting.GOLD);
+                        for (var p : serverLevel.players()) {
+                            BroadcastCommand.BroadcastMessage(p, entryMeetingMessage);
+                        }
+                    }
+                    // meeting.sre.start_game_broadcast
+                }
+            }
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
             boolean hasDio = false, hasRecorder = false, hasCandlebearer = false, hasRaven = false, hasBee = false;
             boolean hasNianShou = false, hasArsonist = false, hasCuckoo = false, hasPelican = false,
-                    hasGodfather = false, hasLeader = false;
+                    hasGodfather = false, hasLeader = false, hasLicensedVillain = false;
             final var all_players = serverLevel.players();
 
             for (var p : all_players) {
@@ -280,6 +343,8 @@ public class NRGameStateEvents {
                     hasGodfather = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.LEADER)) {
                     hasLeader = true;
+                } else if (gameWorldComponent.isRole(p, BounsRoles.LICENSED_VILLAIN)) {
+                    hasLicensedVillain = true;
                 }
             }
 
@@ -307,6 +372,15 @@ public class NRGameStateEvents {
                         p.playNotifySound(SoundEvents.BEE_LOOP, SoundSource.MASTER, 0.5F, 1.0f);
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.bee.entry").withStyle(ChatFormatting.YELLOW));
+                    }
+                });
+            }
+            if (hasLicensedVillain) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.licensed_villain.entry")
+                                .withStyle(ChatFormatting.YELLOW));
                     }
                 });
             }
@@ -384,6 +458,57 @@ public class NRGameStateEvents {
 
     // --- ServerLifecycleEvents ---
 
+    private static Component getProcessorType(AreasSettings areasSettings, boolean emergency) {
+        boolean noVote = false;
+        var result = Component.translatable("meeting.sre.entry.kill").withStyle(ChatFormatting.RED);
+        if (!areasSettings.meetingVoteEnabled) {
+            result = Component.translatable("meeting.sre.entry.no_vote").withStyle(ChatFormatting.WHITE);
+            noVote = true;
+        } else {
+            switch (areasSettings.meetingVoteProcessor) {
+                case DEFAULT:
+                case FORCE_KILL:
+                case KILL:
+                    result = Component.translatable("meeting.sre.entry.kill").withStyle(ChatFormatting.RED);
+                    break;
+                case GLOWING:
+                    result = Component.translatable("meeting.sre.entry.glow").withStyle(ChatFormatting.LIGHT_PURPLE);
+                    break;
+                default:
+                    result = Component.translatable("meeting.sre.entry.custom");
+                    break;
+            }
+        }
+        if (emergency) {
+            if (areasSettings.emergencyMeetingVoteEnabled == TrueFalseResult.FALSE) {
+                result = Component.translatable("meeting.sre.entry.no_vote").withStyle(ChatFormatting.WHITE);
+            } else if (areasSettings.emergencyMeetingVoteEnabled == TrueFalseResult.PASS) {
+                if (noVote) {
+                    return result;
+                }
+            }
+            {
+                switch (areasSettings.emergencyMeetingVoteProcessor) {
+                    case FORCE_KILL:
+                    case KILL:
+                        result = Component.translatable("meeting.sre.entry.kill").withStyle(ChatFormatting.RED);
+                        break;
+                    case FUNCTION:
+                        result = Component.translatable("meeting.sre.entry.custom").withStyle(ChatFormatting.GREEN);
+                        break;
+                    case GLOWING:
+                        result = Component.translatable("meeting.sre.entry.glow")
+                                .withStyle(ChatFormatting.LIGHT_PURPLE);
+                        break;
+                    case DEFAULT:
+                    default:
+                        break;
+                }
+            }
+        }
+        return result;
+    }
+
     private static void registerServerLifecycle() {
         ServerLifecycleEvents.SERVER_STARTED.register((server) -> {
             if (ModEventsRegister.isMJVerifyEnabled) {
@@ -397,6 +522,17 @@ public class NRGameStateEvents {
     // --- ServerTick ---
 
     private static void registerServerTick() {
+        OnGameServerTick.EVENT.register((world) -> {
+            var gamecca = SREGameWorldComponent.KEY.get(world);
+            var modifiercca = WorldModifierComponent.KEY.get(world);
+            for (ServerPlayer p : world.players()) {
+                if (gamecca.isRole(p, ModRoles.OLDMAN)) {
+                    RoleTickers.skipRunningTaskTick(p, gamecca);
+                } else if (modifiercca.isModifier(p, NRModifiers.FRAIL)) {
+                    RoleTickers.skipRunningTaskTick(p, gamecca);
+                }
+            }
+        });
         // 烟雾/迷幻区域 + 塔罗 + 收音机
         ServerTickEvents.END_SERVER_TICK.register((server) -> {
             ServerSmokeAreaManager.tick();

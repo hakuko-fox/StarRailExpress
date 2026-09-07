@@ -25,6 +25,8 @@ import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.content.item.DisguiseEffectSync;
+import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
+import io.wifi.starrailexpress.event.OnGettingPlayerSkin.PlayerSkinResult;
 import io.wifi.starrailexpress.event.client.OnGameFinishedClient;
 import io.wifi.starrailexpress.event.client.OnGameStartedClient;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
@@ -39,7 +41,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.scores.PlayerTeam;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.client.ClientAmonState;
@@ -64,7 +65,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.modifier.split_personality.cca.SplitPersonalityComponent;
-import pro.fazeclan.river.stupid_express.role.arsonist.cca.DousedPlayerComponent;
+import pro.fazeclan.river.stupid_express.role.arsonist.ArsonistRoleData;
 import pro.fazeclan.river.stupid_express.role.necromancer.cca.NecromancerComponent;
 
 import java.util.UUID;
@@ -74,9 +75,24 @@ import java.util.UUID;
  */
 public class SREClientEvents {
 
-    private static Component getDisplayName(PlayerInfo playerInfo) {
-        MutableComponent mutableComponent = PlayerTeam.formatNameForTeam(playerInfo.getTeam(),
-                Component.literal(playerInfo.getProfile().getName()));
+    public static Component getName(Player target) {
+        if (target == null)
+            return Component.literal("");
+        var prefix = ClientSkinCache.somePrefix(target.getUUID());
+        if (prefix == null)
+            return target.getName();
+        return Component.literal("").append(prefix).append(target.getName());
+    }
+
+    public static Component getName(PlayerInfo playerInfo) {
+        if (playerInfo == null || playerInfo.getProfile() == null) {
+            return Component.literal("");
+        }
+        MutableComponent mutableComponent = Component.literal(playerInfo.getProfile().getName());
+        var prefix = ClientSkinCache.somePrefix(playerInfo.getProfile().getId());
+        if (prefix != null) {
+            return Component.literal("").append(prefix).append(mutableComponent);
+        }
         return mutableComponent;
     }
 
@@ -101,6 +117,8 @@ public class SREClientEvents {
     public static void registerClientEvents() {
         registerRoleNameRendererEvents();
         OnGameStartedClient.EVENT.register(() -> {
+            if (Minecraft.getInstance().player != null)
+                Minecraft.getInstance().player.refreshDimensions();
             NoellesrolesClient.clearTimeStopCache();
             if (!Minecraft.getInstance().isLocalServer()) {
                 SRE.LOGGER.info("[CLIENT] Re-register shop entries.");
@@ -108,8 +126,45 @@ public class SREClientEvents {
             }
         });
         OnGameFinishedClient.EVENT.register(() -> {
+            if (Minecraft.getInstance().player != null)
+                Minecraft.getInstance().player.refreshDimensions();
             NoellesrolesClient.clearTimeStopCache();
             Minecraft.getInstance().getSoundManager().stop();
+        });
+
+        // JEB
+        OnGettingPlayerSkin.EVENT.register((player, originalSkin) -> {
+            final var shuffledTarget = getShuffledTarget(player);
+            if (shuffledTarget != null) {
+                final var playerInfo = ClientSkinCache.getCachedPlayerInfo(shuffledTarget);
+                if (playerInfo == null)
+                    return PlayerSkinResult.SKIP;
+                final var skin = playerInfo.getSkin();
+                if (skin == null)
+                    return PlayerSkinResult.SKIP;
+                return PlayerSkinResult.playerSkin(skin);
+            }
+            return PlayerSkinResult.SKIP;
+        });
+
+        // 变形
+        OnGettingPlayerSkin.EVENT.register((player, originalSkin) -> {
+            if (!RoleUtils.isPlayerTheJob(player, ModRoles.MORPHLING)) {
+                return PlayerSkinResult.SKIP;
+            }
+            var data = RoleData.getNullable(MorphlingRoleData.class, player);
+            if (data == null || data.disguise == null || data.disguise.equals(player.getUUID())) {
+                return PlayerSkinResult.SKIP;
+            }
+            PlayerInfo info = ClientSkinCache.getCachedPlayerInfo(data.disguise);
+            Minecraft client = Minecraft.getInstance();
+            if (info == null && client.getConnection() != null) {
+                info = client.getConnection().getPlayerInfo(data.disguise);
+            }
+            if (info != null && info.getSkin() != null) {
+                return PlayerSkinResult.playerSkin(info.getSkin());
+            }
+            return PlayerSkinResult.SKIP;
         });
     }
 
@@ -283,10 +338,10 @@ public class SREClientEvents {
             if (disguiseTarget != null) {
                 PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(disguiseTarget);
                 if (targetInfo != null && targetInfo.getProfile() != null && targetInfo.getProfile().getId() != null) {
-                    return TrueFalseAndCustomResult.custom(getDisplayName(targetInfo));
+                    return TrueFalseAndCustomResult.custom(getName(targetInfo));
                 }
                 if (disguiseTarget.equals(target.getUUID())) {
-                    return TrueFalseAndCustomResult.custom(target.getDisplayName());
+                    return TrueFalseAndCustomResult.custom(getName(target));
                 }
             }
             return TrueFalseAndCustomResult.pass();
@@ -296,10 +351,10 @@ public class SREClientEvents {
             if (stolenTarget != null) {
                 PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(stolenTarget);
                 if (targetInfo != null && targetInfo.getProfile() != null && targetInfo.getProfile().getId() != null) {
-                    return TrueFalseAndCustomResult.custom(getDisplayName(targetInfo));
+                    return TrueFalseAndCustomResult.custom(getName(targetInfo));
                 }
                 if (stolenTarget.equals(target.getUUID())) {
-                    return TrueFalseAndCustomResult.custom(target.getDisplayName());
+                    return TrueFalseAndCustomResult.custom(getName(target));
                 }
             }
             return TrueFalseAndCustomResult.pass();
@@ -318,7 +373,7 @@ public class SREClientEvents {
             if (embalmerTarget != null && ClientEmbalmerState.isActive()) {
                 PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(embalmerTarget);
                 if (targetInfo != null && targetInfo.getProfile() != null && targetInfo.getProfile().getId() != null) {
-                    return TrueFalseAndCustomResult.custom(getDisplayName(targetInfo));
+                    return TrueFalseAndCustomResult.custom(getName(targetInfo));
                 }
             }
             var morphOpt = RoleData.getOptional(MorphlingRoleData.class, target);
@@ -326,12 +381,12 @@ public class SREClientEvents {
                 var mocca = morphOpt.get();
                 PlayerInfo targetInfo = ClientSkinCache.getCachedPlayerInfo(mocca.disguise);
                 if (targetInfo != null && targetInfo.getProfile() != null && targetInfo.getProfile().getId() != null) {
-                    return TrueFalseAndCustomResult.custom(getDisplayName(targetInfo));
+                    return TrueFalseAndCustomResult.custom(getName(targetInfo));
                 } else {
                     // Log.info(LogCategory.GENERAL, "Morphling disguise is null!!!");
                 }
                 if (mocca.disguise != null && mocca.disguise.equals(target.getUUID())) {
-                    return TrueFalseAndCustomResult.custom(target.getDisplayName());
+                    return TrueFalseAndCustomResult.custom(getName(target));
                 }
             }
             return TrueFalseAndCustomResult.pass();
@@ -352,11 +407,12 @@ public class SREClientEvents {
                 context.pose().translate(context.guiWidth() / 2.0f, context.guiHeight() / 2.0f + 6.0f, 0.0f);
                 context.pose().scale(scale, scale, 1.0f);
 
-                DousedPlayerComponent component = DousedPlayerComponent.KEY.get(NoellesrolesClient.targetPlayer);
+                ArsonistRoleData arsonist = ArsonistRoleData.of(player);
+                boolean doused = arsonist != null && arsonist.isDoused(NoellesrolesClient.targetPlayer.getUUID());
                 Component status = Component
-                        .translatable("hud.stupid_express.arsonist.doused." + component.getDoused());
+                        .translatable("hud.stupid_express.arsonist.doused." + doused);
                 context.drawString(font, status, -font.width(status) / 2, 32,
-                        component.getDoused() ? 0xfc9526 : java.awt.Color.GRAY.getRGB());
+                        doused ? 0xfc9526 : java.awt.Color.GRAY.getRGB());
 
                 context.pose().popPose();
             }

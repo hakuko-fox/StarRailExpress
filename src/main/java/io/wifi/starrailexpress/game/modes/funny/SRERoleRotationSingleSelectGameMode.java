@@ -46,6 +46,7 @@ import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -76,7 +77,8 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
         for (ServerPlayer p : players) {
             gameComp.addRole(p, SpecialGameModeRoles.CUSTOM_PENDING, false);
             p.addEffect(new MobEffectInstance(ModEffects.SAFE_TIME, ROTATION_SAFE_TIME + 40, 10, true, false, false));
-            p.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, ROTATION_SAFE_TIME + 40, 10, true, false, false));
+            p.addEffect(
+                    new MobEffectInstance(MobEffects.INVISIBILITY, ROTATION_SAFE_TIME + 40, 10, true, false, false));
             p.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, ROTATION_SAFE_TIME + 40, 10, true, false, false));
             p.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, 40, 10, true, false, false));
             p.addEffect(new MobEffectInstance(ModEffects.CCA_FREEZED, 40, 10, true, false, false));
@@ -93,7 +95,7 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
                     int highestWeightType = PlayerRoleWeightManager.getHighestScoredType(p.getUUID());
                     if (highestWeightType == manager.getLastAssignedFactionGroup())
                         continue;
-                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType);
+                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType, ForceTeamType.ROLE_WEIGHTS);
                 }
             }
         }
@@ -138,8 +140,9 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
         }
     }
 
-    protected void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
-        if (!isInRotationPhase || draftState == null) return;
+    public void handlePlayerSelection(ServerPlayer player, int choiceIndex) {
+        if (!isInRotationPhase || draftState == null)
+            return;
         if (draftState.processSelection(player.serverLevel(), player.getUUID(), choiceIndex)) {
             broadcastSync(player.serverLevel());
         }
@@ -195,6 +198,12 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
 
     private void finishRotationPhase(ServerLevel world, SREGameWorldComponent gameComp) {
         Map<UUID, SRERole> finalRoles = new HashMap<>(draftState.selectedRoles);
+        // 无论轮选以何种路径结束（确认倒计时归零 / 总超时强制收尾 / 最后一名选完），
+        // 都向客户端广播一次“轮选已结束”的终态同步，避免 isSelecting/confirmCountdown
+        // 在客户端残留，冻结角色公布 welcome 或把轮选界面反复顶出。
+        draftState.isSelecting = false;
+        draftState.confirmCountdown = -1;
+        broadcastSync(world);
         isInRotationPhase = false;
         draftState = null;
         completeRoleSelection(world, gameComp, finalRoles);
@@ -276,14 +285,17 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
     @Override
     public GameUtils.WinStatus allowGameEnd(ServerLevel world, GameUtils.WinStatus winStatus, boolean looseEnds,
             SREGameWorldComponent gameComp) {
-        if (isInRotationPhase) return GameUtils.WinStatus.NONE;
-        
+        if (isInRotationPhase)
+            return GameUtils.WinStatus.NONE;
+
         return super.allowGameEnd(world, winStatus, looseEnds, gameComp);
     }
 
     @Override
-    public void gameStarted(ServerLevel world, SREGameWorldComponent gameComp, ArrayList<ServerPlayer> ready) {}
+    public void gameStarted(ServerLevel world, SREGameWorldComponent gameComp, ArrayList<ServerPlayer> ready) {
+    }
 
     @Override
-    public void recordPlayerStats(ServerLevel world, SREGameWorldComponent gameComp, ArrayList<ServerPlayer> ready) {}
+    public void recordPlayerStats(ServerLevel world, SREGameWorldComponent gameComp, ArrayList<ServerPlayer> ready) {
+    }
 }

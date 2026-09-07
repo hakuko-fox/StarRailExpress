@@ -58,6 +58,8 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
+import org.agmas.harpymodloader.events.ModifierAssigned;
+import org.agmas.harpymodloader.events.ModifierRemoved;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
@@ -271,6 +273,62 @@ public class RoleUtils extends MCItemsUtils {
         sendWelcomeAnnouncement(player, role);
     }
 
+    public static void addModifier(Player player, SREModifier modifier) {
+        addModifier(player, modifier, false);
+    }
+
+    public static void addModifier(Player player, SREModifier modifier, boolean noEventCall) {
+        if (player == null || modifier == null) {
+            return;
+        }
+        final var wmc = WorldModifierComponent.getInstance(player);
+        wmc.addModifier(player, modifier);
+        wmc.syncNow();
+        if (!noEventCall)
+            ModifierAssigned.EVENT.invoker().assignModifier(player, modifier);
+    }
+
+    public static void removeModifier(Player player, SREModifier modifier) {
+        removeModifier(player, modifier, false);
+    }
+
+    public static void removeModifier(Player player, SREModifier modifier, boolean noEventCall) {
+        if (player == null || modifier == null) {
+            return;
+        }
+
+        final var wmc = WorldModifierComponent.getInstance(player);
+        wmc.removeModifier(player, modifier);
+        if (!noEventCall)
+            ModifierRemoved.EVENT.invoker().removeModifier(player, modifier);
+    }
+
+    public static void removeAllModifiers(Player player) {
+        removeAllModifiers(player, false);
+    }
+
+    public static void removeAllModifiers(Player player, boolean noEventCall) {
+        if (player == null) {
+            return;
+        }
+        var wmc = WorldModifierComponent.getInstance(player);
+        Set<SREModifier> modifiers = wmc.getModifiers(player);
+
+        if (!noEventCall) {
+            for (var t : modifiers) {
+                ModifierRemoved.EVENT.invoker().removeModifier(player, t);
+            }
+        }
+        wmc.setModifiers(player, List.of());
+    }
+
+    public static void changeRoleAndSendWelcome(Player player, SRERole role) {
+        if (!(player instanceof ServerPlayer sp))
+            return;
+        changeRole(player, role, true);
+        sendWelcomeAnnouncement(sp);
+    }
+
     public static void changeRole(Player player, SRERole role) {
         changeRole(player, role, true);
     }
@@ -294,9 +352,6 @@ public class RoleUtils extends MCItemsUtils {
         // 删除旧职业
         var oldRole = gameWorldComponent.getRole(player);
         if (oldRole != null) {
-            if (record) {
-                SRE.REPLAY_MANAGER.recordPlayerRoleChange(player.getUUID(), oldRole, role);
-            }
             if (clearOldItems) {
                 var cacheItems = new ArrayList<ItemStack>();
                 player.getInventory().items.forEach(
@@ -330,6 +385,12 @@ public class RoleUtils extends MCItemsUtils {
         }
         // 给新职业
         gameWorldComponent.addRole(player, role);
+        gameWorldComponent.roleWorldComponent.syncNow();
+        if (oldRole != null) {
+            if (record) {
+                SRE.REPLAY_MANAGER.recordPlayerRoleChange(player.getUUID(), oldRole, role);
+            }
+        }
         // 触发事件
         if (player instanceof ServerPlayer sp) {
             if (!noEventCall)
@@ -637,6 +698,19 @@ public class RoleUtils extends MCItemsUtils {
         }
     }
 
+    /** Extra long-form item text, e.g. {@code ex.item.desc.noellesroles.bomb}. */
+    public static String getItemExtraDescriptionKey(Item item) {
+        return "ex.item.desc." + BuiltInRegistries.ITEM.getKey(item).toLanguageKey();
+    }
+
+    public static boolean hasItemExtraDescription(Item item) {
+        return item != null && Language.getInstance().has(getItemExtraDescriptionKey(item));
+    }
+
+    public static MutableComponent getItemExtraDescription(Item item) {
+        return Component.translatable(getItemExtraDescriptionKey(item));
+    }
+
     public static Component getTeamName(int roleType) {
         Component teamName = Component.translatable("Unknown").withStyle(ChatFormatting.GRAY);
         if (roleType == 1) {
@@ -835,6 +909,10 @@ public class RoleUtils extends MCItemsUtils {
                 break;
         }
         return result;
+    }
+
+    public static SRERole getRoleByPath(String rolePath) {
+        return TMMRoles.getRoleByPath(rolePath);
     }
 
 }

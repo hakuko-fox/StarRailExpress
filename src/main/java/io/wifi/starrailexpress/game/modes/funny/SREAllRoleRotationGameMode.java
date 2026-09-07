@@ -44,6 +44,9 @@ import org.agmas.harpymodloader.events.OnGamePlayerRolesConfirm;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
+import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 
 import java.util.*;
 
@@ -246,16 +249,18 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 unassignedPlayers.add(player);
 
         // 分配 ForcePlayerTeam（陣營卡）：盡量配發符合陣營的職業，無法配發則退回卡片
-        for (Map.Entry<UUID, Integer> entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
+        for (Map.Entry<UUID, ForceTeamInfo> entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
             UUID uid = entry.getKey();
             ServerPlayer selected = unassignedPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst()
                     .orElse(null);
             if (selected == null)
                 continue;
-            int roleType = entry.getValue();
+            ForceTeamInfo forceTeam = entry.getValue();
+            int roleType = forceTeam.roleType();
             RoleWeightedUtil selector = roleSelectors.get(roleType);
             if (selector == null) {
-                refundFactionCard(selected, roleType);
+                if (forceTeam.type() == ForceTeamType.CARD)
+                    refundFactionCard(selected, roleType);
                 continue;
             }
             RoleInstance ri = selector.selectRandomKeyBasedOnWeightsAndRemoved();
@@ -264,7 +269,8 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 roleAssignments.put(selected, ri.role());
                 unassignedPlayers.remove(selected);
             } else {
-                refundFactionCard(selected, roleType);
+                if (forceTeam.type() == ForceTeamType.CARD)
+                    refundFactionCard(selected, roleType);
             }
         }
 
@@ -349,7 +355,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 && !SREDisableManager.isRoleDisabled(role)
                 // InitModRolesMax sets this to zero when the current map does
                 // not support a map-specific role.
-                && (!role.isSpecialMapRole()
+                && (role.getSpecialMapRole() == MapSpecialFeatures.ALL
                         || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 0) > 0);
     }
 

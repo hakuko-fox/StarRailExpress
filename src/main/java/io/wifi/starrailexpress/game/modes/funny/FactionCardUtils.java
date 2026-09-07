@@ -7,6 +7,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 
 import java.util.List;
 
@@ -48,9 +50,9 @@ public final class FactionCardUtils {
      */
     public static void refundAll(List<ServerPlayer> players) {
         for (ServerPlayer p : players) {
-            Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(p.getUUID());
-            if (forcedType != null) {
-                refund(p, forcedType);
+            ForceTeamInfo forced = PlayerRoleWeightManager.ForcePlayerTeam.get(p.getUUID());
+            if (forced != null && forced.type() == ForceTeamType.CARD) {
+                refund(p, forced.roleType());
             }
         }
     }

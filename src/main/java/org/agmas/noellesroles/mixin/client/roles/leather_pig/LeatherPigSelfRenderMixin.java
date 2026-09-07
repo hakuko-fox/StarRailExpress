@@ -20,8 +20,10 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
+import org.agmas.noellesroles.client.AllayDisguiseRenderer;
 import org.agmas.noellesroles.client.LeatherPigDisguiseRenderer;
 import org.agmas.noellesroles.client.RabbitDisguiseRenderer;
+import org.agmas.noellesroles.client.TomatoHeadDisguiseRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -55,7 +57,9 @@ public abstract class LeatherPigSelfRenderMixin {
             lastCacheTime = now;
             cacheResult = camera.getEntity() instanceof AbstractClientPlayer player
                     && (LeatherPigDisguiseRenderer.shouldDisguise(player)
-                            || RabbitDisguiseRenderer.shouldDisguise(player));
+                            || RabbitDisguiseRenderer.shouldDisguise(player)
+                            || AllayDisguiseRenderer.shouldDisguise(player)
+                            || TomatoHeadDisguiseRenderer.shouldDisguise(player));
         }
         return cacheResult;
     }

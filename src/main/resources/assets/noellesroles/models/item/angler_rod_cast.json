@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld_rod",
+  "textures": {
+    "layer0": "noellesroles:item/angler_rod_cast"
+  }
+}

@@ -26,6 +26,8 @@ import org.agmas.noellesroles.content.entity.SaltedFishBodyEntity;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
 import org.agmas.noellesroles.role_data.innocence.AgentRoleData;
 import org.agmas.noellesroles.role_data.innocence.LeatherPigRoleData;
+import org.agmas.noellesroles.role_data.innocence.TomatoHeadRoleData;
+import org.agmas.noellesroles.role_data.neutral.PhantomSpiritRoleData;
 import org.agmas.noellesroles.role_data.innocence.AwesomeRoleData;
 import org.agmas.noellesroles.role_data.innocence.FoolRoleData;
 import org.agmas.noellesroles.role_data.innocence.MonitorRoleData;
@@ -33,7 +35,9 @@ import org.agmas.noellesroles.role_data.killer.ExecutionerRoleData;
 import org.agmas.noellesroles.role_data.killer.InsaneKillerRoleData;
 import org.agmas.noellesroles.role_data.killer.ManipulatorRoleData;
 import org.agmas.noellesroles.role_data.neutral.AdmirerRoleData;
+import org.agmas.noellesroles.role_data.neutral.AmonRoleData;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
+import org.agmas.noellesroles.role_data.neutral.LicensedVillainRoleData;
 import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role_data.neutral.GodfatherRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
@@ -46,6 +50,7 @@ import org.agmas.noellesroles.role_data.special.BetterVigilanteRoleData;
 import org.agmas.noellesroles.role_data.vigilante.GhostEyeRoleData;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -79,7 +84,7 @@ import net.minecraft.world.entity.player.Player;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.constants.SERoles;
 import pro.fazeclan.river.stupid_express.modifier.lovers.cca.LoversComponent;
-import pro.fazeclan.river.stupid_express.role.arsonist.cca.DousedPlayerComponent;
+import pro.fazeclan.river.stupid_express.role.arsonist.ArsonistRoleData;
 
 /**
  * 高亮获取顺序：
@@ -222,6 +227,36 @@ public class RoleInstinctRegister {
             return TrueFalseAndCustomResult.pass();
         });
 
+        // 无我：本能透视无法看到其他玩家，仅能透视无妄（黄框）
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.ANATMAN_ID,
+                (client, self, target, hasInstinct) -> {
+                    if (!hasInstinct)
+                        return TrueFalseAndCustomResult.pass();
+                    if (target instanceof Player targetPlayer) {
+                        if (SREClient.gameComponent != null
+                                && SREClient.gameComponent.isRole(targetPlayer, ModRoles.ASATYA)) {
+                            return TrueFalseAndCustomResult.custom(Color.YELLOW.getRGB());
+                        }
+                        return TrueFalseAndCustomResult.disallow();
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
+
+        // 无妄：本能透视无法看到其他玩家，仅能透视无我（黄框）
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.ASATYA_ID,
+                (client, self, target, hasInstinct) -> {
+                    if (!hasInstinct)
+                        return TrueFalseAndCustomResult.pass();
+                    if (target instanceof Player targetPlayer) {
+                        if (SREClient.gameComponent != null
+                                && SREClient.gameComponent.isRole(targetPlayer, ModRoles.ANATMAN)) {
+                            return TrueFalseAndCustomResult.custom(Color.YELLOW.getRGB());
+                        }
+                        return TrueFalseAndCustomResult.disallow();
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
+
         // 疫使：透视所有玩家，被感染者显示橙色边框
         RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.INFECTED_ID,
                 (client, self, target, hasInstinct) -> {
@@ -281,8 +316,9 @@ public class RoleInstinctRegister {
                     }
                     if (targetPlayer.distanceToSqr(self) > 40 * 40)
                         return TrueFalseAndCustomResult.disallow();
-                    var douse = DousedPlayerComponent.KEY.get(targetPlayer);
-                    return douse.getDoused() ? TrueFalseAndCustomResult.custom(SERoles.ARSONIST.color())
+                    ArsonistRoleData arsonist = ArsonistRoleData.of(self);
+                    boolean doused = arsonist != null && arsonist.isDoused(targetPlayer.getUUID());
+                    return doused ? TrueFalseAndCustomResult.custom(SERoles.ARSONIST.color())
                             : TrueFalseAndCustomResult.custom(Color.GRAY.getRGB());
                 });
         // 推理者：无法透视玩家
@@ -292,6 +328,22 @@ public class RoleInstinctRegister {
                         return TrueFalseAndCustomResult.disallow();
                     }
                     return TrueFalseAndCustomResult.pass();
+                });
+
+        // 阿蒙：开启直觉后透视所有被时之虫标记的宿主（潜伏中与已成熟）
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.AMON_ID,
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (!isInstinctEnabled)
+                        return TrueFalseAndCustomResult.pass();
+                    if (!(target instanceof Player targetPlayer) || !GameUtils.isPlayerAliveAndSurvival(targetPlayer))
+                        return TrueFalseAndCustomResult.pass();
+                    AmonRoleData amon = RoleData.getNullable(AmonRoleData.class, viewer);
+                    if (amon == null)
+                        return TrueFalseAndCustomResult.disallow();
+                    if (amon.isClientMarked(targetPlayer.getUUID())) {
+                        return TrueFalseAndCustomResult.custom(ModRoles.AMON.color());
+                    }
+                    return TrueFalseAndCustomResult.disallow();
                 });
 
         // 布谷鸟：无法透视玩家；可以透视自己的蛋
@@ -599,6 +651,21 @@ public class RoleInstinctRegister {
                     return TrueFalseAndCustomResult.custom(Color.RED.getRGB());
                 });
 
+        // 幻灵：附身灵视期间高亮周围玩家
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.PHANTOM_SPIRIT_ID,
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (!(target instanceof Player targetPlayer))
+                        return TrueFalseAndCustomResult.pass();
+                    if (!PhantomSpiritRoleData.isRevealActiveFor(viewer))
+                        return TrueFalseAndCustomResult.pass();
+                    if (targetPlayer == viewer)
+                        return TrueFalseAndCustomResult.pass();
+                    if (targetPlayer.distanceToSqr(viewer) > PhantomSpiritRoleData.REVEAL_RANGE
+                            * PhantomSpiritRoleData.REVEAL_RANGE)
+                        return TrueFalseAndCustomResult.pass();
+                    return TrueFalseAndCustomResult.custom(ModRoles.PHANTOM_SPIRIT.color());
+                });
+
         // 鬼眼·杨间：扫描期间白色轮廓
         RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.GHOST_EYE_ID,
                 (client, viewer, target, isInstinctEnabled) -> {
@@ -669,6 +736,32 @@ public class RoleInstinctRegister {
                             || !comp.hereticTarget.equals(targetPlayer.getUUID()))
                         return TrueFalseAndCustomResult.pass();
                     return TrueFalseAndCustomResult.custom(0xF2C56A);
+                });
+
+        // 黑警：未触发时看所有人浅黑；黑警时刻触发后，目标阵营玩家染红，其余仍为黑警颜色
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(BounsRoles.LICENSED_VILLAIN.identifier(),
+                (client, viewer, target, hasInstinct) -> {
+                    if (!hasInstinct)
+                        return TrueFalseAndCustomResult.pass();
+                    if (!(target instanceof Player targetPlayer))
+                        return TrueFalseAndCustomResult.pass();
+                    if (!SREClient.gameComponent.isRole(viewer, BounsRoles.LICENSED_VILLAIN))
+                        return TrueFalseAndCustomResult.pass();
+                    // 无法被透视的职业不显示（小透明/秉烛人/捣蛋鬼/赌徒）
+                    if (isTargetInvisibleToInstinct(targetPlayer))
+                        return TrueFalseAndCustomResult.disallow();
+                    LicensedVillainRoleData data = RoleData.getNullable(LicensedVillainRoleData.class, viewer);
+                    if (data == null)
+                        return TrueFalseAndCustomResult.pass();
+                    if (data.momentTriggered) {
+                        SRERole targetRole = SREClient.gameComponent.getRole(targetPlayer);
+                        if (targetRole != null
+                                && data.isTargetRole(targetRole))
+                            return TrueFalseAndCustomResult.custom(new Color(0xC1, 0x38, 0x38).getRGB());
+                        return TrueFalseAndCustomResult.custom(LicensedVillainRoleData.LICENSED_VILLAIN_COLOR);
+                    }
+                    // 未触发黑警时刻：看所有人为黑警颜色（浅黑）
+                    return TrueFalseAndCustomResult.custom(LicensedVillainRoleData.LICENSED_VILLAIN_COLOR);
                 });
     }
 
@@ -808,6 +901,31 @@ public class RoleInstinctRegister {
                         return TrueFalseAndCustomResult.disallow();
                     return TrueFalseAndCustomResult.pass();
                 });
+
+        // 特码头（西红柿形态）：杀手无法透视
+        RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(ModRoles.TOMATO_HEAD_ID,
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (!(target instanceof Player targetPlayer))
+                        return TrueFalseAndCustomResult.pass();
+                    if (TomatoHeadRoleData.isTomatoForm(targetPlayer)
+                            && SREClient.gameComponent != null
+                            && isKillerTeam(SREClient.gameComponent.getRole(viewer))
+                            && SREClient.isPlayerAliveAndInSurvival())
+                        return TrueFalseAndCustomResult.disallow();
+                    return TrueFalseAndCustomResult.pass();
+                });
+
+        // 幻灵：杀手无法透视未骑乘的幻灵，可以透视骑在别人头上的幻灵
+        RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(ModRoles.PHANTOM_SPIRIT_ID,
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (!(target instanceof Player targetPlayer))
+                        return TrueFalseAndCustomResult.pass();
+                    if (SREClient.gameComponent != null && isKillerTeam(SREClient.gameComponent.getRole(viewer))
+                            && SREClient.isPlayerAliveAndInSurvival()
+                            && !PhantomSpiritRoleData.isRidingPlayer(targetPlayer))
+                        return TrueFalseAndCustomResult.disallow();
+                    return TrueFalseAndCustomResult.pass();
+                });
     }
 
     // ---------- 通用兜底逻辑 ----------
@@ -817,8 +935,18 @@ public class RoleInstinctRegister {
                 return TrueFalseAndCustomResult.pass();
             if (target instanceof SaltedFishBodyEntity)
                 return TrueFalseAndCustomResult.disallow();
+            // 幻灵附身灵视：幻灵与宿主都能透视周围玩家
+            if (target instanceof Player revealTarget && revealTarget != self
+                    && PhantomSpiritRoleData.isRevealActiveFor(self)
+                    && revealTarget.distanceToSqr(self) <= PhantomSpiritRoleData.REVEAL_RANGE
+                            * PhantomSpiritRoleData.REVEAL_RANGE) {
+                return TrueFalseAndCustomResult.custom(ModRoles.PHANTOM_SPIRIT.color());
+            }
             // 通用隐身与不可透视保护
             if (target instanceof Player targetPlayer && isTargetInvisibleToInstinct(targetPlayer))
+                return TrueFalseAndCustomResult.disallow();
+            if (target instanceof Player tomatoTarget && TomatoHeadRoleData.isTomatoForm(tomatoTarget)
+                    && isKillerTeam(SREClient.gameComponent != null ? SREClient.gameComponent.getRole(self) : null))
                 return TrueFalseAndCustomResult.disallow();
             // 低 SAN 非杀手玩家看到冤魂高亮（全局效果）
             if (target instanceof Player targetPlayer && targetPlayer != self) {

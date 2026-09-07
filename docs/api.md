@@ -74,8 +74,8 @@
   **Do NOT import Wathe libraries** — they will cause crashes (uninitialized state). 比如 `GameFunctions`，不要用他！请使用 `GameUtils` 代替！
 - 网络同步压力在人少时几乎不可见，但在 16 人以上的服务器上会非常明显，请遵循"尽量不同步"原则。  
   Network sync overhead is negligible with few players but significant on servers with 16+ players. Minimize unnecessary sync.
-- 尽量使用 `RoleComponent` 将存储和同步逻辑分离，避免污染玩家 NBT。  
-  Prefer `RoleComponent` to separate storage/sync logic and avoid polluting player NBT.
+- 尽量使用 `RoleData`（`.setRoleData`）保存职业状态；CCA 只留给世界/全局或必须挂在当前职业以外玩家身上的状态。  
+  Prefer `RoleData` for role state. Keep CCA for world/global data, or status that must live on a player who is not currently that role.
 
 ---
 
@@ -126,7 +126,8 @@ SRERole setCanSeeTeammateKiller(boolean canSeeKiller)    // 是否可以看到�
 SRERole setOccupiedRoleCount(int count)                  // 占用角色池数量（默认 1）
 SRERole setMax(int count)                                // 设置最大同时存在数量
 SRERole setAutoReset(boolean autoReset)                  // 游戏结束是否自动重置
-SRERole setComponentKey(ComponentKey<? extends RoleComponent> key) // 关联 CCA 组件
+SRERole setRoleData(Function<RoleDataContext, RoleData> func) // 绑定职业数据（默认，优先于 CCA）
+SRERole setComponentKey(ComponentKey<? extends RoleComponent> key) // 关联 CCA（仅跨玩家/全局状态）
 SRERole setCanAutoAddMoney(boolean bl)                   // 是否启用自动加钱（被动收入）
 SRERole setCanHavePassiveIncome(boolean bl)              // 是否启用被动收入
 SRERole addChild(Consumer<LimitedInventoryScreen> addChild) // 添加 HUD 子元素
@@ -192,6 +193,15 @@ List<ItemStack> getDefaultItems()
 // 获取角色商店条目列表
 List<ShopEntry> getShopEntries()
 
+// Psycho 模式可使用的武器（按优先级排序）
+List<Item> getPsychoSupportedWeapons(Player player)
+
+// 自定义 Psycho 无兼容武器时的发放逻辑
+boolean onPsychoGiveItem(Player player, SREPlayerPsychoComponent component)
+
+// Psycho 结束时是否回收本次新发放的兼容武器（默认 true；职业武器覆写为 false）
+boolean shouldClearGrantedPsychoWeapon(Player player, Item weapon)
+
 // 背包界面 init() 开头（仅客户端调用；由 LimitedInventoryScreen 触发）
 void onInventoryScreenInit(LimitedInventoryScreen screen)
 
@@ -201,6 +211,10 @@ void onInventoryScreenInitTail(LimitedInventoryScreen screen)
 // 背包界面 render() 开头，每帧（仅客户端调用）
 void onInventoryScreenRender(LimitedInventoryScreen screen, GuiGraphics graphics, int mouseX, int mouseY, float delta)
 ```
+
+Psycho 开始时会先搜索 `getPsychoSupportedWeapons` 返回的所有武器：主手已持有则保持，
+快捷栏中已存在时直接切槽，副手或背包中已存在时会换入当前主手槽；只有全部不存在时才调用 `onPsychoGiveItem`。
+默认实现仍兼容旧的 `getPsychoItem()` 单武器覆写。职业武器可覆写 `shouldClearGrantedPsychoWeapon` 以免结束时被回收。
 
 #### 枚举 MoodType
 
@@ -323,7 +337,7 @@ public static final SRERole MY_ROLE = TMMRoles.registerRole(
         Integer.MAX_VALUE,  // 无限冲刺
         true        // 隐藏计分板
     )
-    .setComponentKey(ModComponents.MY_ROLE)  // 关联组件（可空）
+    .setRoleData(MyRoleData::new)
     .setCanSeeCoin(true)
     .setOccupiedRoleCount(2)
 );
@@ -331,8 +345,11 @@ public static final SRERole MY_ROLE = TMMRoles.registerRole(
 
 #### 注册角色组件键 / Register Role Component Key
 
+职业状态请用 `.setRoleData`，不要再 `TMMRoles.addRoleComponents` 给每个职业挂一份 CCA。  
+`addRoleComponents` 只用于必须在所有玩家上 tick/同步的全局玩家组件（心情、商店、中毒等）。
+
 ```java
-TMMRoles.addRoleComponents(ModComponents.MY_COMPONENT);
+TMMRoles.addRoleComponents(ModComponents.MY_GLOBAL_COMPONENT); // 仅全局玩家组件
 ```
 
 ---
@@ -509,9 +526,15 @@ RoleData.getOptional(类.class, 玩家);
 
 这也是为什么可以不用写 `init` 和 `clear` 来初始化的原因。
 
+**不要**把会在中途换职业、却还要保留的状态放进 RoleData（例如傀儡师操控假人时临时变成杀手）。那种状态继续用玩家 CCA。
+
+跨玩家状态（任何人身上的感染、被操纵、被浇油若记在受害者身上）也不适合 RoleData；能改成「记在技能持有者的 RoleData 里再按 UUID 查找」的，优先那么做（纵火犯浇油即如此）。
+
 ---
 
 ## CCA 组件 / CCA Components
+
+CCA 用于世界/对局、以及必须挂在「当前职业以外」的玩家状态。职业私有状态用上一节的 `RoleData`。
 
 ### RoleComponent — 角色组件接口
 
@@ -846,12 +869,25 @@ ChargeableItemRegistry.onFullyCharged(stack, player);
 | 类 | 包 | 说明 |
 |---|---|---|
 | `SkinableItem` | `io.wifi.starrailexpress.contents.item` | 抽象基类，支持皮肤系统的物品 |
-| `KnifeItem` | `io.wifi.starrailexpress.contents.item` | 近战刀（继承 `SkinableItem`），蓄力刺杀 |
+| `KnifeItem` | `io.wifi.starrailexpress.content.item` | 近战刀（继承 `SkinableItem`），蓄力刺杀；子类可覆写蓄力钩子 |
 | `RevolverItem` | `io.wifi.starrailexpress.contents.item` | 左轮手枪（继承 `SkinableItem`），有耐久度 |
 | `BatItem` | `io.wifi.starrailexpress.contents.item` | 球棒（继承 `SkinableItem`） |
 | `GrenadeItem` | `io.wifi.starrailexpress.contents.item` | 手雷（继承 `SkinableItem`），蓄力投掷 |
 | `DefenseItem` | `io.wifi.starrailexpress.contents.item` | 防具/防御物品（继承 `Item`），限制使用职业 |
 | `NoteItem` | `io.wifi.starrailexpress.contents.item` | 便签（继承 `Item` + `AdventureUsable`） |
+
+#### KnifeItem — 蓄力钩子
+
+`KnifeItem` 右键会 `startUsingItem`，松开走 `releaseUsing`。子类可覆写：
+
+```java
+boolean canStartKnifeCharge(Level world, Player user, InteractionHand hand, ItemStack stack)
+void onKnifeChargeStarted(Level world, Player user, InteractionHand hand, ItemStack stack)
+boolean onKnifeChargeReleased(ItemStack stack, Level world, Player attacker, int usedTicks) // true=已处理，不再默认刺杀
+int getMinKnifeChargeTicks(ItemStack stack, LivingEntity user)
+```
+
+蓄满 `getUseDuration` 时会走 `finishUsingItem` → `releaseUsing`。
 
 #### DefenseItem — 防御物品
 

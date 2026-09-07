@@ -2,6 +2,7 @@ package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -15,6 +16,8 @@ import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 
 import java.util.ArrayList;
@@ -49,7 +52,7 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
                 // GameInitializeEvent already resolves map-specific roles into ROLE_MAX.
                 // Respect that result here too, otherwise flagged modes can draw a role
                 // on a map where its special-map category is disabled (for example Zora).
-                .filter(role -> !role.isSpecialMapRole()
+                .filter(role -> role.getSpecialMapRole() == MapSpecialFeatures.ALL
                         || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 0) > 0)
                 // Companion roles are inserted by expandWithCompanionRoles; drawing them
                 // directly can split a required pair (for example Luna/Yoru).
@@ -68,16 +71,17 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
         List<ServerPlayer> assignedPlayers = new ArrayList<>();
         List<SRERole> assignedRoles = new ArrayList<>();
         for (ServerPlayer player : shuffled) {
-            Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
-            if (forcedType == null) {
+            ForceTeamInfo forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+            if (forced == null) {
                 remaining.add(player);
                 continue;
             }
             SRERole match = roles.stream()
-                    .filter(role -> FactionCardUtils.roleMatchesCard(role, forcedType))
+                    .filter(role -> FactionCardUtils.roleMatchesCard(role, forced.roleType()))
                     .findFirst().orElse(null);
             if (match == null) {
-                FactionCardUtils.refund(player, forcedType);
+                if (forced.type() == ForceTeamType.CARD)
+                    FactionCardUtils.refund(player, forced.roleType());
                 remaining.add(player);
                 continue;
             }

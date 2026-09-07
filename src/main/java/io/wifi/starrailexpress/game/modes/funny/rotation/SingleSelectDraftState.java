@@ -22,6 +22,8 @@ import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
@@ -168,9 +170,9 @@ public class SingleSelectDraftState {
         Map<Integer, List<UUID>> byType = new HashMap<>();
         for (Map.Entry<UUID, Integer> entry : playerOrder.entrySet()) {
             UUID uuid = entry.getKey();
-            Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
-            if (forcedType != null) {
-                byType.computeIfAbsent(forcedType, k -> new ArrayList<>()).add(uuid);
+            ForceTeamInfo forced = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
+            if (forced != null) {
+                byType.computeIfAbsent(forced.roleType(), k -> new ArrayList<>()).add(uuid);
             }
         }
         for (Map.Entry<Integer, List<UUID>> entry : byType.entrySet()) {
@@ -180,10 +182,10 @@ public class SingleSelectDraftState {
             cardUsedCount.put(type, Math.min(uuids.size(), max));
             for (int i = max; i < uuids.size(); i++) {
                 UUID uid = uuids.get(i);
-                PlayerRoleWeightManager.ForcePlayerTeam.remove(uid);
+                ForceTeamInfo removed = PlayerRoleWeightManager.ForcePlayerTeam.remove(uid);
                 // 超過同陣營卡片上限，退還卡片（使用確切卡片型別）
                 ServerPlayer sp = world.getServer().getPlayerList().getPlayer(uid);
-                if (sp != null) {
+                if (sp != null && removed != null && removed.type() == ForceTeamType.CARD) {
                     FactionCardType cardType = FactionCardType.fromRoleType(type);
                     if (cardType != FactionCardType.NONE) {
                         ProgressionDataManager.addFactionCard(sp, cardType, 1);
@@ -196,10 +198,9 @@ public class SingleSelectDraftState {
     }
 
     private int getPlayerCardType(UUID uuid) {
-        Integer forcedType = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
-        return forcedType != null ? forcedType : -1;
+        ForceTeamInfo forced = PlayerRoleWeightManager.ForcePlayerTeam.get(uuid);
+        return forced != null ? forced.roleType() : -1;
     }
-
     // ---------- 玩家顺序 ----------
     public void assignRotationOrder() {
         List<UUID> sortedPlayers = new ArrayList<>(playerOrder.keySet());
@@ -373,9 +374,9 @@ public class SingleSelectDraftState {
 
             if (priorityRoles.isEmpty()) {
                 // 池中已無符合陣營的職業可作為候選，退還卡片（僅退一次）並移除強制
-                PlayerRoleWeightManager.ForcePlayerTeam.remove(playerUuid);
+                ForceTeamInfo removed = PlayerRoleWeightManager.ForcePlayerTeam.remove(playerUuid);
                 ServerPlayer sp = world != null ? world.getServer().getPlayerList().getPlayer(playerUuid) : null;
-                if (sp != null) {
+                if (sp != null && removed != null && removed.type() == ForceTeamType.CARD) {
                     FactionCardType ct = FactionCardType.fromRoleType(cardType);
                     if (ct != FactionCardType.NONE) {
                         ProgressionDataManager.addFactionCard(sp, ct, 1);

@@ -99,8 +99,8 @@ public class Noellesroles implements ModInitializer {
      *         - 3: Neturals for killer
      *         - 4: Killer
      */
-    public static int getRoleType$Int(SRERole role) {
-        return PlayerRoleWeightManager.getRoleType(role);
+    public static int getRoleType$forSorting(SRERole role) {
+        return PlayerRoleWeightManager.getRoleTypeForSorting(role);
     }
 
     public static List<SRERole> getAllRolesSorted() {
@@ -131,8 +131,8 @@ public class Noellesroles implements ModInitializer {
                     return -1;
                 }
             }
-            int rt_a = getRoleType$Int(a);
-            int rt_b = getRoleType$Int(b);
+            int rt_a = getRoleType$forSorting(a);
+            int rt_b = getRoleType$forSorting(b);
             if (a != null && b != null) {
                 if (rt_a > rt_b)
                     return killerFirst ? -1 : 1;
@@ -176,6 +176,7 @@ public class Noellesroles implements ModInitializer {
     public void onInitialize() {
         // 时间回溯 API（含游戏开始/结束自动取消回溯的事件钩子）需在启动时注册
         TimeRewind.initialize();
+        io.wifi.starrailexpress.register.PayloadBootstrap.registerAll();
         ModItems.init();
         RightClickBlockManager.init();
         org.agmas.noellesroles.content.item.ZeroOneFiveGunItem.register();
@@ -215,9 +216,6 @@ public class Noellesroles implements ModInitializer {
         // 注册预设命令
         PresetCommand.register();
 
-        // 注册网络包类型
-        ModPackets.registerPackets();
-
         // 注册网络处理器
         ModPacketsReciever.registerPackets();
         // 初始化HSR组件
@@ -241,6 +239,8 @@ public class Noellesroles implements ModInitializer {
 
         // 注册鹅鸭杀模式（职业 / 游戏模式 / 破坏技能）
         net.exmo.sre.gooseduck.GooseDuckMod.init();
+        StupidExpress.init();
+        Harpymodloader.init();
     }
 
     /**

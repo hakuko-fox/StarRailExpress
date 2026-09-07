@@ -61,6 +61,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleAssigner;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.CustomWinnerClass;
@@ -152,7 +153,7 @@ public class SREMurderGameMode extends GameMode {
             }
         }
 
-        gameWorldComponent.syncRoles();
+        gameWorldComponent.syncRolesNow();
         // 同步职业
 
         for (ServerPlayer player : players) {
@@ -221,7 +222,7 @@ public class SREMurderGameMode extends GameMode {
             SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(serverWorld);
-        worldModifierComponent.getModifiers().clear();
+        worldModifierComponent.clearAll();
 
         // 使用临时映射存储要添加的修饰符，避免在遍历过程中修改数据结构
         Map<UUID, HashSet<SREModifier>> tempModifierAssignments = new HashMap<>();
@@ -336,7 +337,7 @@ public class SREMurderGameMode extends GameMode {
             }
         }
         // 等所有修饰符都添加完成后，再同步整个组件
-        worldModifierComponent.sync();
+        worldModifierComponent.syncNow();
 
         if (modifierRotation.isEnabled()) {
             Set<SREModifier> assignedThisRound = tempModifierAssignments.values().stream()
@@ -655,7 +656,7 @@ public class SREMurderGameMode extends GameMode {
                     int highestWeightType = PlayerRoleWeightManager.getHighestScoredType(p.getUUID());
                     if (highestWeightType == manager.getLastAssignedFactionGroup())
                         continue;
-                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType);
+                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType, ForceTeamType.ROLE_WEIGHTS);
                 }
             }
         }
@@ -700,7 +701,8 @@ public class SREMurderGameMode extends GameMode {
                             .findFirst().orElse(null);
                     if (selectedPlayer == null)
                         continue;
-                    int roleType = entry.getValue();
+                    var forceTeamInfo = entry.getValue();
+                    int roleType = forceTeamInfo.roleType();
                     var roleSelector = roleSelectors.get(roleType);
                     if (roleSelector == null)
                         continue;
@@ -723,10 +725,17 @@ public class SREMurderGameMode extends GameMode {
                                 roleType);
                         FactionCardType cardType = FactionCardType.fromRoleType(roleType);
                         if (cardType != FactionCardType.NONE) {
-                            ProgressionDataManager.addFactionCard((ServerPlayer) selectedPlayer, cardType, 1);
-                            BroadcastCommand.BroadcastMessage(selectedPlayer,
-                                    Component.translatable("message.sre.pass.faction.assign_failed")
-                                            .withStyle(ChatFormatting.RED));
+                            if (forceTeamInfo.type() == ForceTeamType.CARD) {
+
+                                ProgressionDataManager.addFactionCard((ServerPlayer) selectedPlayer, cardType, 1);
+                                BroadcastCommand.BroadcastMessage(selectedPlayer,
+                                        Component.translatable("message.sre.pass.faction.assign_failed")
+                                                .withStyle(ChatFormatting.RED));
+                            } else {
+                                BroadcastCommand.BroadcastMessage(selectedPlayer,
+                                        Component.translatable("message.sre.force_team.assign_failed")
+                                                .withStyle(ChatFormatting.RED));
+                            }
                         }
                     }
                 }

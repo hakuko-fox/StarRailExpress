@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.event.ShouldRewardKillerTime;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
@@ -29,6 +30,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import org.agmas.noellesroles.role_data.innocence.GhostRoleData;
+import org.agmas.noellesroles.role_data.neutral.AnatmanRoleData;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
 import org.agmas.noellesroles.role_data.neutral.CuckooRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
@@ -205,6 +207,27 @@ public class CustomWinnerClass {
             return customRoleWin;
         }
 
+        // 无我与无妄联合独立胜利：乘客/时间/杀手胜利结算时两人均存活，优先级高于年兽
+        if (winStatus.equals(WinStatus.PASSENGERS) || winStatus.equals(WinStatus.KILLERS)
+                || winStatus.equals(WinStatus.TIME)) {
+            boolean hasAnatmanAlive = false;
+            boolean hasAsatyaAlive = false;
+            for (var player : serverLevel.players()) {
+                if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                    if (gameComponent.isRole(player, ModRoles.ANATMAN)) {
+                        hasAnatmanAlive = true;
+                    }
+                    if (gameComponent.isRole(player, ModRoles.ASATYA)) {
+                        hasAsatyaAlive = true;
+                    }
+                }
+            }
+            if (hasAnatmanAlive && hasAsatyaAlive) {
+                RoleUtils.customWinnerWin(serverLevel, AnatmanRoleData.JOINT_WINNER_ID, ModRoles.ANATMAN.color());
+                return WinStatus.CUSTOM;
+            }
+        }
+
         if (winStatus.equals(WinStatus.TIME) || winStatus.equals(WinStatus.PASSENGERS)
                 || winStatus.equals(WinStatus.LOOSE_END)) {
             var players = serverLevel.players();
@@ -233,6 +256,20 @@ public class CustomWinnerClass {
     }
 
     public static void registerEvents() {
+        // 无我与无妄联合独立胜利：CustomWinnerID = "anatman_asatya" 不是任何玩家的职业路径，
+        // 默认结算（按职业路径匹配 CustomWinnerID）会让两个职业都判负。
+        // 这里通过 AllowPlayerWin 事件，在联合独立胜利时让无我与无妄职业的玩家都算作获胜。
+        AllowPlayerWin.EVENT.register((world, player, playerRole, winStatus, roundEnd, gameComponent) -> {
+            if ((winStatus == WinStatus.CUSTOM || winStatus == WinStatus.CUSTOM_COMPONENT)
+                    && roundEnd != null
+                    && AnatmanRoleData.JOINT_WINNER_ID != null
+                    && AnatmanRoleData.JOINT_WINNER_ID.equals(roundEnd.CustomWinnerID)
+                    && (gameComponent.isRole(player, ModRoles.ANATMAN)
+                            || gameComponent.isRole(player, ModRoles.ASATYA))) {
+                return TrueFalseResult.TRUE;
+            }
+            return TrueFalseResult.PASS;
+        });
         // 如果小透明/芙兰已经通知过了，那就杀人不再增加时间。
         ShouldRewardKillerTime.EVENT.register((victim, killer, deathReason, forceKill, spawnBody) -> {
             for (final var p : victim.level().players()) {

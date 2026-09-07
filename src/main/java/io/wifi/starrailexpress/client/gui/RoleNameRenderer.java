@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.SREClientUtils;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.event.AllowNameRender;
@@ -54,9 +55,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,7 +66,6 @@ public class RoleNameRenderer {
     private static Component roleText1;
     // private static float nametagAlpha = 0f;
     // private static float noteAlpha = 0f;
-    public static Map<UUID, String> displayTags = new HashMap<>();
 
     public static float getPlayerRange(Player player) {
         if (player.getMainHandItem().is(Items.SPYGLASS)) {
@@ -402,7 +400,6 @@ public class RoleNameRenderer {
                 return playerInfo.getTabListDisplayName();
             }
         }
-
         return target.getDisplayName();
     }
 
@@ -429,7 +426,7 @@ public class RoleNameRenderer {
             return storedNameLines;
         }
 
-        String title = displayTags.get(playerId);
+        String title = ClientSkinCache.displayTags.get(playerId);
         if (title == null || title.isBlank()) {
             return new PlayerNameLines(null, fallbackName);
         }

@@ -46,6 +46,7 @@ import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 
@@ -109,7 +110,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
                     int highestWeightType = PlayerRoleWeightManager.getHighestScoredType(p.getUUID());
                     if (highestWeightType == manager.getLastAssignedFactionGroup())
                         continue;
-                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType);
+                    PlayerRoleWeightManager.forceTeam(p.getUUID(), highestWeightType, ForceTeamType.ROLE_WEIGHTS);
                 }
             }
         }
@@ -201,6 +202,12 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
 
     private void finishRotationPhase(ServerLevel world, SREGameWorldComponent gameComp) {
         Map<UUID, SRERole> finalRoles = new HashMap<>(draftState.selectedRoles);
+        // 无论轮选以何种路径结束（确认倒计时归零 / 总超时强制收尾 / 最后一名选完），
+        // 都向客户端广播一次“轮选已结束”的终态同步，避免 isSelecting/confirmCountdown
+        // 在客户端残留，冻结角色公布 welcome 或把轮选界面反复顶出。
+        draftState.isSelecting = false;
+        draftState.confirmCountdown = -1;
+        broadcastSync(world);
         isInRotationPhase = false;
         draftState = null;
         completeRoleSelection(world, gameComp, finalRoles);
@@ -231,7 +238,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
                         true);
             }
         }
-        roleComp.sync();
+        roleComp.syncNow();
         List<ServerPlayer> alive = world.getPlayers(GameUtils::isPlayerAliveAndSurvivalIgnoreShitSplit);
         for (ServerPlayer p : alive) {
             var role = gameComp.getRole(p);
@@ -283,7 +290,7 @@ public class SRERoleRotationGameMode extends SREMurderGameMode {
             SREGameWorldComponent gameComp) {
         if (isInRotationPhase)
             return GameUtils.WinStatus.NONE;
-       
+
         return super.allowGameEnd(world, winStatus, looseEnds, gameComp);
     }
 

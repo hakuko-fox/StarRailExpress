@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
@@ -52,6 +53,8 @@ public class NameTagInventoryComponent implements RoleComponent {
     private static final Gson GSON = new GsonBuilder().create();
     private static final String DATABASE_SYNC_KEY = "nametags";
     private static final long DATABASE_SYNC_FLUSH_TIMEOUT_MS = 4000L;
+    public static final String JUNIOR_NAME_TAG = "starrailexpress.tag.junior";
+    public static final int JUNIOR_NAME_TAG_MAX_LEVEL = 30;
 
     public static final ComponentKey<NameTagInventoryComponent> KEY = ComponentRegistry.getOrCreate(
             SRE.id("nametag_inventory"), NameTagInventoryComponent.class);
@@ -129,11 +132,11 @@ public class NameTagInventoryComponent implements RoleComponent {
                             if (nametagData != null) {
                                 this.applyNetworkNametagData(nametagData);
                                 this.persistLocal();
-                                this.sync();
                                 syncSelectedNameTagDisplay();
                                 logger.debug("玩家 {} 的名片数据已从 MySQL 拉取", this.player.getName().getString());
                             }
                         }
+                        this.sync();
                         flushQueuedNetworkSync();
                     });
                 })
@@ -149,8 +152,9 @@ public class NameTagInventoryComponent implements RoleComponent {
     public MutableComponent generate() {
         ArrayList<MutableComponent> toAddNameTags = new ArrayList<>();
         // ComponentUtils.formatList(toAddNameTags);
-        if (CurrentNameTag != null && !CurrentNameTag.isEmpty() && !CurrentNameTag.isBlank()) {
-            toAddNameTags.add(NameTagTitleCatalog.displayText(CurrentNameTag));
+        String effectiveNameTag = getEffectiveNameTag();
+        if (effectiveNameTag != null && !effectiveNameTag.isEmpty() && !effectiveNameTag.isBlank()) {
+            toAddNameTags.add(NameTagTitleCatalog.displayText(effectiveNameTag));
         }
         if (!toAddNameTags.isEmpty()) {
             return ComponentUtils.formatList(toAddNameTags, Component.literal(" "), (t) -> {
@@ -303,7 +307,7 @@ public class NameTagInventoryComponent implements RoleComponent {
 
         Map<UUID, String> selectedNameTags = new HashMap<>();
         for (ServerPlayer onlinePlayer : server.getPlayerList().getPlayers()) {
-            String selected = KEY.get(onlinePlayer).CurrentNameTag;
+            String selected = KEY.get(onlinePlayer).getEffectiveNameTag();
             if (selected != null && !selected.isBlank()) {
                 selectedNameTags.put(onlinePlayer.getUUID(), selected);
             }
@@ -343,6 +347,32 @@ public class NameTagInventoryComponent implements RoleComponent {
      */
     public String getCurrentNameTag() {
         return CurrentNameTag;
+    }
+
+    /**
+     * 实际佩戴的名片：未选择时，数据库启用且通行证等级低于 30 则默认佩戴小资历。
+     */
+    public String getEffectiveNameTag() {
+        if (CurrentNameTag != null && !CurrentNameTag.isBlank()) {
+            return CurrentNameTag;
+        }
+        if (shouldWearDefaultJuniorNameTag()) {
+            return JUNIOR_NAME_TAG;
+        }
+        return "";
+    }
+
+    public boolean shouldWearDefaultJuniorNameTag() {
+        if (!(this.player instanceof ServerPlayer serverPlayer)) {
+            return false;
+        }
+        if (!SREConfig.instance().mysqlPlayerSyncEnabled || !MysqlPlayerDataStore.isAvailable()) {
+            return false;
+        }
+        if (!ProgressionDataManager.isLoaded(serverPlayer.getUUID())) {
+            return false;
+        }
+        return ProgressionDataManager.get(serverPlayer).level < JUNIOR_NAME_TAG_MAX_LEVEL;
     }
 
     /**
@@ -557,7 +587,16 @@ public class NameTagInventoryComponent implements RoleComponent {
 
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider registryLookup) {
-        writeToNbt(tag, registryLookup);
+        String effectiveNameTag = getEffectiveNameTag();
+        ListTag nameTagsList = new ListTag();
+        if (JUNIOR_NAME_TAG.equals(effectiveNameTag) && !nameTags.contains(JUNIOR_NAME_TAG)) {
+            nameTagsList.add(StringTag.valueOf(JUNIOR_NAME_TAG));
+        }
+        for (String nameTag : nameTags) {
+            nameTagsList.add(StringTag.valueOf(nameTag));
+        }
+        tag.put("nameTags", nameTagsList);
+        tag.putString("CurrentNameTag", effectiveNameTag == null ? "" : effectiveNameTag);
     }
 
     @Override
