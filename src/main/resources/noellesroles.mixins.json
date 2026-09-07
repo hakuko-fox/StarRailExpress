@@ -8,6 +8,7 @@
         "VehicleEntityNoDropMixin",
         "LivingEntityAccessor",
         "AbstractContainerMenuMixin",
+        "CrashReportCategoryMixin",
         "DecServerJoinPlayer",
         "EntityMixinForInvisible",
         "FootstepVanishMixin",
