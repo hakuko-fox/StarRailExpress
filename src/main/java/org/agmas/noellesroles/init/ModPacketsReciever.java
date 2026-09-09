@@ -112,6 +112,14 @@ import java.util.function.Predicate;
 
 public class ModPacketsReciever {
   public static void registerPackets() {
+    ServerPlayNetworking.registerGlobalReceiver(LoanContractSubmitC2SPacket.ID, (payload, context) ->
+        context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.neutral.lender.LenderRoleHandler.submit(
+                    context.player(), payload.lender(), payload.amount())));
+    ServerPlayNetworking.registerGlobalReceiver(InsuranceSubmitC2SPacket.ID, (payload, context) ->
+        context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.innocence.insurance.InsuranceRoleHandler.submit(
+                    context.player(), payload.hand(), payload.reason())));
 
     ServerPlayNetworking.registerGlobalReceiver(VtuberRoleMenuC2SPacket.ID, (payload, context) ->
         context.server().execute(() ->

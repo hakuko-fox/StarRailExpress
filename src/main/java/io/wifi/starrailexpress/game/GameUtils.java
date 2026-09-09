@@ -44,6 +44,7 @@ import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPun
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
+import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.LocalDateData;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -95,6 +96,7 @@ import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.CloseUiPayload;
+import io.wifi.starrailexpress.network.MapDepartCancelPayload;
 import io.wifi.starrailexpress.network.original.AnnounceEndingPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.stats.PlayerStats;
@@ -162,7 +164,7 @@ public class GameUtils {
 
     /**
      * 服务端侧记录
-     * 
+     *
      * @param killer
      * @param victim
      * @param deathReason
@@ -601,6 +603,8 @@ public class GameUtils {
                 player.displayClientMessage(
                         Component.translatable("game.start_error.sre.not_enough_players", gameMode.minPlayerCount),
                         true);
+                // 无法发车：让客户端关闭地图投票结果页的铺黑，避免卡黑屏
+                ServerPlayNetworking.send(player, new MapDepartCancelPayload());
             }
             isStartingGame = false;
         }
@@ -1018,8 +1022,12 @@ public class GameUtils {
                 });
             }
 
-            // 若存在赞助者，把信封替换为赞助者的 plush（保留信封名称/描述，右键仍可打开介绍 GUI）
-            letter = io.wifi.starrailexpress.sponsor.SponsorManager.decorateIntroStack(letter, serverPlayerEntity);
+            // 若存在赞助者，把信封替换为赞助者的 plush，但多给一个（可以丢弃）
+            ItemStack sponsorPlush = io.wifi.starrailexpress.sponsor.SponsorManager.decorateIntroStack(letter,
+                    serverPlayerEntity);
+            if (sponsorPlush != null) {
+                serverPlayerEntity.addItem(sponsorPlush);
+            }
 
             serverPlayerEntity.addItem(letter);
             i++;
@@ -1101,6 +1109,10 @@ public class GameUtils {
             }
         }
         return getReadyPlayerList(serverWorld);
+    }
+
+    public static int getStartingPlayerCount(ServerLevel serverWorld) {
+        return getStartingPlayers(serverWorld).size();
     }
 
     private static List<ServerPlayer> getReadyPlayerList(ServerLevel serverWorld) {
@@ -1292,6 +1304,7 @@ public class GameUtils {
         player.removeVehicle();
         ExtraSlotComponent.KEY.get(player).clear();
         player.setInvulnerable(false);
+        player.setNoGravity(false);
         // 体力重置。-1代表职业最大值
         StaminaCommand.setStamina(player, -1);
         player.setLastHurtByMob(null);
@@ -1707,5 +1720,15 @@ public class GameUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * 更新玩家的 dimension（服务端+客户端）
+     *
+     * @param player
+     */
+    public static void refreshPlayerDimension(ServerPlayer player) {
+        player.refreshDimensions();
+        ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
     }
 }

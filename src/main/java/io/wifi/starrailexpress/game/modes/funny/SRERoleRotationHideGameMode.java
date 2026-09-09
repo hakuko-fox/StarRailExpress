@@ -42,7 +42,9 @@ public class SRERoleRotationHideGameMode extends SRERoleRotationGameMode {
                     draftState.playerOrder,
                     filteredSelected,
                     draftState.randomChoosers,
-                    filteredCandidates);
+                    filteredCandidates,
+                    draftState.confirmRequired,
+                    draftState.confirmedPlayers);
             ServerPlayNetworking.send(p, packet);
         }
     }

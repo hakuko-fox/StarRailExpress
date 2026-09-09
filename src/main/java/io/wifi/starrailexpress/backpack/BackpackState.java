@@ -42,6 +42,8 @@ public final class BackpackState {
     public String lastVtuberCoinRoundId = "";
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
     public boolean migrated = false;
+    /** 各阵营卡最近一次成功激活的墙钟时间（epoch ms）。用于同种类使用间隔。 */
+    public Map<FactionCardType, Long> cardLastUsedAt = new EnumMap<>(FactionCardType.class);
     public long version;
 
     public static BackpackState createDefault() {
@@ -83,7 +85,26 @@ public final class BackpackState {
         if (!pendingRoleId.isBlank()) {
             pendingFactionCard = FactionCardType.NONE;
         }
+        cardLastUsedAt = normalizeLastUsedAt(cardLastUsedAt);
         return this;
+    }
+
+    public long lastUsedAt(FactionCardType type) {
+        if (cardLastUsedAt == null || type == null || type == FactionCardType.NONE) {
+            return 0L;
+        }
+        Long value = cardLastUsedAt.get(type);
+        return value == null ? 0L : Math.max(0L, value);
+    }
+
+    public void markUsed(FactionCardType type, long epochMs) {
+        if (type == null || type == FactionCardType.NONE || epochMs <= 0L) {
+            return;
+        }
+        if (cardLastUsedAt == null) {
+            cardLastUsedAt = new EnumMap<>(FactionCardType.class);
+        }
+        cardLastUsedAt.put(type, epochMs);
     }
 
     public void copyFrom(BackpackState other) {
@@ -101,6 +122,42 @@ public final class BackpackState {
                 : new HashSet<>(other.purchasedSkins);
         this.lastVtuberCoinRoundId = other.lastVtuberCoinRoundId;
         this.version = other.version;
+        this.cardLastUsedAt = other.cardLastUsedAt;
         normalized();
+    }
+
+    private static Map<FactionCardType, Long> normalizeLastUsedAt(Map<FactionCardType, Long> raw) {
+        EnumMap<FactionCardType, Long> used = new EnumMap<>(FactionCardType.class);
+        if (raw == null) {
+            return used;
+        }
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) raw).entrySet()) {
+            FactionCardType type = parseType(entry.getKey());
+            if (type == FactionCardType.NONE) {
+                continue;
+            }
+            long epoch = toEpoch(entry.getValue());
+            if (epoch > 0L) {
+                used.put(type, epoch);
+            }
+        }
+        return used;
+    }
+
+    private static FactionCardType parseType(Object key) {
+        if (key instanceof FactionCardType type) {
+            return type;
+        }
+        if (key == null) {
+            return FactionCardType.NONE;
+        }
+        return FactionCardType.fromString(String.valueOf(key));
+    }
+
+    private static long toEpoch(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return 0L;
     }
 }

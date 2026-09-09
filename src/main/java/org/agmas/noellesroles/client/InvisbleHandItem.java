@@ -28,7 +28,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Items;
-
+import org.agmas.noellesroles.content.block.SREPlushItem;
 import org.agmas.noellesroles.content.entity.NiaoshoushouMissileEntity;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
@@ -46,6 +46,12 @@ public class InvisbleHandItem {
             if (mainHand && !(player instanceof LocalPlayer)
                     && itemStack.is(TMMItems.SNIPER_RIFLE)
                     && SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.HOSHIZORA)) {
+                return ItemStack.EMPTY;
+            }
+            return null;
+        });
+        AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            if (itemStack.getItem() instanceof SREPlushItem) {
                 return ItemStack.EMPTY;
             }
             return null;

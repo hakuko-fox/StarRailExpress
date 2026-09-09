@@ -35,6 +35,10 @@ public class SREConfig implements ConfigData {
     public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
             SREConfig.class);
 
+    // 服务端：加载模组本地翻译文件id（输入auto自动检测环境，留空不加载）
+    public String loadServerLanguageId = "";
+    // 服务端：为上面的语言从Mojang官方下载原版(vanilla)翻译文件(assets/minecraft/lang/<id>.json)，缓存到游戏根目录sre_lang_cache
+    public boolean downloadVanillaLanguageFile = false;
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -84,8 +88,12 @@ public class SREConfig implements ConfigData {
     @Tooltip
     public boolean hideRandomRoleInRoleRotation = true;
     @ConfigEntry.Category(value = "gamemodes")
-    public int roleRotationPerPlayerPerRoleTime = 3;
+    public float roleRotationPerPlayerPerRoleTime = 3;
 
+    @ConfigEntry.Category(value = "gamemodes")
+    public boolean roleRotationPreparingConfirmRequire = false;
+    @ConfigEntry.Category(value = "gamemodes")
+    public int roleRotationPreparingConfirmTimeout = 30;
     @ConfigEntry.Category(value = "gamemodes")
     public boolean roleRotationForceRoleSettings = false;
 
@@ -426,6 +434,16 @@ public class SREConfig implements ConfigData {
     public int dailyTaskCount = 6;
     @ConfigEntry.Category(value = "progression")
     public int weeklyTaskCount = 6;
+    /** 同种类阵营卡使用间隔开关。默认开启。 */
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public boolean enableFactionCardTypeCooldown = true;
+    /** 同种类阵营卡再次使用所需间隔（分钟）。默认 45。 */
+    @ConfigEntry.Category(value = "progression")
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public int factionCardTypeCooldownMinutes = 45;
     // 皮肤设置
     @ConfigEntry.Category(value = "skin")
     public boolean isItemSkinEnabled = true;

@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.fake_steve;
 
 import io.wifi.starrailexpress.api.SRERole;
@@ -331,6 +346,45 @@ public class FakeSteveAi {
         }
         if (state.pathGoal != null) {
             follow(level, body, state.pathGoal, state, psychoActive ? 0.22D : 0.15D);
+        } else {
+            idleHold(level, body, state, now);
+        }
+    }
+
+    /**
+     * Wander-only subset of {@link #tick} for 失心症.
+     * Reuses Fake Steve locomotion without stare, hunt, assimilate, or impostor tells.
+     */
+    public static void tickWanderOnly(ServerLevel level, ServerPlayer body, FakeSteveAgentState state) {
+        long now = level.getGameTime();
+        if (state.lastTickAt == 0L) {
+            state.modeStartedTick = now;
+        }
+        int elapsed = state.lastTickAt == 0L ? 5
+                : (int) Math.max(1L, Math.min(20L, now - state.lastTickAt));
+        state.lastTickAt = now;
+        state.tickStep = elapsed;
+        state.mode = AgentMode.DISGUISE_IDLE;
+        updateStuck(level, body, state, now);
+        FakeSteveMotionController.applyServerMotion(body, state);
+
+        state.idleTicks += elapsed;
+        if (FakeSteveMotionPolicy.shouldSprint(false, state.idleTicks,
+                body.getUUID().hashCode() + (int) (now / 20L))) {
+            state.sprintUntilTick = Math.max(state.sprintUntilTick,
+                    now + 30L + level.getRandom().nextInt(30));
+            state.idleTicks = 0;
+        }
+        boolean reselectWander = FakeSteveWanderPolicy.shouldReselectNow(
+                state.pathGoal == null, state.pathFailureCount, now >= state.nextDecisionTick);
+        if (reselectWander) {
+            state.nextDecisionTick = now + 40L + level.getRandom().nextInt(80);
+            state.pathGoal = wanderGoal(level, body, state);
+            state.path.clear();
+            state.pathFailureCount = 0;
+        }
+        if (state.pathGoal != null) {
+            follow(level, body, state.pathGoal, state, 0.15D);
         } else {
             idleHold(level, body, state, now);
         }

@@ -40,10 +40,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
@@ -83,6 +85,7 @@ import org.agmas.noellesroles.role_data.neutral.MorticianBodyMakerRoleData;
 import org.agmas.noellesroles.role_data.innocence.LeatherPigRoleData;
 import org.agmas.noellesroles.role_data.innocence.TomatoHeadRoleData;
 import org.agmas.noellesroles.role_data.neutral.PhantomSpiritRoleData;
+import org.agmas.noellesroles.role_data.neutral.ZhangAngelRoleData;
 import org.agmas.noellesroles.role_data.innocence.MagicianRoleData;
 import org.agmas.noellesroles.role_data.innocence.MediumRoleData;
 import org.agmas.noellesroles.role_data.killer.StalkerRoleData;
@@ -737,6 +740,44 @@ public class ModRolesInitialEventRegister {
         // 宿命的罪人技能注册：
         // 技能 1「命运的启示」(G)：近距离查看准星目标最近 3 次杀人方式
         // 技能 2「重启」(潜行+技能键)：随机死因死亡脱离，回房间 + 短暂无敌
+        // 网警技能：将主手物品收进副手；副手原有物品必须放入快捷栏才能完成交换。
+        RoleSkill.register(ModRoles.NET_COP,
+                RoleSkill.skill(SRE.id("net_cop_swap_hands"),
+                        "skill.noellesroles.net_cop.swap_hands",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+                                return false;
+                            }
+
+                            ItemStack mainHand = player.getMainHandItem();
+                            ItemStack offHand = player.getOffhandItem();
+                            if (mainHand.isEmpty() && offHand.isEmpty()) {
+                                return false;
+                            }
+
+                            if (!offHand.isEmpty()) {
+                                int emptyHotbarSlot = -1;
+                                for (int slot = 0; slot < 9; slot++) {
+                                    if (player.getInventory().getItem(slot).isEmpty()) {
+                                        emptyHotbarSlot = slot;
+                                        break;
+                                    }
+                                }
+                                if (emptyHotbarSlot < 0) {
+                                    return false;
+                                }
+                                player.getInventory().setItem(emptyHotbarSlot, offHand.copy());
+                            }
+
+                            player.setItemInHand(InteractionHand.OFF_HAND, mainHand.copy());
+                            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                            player.getInventory().setChanged();
+                            player.inventoryMenu.broadcastChanges();
+                            player.containerMenu.broadcastChanges();
+                            return true;
+                        }).cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
+
         RoleSkill.register(ModRoles.DOOMED_SINNER,
                 RoleSkill.skill(SRE.id("doomed_sinner_revelation"),
                         "skill.noellesroles.doomed_sinner.revelation",
@@ -1239,7 +1280,7 @@ public class ModRolesInitialEventRegister {
                 context -> {
                     EchoListenerRoleData data = RoleData.getNullable(EchoListenerRoleData.class, context.player());
                     return data != null && data.useSonicWave();
-                }).cooldownSeconds(30).build());
+                }).showOnHud(true).recordReplay().cooldownSeconds(30).build());
 
         // 小透明技能注册：隐身，冷却20秒，消耗150金币
         RoleSkill.register(ModRoles.GHOST, RoleSkill.skill(
@@ -1696,6 +1737,16 @@ public class ModRolesInitialEventRegister {
                         .cooldownSeconds(PhantomSpiritRoleData.COOLDOWN_SECONDS)
                         .withTarget()
                         .toggleable(true)
+                        .showOnHud(true).announceToSelf(false).build());
+
+        RoleSkill.register(ModRoles.ZHANG_ANGEL,
+                RoleSkill.skill(ZhangAngelRoleData.SKILL_ID, "skill.noellesroles.zhang_angel.lightning",
+                        context -> {
+                            var data = RoleData.getNullable(ZhangAngelRoleData.class, context.player());
+                            return data != null && data.useLightning(context);
+                        })
+                        .cooldownSeconds(1)
+                        .withTarget()
                         .showOnHud(true).announceToSelf(false).build());
 
         // 出题人不适用于统一的技能注册：其需要不同的触发方式但这个api不兼容。

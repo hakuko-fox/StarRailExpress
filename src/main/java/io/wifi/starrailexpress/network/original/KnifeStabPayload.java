@@ -65,6 +65,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (player.isSpectator() || player.hasEffect(ModEffects.USED_BANED)) {
                 return;
             }
+            if (org.agmas.noellesroles.content.effects.StatusAilmentHandler.isIntellectLocked(player)) {
+                return;
+            }
             SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
             final var role = game.getRole(player);
             if (!org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.canUseKanaKnife(player)) {

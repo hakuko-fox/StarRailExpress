@@ -52,7 +52,9 @@ public class SRERoleRotationSingleSelectHideGameMode extends SRERoleRotationSing
                     orderList,
                     filteredSelected,
                     draftState.randomChoosers,
-                    filteredCandidates);
+                    filteredCandidates,
+                    false,
+                    Collections.emptySet());
             ServerPlayNetworking.send(p, packet);
         }
     }

@@ -36,10 +36,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.flag.FeatureFlagSet;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.GhostStateComponent;
+import org.agmas.noellesroles.content.effects.LimpEffect;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.PuppetWanderEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
+import org.agmas.noellesroles.content.effects.StatusAilmentHandler;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
+import org.agmas.noellesroles.content.effects.TomatoFormMobEffect;
 import org.agmas.noellesroles.game.backworld.BackworldOutlineEffectSync;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionEffectSync;
@@ -168,7 +171,7 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xE0422A));
     /** 特码头变身：客户端用这个药水判断第三人称和掉落物模型 */
     public static final Holder<MobEffect> TOMATO_FORM = register("tomato_form",
-            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xC43C2C));
+            new TomatoFormMobEffect(MobEffectCategory.NEUTRAL, 0xC43C2C));
 
     /**
      * 安全时间效果
@@ -492,9 +495,9 @@ public class ModEffects {
     /**
      * 破镜重圆：客户端世界坍缩回溯特效。
      * <ul>
-     *   <li>生效即视野震颤</li>
-     *   <li>4 秒后周围方块由外向内向下坍缩，10 秒时完全坍缩</li>
-     *   <li>效果结束后面块由内向外升起还原</li>
+     * <li>生效即视野震颤</li>
+     * <li>4 秒后周围方块由外向内向下坍缩，10 秒时完全坍缩</li>
+     * <li>效果结束后面块由内向外升起还原</li>
      * </ul>
      * 方块坍缩/还原仅在客户端进行，见 {@code MirrorReunionSceneManager}。
      */
@@ -623,12 +626,8 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x5C4033));
 
     /**
-     * 盲视
-     * - 有害效果，近黑白
-     * - 世界只剩黑白；默认全黑，只有声音在三维空间中传播过的区域才变得可见。
-     * 声音越大传播越远、越清晰；同一处被声音覆盖越久则越白。
-     * 行为见 {@code org.agmas.noellesroles.client.BlindVisionClientHandle} 与
-     * {@code BlindVisionShader}。
+     * 盲视。客户端视觉行为移植自 Blindness 1.5-streamer 的声音范围 shader，
+     * 见 {@code org.agmas.noellesroles.client.BlindnessVisionClientHandle}。
      */
     public static final Holder<MobEffect> BLIND_VISION = register("blind_vision",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x111111));
@@ -643,6 +642,95 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> DEAFNESS = register("deafness",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x3A3A3A));
+
+    /**
+     * 听觉模糊（轻度耳聋）
+     * - 有害效果，灰蓝色
+     * - 客户端保留少量音量，并对游戏音效和语音施加低通滤波，模拟听见但难以听清。
+     */
+    public static final Holder<MobEffect> MUFFLED_HEARING = register("muffled_hearing",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x59636B));
+
+    /**
+     * 腿瘸。拥有此效果时走路一瘸一拐，幅度随药水等级增加。
+     * 移动见 {@code LimpTravelMixin}，第三人称迈腿见 {@code LimpPlayerModelMixin}，
+     * 第一人称视角见 {@code LimpCameraMixin}。
+     */
+    public static final Holder<MobEffect> LIMP = register("limp", new LimpEffect());
+
+    /** Prevents eating food and drinking module beverages. */
+    public static final Holder<MobEffect> LOAN_STOMACH_BAN = register("loan_stomach_ban",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x7A4A2B));
+
+    /**
+     * 近视：远处模糊，近处相对清晰。shader 见 {@code MyopiaShader}。
+     */
+    public static final Holder<MobEffect> MYOPIA = register("myopia",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x7A8BA6));
+
+    /**
+     * 手疾：持刀/枪时准星轻微抖动，刚抽出时最强，等级提高幅度。
+     */
+    public static final Holder<MobEffect> HAND_TREMOR = register("hand_tremor",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xC47A4A));
+
+    /**
+     * 心灵失聪：mood 永远视为满值，不再自然下降。
+     */
+    public static final Holder<MobEffect> MENTAL_DEAFNESS = register("mental_deafness",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xB8A4C8));
+
+    /**
+     * 人类认知偏差：其他人的皮肤随机替换，名字像低 mood 一样模糊。
+     */
+    public static final Holder<MobEffect> COGNITIVE_BIAS = register("cognitive_bias",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x9A6BB5));
+
+    /**
+     * 食欲不振：无法食用食物和饮品。
+     */
+    public static final Holder<MobEffect> LOSS_OF_APPETITE = register("loss_of_appetite",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6B7A4A));
+
+    /**
+     * 肺部缺失：一段时间后窒息而死。默认一级 115 秒（120-5），每级再减 5 秒。
+     */
+    public static final Holder<MobEffect> MISSING_LUNGS = register("missing_lungs",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x4A6B7A) {
+                @Override
+                public void onEffectEnded(ServerPlayer livingEntity) {
+                    StatusAilmentHandler.onMissingLungsEnded(livingEntity);
+                }
+            });
+
+    /**
+     * 失心症：间歇失去自我，由 Fake Steve 漫走接管，无凝视/伪人特征。
+     * 默认间隔 30-45 秒，持续 10-15 秒。
+     */
+    public static final Holder<MobEffect> APHRENIA = register("aphrenia",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x5C3A6E) {
+                @Override
+                public void onEffectEnded(ServerPlayer livingEntity) {
+                    StatusAilmentHandler.onAphreniaEnded(livingEntity);
+                }
+            });
+
+    /**
+     * 智力下降：间歇无法使用物品。
+     */
+    public static final Holder<MobEffect> INTELLECT_DROP = register("intellect_drop",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6E5C3A) {
+                @Override
+                public void onEffectEnded(ServerPlayer livingEntity) {
+                    StatusAilmentHandler.onIntellectEnded(livingEntity);
+                }
+            });
+
+    /**
+     * 运动障碍：移动时有概率摔倒（游泳姿态）。
+     */
+    public static final Holder<MobEffect> MOTOR_DYSFUNCTION = register("motor_dysfunction",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x7A5A4A));
 
     /** 视野迷雾：根据效果等级计算雾的可见距离（格）。1 级=2 格，每升 1 级多看 3 格。 */
     public static float getVisionFogDistance(int amplifier) {
@@ -670,8 +758,12 @@ public class ModEffects {
         return instance != null ? instance.getAmplifier() : -1;
     }
 
+    public static boolean hasFullMoodLock(LivingEntity entity) {
+        return entity != null && entity.hasEffect(MENTAL_DEAFNESS);
+    }
+
     public static float getMoodDrainMultiplier(LivingEntity entity) {
-        if (entity.hasEffect(MOOD_DRAIN_IMMUNITY)) {
+        if (hasFullMoodLock(entity) || entity.hasEffect(MOOD_DRAIN_IMMUNITY)) {
             return 0f;
         }
         int amp = getAmplifier(entity, MOOD_DRAIN_REDUCTION);
@@ -749,6 +841,14 @@ public class ModEffects {
         return amp < 0 ? 0 : Mth.clamp(amp + 1, 1, 5);
     }
 
+    /** 听觉模糊等级（0 = 无效果，1~5 = amplifier+1）。 */
+    public static int getMuffledHearingLevel(LivingEntity entity) {
+        int amp = getAmplifier(entity, MUFFLED_HEARING);
+        // Potion level I uses the previous level-V strength. Higher potion
+        // levels are represented by larger values and continue to stack.
+        return amp < 0 ? 0 : amp + 1;
+    }
+
     /** 水下语音等级（0 = 无效果，1~5 = amplifier+1）。 */
     public static int getVoiceUnderwaterLevel(LivingEntity entity) {
         int amp = getAmplifier(entity, VOICE_UNDERWATER);
@@ -823,6 +923,7 @@ public class ModEffects {
     public static boolean pierceDeath = false;
 
     public static void init() {
+        StatusAilmentHandler.register();
         // 把说话者侧的语音效果（重金属/回响）同步给所有客户端，
         // 否则听者客户端查不到说话者的效果，OpenAL 语音处理无法生效。
         org.agmas.noellesroles.voice.VoiceEffectSync.init();
@@ -830,7 +931,7 @@ public class ModEffects {
         // 导致“伪装只有自己能看到”。
         io.wifi.starrailexpress.content.item.DisguiseEffectSync.init();
         io.wifi.starrailexpress.content.item.TrueSkinEffectSync.init();
-        
+
         // 把“脚步消失”效果同步给所有客户端，否则其它玩家侧的脚步声/疾跑粒子拦截查不到该效果。
         org.agmas.noellesroles.init.FootstepVanishEffectSync.init();
         // 把怀旧者“里世界标记”效果同步给所有客户端，否则其它客户端查不到怀旧者的里世界状态，
@@ -854,6 +955,8 @@ public class ModEffects {
                 return false;
             }
             if (deathReason.equals(Noellesroles.id("bomb_death")))
+                return true;
+            if (deathReason.equals(GameConstants.DeathReasons.MISSING_LUNGS))
                 return true;
             if (player.hasEffect(ModEffects.TAROT_ASSEMBLY)) {
                 if (player.position().z >= 19000)
