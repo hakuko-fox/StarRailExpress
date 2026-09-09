@@ -33,6 +33,7 @@ import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.data.ClientRoleRosterCache;
 import io.wifi.starrailexpress.client.gui.screen.NewspaperScreen;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
+import io.wifi.starrailexpress.client.util.ClientScheduler;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.TMMItemTooltips;
 import io.wifi.starrailexpress.client.util.TaskInstinctManager;
@@ -40,6 +41,7 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.content.vote.client.RoleRotationCache;
 import io.wifi.starrailexpress.content.vote.client.VolunteerCache;
+import io.wifi.starrailexpress.customrole.CustomRoleLoader;
 import io.wifi.starrailexpress.event.AllowNameRender;
 import io.wifi.starrailexpress.event.OnRoundStartWelcomeTimmer;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -328,11 +330,12 @@ public class NoellesrolesClient implements ClientModInitializer {
         BlockRenderLayerMap.INSTANCE.putBlock(
                 org.agmas.noellesroles.init.ModSceneBlocks.WATER_VALVE, RenderType.cutout());
 
-        // 注册C4背部渲染
+        // 注册C4背部渲染以及手铐模型渲染
         LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
                 (entityType, entityRenderer, registrationHelper, context) -> {
                     if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
                         registrationHelper.register(new C4BackFeatureRenderer(pr));
+                        registrationHelper.register(new HandCuffsFeatureRenderer(pr));
                     }
                 });
 
@@ -489,8 +492,11 @@ public class NoellesrolesClient implements ClientModInitializer {
         PointerClientHandle.register();
         HakoniwaVisionClientHandle.register();
         IlliterateTextClientHandle.register();
-        BlindVisionClientHandle.register();
+        BlindnessVisionClientHandle.register();
         DeafnessClientHandle.register();
+        HandTremorClientHandle.register();
+        CognitiveBiasClientHandle.register();
+        MuffledHearingClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
@@ -507,12 +513,19 @@ public class NoellesrolesClient implements ClientModInitializer {
         BeeFamilyClientManager.registerEvents();
 
         ClientPlayNetworking.registerGlobalReceiver(RefreshDimensionsS2CPacket.ID, (payload, context) -> {
-            if (context.client().player != null)
-                context.client().player.refreshDimensions();
+            ClientScheduler.schedule(() -> {
+                if (context.client().player != null) {
+                    context.client().player.refreshDimensions();
+                }
+            }, 10);
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenScreenPayload.ID, (payload, context) -> {
             ClientOpenScreenManager.openScreen(payload, context);
         });
+        ClientPlayNetworking.registerGlobalReceiver(LoanContractOpenS2CPacket.ID, (payload, context) ->
+                context.client().execute(() -> context.client().setScreen(new LoanContractScreen(payload))));
+        ClientPlayNetworking.registerGlobalReceiver(InsuranceOpenS2CPacket.ID, (payload, context) ->
+                context.client().execute(() -> context.client().setScreen(new InsuranceScreen(payload.hand()))));
         ClientPlayNetworking.registerGlobalReceiver(ReasonerOpenScreenS2CPacket.ID, (payload, context) -> {
             context.client().execute(() -> context.client().setScreen(new ReasonerCompassScreen(payload)));
         });
@@ -706,9 +719,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             final var client = context.client();
             client.execute(() -> {
                 if (client.player != null) {
-                    boolean isIntroItem = client.player.getMainHandItem().getItem() == ModItems.LETTER_ITEM
-                            || client.player.getMainHandItem()
-                                    .has(io.wifi.starrailexpress.index.SREDataComponentTypes.SPONSOR_INTRO);
+                    boolean isIntroItem = client.player.getMainHandItem().getItem() == ModItems.LETTER_ITEM;
                     if (isIntroItem && SREClient.gameComponent != null) {
                         SRERole role = SREClient.gameComponent.getRole(client.player);
                         if (role != null) {
@@ -1147,6 +1158,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientEmbalmerState.clear();
             ClientAmonState.clearAll();
             ClientSkincrawlerState.clearAll();
+            CustomRoleLoader.removeClientCache();
             // 在断开连接时，强制清理所有玩家的渲染缓存
 
         });
@@ -1495,7 +1507,8 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         ItemTooltipCallback.EVENT.register(((itemStack, tooltipContext, tooltipType, list) -> {
             if (itemStack.is(ModItems.ANGLER_ROD)) {
-                list.removeIf(line -> line.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents contents
+                list.removeIf(line -> line
+                        .getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents contents
                         && "item.durability".equals(contents.getKey()));
             }
             tooltipHelper(TMMItems.DEFENSE_VIAL, itemStack, list);

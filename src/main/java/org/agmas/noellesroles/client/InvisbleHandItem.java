@@ -27,7 +27,7 @@ import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-
+import org.agmas.noellesroles.content.block.SREPlushItem;
 import org.agmas.noellesroles.content.entity.NiaoshoushouMissileEntity;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
@@ -40,6 +40,12 @@ import org.agmas.noellesroles.utils.RoleUtils;
 public class InvisbleHandItem {
 
     public static void register() {
+        AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            if (itemStack.getItem() instanceof SREPlushItem) {
+                return ItemStack.EMPTY;
+            }
+            return null;
+        });
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
             if (itemStack.is(Items.BONE)) {
                 if (RoleUtils.isPlayerTheJob(player, THMiscRoles.KAENBYOU_RIN))
@@ -73,13 +79,13 @@ public class InvisbleHandItem {
             }
             return null; // 不修改
         });
-        // 显示手铐
+        // 显示手铐（改由 HandCuffsFeatureRenderer 动态渲染，副手此处隐藏避免重复）
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
             if (mainHand)
                 return null;
             var item = ExtraSlotComponent.getSlot(player, HandCuffsItem.SLOT_HANDCUFFS);
             if (item.is(ModItems.HANDCUFFS)) {
-                return item;
+                return ItemStack.EMPTY;
             }
             return null; // 不修改
         });

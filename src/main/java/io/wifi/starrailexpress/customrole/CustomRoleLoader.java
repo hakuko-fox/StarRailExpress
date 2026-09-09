@@ -21,6 +21,7 @@ import io.wifi.starrailexpress.api.InstinctType;
 import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -95,10 +96,10 @@ public class CustomRoleLoader {
         gameEndCommandsByRoleId.clear();
         customWinDataMap.clear();
         // 先清除旧的自定义职业
-        List<String> toRemove = new ArrayList<>();
+        List<SRERole> toRemove = new ArrayList<>();
         for (var entry : TMMRoles.ROLES.entrySet()) {
             if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
-                toRemove.add(entry.getKey().toString());
+                toRemove.add(entry.getValue());
                 // 同时清除已注册的技能，避免 re-register 时报 "already registered"
                 RoleSkill.unregister(entry.getKey());
                 // 清除 INITIAL_ITEMS_MAP 中的条目
@@ -113,8 +114,8 @@ public class CustomRoleLoader {
                 removeRoleReferences(entry.getValue());
             }
         }
-        for (String key : toRemove) {
-            TMMRoles.ROLES.remove(ResourceLocation.parse(key));
+        for (SRERole key : toRemove) {
+            TMMRoles.unregisterCustomRole(key);
         }
         registeredRoles.clear();
         loadedRoles.clear();
@@ -172,37 +173,7 @@ public class CustomRoleLoader {
      * 在收到服务端同步包并写入本地文件后调用
      */
     public static void reloadClient() {
-        // 清除旧的客户端注册的自定义职业（包括技能注册，避免 re-register 抛异常）
-        List<String> toRemove = new ArrayList<>();
-        List<SRERole> removedRoles = new ArrayList<>();
-        for (var entry : TMMRoles.ROLES.entrySet()) {
-            if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
-                toRemove.add(entry.getKey().toString());
-                removedRoles.add(entry.getValue());
-                RoleSkill.unregister(entry.getKey());
-                org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
-            }
-        }
-        // 同时清除 registeredRoles 中的旧角色技能（TMMRoles.ROLES 可能已被 clearCache 清空）
-        for (var entry : registeredRoles.entrySet()) {
-            ResourceLocation roleId = ResourceLocation.fromNamespaceAndPath("customrole", entry.getKey());
-            RoleSkill.unregister(roleId);
-        }
-        // 在移除旧自定义职业前，先清理其它职业/修饰符对它的关联引用，
-        // 否则重载后旧 SRERole 实例会残留在 relatedRoles/opposingRoles/occupationRoles 中，
-        // 导致 postInit 重新绑定时出现重复，表现为“其它相关职业”出现两个相同的自定义职业。
-        for (SRERole oldRole : removedRoles) {
-            removeRoleReferences(oldRole);
-        }
-        toRemove.forEach(id -> TMMRoles.ROLES.remove(ResourceLocation.parse(id)));
-        registeredRoles.clear();
-        loadedRoles.clear();
-        instinctMaxRanges.clear();
-        instinctBeSeenMaxRanges.clear();
-        instinctSameColor.clear();
-        instinctUnlimitedTeammate.clear();
-        instinctModeDataMap.clear();
-        skillDisplayNames.clear();
+        removeClientCache();
 
         // 从客户端本地 config 目录加载（网络同步写入的）
         CustomRoleConfig config = CustomRoleConfig.loadFromDefaultPath();
@@ -254,6 +225,40 @@ public class CustomRoleLoader {
 
         postInit();
         SRE.LOGGER.info("[CustomRole-Client] Reloaded {} custom roles from local config", config.roles.size());
+    }
+
+    public static void removeClientCache() {
+        // 清除旧的客户端注册的自定义职业（包括技能注册，避免 re-register 抛异常）
+        List<SRERole> toRemove = new ArrayList<>();
+        List<SRERole> removedRoles = new ArrayList<>();
+        for (var entry : TMMRoles.ROLES.entrySet()) {
+            if (entry.getValue() instanceof CustomNormalRole || "customrole".equals(entry.getKey().getNamespace())) {
+                toRemove.add(entry.getValue());
+                removedRoles.add(entry.getValue());
+                RoleSkill.unregister(entry.getKey());
+                org.agmas.noellesroles.init.RoleInitialItems.INITIAL_ITEMS_MAP.remove(entry.getValue());
+            }
+        }
+        // 同时清除 registeredRoles 中的旧角色技能（TMMRoles.ROLES 可能已被 clearCache 清空）
+        for (var entry : registeredRoles.entrySet()) {
+            ResourceLocation roleId = ResourceLocation.fromNamespaceAndPath("customrole", entry.getKey());
+            RoleSkill.unregister(roleId);
+        }
+        // 在移除旧自定义职业前，先清理其它职业/修饰符对它的关联引用，
+        // 否则重载后旧 SRERole 实例会残留在 relatedRoles/opposingRoles/occupationRoles 中，
+        // 导致 postInit 重新绑定时出现重复，表现为“其它相关职业”出现两个相同的自定义职业。
+        for (SRERole oldRole : removedRoles) {
+            removeRoleReferences(oldRole);
+        }
+        toRemove.forEach(role -> TMMRoles.unregisterCustomRole(role));
+        registeredRoles.clear();
+        loadedRoles.clear();
+        instinctMaxRanges.clear();
+        instinctBeSeenMaxRanges.clear();
+        instinctSameColor.clear();
+        instinctUnlimitedTeammate.clear();
+        instinctModeDataMap.clear();
+        skillDisplayNames.clear();
     }
 
     /**
@@ -332,7 +337,7 @@ public class CustomRoleLoader {
     private static SRERole createRole(CustomRoleData data) {
         data.englishId = data.englishId.toLowerCase(); // 兜底：确保英文id全小写
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("customrole", data.englishId);
-
+        
         // 解析颜色
         int color = (data.colorR << 16) | (data.colorG << 8) | data.colorB;
 
@@ -379,6 +384,7 @@ public class CustomRoleLoader {
 
         // === 高级定义 ===
         role.setCanSeeCoin(data.canSeeCoin);
+        role.addFlag("inner.custom_role");
         if (data.canUseInstinct) {
             role.setCanUseInstinctAndNightVision(true);
 
@@ -480,7 +486,7 @@ public class CustomRoleLoader {
             role.setHiddenForRoleRotation(data.hiddenForRoleRotation);
         if (data.specialMapRole != null && !"ALL".equalsIgnoreCase(data.specialMapRole)) {
             try {
-                role.setSpecialMapRole(SRERole.SpecialMapRoleMap.valueOf(data.specialMapRole.trim().toUpperCase()));
+                role.setSpecialMapRole(MapSpecialFeatures.valueOf(data.specialMapRole.trim().toUpperCase()));
             } catch (IllegalArgumentException ignored) {
             }
         }

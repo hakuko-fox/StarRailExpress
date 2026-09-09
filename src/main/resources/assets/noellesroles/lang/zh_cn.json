@@ -136,6 +136,7 @@
   "announcement.star.role.net_cop": "网警",
   "announcement.star.goals.net_cop": "维护列车的秩序，让杀手得到应有的制裁！",
   "message.noellesroles.net_cop.shop_already_owned": "你已经拥有该武器",
+  "skill.noellesroles.net_cop.swap_hands": "交换手中物品",
   "message.noellesroles.net_cop.shop_need_axe": "需要先购买 Dream 的铁斧",
   "message.noellesroles.net_cop.shop_need_axe_and_sword": "需要先同时持有 Dream 的铁斧与钻石剑",
   "announcement.star.role.noellesroles.magician": "魔术师",
@@ -236,6 +237,8 @@
   "announcement.star.goals.witch_maiden": "巫妖侍女",
   "announcement.star.role.rabbit_wansui": "兔兔万岁",
   "announcement.star.goals.rabbit_wansui": "把列车上的乘客，全部！全部！变成兔兔！！！",
+  "announcement.star.modifier.noellesroles.frail": "体弱",
+  "message.frail.skip_running": "你的跑步任务已自动跳过。",
   "announcement.star.modifier.noellesroles.rabbit_shape": "兔兔",
   "announcement.star.role.bee_queen": "蜂后",
   "announcement.star.goals.bee_queen": "🐝 复活尸体，组成你的蜜蜂大军！",
@@ -392,6 +395,7 @@
   "mathproblem.noellesroles.success": "你及格了，避免了挂科。",
   "death_reason.wifi.cat_killer": "猫娘阳寿已尽",
   "death_reason.noellesroles.timeout": "寿命已尽",
+  "death_reason.noellesroles.missing_lungs": "窒息",
   "death_reason.noellesroles.angler_exhausted": "钓竿用尽",
   "death_reason.noellesroles.angler_catch": "被钓上来",
   "death_reason.noellesroles.machenxu": "魂噬",
@@ -571,6 +575,7 @@
   "death_reason.starrailexpress.arrow": "被箭射死",
   "death_reason.starrailexpress.trident": "被三叉戟刺死",
   "death_reason.noellesroles.trident": "被三叉戟刺死",
+  "death_reason.noellesroles.firework_crossbow": "爆炸弩",
   "death_reason.starrailexpress.voodoo": "巫毒魔法",
   "hud.coroner.death_info.new": "死于 %s秒前，死因是 %s",
   "hud.coroner.death_info.name": "%s 的尸体",
@@ -1835,6 +1840,7 @@
   "block.noellesroles.custom_player_plush": "自定义玩家玩偶",
   "block.noellesroles.custom_player_plush.texture": "自定义材质玩偶",
   "block.noellesroles.custom_player_plush.player": "%s的玩偶",
+  "tooltip.sre.custom_player_plush.droppable": "可以直接丢弃，丢弃后会消失。",
   "tooltip.sre.custom_player_plush.player": "玩家：%s",
   "tooltip.sre.custom_player_plush.texture": "材质：%s",
   "tooltip.sre.custom_player_plush.sound": "音效：%s",
@@ -1901,6 +1907,7 @@
   "screen.roleintroduce.flag.inner.version.prefix": "ℹ 加入版本: %s",
   "screen.roleintroduce.flag.inner.disable": "❌ 当前已禁用",
   "screen.roleintroduce.flag.inner.enable": "✔ 当前已启用",
+  "screen.roleintroduce.flag.inner.custom_role": "地图自定义角色",
   "screen.roleintroduce.flag.inner.hidden": "隐藏修饰符",
   "screen.roleintroduce.flag.inner.original": "原版列车角色",
   "screen.roleintroduce.flag.inner.role_rotation.hidden": "轮抽中不显示真名的角色",
@@ -3995,7 +4002,7 @@
   "skill.noellesroles.warlock.curse": "蚀骨之咒",
   "skill.noellesroles.warlock.domain": "领域展开·灰髓之境",
   "message.noellesroles.warlock.stolen": "窃得了 %s 的发肤",
-  "message.noellesroles.warlock.steal_no_target": "需要瞄准 8 格内的玩家",
+  "message.noellesroles.warlock.steal_no_target": "需要瞄准玩家",
   "message.noellesroles.warlock.steal_too_far": "距离太远，无法窃取",
   "message.noellesroles.warlock.steal_already": "已经取过此人的发肤了",
   "message.noellesroles.warlock.steal_victim_hint": "你感到脖颈掠过一丝凉意……",
@@ -4600,6 +4607,9 @@
   "effect.noellesroles.deafness": "耳聋",
   "mob_effect.noellesroles.deafness": "耳聋",
   "effect.noellesroles.deafness.description": "你听不到任何声音",
+  "effect.noellesroles.muffled_hearing": "听觉模糊",
+  "mob_effect.noellesroles.muffled_hearing": "听觉模糊",
+  "effect.noellesroles.muffled_hearing.description": "声音变得低沉、模糊，只能勉强听清",
   "effect.noellesroles.eerie_domain": "诡域",
   "mob_effect.noellesroles.eerie_domain": "诡域",
   "effect.noellesroles.domain_mark": "领域标记",
@@ -4940,5 +4950,129 @@
   "effect.noellesroles.tomato_form": "西红柿形态",
   "mob_effect.noellesroles.tomato_form": "西红柿形态",
   "mob_effect.noellesroles.tomato_sauce": "番茄酱",
-  "subtitles.noellesroles.tomato_splat": "西红柿碎裂"
+  "subtitles.noellesroles.tomato_splat": "西红柿碎裂",
+  "announcement.star.role.echo_listener": "循声者",
+  "announcement.star.role.noellesroles.echo_listener": "循声者",
+  "announcement.star.goals.echo_listener": "帮助好人阵营存活，在黑暗中循声定位并压制威胁！",
+  "skill.noellesroles.echo_listener.sonic_wave": "声波",
+  "message.noellesroles.echo_listener.no_money": "发放声波需要 %s 金币！",
+  "message.noellesroles.echo_listener.no_target": "声波方向上没有玩家。",
+  "message.noellesroles.echo_listener.respawned": "你循着回声重新回到了列车。",
+  "announcement.star.role.zhang_angel": "张天使",
+  "announcement.star.role.noellesroles.zhang_angel": "张天使",
+  "announcement.star.goals.zhang_angel": "与乘客一同活到最后。",
+  "skill.noellesroles.zhang_angel.lightning": "召雷",
+  "hud.noellesroles.zhang_angel.swallows": "吞电：%s/%s",
+  "hud.noellesroles.zhang_angel.stealth": "黑暗隐身中",
+  "message.noellesroles.zhang_angel.swallowed": "吞电 %s/%s",
+  "message.noellesroles.zhang_angel.ready": "吞电已满，花费 100 金币可对准目标召雷。",
+  "message.noellesroles.zhang_angel.not_enough_swallows": "吞电不足：需要 %s 次，当前 %s 次。",
+  "message.noellesroles.zhang_angel.lightning_cast": "闪电击中了 %s，对方陷入了%s。",
+  "message.noellesroles.zhang_angel.lightning_hit": "你被闪电击中，陷入了%s。",
+  "message.noellesroles.zhang_angel.disability.slowness": "缓慢 II",
+  "message.noellesroles.zhang_angel.disability.blindness": "失明与盲视",
+  "message.noellesroles.zhang_angel.disability.deafness": "耳聋",
+  "message.noellesroles.zhang_angel.disability.limp": "腿瘸",
+  "effect.noellesroles.limp": "腿瘸",
+  "mob_effect.noellesroles.limp": "腿瘸",
+  "effect.noellesroles.limp.description": "走路一瘸一拐。效果等级越高，瘸得越明显。",
+  "announcement.star.role.lender": "放贷人",
+  "announcement.star.goals.lender": "给予需要的人有代价的帮助",
+  "announcement.star.role.insurance": "保险职员",
+  "announcement.star.goals.insurance": "为绝境中的人们签订生命最后的保险",
+  "skill.noellesroles.lender_request": "发起贷款请求",
+  "item.noellesroles.loan_contract": "贷款合同",
+  "item.noellesroles.loan_contract.amount": "本金：%s 金币",
+  "item.noellesroles.loan_contract.tooltip": "右键偿还本金和利息。",
+  "screen.noellesroles.loan_contract.title": "贷款合同",
+  "screen.noellesroles.loan_contract.amount": "贷款金额（金币）",
+  "screen.noellesroles.loan_contract.limit": "上限：%s 金币",
+  "screen.noellesroles.loan_contract.confirm": "签订合同",
+  "screen.noellesroles.loan_contract.terms": "每45秒增加25金币利息；3分30秒后强制收款。",
+  "screen.noellesroles.loan_contract.esc": "按 Esc 离开合同页面",
+  "message.noellesroles.loan.request": "%s 请求签订贷款合同。右键放贷人接受。",
+  "message.noellesroles.loan.request_sent": "已向 %s 发起贷款请求。",
+  "message.noellesroles.loan.accepted": "贷款请求已接受，请填写合同金额。",
+  "message.noellesroles.loan.expired": "贷款请求已过期。",
+  "message.noellesroles.loan.invalid_amount": "金额必须在1到%s金币之间。",
+  "message.noellesroles.loan.lender_unavailable": "放贷人当前不可用。",
+  "message.noellesroles.loan.lender_insufficient": "放贷人的金币不足以发放这笔贷款。",
+  "message.noellesroles.loan.inventory_full": "没有空间存放贷款合同，贷款已取消。",
+  "message.noellesroles.loan.created": "你向 %s 借出了 %s 金币。",
+  "message.noellesroles.loan.received": "你获得了 %s 金币和一份贷款合同。",
+  "message.noellesroles.loan.payment_received": "你收到 %s 金币还款。",
+  "message.noellesroles.loan.insufficient": "你需要 %s 金币才能一次性还清合同。",
+  "message.noellesroles.loan.repaid": "已偿还 %s 金币。",
+  "message.noellesroles.loan.reminder": "还款提醒：当前应还 %s 金币。",
+  "message.noellesroles.loan.forced": "合同到期：应还 %s 金币，已收取 %s 金币。",
+  "message.noellesroles.loan.stomach_banned": "你的胃无法再接受食物或饮料。",
+  "message.noellesroles.loan.penalty.eye": "你失去了一只眼睛",
+  "message.noellesroles.loan.penalty.heart": "你失去了心脏。",
+  "message.noellesroles.loan.penalty.hand": "你失去了一只手",
+  "message.noellesroles.loan.penalty.liver": "你失去了肝脏",
+  "message.noellesroles.loan.penalty.leg": "你失去了一条腿",
+  "message.noellesroles.loan.penalty.stomach": "你失去了胃",
+  "message.noellesroles.loan.penalty.tongue": "你失去了舌头",
+  "message.noellesroles.loan.penalty.ear": "你失去了一只耳朵",
+  "effect.noellesroles.myopia": "近视",
+  "mob_effect.noellesroles.myopia": "近视",
+  "effect.noellesroles.myopia.description": "远处变得模糊，近处相对清晰。等级越高越看不清远处。",
+  "effect.noellesroles.hand_tremor": "手疾",
+  "mob_effect.noellesroles.hand_tremor": "手疾",
+  "effect.noellesroles.hand_tremor.description": "拿着刀、枪等武器时屏幕会轻微抖动，刚抽出时最强。",
+  "effect.noellesroles.mental_deafness": "心灵失聪",
+  "mob_effect.noellesroles.mental_deafness": "心灵失聪",
+  "effect.noellesroles.mental_deafness.description": "心情永远保持满值。",
+  "effect.noellesroles.cognitive_bias": "人类认知偏差",
+  "mob_effect.noellesroles.cognitive_bias": "人类认知偏差",
+  "effect.noellesroles.cognitive_bias.description": "其他人的皮肤会随机变化，名字变得模糊。",
+  "effect.noellesroles.loss_of_appetite": "食欲不振",
+  "mob_effect.noellesroles.loss_of_appetite": "食欲不振",
+  "effect.noellesroles.loss_of_appetite.description": "无法食用食物和饮品。",
+  "effect.noellesroles.missing_lungs": "肺部缺失",
+  "mob_effect.noellesroles.missing_lungs": "肺部缺失",
+  "effect.noellesroles.missing_lungs.description": "一段时间后窒息而死。等级越高死亡越快。",
+  "effect.noellesroles.aphrenia": "失心症",
+  "mob_effect.noellesroles.aphrenia": "失心症",
+  "effect.noellesroles.aphrenia.description": "偶尔会失去自我，身体自行走动一段时间后恢复。",
+  "effect.noellesroles.intellect_drop": "智力下降",
+  "mob_effect.noellesroles.intellect_drop": "智力下降",
+  "effect.noellesroles.intellect_drop.description": "有时会突然无法使用物品。",
+  "effect.noellesroles.motor_dysfunction": "运动障碍",
+  "mob_effect.noellesroles.motor_dysfunction": "运动障碍",
+  "effect.noellesroles.motor_dysfunction.description": "移动时有概率摔倒。",
+  "message.noellesroles.ailment.appetite_banned": "你现在没有食欲，无法进食或饮水。",
+  "item.noellesroles.loan_contract.desc": "右键偿还贷款本金和利息。",
+  "message.noellesroles.loan.request_pending": "你已有一个等待接受的贷款请求，请等待10秒超时后再试。"
+  ,"item.noellesroles.insurance": "保险"
+  ,"item.noellesroles.insurance.status.unsigned": "状态：未签订"
+  ,"item.noellesroles.insurance.status.signed": "状态：已签订"
+  ,"item.noellesroles.insurance.status.active": "状态：生效中"
+  ,"item.noellesroles.insurance.reason.knife": "保护死亡原因：刀"
+  ,"item.noellesroles.insurance.reason.revolver": "保护死亡原因：左轮手枪"
+  ,"item.noellesroles.insurance.reason.bat": "保护死亡原因：球棒"
+  ,"item.noellesroles.insurance.reason.grenade": "保护死亡原因：手榴弹"
+  ,"item.noellesroles.insurance.reason.short_shotgun": "保护死亡原因：短管霰弹枪"
+  ,"item.noellesroles.insurance.reason.heart_attack": "保护死亡原因：心脏骤停"
+  ,"item.noellesroles.insurance.reason.throwing_knife": "保护死亡原因：飞刀"
+  ,"item.noellesroles.insurance.reason.other": "保护死亡原因：其它"
+  ,"screen.noellesroles.insurance.title": "保险合同"
+  ,"screen.noellesroles.insurance.instruction": "选择要保护的死亡原因"
+  ,"screen.noellesroles.insurance.reason.knife": "刀"
+  ,"screen.noellesroles.insurance.reason.revolver": "左轮手枪"
+  ,"screen.noellesroles.insurance.reason.bat": "球棒"
+  ,"screen.noellesroles.insurance.reason.grenade": "手榴弹"
+  ,"screen.noellesroles.insurance.reason.short_shotgun": "短管霰弹枪"
+  ,"screen.noellesroles.insurance.reason.heart_attack": "心脏骤停"
+  ,"screen.noellesroles.insurance.reason.throwing_knife": "飞刀"
+  ,"screen.noellesroles.insurance.reason.other": "其它"
+  ,"screen.noellesroles.insurance.selected": "已选择：%s"
+  ,"screen.noellesroles.insurance.selected.none": "尚未选择死亡原因"
+  ,"screen.noellesroles.insurance.confirm": "签订保险"
+  ,"screen.noellesroles.insurance.esc": "按 Esc 退出合同页面"
+  ,"message.noellesroles.insurance.signed": "保险已签订。右键保险并支付25金币即可生效。"
+  ,"message.noellesroles.insurance.activated": "保险已生效。"
+  ,"message.noellesroles.insurance.already_active": "这份保险已经生效。"
+  ,"message.noellesroles.insurance.invalid": "无法签订这份保险。"
+  ,"message.noellesroles.insurance.protected": "保险生效：本次死亡伤害已被抵挡，并获得25金币。"
 }

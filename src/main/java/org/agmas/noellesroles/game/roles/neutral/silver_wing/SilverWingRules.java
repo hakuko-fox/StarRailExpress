@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.game.roles.neutral.silver_wing;
 
 /**
@@ -21,7 +36,7 @@ public final class SilverWingRules {
     public static final int BIRD_SKILL_BAN_SECONDS = 8;
     public static final float BIRD_MOOD_DRAIN = 0.30F;
     public static final int BIRD_GOLD_PENALTY = 25;
-    public static final float BIRD_SHIELD_BREAK_CHANCE = 0.75F;
+    public static final float BIRD_SHIELD_BREAK_CHANCE = 0.5F;
     public static final double BIRD_FLY_SPEED = 0.45D;
     public static final double BIRD_DASH_SPEED = 1.15D;
     public static final int BIRD_DASH_EXPLODE_SECONDS = 3;

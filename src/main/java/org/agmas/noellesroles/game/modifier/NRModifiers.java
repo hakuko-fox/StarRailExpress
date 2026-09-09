@@ -17,6 +17,7 @@ package org.agmas.noellesroles.game.modifier;
 
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.events.ModifierAssigned;
 import org.agmas.harpymodloader.events.ModifierRemoved;
@@ -38,6 +39,18 @@ import java.util.List;
  * NoellesRoles 修饰符注册类
  */
 public class NRModifiers {
+    /** 体弱修饰符。拥有此修饰符的无需完成跑步任务：它会自动完成。 */
+    public static final SREModifier FRAIL = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("frail"),
+            0x303030,
+            null,
+            null,
+            false,
+            false))
+            .setCanSetSpawnInfoInConfig(true)
+            .setDefaultEnableChance(1000)
+            .setDefaultMax(1)
+            .setAddedVersion("4.4");
     /** Runtime-only marker for a player cosplayed as a Rabbit. */
     public static final SREModifier RABBIT_SHAPE = HMLModifiers.registerModifier(new SREModifier(
             Noellesroles.id("rabbit_shape"),
@@ -148,7 +161,8 @@ public class NRModifiers {
     /**
      * 里昂不与远征队等任何修饰符共存于一人身上。
      *
-     * <p>由于本模组（Noellesroles）入口先于其它模组（如 stupid_express）的修饰符注册执行，
+     * <p>
+     * 由于本模组（Noellesroles）入口先于其它模组（如 stupid_express）的修饰符注册执行，
      * 此处在服务器启动时（所有模组修饰符均已注册到 {@link HMLModifiers#MODIFIERS}）统一把里昂
      * 加入每个修饰符的 {@code cannotBeAppliedTo} 排除名单。
      */
@@ -167,6 +181,20 @@ public class NRModifiers {
      * 分配修饰符组件
      */
     public static void assignModifierComponents() {
+        ModifierAssigned.EVENT.register((player, modifier) -> {
+            if (!modifier.equals(RABBIT_SHAPE)) {
+                return;
+            }
+            if (player instanceof ServerPlayer sp)
+                GameUtils.refreshPlayerDimension(sp);
+        });
+        ModifierRemoved.EVENT.register((player, modifier) -> {
+            if (!modifier.equals(RABBIT_SHAPE)) {
+                return;
+            }
+            if (player instanceof ServerPlayer sp)
+                GameUtils.refreshPlayerDimension(sp);
+        });
         // 远征队修饰符分配事件
         ModifierAssigned.EVENT.register((player, modifier) -> {
             if (!modifier.equals(EXPEDITION)) {
@@ -221,6 +249,7 @@ public class NRModifiers {
             }
         });
     }
+
     static {
         INTROVERTED.setAddedVersion("4.0");
         TAXED.setAddedVersion("4.0");

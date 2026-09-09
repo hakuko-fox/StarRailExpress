@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.component.DefibrillatorComponent;
 import org.agmas.noellesroles.component.FoodDrinkGlowComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
@@ -28,6 +29,7 @@ import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerRole;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerRole;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
 import org.agmas.noellesroles.game.roles.innocence.mortician.MorticianRole;
+import org.agmas.noellesroles.game.roles.innocence.insurance.InsuranceRole;
 import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
@@ -44,6 +46,7 @@ import org.agmas.noellesroles.game.roles.neutral.mafia.MafiaRole;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaRole;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
+import org.agmas.noellesroles.game.roles.neutral.raven.RavenRole;
 import org.agmas.noellesroles.game.roles.vigilante.genshin.TartagliaRole;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
@@ -62,6 +65,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.mojang.serialization.Codec;
 
+import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.api.EggRole;
 import io.wifi.starrailexpress.api.ExtraEffectRole;
 import io.wifi.starrailexpress.api.InstinctType;
@@ -76,6 +80,7 @@ import io.wifi.starrailexpress.cca.SREArmorPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPoisonComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.client.gui.RoleAnnouncementTexts;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -227,7 +232,9 @@ public class ModRoles {
     // 特码头角色 ID
     public static final ResourceLocation TOMATO_HEAD_ID = Noellesroles.id("tomato_head");
     // 幻灵角色 ID
-    public static final ResourceLocation PHANTOM_SPIRIT_ID = Noellesroles.id("phantom_spirit");
+    public static final ResourceLocation PHANTOM_SPIRIT_ID = BounsRoles.id("phantom_spirit");
+    // 张天使角色 ID
+    public static final ResourceLocation ZHANG_ANGEL_ID = BounsRoles.id("zhang_angel");
     // 野人角色 ID
     public static final ResourceLocation BARBARIAN_ID = BounsRoles.id("barbarian");
     // 亡灵之主角色 ID
@@ -251,6 +258,9 @@ public class ModRoles {
     public static ResourceLocation POISONER_ID = Noellesroles.id("poisoner");
     public static ResourceLocation SPELLBREAKER_ID = Noellesroles.id("spellbreaker");
     public static ResourceLocation LEADER_ID = Noellesroles.id("leader");
+    public static final ResourceLocation LENDER_ID = Noellesroles.id("lender");
+    public static final ResourceLocation INSURANCE_ID = Noellesroles.id("insurance");
+    public static final ResourceLocation ECHO_LISTENER_ID = BounsRoles.id("echo_listener");
 
     public static ResourceLocation LOCKSMITH_ID = Noellesroles.id("locksmith");
     public static ResourceLocation EXAMPLER_ID = Noellesroles.id("exampler");
@@ -351,7 +361,7 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
             false // 显示计分板
     )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.FLY).setDefaultMax(0)
+            .setSpecialMapRole(MapSpecialFeatures.FLY).setDefaultMax(0)
             .setRoleData(PilotRoleData::new);
 
     /**
@@ -379,7 +389,7 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限体力
             true // 隐藏计分板
     )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.FLY).setDefaultMax(1)
+            .setSpecialMapRole(MapSpecialFeatures.FLY).setDefaultMax(1)
             .setRoleData(ShadowFalconRoleData::new);
 
     /**
@@ -581,7 +591,7 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 无限冲刺时间
             true // 隐藏计分板
     )).setCanSeeCoin(true).setOccupiedRoleCount(2).setVigilanteTeam(true).setCanBeRandomedByOtherRoles(false)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.QIYUCUN).setDefaultMax(0);
+            .setSpecialMapRole(MapSpecialFeatures.QIYUCUN).setDefaultMax(0);
     public static SRERole MA_CHEN_XU = TMMRoles.registerRole(new NormalRole(
             MA_CHEN_XU_ID, // 角色 ID
             new Color(75, 0, 130).getRGB(), // 深紫色 - 代表恐惧与神秘
@@ -591,7 +601,7 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
     )).setRoleData(MaChenXuRoleData::new).setCanSeeCoin(true).setOccupiedRoleCount(2)
-            .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(SRERole.SpecialMapRoleMap.QIYUCUN)
+            .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(MapSpecialFeatures.QIYUCUN)
             .setDefaultMax(1).setToggledOnInstinctType(
                     InstinctType.customWithFunction((self, target, selfRole, targetRole) -> {
                         MaChenXuRoleData macComp = RoleData.getNullable(MaChenXuRoleData.class,
@@ -653,14 +663,14 @@ public class ModRoles {
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false).addEffect(
                             new MobEffectInstance(
-                                    MobEffects.MOVEMENT_SLOWDOWN,
+                                    ModEffects.LIMP,
                                     30 * 20, // 持续时间 60s（tick）
                                     0, // 等级（0 = 缓慢 I）
                                     true, // ambient（环境效果，如信标）
                                     false, // showParticles（显示粒子）
                                     true // showIcon（显示图标）
                             )))
-            .setCanSeeCoin(true).setServerGameTickEvent((p, g) -> RoleTickers.oldmanTick(p, g));
+            .setCanSeeCoin(true);
     // 算命大师
     public static SRERole FORTUNETELLER = TMMRoles.registerRole(
             new NormalRole(FORTUNETELLER_ID, new Color(239, 228, 176).getRGB(),
@@ -745,16 +755,33 @@ public class ModRoles {
      * - 与阴谋家互斥生成
      */
     public static SRERole PHANTOM_SPIRIT = TMMRoles.registerRole(
-            new NormalRole(PHANTOM_SPIRIT_ID, new Color(90, 196, 208).getRGB(),
+            new EggRole(PHANTOM_SPIRIT_ID, new Color(90, 196, 208).getRGB(),
                     RoleType.NEUTRALS_FOR_INNOCENT, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false)
                     .setRoleData(PhantomSpiritRoleData::new))
             .setCanSeeCoin(true)
-            .setCanIncreaseSurvivingInnocents(true)
+            .setNeutralForInnocent(true)
             .setCanXiaonao(false)
-            .setCanBeXiaonao(false)
+            .setCanBeXiaonao(true)
             .setDefaultMax(1)
-            .setDefaultEnableChance(4000)
+            .setDefaultEnableChance(500)
+            .setAddedVersion("4.4");
+
+    /**
+     * 张天使 - 平民中立（与乘客一同胜利）
+     * - 每 10 秒吞电，使周围灯光闪烁
+     * - 处于黑暗（亮度≤5 或关灯）时隐身并获得速度 I
+     * - 积攒 10 次吞电后，花费 100 金币对准目标召雷：随机施加缓慢 II、失明+盲视、耳聋或腿瘸
+     */
+    public static SRERole ZHANG_ANGEL = TMMRoles.registerRole(
+            new EggRole(ZHANG_ANGEL_ID, new Color(170, 200, 255).getRGB(),
+                    RoleType.NEUTRALS_FOR_INNOCENT, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), true)
+                    .setRoleData(ZhangAngelRoleData::new))
+            .setCanSeeCoin(true)
+            .setDarknessImmune(true)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(500)
             .setAddedVersion("4.4");
 
     /**
@@ -876,7 +903,8 @@ public class ModRoles {
             .setCanSeeCoin(false).setVigilanteTeam(true).setCanPickUpRevolver(false)
             .setSpecialVigilante(true).setDefaultMax(1).setDefaultEnableChance(6500)
             .setCanUseSpVanillaWeapon(true).setNoCoinSystem(true).setCanBeRandomedByOtherRoles(false)
-            .setSpecialMapRoles(SRERole.SpecialMapRoleMap.CAN_JUMP, SRERole.SpecialMapRoleMap.MINIGAME_QUEST)
+            .setSpecialMapRolesCondition((t) -> t.contains(MapSpecialFeatures.CAN_JUMP)
+                    && t.contains(MapSpecialFeatures.MINIGAME_QUEST))
             // 小游戏任务独立计算：不并入轮换派发，始终独立计时刷新
             .setIndependentMinigameTiming(true)
             .setRoleData(NetCopRoleData::new);
@@ -1001,7 +1029,7 @@ public class ModRoles {
             .setCanJumpManhole(true).setCanAcrossFog(true)
             .setRoleData(AdventurerRoleData::new)
             .setDefaultEnableNeededPlayerCount(6)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.TRAP).setDefaultMax(1)
+            .setSpecialMapRole(MapSpecialFeatures.TRAP).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
             .setEnvironmentalImmunity(true);
     // 红尘客
@@ -1306,7 +1334,7 @@ public class ModRoles {
             )))
             .setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false)
             .setRoleData(DiverRoleData::new)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER).setDefaultMax(0);
+            .setSpecialMapRole(MapSpecialFeatures.UNDERWATER).setDefaultMax(0);
 
     /**
      * 特警角色
@@ -1333,7 +1361,7 @@ public class ModRoles {
             .setServerGameTickEvent((player, gameComponent) -> {
                 org.agmas.noellesroles.game.roles.vigilante.swast.SwastTickHandler.serverTick(player,
                         gameComponent);
-            }).setSpecialVigilante(true).setSpecialMapRole(SRERole.SpecialMapRoleMap.BIGMAP)
+            }).setSpecialVigilante(true).setSpecialMapRole(MapSpecialFeatures.BIGMAP)
             .setDefaultMax(1).setDefaultEnableChance(7000);
 
     /**
@@ -1389,7 +1417,8 @@ public class ModRoles {
                     true // showIcon（显示图标）
             )))
             .setCanSeeCoin(true).setVigilanteTeam(true).setCanPickUpRevolver(false)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER).setDefaultMax(1)
+            .setSpecialPolice(true)
+            .setSpecialMapRole(MapSpecialFeatures.UNDERWATER).setDefaultMax(1)
             .setCanKillWithTrident(true);
 
     /**
@@ -1423,7 +1452,7 @@ public class ModRoles {
                     true // showIcon（显示图标）
             )))
             .setRoleData(WaterGhostRoleData::new).setCanSeeCoin(true)
-            .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(SRERole.SpecialMapRoleMap.UNDERWATER)
+            .setCanBeRandomedByOtherRoles(false).setSpecialMapRole(MapSpecialFeatures.UNDERWATER)
             .setDefaultMax(1)
             .setCanKillWithTrident(true);
 
@@ -1522,42 +1551,66 @@ public class ModRoles {
                         boolean isFollower = data != null && data.isFollower(target.getUUID());
                         boolean isNonKillerNeutral = targetRole.isNeutrals()
                                 && !targetRole.isNeutralForKiller();
+                        // 好人方中立（isNeutralForInnocent）：除失忆患者(amnesiac)与初学者(initiate)外，领袖无法透视到
+                        boolean isGoodSideNeutral = targetRole.isNeutralForInnocent();
+                        boolean seeableGoodNeutral = isGoodSideNeutral
+                                && (targetRole.identifier().getPath().equals("amnesiac")
+                                        || targetRole.identifier().getPath()
+                                                .equals("initiate"));
+                        boolean showNonKillerNeutral = isNonKillerNeutral
+                                && (!isGoodSideNeutral || seeableGoodNeutral);
                         boolean hasFollowers = data != null && !data.followers.isEmpty();
                         // 自己的追随者 → 蓝色（可无限距离透视）
                         if (isFollower) {
                             return InstinctType.custom(new Color(0, 0, 255).getRGB());
                         }
                         // 有追随者时：不再额外显示其它非杀手方中立的特殊框
-                        if (hasFollowers && isNonKillerNeutral) {
+                        if (hasFollowers && showNonKillerNeutral) {
                             return InstinctType.NONE;
                         }
                         double dist = self.distanceTo(target);
                         // 超出 10 格：仅当没有追随者时可无限透视非杀手方中立（黄色），其余不透视
                         if (dist > 10.0D) {
-                            if (!hasFollowers && isNonKillerNeutral) {
+                            if (!hasFollowers && showNonKillerNeutral) {
                                 return InstinctType.custom(
                                         new Color(255, 255, 0).getRGB());
                             }
                             return InstinctType.NONE;
                         }
                         // 10 格内
-                        if (isNonKillerNeutral) {
+                        if (showNonKillerNeutral) {
                             return InstinctType.custom(new Color(255, 255, 0).getRGB());
                         }
-                        // 其余（杀手、好人、杀手方中立、自己） → 领袖色
+                        // 其余（杀手、好人、杀手方中立、好人方中立、自己） → 领袖色
                         return InstinctType.custom(new Color(255, 0, 255).getRGB());
                     }));
+    /** 放贷人：中立阵营，以合同把金币借给其他玩家。 */
+    public static SRERole LENDER = TMMRoles.registerRole(new NormalRole(
+            LENDER_ID, new Color(184, 134, 11).getRGB(), RoleType.NEUTRALS,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setCanSeeCoin(true)
+            .setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(5000);
+
+    /** 保险职员：平民阵营，可以在职业商店购买保险。 */
+    public static SRERole INSURANCE = TMMRoles.registerRole(new InsuranceRole(
+            INSURANCE_ID, new Color(35, 105, 180).getRGB()))
+            .setCanSeeCoin(true)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(5000);
+
     public static SRERole TAMER = TMMRoles
             .registerRole(new NormalRole(TAMER_ID, new Color(210, 180, 140).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setNeutrals(false).setCanSeeCoin(true)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.HORSE).setDefaultMax(0)
+            .setSpecialMapRole(MapSpecialFeatures.HORSE).setDefaultMax(0)
             .setCanBeRandomedByOtherRoles(false);
     public static SRERole HUNTER = TMMRoles
             .registerRole(new NormalRole(HUNTER_ID, new Color(160, 82, 45).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setNeutrals(false).setCanSeeCoin(true)
-            .setSpecialMapRole(SRERole.SpecialMapRoleMap.HORSE).setDefaultMax(1)
+            .setSpecialMapRole(MapSpecialFeatures.HORSE).setDefaultMax(1)
             .setCanBeRandomedByOtherRoles(false)
             .setRoleData(HunterRoleData::new)
             .setCanKillWithBowAndCrossbow(true);
@@ -1641,8 +1694,8 @@ public class ModRoles {
             .setCanUseInstinctAndNightVision(true)
             .setCanSeeCoin(true)
             .setDefaultMax(1)
-            .setDefaultEnableChance(5000)
-            .setDefaultEnableNeededPlayerCount(12)
+            .setDefaultEnableChance(1000)
+            .setDefaultEnableNeededPlayerCount(18)
             .setAddedVersion("4.4"); // versiontag 4.4
 
     public static SRERole SPELLBREAKER = TMMRoles
@@ -2412,16 +2465,45 @@ public class ModRoles {
             .setDefaultEnableNeededPlayerCount(12)
             .setBeSeenInstinctType(InstinctType.DEFAULT, InstinctType.NONE);
 
-    public static SRERole RAVEN = TMMRoles.registerRole(new NormalRole(
+    public static SRERole RAVEN = TMMRoles.registerRole(new RavenRole(
             RAVEN_ID,
             new Color(130, 100, 160).getRGB(),
             false,
             false,
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
-            true)).setRoleData(RavenRoleData::new).setCanSeeCoin(true).setNeutrals(true)
+            true))
+            .setRoleData(RavenRoleData::new).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
             .setDefaultEnableNeededPlayerCount(10);
+
+    public static SRERole ECHO_LISTENER = TMMRoles.registerRole(new EggRole(
+            ECHO_LISTENER_ID, new Color(78, 110, 122).getRGB(), false, false,
+            SRERole.MoodType.FAKE, Integer.MAX_VALUE, true) {
+        @Override
+        public void onFinishQuest(Player player, String quest) {
+            super.onFinishQuest(player, quest);
+            if (player instanceof ServerPlayer serverPlayer) {
+                SREPlayerShopComponent.KEY.get(serverPlayer).addToBalance(50);
+            }
+        }
+
+        @Override
+        public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason,
+                boolean forceDeath) {
+            if (!forceDeath) {
+                DefibrillatorComponent component = ModComponents.DEFIBRILLATOR.get(victim);
+                component.triggerDeath(60 * 20, null, victim.position());
+            }
+        }
+    }).setRoleData(EchoListenerRoleData::new)
+            .setCanSeeCoin(true)
+            .setNeutrals(true)
+            .setNeutralForKiller(false)
+            .setNeutralForInnocent(true)
+            .setDefaultEnableChance(500)
+            .setCanUseInstinctAndNightVision(false)
+            .setDefaultMax(1);
 
     public static SRERole REASONER = TMMRoles.registerRole(new NormalRole(
             REASONER_ID,
@@ -3069,7 +3151,12 @@ public class ModRoles {
         RESCUER.setAddedVersion("3.3");
         FIREFIGHTER.setAddedVersion("3.3");
         ACCOUNTANT.setAddedVersion("3.3");
-        TOMATO_HEAD.setAddedVersion("4.5");
+        TOMATO_HEAD.setAddedVersion("4.4");
+        ZHANG_ANGEL.setAddedVersion("4.4");
+        NET_COP.setAddedVersion("4.4");
+        LENDER.setAddedVersion("4.4");
+        INSURANCE.setAddedVersion("4.4");
+        ECHO_LISTENER.setAddedVersion("4.4");
         ALCHEMIST.setAddedVersion("3.3");
         DIVER.setAddedVersion("4.0");
         SWAST.setAddedVersion("3.3");

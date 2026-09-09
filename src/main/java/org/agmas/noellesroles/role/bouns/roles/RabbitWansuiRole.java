@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role.bouns.roles;
 
 import org.agmas.harpymodloader.component.WorldModifierComponent;
@@ -27,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class RabbitWansuiRole extends CustomWinnerRole implements EggRoleInterface {
 
-    private static final int COST = 75;
+    private static final int COST = 25;
 
     public RabbitWansuiRole(ResourceLocation identifier, int color, RoleType roleType, MoodType moodType,
             int maxSprintTime, boolean canSeeTime) {
@@ -66,11 +81,8 @@ public class RabbitWansuiRole extends CustomWinnerRole implements EggRoleInterfa
                 if (wmcca.isModifier(p, NRModifiers.RABBIT_SHAPE)) {
                     SRE.REPLAY_MANAGER.recordCustomEvent(
                             Component.translatable("replay.event.rabbit.restore",
-                                    GameReplayUtils.getReplayPlayerDisplayText(player, true)));
-                    wmcca.removeModifier(p, NRModifiers.RABBIT_SHAPE);
-
-                    ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
-                    player.refreshDimensions();
+                                    GameReplayUtils.getReplayPlayerDisplayText(p, true)));
+                    RoleUtils.removeModifier(p, NRModifiers.RABBIT_SHAPE);
                 }
             }
         }
@@ -93,12 +105,12 @@ public class RabbitWansuiRole extends CustomWinnerRole implements EggRoleInterfa
                         MoneyUtils.sendNotEnoughtMoneyMessage(player, COST);
                         return false;
                     }
-                    wmcca.addModifier(target, NRModifiers.RABBIT_SHAPE);
                     target.displayClientMessage(Component.translatable("skill.noellesroles.rabbit_wansui.target.tip")
                             .withStyle(ChatFormatting.AQUA), true);
                     target.addEffect(ModEffects.of(MobEffects.DARKNESS, 5 * 20, 0, false, false, true));
                     target.addEffect(ModEffects.of(MobEffects.BLINDNESS, 5 * 20, 0, false, false, true));
                     target.addEffect(ModEffects.of(ModEffects.USED_BANED, 15 * 20, 0, false, false, true));
+                    target.addEffect(ModEffects.of(ModEffects.SKILL_BANED, 30 * 20, 0, false, false, true));
                     target.addEffect(ModEffects.of(ModEffects.MOVE_BANED, 5 * 20, 0, false, false, true));
                     target.addEffect(ModEffects.of(ModEffects.JUMP_DECREASE, 5 * 20, 10, false, false, true));
                     target.addEffect(ModEffects.of(ModEffects.CHAT_BAN, 30 * 20, 10, false, false, true));
@@ -106,8 +118,7 @@ public class RabbitWansuiRole extends CustomWinnerRole implements EggRoleInterfa
                     target.addEffect(ModEffects.of(ModEffects.NO_INSTINCT, 120 * 20, 10, false, false, true));
                     target.addEffect(ModEffects.of(ModEffects.INVENTORY_BANED, 30 * 20, 10, false, false, true));
                     target.addEffect(ModEffects.of(ModEffects.NO_STAMINA, 60 * 20, 10, false, false, true));
-                    ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
-                    player.refreshDimensions();
+                    RoleUtils.addModifier(target, NRModifiers.RABBIT_SHAPE);
                     return true;
                 })
                         .withTarget()

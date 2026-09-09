@@ -1,3 +1,18 @@
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package org.agmas.noellesroles.role.bouns.roles;
 
 import java.util.ArrayList;
@@ -21,7 +36,7 @@ import net.minecraft.world.phys.AABB;
 public class HengXingTiRole extends ExtraEffectRole implements EggRoleInterface {
     public static final int SKILL_DURATION = 15 * 20;
     public static final int SKILL_RANGE = 10;
-    public static final int MAX_TP_PLAYER_COUNT = 8;
+    public static final int MAX_TP_PLAYER_COUNT = 12;
     public static final double PULL_RANGE = 1;
     public static final double ROTATION_SPEED = 2 * Math.PI / 100; // 每 100 tick 转一圈
 
@@ -106,7 +121,9 @@ public class HengXingTiRole extends ExtraEffectRole implements EggRoleInterface 
         target.addEffect(ModEffects.of(ModEffects.NO_COLLIDE, 20, 1, false, false, true));
         target.addEffect(ModEffects.of(ModEffects.MOVE_BANED, 20, 1, false, false, true));
         target.addEffect(ModEffects.of(ModEffects.SKILL_BANED, 20, 1, false, false, true));
-
+        target.addEffect(ModEffects.of(ModEffects.USED_BANED, 20, 1, false, false, true));
+        target.addEffect(ModEffects.of(ModEffects.INVINCIBLE, 20, 1, false, false, true));
+        
         ServerLevel level = player.serverLevel();
 
         // 目标玩家碰撞箱尺寸
