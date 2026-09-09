@@ -22,6 +22,8 @@ public final class FakeSteveRules {
     public static final int FACE_TO_FACE_TICKS = 5 * 20;
     public static final int ASSIMILATION_TICKS = 3 * 20;
     public static final long HUNT_ROOM_RECALL_INTERVAL_TICKS = 90L * 20L;
+    public static final double VIRUS_AURA_RADIUS = 5.0D;
+    public static final double VIRUS_AURA_RADIUS_SQR = VIRUS_AURA_RADIUS * VIRUS_AURA_RADIUS;
 
     private FakeSteveRules() {
     }
@@ -55,6 +57,25 @@ public final class FakeSteveRules {
             int uninterruptedTicks) {
         return nearbyFakeMembers >= 2 && otherLivingHumans == 0
                 && uninterruptedTicks >= ASSIMILATION_TICKS;
+    }
+
+    public static float virusMoodDrainMultiplier(boolean holder, boolean nearbyHolder,
+            boolean nearbyCorpse) {
+        float multiplier = 1.0F;
+        if (holder) {
+            multiplier += 0.30F;
+        }
+        if (nearbyHolder) {
+            multiplier += 0.50F;
+        }
+        if ((holder || nearbyHolder) && nearbyCorpse) {
+            multiplier += 0.10F;
+        }
+        return multiplier;
+    }
+
+    public static boolean hasReachedZero(float previousMood, float currentMood) {
+        return previousMood > 0.0F && currentMood <= 0.0F;
     }
 
     public static boolean hasFaceToFaceCommunication(int uninterruptedTicks) {

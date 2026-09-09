@@ -67,6 +67,21 @@ class FakeSteveRulesTest {
     }
 
     @Test
+    void virusMoodDrainStacksHolderAuraAndNearbyCorpseBonuses() {
+        assertEquals(1.30F, FakeSteveRules.virusMoodDrainMultiplier(true, false, false));
+        assertEquals(1.50F, FakeSteveRules.virusMoodDrainMultiplier(false, true, false));
+        assertEquals(1.60F, FakeSteveRules.virusMoodDrainMultiplier(false, true, true));
+        assertEquals(1.00F, FakeSteveRules.virusMoodDrainMultiplier(false, false, true));
+    }
+
+    @Test
+    void sanityCollapseTriggersOnlyWhenMoodCrossesZero() {
+        assertFalse(FakeSteveRules.hasReachedZero(0.0F, 0.0F));
+        assertFalse(FakeSteveRules.hasReachedZero(0.2F, 0.1F));
+        assertTrue(FakeSteveRules.hasReachedZero(0.1F, 0.0F));
+    }
+
+    @Test
     void faceToFaceCommunicationRequiresFiveContinuousSeconds() {
         assertFalse(FakeSteveRules.hasFaceToFaceCommunication(99));
         assertTrue(FakeSteveRules.hasFaceToFaceCommunication(100));

@@ -18,6 +18,7 @@ package org.agmas.noellesroles.game.fake_steve;
 public enum ActivationSource {
     NATURAL_ROLL,
     VIRUS_DEATH,
+    VIRUS_SANITY_COLLAPSE,
     COMMAND_NEXT,
     COMMAND_EVENT,
     COMMAND_SPAWN,

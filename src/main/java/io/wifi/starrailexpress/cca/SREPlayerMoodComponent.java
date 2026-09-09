@@ -22,6 +22,7 @@ import io.wifi.starrailexpress.cca.SREPlayerTaskComponent.Task;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
@@ -33,8 +34,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
+import org.agmas.noellesroles.game.fake_steve.FakeSteveDirector;
+import org.agmas.noellesroles.game.fake_steve.FakeSteveRules;
+import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.init.ModEffects;
 import org.jetbrains.annotations.NotNull;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -139,6 +145,7 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
         }
         if (!this.playerTaskComponent.tasks.isEmpty()) {
             float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
+            drainMultiplier *= getFakeSteveVirusDrainMultiplier();
             if (this.mood > 0) {
                 this.mood = this.mood
                         - this.playerTaskComponent.tasks.size() * GameConstants.MOOD_DRAIN * drainMultiplier;
@@ -201,13 +208,19 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
                     shouldSync = true;
                 }
             } else if (!this.playerTaskComponent.tasks.isEmpty()) {
+                float previousMood = this.mood;
                 float drainMultiplier = ModEffects.getMoodDrainMultiplier(this.player);
+                drainMultiplier *= getFakeSteveVirusDrainMultiplier();
                 if (this.mood > 0) {
                     this.mood = this.mood
                             - this.playerTaskComponent.tasks.size() * GameConstants.MOOD_DRAIN * drainMultiplier;
                 }
                 if (this.mood < 0)
                     this.mood = 0;
+                if (this.player instanceof ServerPlayer serverPlayer
+                        && FakeSteveRules.hasReachedZero(previousMood, this.mood)) {
+                    FakeSteveDirector.triggerVirusSanityCollapse(serverPlayer);
+                }
                 if (this.playerTaskComponent.nextTaskTimer % 100 == 0) { // 5s一次同步
                     shouldSync = true;
                 }
@@ -241,6 +254,22 @@ public class SREPlayerMoodComponent implements RoleComponent, ServerTickingCompo
             return this.mood;
         } else
             return 1;
+    }
+
+    /** Applies the hidden Fake Steve virus aura to natural task-based mood loss. */
+    private float getFakeSteveVirusDrainMultiplier() {
+        WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(this.player.level());
+        boolean holder = modifiers.isModifier(this.player, NRModifiers.FAKE_STEVE_VIRUS);
+        boolean nearbyHolder = this.player.level().players().stream()
+                .filter(nearby -> nearby != this.player)
+                .filter(nearby -> GameUtils.isPlayerAliveAndSurvival(nearby))
+                .filter(nearby -> modifiers.isModifier(nearby, NRModifiers.FAKE_STEVE_VIRUS))
+                .anyMatch(nearby -> nearby.distanceToSqr(this.player) <= FakeSteveRules.VIRUS_AURA_RADIUS_SQR);
+        boolean nearbyCorpse = (holder || nearbyHolder)
+                && !this.player.level().getEntities(TMMEntities.PLAYER_BODY,
+                        new AABB(this.player.blockPosition()).inflate(FakeSteveRules.VIRUS_AURA_RADIUS),
+                        body -> true).isEmpty();
+        return FakeSteveRules.virusMoodDrainMultiplier(holder, nearbyHolder, nearbyCorpse);
     }
 
     public void setMood(float mood) {

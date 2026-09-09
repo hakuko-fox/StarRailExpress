@@ -224,6 +224,28 @@ public final class FakeSteveDirector {
         return true;
     }
 
+    /** Opens the event and gives the nearby virus victim an immediate apparition attempt. */
+    public static boolean triggerVirusSanityCollapse(ServerPlayer target) {
+        if (target == null || !canGenerate(target.serverLevel()) || !isRoundAcceptingCommands(target.serverLevel())
+                || !isValidTarget(target) || !hasVirusHolderNear(target)) {
+            return false;
+        }
+        ServerLevel level = target.serverLevel();
+        Session session = session(level);
+        if (session == null) {
+            return false;
+        }
+        if (!session.active) {
+            session.active = true;
+            session.activationSource = ActivationSource.VIRUS_SANITY_COLLAPSE;
+            announceNaturalEvent(level);
+        }
+        if (!FakeSteveApparitions.spawnFor(target, false)) {
+            session.pendingEvents++;
+        }
+        return true;
+    }
+
     /** Implemented by the apparition networking slice. */
     public static boolean spawnApparition(ServerPlayer target) {
         if (target == null || !isValidTarget(target)
@@ -324,6 +346,14 @@ public final class FakeSteveDirector {
     private static boolean hasVirus(ServerPlayer player) {
         return WorldModifierComponent.KEY.get(player.serverLevel())
                 .isModifier(player, NRModifiers.FAKE_STEVE_VIRUS);
+    }
+
+    private static boolean hasVirusHolderNear(ServerPlayer target) {
+        return target.serverLevel().players().stream()
+                .filter(player -> player != target)
+                .filter(player -> GameUtils.isPlayerAliveAndSurvival(player))
+                .filter(FakeSteveDirector::hasVirus)
+                .anyMatch(player -> player.distanceToSqr(target) <= FakeSteveRules.VIRUS_AURA_RADIUS_SQR);
     }
 
     private static void tick(ServerLevel level) {
