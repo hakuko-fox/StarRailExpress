@@ -86,19 +86,24 @@ public class EntityMixin {
             }
 
             if (self instanceof Player sp) {
+                if (other instanceof Player so && !self.level().isClientSide()) {
+                    boolean flag = CollisionRules.cantCollide.stream().noneMatch(p -> p.test(sp) || p.test(so));
+
+                    if (!flag) {
+                        return false;
+                    }
+                }
                 TrueFalseResult result2 = CanCollideWith.PLAYER.invoker().allowCollideWith(sp, other);
                 if (result2.equals(TrueFalseResult.FALSE)) {
                     return false;
                 } else if (result2.equals(TrueFalseResult.TRUE)) {
                     return true;
                 }
-                if (other instanceof Player so) {
-                    if (so.level().isClientSide) {
+                if (other instanceof Player) {
+                    if (self.level().isClientSide) {
                         return false;
                     }
-                    // 此处：渲染进程和服务端不一致。所以判断的时候应该分开判断。
-                    boolean flag = CollisionRules.cantCollide.stream().noneMatch(p -> p.test(sp) || p.test(so));
-                    return flag;
+                    return true;
                 }
             }
         }

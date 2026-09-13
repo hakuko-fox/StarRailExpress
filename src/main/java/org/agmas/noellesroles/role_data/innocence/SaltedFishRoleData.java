@@ -43,6 +43,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.BodyCleanupZones;
 import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
@@ -99,6 +100,17 @@ public class SaltedFishRoleData extends SimpleRoleData {
 
     public boolean isActive() {
         return activeTicks > 0;
+    }
+
+    /**
+     * 是否处于「伪装成尸体」的形态（晒咸鱼期间）。
+     *
+     * <p>此时玩家被渲染成一具躺平的尸体，碰撞箱也要按尸体尺寸走，
+     * 否则瞄准那具「尸体」时命中的是一根看不见的站立碰撞箱。
+     */
+    public static boolean isCorpseForm(Player player) {
+        SaltedFishRoleData data = RoleData.getNullable(SaltedFishRoleData.class, player);
+        return data != null && data.isActive();
     }
 
     public boolean useSkill(ServerPlayer sp) {
@@ -166,7 +178,7 @@ public class SaltedFishRoleData extends SimpleRoleData {
         }
 
         updateSunYaw(sp.serverLevel());
-        updateFakeBody(sp.serverLevel());
+        updateFakeBody(sp);
         applyRestraints();
         stopHorizontalMotion(sp);
 
@@ -270,9 +282,18 @@ public class SaltedFishRoleData extends SimpleRoleData {
         return null;
     }
 
-    private void updateFakeBody(ServerLevel level) {
-        PlayerBodyEntity body = getFakeBody(level);
+    private void updateFakeBody(ServerPlayer sp) {
+        // 会议区/游记放逐区会自动清除尸体，进去就再也回不来了：
+        // 本体在区域内时让假尸体留在原地，离开后再继续跟随。
+        if (BodyCleanupZones.isInside(sp)) {
+            return;
+        }
+        PlayerBodyEntity body = getFakeBody(sp.serverLevel());
         if (body == null) {
+            // 尸体被清理区删掉了：本体离开区域后重新生成，否则咸鱼会一直「隐身且没有假尸体」
+            if (activeTicks > 0) {
+                spawnFakeBody(sp);
+            }
             return;
         }
         // 位置：每 tick 跟随本体，避免本体被推动/下落/传送后假尸体留在原地而分离。

@@ -138,5 +138,7 @@
   "map_intro.mechanic.train_target.title": "列車標靶 / 標靶",
   "map_intro.mechanic.train_target.body": "列車標靶：被手槍/狙擊槍擊中時會觸發紅石機關。標靶：被彈射物擊中時會觸發紅石機關",
   "map_intro.mechanic.special_roles.title": "特定地圖刷新的職業",
-  "map_intro.mechanic.special_roles.body": "以下職業僅會出現在特定地圖\n布袋鬼地圖：布袋鬼、詭客\n大地圖：特警\n水下地圖：海王、水鬼、潛水夫\n天空地圖：影隼、飛行員\n機關地圖：冒險家\n騎馬地圖：馴馬師、獵人\n會議地圖：加拿大鵝\n會議投票地圖：呆呆鳥、政客、傳教士"
+  "map_intro.mechanic.special_roles.body": "以下職業僅會出現在特定地圖\n布袋鬼地圖：布袋鬼、詭客\n大地圖：特警\n水下地圖：海王、水鬼、潛水夫\n天空地圖：影隼、飛行員\n機關地圖：冒險家\n騎馬地圖：馴馬師、獵人\n會議地圖：加拿大鵝\n會議投票地圖：呆呆鳥、政客、傳教士",
+  "map_intro.show_all_maps": "顯示全部地圖（含未登記進投票配置的）",
+  "map_intro.property.plane_crash": "地圖啟用飛機墜落事件，開場會有飛機撞向中心，建築會間歇震顫"
 }

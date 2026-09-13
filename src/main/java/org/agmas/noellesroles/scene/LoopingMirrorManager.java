@@ -54,6 +54,7 @@ public final class LoopingMirrorManager {
     }
 
     public static void addAndBind(ServerLevel level, LoopingMirrorLoop loop) {
+        VerticalLoopingMirrorSavedData.get(level).removeContaining(loop.controller());
         add(level, loop);
         writeToBlockEntity(level, loop);
     }

@@ -1965,7 +1965,7 @@ public class RoleShopHandler {
                         c.revolverSoundCooldown = PhantomMusicianRoleData.REVOLVER_SOUND_COOLDOWN;
                         c.sync();
                         p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS,
-                                1F, 1F);
+                                1F, 0.7F);
                         return true;
                     }
                 });
@@ -2439,6 +2439,15 @@ public class RoleShopHandler {
                 }
             });
             ShopContent.customEntries.put(ModRoles.OLDMAN.getIdentifier(), SHOP);
+        }
+
+        // 残疾患者商店
+        {
+            var SHOP = new ArrayList<ShopEntry>();
+            SHOP.add(new ShopEntry(ModItems.ONCE_REVOLVER.getDefaultInstance(), 300, ShopEntry.Type.WEAPON));
+            SHOP.add(new ShopEntry(TMMItems.WEAK_DEFENSE_VIAL.getDefaultInstance(), 500, ShopEntry.Type.POISON));
+            SHOP.add(new ShopEntry(ModItems.INFERIOR_LOCKPICK.getDefaultInstance(), 200, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(ModRoles.DISABLED_PATIENT.getIdentifier(), SHOP);
         }
 
         // 监察员的商店

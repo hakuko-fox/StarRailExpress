@@ -35,6 +35,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.packet.ToggleInsaneSkillC2SPacket;
 import org.agmas.noellesroles.role.ModRoles;
@@ -168,6 +169,17 @@ public class InsaneKillerRoleData extends SimpleRoleData {
 
     public boolean isUsedDeathAbility() {
         return deathState != 0;
+    }
+
+    /**
+     * 是否处于「伪装成尸体」的形态。
+     *
+     * <p>此时玩家被渲染成一具躺平的尸体，碰撞箱也要按尸体尺寸走，
+     * 否则瞄准那具「尸体」时命中的其实是一根看不见的站立碰撞箱。
+     */
+    public static boolean isCorpseForm(Player player) {
+        InsaneKillerRoleData data = RoleData.getNullable(InsaneKillerRoleData.class, player);
+        return data != null && data.isActive;
     }
 
     public int getDeathState() {

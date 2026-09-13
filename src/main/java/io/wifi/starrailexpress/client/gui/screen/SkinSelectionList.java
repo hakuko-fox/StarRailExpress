@@ -19,7 +19,7 @@ import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.content.item.SkinableItem;
-import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.data.PlayerSkinEconomyManager;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.minecraft.ChatFormatting;
@@ -275,7 +275,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             this.skinColor = sskinColor;
             this.isUnlocked = skinName.equals("default")
                     || skinsComponent.isSkinUnlockedForItemType(itemTypeName, skinName)
-                    || PlayerEconomyManager.isSkinUnlockedForItemType(
+                    || PlayerSkinEconomyManager.isSkinUnlockedForItemType(
                             Minecraft.getInstance().player, storeSkinType(), skinName)
                     || ClientPlayerDataCache.backpack(Minecraft.getInstance().player.getUUID()).purchasedSkins
                             .contains(BackpackManager.storeSkinKey(storeSkinType(), skinName));

@@ -21,12 +21,13 @@ import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
-import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.client.util.SREClientUtils;
 import io.wifi.starrailexpress.content.entity.NoteEntity;
 import io.wifi.starrailexpress.event.AllowNameRender;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.morph.MorphApiClient;
+import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.exmo.sre.nametag.NameTagTitleCatalog;
@@ -404,6 +405,30 @@ public class RoleNameRenderer {
     }
 
     private static PlayerNameLines getDisplayName(Player target) {
+        if (target instanceof net.minecraft.client.player.AbstractClientPlayer clientPlayer) {
+            if (MorphApiClient.isTextureMorph(clientPlayer)
+                    || io.wifi.starrailexpress.hat.HatEquipmentApi.shouldHideBoundCosmetics(clientPlayer)) {
+                return new PlayerNameLines(null, target.getName());
+            }
+            UUID owner = MorphApiClient.shouldRevealRealName()
+                    ? target.getUUID() : MorphApiClient.resolveDisplayedOwnerUuid(clientPlayer);
+            if (owner != null && !owner.equals(target.getUUID())) {
+                Minecraft client = Minecraft.getInstance();
+                Player displayedPlayer = client.level == null ? null : client.level.getPlayerByUUID(owner);
+                PlayerInfo info = client.getConnection() == null ? null
+                        : client.getConnection().getPlayerInfo(owner);
+                if (info == null) {
+                    info = ClientSkinCache.getCachedPlayerInfo(owner);
+                }
+                if (displayedPlayer != null) {
+                    return getDisplayName(owner, displayedPlayer, getSyncedDisplayName(displayedPlayer),
+                            displayedPlayer.getGameProfile());
+                }
+                if (info != null && info.getProfile() != null) {
+                    return getDisplayName(owner, null, info.getTabListDisplayName(), info.getProfile());
+                }
+            }
+        }
         Component displayName = getSyncedDisplayName(target);
         return getDisplayName(target.getUUID(), target, displayName, target.getGameProfile());
     }

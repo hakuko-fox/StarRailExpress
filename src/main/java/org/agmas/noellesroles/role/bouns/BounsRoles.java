@@ -51,6 +51,7 @@ import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.modifier.BounsModifiers;
 import org.agmas.noellesroles.role.touhou.THMagicForestRoles;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.anime.AnimeRoles;
 import org.agmas.noellesroles.role.touhou.THHumanVillageRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.role.touhou.THMountainRoles;
@@ -73,6 +74,7 @@ public class BounsRoles {
     public static final ResourceLocation TELEGRAPHER_ID = id("telegrapher");
     public static final ResourceLocation DISC_MASTER_ID = id("disc_master");
     public static final ResourceLocation ANGLER_ID = id("angler");
+    public static final ResourceLocation PROGRAMMER_ID = id("programmer");
 
     public static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(NAMESPACE, path);
@@ -177,7 +179,7 @@ public class BounsRoles {
             .setDefaultEnableChance(200);
 
     /**
-     * 垂钓者：常驻平民。仅在水下职业地图刷新（与海王/潜水员同一份名单）。
+     * 垂钓者：常驻平民。在水下职业地图或实验室地图刷新（两者为「或」关系）。
      */
     public static SRERole ANGLER = TMMRoles.registerRole(new NormalRole(
             ANGLER_ID,
@@ -188,7 +190,9 @@ public class BounsRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(),
             false
     )).setCanSeeCoin(true).setRoleData(AnglerRoleData::new)
-            .setSpecialMapRole(MapSpecialFeatures.UNDERWATER)
+            // 水下图或实验室图均可刷新（参照网警，用 SpecialMapRolesCondition 表达组合关系）
+            .setSpecialMapRolesCondition((t) -> t.contains(MapSpecialFeatures.UNDERWATER)
+                    || t.contains(MapSpecialFeatures.LAB))
             .setDefaultEnableChance(4000).setDefaultMax(1).setCanBeRandomedByOtherRoles(false)
             .setAddedVersion("4.4"); // versiontag 4.4
 
@@ -382,6 +386,28 @@ public class BounsRoles {
             .setTaskReward(2, 1, new ItemStack(TMMItems.STANDARD_REVOLVER)) // 完成 2 个任务获制式左轮
             .setCanUseInstinctAndNightVision(true);
 
+    /**
+     * 程序员角色
+     * - 彩蛋职业（受彩蛋刷新概率影响）
+     * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)
+     * - 假心情系统、无限冲刺时间、在计分板上显示
+     * - 商店：杀手默认刀具 + 终端（150金币）
+     * - 终端右键打开终端界面，可输入 /give @s <物品ID> 与 /tp @s room，执行成功后终端销毁
+     * - 职业相关规则全部集中在 {@link ProgrammerRole} 里
+     */
+    public static SRERole PROGRAMMER = TMMRoles.registerRole(new ProgrammerRole(
+            PROGRAMMER_ID, // 角色 ID
+            new Color(0, 170, 120).getRGB(), // 终端绿
+            false, // isInnocent = 杀手阵营
+            true, // canUseKiller = 有杀手能力
+            SRERole.MoodType.FAKE, // 假心情
+            -1, // 无限冲刺时间
+            true // 显示计分板
+    )).setCanBeRandomedByOtherRoles(false)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(2000) // 彩蛋刷新率 20%
+            .setAddedVersion("4.4"); // versiontag 4.4
+
     public static void init() {
         THRedHouseRoles.init();
         THMountainRoles.init();
@@ -390,6 +416,7 @@ public class BounsRoles {
         BounsModifiers.init();
         THLostForestRoles.init();
         THHumanVillageRoles.init();
+        AnimeRoles.init();
         registerEvents();
     }
 

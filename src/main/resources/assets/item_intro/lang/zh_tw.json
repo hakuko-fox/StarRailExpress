@@ -1,4 +1,4 @@
-﻿{
+{
   "item.noellesroles.crystal_ball.desc": "占卜家專用。右鍵對準屍體開始 10 秒施法（期間靜止不動），完成後揭示死亡時間 + 隨機兇手線索（三選一：兇手存活/死亡+名字、兇手職業、兇手全局高亮1秒）。50% 概率破碎，60 秒冷卻。若占卜對象為亡語殺手偽裝的屍體，視為其用刀刺死了自己。",
   "item.noellesroles.deduction_book.desc": "大偵探專用。右鍵打開查看已掌握的線索；對著屍體右鍵並保持靜止即可勘察。每頁對應一名兇手，線索≥3條時可選擇查明方位或生死。",
   "item.exposure.photograph_frame.desc": "攝影師專用道具。售價 200 金幣，一局最多購買兩次。在冒險模式下也可放置。將攝影師拍攝的照片放入畫框後，任何玩家穿過畫框即可傳送到照片的拍攝地點；每次穿越會被致盲 3 秒，且需冷卻 3 秒才能再次穿越。局內開始時僅清除攝影師放置的畫框。",
@@ -116,7 +116,7 @@
   "item.noellesroles.signature_paper.desc": "明星職業專屬道具，右鍵可以簽名，蹲下右鍵簽生死狀，具體詳見明星職業介紹。",
   "item.noellesroles.life_and_death_shape.desc": "生死狀，可以讓明星為你抵擋一次傷害。",
   "item.noellesroles.signed_paper.desc": "簽名紙，擁有簽名紙的玩家能持續透視明星的位置，並在看向明星時獲得速度1效果。",
-  "item.noellesroles.bowen_badge.desc": "波文徽章，承太郎職業專屬道具，長按右鍵3s進行衝刺，殺死衝撞到的目標並對周圍目標造成擊退。",
+  "item.noellesroles.bowen_badge.desc": "歐拉一拳，承太郎專屬。右鍵進入攻擊期間，綁定第一個打到的目標；目標無法移動、無法使用物品，並始終被固定在使用者前方。6秒內右鍵攻擊20次即可擊殺，每次攻擊都會使目標受擊。超時取消並進入一半冷卻。持有時手臂會被金色漸變包裹。仍可右鍵打開列車門。",
   "item.noellesroles.shisiye.desc": "女僕咲夜職業專屬道具，飲用後獲得速度10。",
   "item.noellesroles.problem_set.desc": "習題集，右鍵開始做題，做題正確會給予獎勵，失敗會給予懲罰。",
   "item.noellesroles.antidote.desc": "右鍵對玩家使用，可以使玩家解毒，使用後進入cd，當場上存在疫使時cd更快。",
@@ -207,12 +207,16 @@
   "item.noellesroles.sealed_breathless_bread.desc": "封印物。吃飯/喝水任務收益提高，進食也可能恢復少量 SAN；每次進食都有極低概率噎死。",
   "item.noellesroles.sealed_thunderbolt_nail.desc": "封印物。擊殺後追加金幣或短暫加速；在能看見天空的開闊處可能招來雷擊。",
   "item.noellesroles.sealed_vanishing_cloak.desc": "封印物。右鍵短暫隱身，結束後會發光暴露並持續掉 SAN。",
-  "item.noellesroles.sealed_doorless_key.desc": "封印物。右鍵短距瞬移、可穿越封鎖；落點可能偏移，甚至把你送進危險處。",
+  "item.noellesroles.sealed_doorless_key.desc": "封印物。右鍵短距瞬移、可穿越封鎖，4 秒後回到原處；落點可能偏移，甚至把你送進危險處。",
   "item.noellesroles.sealed_hungry_purse.desc": "封印物。緩慢產出金幣；遭到攻擊時會吐出金幣。",
   "item.noellesroles.sealed_whisper_bell.desc": "封印物。偶爾告知最近存活者的方位，但鈴聲也會攪亂視野。",
   "item.noellesroles.sealed_splintered_compass.desc": "封印物。指向最近的殺手方向；指針偶爾會把你拽去別處。",
   "item.noellesroles.sealed_last_match.desc": "封印物。右鍵點燃附近的人；火焰也可能回火燒到你自己。",
   "item.noellesroles.tomato.desc": "特碼頭死後掉落。\n按 Q 鍵丟出投擲物，落到方塊上會變成掉落物。\n走過會絆倒 2 秒並撿起。\n投擲方和被絆倒者的番茄同時進入 20 秒冷卻。\n砸中玩家會把番茄交給對方，並讓對方螢幕糊滿番茄醬 3 秒。",
   "item.noellesroles.loan_contract.desc": "右鍵償還貸款本金和利息。",
-  "item.noellesroles.insurance.desc": "選擇死亡原因簽訂保險；右鍵已簽訂的保險並支付25金幣使其生效。"
+  "item.noellesroles.insurance.desc": "選擇死亡原因簽訂保險；右鍵已簽訂的保險並支付25金幣使其生效。",
+  "item.starrailexpress.vertical_looping_mirror_tool.desc": "建圖工具。先選一塊迴圈鏡子，再勾選 A、B 兩個對角。穿過頂底面會上下迴圈；上方只疊有限份場景，下方是霧。",
+  "item.noellesroles.spellbreaker_potion.desc": "破咒者專用。瞄準存活玩家使用後，目標在 80 秒內下一次技能會被封印。",
+  "item.trainmurdermystery.weak_defense_vial.desc": "弱效護盾試劑。亡命徒等可直接右鍵飲用；普通玩家可倒在托盤上。提供持續約 20 秒、僅能抵擋一次刀傷害的弱效護盾。",
+  "item.noellesroles.sanity_meds.desc": "修機模式鎮靜劑。服用後恢復 40 點理智。黑暗與追捕者靠近時會侵蝕理智。"
 }

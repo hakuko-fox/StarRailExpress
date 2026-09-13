@@ -30,6 +30,7 @@ import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.role_data.killer.InsaneKillerRoleData;
+import org.agmas.noellesroles.utils.BodyCleanupZones;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -57,28 +58,41 @@ public abstract class InsaneKillerRenderMixin
         if (component != null && component.isActive) {
             ci.cancel();
             isPlayerBodyEntity.put(abstractClientPlayer.getUUID(), true);
-            if (!playerBodyEntities.containsKey(abstractClientPlayer.getUUID())) {
-                // if (abstractClientPlayer.getUUID() ==
-                // Minecraft.getInstance().player.getUUID()){
-                // Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK);
-                // }
-                final var body = new PlayerBodyEntity(TMMEntities.PLAYER_BODY, abstractClientPlayer.level());
-                body.setPlayerUuid(abstractClientPlayer.getUUID());
-                Vec3 spawnPos = abstractClientPlayer.position()
-                        .add(abstractClientPlayer.getLookAngle().normalize().scale(1));
-                body.moveTo(spawnPos.x(), abstractClientPlayer.getY(), spawnPos.z(), 0, 0f);
-                // body.setYRot(abstractClientPlayer.getYHeadRot());
-                // body.setYHeadRot(abstractClientPlayer.getYHeadRot());
-                clientLevel.addEntity(body);
-                playerBodyEntities.put(abstractClientPlayer.getUUID(), body);
-            }
-            final var playerBodyEntity = playerBodyEntities.get(abstractClientPlayer.getUUID());
+            // 会议区/游记放逐区会自动清除尸体，进去就再也回不来了：
+            // 本体在区域内时不动假尸体（既不新建也不跟随），离开后再恢复。
+            if (!BodyCleanupZones.isInside(abstractClientPlayer)) {
+                PlayerBodyEntity cached = playerBodyEntities.get(abstractClientPlayer.getUUID());
+                if (cached != null && cached.isRemoved()) {
+                    // 尸体已被清理，丢掉失效引用重建，否则伪装永远不再出现
+                    playerBodyEntities.remove(abstractClientPlayer.getUUID());
+                    cached = null;
+                }
+                if (cached == null) {
+                    // if (abstractClientPlayer.getUUID() ==
+                    // Minecraft.getInstance().player.getUUID()){
+                    // Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK);
+                    // }
+                    final var body = new PlayerBodyEntity(TMMEntities.PLAYER_BODY, abstractClientPlayer.level());
+                    body.setPlayerUuid(abstractClientPlayer.getUUID());
+                    // 标记为「伪造的尸体」：验尸官能察觉这是亡语杀手假扮的
+                    body.getComponent().isFakeBody = true;
+                    Vec3 spawnPos = abstractClientPlayer.position()
+                            .add(abstractClientPlayer.getLookAngle().normalize().scale(1));
+                    body.moveTo(spawnPos.x(), abstractClientPlayer.getY(), spawnPos.z(), 0, 0f);
+                    // body.setYRot(abstractClientPlayer.getYHeadRot());
+                    // body.setYHeadRot(abstractClientPlayer.getYHeadRot());
+                    clientLevel.addEntity(body);
+                    playerBodyEntities.put(abstractClientPlayer.getUUID(), body);
+                    cached = body;
+                }
 
-            Entity entity = clientLevel.getEntity(playerBodyEntity.getId());
-            if (entity != null) {
-                entity.setPos(abstractClientPlayer.getX(), abstractClientPlayer.getY(), abstractClientPlayer.getZ());
-                entity.setYHeadRot(0);
-                // entity.setXRot(0);
+                Entity entity = clientLevel.getEntity(cached.getId());
+                if (entity != null) {
+                    entity.setPos(abstractClientPlayer.getX(), abstractClientPlayer.getY(),
+                            abstractClientPlayer.getZ());
+                    entity.setYHeadRot(0);
+                    // entity.setXRot(0);
+                }
             }
             // playerBodyEntity.moveTo(abstractClientPlayer.getX(),
             // abstractClientPlayer.getY(), abstractClientPlayer.getZ());

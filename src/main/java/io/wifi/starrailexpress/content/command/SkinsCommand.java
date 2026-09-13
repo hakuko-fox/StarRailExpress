@@ -21,7 +21,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.data.AdminSkinManagementService;
 import io.wifi.starrailexpress.data.AdminSkinManagementService.Change;
-import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.data.PlayerSkinEconomyManager;
 import io.wifi.starrailexpress.network.OpenSkinScreenPaylod;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -192,9 +192,9 @@ public class SkinsCommand {
     private static void applyLocalChange(ServerPlayer player, String itemType, Collection<String> skinNames,
             Change change) {
         if (change == Change.UNLOCK) {
-            PlayerEconomyManager.unlockSkinsForItemType(player, itemType, skinNames);
+            PlayerSkinEconomyManager.unlockSkinsForItemType(player, itemType, skinNames);
         } else {
-            PlayerEconomyManager.lockSkinsForItemType(player, itemType, skinNames);
+            PlayerSkinEconomyManager.lockSkinsForItemType(player, itemType, skinNames);
         }
     }
 

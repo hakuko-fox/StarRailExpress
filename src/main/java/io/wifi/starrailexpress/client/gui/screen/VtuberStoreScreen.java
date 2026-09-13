@@ -11,7 +11,7 @@ import io.wifi.starrailexpress.backpack.BackpackState;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.client.data.ClientVtuberStoreCache;
-import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.data.PlayerSkinEconomyManager;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.VtuberStorePurchasePayload;
@@ -538,7 +538,7 @@ public final class VtuberStoreScreen extends Screen {
                 && SREPlayerSkinsComponent.KEY.get(minecraft.player)
                         .isSkinUnlockedForItemType(product.subtype(), product.value());
         boolean economyOwned = minecraft != null && minecraft.player != null
-                && PlayerEconomyManager.isSkinUnlockedForItemType(minecraft.player, product.subtype(), product.value());
+                && PlayerSkinEconomyManager.isSkinUnlockedForItemType(minecraft.player, product.subtype(), product.value());
         return storeOwned || remoteOwned || economyOwned;
     }
 

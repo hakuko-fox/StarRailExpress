@@ -6,6 +6,44 @@
 
 ---
 
+> ⚠️ **本文件的 API 清单存在大量过时内容（包名/方法名/事件签名），写代码请以源码为准。**
+> 下面这张表是本文件已核实的「旧写法 → 实际写法」对照；正文里的代码块也已按此表做过一轮修正，但**仍可能有遗漏**，遇到不确定的符号请直接 grep 源码：
+> `grep -rn "方法名\|类名" src/main/java`；事件签名看 `src/main/java/io/wifi/starrailexpress/event/*.java`。
+>
+> | 旧写法（本文档可能残留） | 实际写法 / 位置 |
+> | --- | --- |
+> | `io.wifi.starrailexpress.contents.item.*` | `io.wifi.starrailexpress.content.item.*`（无 `s`） |
+> | `ItemSkinManager` | `io.wifi.starrailexpress.util.ItemSkinManager`；注册皮肤 `registerACustomSkin(skinType, skinID, color)` |
+> | `TMMItemUtils` | `io.wifi.starrailexpress.util.SREItemUtils` |
+> | `org.agmas.noellesroles.RoleSkill` | `io.wifi.starrailexpress.api.RoleSkill` |
+> | `RoleSkill.beginUseWithTarget(...)` | `beginUseShiftedWithTarget(ServerPlayer, UUID)` / `beginUse(ServerPlayer, @Nullable UUID, int, Phase)` |
+> | `SRERole.getCooldownComponent(player)` | `SREAbilityPlayerComponent.KEY.get(player)` |
+> | `SRERole.setMax(n)`、`SREModifier.setMax(n)` | `setDefaultMax(n)` |
+> | `setCanSeeTeammateKiller(b)` | `setCanSeeTeammateKillerRole(b)` |
+> | 构造器末参 `hideScoreboard` | 实际是 `canSeeTime`（含义相反） |
+> | `onDeath(...)` 4 参、`onKill(...)` 返回 `boolean` | `void onDeath(..., boolean forceDeath)` / `void onKill(...)`；需要尸体用 `onDeathWithBody(...)` |
+> | `rightClickEntity/leftClickEntity` 返回 `void` | 返回 `InteractionResult` |
+> | `onAbilityUse(Player)` | `boolean onAbilityUse(ServerPlayer)` |
+> | `MorphApi.resolveDisplayedOwnerUuid/getDisplayedName/getDisplayedPlushStack` | 在客户端类 `MorphApiClient` 上 |
+> | `RoundEndComponent.CustomWinnerID` / `GameUtils.CustomWinnersPredicates` | `SREGameRoundEndComponent.CustomWinnerID`；**没有 `CustomWinnersPredicates`**，独立胜利用 `RoleUtils.customWinnerWin(...)`（见 `docs/AI创建新职业攻略.md` §12） |
+> | `GameConstants.DeathReasons.KNIFE_STAB` | `DeathReasons.KNIFE`（值仍是 `sre:knife_stab`） |
+> | `GameUtils.addItemCooldowns(level)` | `addItemCooldowns(ServerLevel, int time)` |
+> | `GameUtils.isPlayerSplitPersonalityAndSurvive` | `GameUtils.isPlayerReallyAliveOrDead`（`SPAliveResult`：`ALIVE`/`DEAD`/`NOT`） |
+> | `RoleUtils.RemoveAllPlayerAttributes` / `RemoveAllEffects` | `removeAllPlayerAttributes` / `removeAllEffects` |
+> | `RoleUtils.getRoleFromName("killer")` | `RoleUtils.getRole(String)` / `getRole(ResourceLocation)` |
+> | `Harpymodloader.setOccupationRole/getOccupationRole/removeOccupationRole` | `addOccupationRole(main, companion)` / `getOccupationRoles(role)` / `clearOccupationRole(role)` |
+> | `DISCOVERY_ID` | `SREGameModes.DISCOVERY_MODE_ID` |
+> | `SREGameModes.registerGameMode(id, mode)` | `registerGameMode(GameMode)` |
+> | `GameMode.tickCommonGameLoop()` / `tickClientGameLoop()` | 都带参数：`(Level level)` |
+> | `List<ReplayEvent>` | `List<TimelineReplayEvent>` |
+> | Replay `EventType`：`ITEM_USE`/`ROUND_END`/`ROLE_ASSIGNMENT`/`SKILL_USED`/`CUSTOM_MESSAGE`/`NOTE_EDIT`/`KEY_USED`/`GUN_FIRED` | 实际为 `ITEM_USED`/`GAME_END`/`CHANGE_ROLE`/`SKILL_RELEASE`/`CUSTOM_EVENT`；`NOTE_EDIT`/`KEY_USED`/`GUN_FIRED` **不存在**（完整枚举见 `api/replay/ReplayEventTypes.java`） |
+> | 本能在 `OnGetInstinctHighlight` 上 | 实际是 `event.client.CommonInstinctEvents` 的 `ALIVE_COMMON_BEFORE/MIDDLE/AFTER_EVENT` / `SPECTATOR_COMMON_EVENT`，返回 `TrueFalseAndCustomResult<Integer>` |
+> | `OnRoundStartWelcomeTimer` | `OnRoundStartWelcomeTimmer`（拼写如此） |
+> | `AllowGameEnd.EVENT` | `AllowGameEnd.EVENT_START` / `EVENT_END` |
+> | `AreasSettings.meetingX/Y/Z`、`meetingChairScanRadius` | `meetingPosition: {x,y,z}`、`meetingChairScanBox: {minX..maxZ}` |
+>
+> 注：**RoleData / ShopEntry / 商店 / 背包扩展 / TimeRewind / ui_style 等章节经核对基本正确**，可以放心参考；职业相关的最新最全流程请优先看 [`角色开发指南.md`](角色开发指南.md) 与 [`AI创建新职业攻略.md`](AI创建新职业攻略.md)。
+
 ## 目录 / Table of Contents
 
 1. [重要提醒 / Important Notes](#重要提醒--important-notes)
@@ -36,13 +74,15 @@
    - [可继承物品基类](#可继承物品基类)
    - [SkinableItem — 可换皮肤物品](#skinableitem--可换皮肤物品)
 9. [皮肤系统 / Skin System](#皮肤系统--skin-system)
-   - [SkinManager — 皮肤工具类](#skinmanager--皮肤工具类)
+   - [ItemSkinManager — 皮肤工具类](#itemskinmanager--皮肤工具类)
    - [注册自定义皮肤](#注册自定义皮肤)
+   - [变形 API / Morph API](#变形-api--morph-api)
 10. [事件系统 / Event System](#事件系统--event-system)
     - [游戏生命周期事件](#游戏生命周期事件)
     - [玩家死亡事件](#玩家死亡事件)
     - [技能与交互事件](#技能与交互事件)
     - [渲染与客户端事件](#渲染与客户端事件)
+    - [变形事件](#变形事件)
     - [其他事件](#其他事件)
 11. [Harpymodloader API](#harpymodloader-api)
     - [Harpymodloader — 主入口](#harpymodloader--主入口)
@@ -53,7 +93,7 @@
 13. [HUD 渲染 / HUD Rendering](#hud-渲染--hud-rendering)
 14. [工具类 / Utilities](#工具类--utilities)
     - [GameUtils — 游戏工具](#gameutils--游戏工具)
-    - [TMMItemUtils — 物品工具](#tmmitemutils--物品工具)
+    - [SREItemUtils — 物品工具](#tmmitemutils--物品工具)
     - [RoleUtils — 角色工具](#roleutils--角色工具)
 15. [Replay 系统 / Replay System](#replay-系统--replay-system)
     - [IGameReplayRecorder — 回放记录接口](#igamereplayrecorder--回放记录接口)
@@ -65,6 +105,10 @@
     - [屏幕公开"轮椅"方法](#屏幕公开轮椅方法)
     - [PlayerPaginationHelper — 翻页/搜索/排序](#playerpaginationhelper--翻页搜索排序)
     - [RoleScreenHelper — 角色选人辅助](#rolescreenhelper--角色选人辅助)
+17. [粒子与特效 / Particle & FX](#粒子与特效--particle--fx)
+    - [ParticleFx — 服务端粒子助手](#particlefx--服务端粒子助手)
+    - [SceneParticles — 场景方块粒子](#sceneparticles--场景方块粒子)
+    - [自定义形状粒子 / Custom Shape Particles](#自定义形状粒子--custom-shape-particles)
 
 ---
 
@@ -93,7 +137,7 @@ Abstract base class for all roles. Configure role properties via fluent setters 
 ```java
 public SRERole(ResourceLocation identifier, int color, boolean isInnocent,
                boolean canUseKiller, MoodType moodType, int maxSprintTime,
-               boolean hideScoreboard)
+               boolean canSeeTime)   // 最后一个参数是「是否看得见游戏计时」，不是隐藏计分板
 ```
 
 | 参数 | 类型 | 说明 |
@@ -104,7 +148,7 @@ public SRERole(ResourceLocation identifier, int color, boolean isInnocent,
 | `canUseKiller` | `boolean` | 是否具有杀手能力 |
 | `moodType` | `MoodType` | 心情类型：`NONE` / `REAL` / `FAKE` |
 | `maxSprintTime` | `int` | 最大冲刺时间（tick），`-1` 为无限制 |
-| `hideScoreboard` | `boolean` | 是否隐藏计分板 |
+| `canSeeTime` | `boolean` | 是否看得见游戏计时（旧文档写作 `hideScoreboard`，含义相反） |
 
 #### 属性配置方法 / Property Setters（链式调用 / Fluent）
 
@@ -122,9 +166,9 @@ SRERole setAbleToPickUpRevolver(boolean able)            // 是否可以拾取�
 SRERole setNeutrals(boolean neutrals)                    // 是否为中立阵营
 SRERole setNeutralForKiller(boolean forKiller)           // 是否对杀手中立（同时设置 isNeutrals=true）
 SRERole setVigilanteTeam(boolean vigilanteTeam)          // 是否为自警阵营
-SRERole setCanSeeTeammateKiller(boolean canSeeKiller)    // 是否可以看到队友杀手身份
+SRERole setCanSeeTeammateKillerRole(boolean canSeeKiller)    // 是否可以看到队友杀手身份
 SRERole setOccupiedRoleCount(int count)                  // 占用角色池数量（默认 1）
-SRERole setMax(int count)                                // 设置最大同时存在数量
+SRERole setDefaultMax(int count)                         // 设置最大同时存在数量
 SRERole setAutoReset(boolean autoReset)                  // 游戏结束是否自动重置
 SRERole setRoleData(Function<RoleDataContext, RoleData> func) // 绑定职业数据（默认，优先于 CCA）
 SRERole setComponentKey(ComponentKey<? extends RoleComponent> key) // 关联 CCA（仅跨玩家/全局状态）
@@ -140,10 +184,11 @@ SRERole setInventoryScreenExtensionFactory(Supplier<RoleInventoryScreenExtension
 
 ```java
 // 玩家死亡时调用（可返回 false 阻止尸体生成）
-boolean onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason)
+void onDeath(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason, boolean forceDeath)
+void onDeathWithBody(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason, PlayerBodyEntity body)
 
 // 杀手杀死玩家时调用
-boolean onKill(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason)
+void onKill(Player victim, boolean spawnBody, @Nullable Player killer, ResourceLocation deathReason)
 
 // 完成任务时调用
 void onFinishQuest(Player player, String quest)
@@ -158,13 +203,13 @@ void serverTick(ServerPlayer player)
 void clientTick(Player player)
 
 // 右键实体
-void rightClickEntity(Player player, Entity victim)
+InteractionResult rightClickEntity(Player player, Entity victim)
 
 // 左键实体
-void leftClickEntity(Player player, Entity victim)
+InteractionResult leftClickEntity(Player player, Entity victim)
 
 // 使用物品（G 键）
-void onAbilityUse(Player player)
+boolean onAbilityUse(ServerPlayer player)
 
 // 使用左轮手枪
 boolean onUseGun(Player player)
@@ -265,7 +310,7 @@ TMMRoles.registerRole(new NormalRole(...)
 
 ```java
 // 静态辅助方法，从玩家获取通用技能组件
-SREAbilityPlayerComponent component = SRERole.getCooldownComponent(player);
+SREAbilityPlayerComponent component = SREAbilityPlayerComponent.KEY.get(player);
 ```
 
 ---
@@ -293,9 +338,11 @@ new NormalRole(ResourceLocation id, int color, boolean isInnocent,
 Extends `NormalRole` and automatically applies potion effects to the player every 20 ticks.
 
 ```java
+// 注意：没有 varargs 构造器，效果通过构造器传入 ArrayList<MobEffectInstance>（或单个 MobEffectInstance），
+// 或构造后用 addEffect(...) 链式添加
 new ExtraEffectRole(ResourceLocation id, int color, boolean isInnocent,
                     boolean canUseKiller, MoodType moodType, int maxSprintTime,
-                    boolean hideScoreboard, MobEffectInstance... effects)
+                    boolean canSeeTime, ArrayList<MobEffectInstance> effects)
 ```
 
 | 方法 | 说明 |
@@ -435,7 +482,7 @@ public static final SREModifier MY_MODIFIER = HMLModifiers.registerModifier(
         false,     // 不仅限杀手
         true       // 仅限平民阵营
     )
-    .setMax(2)     // 同场最多 2 人拥有
+    .setDefaultMax(2)     // 同场最多 2 人拥有
     .setServerGameTickEvent(player -> {
         // 每 Tick 执行的服务端逻辑
     })
@@ -445,7 +492,7 @@ public static final SREModifier MY_MODIFIER = HMLModifiers.registerModifier(
 #### 添加配置（可选）
 
 修饰符每局分配数量受 `HarpyModLoaderConfig` 中两个参数控制：  
-- `modifierMaximum`：每名玩家最多修饰符数量（默认 1）
+- `modifierMaximum`：每名玩家最多修饰符数量（默认 4）
 - `modifierMultiplier`：按玩家总数乘以该系数分配修饰符（默认 0.5）
 
 可通过 `/setEnabledModifier` 指令在游戏内禁用/启用修饰符。
@@ -466,13 +513,13 @@ WorldModifierComponent wmc = WorldModifierComponent.KEY.get(player.level());
 |------|------|
 | `boolean isModifier(Player player, SREModifier modifier)` | 判断玩家是否拥有该修饰符 |
 | `boolean isModifier(UUID uuid, SREModifier modifier)` | 同上（UUID 版） |
-| `ArrayList<SREModifier> getModifiers(Player player)` | 获取玩家所有修饰符 |
-| `ArrayList<SREModifier> getModifiers(UUID uuid)` | 同上（UUID 版） |
-| `HashMap<UUID, ArrayList<SREModifier>> getModifiers()` | 获取全局修饰符映射 |
+| `Set<SREModifier> getModifiers(Player player)` | 获取玩家所有修饰符 |
+| `Set<SREModifier> getModifiers(UUID uuid)` | 同上（UUID 版） |
+| `Map<UUID, Set<SREModifier>> getModifiers()` | 获取全局修饰符映射 |
 | `List<UUID> getAllWithModifier(SREModifier modifier)` | 获取拥有该修饰符的所有玩家 |
 | `void addModifier(UUID player, SREModifier modifier)` | 为玩家添加修饰符（并同步） |
 | `void removeModifier(UUID player, SREModifier modifier)` | 移除玩家修饰符（并同步） |
-| `ArrayList<SREModifier> getDisplayableModifiers(Player player)` | 获取可展示给该玩家的修饰符列表 |
+| `Set<SREModifier> getDisplayableModifiers(Player player)` | 获取可展示给该玩家的修饰符列表 |
 
 > **注意：** 修饰符添加/移除会分别触发 `ModifierAssigned.EVENT` / `ModifierRemoved.EVENT`，见[HML 事件](#hml-事件)。
 
@@ -588,7 +635,7 @@ Manages skill cooldowns and charge counts with automatic client/server sync for 
 // 从玩家获取组件
 SREAbilityPlayerComponent comp = SREAbilityPlayerComponent.KEY.get(player);
 // 或通过 SRERole 辅助方法
-SREAbilityPlayerComponent comp = SRERole.getCooldownComponent(player);
+SREAbilityPlayerComponent comp = SREAbilityPlayerComponent.KEY.get(player);
 ```
 
 | 字段 / Field | 类型 | 说明 |
@@ -611,7 +658,7 @@ SREAbilityPlayerComponent comp = SRERole.getCooldownComponent(player);
 
 ### RoleSkill — 技能注册
 
-**包 / Package:** `org.agmas.noellesroles`
+**包 / Package:** `io.wifi.starrailexpress.api`（不是 `org.agmas.noellesroles`）
 
 服务端 G 键技能的注册与触发中心。玩家按下技能键时，客户端自动发送 `AbilityC2SPacket`，服务端通过 `RoleSkill` 分发处理。  
 Central registry and dispatcher for server-side G-key role skills. The client auto-sends `AbilityC2SPacket` on G-key press; the server dispatches via `RoleSkill`.
@@ -637,7 +684,7 @@ RoleSkill.register(ModRoles.MY_ROLE, (context) -> {
 });
 
 // 带目标的技能（需客户端发送 AbilityWithTargetC2SPacket）
-RoleSkill.beginUseWithTarget(player, targetUUID);
+RoleSkill.beginUseShiftedWithTarget(player, targetUUID);   // 潜行副技能；普通技能用 beginUse(player)
 ```
 
 #### 其他方法 / Other Methods
@@ -650,7 +697,9 @@ boolean tryRegister(ResourceLocation, Consumer<RoleSkillContext>)  // 失败时�
 
 // 手动触发技能（服务端，含 BEFORE/AFTER 事件）
 boolean beginUse(ServerPlayer player)
-boolean beginUseWithTarget(ServerPlayer player, UUID target)
+boolean beginUseWithTarget(...)  // ← 不存在，实际是下面两个
+boolean beginUseShiftedWithTarget(ServerPlayer player, UUID target)
+boolean beginUse(ServerPlayer player, @Nullable UUID target, int requestedSlot, Phase phase)
 ```
 
 #### 技能前后钩子 / Before/After Hooks
@@ -868,13 +917,13 @@ ChargeableItemRegistry.onFullyCharged(stack, player);
 
 | 类 | 包 | 说明 |
 |---|---|---|
-| `SkinableItem` | `io.wifi.starrailexpress.contents.item` | 抽象基类，支持皮肤系统的物品 |
+| `SkinableItem` | `io.wifi.starrailexpress.content.item` | 抽象基类，支持皮肤系统的物品 |
 | `KnifeItem` | `io.wifi.starrailexpress.content.item` | 近战刀（继承 `SkinableItem`），蓄力刺杀；子类可覆写蓄力钩子 |
-| `RevolverItem` | `io.wifi.starrailexpress.contents.item` | 左轮手枪（继承 `SkinableItem`），有耐久度 |
-| `BatItem` | `io.wifi.starrailexpress.contents.item` | 球棒（继承 `SkinableItem`） |
-| `GrenadeItem` | `io.wifi.starrailexpress.contents.item` | 手雷（继承 `SkinableItem`），蓄力投掷 |
-| `DefenseItem` | `io.wifi.starrailexpress.contents.item` | 防具/防御物品（继承 `Item`），限制使用职业 |
-| `NoteItem` | `io.wifi.starrailexpress.contents.item` | 便签（继承 `Item` + `AdventureUsable`） |
+| `RevolverItem` | `io.wifi.starrailexpress.content.item` | 左轮手枪（继承 `SkinableItem`），有耐久度 |
+| `BatItem` | `io.wifi.starrailexpress.content.item` | 球棒（继承 `SkinableItem`） |
+| `GrenadeItem` | `io.wifi.starrailexpress.content.item` | 手雷（继承 `SkinableItem`），蓄力投掷 |
+| `DefenseItem` | `io.wifi.starrailexpress.content.item` | 防具/防御物品（继承 `Item`），限制使用职业 |
+| `NoteItem` | `io.wifi.starrailexpress.content.item` | 便签（继承 `Item` + `AdventureUsable`） |
 
 #### KnifeItem — 蓄力钩子
 
@@ -902,7 +951,7 @@ DefenseItem.canUseByRightClickRolePaths.add("my_role");
 
 ### SkinableItem — 可换皮肤物品
 
-**包 / Package:** `io.wifi.starrailexpress.contents.item`
+**包 / Package:** `io.wifi.starrailexpress.content.item`
 
 继承此抽象类以创建支持皮肤系统的物品。  
 Extend this abstract class to create an item that supports the skin system.
@@ -915,7 +964,7 @@ public class MyWeapon extends SkinableItem {
 
     @Override
     public String getItemSkinType() {
-        // 返回皮肤类型名称（需与 SkinManager.registerType 中注册的名称一致）
+        // 返回皮肤类型名称（需与 ItemSkinManager.registerType 中注册的名称一致）
         return "my_weapon";
     }
 
@@ -942,7 +991,7 @@ public class MyWeapon extends SkinableItem {
 
 ## 皮肤系统 / Skin System
 
-### SkinManager — 皮肤工具类
+### ItemSkinManager — 皮肤工具类
 
 **包 / Package:** `io.wifi.starrailexpress.util`
 
@@ -952,39 +1001,39 @@ Core skin system manager: handles registration, querying, lock/unlock, and playe
 #### 注册自定义皮肤
 
 ```java
-// 1. 注册皮肤类型（须在 SkinManager 静态初始化顺序之后，建议在 mod onInitialize 中调用）
-SkinManager.registerType("my_weapon");
+// 1. 注册皮肤类型（须在 ItemSkinManager 静态初始化顺序之后，建议在 mod onInitialize 中调用）
+ItemSkinManager.registerType("my_weapon");
 
 // 2. 注册具体皮肤（type, skinID, color）
-SkinManager.registerSkin("my_weapon", "default", Colors.LIGHT_GRAY);
-SkinManager.registerSkin("my_weapon", "gold",    0xFFD700);
-SkinManager.registerSkin("my_weapon", "iron",    0xAAAAAA);
+ItemSkinManager.registerACustomSkin("my_weapon", "default", Colors.LIGHT_GRAY);
+ItemSkinManager.registerACustomSkin("my_weapon", "gold",    0xFFD700);
+ItemSkinManager.registerACustomSkin("my_weapon", "iron",    0xAAAAAA);
 ```
 
 #### 皮肤数据操作
 
 ```java
 // 检查玩家是否解锁了某皮肤
-boolean unlocked = SkinManager.isSkinUnlocked(player, itemStack, "gold");
+boolean unlocked = ItemSkinManager.isSkinUnlocked(player, itemStack, "gold");
 
 // 解锁皮肤给玩家
-SkinManager.unlockSkin(player, itemStack, "gold");
+ItemSkinManager.unlockSkin(player, itemStack, "gold");
 
 // 按物品类型解锁皮肤（无 ItemStack 版本）
-SkinManager.unlockSkinForItemType(player, "my_weapon", "gold");
+ItemSkinManager.unlockSkinForItemType(player, "my_weapon", "gold");
 
 // 锁定皮肤（移除解锁状态）
-SkinManager.lockSkin(player, itemStack, "gold");
+ItemSkinManager.lockSkin(player, itemStack, "gold");
 
 // 获取玩家当前装备的皮肤
-String skinName = SkinManager.getEquippedSkin(player, itemStack);
+String skinName = ItemSkinManager.getEquippedSkin(player, itemStack);
 
 // 设置玩家当前装备皮肤
-SkinManager.setEquippedSkin(player, itemStack, "gold");
-SkinManager.setEquippedSkinForItemType(player, "my_weapon", "gold");
+ItemSkinManager.setEquippedSkin(player, itemStack, "gold");
+ItemSkinManager.setEquippedSkinForItemType(player, "my_weapon", "gold");
 
 // 同步皮肤数据给客户端
-SkinManager.sync(player);
+ItemSkinManager.sync(player);
 ```
 
 #### 皮肤彩券货币
@@ -993,18 +1042,18 @@ SkinManager.sync(player);
 
 ```java
 // 获取/增加彩券抽取次数
-int chances = SkinManager.getLootChance(player);
-SkinManager.addLootChance(player, 1);
+int chances = ItemSkinManager.getLootChance(player);
+ItemSkinManager.addLootChance(player, 1);
 
 // 获取/增加皮肤货币数量
-int coins = SkinManager.getCoinNum(player);
-SkinManager.addCoinNum(player, 100);
+int coins = ItemSkinManager.getCoinNum(player);
+ItemSkinManager.addCoinNum(player, 100);
 ```
 
-#### SkinManager.Skin — 皮肤数据类
+#### ItemSkinManager.Skin — 皮肤数据类
 
 ```java
-SkinManager.Skin skin = SkinManager.Skin.fromString("my_weapon", "gold");
+ItemSkinManager.Skin skin = ItemSkinManager.Skin.fromString("my_weapon", "gold");
 int color = skin.getColor();   // 颜色值
 String name = skin.getName();  // 皮肤小写名称
 String tooltip = skin.tooltipName; // Tooltip 显示名
@@ -1014,21 +1063,58 @@ String tooltip = skin.tooltipName; // Tooltip 显示名
 
 | 常量 | 字符串值 |
 |---|---|
-| `SkinManager.SkinTypes.KNIFE` | `"knife"` |
-| `SkinManager.SkinTypes.REVOLVER` | `"revolver"` |
-| `SkinManager.SkinTypes.BAT` | `"bat"` |
-| `SkinManager.SkinTypes.GRENADE` | `"grenade"` |
-| `SkinManager.SkinTypes.HAT` | `"hat"` |
+| `ItemSkinManager.SkinTypes.KNIFE` | `"knife"` |
+| `ItemSkinManager.SkinTypes.REVOLVER` | `"revolver"` |
+| `ItemSkinManager.SkinTypes.BAT` | `"bat"` |
+| `ItemSkinManager.SkinTypes.GRENADE` | `"grenade"` |
+| `ItemSkinManager.SkinTypes.HAT` | `"hat"` |
 
 #### 皮肤品质颜色 / QualityColor
 
 ```java
-SkinManager.QualityColor.COMMON       // 0xFFEEEEEE 白灰
-SkinManager.QualityColor.UNCOMMON     // 0xFF33FF55 绿色
-SkinManager.QualityColor.RARE         // 0xFFAAAAFF 蓝色
-SkinManager.QualityColor.EPIC         // 0xFFAA55FF 紫色
-SkinManager.QualityColor.LEGENDARY    // 0xFFFFAA55 金色
-SkinManager.QualityColor.UNBELIEVABLE // 0xFFFF3F3F 红色
+ItemSkinManager.QualityColor.COMMON       // 0xFFEEEEEE 白灰
+ItemSkinManager.QualityColor.UNCOMMON     // 0xFF33FF55 绿色
+ItemSkinManager.QualityColor.RARE         // 0xFFAAAAFF 蓝色
+ItemSkinManager.QualityColor.EPIC         // 0xFFAA55FF 紫色
+ItemSkinManager.QualityColor.LEGENDARY    // 0xFFFFAA55 金色
+ItemSkinManager.QualityColor.UNBELIEVABLE // 0xFFFF3F3F 红色
+```
+
+---
+
+## 变形 API / Morph API
+
+**包 / Package:** `io.wifi.starrailexpress.morph`
+
+统一玩家外观变形：指定玩家、随机玩家、指定贴图。变形为玩家时，皮肤 / 帽子 / 名牌 / 身份玩偶一律跟随显示对象（与帽子绑定相同），避免用赞助玩偶识人。
+
+```java
+import io.wifi.starrailexpress.morph.MorphApi;
+
+// 变形成指定玩家（帽子、名牌、赞助玩偶一并绑定）
+MorphApi.morphToPlayer(serverPlayer, target.getUUID());
+MorphApi.morphToPlayer(serverPlayer, target.getUUID(), 20 * 15); // 15 秒后自动解除
+
+// 随机变形成一名存活玩家
+MorphApi.morphToRandomPlayer(serverPlayer);
+MorphApi.morphToRandomPlayer(serverPlayer, candidate -> GameUtils.isPlayerAliveAndSurvival(candidate), 0);
+
+// 使用其他贴图变形（无真实玩家可复制，帽子/名牌前缀/玩偶隐藏）
+MorphApi.morphToTexture(serverPlayer, SRE.id("textures/entity/disguise/disguise_skin_1.png"), false);
+
+// 解除变形
+MorphApi.clearMorph(serverPlayer);
+
+MorphAppearance appearance = MorphApi.getAppearance(player);
+boolean morphed = MorphApi.isMorphed(player);
+```
+
+客户端查询当前应显示的拥有者 / 名称 / 玩偶：
+
+```java
+UUID owner = MorphApiClient.resolveDisplayedOwnerUuid(clientPlayer);   // 这三个是客户端专用，在 MorphApiClient 上
+Component name = MorphApiClient.getDisplayedName(clientPlayer);
+ItemStack plush = MorphApiClient.getDisplayedPlushStack(clientPlayer);
 ```
 
 ---
@@ -1052,7 +1138,7 @@ SomeEvent.EVENT.register((param1, param2) -> { /* ... */ });
 **类型:** 可拦截，首个非 `NOT_MODIFY` 返回值生效。
 
 ```java
-AllowGameEnd.EVENT.register((serverLevel, currentWinStatus, isLooseEndsMode) -> {
+AllowGameEnd.EVENT_END.register((serverLevel, currentWinStatus, isLooseEndsMode) -> {   // 另有 EVENT_START
     // 返回 WinStatus.NOT_MODIFY 不修改，其他值将结束游戏
     return WinStatus.NOT_MODIFY;
 });
@@ -1070,7 +1156,7 @@ AllowGameEnd.EVENT.register((serverLevel, currentWinStatus, isLooseEndsMode) -> 
 | `LOOSE_END` | 散局玩家获胜 |
 | `GAMBLER` | 赌徒获胜 |
 | `RECORDER` | 记录者获胜 |
-| `CUSTOM` | 自定义胜利（需设置 `RoundEndComponent.CustomWinnerID` 和 `CustomWinnersPredicates`） |
+| `CUSTOM` | 自定义胜利（设置 `SREGameRoundEndComponent.CustomWinnerID`，用 `RoleUtils.customWinnerWin(...)` 结算；**不存在 `CustomWinnersPredicates`**） |
 
 #### `OnGameEnd` — 游戏结束时
 
@@ -1100,7 +1186,7 @@ OnGameTrueStarted.EVENT.register((serverLevel) -> {
 OnTrainAreaHaveReseted.EVENT.register((serverLevel) -> { /* ... */ });
 ```
 
-#### `OnRoundStartWelcomeTimer` — 开场欢迎计时器
+#### `OnRoundStartWelcomeTimmer` — 开场欢迎计时器（**注意类名拼写是 Timmer**）
 
 **类型:** 通知型。每轮开始欢迎计时阶段触发。
 
@@ -1192,7 +1278,7 @@ EarlyKillPlayer.FIND_KILLER_EVENT.register((victim, killer, reason) -> {
 **类型:** 可拦截，任意监听器返回 `false` 则不掉落。
 
 ```java
-ShouldDropOnDeath.EVENT.register((player) -> true);
+ShouldDropOnDeath.EVENT.register((stack) -> true);   // 回调参数是 ItemStack，不是玩家
 ```
 
 #### `OnShieldBroken` — 护盾破碎
@@ -1200,7 +1286,7 @@ ShouldDropOnDeath.EVENT.register((player) -> true);
 **类型:** 通知型。
 
 ```java
-OnShieldBroken.EVENT.register((player) -> { /* ... */ });
+OnShieldBroken.EVENT.register((victim, killer) -> { /* ... */ });
 ```
 
 #### `OnTeammateKilledTeammate` — 队友击杀队友
@@ -1208,7 +1294,7 @@ OnShieldBroken.EVENT.register((player) -> { /* ... */ });
 **类型:** 通知型。
 
 ```java
-OnTeammateKilledTeammate.EVENT.register((victim, killer) -> { /* ... */ });
+OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> { /* ... */ });
 ```
 
 ---
@@ -1252,7 +1338,7 @@ OnVendingMachinesBuyItems.EVENT.register((player, shopEntry) -> {
 **类型:** 通知型。
 
 ```java
-OnRevolverUsed.EVENT.register((player) -> { /* ... */ });
+OnRevolverUsed.EVENT.register((player, target) -> { /* ... */ });   // target 可能为 null
 ```
 
 #### `IsShootBackFire` — 是否触发后坐力
@@ -1268,7 +1354,7 @@ OnRevolverUsed.EVENT.register((player) -> { /* ... */ });
 **类型:** 返回 `true` 表示可被击打。
 
 ```java
-IsPlayerPunchable.EVENT.register((attacker, target) -> true);
+IsPlayerPunchable.EVENT.register((player) -> true);   // 只有 1 个参数（被攻击者）
 ```
 
 #### `AllowPlayerPunching` — 是否允许玩家出拳
@@ -1276,7 +1362,7 @@ IsPlayerPunchable.EVENT.register((attacker, target) -> true);
 **类型:** 可拦截。
 
 ```java
-AllowPlayerPunching.EVENT.register((attacker, target) -> true);
+AllowPlayerPunching.EVENT.register((player) -> true);   // 只有 1 个参数（攻击者）
 ```
 
 #### `AllowPlayerOpenLockedDoor` — 是否允许玩家开锁
@@ -1300,20 +1386,22 @@ AllowPlayerControlled.EVENT.register((controller, target) -> {
 });
 ```
 
-#### `OnGetInstinctHighlight` — 获取本能高亮实体
+#### `CommonInstinctEvents` — 本能高亮（**不存在 `OnGetInstinctHighlight`**）
 
-**类型:** 首个非 `null` 列表返回值生效。可自定义本能技能高亮的实体范围。
+**包 / Package:** `io.wifi.starrailexpress.event.client.CommonInstinctEvents`
+**类型:** 返回 `TrueFalseAndCustomResult<Integer>`（`pass()` 跳过 / `custom(颜色)` 覆盖）。
 
 ```java
-OnGetInstinctHighlight.EVENT.register((player) -> {
-    // 返回需要高亮的实体列表，或 null 跳过
-    return null;
+// 四个阶段事件：ALIVE_COMMON_BEFORE_EVENT / ALIVE_COMMON_MIDDLE_EVENT /
+//             ALIVE_COMMON_AFTER_EVENT / SPECTATOR_COMMON_EVENT
+CommonInstinctEvents.ALIVE_COMMON_AFTER_EVENT.register((self, target, isInstinctEnabled) -> {
+    return TrueFalseAndCustomResult.pass();   // 或 TrueFalseAndCustomResult.custom(0xFF00FF)
 });
 ```
 
 #### `OnGiveKillerBalance` — 给予杀手金币
 
-**类型:** 可拦截。
+**类型:** **通知型且会累加返回值**（`int` 金币数，把所有监听器的返回值相加），不是拦截型。
 
 #### `EntityInteractionHandler` — 实体交互处理
 
@@ -1351,7 +1439,7 @@ AllowNameRender.EVENT.register((player) -> true);
 **类型:** 可拦截（客户端）。
 
 ```java
-AllowItemShowInHand.EVENT.register((player, stack) -> true);
+AllowItemShowInHand.EVENT.register((player, stack, mainHand) -> stack);   // 返回 ItemStack
 ```
 
 #### `AllowOtherCameraType` — 是否允许使用非第一人称视角
@@ -1359,7 +1447,7 @@ AllowItemShowInHand.EVENT.register((player, stack) -> true);
 **类型:** 可拦截（客户端）。
 
 ```java
-AllowOtherCameraType.EVENT.register((player) -> true);
+AllowOtherCameraType.EVENT.register((original, localPlayer) -> ReturnCameraType.PASS);   // 返回 ReturnCameraType
 ```
 
 #### `ClientHeldItemSwitchEvent` — 客户端切换手持物品
@@ -1373,6 +1461,34 @@ AllowOtherCameraType.EVENT.register((player) -> true);
 ```java
 OnOpenInventory.EVENT.register((localPlayer, screen) -> false);
 ```
+
+---
+
+### 变形事件
+
+#### `AllowPlayerMorph` — 是否允许变形
+
+**包 / Package:** `io.wifi.starrailexpress.event`  
+**类型:** 可拦截，任意监听器返回 `false` 则取消。
+
+```java
+AllowPlayerMorph.EVENT.register((player, appearance) -> {
+    // appearance 为 MorphAppearance.NONE 时表示解除变形
+    return true;
+});
+```
+
+#### `OnPlayerMorph` — 变形完成
+
+**类型:** 通知型。外观已写入并开始同步。`next` 为 `NONE` 时表示解除变形。
+
+```java
+OnPlayerMorph.EVENT.register((player, previous, next) -> { /* ... */ });
+```
+
+#### `OnResolveDisplayedSkinOwner` — 解析显示皮肤拥有者（客户端）
+
+帽子、名牌、身份玩偶都通过此事件解析「看起来是谁」。返回非本人 UUID 即生效。
 
 ---
 
@@ -1426,14 +1542,14 @@ Harpymodloader.setRoleMaximum(MY_ROLE_ID, 2);  // ResourceLocation 版
 现已迁移到 `SRERole` 中存储。当然，您也可以使用旧版本API：
 ```java
 // 设置：分配 DOCTOR 的同时也分配 POISONER
-Harpymodloader.setOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
+Harpymodloader.addOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
 
 // 查询
-SRERole companion = Harpymodloader.getOccupationRole(ModRoles.DOCTOR); // POISONER
+SRERole companion = Harpymodloader.getOccupationRoles(ModRoles.DOCTOR); // POISONER
 boolean has = Harpymodloader.hasOccupationRole(ModRoles.DOCTOR);
 
 // 移除
-Harpymodloader.removeOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
+Harpymodloader.clearOccupationRole(ModRoles.DOCTOR, ModRoles.POISONER);
 Harpymodloader.clearOccupationRole(ModRoles.DOCTOR);
 ```
 
@@ -1552,9 +1668,9 @@ public abstract class GameMode {
     public void writeToNbt(CompoundTag nbt, HolderLookup.Provider lookup) {}
 
     // 通用（客户端+服务端）每 Tick
-    public void tickCommonGameLoop() {}
+    public void tickCommonGameLoop(Level level) {}
     // 客户端每 Tick
-    public void tickClientGameLoop() {}
+    public void tickClientGameLoop(Level level) {}
     // 服务端每 Tick（必须实现）
     public abstract void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent);
 
@@ -1577,13 +1693,13 @@ public abstract class GameMode {
 | `MURDER` | `sre:murder` | 标准谋杀模式 |
 | `LOOSE_ENDS` | `wathe:loose_ends` | 散局模式 |
 
-`DISCOVERY_ID = sre:discovery` — Discovery 模式 ID（仅注册，无对应 `GameMode` 常量）
+`DISCOVERY_MODE_ID = sre:discovery` — Discovery 模式 ID（仅注册，无对应 `GameMode` 常量）
 
 #### 注册自定义游戏模式
 
 ```java
 public static final ResourceLocation MY_MODE_ID = SRE.id("my_mode");
-public static final GameMode MY_MODE = SREGameModes.registerGameMode(MY_MODE_ID, new MyGameMode(MY_MODE_ID));
+public static final GameMode MY_MODE = SREGameModes.registerGameMode(new MyGameMode(MY_MODE_ID));
 ```
 
 ---
@@ -1628,7 +1744,7 @@ This event is **only called when the player has the specified role** — no manu
 
 ```java
 // 记录事件
-recorder.recordEvent(EventType.PLAYER_KILL, new PlayerKillDetails(killerUUID, victimUUID));
+recorder.recordEvent(EventType.PLAYER_KILL, new PlayerKillDetails(killerUUID, victimUUID, deathReason));
 
 // 记录自定义事件
 recorder.recordCustomEvent(MY_EVENT_ID, playerUUID, "custom message");
@@ -1639,10 +1755,10 @@ recorder.recordCustomEvent(MY_EVENT_ID, playerUUID, "custom message");
 **包 / Package:** `io.wifi.starrailexpress.api.replay`
 
 ```java
-List<ReplayEvent> all = reader.getEvents();
-List<ReplayEvent> inRange = reader.getEventsInTimeRange(startMs, endMs);
-List<ReplayEvent> byPlayer = reader.getEventsByPlayer(uuid);
-List<ReplayEvent> byType = reader.getEventsByType(EventType.PLAYER_KILL);
+List<TimelineReplayEvent> all = reader.getEvents();   // 元素类型是 TimelineReplayEvent
+List<TimelineReplayEvent> inRange = reader.getEventsInTimeRange(startMs, endMs);
+List<TimelineReplayEvent> byPlayer = reader.getEventsByPlayer(uuid);
+List<TimelineReplayEvent> byType = reader.getEventsByType(EventType.PLAYER_KILL);
 List<UUID> players = reader.getAllPlayerUuids();
 Optional<String> name = reader.getPlayerName(uuid);
 ```
@@ -1660,24 +1776,24 @@ Optional<String> name = reader.getPlayerName(uuid);
 | `STORE_BUY` | `StoreBuyDetails` | 商店购买 |
 | `DOOR_OPEN` / `DOOR_CLOSE` / `DOOR_LOCK` / `DOOR_UNLOCK` | `DoorActionDetails` | 门操作 |
 | `LOCKPICK_ATTEMPT` | `LockpickAttemptDetails` | 撬锁尝试 |
-| `ITEM_USED` / `ITEM_USE` | `ItemUsedDetails` | 物品使用 |
+| `ITEM_USED` | `ItemUsedDetails` | 物品使用（没有 `ITEM_USE`） |
 | `MOOD_CHANGE` | `MoodChangeDetails` | 心情变化 |
-| `NOTE_EDIT` | `NoteEditDetails` | 便签编辑 |
+| ~~`NOTE_EDIT`~~ | — | **枚举里不存在**该类型 |
 | `GAME_START` / `GAME_END` | — | 游戏开始/结束 |
-| `ROLE_ASSIGNMENT` | — | 角色分配 |
+| `CHANGE_ROLE` | — | 角色变更 |
 | `BLACKOUT_START` / `BLACKOUT_END` | `BlackoutEventDetails` | 停电事件 |
-| `ROUND_END` | `RoundEndDetails` | 回合结束 |
-| `KEY_USED` | `KeyUsedDetails` | 钥匙使用 |
-| `SKILL_USED` | — | 技能使用 |
+| `GAME_END` | `RoundEndDetails` | 游戏/回合结束 |
+| ~~`KEY_USED`~~ | — | **枚举里不存在**该类型 |
+| `SKILL_RELEASE` | — | 技能释放 |
 | `PSYCHO_STATE_CHANGE` | `PsychoStateChangeDetails` | 精神状态变化 |
-| `GUN_FIRED` | `GunFiredDetails` | 枪械射击 |
+| ~~`GUN_FIRED`~~ | — | **枚举里不存在**该类型 |
 | `GRENADE_THROWN` | `GrenadeThrownDetails` | 手雷投掷 |
-| `CUSTOM_MESSAGE` | `CustomEventDetails` | 自定义事件 |
+| `CUSTOM_EVENT` | `CustomEventDetails` | 自定义事件 |
 
 #### 注册自定义事件序列化器
 
 ```java
-ReplayEventRegistry.registerCustomEvent(
+TimelineReplayEventRegistry.registerCustomEvent(
     MY_CUSTOM_EVENT_ID,    // ResourceLocation
     MyEventDetails.class,
     (details, json) -> { /* 序列化 */ },
@@ -1715,7 +1831,7 @@ GameUtils.initializeGame(serverLevel);
 GameUtils.finalizeGame(serverLevel);
 
 // 添加游戏开始的物品冷却（安全时间）
-GameUtils.addItemCooldowns(serverLevel);
+GameUtils.addItemCooldowns(serverLevel, ticks);
 ```
 
 #### 执行命令
@@ -1755,8 +1871,8 @@ boolean creative = GameUtils.isPlayerCreative(player);
 boolean specOrCreative = GameUtils.isPlayerSpectatingOrCreative(player);
 
 // 分裂人格存活结果
-GameUtils.SPAliveResult result = GameUtils.isPlayerSplitPersonalityAndSurvive(player);
-// result: ALIVE | DEAD | NOT_APPLICABLE
+GameUtils.SPAliveResult result = GameUtils.isPlayerReallyAliveOrDead(player);
+// result: ALIVE | DEAD | NOT
 ```
 
 #### 玩家击杀 / Kill Player
@@ -1764,7 +1880,7 @@ GameUtils.SPAliveResult result = GameUtils.isPlayerSplitPersonalityAndSurvive(pl
 ```java
 // 击杀玩家（可指定死亡原因，触发 AllowPlayerDeath/OnPlayerDeath 等事件）
 GameUtils.killPlayer(victim, spawnBody, killer);
-GameUtils.killPlayer(victim, spawnBody, killer, GameConstants.DeathReasons.KNIFE_STAB);
+GameUtils.killPlayer(victim, spawnBody, killer, GameConstants.DeathReasons.KNIFE);
 
 // 强制击杀（跳过 AllowPlayerDeath 拦截）
 GameUtils.forceKillPlayer(victim, spawnBody, killer, deathReason);
@@ -1794,17 +1910,18 @@ GameUtils.limitPlayerToBox(serverPlayer, new AABB(minX,minY,minZ, maxX,maxY,maxZ
 #### 自定义胜利条件
 
 ```java
-// 注册自定义胜利判断谓词（配合 WinStatus.CUSTOM 使用）
-GameUtils.CustomWinnersPredicates.add(entry -> {
-    Player player = entry.getKey();
-    String roleId = entry.getValue();
-    return roleId.equals("my_role"); // 满足条件的玩家为胜利者
-});
+// ⚠️ GameUtils.CustomWinnersPredicates 并不存在！自定义/独立胜利请这样写：
+// 1) 在职业类里覆写 CustomWinnerRoleInterface#checkWin 返回 WinStatus.CUSTOM（继承 CustomWinnerRole 最省事）
+// 2) 由 RoleUtils.customWinnerWin 完成结算：
+RoleUtils.customWinnerWin(serverLevel, GameUtils.WinStatus.CUSTOM, ModRoles.MY_ROLE_ID.getPath(),
+        OptionalInt.of(ModRoles.MY_ROLE.color()));
+// 3) 必要时在 CustomWinnerClass.registerCustomWinners() 里加分支（顺序 = 优先级）
+// 详见 docs/角色开发指南.md §5 / §14 与 docs/AI创建新职业攻略.md §12
 ```
 
 ---
 
-### TMMItemUtils — 物品工具
+### SREItemUtils — 物品工具
 
 **包 / Package:** `io.wifi.starrailexpress.util`
 
@@ -1813,18 +1930,18 @@ Provides convenient player inventory clear/count methods that auto-sync the inve
 
 ```java
 // 清除玩家背包中指定物品（全部），返回清除数量
-int count = TMMItemUtils.clearItem(player, TMMItems.KNIFE);
-int count = TMMItemUtils.clearItem(player, TMMItemTags.GUNS);       // 按标签
-int count = TMMItemUtils.clearItem(player, stack -> stack.isDamaged()); // 按谓词
+int count = SREItemUtils.clearItem(player, TMMItems.KNIFE);
+int count = SREItemUtils.clearItem(player, TMMItemTags.GUNS);       // 按标签
+int count = SREItemUtils.clearItem(player, stack -> stack.isDamaged()); // 按谓词
 
 // 清除指定数量
-int count = TMMItemUtils.clearItem(player, TMMItems.KNIFE, 1);
-int count = TMMItemUtils.clearItem(player, predicate, 3);
+int count = SREItemUtils.clearItem(player, TMMItems.KNIFE, 1);
+int count = SREItemUtils.clearItem(player, predicate, 3);
 
 // 统计玩家背包中物品数量（不清除）
-int has = TMMItemUtils.hasItem(player, TMMItems.KNIFE);
-int has = TMMItemUtils.hasItem(player, TMMItemTags.GUNS);
-int has = TMMItemUtils.hasItem(player, predicate);
+int has = SREItemUtils.hasItem(player, TMMItems.KNIFE);
+int has = SREItemUtils.hasItem(player, TMMItemTags.GUNS);
+int has = SREItemUtils.hasItem(player, predicate);
 ```
 
 ---
@@ -1857,10 +1974,10 @@ RoleUtils.playSound(serverPlayer, soundEvent, source, x, y, z, volume, pitch);
 
 ```java
 // 移除玩家所有属性修饰符
-RoleUtils.RemoveAllPlayerAttributes(serverPlayer);
+RoleUtils.removeAllPlayerAttributes(serverPlayer);
 
 // 清除所有药水效果
-boolean removed = RoleUtils.RemoveAllEffects(player);
+boolean removed = RoleUtils.removeAllEffects(player);
 ```
 
 #### 背包操作
@@ -1926,7 +2043,7 @@ ResourceLocation id2 = RoleUtils.getRoleOrModifierOrItemIdentifier(roleOrModifie
 
 ```java
 // 通过名称（path）获取职业
-SRERole role = RoleUtils.getRoleFromName("killer");  // Noellesroles 命名空间
+SRERole role = RoleUtils.getRole("killer");  // Noellesroles 命名空间（getRole(String) / getRole(ResourceLocation)）
 SRERole role = RoleUtils.getRole(roleId);             // 任意 ResourceLocation
 
 // 判断两职业是否相同（null 安全）
@@ -1968,7 +2085,8 @@ boolean joined = MeetingApi.isParticipant(playerUuid);
 | 字段 | 默认 | 说明 |
 |---|---|---|
 | `meetingEnabled` | `false` | 是否启用会议系统 |
-| `meetingX/Y/Z` | `0` | 会议地点坐标 |
+| `meetingPosition` | `0,0,0` | 会议地点坐标（`StoreableVec3`；**没有 `meetingX/Y/Z`**） |
+| `meetingChairScanBox` | `-12,-3,-12 → 12,3,12` | 自动搜索椅子的 AABB（`StoreableAABB`，旧文档写作 `meetingChairScanRadius`） |
 | `meetingChairScanRadius` | `12` | 自动搜寻椅子的半径（上限 32） |
 | `meetingDiscussSeconds` | `60` | 讨论阶段时长（秒） |
 | `meetingCooldownSeconds` | `90` | 两次会议的最小间隔（秒） |
@@ -2061,7 +2179,7 @@ public final class AmonRoleScreenExtension extends PlayerListRoleScreenExtension
 | 方法 | 说明 |
 |------|------|
 | `addRoleWidget(T widget)` | 添加控件（等价原版 `addRenderableWidget`，公开） |
-| `removeRoleWidget(Widget widget)` | 移除控件 |
+| `removeRoleWidget(GuiEventListener widget)` | 移除控件 |
 | `clearRoleWidgets()` | 清空全部控件（慎用） |
 | `reinit()` | 清空控件并重新 `init()`（两阶段界面用，如葬仪选人→选死因） |
 
@@ -2113,15 +2231,105 @@ helper.onRender(graphics, screen);// 画提示文字 + 页码
 
 ---
 
+## 粒子与特效 / Particle & FX
+
+### 前置事实：粒子是怎么过网的
+
+`ServerLevel.sendParticles(type, x, y, z, count, dx, dy, dz, speed)` 每次调用都会构造**一个** `ClientboundLevelParticlesPacket`，发送给 32 格内的**每个**玩家。包里的 `count` 就是"这次生成几颗粒子"，**不额外增加包体积**；客户端把每颗粒子放在 `pos + nextGaussian() * spread`、速度取 `nextGaussian() * speed`。
+
+因此两条硬规则：
+
+1. **禁止在循环里反复调用 `sendParticles` 凑粒子数** —— 需要 N 颗就传 `count = N`。
+2. **禁止为了"摆形状"在服务端逐点发包** —— 需要自定义形状时走下面的自定义粒子包，形状交给客户端算。
+
+```java
+// 错误：20 个包 × 附近玩家数
+for (int i = 0; i < 20; i++) level.sendParticles(P, x, y, z, 1, 0.3, 0.3, 0.3, 0.0);
+
+// 正确：1 个包，20 颗粒子
+level.sendParticles(P, x, y, z, 20, 0.3, 0.3, 0.3, 0.0);
+```
+
+不适用上述规则的情况：面向单个玩家的私有包 `sendParticles(ServerPlayer, ...)`，以及位置随玩家变化的"每玩家一包"（如每个玩家脚下各来一簇）。纯客户端的 `level.addParticle` / `addAlwaysVisibleParticle` 不进网络，随便用。
+
+### ParticleFx — 服务端粒子助手
+
+`io.wifi.starrailexpress.util.ParticleFx`，每个方法都只发一个包。
+
+| 方法 | 用途 |
+| --- | --- |
+| `burst(level, particle, x, y, z, count, spreadX, spreadY, spreadZ, speed)` | 一次发包的通用入口 |
+| `sphere(level, particle, Vec3 center, count, radius, speed)` | 球形体积（原"绕圈摆点"的效果退化用） |
+| `segment(level, particle, Vec3 from, Vec3 to, count, thickness, speed)` | 两点之间的柱体（原"沿轨迹逐点摆"退化用） |
+| `region(level, particle, AABB box, count, speed)` | AABB 区域内散布 |
+| `regionCapped(level, particle, AABB box, count, speed, maxSpread)` | 同上，但各轴散布有上限（长轨迹不会被摊成一整片） |
+| `sendCustom(...)` / `sendCustomBatch(...)` | 自定义形状粒子，见下节 |
+
+### SceneParticles — 场景方块粒子
+
+`org.agmas.noellesroles.scene.SceneParticles`（服务端），同样每个方法只发一个包：`burst` / `blockBurst` / `ring` / `column` / `columnDown` / `regionScatter`。
+
+### 自定义形状粒子 / Custom Shape Particles
+
+环形、螺旋、沿轨迹、跟随实体、多边形范围提示等形状，原版包**表达不了**（原版只有"一个点 + 高斯散布"）。约定：**服务端只发一个包，形状由客户端按 id 生成**——客户端逐点 `addParticle` 不进网络，形状可以任意复杂，也不会有额外包数。
+
+服务端只提供 id、原点、时长和自定义参数：
+
+```java
+public static final ResourceLocation SHOCK_WAVE =
+        ResourceLocation.fromNamespaceAndPath("mymod", "shock_wave");
+
+// 一条；最后是自定义参数（最多 8 个 float，含义完全由客户端处理器定义）
+ParticleFx.sendCustom(level, SHOCK_WAVE, pos, 20, 6.0F, 0.5F);
+
+// 同一时刻多条：合并成一个包（不要循环调用 sendCustom）
+ParticleFx.sendCustomBatch(level, center, List.of(
+        CustomParticleS2CPayload.Entry.at(SHOCK_WAVE, pos.x, pos.y, pos.z, 20, 6.0F),
+        CustomParticleS2CPayload.Entry.at(SHOCK_WAVE, pos2.x, pos2.y, pos2.z, 20, 3.0F)));
+```
+
+客户端注册处理器（客户端初始化处注册一次，例如 `SREClient` 的初始化流程或该功能自己的客户端初始化方法）：
+
+```java
+CustomParticleHandlers.register(SHOCK_WAVE, (level, origin, durationTicks, params) -> {
+    double radius = params.length > 0 ? params[0] : 1.0D;
+    double speed = params.length > 1 ? params[1] : 0.0D;
+    for (int i = 0; i < 64; i++) {
+        double a = Math.PI * 2.0 * i / 64;
+        level.addParticle(ParticleTypes.END_ROD,
+                origin.x + Math.cos(a) * radius, origin.y, origin.z + Math.sin(a) * radius,
+                0, 0, 0);
+    }
+});
+```
+
+`Handler.play(ClientLevel level, Vec3 origin, int durationTicks, float[] params)` 在客户端主线程调用，未做距离判断（服务端已按半径筛过接收者）。需要持续多帧的特效可利用 `durationTicks`，在客户端自行按 tick 推进（例如存到客户端的特效列表里逐帧生成）。
+
+约束与行为：
+
+| 项 | 值 / 行为 |
+| --- | --- |
+| 单个包最多携带 | `CustomParticleS2CPayload.MAX_ENTRIES` = 64 条（服务端超出会截断并打告警；客户端超出直接断开连接） |
+| 每条最多参数 | `CustomParticleS2CPayload.MAX_PARAMS` = 8 个 float |
+| 广播半径 | `ParticleFx.CUSTOM_FX_RANGE` = 64 格（按原点筛选接收者，不会发给其他维度） |
+| 未知 id | 客户端**静默忽略**，不报错——服务端可以先上新特效，客户端后续版本再补处理器 |
+| 重复注册 id | 客户端立刻抛 `IllegalStateException`，便于早发现冲突 |
+| 调试 | `CustomParticleHandlers.isRegistered(id)` / `registeredIds()` |
+
+包 id 为 `starrailexpress:custom_particle_s2c`（`CustomParticleS2CPayload.ID`），类型注册在 `SREPayloadRegister`，客户端接收在 `SREClient`。
+
+---
+
 ## 参考 / References
 
 - 角色系统源码：`src/main/java/io/wifi/starrailexpress/api/`
 - 事件列表：`src/main/java/io/wifi/starrailexpress/event/`
-- 技能系统：`src/main/java/org/agmas/noellesroles/RoleSkill.java`
+- 技能系统：`src/main/java/io/wifi/starrailexpress/api/RoleSkill.java`
 - 修饰符系统：`src/main/java/org/agmas/harpymodloader/modifiers/`
 - Harpymodloader 事件：`src/main/java/org/agmas/harpymodloader/events/`
 - Noellesroles 事件：`src/main/java/org/agmas/noellesroles/events/`
-- 皮肤管理：`src/main/java/io/wifi/starrailexpress/util/SkinManager.java`
-- 工具类：`src/main/java/io/wifi/starrailexpress/util/TMMItemUtils.java` · `src/main/java/org/agmas/noellesroles/utils/RoleUtils.java`
+- 皮肤管理：`src/main/java/io/wifi/starrailexpress/util/ItemSkinManager.java`
+- 粒子/特效：`src/main/java/io/wifi/starrailexpress/util/ParticleFx.java` · `src/main/java/io/wifi/starrailexpress/client/particle/CustomParticleHandlers.java` · `src/main/java/io/wifi/starrailexpress/network/packet/CustomParticleS2CPayload.java` · `src/main/java/org/agmas/noellesroles/scene/SceneParticles.java`
+- 工具类：`src/main/java/io/wifi/starrailexpress/util/SREItemUtils.java` · `src/main/java/org/agmas/noellesroles/utils/RoleUtils.java`
 - 创建扩展指南：[`CreateExtention.md`](../CreateExtention.md)
 - 中文 README：[`README.zh.md`](../README.zh.md)

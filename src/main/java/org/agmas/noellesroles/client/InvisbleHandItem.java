@@ -15,7 +15,6 @@
 
 package org.agmas.noellesroles.client;
 
-import io.wifi.starrailexpress.cca.ExtraSlotComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.client.SREClient;
@@ -24,18 +23,21 @@ import io.wifi.starrailexpress.event.AllowItemShowInHand;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
+import io.wifi.starrailexpress.morph.MorphApiClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Items;
-import org.agmas.noellesroles.content.block.SREPlushItem;
+
 import org.agmas.noellesroles.content.entity.NiaoshoushouMissileEntity;
 import org.agmas.noellesroles.content.item.HandCuffsItem;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
+import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
+import org.agmas.noellesroles.role_data.vigilante.JojoRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 public class InvisbleHandItem {
@@ -51,7 +53,10 @@ public class InvisbleHandItem {
             return null;
         });
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
-            if (itemStack.getItem() instanceof SREPlushItem) {
+            if (itemStack.is(FunnyItems.BOWEN_BADGE)) {
+                return ItemStack.EMPTY;
+            }
+            if (!mainHand && JojoRoleData.isRushing(player) && JojoRoleData.isHoldingOraPunch(player)) {
                 return ItemStack.EMPTY;
             }
             return null;
@@ -89,15 +94,20 @@ public class InvisbleHandItem {
             }
             return null; // 不修改
         });
-        // 显示手铐（改由 HandCuffsFeatureRenderer 动态渲染，副手此处隐藏避免重复）
+        // 显示手铐：
+        //  - 第三人称由 HandCuffsFeatureRenderer 画在手腕上，副手保持隐藏以免双重渲染；
+        //  - 第一人称不会渲染自己的模型，所以以前戴上后自己什么都看不到 ——
+        //    这里把自己视角里的副手直接渲染成手铐堆。
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
             if (mainHand)
                 return null;
-            var item = ExtraSlotComponent.getSlot(player, HandCuffsItem.SLOT_HANDCUFFS);
-            if (item.is(ModItems.HANDCUFFS)) {
-                return ItemStack.EMPTY;
+            if (!HandCuffsItem.hasHandCuff(player))
+                return null;
+            if (player == Minecraft.getInstance().player
+                    && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+                return HandCuffsItem.getHandCuffItemStack(player);
             }
-            return null; // 不修改
+            return ItemStack.EMPTY; // 第三人称/其他玩家视角：交给 HandCuffsFeatureRenderer
         });
         // 隐藏指定的物品
         AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
@@ -175,6 +185,11 @@ public class InvisbleHandItem {
                 }
             }
             return null;
+        }); 
+        
+        // 身份玩偶跟随显示皮肤拥有者（与帽子绑定相同）。放在最后，避免抢先覆盖隐身/副手替换。
+        AllowItemShowInHand.EVENT.register((player, itemStack, mainHand) -> {
+            return MorphApiClient.remapHeldPlush(player, itemStack, mainHand);
         });
 
     }

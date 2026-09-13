@@ -26,14 +26,20 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.game.modifier.expedition.ExpeditionComponent;
+import org.agmas.noellesroles.game.modifier.fatskinny.FatSkinnyModifier;
+import org.agmas.noellesroles.game.modifier.coward.CowardModifier;
+import org.agmas.noellesroles.game.modifier.cowardice.CowardiceModifier;
 import org.agmas.noellesroles.game.modifier.hoarse.HoarseModifier;
+import org.agmas.noellesroles.game.modifier.rage.RageModifier;
 import org.agmas.noellesroles.game.modifier.introverted.IntrovertedModifier;
 import org.agmas.noellesroles.game.modifier.taxed.TaxedModifier;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role.touhou.THMiscRoles;
 
 import java.awt.*;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * NoellesRoles 修饰符注册类
@@ -159,6 +165,71 @@ public class NRModifiers {
             .setDefaultMax(2)
             .setDefaultEnableChance(5000);
 
+    /** 胆小鬼修饰符：持续获得胆小鬼药水，面前有人死亡时坐下并发抖 */
+    public static SREModifier COWARD = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("coward"),
+            0x6B8E6B,
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(CowardModifier::serverTick)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(4000)
+            .setAddedVersion("4.4");
+
+    /** 暴怒修饰符：持续获得暴怒药水，附近有人死亡时红屏加速并锁定最近玩家 */
+    public static SREModifier RAGE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("rage"),
+            0xC41E1E,
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(RageModifier::serverTick)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(4000)
+            .setAddedVersion("4.4");
+
+    /** 怯懦修饰符：持续获得怯懦药水，附近有人死亡后一次性失控跑走 */
+    public static SREModifier COWARDICE = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("cowardice"),
+            0x8A7A4A,
+            null,
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(CowardiceModifier::serverTick)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(4000)
+            .setAddedVersion("4.4");
+
+    /** 胖子修饰符：模型左右拉伸变胖，并推动周围玩家 */
+    public static SREModifier FAT = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("fat"),
+            0xE09A5A,
+            Set.of(THMiscRoles.IBUKI_SUIKA),
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(FatSkinnyModifier::serverTickFat)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(3000)
+            .setAddedVersion("4.4");
+
+    /** 瘦子修饰符：模型左右压扁变瘦，并被周围玩家挤压移动 */
+    public static SREModifier SKINNY = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("skinny"),
+            0x8EB4D4,
+            Set.of(THMiscRoles.IBUKI_SUIKA),
+            null,
+            false,
+            false))
+            .setServerGameTickEvent(FatSkinnyModifier::serverTickSkinny)
+            .setDefaultMax(2)
+            .setDefaultEnableChance(3000)
+            .setAddedVersion("4.4");
+
     /**
      * 初始化修饰符系统
      */
@@ -168,9 +239,11 @@ public class NRModifiers {
         EXPEDITION.civilianOnly = true;
         EXPEDITION.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.GHOST));
         INTROVERTED.civilianOnly = true;
+        FAT.addBothRelatedModifier(SKINNY);
         excludeLeonFromAllModifiers();
         assignModifierComponents();
         TaxedModifier.init();
+        FatSkinnyModifier.init();
     }
 
     /**

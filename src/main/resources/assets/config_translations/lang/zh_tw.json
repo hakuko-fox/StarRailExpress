@@ -704,5 +704,11 @@
   "text.autoconfig.starrailexpress.option.blackoutGlobalCooldown": "停電公共冷卻時長",
   "=== NoellesRolesConfig 補充 ===": "",
   "text.autoconfig.starrailexpress.option.loadServerLanguageId": "服務端：載入模組本地翻譯檔案id（輸入auto自動偵測環境，留空不載入）",
-  "text.autoconfig.starrailexpress.option.downloadVanillaLanguageFile": "服務端：從Mojang官方下載上述語言對應的原版(vanilla)翻譯檔並套用，快取至遊戲根目錄sre_lang_cache（需先設定loadServerLanguageId且非en_us）"
+  "text.autoconfig.starrailexpress.option.downloadVanillaLanguageFile": "服務端：從Mojang官方下載上述語言對應的原版(vanilla)翻譯檔並套用，快取至遊戲根目錄sre_lang_cache（需先設定loadServerLanguageId且非en_us）",
+  "text.autoconfig.starrailexpress.option.elevateBlockCommandPermission": "提升命令方塊執行權限",
+  "text.autoconfig.starrailexpress.option.elevateBlockCommandPermission.@Tooltip": "服務端開關。開啟後，原版命令方塊（含命令方塊礦車）與實體交互方塊執行指令的權限提升為 3。可由 /sre:block_cmd_perm on|off 修改並保存到本配置。默認關閉。",
+  "text.autoconfig.starrailexpress.category.anticheat": "反作弊",
+  "text.autoconfig.starrailexpress.option.enableClickAc": "點擊頻率反作弊",
+  "text.autoconfig.starrailexpress.option.enableClickAc.@Tooltip": "預設開啟。玩家每秒左右鍵合計超過 12 次時，鎖定左右鍵 5 秒。",
+  "text.autoconfig.noellesroles.option.labRolesMaps": "會刷新實驗室地圖角色的地圖（實驗室）"
 }

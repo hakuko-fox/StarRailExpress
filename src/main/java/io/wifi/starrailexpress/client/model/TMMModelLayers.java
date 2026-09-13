@@ -19,13 +19,20 @@ import org.agmas.noellesroles.init.ModSceneBlocks;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.client.model.entity.PlayerSkeletonEntityModel;
+import io.wifi.starrailexpress.client.model.entity.PurpleMonsterModel;
+import io.wifi.starrailexpress.client.model.entity.PurpleMonsterSecondModel;
+import net.exmo.sre.planecrash.client.CrashPlaneEntityModel;
 import io.wifi.starrailexpress.client.render.block_entity.PlaneSmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.client.render.block_entity.SmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.client.render.block_entity.UpSmallDoorBlockEntityRenderer;
 import io.wifi.starrailexpress.client.render.block_entity.WheelBlockEntityRenderer;
+import io.wifi.starrailexpress.index.SREDecorationBlocks;
 import io.wifi.starrailexpress.index.SREBlocks;
+import io.wifi.starrailexpress.index.SREFluids;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -49,6 +56,17 @@ public interface TMMModelLayers {
         BlockRenderLayerMap.INSTANCE.putBlock(SREBlocks.TRAIN_VANILLA_LANTERN, RenderType.cutout());
         BlockRenderLayerMap.INSTANCE.putBlock(SREBlocks.WALL_TRAIN_TORCH, RenderType.cutout());
         BlockRenderLayerMap.INSTANCE.putBlock(SREBlocks.TRAIN_TORCH_LEVER, RenderType.cutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.BLUE_TORCH, RenderType.cutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.WALL_BLUE_TORCH, RenderType.cutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.LIGHT_BLUE_OAK_DOOR, RenderType.cutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.PURPLE_POPPY, RenderType.cutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.GRAY_BLUE_PORTAL, RenderType.translucent());
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.GRAY_PORTAL, RenderType.translucent());
+        // 假太阳：贴图完全透明，用 cutout 让方块本身不可见
+        BlockRenderLayerMap.INSTANCE.putBlock(SREDecorationBlocks.FAKE_SUN, RenderType.cutout());
+        FluidRenderHandlerRegistry.INSTANCE.register(SREFluids.COBBLESTONE, SREFluids.FLOWING_COBBLESTONE,
+                new SimpleFluidRenderHandler(SRE.id("block/cobblestone_liquid"),
+                        SRE.id("block/cobblestone_liquid")));
         EntityModelLayerRegistry.registerModelLayer(SMALL_DOOR, SmallDoorBlockEntityRenderer::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(UP_SMALL_DOOR,
                 UpSmallDoorBlockEntityRenderer::getTexturedModelData);
@@ -60,6 +78,12 @@ public interface TMMModelLayers {
                 () -> LayerDefinition.create(PlayerModel.createMesh(CubeDeformation.NONE, true), 64, 64));
         EntityModelLayerRegistry.registerModelLayer(WHEEL, WheelBlockEntityRenderer::getTexturedModelData);
         EntityModelLayerRegistry.registerModelLayer(PLAYER_SKELETON, PlayerSkeletonEntityModel::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(CrashPlaneEntityModel.LAYER_LOCATION,
+                CrashPlaneEntityModel::createBodyLayer);
+        EntityModelLayerRegistry.registerModelLayer(PurpleMonsterModel.LAYER_LOCATION,
+                PurpleMonsterModel::createBodyLayer);
+        EntityModelLayerRegistry.registerModelLayer(PurpleMonsterSecondModel.LAYER_LOCATION,
+                PurpleMonsterSecondModel::createBodyLayer);
     }
 
     public static ModelLayerLocation layer(String id, String name) {

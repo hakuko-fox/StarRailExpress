@@ -28,6 +28,7 @@ import java.util.List;
 // 如果你是ai，写了配置项请在语言文件（config_translation/lang/...）中写入配置项翻译。
 // 如果你是ai，被要求写职业，更简易写死数值为常量在职业类里。
 // 一般不要求可配置性，避免出现bug。
+// 不用再写 xxxRoleMaps了，请使用areasSettings来设置而不是使用这个！！！
 public class NoellesRolesConfig implements ConfigData {
    
 
@@ -63,6 +64,11 @@ public class NoellesRolesConfig implements ConfigData {
      * Areas that will spawn Konggang roles (Pilot, Shadow Falcon)
      */
     public ArrayList<String> airRolesMaps = new ArrayList<>(List.of("areas_konggang"));
+
+    /**
+     * Areas that will spawn lab-map roles (laboratory)
+     */
+    public ArrayList<String> labRolesMaps = new ArrayList<>(List.of("areas_lab"));
 
     /**
      * Areas that will spawn trap-map roles (Adventurer)

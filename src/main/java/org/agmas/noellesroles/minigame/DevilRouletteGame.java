@@ -24,6 +24,8 @@ import org.agmas.noellesroles.init.ModItems;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -93,6 +95,42 @@ public class DevilRouletteGame {
     }
 
     public static class FireResult {
+        public static class Builder {
+            public Builder() {
+                fireResult = new FireResult();
+            }
+            /** 默认有效，需要无效化时直接调用 */
+            public Builder setFireUnable() {
+                fireResult.isFireUseable = false;
+                return this;
+            }
+            public Builder setIsTrueBullet(boolean isTrueBullet) {
+                fireResult.isTrueBullet = isTrueBullet;
+                return this;
+            }
+            public Builder setIsReload(boolean isReload) {
+                fireResult.isReload = isReload;
+                return this;
+            }
+            public Builder setIsTargetAlive(boolean isTargetAlive) {
+                fireResult.isTargetAlive = isTargetAlive;
+                return this;
+            }
+            public Builder setIsSwitch(boolean isSwitch) {
+                fireResult.isSwitch = isSwitch;
+                return this;
+            }
+            public Builder setOperatorUUID(UUID operatorUUID) {
+                fireResult.operatorUUID = operatorUUID;
+                return this;
+            }
+            public FireResult build() {
+                return fireResult;
+            }
+            protected  FireResult fireResult;
+        }
+        /** 操作是否有效 */
+        public boolean isFireUseable = true;
         /** 是否是真弹 */
         public boolean isTrueBullet = false;
         /** 是否重装弹（当子弹打空后返回true） */
@@ -124,10 +162,19 @@ public class DevilRouletteGame {
         protected UUID playerUUID;
         protected int health = MAX_HEALTH;
     }
-    public DevilRouletteGame(UUID player1ID, UUID player2ID, RandomSource random, Level level) {
+    public DevilRouletteGame(ArrayList<UUID> playerIDs, RandomSource random, Level level) {
+        // 如果玩家列表不符合要求，为了防止后续出现越界行为(2人游戏会有直接读取index)，直接抛出异常
+        if (playerIDs == null || playerIDs.size() < 2) {
+            throw new IllegalArgumentException("至少需要 2 名玩家才能开始游戏");
+        }
+        playerDataMap = new HashMap<>();
         playerDataList = new ArrayList<>();
-        playerDataList.add(new GamePlayerData(player1ID));
-        playerDataList.add(new GamePlayerData(player2ID));
+        for (UUID playerID : playerIDs) {
+            GamePlayerData curData = new GamePlayerData(playerID);
+            playerDataList.add(curData);
+            // 同步在玩家数据表中存储实现快速查询玩家
+            playerDataMap.put(playerID, curData);
+        }
         currentPlayerData = playerDataList.getFirst();
         this.random = random;
         this.level = level;
@@ -235,10 +282,10 @@ public class DevilRouletteGame {
      * @param target 操作目标
      * @return 弹丸结果
      */
-    public FireResult fire(Target target) {
+    public FireResult fire(UUID target) {
         FireResult result = new FireResult();
         result.operatorUUID = currentPlayerData.playerUUID;
-        GamePlayerData targetPlayerData = playerDataList.get(indexOfResult(currentPlayerData.playerUUID, target));
+        GamePlayerData targetPlayerData = getPlayerData(target);
         // 获取当前子弹，指针移向下一发子弹
         Boolean resultBullet = bulletList.get(curListIdx++);
         result.isTrueBullet = Boolean.TRUE.equals(resultBullet);
@@ -302,6 +349,9 @@ public class DevilRouletteGame {
         damage = 1;
         return result;
     }
+    public FireResult fire(Target target) {
+        return fire(playerDataList.get(indexOfResult(currentPlayerData.playerUUID, target)).playerUUID);
+    }
     public FireResult forceGameOverByKillPlayer(UUID playerID) {
         FireResult result = new FireResult();
         result.isTrueBullet = true;
@@ -337,15 +387,21 @@ public class DevilRouletteGame {
         return alivePlayer;
     }
     public void removeUnAlivePlayers() {
-        playerDataList.removeIf(gamePlayerData -> level.getPlayerByUUID(gamePlayerData.playerUUID) == null);
+        // 统一收集要移除的玩家，再从列表中移除
+        List<GamePlayerData> toRemove = playerDataList.stream()
+                .filter(p -> level.getPlayerByUUID(p.playerUUID) == null)
+                .toList();
+        playerDataList.removeAll(toRemove);
+        toRemove.forEach(p -> playerDataMap.remove(p.playerUUID));
     }
 
     public boolean canOperate(UUID playerID) {
         return playerID == currentPlayerData.playerUUID;
     }
 
+    /** 使用taget枚举快速处理目标，获得目标索引 */
     public int indexOfResult(UUID playerID, Target target) {
-        if (playerDataList.getFirst().playerUUID ==  playerID) {
+        if (playerDataList.getFirst().playerUUID.equals(playerID)) {
             // 如果操作玩家是玩家1，且目标为自己，则返回索引0
             return target == Target.self ? 0 : 1;
         }
@@ -358,14 +414,18 @@ public class DevilRouletteGame {
     }
     public int getHealth(UUID playerID) {
         for (GamePlayerData playerData : playerDataList)
-            if (playerData.playerUUID == playerID)
+            if (playerData.playerUUID.equals(playerID))
                 return playerData.health;
         return 0;
     }
     public GamePlayerData getPlayerData(UUID playerID) {
-        for (GamePlayerData playerData : playerDataList)
-            if (playerData.playerUUID == playerID)
-                return playerData;
+        // for (GamePlayerData playerData : playerDataList)
+        //     if (playerData.playerUUID.equals(playerID))
+        //         return playerData;
+        // 使用更快的hashMap查询uuid - 提高多人效率
+        if (playerDataMap.containsKey(playerID)) {
+            return playerDataMap.get(playerID);
+        }
         return NONE_PLAYER;
     }
 
@@ -432,6 +492,7 @@ public class DevilRouletteGame {
     }
 
     protected List<GamePlayerData> playerDataList;
+    protected Map<UUID, GamePlayerData> playerDataMap;
     /** 弹丸列表 */
     protected List<Boolean> bulletList = new ArrayList<>();
     protected Level level;

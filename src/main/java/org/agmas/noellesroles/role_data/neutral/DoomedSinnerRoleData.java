@@ -60,7 +60,6 @@ import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import org.agmas.noellesroles.packet.DoomedSinnerFateRevealS2CPacket;
-import org.agmas.noellesroles.packet.SkincrawlerSkinS2CPacket;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -327,16 +326,15 @@ public class DoomedSinnerRoleData extends SimpleRoleData {
         if (corpseTimers.isEmpty() || !(player.level() instanceof ServerLevel serverLevel)) {
             return;
         }
-        var iterator = corpseTimers.entrySet().iterator();
-        while (iterator.hasNext()) {
-            var entry = iterator.next();
+        // 快照迭代：尸体消散可能重入，写入方 trackFreshCorpse() 会改本 map。
+        for (var entry : new ArrayList<>(corpseTimers.entrySet())) {
             int remaining = entry.getValue() - 1;
             if (remaining <= 0) {
                 Entity body = serverLevel.getEntity(entry.getKey());
                 if (body != null) {
                     body.discard();
                 }
-                iterator.remove();
+                corpseTimers.remove(entry.getKey(), entry.getValue());
             } else {
                 entry.setValue(remaining);
             }
@@ -399,20 +397,13 @@ public class DoomedSinnerRoleData extends SimpleRoleData {
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
-        List<ServerPlayer> candidates = level.players().stream()
-                .filter(p -> !p.getUUID().equals(player.getUUID()))
-                .toList();
-        if (candidates.isEmpty()) {
+        boolean morphed = io.wifi.starrailexpress.morph.MorphApi.morphToRandomPlayer(player,
+                candidate -> !candidate.getUUID().equals(player.getUUID()));
+        if (!morphed) {
             return;
         }
-        UUID skinUuid = candidates.get(player.getRandom().nextInt(candidates.size())).getUUID();
-        SkincrawlerSkinS2CPacket packet = new SkincrawlerSkinS2CPacket(player.getUUID(), skinUuid);
-        for (ServerPlayer viewer : level.players()) {
-            ServerPlayNetworking.send(viewer, packet);
-        }
-
-        // 回放记录：宿命的罪人改变自身皮肤
-        Player skinTarget = level.getPlayerByUUID(skinUuid);
+        java.util.UUID skinUuid = io.wifi.starrailexpress.morph.MorphApi.getAppearance(player).targetPlayer();
+        Player skinTarget = skinUuid == null ? null : level.getPlayerByUUID(skinUuid);
         SRE.REPLAY_MANAGER.recordCustomEvent(
                 Component.translatable("replay.event.doomed_sinner.change_skin",
                         GameReplayUtils.getReplayPlayerDisplayText(player, true),

@@ -15,7 +15,7 @@ import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
-import io.wifi.starrailexpress.data.PlayerEconomyManager;
+import io.wifi.starrailexpress.data.PlayerSkinEconomyManager;
 import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.network.VtuberStoreCatalogPayload;
@@ -127,7 +127,7 @@ public final class VtuberStoreManager {
     public static boolean ownsSkin(ServerPlayer player, String skinType, String skinId) {
         return BackpackManager.ownsStoreSkin(player, skinType, skinId)
                 || SREPlayerSkinsComponent.KEY.get(player).isSkinUnlockedForItemType(skinType, skinId)
-                || PlayerEconomyManager.isSkinUnlockedForItemType(player, skinType, skinId);
+                || PlayerSkinEconomyManager.isSkinUnlockedForItemType(player, skinType, skinId);
     }
 
     public static void rewardPlayerForRound(ServerLevel world, GameMode gameMode,

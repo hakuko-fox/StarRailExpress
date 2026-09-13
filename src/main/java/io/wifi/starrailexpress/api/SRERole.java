@@ -1138,6 +1138,13 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public void clientTick(Player player) {
     }
 
+    /**
+     * 客户端+服务端 当右键实体时触发
+     * 
+     * @param player
+     * @param victim
+     * @return
+     */
     public InteractionResult rightClickEntity(Player player, Entity victim) {
         return InteractionResult.PASS;
     }
@@ -1700,6 +1707,9 @@ public abstract class SRERole extends SREAbstractInfoClass {
         }
         if (config.maChenXuMaps != null && config.maChenXuMaps.contains(id)) {
             result.add(MapSpecialFeatures.QIYUCUN);
+        }
+        if (config.labRolesMaps != null && config.labRolesMaps.contains(id)) {
+            result.add(MapSpecialFeatures.LAB);
         }
         if (config.swastMaps != null && config.swastMaps.contains(id)) {
             result.add(MapSpecialFeatures.BIGMAP);

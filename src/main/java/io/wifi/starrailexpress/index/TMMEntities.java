@@ -19,6 +19,7 @@ import dev.doctor4t.ratatouille.util.registrar.EntityTypeRegistrar;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.content.block.entity.SeatEntity;
 import io.wifi.starrailexpress.content.entity.*;
+import net.exmo.sre.planecrash.CrashPlaneEntity;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -66,9 +67,35 @@ public interface TMMEntities {
                     .noSummon()
     );
 
+    EntityType<CrashPlaneEntity> CRASH_PLANE = registrar.create("crash_plane",
+            EntityType.Builder.of(CrashPlaneEntity::new, MobCategory.MISC)
+                    .sized(12.0f, 4.0f)
+                    .clientTrackingRange(256)
+                    .updateInterval(1)
+                    .fireImmune()
+    );
+
+    EntityType<PurpleMonsterEntity> PURPLE_MONSTER = registrar.create("purple_monster",
+            EntityType.Builder.of(PurpleMonsterEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+    );
+
+    EntityType<PurpleMonsterSecondEntity> PURPLE_MONSTER_SECOND = registrar.create("purple_monster_second",
+            EntityType.Builder.of(PurpleMonsterSecondEntity::new, MobCategory.MONSTER)
+                    .sized(1.2f, 2.4f)
+                    .eyeHeight(1.6f)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+    );
+
     static void initialize() {
         registrar.registerEntries();
 
         FabricDefaultAttributeRegistry.register(PLAYER_BODY, PlayerBodyEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(PURPLE_MONSTER, PurpleMonsterEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(PURPLE_MONSTER_SECOND, PurpleMonsterSecondEntity.createAttributes());
     }
 }

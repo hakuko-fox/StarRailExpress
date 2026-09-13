@@ -56,7 +56,7 @@ public final class AdminSkinManagementService {
     public static CompletableFuture<Boolean> persistChange(ServerPlayer player, String itemType,
             Collection<String> skinNames, Change change) {
         long updatedAt = System.currentTimeMillis();
-        String fallbackPayload = PlayerEconomyManager.createSkinDataSnapshot(player, updatedAt);
+        String fallbackPayload = PlayerSkinEconomyManager.createSkinDataSnapshot(player, updatedAt);
         Set<String> requestedSkins = new LinkedHashSet<>(skinNames);
         String playerName = player.getName().getString();
 

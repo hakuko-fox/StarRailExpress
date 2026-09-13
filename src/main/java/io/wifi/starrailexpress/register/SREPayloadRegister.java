@@ -22,6 +22,7 @@ import io.wifi.starrailexpress.content.vote.network.VoteSyncS2CPacket;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.network.original.*;
 import io.wifi.starrailexpress.network.packet.CustomNarratorPacket;
+import io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload;
 import io.wifi.starrailexpress.network.packet.ModVersionPacket;
 import io.wifi.starrailexpress.network.packet.RoleRotationConfirmC2SPacket;
 import io.wifi.starrailexpress.network.packet.RoleRotationSelectC2SPacket;
@@ -82,6 +83,9 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(CustomNarratorPacket.ID, CustomNarratorPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(StaminaS2CPacket.ID, StaminaS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.packet.MobRiotStateS2CPacket.ID,
+                io.wifi.starrailexpress.network.packet.MobRiotStateS2CPacket.CODEC);
 
         PayloadTypeRegistry.playS2C().register(SyncRoomToPlayerPayload.ID, SyncRoomToPlayerPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SyncRoomToPlayerPayload.ID, SyncRoomToPlayerPayload.CODEC);
@@ -95,10 +99,15 @@ public class SREPayloadRegister {
 
         PayloadTypeRegistry.playS2C().register(OnGameStartedPayload.TYPE, OnGameStartedPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(OnGameFinishedPayload.TYPE, OnGameFinishedPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClickLockoutPayload.TYPE, ClickLockoutPayload.CODEC);
 
         // 高级相机轨道
         PayloadTypeRegistry.playS2C().register(net.exmo.sre.camera.AdvancedCameraPayload.ID,
                 net.exmo.sre.camera.AdvancedCameraPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.planecrash.PlaneCrashIntroPayload.ID,
+                net.exmo.sre.planecrash.PlaneCrashIntroPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(net.exmo.sre.planecrash.PlaneCrashTremorPayload.ID,
+                net.exmo.sre.planecrash.PlaneCrashTremorPayload.CODEC);
 
         PayloadTypeRegistry.playS2C().register(SyncMapConfigPayload.ID, SyncMapConfigPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TriggerScreenEdgeEffectPayload.ID,
@@ -135,6 +144,10 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playS2C().register(SkillCastAnnouncePayload.ID, SkillCastAnnouncePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.HatEquipmentSyncPayload.ID,
                 io.wifi.starrailexpress.network.HatEquipmentSyncPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.MorphSyncPayload.ID,
+                io.wifi.starrailexpress.network.MorphSyncPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.PlushEquipmentSyncPayload.ID,
+                io.wifi.starrailexpress.network.PlushEquipmentSyncPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.RoleRosterSyncPayload.ID,
                 io.wifi.starrailexpress.network.RoleRosterSyncPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.sponsor.SponsorListPayload.ID,
@@ -282,5 +295,8 @@ public class SREPayloadRegister {
                 net.exmo.sre.record.network.RecordReplayRequestC2SPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(net.exmo.sre.record.network.RecordReplayS2CPayload.ID,
                 net.exmo.sre.record.network.RecordReplayS2CPayload.CODEC);
+
+        // 通用"自定义形状粒子"包：服务端发 id + 原点 + 参数，客户端按 id 生成形状
+        PayloadTypeRegistry.playS2C().register(CustomParticleS2CPayload.ID, CustomParticleS2CPayload.CODEC);
     }
 }

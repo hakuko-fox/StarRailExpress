@@ -1,4 +1,4 @@
-﻿{
+{
   "=== SODIUM-EXTRA 补充===": "",
   "sodium-extra.option.light_updates_starrailexpress": "关照更新 (已被StarRailExpress强制启用)",
   "sodium-extra.option.light_updates_starrailexpress.tooltip": "处理光照更新。无论此选项是否启用，始终都会更新光照。(已被StarRailExpress强制启用)",
@@ -703,5 +703,13 @@
   "text.autoconfig.noellesroles.option.manipulatorMarkReward": "操纵者 - 成功标记奖励的金币",
   "text.autoconfig.noellesroles.option.manipulatorTargetDeathReward": "操纵者 - 控制期间目标死亡奖励的金币",
   "text.autoconfig.noellesroles.option.chanceOfSilencer": "静语者生成概率（%）",
-  "text.autoconfig.starrailexpress.option.downloadVanillaLanguageFile": "服务端：从Mojang官方下载上面语言id对应的原版(vanilla)语言文件并应用，缓存到游戏根目录sre_lang_cache（需先设置loadServerLanguageId且非en_us）"
+  "text.autoconfig.starrailexpress.option.downloadVanillaLanguageFile": "服务端：从Mojang官方下载上面语言id对应的原版(vanilla)语言文件并应用，缓存到游戏根目录sre_lang_cache（需先设置loadServerLanguageId且非en_us）",
+  "text.autoconfig.starrailexpress.option.elevateBlockCommandPermission": "提升命令方块执行权限",
+  "text.autoconfig.starrailexpress.option.elevateBlockCommandPermission.@Tooltip": "服务端开关。开启后，原版命令方块（含命令方块矿车）与实体交互方块执行指令的权限提升为 3。可由 /sre:block_cmd_perm on|off 修改并保存到本配置。默认关闭。",
+  "text.autoconfig.starrailexpress.option.mobRiotTokenPerPlayer": "暴民模式通关代币倍率（每人）",
+  "text.autoconfig.starrailexpress.option.mobRiotTokenPerPlayer.@Tooltip": "全场代币总和达到 开局人数 × 该值 后解锁回房睡觉通关。默认 7。",
+  "text.autoconfig.starrailexpress.category.anticheat": "反作弊",
+  "text.autoconfig.starrailexpress.option.enableClickAc": "点击频率反作弊",
+  "text.autoconfig.starrailexpress.option.enableClickAc.@Tooltip": "默认开启。玩家每秒左右键合计超过 12 次时，锁定左右键 5 秒。",
+  "text.autoconfig.noellesroles.option.labRolesMaps": "会刷新实验室地图角色的地图（实验室）"
 }

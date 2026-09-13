@@ -23,6 +23,7 @@ import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.client.gui.MobRiotHudRenderer;
 import io.wifi.starrailexpress.client.util.ClientSkinCache;
 import io.wifi.starrailexpress.content.item.DisguiseEffectSync;
 import io.wifi.starrailexpress.event.OnGettingPlayerSkin;
@@ -32,6 +33,7 @@ import io.wifi.starrailexpress.event.client.OnGameStartedClient;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName;
 import io.wifi.starrailexpress.event.client.OnRenderRoleName.RenderPlayerNameInterface;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.morph.MorphApiClient;
 import io.wifi.starrailexpress.util.TrueFalseAndCustomResult;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.minecraft.ChatFormatting;
@@ -76,12 +78,7 @@ import java.util.UUID;
 public class SREClientEvents {
 
     public static Component getName(Player target) {
-        if (target == null)
-            return Component.literal("");
-        var prefix = ClientSkinCache.somePrefix(target.getUUID());
-        if (prefix == null)
-            return target.getName();
-        return Component.literal("").append(prefix).append(target.getName());
+        return MorphApiClient.getDisplayedName(target);
     }
 
     public static Component getName(PlayerInfo playerInfo) {
@@ -171,6 +168,7 @@ public class SREClientEvents {
     public static void registerRoleNameRendererEvents() {
         PlayerBodyHud.registerEvents();
         ForensicHud.registerEvents();
+        MobRiotHudRenderer.registerClientEvents();
         // 大小姐的仆从显示大小姐
         OnRenderRoleName.RENDER_PLAYER_ROLE.register((player, target, context, tickCounter, renderer) -> {
             if (target == null)
@@ -361,7 +359,7 @@ public class SREClientEvents {
         });
 
         OnRenderRoleName.RENDER_PLAYER_NAME.register((player, target, ctx, delta, font) -> {
-            if (!SREClient.isPlayerAliveAndInSurvival() && !SREClient.hasPenalty()) {
+            if (MorphApiClient.shouldRevealRealName()) {
                 // 旁观不参与变幻
                 return TrueFalseAndCustomResult.pass();
             }

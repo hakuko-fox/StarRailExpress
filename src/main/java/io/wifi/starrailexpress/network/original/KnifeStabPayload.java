@@ -62,6 +62,9 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
+                return;
+            }
             if (player.isSpectator() || player.hasEffect(ModEffects.USED_BANED)) {
                 return;
             }

@@ -335,6 +335,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     if (entityRenderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
                         registrationHelper.register(new C4BackFeatureRenderer(pr));
                         registrationHelper.register(new HandCuffsFeatureRenderer(pr));
+                        registrationHelper.register(new OraGoldArmFeatureRenderer(pr));
                     }
                 });
 
@@ -477,7 +478,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 var insaneComponent = RoleData.getNullable(InsaneKillerRoleData.class, target);
                 if (insaneComponent != null) {
                     if (insaneComponent.isActive || insaneComponent.inNearDeath()) {
-                        return false;
+                        // 伪装期间名字照旧隐藏；但旁观/创造模式看穿伪装，按正常玩家显示
+                        return SREClient.isPlayerSpectatingOrCreative();
                     }
                 }
 
@@ -488,7 +490,9 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientSkincrawlerState.register();
         SaltedFishClientHandle.register();
         TomatoHeadClientHandle.register();
+        DeathReactionClientHandle.register();
         PhantomSpiritClientHandle.register();
+        ChinoHeadRideClientHandle.register();
         TwoDimensionalCameraClientHandle.register();
         PointerClientHandle.register();
         HakoniwaVisionClientHandle.register();
@@ -737,17 +741,17 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapIntroSyncPayload.ID,
                 (payload, context) -> context.client().execute(() -> {
-                    io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache.update(payload);
+                    var view = io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache.accept(payload);
                     if (context
                             .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MapIntroduceScreen screen) {
-                        screen.updateFromPacket(payload);
+                        screen.updateFromPacket(view);
                     } else if (context
                             .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.maprotation.MapRotationScreen rotationScreen) {
                         // 地图轮换界面复用同一份地图介绍数据（Fabric 每个包 ID 只允许一个全局接收器）
-                        rotationScreen.updateFromPacket(payload);
+                        rotationScreen.updateFromPacket(view);
                     } else if (context
                             .client().screen instanceof io.wifi.starrailexpress.client.gui.screen.MapVoteScreen voteScreen) {
-                        voteScreen.updateIntroFromPacket(payload);
+                        voteScreen.updateIntroFromPacket(view);
                     }
                 }));
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MapRotationSyncPayload.ID,

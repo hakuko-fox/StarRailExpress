@@ -116,7 +116,7 @@
   "item.noellesroles.signature_paper.desc": "明星职业专属道具，右键可以签名，蹲下右键签生死状，具体详见明星职业介绍。",
   "item.noellesroles.life_and_death_shape.desc": "生死状，可以让明星为你抵挡一次伤害。",
   "item.noellesroles.signed_paper.desc": "签名纸，拥有签名纸的玩家能持续透视明星的位置，并在看向明星时获得速度1效果。",
-  "item.noellesroles.bowen_badge.desc": "波文徽章，承太郎职业专属道具，长按右键3s进行冲刺，杀死冲撞到的目标并对周围目标造成击退。",
+  "item.noellesroles.bowen_badge.desc": "欧拉一拳，承太郎专属。右键进入攻击期间，绑定第一个打到的目标；目标无法移动、无法使用物品，并始终被固定在使用者前方。6秒内右键攻击20次即可击杀，每次攻击都会使目标受击。超时取消并进入一半冷却。持有时手臂会被金色渐变包裹。仍可右键打开列车门。",
   "item.noellesroles.shisiye.desc": "女仆咲夜职业专属道具，饮用后获得速度10。",
   "item.noellesroles.problem_set.desc": "习题集，右键开始做题，做题正确会给予奖励，失败会给予惩罚。",
   "item.noellesroles.antidote.desc": "右键对玩家使用，可以使玩家解毒，使用后进入cd，当场上存在疫使时cd更快。",
@@ -207,12 +207,17 @@
   "item.noellesroles.sealed_breathless_bread.desc": "封印物。吃饭/喝水任务收益提高，进食也可能恢复少量 SAN；每次进食都有极低概率噎死。",
   "item.noellesroles.sealed_thunderbolt_nail.desc": "封印物。击杀后追加金币或短暂加速；在能看见天空的开阔处可能招来雷击。",
   "item.noellesroles.sealed_vanishing_cloak.desc": "封印物。右键短暂隐身，结束后会发光暴露并持续掉 SAN。",
-  "item.noellesroles.sealed_doorless_key.desc": "封印物。右键短距瞬移、可穿越封锁；落点可能偏移，甚至把你送进危险处。",
+  "item.noellesroles.sealed_doorless_key.desc": "封印物。右键短距瞬移、可穿越封锁，4 秒后回到原处；落点可能偏移，甚至把你送进危险处。",
   "item.noellesroles.sealed_hungry_purse.desc": "封印物。缓慢产出金币；遭到攻击时会吐出金币。",
   "item.noellesroles.sealed_whisper_bell.desc": "封印物。偶尔告知最近存活者的方位，但铃声也会搅乱视野。",
   "item.noellesroles.sealed_splintered_compass.desc": "封印物。指向最近的杀手方向；指针偶尔会把你拽去别处。",
   "item.noellesroles.sealed_last_match.desc": "封印物。右键点燃附近的人；火焰也可能回火烧到你自己。",
   "item.noellesroles.tomato.desc": "特码头死后掉落。\n按 Q 键丢出投掷物，落到方块上会变成掉落物。\n走过会绊倒 2 秒并捡起。\n投掷方和被绊倒者的西红柿同时进入 20 秒冷却。\n砸中玩家会把西红柿交给对方，并让对方屏幕糊满番茄酱 3 秒。",
   "item.noellesroles.loan_contract.desc": "右键偿还贷款本金和利息。",
-  "item.noellesroles.insurance.desc": "选择死亡原因签订保险；右键已签订的保险并支付25金币使其生效。"
+  "item.noellesroles.insurance.desc": "选择死亡原因签订保险；右键已签订的保险并支付25金币使其生效。",
+  "item.starrailexpress.vertical_looping_mirror_tool.desc": "建图工具。先选一块循环镜子，再勾选 A、B 两个对角。穿过顶底面会上下循环；上方只叠有限份场景，下方是雾。",
+  "item.noellesroles.spellbreaker_potion.desc": "破咒者专用。瞄准存活玩家使用后，目标在 80 秒内下一次技能会被封印。",
+  "item.trainmurdermystery.weak_defense_vial.desc": "弱效护盾试剂。亡命徒等可直接右键饮用；普通玩家可倒在托盘上。提供持续约 20 秒、仅能抵挡一次刀伤害的弱效护盾。",
+  "item.noellesroles.sanity_meds.desc": "修机模式镇静剂。服用后恢复 40 点理智。黑暗与追捕者靠近时会侵蚀理智。",
+  "item.noellesroles.terminal.desc": "程序员专用的终端。右键打开终端界面，输入 /give @s <物品ID> 或 /tp @s room 后按回车执行；成功执行一条指令后终端会被销毁。"
 }

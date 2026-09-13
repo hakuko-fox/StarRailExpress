@@ -14,10 +14,11 @@ import io.wifi.starrailexpress.client.gui.screen.mapui.MapCapabilitySummary;
 import io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache;
 import io.wifi.starrailexpress.client.gui.screen.mapui.MapUiGraphics;
 import io.wifi.starrailexpress.client.gui.screen.mapui.MapVoteLayout;
+import io.wifi.starrailexpress.client.gui.screen.maprotation.MapIntroDetail;
 import io.wifi.starrailexpress.content.vote.client.VoteFlowFrame;
 import io.wifi.starrailexpress.content.vote.client.VoteFlowTransition;
 import io.wifi.starrailexpress.content.vote.client.VoteModePresentation;
-import io.wifi.starrailexpress.game.data.MapConfig;
+import io.wifi.starrailexpress.network.MapDisplayInfo;
 import io.wifi.starrailexpress.network.MapIntroRequestPayload;
 import io.wifi.starrailexpress.network.MapIntroSyncPayload;
 import io.wifi.starrailexpress.network.VoteForMapPayload;
@@ -30,6 +31,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -40,6 +42,9 @@ public class MapVoteScreen extends Screen {
     private static final long DOUBLE_CLICK_MS = 400L;
     /** 客户端自卫：结果页铺黑后超过该时长仍未开局则自动关闭，防止卡黑屏。 */
     private static final long RESULT_SAFETY_CLOSE_MS = 10_000L;
+
+    /** PageUp/PageDown 一次翻几行详情 */
+    private static final int DETAIL_PAGE_LINES = 8;
     private final MapBackdropRenderer backdrop = new MapBackdropRenderer(0.28F);
     private final List<MapRow> rows = new ArrayList<>();
     private int focusIndex;
@@ -51,6 +56,10 @@ public class MapVoteScreen extends Screen {
     private float resultTitleHeight = 22;
     private boolean introDataReceived;
     private MapCapabilitySummary summary;
+    /** 与地图轮换界面同源的完整详情行（MapIntroDetail.build） */
+    private List<FormattedCharSequence> detailLines = List.of();
+    private String detailCacheKey = "";
+    private int detailScroll = 0;
     private long lastMapClickAt;
     private int lastMapClickIndex = -1;
 
@@ -63,28 +72,37 @@ public class MapVoteScreen extends Screen {
     @Override
     protected void init() {
         String focusedId = focused() == null ? null : focused().id();
-        rows.clear();
-        var maps = MapConfig.getInstance().getMaps();
-        if (maps != null) {
-            for (var entry : maps) {
-                if (entry != null && entry.getId() != null) rows.add(new MapRow(entry));
-            }
-        }
-        if (SREClientConfig.instance().autoSortVotes)
-            rows.sort(Comparator.comparingInt((MapRow row) -> voteCount(row.id())).reversed());
+        rebuildRows();
         int restored = indexOf(resultMapId != null ? resultMapId : focusedId);
         focusIndex = Mth.clamp(restored >= 0 ? restored : focusIndex, 0, Math.max(0, rows.size() - 1));
         routePosition = focusIndex;
         backdrop.resize(width, height);
         if (selectionChangedAt == 0) selectionChangedAt = System.currentTimeMillis();
         summary = MapCapabilitySummary.forMap(targetMapId());
-        if (!introDataReceived) ClientPlayNetworking.send(new MapIntroRequestPayload());
+        if (!introDataReceived) ClientPlayNetworking.send(new MapIntroRequestPayload(false));
     }
 
     public void updateIntroFromPacket(MapIntroSyncPayload payload) {
         MapIntroClientCache.update(payload);
+        if (payload == null || payload.isIgnored()) {
+            return; // 不兼容/损坏的包：不标记已收到，避免用空数据重建列表
+        }
         introDataReceived = true;
+        // 候选 id 可能先到、DTO 后到：数据到齐后重建列表（否则会出现空列表）
+        rebuildRows();
         summary = MapCapabilitySummary.forMap(targetMapId());
+    }
+
+    /** 用当前缓存里的投票候选重建行（候选 id 由投票包给出）。 */
+    private void rebuildRows() {
+        rows.clear();
+        for (var info : MapIntroClientCache.candidates()) {
+            rows.add(new MapRow(info));
+        }
+        if (SREClientConfig.instance().autoSortVotes) {
+            rows.sort(Comparator.comparingInt((MapRow row) -> voteCount(row.id())).reversed());
+        }
+        focusIndex = Mth.clamp(focusIndex, 0, Math.max(0, rows.size() - 1));
     }
 
     public void showResult(String mapId) {
@@ -213,21 +231,51 @@ public class MapVoteScreen extends Screen {
         int textY = metaY + 21;
         g.fill(x, textY - 7, x + Math.round(Math.min(180, l.infoWidth() - 12) * enter), textY - 6,
                 VoteFlowFrame.withAlpha(VoteFlowFrame.GOLD, Math.round(detailAlpha * 0.55F)));
-        int maxLines = Math.min(l.compact() ? 2 : 3, Math.max(0, (bottom - textY - 25) / 13));
+        // 非紧凑布局把描述压到 2 行，腾出的空间给完整属性详情
+        int maxLines = Math.min(2, Math.max(0, (bottom - textY - 25) / 13));
         var lines = font.split(row.description(), l.infoWidth() - 12);
         for (int i = 0; i < Math.min(maxLines, lines.size()); i++) {
             g.drawString(font, lines.get(i), x, textY, VoteFlowFrame.withAlpha(0xFFD8C9AC, detailAlpha), false);
             textY += 13;
         }
         if (textY + 20 < bottom) textY += 9;
-        if (summary != null) {
-            for (Component rule : summary.ruleLines(l.compact() ? 2 : 3)) {
-                if (textY + 10 > bottom) break;
-                g.fill(x, textY + 3, x + 3, textY + 6, VoteFlowFrame.withAlpha(VoteFlowFrame.GOLD_DIM, detailAlpha));
-                g.drawString(font, MapUiGraphics.clip(font, rule.getString(), l.infoWidth() - 22), x + 11, textY,
-                        VoteFlowFrame.withAlpha(VoteFlowFrame.MUTED, detailAlpha), false);
-                textY += 15;
+        if (l.compact()) {
+            // 窗口太矮时退回简短摘要（否则一行详情都放不下）
+            if (summary != null) {
+                for (Component rule : summary.ruleLines(2)) {
+                    if (textY + 10 > bottom) break;
+                    g.fill(x, textY + 3, x + 3, textY + 6, VoteFlowFrame.withAlpha(VoteFlowFrame.GOLD_DIM, detailAlpha));
+                    g.drawString(font, MapUiGraphics.clip(font, rule.getString(), l.infoWidth() - 22), x + 11, textY,
+                            VoteFlowFrame.withAlpha(VoteFlowFrame.MUTED, detailAlpha), false);
+                    textY += 15;
+                }
             }
+            g.disableScissor();
+            return;
+        }
+        // 与地图轮换界面显示同样多的信息：完整的属性/投票/特殊职业行，可 PageUp/PageDown 翻看
+        ensureDetail(row, l.infoWidth() - 26);
+        int lineH = 13;
+        int viewTop = textY;
+        int viewHeight = Math.max(0, bottom - viewTop);
+        int visible = Math.max(1, viewHeight / lineH);
+        int maxScroll = Math.max(0, detailLines.size() - visible);
+        detailScroll = Mth.clamp(detailScroll, 0, maxScroll);
+        int end = Math.min(detailLines.size(), detailScroll + visible);
+        for (int i = detailScroll; i < end; i++) {
+            FormattedCharSequence line = detailLines.get(i);
+            int lineY = viewTop + (i - detailScroll) * lineH;
+            g.drawString(font, line, x, lineY, VoteFlowFrame.withAlpha(0xFFD8C9AC, detailAlpha), false);
+        }
+        if (maxScroll > 0) {
+            // 右侧细滚动条 + 位置提示
+            int trackX = x + l.infoWidth() - 6;
+            g.fill(trackX, viewTop, trackX + 2, viewTop + visible * lineH,
+                    VoteFlowFrame.withAlpha(0xFF000000, Math.round(detailAlpha * 0.35F)));
+            int thumbH = Math.max(10, visible * visible * lineH / (detailLines.size() * lineH));
+            int thumbY = viewTop + (visible * lineH - thumbH) * detailScroll / maxScroll;
+            g.fill(trackX, thumbY, trackX + 2, thumbY + thumbH,
+                    VoteFlowFrame.withAlpha(VoteFlowFrame.GOLD, detailAlpha));
         }
         g.disableScissor();
     }
@@ -258,12 +306,12 @@ public class MapVoteScreen extends Screen {
             g.fill(x, top, x + l.stationWidth(), top + 1,
                     VoteFlowFrame.withAlpha(focused ? VoteFlowFrame.GOLD : VoteFlowFrame.MUTED,
                             Math.round(a * (focused ? 1 : 0.25F))));
-            int color = !row.entry.canSelect ? VoteFlowFrame.MUTED : focused ? VoteFlowFrame.TEXT : 0xFFC8B898;
+            int color = !row.info.canSelect() ? VoteFlowFrame.MUTED : focused ? VoteFlowFrame.TEXT : 0xFFC8B898;
             if (voted) g.fill(x + 7, top + 9, x + 10, top + 12, VoteFlowFrame.withAlpha(VoteFlowFrame.GOLD, a));
             String name = MapUiGraphics.clip(font, row.name(), l.stationWidth() - 22);
             drawScaled(g, Component.literal(name), x + 8 + (voted ? 6 : 0), top + 8, 1,
                     VoteFlowFrame.withAlpha(color, a));
-            Component votes = row.entry.canSelect ? Component.translatable("gui.sre.map_vote.votes", voteCount(row.id()))
+            Component votes = row.info.canSelect() ? Component.translatable("gui.sre.map_vote.votes", voteCount(row.id()))
                     : Component.translatable("gui.sre.map_vote.unavailable");
             if (a > 3) g.drawString(font, MapUiGraphics.clip(font, votes.getString(), l.stationWidth() - 16),
                     x + 8, top + 23, VoteFlowFrame.withAlpha(voted ? VoteFlowFrame.GOLD_DIM : VoteFlowFrame.MUTED, a), false);
@@ -389,6 +437,11 @@ public class MapVoteScreen extends Screen {
             case GLFW.GLFW_KEY_HOME -> { moveFocus(-focusIndex); return true; }
             case GLFW.GLFW_KEY_END -> { moveFocus(rows.size() - 1 - focusIndex); return true; }
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER, GLFW.GLFW_KEY_SPACE -> { submitFocused(); return true; }
+            case GLFW.GLFW_KEY_PAGE_UP -> { detailScroll = Math.max(0, detailScroll - DETAIL_PAGE_LINES); return true; }
+            case GLFW.GLFW_KEY_PAGE_DOWN -> {
+                detailScroll = Math.min(Math.max(0, detailLines.size()), detailScroll + DETAIL_PAGE_LINES);
+                return true;
+            }
             default -> { return super.keyPressed(keyCode, scanCode, modifiers); }
         }
     }
@@ -424,11 +477,33 @@ public class MapVoteScreen extends Screen {
         focusIndex = Mth.clamp(index, 0, rows.size() - 1);
         selectionChangedAt = System.currentTimeMillis();
         summary = MapCapabilitySummary.forMap(targetMapId());
+        detailCacheKey = "";
+        detailScroll = 0;
+    }
+
+    /** 详情行：聚焦地图变化或换行宽时重建（内容与地图轮换界面完全一致）。 */
+    private void ensureDetail(MapRow row, int wrapW) {
+        if (row == null) {
+            detailLines = List.of();
+            detailCacheKey = "";
+            return;
+        }
+        String key = row.id() + "|" + wrapW;
+        if (key.equals(detailCacheKey)) {
+            return;
+        }
+        boolean sameRow = detailCacheKey.startsWith(row.id() + "|");
+        detailCacheKey = key;
+        // 投票界面自己已有大标题，详情不重复输出「名称 + ID」
+        detailLines = MapIntroDetail.build(font, Math.max(60, wrapW), row.info, false);
+        if (!sameRow) {
+            detailScroll = 0;
+        }
     }
     private boolean canVote() {
         MapRow row = focused();
         var voting = votingComponent();
-        return row != null && voting != null && voting.isVotingActive() && row.entry.canSelect;
+        return row != null && voting != null && voting.isVotingActive() && row.info.canSelect();
     }
     private void submitFocused() {
         if (!canVote() || focused().id().equals(votedMapId)) return;
@@ -449,8 +524,8 @@ public class MapVoteScreen extends Screen {
     private String resultName() {
         int index = indexOf(resultMapId);
         if (index >= 0) return rows.get(index).name();
-        var map = MapConfig.getInstance().getMapById(resultMapId);
-        String value = map == null ? resultMapId : map.getDisplayName();
+        var map = MapIntroClientCache.get(resultMapId);
+        String value = map == null ? resultMapId : map.displayName();
         return value == null || value.isBlank() ? resultMapId : Component.translatableWithFallback(value, value).getString();
     }
     private MapVotingComponent votingComponent() {
@@ -471,9 +546,8 @@ public class MapVoteScreen extends Screen {
         return VoteModePresentation.name(mode, fallback).getString();
     }
     private static Component capacity(MapRow row) {
-        var voteMap = MapIntroClientCache.getVoteMap(row.id());
-        int min = voteMap == null ? row.entry.minCount : voteMap.minCount();
-        int max = voteMap == null ? row.entry.maxCount : voteMap.maxCount();
+        int min = row.info.minCount();
+        int max = row.info.maxCount();
         if (min > 0 && max > 0) return Component.translatable("gui.sre.map_vote.capacity", min, max);
         if (max > 0) return Component.translatable("gui.sre.map_vote.capacity_max", max);
         return Component.translatable("gui.sre.map_vote.capacity_unlimited");
@@ -487,16 +561,16 @@ public class MapVoteScreen extends Screen {
         g.pose().popPose();
     }
     private static final class MapRow {
-        private final MapConfig.MapEntry entry;
+        private final MapDisplayInfo info;
         private float hover;
-        private MapRow(MapConfig.MapEntry entry) { this.entry = entry; }
-        private String id() { return entry.getId(); }
+        private MapRow(MapDisplayInfo info) { this.info = info; }
+        private String id() { return info.id(); }
         private String name() {
-            String value = entry.getDisplayName();
+            String value = info.displayName();
             return value == null || value.isBlank() ? id() : Component.translatableWithFallback(value, value).getString();
         }
         private Component description() {
-            String value = entry.getDescription();
+            String value = info.description();
             return value == null || value.isBlank() ? Component.translatable("gui.sre.map_vote.no_description")
                     : Component.translatableWithFallback(value, value);
         }
