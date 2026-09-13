@@ -28,7 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
+import org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -54,7 +54,7 @@ public class FakeGrenadeItem extends GrenadeItem {
     @Override
     public void releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
         if (user instanceof Player player) {
-            HakukoFoxPlayerComponent comp = HakukoFoxPlayerComponent.KEY.maybeGet(player).orElse(null);
+            HakukoFoxRoleData comp = io.wifi.starrailexpress.api.data.RoleData.getOptional(HakukoFoxRoleData.class, player).orElse(null);
             if (comp != null && comp.isBeastFormActive()) {
                 player.displayClientMessage(Component.translatable("skill.noellesroles.hakukofox.no_weapon"), true);
                 return;

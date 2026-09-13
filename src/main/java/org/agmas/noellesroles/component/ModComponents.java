@@ -23,11 +23,6 @@ import org.agmas.noellesroles.ConfigWorldComponent;
 import org.agmas.noellesroles.Noellesroles;
 import net.exmo.sre.repair.component.RepairRolePlayerComponent;
 import org.agmas.noellesroles.content.entity.DoomedSinnerBodyEntity;
-import org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent;
-import org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent;
-import org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent;
-import org.agmas.noellesroles.game.roles.vigilante.everly.EverlyPlayerComponent;
-import org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
@@ -100,14 +95,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
   public static final ComponentKey<InfectedPlayerComponent> INFECTED = ComponentRegistry.getOrCreate(
       ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "infected"),
       InfectedPlayerComponent.class);
-
-  public static final ComponentKey<HalicPlayerComponent> HALIC = HalicPlayerComponent.KEY;
-  public static final ComponentKey<org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent> HAKUKO_FOX =
-      org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY;
-  public static final ComponentKey<NineMuiPlayerComponent> NINE_MUI = NineMuiPlayerComponent.KEY;
-  public static final ComponentKey<EverlyPlayerComponent> EVERLY = EverlyPlayerComponent.KEY;
-  public static final ComponentKey<FuTaiPlayerComponent> FU_TAI = FuTaiPlayerComponent.KEY;
-  public static final ComponentKey<VtuberRolePlayerComponent> VTUBER_ROLE = VtuberRolePlayerComponent.KEY;
 
   public ModComponents() {
     // CCA 需要无参构造函数
@@ -192,34 +179,6 @@ public class ModComponents implements EntityComponentInitializer, WorldComponent
         .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
         .end(org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent::new);
 
-    // 注册 Halic 组件
-    registry.beginRegistration(Player.class, HALIC)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent::new);
-
-    // 注册 HakukoFox 组件
-    registry.beginRegistration(Player.class, HAKUKO_FOX)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent::new);
-
-    // 注册 玖璃 组件
-    registry.beginRegistration(Player.class, NINE_MUI)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(NineMuiPlayerComponent::new);
-
-    // 注册 芙妮 组件
-    registry.beginRegistration(Player.class, EVERLY)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(EverlyPlayerComponent::new);
-
-    // 注册 风太 组件
-    registry.beginRegistration(Player.class, FU_TAI)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(FuTaiPlayerComponent::new);
-
-    registry.beginRegistration(Player.class, VTUBER_ROLE)
-        .respawnStrategy(RespawnCopyStrategy.NEVER_COPY)
-        .end(VtuberRolePlayerComponent::new);
     // ==================== 示例：注册更多组件 ====================
     //
     // 如果你的角色需要存储特定数据，可以在这里注册更多组件：

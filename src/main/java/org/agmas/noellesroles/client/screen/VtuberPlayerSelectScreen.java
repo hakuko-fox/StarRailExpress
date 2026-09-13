@@ -24,8 +24,8 @@ public class VtuberPlayerSelectScreen extends Screen {
 
     private long cooldownSeconds() {
         return minecraft == null || minecraft.player == null ? 0L
-                : org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent.KEY
-                        .get(minecraft.player).getMenuCooldownSeconds();
+                : io.wifi.starrailexpress.api.data.RoleData.getOptional(org.agmas.noellesroles.role_data.vtuber.VtuberRoleData.class, minecraft.player)
+                        .map(org.agmas.noellesroles.role_data.vtuber.VtuberRoleData::getMenuCooldownSeconds).orElse(0L);
     }
 
     @Override

@@ -4,7 +4,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
+import org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData;
 import org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +15,7 @@ public abstract class HakukoFoxEyeHeightMixin {
     @ModifyReturnValue(method = "getDefaultDimensions", at = @At("RETURN"))
     private EntityDimensions noellesroles$lowerEyeToFox(EntityDimensions dimensions, Pose pose) {
         Player self = (Player) (Object) this;
-        if (!HakukoFoxPlayerComponent.isDisguised(self)
+        if (!HakukoFoxRoleData.isDisguised(self)
                 && !VtuberRoleRuntime.isAnimalDisguised(self)) {
             return dimensions;
         }

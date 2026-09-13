@@ -25,11 +25,11 @@ function Assert-Matches([string] $text, [string] $pattern, [string] $message) {
     }
 }
 
-$fuTai = Read-Utf8 'src/main/java/org/agmas/noellesroles/game/roles/innocence/futai/FuTaiPlayerComponent.java'
+$fuTai = Read-Utf8 'src/main/java/org/agmas/noellesroles/role/vtuber/FuTaiRole.java'
 Assert-NotContains $fuTai 'spawnRoundGlitches' '風太的新版本仍會生成舊版異常紅石。'
 Assert-NotContains $fuTai 'collectedGlitches' '風太的新版本仍保留異常紅石收集與神諭升級狀態。'
 Assert-Contains $fuTai 'int cost = 200;' '風太神諭應固定消耗 200 金幣。'
-Assert-Contains $fuTai 'nextOracleTick = now + 20L * 120L;' '風太神諭應固定冷卻 120 秒。'
+Assert-Contains $fuTai '.cooldownSeconds(120)' '風太神諭應固定冷卻 120 秒。'
 
 $client = Read-Utf8 'src/main/java/org/agmas/noellesroles/client/NoellesrolesClient.java'
 Assert-Matches $client '(?s)isRole\(client\.player, ModRoles\.KANA\).*?new VtuberPlayerSelectScreen\(1, false\)' '佳奈按 E 後未開啟排除自己的單人選擇選單。'
@@ -38,33 +38,44 @@ $knifePayload = Read-Utf8 'src/main/java/io/wifi/starrailexpress/network/origina
 Assert-Contains $knifePayload '!role.onUseKnife(player)' '刀擊封包缺少伺服器端 onUseKnife 驗證，柚封凌的禁用狀態可被繞過。'
 
 $roleEvents = Read-Utf8 'src/main/java/org/agmas/noellesroles/init/ModRolesInitialEventRegister.java'
-Assert-Matches $roleEvents '(?s)useOracleSkill\(player, context\);\s*\}\)\.cooldownSeconds\(120\)' '風太 HUD 未同步 120 秒技能冷卻。'
-Assert-Contains $roleEvents 'NINE_ONE_ATTACKED' '九月一缺少「受攻擊後」狀態，40 秒任務週期會在受攻擊前啟動。'
-Assert-Contains $roleEvents 'ModEffects.CHAT_BAN' '九月一受攻擊後只禁語音，未禁止文字聊天。'
-Assert-Contains $roleEvents 'context.setSkillCooldown(5 * 20)' '陌塵技能失敗後未套用 5 秒冷卻。'
-Assert-Matches $roleEvents '(?s)RoleSkill\.register\(ModRoles\.BAIYU,.*?\.cooldownSeconds\(30\)\.showOnHud\(true\)\.build\(\)\);' '白御「記錄二三事」冷卻未更新為 30 秒。'
+$roleDir = 'src/main/java/org/agmas/noellesroles/role/vtuber'
+$kana = Read-Utf8 "$roleDir/KanaRole.java"
+$baiyu = Read-Utf8 "$roleDir/BaiyuRole.java"
+$september = Read-Utf8 "$roleDir/SeptemberOneRole.java"
+$mochen = Read-Utf8 "$roleDir/MochenRole.java"
+$maolun = Read-Utf8 "$roleDir/MaolunRole.java"
+$hakuko = Read-Utf8 "$roleDir/HakukoFoxRole.java"
+$bloodFox = Read-Utf8 "$roleDir/BloodFoxRole.java"
+$yozora = Read-Utf8 "$roleDir/YozoraRole.java"
+
+Assert-Matches $fuTai '(?s)useOracleSkill\(player, context\);\s*\}\)\.cooldownSeconds\(120\)' '風太 HUD 未同步 120 秒技能冷卻。'
+Assert-Contains $september '.attacked = true' '九月一缺少「受攻擊後」狀態，40 秒任務週期會在受攻擊前啟動。'
+Assert-Contains $september 'ModEffects.CHAT_BAN' '九月一受攻擊後只禁語音，未禁止文字聊天。'
+Assert-Contains $mochen 'context.setSkillCooldown(5 * 20)' '陌塵技能失敗後未套用 5 秒冷卻。'
+Assert-Matches $baiyu '(?s)RoleSkill\.register\(ModRoles\.BAIYU,.*?\.cooldownSeconds\(30\)\.showOnHud\(true\)\.build\(\)\);' '白御「記錄二三事」冷卻未更新為 30 秒。'
 
 $taskComponent = Read-Utf8 'src/main/java/io/wifi/starrailexpress/cca/SREPlayerTaskComponent.java'
 Assert-Contains $taskComponent 'isNineOneTaskCycleActive()' '九月一任務刷新與 40 秒有效期未限定在受攻擊後。'
 Assert-Contains $taskComponent 'this.nextTaskTimer = 0;' '九月一任務過期後未立即排入下一個 40 秒週期。'
 
 $runtime = Read-Utf8 'src/main/java/org/agmas/noellesroles/game/roles/vtuber/VtuberRoleRuntime.java'
-Assert-Contains $runtime 'KANA_MENU_COOLDOWN.put(caster.getUUID(), now + 20L * 15L);' '佳奈拖放技能冷卻不是 15 秒。'
-Assert-Matches $runtime '(?s)selectKanaTarget\(ServerPlayer caster, ServerPlayer target.*?target == caster.*?KANA_MENU_COOLDOWN\.put\(caster\.getUUID\(\), now \+ 20L \* 15L\)' '佳奈選擇技能未在伺服器排除自己，或成功選擇後未套用 15 秒冷卻。'
-Assert-Matches $runtime '(?s)long cooldownUntil = KANA_MENU_COOLDOWN\.getOrDefault.*?if \(now < cooldownUntil\).*?return;.*?target\.removeEffect' '佳奈冷卻期間仍可把效果套用到其他玩家。'
-Assert-Matches $runtime '(?s)tickNocturnalAndStableSan\(ServerPlayer player.*?game\.isRole\(player, ModRoles\.FU_TAI\).*?player\.removeEffect\(MobEffects\.BLINDNESS\)' '風太被動「夜行性動物」未移除失明。'
+Assert-Contains $kana 'setMenuCooldownUntil(now + 20L * 15L);' '佳奈拖放技能冷卻不是 15 秒。'
+Assert-Matches $kana '(?s)selectKanaTarget\(ServerPlayer caster, ServerPlayer target.*?target == caster.*?setMenuCooldownUntil\(now \+ 20L \* 15L\)' '佳奈選擇技能未在伺服器排除自己，或成功選擇後未套用 15 秒冷卻。'
+Assert-Matches $kana '(?s)long cooldownUntil = RoleData\.getNullable.*?if \(now < cooldownUntil\).*?return;.*?target\.removeEffect' '佳奈冷卻期間仍可把效果套用到其他玩家。'
+Assert-Matches $fuTai '(?s)serverTick\(ServerPlayer player.*?player\.removeEffect\(MobEffects\.BLINDNESS\)' '風太被動「夜行性動物」未移除失明。'
 Assert-NotContains $runtime 'BAIYU_EXAMINATIONS' '白御仍使用延遲 10 秒且要求站定的舊版檢查流程。'
-Assert-Contains $runtime 'BAIYU_MARKED_TARGETS.put(player.getUUID(), target.getUUID());' '白御必須只保存一個目前標記。'
+Assert-Contains $baiyu '.baiyuMarkedTarget = target.getUUID();' '白御必須只保存一個目前標記。'
 
-$shop = Read-Utf8 'src/main/java/org/agmas/noellesroles/init/RoleShopHandler.java'
-foreach ($roleId in @('YUZU_FENGLING_ID', 'HAKUKO_FOX_ID', 'KANA_ID')) {
-    Assert-Contains $shop "registerDefaultKillerShopWithCrowbar(ModRoles.$roleId);" "$roleId 未明確註冊包含撬棍的角色商店。"
+foreach ($roleName in @('YuzuFengling', 'HakukoFox', 'Kana')) {
+    $roleSource = Read-Utf8 "$roleDir/${roleName}Role.java"
+    Assert-Contains $roleSource 'VtuberRoleSupport.killerShopWithCrowbar()' "$roleName 缺少包含撬棍的角色商店。"
 }
+$shop = Read-Utf8 "$roleDir/HoshizoraRole.java"
 Assert-Contains $shop 'HOSHIZORA_SHOP.add(maxOneScopeEntry(25));' '星空宙商店缺少上限 1 的狙擊鏡。'
-Assert-Contains $shop 'private static ShopEntry maxOneScopeEntry(int price)' '星空宙商店未檢查狙擊槍內置瞄準鏡，可能重複購買瞄準鏡。'
-Assert-Contains $shop 'SniperRifleItem.hasScopeAttached(inventoryStack)' '星空宙商店未將狙擊槍內置瞄準鏡計入瞄準鏡上限。'
+Assert-Contains $shop 'private static ShopEntry maxOneScopeEntry(int price)' '星空宙缺少瞄準鏡數量驗證。'
+Assert-Contains $shop 'SniperRifleItem.hasScopeAttached(inventoryStack)' '星空宙未計算已安裝的瞄準鏡。'
 Assert-Contains $shop 'maxOneItemEntry(TMMItems.SNIPER_RIFLE.getDefaultInstance()' '星空宙商店缺少上限 1 的狙擊槍。'
-Assert-Matches $shop '(?s)var HOSHIZORA_SHOP.*?TMMItems\.CROWBAR\.getDefaultInstance\(\).*?customEntries\.put\(ModRoles\.HOSHIZORA_ID' '星空宙角色商店缺少撬棍。'
+Assert-Matches $shop '(?s)getShopEntries.*?TMMItems\.CROWBAR\.getDefaultInstance' '星空宙商店缺少撬棍。'
 
 $sniperPayload = Read-Utf8 'src/main/java/io/wifi/starrailexpress/network/original/SniperShootPayload.java'
 Assert-NotContains $sniperPayload 'ZORA_TARGET_HITS.remove(zoraHitKey);' '星空宙目標死亡後仍會清除命中次數，復活後會被重置。'
@@ -100,15 +111,16 @@ Assert-Contains $menu 'Long.toString(seconds)' '玩家頭像缺少冷卻倒數�
 Assert-Contains $menu 'cooldownSeconds() > 0L || selected.size()' '冷卻時仍可送出選擇。'
 $hud = Read-Utf8 'src/main/java/org/agmas/noellesroles/client/hud/UnifiedSkillHud.java'
 Assert-Contains $hud 'getMarkedTargetName()' '白御 HUD 未讀取目前標記目標。'
-Assert-Contains $runtime 'setMarkedTargetName(target.getGameProfile().getName())' '白御目標未同步。'
-Assert-Contains $runtime 'setMenuCooldownUntil(now + 20L * 15L)' '佳奈選單冷卻未同步。'
-Assert-Contains $roleEvents 'ProblemScreenOpenC2SPacket(true, 2, 60, true)' '貓倫必須答錯兩次即結束。'
-Assert-Contains $roleEvents '.cooldownSeconds(20).toggleable(true).manualCooldown()' '白狐解除後應冷卻20秒。'
-Assert-Contains $roleEvents '.cooldownSeconds(10).toggleable(true).manualCooldown()' '血狐與夜空必須在解除後冷卻。'
+Assert-Contains $baiyu 'setMarkedTargetName(target.getGameProfile().getName())' '白御目標未同步。'
+Assert-Contains $kana 'setMenuCooldownUntil(now + 20L * 15L)' '佳奈選單冷卻未同步。'
+Assert-Contains $maolun 'ProblemScreenOpenC2SPacket(true, 2, 60, true)' '貓倫必須答錯兩次即結束。'
+Assert-Contains $hakuko '.cooldownSeconds(20).toggleable(true).manualCooldown()' '白狐解除後應冷卻20秒。'
+Assert-Contains $bloodFox '.cooldownSeconds(10).toggleable(true).manualCooldown()' '血狐與夜空必須在解除後冷卻。'
+Assert-Contains $yozora '.cooldownSeconds(10).toggleable(true).manualCooldown()' '血狐與夜空必須在解除後冷卻。'
 Assert-Contains $knifePayload 'consumeKanaKnife(player)' '佳奈小刀未在命中時消耗。'
 Assert-Contains $knifePayload 'canUseKanaKnife(player)' '佳奈小刀缺少伺服器來源檢查。'
 Assert-Matches $runtime '(?s)handleMenuSelection\(ServerPlayer caster.*?RoleSkill\.blockForSpectator\(caster, false\).*?return;.*?SREGameWorldComponent game' '佳奈及貓倫選單技能未檢查技能封鎖。'
-Assert-Matches $runtime '(?s)private static void tickNocturnalAndStableSan.*?game\.isRole\(player, ModRoles\.BAIYU\).*?player\.removeEffect\(MobEffects\.BLINDNESS\)' '白御被動「夜行性動物」未移除失明。'
+Assert-Matches $baiyu '(?s)serverTick\(ServerPlayer player.*?player\.removeEffect\(MobEffects\.BLINDNESS\)' '白御被動「夜行性動物」未移除失明。'
 foreach ($language in @('zh_tw', 'zh_cn', 'en_us')) {
     $intro = (Read-Utf8 "src/main/resources/assets/role_modifier_intro/lang/$language.json") | ConvertFrom-Json -AsHashtable
     Assert-Contains $intro['info.screen.roleid.hakukofox'] '冷卻時間20秒' "$language 白狐說明仍是舊冷卻。"

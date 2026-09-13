@@ -120,13 +120,7 @@
       "starrailexpress:player_nunchuck",
       "starrailexpress:mailbox",
       "starrailexpress:player_damage_tracker",
-      "noellesroles:cake_maker",
-      "noellesroles:halic",
-      "noellesroles:hakukofox",
-      "noellesroles:9muimui",
-      "noellesroles:everly",
-      "noellesroles:fu_tai",
-      "noellesroles:vtuber_role_state"
+      "noellesroles:cake_maker"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

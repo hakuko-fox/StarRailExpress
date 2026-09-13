@@ -218,5 +218,9 @@
   "item.starrailexpress.vertical_looping_mirror_tool.desc": "建圖工具。先選一塊迴圈鏡子，再勾選 A、B 兩個對角。穿過頂底面會上下迴圈；上方只疊有限份場景，下方是霧。",
   "item.noellesroles.spellbreaker_potion.desc": "破咒者專用。瞄準存活玩家使用後，目標在 80 秒內下一次技能會被封印。",
   "item.trainmurdermystery.weak_defense_vial.desc": "弱效護盾試劑。亡命徒等可直接右鍵飲用；普通玩家可倒在托盤上。提供持續約 20 秒、僅能抵擋一次刀傷害的弱效護盾。",
-  "item.noellesroles.sanity_meds.desc": "修機模式鎮靜劑。服用後恢復 40 點理智。黑暗與追捕者靠近時會侵蝕理智。"
+  "item.noellesroles.sanity_meds.desc": "修機模式鎮靜劑。服用後恢復 40 點理智。黑暗與追捕者靠近時會侵蝕理智。",
+  "item.noellesroles.alin_wrench.desc": "阿麟專用的一次性工具。修復並打開一扇被破壞的小門；同一扇門每局只能修復一次。",
+  "item.noellesroles.alin_screwdriver.desc": "阿麟專用的一次性工具。破壞一扇完整的小門；同一扇門每局只能破壞一次。",
+  "item.noellesroles.yuyue_note.desc": "可書寫的一般便利貼。寫好後對生物使用，可貼到對方背上；蹲下時使用一般便利貼互動。",
+  "item.noellesroles.toy_hammer.desc": "Juka 專用。攻擊玩家不造成傷害，令目標無法移動、使用物品及操作背包 2 秒，自己緩速 II 2 秒。冷卻 60 秒。"
 }

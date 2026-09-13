@@ -1,16 +1,16 @@
-package org.agmas.noellesroles.game.roles.killer.hakukofox;
+package org.agmas.noellesroles.role_data.vtuber;
 
-import io.wifi.starrailexpress.api.RoleComponent;
 import io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.api.data.RoleData;
+import io.wifi.starrailexpress.api.data.RoleDataContext;
+import io.wifi.starrailexpress.api.impl.SimpleRoleData;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -18,11 +18,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role.ModRoles;
-import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistry;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import org.agmas.noellesroles.utils.MoneyUtils;
 
 /**
  * 白狐 2.0 — 殺手陣營
@@ -35,25 +32,15 @@ import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
  * 被動技（修仙成狐）：開局時失明60秒，60秒後自動化身為獸化型態。
  * 標籤：香港Vtuber
  */
-public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingComponent {
-    public static final ComponentKey<HakukoFoxPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "hakukofox"),
-            HakukoFoxPlayerComponent.class);
-
-    private final Player player;
+public class HakukoFoxRoleData extends SimpleRoleData {
 
     private boolean beastFormActive = false;
     // 修仙成狐：開局失明 60 秒，時間到後自動化身
     private boolean cultivating = false;
     private long cultivateEndTime = 0;
 
-    public HakukoFoxPlayerComponent(Player player) {
-        this.player = player;
-    }
-
-    @Override
-    public Player getPlayer() {
-        return player;
+    public HakukoFoxRoleData(RoleDataContext context) {
+        super(context);
     }
 
     @Override
@@ -62,26 +49,18 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         return true;
     }
 
-    public void sync() {
-        KEY.sync(player);
-    }
-
     @Override
-    public void init() {
+    public void clear() {
         beastFormActive = false;
         cultivating = false;
         cultivateEndTime = 0;
-        sync();
-    }
-
-    @Override
-    public void clear() {
         removeBeastEffects();
         if (player instanceof ServerPlayer sp) {
             sp.removeEffect(MobEffects.BLINDNESS);
             sp.refreshDimensions();
+            sync();
         }
-        init();
+
     }
 
     public boolean isBeastFormActive() {
@@ -97,7 +76,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
     }
 
     public static boolean isDisguised(Player player) {
-        HakukoFoxPlayerComponent comp = KEY.maybeGet(player).orElse(null);
+        HakukoFoxRoleData comp = RoleData.getOptional(HakukoFoxRoleData.class, player).orElse(null);
         return comp != null && comp.isDisguised();
     }
 
@@ -170,18 +149,18 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) return false;
 
         int cost = 100;
-        var shop = SREPlayerShopComponent.KEY.get(sp);
-        if (shop.balance < cost) {
+        int balance = MoneyUtils.getBalance(sp);
+        if (balance < cost) {
             sp.displayClientMessage(
                     Component.translatable("message.noellesroles.hakukofox.not_enough_money", cost),
                     true);
             return false;
         }
-        shop.addToBalance(-cost);
+        MoneyUtils.addToBalance(sp, -cost);
 
         ServerLevel level = sp.serverLevel();
         for (ServerPlayer other : level.players()) {
-            if (other == sp) continue;
+            if (other == sp || !GameUtils.isPlayerAliveAndSurvival(other)) continue;
             other.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3 * 20, 0, false, false, true));
             other.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 3 * 20, 0, false, false, true));
             other.displayClientMessage(
@@ -192,7 +171,6 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
                 SoundEvents.FOX_SCREECH, SoundSource.PLAYERS, 1.0F, 1.0F);
         sp.displayClientMessage(
                 Component.translatable("skill.noellesroles.hakukofox.freeze_self"), true);
-        ctx.setSkillCooldown(60 * 20);
         return true;
     }
 
@@ -219,7 +197,7 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
 
         // 修仙之狐：開出60秒後自動化身
         if (cultivating && !beastFormActive && GameUtils.isPlayerAliveAndSurvival(sp)
-                && sp.serverLevel().getGameTime() >= cultivateEndTime) {
+                    && sp.serverLevel().getGameTime() >= cultivateEndTime) {
             cultivating = false;
             if (sp.hasEffect(MobEffects.BLINDNESS)) {
                 sp.removeEffect(MobEffects.BLINDNESS);
@@ -242,18 +220,8 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
         cultivateEndTime = tag.getLong("cultivateEndTime");
     }
 
-    @Override
-    public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        writeToSyncNbt(tag, provider);
-    }
-
-    @Override
-    public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        readFromSyncNbt(tag, provider);
-    }
-
     private static boolean isBeastForm(Player player) {
-        HakukoFoxPlayerComponent comp = KEY.maybeGet(player).orElse(null);
+        HakukoFoxRoleData comp = RoleData.getOptional(HakukoFoxRoleData.class, player).orElse(null);
         return comp != null && comp.isBeastFormActive()
                 && SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.HAKUKO_FOX);
     }
@@ -262,20 +230,24 @@ public class HakukoFoxPlayerComponent implements RoleComponent, ServerTickingCom
     // 被動（獸化）：所受攻擊不會死亡。
     // 在獸化型態下每一種死因都會被否決，並回滿血量（同原版白狐的「狐有九命」，但期間內持續免疫）。
     //
-    static {
+    public static void registerEvents() {
         AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-            if (victim instanceof ServerPlayer sp && isBeastForm(sp)) {
-                sp.setHealth(sp.getMaxHealth());
-                return false;
-            }
-            return true;
-        });
+                    if (victim instanceof ServerPlayer sp && isBeastForm(sp)) {
+                        sp.setHealth(sp.getMaxHealth());
+                        return false;
+                    }
+                    return true;
+                });
         AllowPlayerDeath.EVENT.register((victim, deathReason) -> {
-            if (victim instanceof ServerPlayer sp && isBeastForm(sp)) {
-                sp.setHealth(sp.getMaxHealth());
-                return false;
-            }
-            return true;
-        });
+                    if (victim instanceof ServerPlayer sp && isBeastForm(sp)) {
+                        sp.setHealth(sp.getMaxHealth());
+                        return false;
+                    }
+                    return true;
+                });
+    }
+
+    public static boolean isCultivating(Player player) {
+        return RoleData.getOptional(HakukoFoxRoleData.class, player).map(HakukoFoxRoleData::isCultivating).orElse(false);
     }
 }

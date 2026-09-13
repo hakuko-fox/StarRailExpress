@@ -105,7 +105,7 @@ public final class UnifiedSkillHud {
                     : selectable.get(Mth.clamp(ability.getSelectedSkill(), 0, selectable.size() - 1));
 
             boolean baiyu = role != null && role.identifier().equals(org.agmas.noellesroles.role.ModRoles.BAIYU_ID);
-            var vtuberState = org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent.KEY.get(client.player);
+            var vtuberState = io.wifi.starrailexpress.api.data.RoleData.getNullable(org.agmas.noellesroles.role_data.vtuber.VtuberRoleData.class, client.player);
             int rowCount = visible.size() + (baiyu ? 1 : 0) + (passives.isEmpty() ? 0 : 1);
             Component[] names = new Component[rowCount];
             Component[] states = new Component[rowCount];
@@ -136,9 +136,8 @@ public final class UnifiedSkillHud {
                 Component stateText;
                 int stateColor;
                 float progress = -1.0F;
-                boolean formActive = skill.manualCooldown() && (vtuberState.isDisguised()
-                        || org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY
-                                .get(client.player).isBeastFormActive());
+                boolean formActive = skill.manualCooldown() && ((vtuberState != null && vtuberState.isDisguised())
+                        || org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData.isDisguised(client.player));
                 if (formActive) {
                     stateText = Component.translatable("hud.noellesroles.vtuber.form_active");
                     stateColor = GREEN;
@@ -171,9 +170,9 @@ public final class UnifiedSkillHud {
             }
 
             if (baiyu) {
-                Component target = vtuberState.getMarkedTargetName().isEmpty()
+                Component target = (vtuberState == null ? "" : vtuberState.getMarkedTargetName()).isEmpty()
                         ? Component.translatable("hud.noellesroles.baiyu.no_target")
-                        : Component.literal(vtuberState.getMarkedTargetName());
+                        : Component.literal((vtuberState == null ? "" : vtuberState.getMarkedTargetName()));
                 names[idx] = Component.translatable("hud.noellesroles.baiyu.marked_target", target);
                 states[idx] = null;
                 stateColors[idx] = MUTED;

@@ -219,5 +219,9 @@
   "item.noellesroles.spellbreaker_potion.desc": "破咒者专用。瞄准存活玩家使用后，目标在 80 秒内下一次技能会被封印。",
   "item.trainmurdermystery.weak_defense_vial.desc": "弱效护盾试剂。亡命徒等可直接右键饮用；普通玩家可倒在托盘上。提供持续约 20 秒、仅能抵挡一次刀伤害的弱效护盾。",
   "item.noellesroles.sanity_meds.desc": "修机模式镇静剂。服用后恢复 40 点理智。黑暗与追捕者靠近时会侵蚀理智。",
-  "item.noellesroles.terminal.desc": "程序员专用的终端。右键打开终端界面，输入 /give @s <物品ID> 或 /tp @s room 后按回车执行；成功执行一条指令后终端会被销毁。"
+  "item.noellesroles.terminal.desc": "程序员专用的终端。右键打开终端界面，输入 /give @s <物品ID> 或 /tp @s room 后按回车执行；成功执行一条指令后终端会被销毁。",
+  "item.noellesroles.alin_wrench.desc": "阿麟专用的一次性工具。修复并打开一扇被破坏的小门；同一扇门每局只能修复一次。",
+  "item.noellesroles.alin_screwdriver.desc": "阿麟专用的一次性工具。破坏一扇完整的小门；同一扇门每局只能破坏一次。",
+  "item.noellesroles.yuyue_note.desc": "可书写的一般便利贴。写好后对生物使用，可贴到对方背上；潜行时使用一般便利贴交互。",
+  "item.noellesroles.toy_hammer.desc": "Juka 专用。攻击玩家不造成伤害，令目标无法移动、使用物品及操作背包 2 秒，自己缓速 II 2 秒。冷却 60 秒。"
 }

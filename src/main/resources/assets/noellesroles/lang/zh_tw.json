@@ -5182,5 +5182,6 @@
   "mob_effect.noellesroles.glitch": "故障",
   "effect.noellesroles.glitch.description": "周圍方塊的渲染會變成隨機顏色。",
   "effect.noellesroles.puppet_wander": "傀儡遊走",
-  "mob_effect.noellesroles.puppet_wander": "傀儡遊走"
+  "mob_effect.noellesroles.puppet_wander": "傀儡遊走",
+  "message.noellesroles.luna_yoru.missing_room": "雙方都必須有已分配的房間才能返回。"
 }

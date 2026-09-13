@@ -128,104 +128,15 @@ import java.util.Set;
 
 public class ModRolesInitialEventRegister {
 
-    private static final Map<UUID, Integer> YOZORA_DEATH_NOTICES = new HashMap<>();
-    private record MaolunChallenge(UUID casterUuid, long deadlineTick) {
-    }
-
-    private static final Map<UUID, MaolunChallenge> MAOLUN_CHALLENGES = new HashMap<>();
-    private static final Set<UUID> MAOLUN_RESOLVED_RESULTS = new java.util.HashSet<>();
-    private static final Map<UUID, Integer> MAOLUN_FAILURES = new HashMap<>();
-    private static final Map<UUID, Set<ShenwuDamageGroup>> SHENWU_DAMAGE_GROUPS = new HashMap<>();
-    private static final Set<UUID> NINE_ONE_FATAL_SHIELD_USED = new java.util.HashSet<>();
-    private static final Set<UUID> NINE_ONE_ATTACKED = new java.util.HashSet<>();
-
-    private enum ShenwuDamageGroup {
-        CIVILIAN,
-        SHERIFF,
-        KILLER
-    }
-
     public static void register() {
 
-        io.wifi.starrailexpress.event.OnGameTrueStarted.EVENT.register(
-                ModRolesInitialEventRegister::resetVtuberRoundState);
-        io.wifi.starrailexpress.event.OnGameEnd.EVENT.register(
-                (level, game) -> resetVtuberRoundState(level));
-
-        OnPlayerDeath.EVENT.register((victim, deathReason) -> {
-            if (!(victim.level() instanceof net.minecraft.server.level.ServerLevel serverLevel))
-                return;
-            var game = SREGameWorldComponent.KEY.get(serverLevel);
-            for (ServerPlayer observer : serverLevel.players()) {
-                if (!GameUtils.isPlayerAliveAndSurvival(observer)
-                        || !game.isRole(observer, ModRoles.YOZORA)
-                        || org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent.KEY.get(observer)
-                                .getDisguise()
-                                != org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent.YOZORA_CAT)
-                    continue;
-                int notices = YOZORA_DEATH_NOTICES.merge(observer.getUUID(), 1, Integer::sum);
-                observer.playNotifySound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING.value(),
-                        net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.2F);
-                observer.displayClientMessage(Component.translatable("message.noellesroles.yozora.death_notice",
-                        Math.max(0, 9 - notices)), true);
-                if (notices >= 9 && GameUtils.isPlayerAliveAndSurvival(observer)) {
-                    GameUtils.killPlayer(observer, true, null,
-                            org.agmas.noellesroles.Noellesroles.id("yozora_nine_lives"));
-                }
-            }
-        });
-
-        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-            if (!(victim instanceof ServerPlayer shenwu)
-                    || !SREGameWorldComponent.KEY.get(victim.level()).isRole(shenwu, ModRoles.SHENWU_BINGFENG)
-                    || !(killer instanceof ServerPlayer)) {
-                return true;
-            }
-            Set<ShenwuDamageGroup> groups = SHENWU_DAMAGE_GROUPS
-                    .computeIfAbsent(shenwu.getUUID(), ignored -> EnumSet.noneOf(ShenwuDamageGroup.class));
-            if (groups.size() >= ShenwuDamageGroup.values().length
-                    && hasNonKillerPlayerBesides(shenwu)) {
-                org.agmas.noellesroles.utils.RoleUtils.customWinnerWin(shenwu.serverLevel(),
-                        ModRoles.SHENWU_BINGFENG.identifier().getPath(), ModRoles.SHENWU_BINGFENG.color());
-                return false;
-            }
-            ShenwuDamageGroup attackerGroup = getShenwuDamageGroup(
-                    SREGameWorldComponent.KEY.get(victim.level()).getRole(killer));
-            if (attackerGroup == null || !groups.add(attackerGroup)) {
-                return true;
-            }
-            shenwu.displayClientMessage(Component.translatable("message.noellesroles.kamikiri_ice.fatal_saved"), true);
-            return false;
-        });
-
-        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
-            if (!(victim instanceof ServerPlayer nineOne) || killer == null) {
-                return true;
-            }
-            var game = SREGameWorldComponent.KEY.get(victim.level());
-            if (!game.isRole(nineOne, ModRoles.SEPTEMBER_ONE)
-                    || NINE_ONE_FATAL_SHIELD_USED.contains(nineOne.getUUID())) {
-                return true;
-            }
-            net.minecraft.world.phys.Vec3 toAttacker = killer.position().subtract(nineOne.position())
-                    .multiply(1.0D, 0.0D, 1.0D).normalize();
-            net.minecraft.world.phys.Vec3 facing = nineOne.getLookAngle()
-                    .multiply(1.0D, 0.0D, 1.0D).normalize();
-            if (facing.dot(toAttacker) <= 0.0D) {
-                return true;
-            }
-            NINE_ONE_FATAL_SHIELD_USED.add(nineOne.getUUID());
-            killer.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 6, 0,
-                    false, false, true));
-            nineOne.displayClientMessage(Component.translatable(
-                    "message.noellesroles.nine_one.front_shield"), true);
-            return false;
-        });
-
-        AllowPlayerDeath.EVENT.register((victim, deathReason) ->
-                !org.agmas.noellesroles.role.ModRoles.isLafinaCharging(victim));
-        AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) ->
-                !org.agmas.noellesroles.role.ModRoles.isLafinaCharging(victim));
+        org.agmas.noellesroles.role.vtuber.YozoraRole.registerEvents();
+        org.agmas.noellesroles.role.vtuber.ShenwuBingfengRole.registerEvents();
+        org.agmas.noellesroles.role.vtuber.SeptemberOneRole.registerEvents();
+        org.agmas.noellesroles.role.vtuber.MaolunRole.registerEvents();
+        org.agmas.noellesroles.role.vtuber.LafinaRole.registerEvents();
+        org.agmas.noellesroles.role.vtuber.AlinRole.registerEvents();
+        org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData.registerEvents();
 
         // 初始化亡灵之主事件（亡者复苏 / 角色初始化）
         org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordHandler.init();
@@ -245,14 +156,11 @@ public class ModRolesInitialEventRegister {
                     .get(player);
             // 通用：设置职业的初始金币数（未配置则不改变，默认 -1）
             int initialCoin = role.getInitialCoinCount();
-            if (initialCoin >= 0) {
-                SREPlayerShopComponent.KEY.get(player).setBalance(initialCoin);
-            }
+
             // 白狐被動：修仙成狐 — 開局失明60秒，屆時自動化身
             if (RoleUtils.compareRole(role, ModRoles.HAKUKO_FOX)
                     && player instanceof ServerPlayer cultivationPlayer) {
-                org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY
-                        .get(cultivationPlayer).startCultivation(cultivationPlayer);
+                io.wifi.starrailexpress.api.data.RoleData.getNullable(org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData.class, cultivationPlayer).startCultivation(cultivationPlayer);
             }
             if (RoleUtils.compareRole(role, ModRoles.CONSPIRATOR)) {
                 ModEventsRegister.reJudgeSpectatorsPenalty(player.level());
@@ -364,78 +272,13 @@ public class ModRolesInitialEventRegister {
                 player.addItem(TMMItems.KNIFE.getDefaultInstance().copy());
                 return;
             }
-            if (role.identifier().equals(ModRoles.HAKUKO_FOX.identifier())) {
-                if (!SREItemUtils.hasItem(player, TMMItems.KNIFE)) {
-                    player.addItem(TMMItems.KNIFE.getDefaultInstance().copy());
-                }
-                return;
-            }
             if (role.identifier().equals(TMMRoles.VIGILANTE.identifier())) {
                 if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
                     player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
                 }
                 return;
             }
-            if (role.identifier().equals(ModRoles.EVERLY.identifier())
-                    || role.identifier().equals(ModRoles.YOZORA.identifier())
-                    || role.identifier().equals(ModRoles.BAIYU.identifier())
-                    || role.identifier().equals(ModRoles.AYERS.identifier())) {
-                if (role.identifier().equals(ModRoles.YOZORA.identifier())) {
-                    YOZORA_DEATH_NOTICES.remove(player.getUUID());
-                }
-                if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
-                    player.addItem(TMMItems.REVOLVER.getDefaultInstance().copy());
-                }
-                return;
-            }
-            if (role.identifier().equals(ModRoles.ALIN.identifier())) {
-                return;
-            }
-            if (role.identifier().equals(ModRoles.XIANMIAO.identifier())) {
-                RoleUtils.insertStackInFreeSlot(player, ModItems.FAKE_REVOLVER.getDefaultInstance());
-                return;
-            }
-            if (role.identifier().equals(ModRoles.YUZU_FENGLING.identifier())) {
-                RoleUtils.insertStackInFreeSlot(player, TMMItems.KNIFE.getDefaultInstance());
-                return;
-            }
-            if (role.identifier().equals(ModRoles.HOSHIZORA.identifier())) {
-                io.wifi.starrailexpress.network.original.SniperShootPayload.resetZoraState(player.getUUID());
-                var sniper = io.wifi.starrailexpress.index.TMMItems.SNIPER_RIFLE.getDefaultInstance();
-                io.wifi.starrailexpress.content.item.SniperRifleItem.setAmmoCount(sniper,
-                        io.wifi.starrailexpress.content.item.SniperRifleItem.MAX_AMMO);
-                io.wifi.starrailexpress.content.item.SniperRifleItem.setScopeAttached(sniper, true);
-                RoleUtils.insertStackInFreeSlot(player, sniper);
-                return;
-            }
-            if (role.identifier().equals(ModRoles.SHENWU_BINGFENG.identifier())) {
-                SHENWU_DAMAGE_GROUPS.remove(player.getUUID());
-                boolean sheriffVariant = player.getRandom().nextFloat() < 0.70F;
-                RoleUtils.insertStackInFreeSlot(player,
-                        sheriffVariant
-                                ? ModItems.FAKE_REVOLVER.getDefaultInstance()
-                                : ModItems.FAKE_KNIFE.getDefaultInstance());
-                player.displayClientMessage(Component.translatable(sheriffVariant
-                        ? "message.noellesroles.kamikiri_ice.sheriff_variant"
-                        : "message.noellesroles.kamikiri_ice.killer_variant"), true);
-                return;
-            }
-            if (role.identifier().equals(ModRoles.MAOLUN.identifier())) {
-                return;
-            }
-            if (role.identifier().equals(ModRoles.JUKA.identifier())) {
-                RoleUtils.insertStackInFreeSlot(player, ModItems.TOY_HAMMER.getDefaultInstance());
-                return;
-            }
-            if (role.identifier().equals(ModRoles.SEPTEMBER_ONE.identifier())) {
-                NINE_ONE_FATAL_SHIELD_USED.remove(player.getUUID());
-                NINE_ONE_ATTACKED.remove(player.getUUID());
-                var ability = SREAbilityPlayerComponent.KEY.get(player);
-                ability.init(false);
-                ability.status = 0;
-                ability.sync();
-                return;
-            }
+            if (org.agmas.noellesroles.role.vtuber.VtuberRoleItems.giveInitialItems(player, role)) return;
             if (role.identifier().equals(ModRoles.SHERIFF_ID)) {
                 // 警卫角色初始化：重置任务计数
                 return;
@@ -588,153 +431,13 @@ public class ModRolesInitialEventRegister {
     }
 
     public static void recordShenwuDamage(Player victim, Player attacker) {
-        if (!(victim instanceof ServerPlayer damaged) || attacker == null)
-            return;
-        var game = SREGameWorldComponent.KEY.get(victim.level());
-        if (game.isRole(damaged, ModRoles.SEPTEMBER_ONE)) {
-            if (NINE_ONE_ATTACKED.add(damaged.getUUID())) {
-                SREPlayerTaskComponent tasks = SREPlayerTaskComponent.KEY.get(damaged);
-                tasks.currentTaskAge = 0;
-                tasks.nextTaskTimer = 40 * 20;
-                tasks.sync();
-            }
-            damaged.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, Integer.MAX_VALUE, 0,
-                    false, false, true));
-            damaged.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, Integer.MAX_VALUE, 0,
-                    false, false, true));
-        }
+        org.agmas.noellesroles.role.vtuber.SeptemberOneRole.recordAttack(victim, attacker);
     }
 
     public static boolean hasNineOneBeenAttacked(Player player) {
-        return player != null && NINE_ONE_ATTACKED.contains(player.getUUID());
-    }
-
-    private static ShenwuDamageGroup getShenwuDamageGroup(SRERole attackerRole) {
-        if (attackerRole == null) {
-            return null;
-        }
-        if (attackerRole.isKiller() && !attackerRole.isNeutrals()) {
-            return ShenwuDamageGroup.KILLER;
-        }
-        if (attackerRole.isVigilanteTeam()) {
-            return ShenwuDamageGroup.SHERIFF;
-        }
-        if (attackerRole.isInnocent() && !attackerRole.isNeutrals()) {
-            return ShenwuDamageGroup.CIVILIAN;
-        }
-        return null;
-    }
-
-    public static boolean startMaolunChallenge(ServerPlayer caster, ServerPlayer target) {
-        if (!canStartMaolunChallenge(caster, target)) {
-            return false;
-        }
-        int duration = 60 * 20;
-        MAOLUN_RESOLVED_RESULTS.remove(target.getUUID());
-        MAOLUN_CHALLENGES.put(target.getUUID(), new MaolunChallenge(caster.getUUID(),
-                target.level().getGameTime() + duration));
-        MAOLUN_FAILURES.putIfAbsent(target.getUUID(), 0);
-        target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, duration, 0, false, false, true));
-        target.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
-        target.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
-        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(target,
-                new org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket(true, 2, 60, true));
-        caster.displayClientMessage(Component.translatable("message.noellesroles.meowlen.challenge_started",
-                target.getName()), true);
-        return true;
-    }
-
-    public static boolean startMaolunSelection(ServerPlayer caster, ServerPlayer first, ServerPlayer second) {
-        if (first == second || !canStartMaolunChallenge(caster, first)
-                || !canStartMaolunChallenge(caster, second)) {
-            return false;
-        }
-        return startMaolunChallenge(caster, first) && startMaolunChallenge(caster, second);
-    }
-
-    private static boolean canStartMaolunChallenge(ServerPlayer caster, ServerPlayer target) {
-        return target != null
-                && SREGameWorldComponent.KEY.get(caster.level()).isRole(caster, ModRoles.MAOLUN)
-                && caster != target
-                && GameUtils.isPlayerAliveAndSurvival(target)
-                && !MAOLUN_CHALLENGES.containsKey(target.getUUID());
-    }
-
-    public static boolean finishMaolunChallenge(ServerPlayer target, boolean success) {
-        if (!MAOLUN_CHALLENGES.containsKey(target.getUUID())) {
-            return false;
-        }
-        clearMaolunChallengeEffects(target);
-        if (success) {
-            MAOLUN_CHALLENGES.remove(target.getUUID());
-            target.displayClientMessage(Component.translatable(
-                    "message.noellesroles.meowlen.challenge_succeeded"), true);
-            return true;
-        }
-        MAOLUN_CHALLENGES.remove(target.getUUID());
-        int failures = MAOLUN_FAILURES.merge(target.getUUID(), 1, Integer::sum);
-        target.displayClientMessage(Component.translatable("message.noellesroles.meowlen.challenge_failed",
-                Component.literal(Integer.toString(Math.max(0, 2 - failures)))), true);
-        if (failures >= 2) {
-            MAOLUN_FAILURES.remove(target.getUUID());
-            GameUtils.killPlayer(target, true, null, org.agmas.noellesroles.Noellesroles.id("meowlen_math_failure"));
-        }
-        return true;
-    }
-
-    public static boolean consumeResolvedMaolunChallengeResult(ServerPlayer target) {
-        return MAOLUN_RESOLVED_RESULTS.remove(target.getUUID());
-    }
-
-    public static void tickMaolunChallenges(net.minecraft.server.MinecraftServer server) {
-        if (server == null || MAOLUN_CHALLENGES.isEmpty()) {
-            return;
-        }
-        for (UUID targetUuid : java.util.List.copyOf(MAOLUN_CHALLENGES.keySet())) {
-            MaolunChallenge challenge = MAOLUN_CHALLENGES.get(targetUuid);
-            if (challenge == null) {
-                continue;
-            }
-            ServerPlayer target = server.getPlayerList().getPlayer(targetUuid);
-            if (target == null) {
-                MAOLUN_CHALLENGES.remove(targetUuid);
-                continue;
-            }
-            if (target.level().getGameTime() >= challenge.deadlineTick()) {
-                if (finishMaolunChallenge(target, false)) {
-                    MAOLUN_RESOLVED_RESULTS.add(targetUuid);
-                }
-            }
-        }
-    }
-
-    private static void clearMaolunChallengeEffects(ServerPlayer target) {
-        target.removeEffect(ModEffects.MOVE_BANED);
-        target.removeEffect(ModEffects.USED_BANED);
-        target.removeEffect(ModEffects.INVENTORY_BANED);
-    }
-
-    private static void resetVtuberRoundState(net.minecraft.server.level.ServerLevel level) {
-        for (ServerPlayer player : level.players()) {
-            if (MAOLUN_CHALLENGES.containsKey(player.getUUID())) {
-                clearMaolunChallengeEffects(player);
-            }
-        }
-        YOZORA_DEATH_NOTICES.clear();
-        MAOLUN_CHALLENGES.clear();
-        MAOLUN_RESOLVED_RESULTS.clear();
-        MAOLUN_FAILURES.clear();
-        SHENWU_DAMAGE_GROUPS.clear();
-        NINE_ONE_FATAL_SHIELD_USED.clear();
-        NINE_ONE_ATTACKED.clear();
-    }
-
-    private static boolean hasNonKillerPlayerBesides(ServerPlayer shenwu) {
-        var game = SREGameWorldComponent.KEY.get(shenwu.level());
-        return shenwu.level().players().stream()
-                .filter(player -> player != shenwu && GameUtils.isPlayerAliveAndSurvival(player))
-                .map(game::getRole)
-                .anyMatch(role -> role != null && !(role.isKiller() && !role.isNeutrals()));
+        return player != null && RoleData.getOptional(
+                org.agmas.noellesroles.role_data.vtuber.SeptemberOneRoleData.class, player)
+                .map(data -> data.attacked).orElse(false);
     }
 
     static {
@@ -1857,173 +1560,24 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).build());
 
-        // ==================== Halic 技能注册 ====================
-        // 技能1（G）：10金幣、冷卻10秒；分身受攻擊後消失，攻擊者停止行動3秒，武器不進入冷卻。
-        // 技能2（Shift+G）：每局1次、50金幣；本體與分身附近7格內的其他玩家停止行動7秒。
-        RoleSkill.register(ModRoles.HALIC,
-                RoleSkill.skill(SRE.id("halic_decoy"), "skill.noellesroles.halic.decoy", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent.KEY.get(player)
-                            .createDecoy(player);
-                }).cooldownSeconds(10).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("halic_electrocute"), "skill.noellesroles.halic.sanity", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.innocence.halic.HalicPlayerComponent.KEY.get(player)
-                            .electrocute(player);
-                }).shifted(true).charges(1).showOnHud(true).build());
-
-        // ==================== HakukoFox 技能注册 ====================
-        // 技能1（G）：獸化型態 — 變身為白色狐狸，獲得速度 II，無限時間
-        //   再按 G 回到人型，解除後才開始20秒冷卻。
-        //   獸化期間所受攻擊不會使你死亡。
-        // 技能2（Shift+G）：瞬結 — 消耗100金令其他玩家緩速、失明3秒
-        //   冷却 60 秒。
-        RoleSkill.register(ModRoles.HAKUKO_FOX,
-                RoleSkill.skill(SRE.id("hakukofox_transform"), "skill.noellesroles.hakukofox.transform", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
-                            .toggleBeastForm(player, context);
-                }).cooldownSeconds(20).toggleable(true).manualCooldown().showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("hakukofox_freeze"), "skill.noellesroles.hakukofox.freeze", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.KEY.get(player)
-                            .useFreezeSkill(player, context);
-                }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
-
-        // Halic 被動：無法購買武器
-        OnVendingMachinesBuyItems.EVENT.register((player, entry) -> {
-            SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-            if (gameWorldComponent.isRole(player, ModRoles.HOSHIZORA)) {
-                return entry.type() != dev.doctor4t.wathe.util.ShopEntry.Type.WEAPON
-                        || entry.stack().is(TMMItems.SNIPER_RIFLE);
-            }
-            if (gameWorldComponent.isRole(player, ModRoles.HALIC)
-                    || gameWorldComponent.isRole(player, ModRoles.SEPTEMBER_ONE)
-                    || gameWorldComponent.isRole(player, ModRoles.SHENWU_BINGFENG)
-                    || gameWorldComponent.isRole(player, ModRoles.MAOLUN)
-                    || gameWorldComponent.isRole(player, ModRoles.JUKA)
-                    || gameWorldComponent.isRole(player, ModRoles.KANA)) {
-                return entry.type() != dev.doctor4t.wathe.util.ShopEntry.Type.WEAPON;
-            }
-            return true;
-        });
-
-        // ==================== 玖璃 技能註冊 ====================
-        // 技能1（G）：行動敏捷 — 消耗100金幣，獲得速度II 7秒，冷卻90秒。
-        // 被動：回歸石化 — 每分鐘33%機率石化10秒（無法說話/移動，且無敵）。
-        RoleSkill.register(ModRoles.NINE_MUI,
-                RoleSkill.skill(SRE.id("9muimui_blessing"), "skill.noellesroles.9muimui.blessing", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.killer.nine_mui.NineMuiPlayerComponent.KEY.get(player)
-                            .useBlessingSkill(player, context);
-                }).cooldownSeconds(90).showOnHud(true).build());
-
-        // ==================== 綺芙妮 技能註冊 ====================
-        // 技能1（G）：時間停止 — 全場停止5秒，每局最多1次。
-        RoleSkill.register(ModRoles.EVERLY,
-                RoleSkill.skill(SRE.id("everly_timestop"), "skill.noellesroles.everly.timestop", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.vigilante.everly.EverlyPlayerComponent.KEY.get(player)
-                            .useTimeStop(player, context);
-                }).charges(1).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("everly_time_reversal"), "skill.noellesroles.everly.time_reversal", context -> {
-                    return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                            .useRewind(context.player(), 5, 150);
-                }).charges(1).shifted(true).showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.MOCHEN,
-                RoleSkill.skill(SRE.id("mochen_time_reversal"), "skill.noellesroles.mochen.time_reversal", context -> {
-                    boolean rewound = org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                            .useRewind(context.player(), 3);
-                    if (!rewound) {
-                        context.setSkillCooldown(5 * 20);
-                    }
-                    return rewound;
-                })
-                        .cooldownSeconds(120).showOnHud(true).build());
-
-        // ==================== 風太 技能註冊 ====================
-        // 技能1（G）：占星探究。固定消耗200金幣，冷卻120秒並同步HUD倒數。
-        RoleSkill.register(ModRoles.FU_TAI,
-                RoleSkill.skill(SRE.id("fu_tai_oracle"), "skill.noellesroles.fu_tai.oracle", context -> {
-                    ServerPlayer player = context.player();
-                    if (player.isSpectator()) return false;
-                    return org.agmas.noellesroles.game.roles.innocence.futai.FuTaiPlayerComponent.KEY.get(player)
-                            .useOracleSkill(player, context);
-                }).cooldownSeconds(120).showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.LAFINA,
-                RoleSkill.skill(SRE.id("lavanaii_bear_charge"), "skill.noellesroles.lavanaii.bear_charge", context -> {
-                    ServerPlayer player = context.player();
-                    var shop = SREPlayerShopComponent.KEY.get(player);
-                    if (shop.balance < 150) {
-                        player.displayClientMessage(Component.translatable("message.noellesroles.lavanaii.not_enough_coins"), true);
-                        return false;
-                    }
-                    shop.addToBalance(-150);
-                    org.agmas.noellesroles.role.ModRoles.beginLafinaCharge(player);
-                    return true;
-                }).cooldownSeconds(70).showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.YOZORA,
-                RoleSkill.skill(SRE.id("yozora_cat_sixth_sense"), "skill.noellesroles.yozora.cat_sixth_sense", context -> {
-                    return org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                            .toggleYozoraCat(context);
-                }).cooldownSeconds(10).toggleable(true).manualCooldown().showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.BLOOD_FOX,
-                RoleSkill.skill(SRE.id("blood_fox_transform"), "skill.noellesroles.blood_fox.transform", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .toggleBloodFox(context))
-                        .cooldownSeconds(10).toggleable(true).manualCooldown().showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.AMI,
-                RoleSkill.skill(SRE.id("amimi_repel"), "skill.noellesroles.amimi.repel", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useAmiRepel(context.player()))
-                        .cooldownSeconds(90).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("amimi_alcohol_life"), "skill.noellesroles.amimi.alcohol_life", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useAmiTrap(context.player()))
-                        .shifted(true).cooldownSeconds(10).showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.TINALIS,
-                RoleSkill.skill(SRE.id("tinalis_attract"), "skill.noellesroles.tinalis.attract", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useTinalisAttract(context.player()))
-                        .cooldownSeconds(90).showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.YOUJIN,
-                RoleSkill.skill(SRE.id("youjin_trap"), "skill.noellesroles.youjin.trap", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useYoujinTrap(context.player()))
-                        .cooldownSeconds(10).showOnHud(true).build());
-
-        RoleSkill.register(ModRoles.YUZU_FENGLING,
-                RoleSkill.skill(SRE.id("yuzu_fengling_agility"), "skill.noellesroles.yuzu_fengling.agility", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useYuzuAgility(context.player()))
-                        .cooldownSeconds(90).showOnHud(true).build());
-
-        RoleSkill.Definition pairSkill = RoleSkill.skill(SRE.id("luna_yoru_pair"),
-                "skill.noellesroles.luna_yoru.pair", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .usePairSkill(context.player()))
-                .charges(1).showOnHud(true).build();
-        RoleSkill.register(ModRoles.LUNA, pairSkill);
-        RoleSkill.register(ModRoles.YORU, pairSkill);
-
-        RoleSkill.register(ModRoles.BAIYU,
-                RoleSkill.skill(SRE.id("baiyu_record"), "skill.noellesroles.baiyu.record", context ->
-                        org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime
-                                .useBaiyuExamine(context.player()))
-                        .cooldownSeconds(30).showOnHud(true).build());
+        org.agmas.noellesroles.role.vtuber.HalicRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.HakukoFoxRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.NineMuiRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.EverlyRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.FuTaiRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.LafinaRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.YozoraRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.AmiRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.BloodFoxRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.MochenRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.TinalisRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.LunaRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.YoruRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.YoujinRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.YuzuFenglingRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.BaiyuRole.registerSkills();
+        OnVendingMachinesBuyItems.EVENT.register((player, entry) ->
+                org.agmas.noellesroles.role.vtuber.VtuberRoleSupport.canBuy(player, entry));
         RoleSkill.register(ModRoles.SILVER_WING, RoleSkill.skill(
                 org.agmas.noellesroles.game.roles.neutral.silver_wing.SilverWingEffects.EMP_SKILL_ID,
                 "skill.noellesroles.silver_wing.emp",

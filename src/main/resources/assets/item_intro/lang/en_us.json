@@ -227,5 +227,9 @@
   "item.starrailexpress.vertical_looping_mirror_tool.desc": "Map tool. Pick a looping mirror, then corners A and B. Crossing the top or bottom loops vertically. The client stacks a limited number of copies above; the bottom is fog.",
   "item.noellesroles.spellbreaker_potion.desc": "Spellbreaker only. Use on a living player to seal their next skill for 80 seconds.",
   "item.trainmurdermystery.weak_defense_vial.desc": "Weak shield vial. Desperados can drink it; others can pour it onto a tray. Grants a ~20s weak shield that blocks one knife hit.",
-  "item.noellesroles.sanity_meds.desc": "Repair-mode sedative. Restores 40 sanity. Darkness and nearby pursuers still drain sanity."
+  "item.noellesroles.sanity_meds.desc": "Repair-mode sedative. Restores 40 sanity. Darkness and nearby pursuers still drain sanity.",
+  "item.noellesroles.alin_wrench.desc": "Alin only. A single-use tool that repairs and opens a broken small door. Each door can be repaired once per round.",
+  "item.noellesroles.alin_screwdriver.desc": "Alin only. A single-use tool that breaks an intact small door. Each door can be broken once per round.",
+  "item.noellesroles.yuyue_note.desc": "A writable sticky note. Once written, use it on a living entity to attach it to their back. Sneaking uses the ordinary note interaction.",
+  "item.noellesroles.toy_hammer.desc": "Juka only. Hitting a player deals no damage and blocks their movement, item use and inventory for 2 seconds. Gives the wielder Slowness II for 2 seconds. Cooldown: 60 seconds."
 }

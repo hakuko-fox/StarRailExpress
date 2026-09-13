@@ -26,7 +26,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.content.entity.DecoyGrenadeEntity;
-import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
+import org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData;
 import org.agmas.noellesroles.init.ModEntities;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,7 +46,7 @@ public class DecoyGrenadeItem extends Item {
     public InteractionResultHolder<ItemStack> use(@NotNull Level world, @NotNull Player user, InteractionHand hand) {
         ItemStack itemStack = user.getItemInHand(hand);
 
-        HakukoFoxPlayerComponent comp = HakukoFoxPlayerComponent.KEY.maybeGet(user).orElse(null);
+        HakukoFoxRoleData comp = io.wifi.starrailexpress.api.data.RoleData.getOptional(HakukoFoxRoleData.class, user).orElse(null);
         if (comp != null && comp.isBeastFormActive()) {
             user.displayClientMessage(Component.translatable("skill.noellesroles.hakukofox.no_weapon"), true);
             return InteractionResultHolder.fail(itemStack);

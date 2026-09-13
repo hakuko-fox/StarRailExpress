@@ -297,9 +297,9 @@ public class ModPacketsReciever {
       ServerPlayer player = context.player();
       // A Meowlen challenge is already active before SAFE_TIME can be checked. Always
       // settle (or swallow a just-expired result) first so the target is not stranded.
-      if (ModRolesInitialEventRegister.finishMaolunChallenge(player, payload.success()))
+      if (org.agmas.noellesroles.role.vtuber.MaolunRole.finishMaolunChallenge(player, payload.success()))
         return;
-      if (ModRolesInitialEventRegister.consumeResolvedMaolunChallengeResult(player))
+      if (org.agmas.noellesroles.role.vtuber.MaolunRole.consumeResolvedMaolunChallengeResult(player))
         return;
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;

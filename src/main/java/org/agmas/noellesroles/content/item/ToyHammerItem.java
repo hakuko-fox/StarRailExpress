@@ -17,18 +17,6 @@ public class ToyHammerItem extends Item implements SREItemProperties.LeftClickHu
 
     @Override
     public boolean onServerAttack(ServerPlayer attacker, ServerPlayer target, ItemStack mainhandItem) {
-        if (SREGameWorldComponent.KEY.get(attacker.level()).isRole(attacker, ModRoles.JUKA)
-                && !attacker.getCooldowns().isOnCooldown(this)) {
-            attacker.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 2, 1,
-                    false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 20 * 2, 0,
-                    false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 20 * 2, 0,
-                    false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 20 * 2, 0,
-                    false, false, true));
-            attacker.getCooldowns().addCooldown(this, 20 * 60);
-        }
-        return false;
+        return org.agmas.noellesroles.role.vtuber.JukaRole.useToyHammer(attacker, target, mainhandItem);
     }
 }

@@ -5047,5 +5047,6 @@
   "mob_effect.noellesroles.glitch": "Glitch",
   "effect.noellesroles.glitch.description": "Nearby blocks render with random colors.",
   "effect.noellesroles.puppet_wander": "Puppet Wander",
-  "mob_effect.noellesroles.puppet_wander": "Puppet Wander"
+  "mob_effect.noellesroles.puppet_wander": "Puppet Wander",
+  "message.noellesroles.luna_yoru.missing_room": "Both players need an assigned room before returning."
 }

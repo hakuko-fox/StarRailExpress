@@ -29,7 +29,6 @@ import org.agmas.noellesroles.component.PlayerVolumeComponent;
 import org.agmas.noellesroles.component.TemporaryEffectPlayerComponent;
 import org.agmas.noellesroles.content.entity.MudTrapEntity;
 import org.agmas.noellesroles.content.entity.TripwireTrapEntity;
-import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.packet.PlayerResetS2CPacket;
@@ -100,7 +99,6 @@ public abstract class PlayerResetMixin {
         DeathPenaltyComponent deathPenalty = ModComponents.DEATH_PENALTY.get(player);
         deathPenalty.clear();
 
-        HakukoFoxPlayerComponent.KEY.get(player).clear();
         // 清除其他自定义组件状态
         SREAbilityPlayerComponent abilityComp = ModComponents.ABILITY.get(player);
         abilityComp.clear();

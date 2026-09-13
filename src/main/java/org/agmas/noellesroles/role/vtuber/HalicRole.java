@@ -1,10 +1,11 @@
-package org.agmas.noellesroles.game.roles.innocence.halic;
+package org.agmas.noellesroles.role.vtuber;
 
-import io.wifi.starrailexpress.api.RoleComponent;
-import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.NormalRole;
+import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.SRERole.MoodType;
 import io.wifi.starrailexpress.game.GameUtils;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
+import java.util.Set;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -14,63 +15,25 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
 import org.agmas.noellesroles.init.NRSounds;
-import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistry;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.MoneyUtils;
 
-/**
- * 哈力克 2.0 — 平民陣營
- *
- * 主動技1（G）：如兔子般量產的威力。冷卻10秒（由框架 cooldownSeconds(10) 控制），消耗10金幣，
- *   生產一隻分身哈力克（直到遊戲結束）。分身受攻擊後消失，攻擊者停止行動3秒，武器不進入冷卻。
- * 主動技2（Shift+G）：漏電仿生人。每局遊戲最多1次（由框架 charges(1) 控制），消耗50金幣，
- *   令所有哈力克附近7格玩家停止行動7秒。
- * 被動技：拒絕交易（無法購買武器）、非有機生物（無視理智值）。
- * 標籤：香港Vtuber
- */
-public class HalicPlayerComponent implements RoleComponent, ServerTickingComponent {
-
-    public static final ComponentKey<HalicPlayerComponent> KEY = ComponentRegistry.getOrCreate(
-            ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "halic"),
-            HalicPlayerComponent.class);
-
-    private final Player player;
-
-    public HalicPlayerComponent(Player player) {
-        this.player = player;
+public class HalicRole extends NormalRole {
+    public HalicRole(ResourceLocation id, int color, boolean innocent, boolean killer,
+            MoodType mood, int sprint, boolean seeTime) {
+        super(id, color, innocent, killer, mood, sprint, seeTime);
     }
 
     @Override
-    public Player getPlayer() {
-        return player;
+    public ResourceLocation getNormalSkin(Player player, boolean isSlim) {
+        return SRE.id("textures/entity/custom_psycho/halic.png");
     }
 
-    @Override
-    public boolean shouldSyncWith(ServerPlayer p) {
-        return p == this.player;
-    }
-
-    public void sync() {
-        KEY.sync(player);
-    }
-
-    @Override
-    public void init() {
-        sync();
-    }
-
-    @Override
-    public void clear() {
-        clearDecoys();
-        init();
-    }
-
-    private void clearDecoys() {
+    public static void clearDecoys(Player player) {
         if (!(player instanceof ServerPlayer sp)) {
             return;
         }
@@ -78,25 +41,23 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
                 PuppeteerBodyEntity.class,
                 new AABB(sp.blockPosition()).inflate(10000),
                 entity -> entity.isHalicDecoy()
-                        && sp.getUUID().equals(entity.getOwnerUuid().orElse(null)))) {
+                && sp.getUUID().equals(entity.getOwnerUuid().orElse(null)))) {
             decoy.remove(net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
         }
     }
 
-    /** 主動技1：量產分身 — 冷卻由框架 cooldownSeconds(10) 控制 */
-    public boolean createDecoy(ServerPlayer sp) {
+    public static boolean createDecoy(ServerPlayer sp) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
         }
-        var shop = SREPlayerShopComponent.KEY.get(sp);
+        int balance = MoneyUtils.getBalance(sp);
         int cost = 10;
-        if (shop.balance < cost) {
+        if (balance < cost) {
             sp.displayClientMessage(
                     Component.translatable("message.noellesroles.halic.not_enough_money", cost),
                     true);
             return false;
         }
-        shop.addToBalance(-cost);
 
         ServerLevel level = sp.serverLevel();
         PuppeteerBodyEntity decoy = new PuppeteerBodyEntity(ModEntities.PUPPETEER_BODY, level);
@@ -106,7 +67,8 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
         decoy.setOwner(sp);
         decoy.setHalicDecoy(true);
         decoy.setPersistenceRequired();
-        level.addFreshEntity(decoy);
+        if (!level.addFreshEntity(decoy)) return false;
+        MoneyUtils.addToBalance(sp, -cost);
 
         playSoundToPlayers(level, sp.getX(), sp.getY(), sp.getZ(), 5.0, NRSounds.HALIC_HELLO);
 
@@ -118,20 +80,19 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
         return true;
     }
 
-    /** 主動技2：漏電 — 每局1次由框架 charges(1) 控制 */
-    public boolean electrocute(ServerPlayer sp) {
+    public static boolean electrocute(ServerPlayer sp) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
         }
         int cost = 50;
-        var shop = SREPlayerShopComponent.KEY.get(sp);
-        if (shop.balance < cost) {
+        int balance = MoneyUtils.getBalance(sp);
+        if (balance < cost) {
             sp.displayClientMessage(
                     Component.translatable("message.noellesroles.halic.not_enough_money", cost),
                     true);
             return false;
         }
-        shop.addToBalance(-cost);
+        MoneyUtils.addToBalance(sp, -cost);
 
         double range = 7.0;
         java.util.Set<ServerPlayer> targets = new java.util.HashSet<>();
@@ -149,7 +110,7 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
                 PuppeteerBodyEntity.class,
                 new AABB(sp.blockPosition()).inflate(10000),
                 p -> p.isHalicDecoy()
-                        && sp.getUUID().equals(p.getOwnerUuid().orElse(null)));
+                && sp.getUUID().equals(p.getOwnerUuid().orElse(null)));
         for (var decoy : decoys) {
             for (ServerPlayer target : sp.serverLevel().getEntitiesOfClass(
                     ServerPlayer.class,
@@ -205,22 +166,21 @@ public class HalicPlayerComponent implements RoleComponent, ServerTickingCompone
     }
 
     @Override
-    public void serverTick() {
+    public void onRemove(net.minecraft.server.level.ServerPlayer player) {
+        clearDecoys(player);
     }
 
-    @Override
-    public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
-    }
-
-    @Override
-    public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
-    }
-
-    @Override
-    public void writeToNbt(CompoundTag tag, HolderLookup.Provider provider) {
-    }
-
-    @Override
-    public void readFromNbt(CompoundTag tag, HolderLookup.Provider provider) {
+    public static void registerSkills() {
+        RoleSkill.register(ModRoles.HALIC,
+                RoleSkill.skill(SRE.id("halic_decoy"), "skill.noellesroles.halic.decoy", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return HalicRole.createDecoy(player);
+                }).cooldownSeconds(10).showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("halic_electrocute"), "skill.noellesroles.halic.sanity", context -> {
+                    ServerPlayer player = context.player();
+                    if (player.isSpectator()) return false;
+                    return HalicRole.electrocute(player);
+                }).shifted(true).charges(1).showOnHud(true).build());
     }
 }

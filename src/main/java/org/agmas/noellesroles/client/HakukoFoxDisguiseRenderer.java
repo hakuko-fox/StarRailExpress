@@ -12,7 +12,7 @@ import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.core.registries.Registries;
-import org.agmas.noellesroles.game.roles.vtuber.VtuberRolePlayerComponent;
+import org.agmas.noellesroles.role_data.vtuber.VtuberRoleData;
 
 /**
  * 白狐：把玩家渲染成一隻白色狐狸。
@@ -23,19 +23,19 @@ public class HakukoFoxDisguiseRenderer {
     private static final Map<UUID, Cat> CATS = new HashMap<>();
 
     public static boolean shouldDisguise(AbstractClientPlayer player) {
-        return org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent.isDisguised(player)
-                || VtuberRolePlayerComponent.KEY.maybeGet(player)
-                        .map(VtuberRolePlayerComponent::isDisguised).orElse(false);
+        return org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData.isDisguised(player)
+                || io.wifi.starrailexpress.api.data.RoleData.getOptional(VtuberRoleData.class, player)
+                        .map(VtuberRoleData::isDisguised).orElse(false);
     }
 
     public static boolean render(AbstractClientPlayer player, float yaw, float tickDelta,
             com.mojang.blaze3d.vertex.PoseStack poseStack, net.minecraft.client.renderer.MultiBufferSource bufferSource, int packedLight) {
-        int disguise = VtuberRolePlayerComponent.KEY.maybeGet(player)
-                .map(VtuberRolePlayerComponent::getDisguise).orElse(VtuberRolePlayerComponent.NONE);
-        if (disguise == VtuberRolePlayerComponent.YOZORA_CAT) {
+        int disguise = io.wifi.starrailexpress.api.data.RoleData.getOptional(VtuberRoleData.class, player)
+                .map(VtuberRoleData::getDisguise).orElse(VtuberRoleData.NONE);
+        if (disguise == VtuberRoleData.YOZORA_CAT) {
             return renderCat(player, yaw, tickDelta, poseStack, bufferSource, packedLight);
         }
-        Fox fox = getFox(player, disguise == VtuberRolePlayerComponent.BLOOD_FOX);
+        Fox fox = getFox(player, disguise == VtuberRoleData.BLOOD_FOX);
         if (fox == null) {
             return false;
         }

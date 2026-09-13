@@ -5381,5 +5381,6 @@
   "message.noellesroles.terminal.monitor_blackout_already": "监控已经处于失灵状态，指令未执行。",
   "message.noellesroles.terminal.error.usage": "指令格式错误，请输入 /give @s <物品ID> 或 /tp @s room",
   "message.noellesroles.terminal.error.invalid_item": "该物品不在终端可用列表中。",
-  "message.noellesroles.terminal.error.unknown_command": "未知指令，终端无法识别。"
+  "message.noellesroles.terminal.error.unknown_command": "未知指令，终端无法识别。",
+  "message.noellesroles.luna_yoru.missing_room": "双方都必须有已分配的房间才能返回。"
 }

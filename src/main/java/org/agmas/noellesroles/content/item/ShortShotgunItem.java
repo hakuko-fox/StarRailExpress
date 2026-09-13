@@ -39,7 +39,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.game.roles.killer.hakukofox.HakukoFoxPlayerComponent;
+import org.agmas.noellesroles.role_data.vtuber.HakukoFoxRoleData;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.init.NRSounds;
 
@@ -105,7 +105,7 @@ public class ShortShotgunItem extends Item implements HeldLikeBat, TrainWeapon {
             return;
         }
 
-        HakukoFoxPlayerComponent comp = HakukoFoxPlayerComponent.KEY.maybeGet(player).orElse(null);
+        HakukoFoxRoleData comp = io.wifi.starrailexpress.api.data.RoleData.getOptional(HakukoFoxRoleData.class, player).orElse(null);
         if (comp != null && comp.isBeastFormActive()) {
             player.displayClientMessage(Component.translatable("skill.noellesroles.hakukofox.no_weapon"), true);
             return;
