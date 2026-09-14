@@ -16,6 +16,7 @@
 package org.agmas.noellesroles.init;
 
 import dev.doctor4t.ratatouille.util.registrar.ItemRegistrar;
+import io.wifi.starrailexpress.content.item.CocktailItem;
 import io.wifi.starrailexpress.index.TMMDescItems;
 import io.wifi.starrailexpress.index.TMMItems;
 import net.minecraft.resources.ResourceKey;
@@ -27,7 +28,8 @@ import org.agmas.noellesroles.content.item.*;
 public class FunnyItems {
     public static final ItemRegistrar registrar = new ItemRegistrar(Noellesroles.MOD_ID);
 
-    // 波纹勋章
+    public static final Item CHINO_COFFEE = register(new CocktailItem(new Item.Properties().stacksTo(64).food(Foods.HONEY_BOTTLE)), "chino_coffee");
+    // 欧拉一拳（原波纹勋章）
     public static final Item HOT_POTATO = register(
             new HotPotatoItem(new Item.Properties().stacksTo(1)),
             "hot_potato");
@@ -67,6 +69,10 @@ public class FunnyItems {
     public static final Item SUPER_PIG_HORSESHOE = register(
             new SuperPigHorseshoeItem(new Item.Properties().stacksTo(1)),
             "super_pig_horseshoe");
+    // 终端 - 程序员专属，右键打开终端界面，执行一条指令后销毁
+    public static final Item TERMINAL = register(
+            new TerminalItem(new Item.Properties().stacksTo(1)),
+            "terminal");
 
     @SuppressWarnings("unchecked")
     public static Item register(Item item, String id) {

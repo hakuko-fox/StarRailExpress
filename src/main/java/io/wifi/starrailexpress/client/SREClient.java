@@ -64,6 +64,7 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SRETrainWorldComponent;
+import io.wifi.starrailexpress.client.command.NetworkStatsClientCommand;
 import io.wifi.starrailexpress.client.commandmacro.CommandMacroExecutor;
 import io.wifi.starrailexpress.client.data.ClientPlayerDataCache;
 import io.wifi.starrailexpress.client.fourthroom.FourthRoomCameraDirector;
@@ -125,11 +126,13 @@ import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMParticles;
 import io.wifi.starrailexpress.index.TMMSounds;
+import io.wifi.starrailexpress.morph.MorphApiClient;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.network.IsLobbyConfigPayload;
 import io.wifi.starrailexpress.network.JoinSpecGroupPayload;
 import io.wifi.starrailexpress.network.MapVotingResultsPayload;
+import io.wifi.starrailexpress.network.NetworkStatistics;
 import io.wifi.starrailexpress.network.OnGameFinishedPayload;
 import io.wifi.starrailexpress.network.OnGameStartedPayload;
 import io.wifi.starrailexpress.network.OpenProgressionScreenPayload;
@@ -293,6 +296,21 @@ public class SREClient implements ClientModInitializer {
         return cachedPlayerCreative;
     }
 
+    /**
+     * 客户端侧网络统计：注册 {@code /tmm:netstatsc}，并给统计内核补上只有客户端才知道的两件事——
+     * 编码载荷时用的注册表访问，以及本地玩家名（用于按玩家归集）。数据留在客户端本地，
+     * 导出到 {@code .minecraft/netstats/}，与服务端的 /tmm:netstats 完全独立。
+     */
+    private static void initNetworkStatisticsClient() {
+        NetworkStatistics clientStats = NetworkStatistics.getClientInstance();
+        clientStats.setRegistryAccessSupplier(() -> {
+            LocalPlayer player = Minecraft.getInstance().player;
+            return player != null ? player.level().registryAccess() : null;
+        });
+        clientStats.setLocalPlayerSupplier(() -> Minecraft.getInstance().player);
+        NetworkStatsClientCommand.register();
+    }
+
     @Override
     public void onInitializeClient() {
         LetterNewspaperBuilder.init();
@@ -301,11 +319,17 @@ public class SREClient implements ClientModInitializer {
         SceneAssetNetwork.registerClientReceivers();
         ClientScheduler.init();
         ClientSkinCache.init();
+        MorphApiClient.registerClient();
         io.wifi.starrailexpress.hat.HatEquipmentApi.registerDefaultOwnerResolvers();
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
-                .register((handler, client) -> io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.clear());
+                .register((handler, client) -> {
+                    io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.clear();
+                    io.wifi.starrailexpress.client.morph.ClientMorphCache.clear();
+                    io.wifi.starrailexpress.client.plush.ClientPlushEquipmentCache.clear();
+                });
         io.wifi.starrailexpress.client.mirror.MirrorReflectionManager.init();
         ClientConfigEvents.register();
+        initNetworkStatisticsClient();
         new EXSREClient().onInitializeClient();
         // Load config
         ModWhitelistClient.onInitializeClient();
@@ -330,6 +354,13 @@ public class SREClient implements ClientModInitializer {
         EntityRendererRegistry.register(TMMEntities.TIMED_GRENADE, ThrownItemRenderer::new);
         EntityRendererRegistry.register(TMMEntities.NOTE, NoteEntityRenderer::new);
         EntityRendererRegistry.register(TMMEntities.ZIPLINE_RIDER, NoopRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.CRASH_PLANE,
+                net.exmo.sre.planecrash.client.CrashPlaneEntityRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.PURPLE_MONSTER,
+                io.wifi.starrailexpress.client.render.entity.PurpleMonsterRenderer::new);
+        EntityRendererRegistry.register(TMMEntities.PURPLE_MONSTER_SECOND,
+                io.wifi.starrailexpress.client.render.entity.PurpleMonsterSecondRenderer::new);
+        net.exmo.sre.planecrash.client.PlaneCrashFakeFlames.register();
 
         // Register entity model layers
         TMMModelLayers.initialize();
@@ -476,6 +507,7 @@ public class SREClient implements ClientModInitializer {
             trainComponent = null;
             moodComponent = null;
             timeComponent = null;
+            io.wifi.starrailexpress.anticheat.ClickAntiCheatClient.clear();
         });
         // Lock options
         OptionLocker.overrideOption("gamma", 0d);
@@ -507,12 +539,24 @@ public class SREClient implements ClientModInitializer {
                 stam.starrailexpress$setStamina((float) value);
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.MobRiotStateS2CPacket.ID,
+                (payload, context) -> context.client().execute(() ->
+                        io.wifi.starrailexpress.client.gui.MobRiotHudRenderer.update(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.ClickLockoutPayload.TYPE,
+                (payload, context) -> io.wifi.starrailexpress.anticheat.ClickAntiCheatClient
+                        .applyLockout(payload.remainingMillis()));
         ClientPlayNetworking.registerGlobalReceiver(IsLobbyConfigPayload.ID, (payload, context) -> {
             SREClient.isInLobby = payload.isLobby();
             SRE.isLobby = payload.isLobby();
             LoggerFactory.getLogger(this.getClass())
                     .info("Is Lobby status: " + (SREClient.isInLobby ? "Yes" : "No"));
         });
+        // 自定义形状粒子：服务端只说"在哪、播哪条、多久"，形状由客户端按 id 生成
+        ClientPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.packet.CustomParticleS2CPayload.ID,
+                (payload, context) -> context.client().execute(
+                        () -> io.wifi.starrailexpress.client.particle.CustomParticleHandlers.dispatch(payload)));
 
         // Item tooltips
         TMMItemTooltips.addTooltips();
@@ -581,6 +625,7 @@ public class SREClient implements ClientModInitializer {
             // 游戏结束时清除高级相机轨道
             if (prevGameRunning && !gameComponent.isRunning()) {
                 net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+                net.exmo.sre.planecrash.client.PlaneCrashClientEffects.clear();
             }
             prevGameRunning = gameComponent.isRunning();
 
@@ -742,6 +787,7 @@ public class SREClient implements ClientModInitializer {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
             net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
+            net.exmo.sre.planecrash.client.PlaneCrashClientEffects.clear();
             ClientSkincrawlerState.clearAll();
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
             SceneAssetClient.clearRuntime();
@@ -828,6 +874,12 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.HatEquipmentSyncPayload.ID,
                 (payload, context) -> context.client()
                         .execute(() -> io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.applySync(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.MorphSyncPayload.ID,
+                (payload, context) -> context.client()
+                        .execute(() -> io.wifi.starrailexpress.client.morph.ClientMorphCache.applySync(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.PlushEquipmentSyncPayload.ID,
+                (payload, context) -> context.client()
+                        .execute(() -> io.wifi.starrailexpress.client.plush.ClientPlushEquipmentCache.applySync(payload)));
         ClientPlayNetworking.registerGlobalReceiver(ShowStatsPayload.ID, (payload, context) -> {
             UUID targetPlayerUuid = payload.targetPlayerUuid();
             context.client().execute(() -> {
@@ -841,6 +893,7 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(OnGameFinishedPayload.TYPE, (payload, context) -> {
             MapStatusBarClientState.set(MapStatusBarType.NONE, 20, 20);
             io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.clear();
+            io.wifi.starrailexpress.client.gui.MobRiotHudRenderer.reset();
             OnGameFinishedClient.EVENT.invoker().gameFinished();
         });
         ClientPlayNetworking.registerGlobalReceiver(OnGameStartedPayload.TYPE, (payload, context) -> {
@@ -877,17 +930,9 @@ public class SREClient implements ClientModInitializer {
         net.exmo.sre.meeting.client.MeetingReportClientHandler.register();
 
         ClientPlayNetworking.registerGlobalReceiver(ShowSelectedMapUIPayload.ID, (payload, context) -> {
-            var str = payload.serverConfig();
-
-            // @SuppressWarnings("unchecked")
-            try {
-                var a = MapConfig.gson.fromJson(str, MapConfig.class);
-                MapConfig.getInstance().maps.clear();
-                MapConfig.getInstance().maps.addAll(a.maps);
-            } catch (JsonSyntaxException e) {
-                LoggerFactory.getLogger("TMMClient").error(e.getMessage());
-                e.printStackTrace();
-            }
+            // 候选只有 id；地图展示数据来自 MapIntroSyncPayload（MapIntroClientCache）
+            io.wifi.starrailexpress.client.gui.screen.mapui.MapIntroClientCache
+                    .setCandidateIds(payload.candidateIds());
             context.client().execute(() -> {
                 io.wifi.starrailexpress.content.vote.client.VoteFlowTransition.beginIfArmed();
                 context.client().setScreen(MapVoteScreen.create());
@@ -997,6 +1042,23 @@ public class SREClient implements ClientModInitializer {
                             net.exmo.sre.camera.client.AdvancedCameraDirector.clear();
                         } else {
                             net.exmo.sre.camera.client.AdvancedCameraDirector.play(payload.json());
+                        }
+                    });
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+                net.exmo.sre.planecrash.PlaneCrashIntroPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> net.exmo.sre.camera.client.AdvancedCameraDirector
+                            .startEntityFocus(payload.entityId(), payload.durationTicks(), true));
+                });
+        ClientPlayNetworking.registerGlobalReceiver(
+                net.exmo.sre.planecrash.PlaneCrashTremorPayload.ID, (payload, context) -> {
+                    context.client().execute(() -> {
+                        if (payload.warning()) {
+                            net.exmo.sre.planecrash.client.PlaneCrashClientEffects
+                                    .startWarning(payload.tiltYaw(), payload.durationTicks());
+                        } else {
+                            net.exmo.sre.planecrash.client.PlaneCrashClientEffects
+                                    .startTremor(payload.tiltYaw(), payload.durationTicks());
                         }
                     });
                 });
@@ -1124,6 +1186,7 @@ public class SREClient implements ClientModInitializer {
                 return;
             FourthRoomCameraDirector.tick(client);
             net.exmo.sre.camera.client.AdvancedCameraDirector.tick(client);
+            net.exmo.sre.planecrash.client.PlaneCrashClientEffects.tick();
             io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.tick(client);
             if (SREClient.gameComponent == null)
                 return;

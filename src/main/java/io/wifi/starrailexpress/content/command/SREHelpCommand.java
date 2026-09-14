@@ -64,6 +64,7 @@ public class SREHelpCommand {
                 new Entry("/tmm:showStats", "tmm.showstats"),
                 new Entry("/tmm:showSelectedMapUI", "tmm.showselectedmapui"),
                 new Entry("/tmm:netstats", "tmm.netstats"),
+                new Entry("/tmm:netstatsc", "tmm.netstatsc"),
                 new Entry("/tmm:giveRoomKey", "tmm.giveroomkey"),
                 new Entry("/tmm:participate", "tmm.participate"),
                 new Entry("/tmm:entity_interact_cmd", "tmm.entity_interact_cmd"),
@@ -94,7 +95,8 @@ public class SREHelpCommand {
                 new Entry("/sre:subtitle", "sre.subtitle"),
                 new Entry("/sre:eggclear", "sre.eggclear"),
                 new Entry("/sre:infected", "sre.infected"),
-                new Entry("/sre:helium", "sre.helium")));
+                new Entry("/sre:helium", "sre.helium"),
+                new Entry("/sre:block_cmd_perm", "sre.block_cmd_perm")));
 
         CATEGORIES.put("game", List.of(
                 new Entry("/tmm:game visual", "tmm.game.visual"),
@@ -114,6 +116,7 @@ public class SREHelpCommand {
                 new Entry("/tmm:game body", "tmm.game.body"),
                 new Entry("/tmm:game revive", "tmm.game.revive"),
                 new Entry("/tmm:game kill", "tmm.game.kill"),
+                new Entry("/tmm:game use_skill", "tmm.game.use_skill"),
                 new Entry("/tmm:game timestop", "tmm.game.timestop")));
 
         CATEGORIES.put("harpy", List.of(

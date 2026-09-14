@@ -48,6 +48,9 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "gamemodes")
     public boolean enableNoLimitLoversInLoverMode = false;
     @ConfigEntry.Category(value = "gamemodes")
+    @Tooltip
+    public int mobRiotTokenPerPlayer = 7;
+    @ConfigEntry.Category(value = "gamemodes")
     public int volunteerModeVolunteerCount = 3;
     @ConfigEntry.Category(value = "gamemodes")
     public int volunteerModeSelectionTime = 20;
@@ -99,7 +102,7 @@ public class SREConfig implements ConfigData {
     // 可由命令 /sre:mirror_end_egg on|off 修改并保存到本配置。
     @Tooltip
     public boolean enableMirrorReunionEndEgg = false;
-    // 时长
+    // 时长（tick）。实际结局还会再多 1.5 秒。
     public int mirrorReunionEndEggTime = 5 * 20;
 
     // 随机地图设置
@@ -114,6 +117,11 @@ public class SREConfig implements ConfigData {
     public int entityInteractionBlockEntityPlayerPermission = 2;
     @ConfigEntry.Category(value = "commands")
     public int entityInteractionBlockEntityPermission = 2;
+    // 开启后：原版命令方块（含命令方块矿车）与实体交互方块执行指令的权限提升为 3。
+    // 可由 /sre:block_cmd_perm on|off 修改并保存到本配置。
+    @ConfigEntry.Category(value = "commands")
+    @Tooltip
+    public boolean elevateBlockCommandPermission = false;
     @ConfigEntry.Category(value = "commands")
     public int timeRewindPermission = 2;
     @ConfigEntry.Category(value = "commands")
@@ -451,6 +459,10 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "skin")
     public boolean itemSkinSyncServerEnabled = false;
     // AFK设置
+
+    @ConfigEntry.Category(value = "anticheat")
+    @Tooltip
+    public boolean enableClickAc = true; // 点击频率反作弊
 
     @ConfigEntry.Category(value = "afk")
     public boolean afkKickEnabled = true; // 是否启用挂机踢出功能

@@ -17,7 +17,7 @@ public final class TwinChildrenHitbox {
      * gaps, short enough that the upper twin's knife/gun is not inside the
      * lower twin's hitbox.
      */
-    public static final float STACKED_COLLISION_HEIGHT = 1.1F;
+    public static final float STACKED_COLLISION_HEIGHT = 1.3F;
 
     /** Half-scale factor applied by the Twin Children attribute modifier. */
     public static final float HALF_SCALE_FACTOR = 0.5F;
@@ -29,7 +29,7 @@ public final class TwinChildrenHitbox {
      * Upper twin collision height after half-scale. Shorter than the visual
      * 0.9 model so the rider is not wrapped by a tall hitbox.
      */
-    public static final float UPPER_COLLISION_HEIGHT = 0.7F;
+    public static final float UPPER_COLLISION_HEIGHT = 0.5F;
 
     /** Unscaled collision height so that {@code height * 0.5 = 0.7}. */
     public static final float UPPER_UNSCALED_HEIGHT = UPPER_COLLISION_HEIGHT / HALF_SCALE_FACTOR;
@@ -67,4 +67,12 @@ public final class TwinChildrenHitbox {
     public static double headPassengerAttachmentY(float vehicleScale, double passengerVehicleAttachY) {
         return VISUAL_STANDING_HEIGHT * vehicleScale + passengerVehicleAttachY;
     }
+
+    /** World Y of the invisible seat sitting on the lower twin's visual head. */
+    public static double headSeatY(double lowerY, float lowerScale) {
+        return lowerY + VISUAL_STANDING_HEIGHT * lowerScale;
+    }
+
+    /** Rider offset on the invisible seat. */
+    public static final double SEAT_PASSENGER_ATTACHMENT_Y = 0.05D;
 }

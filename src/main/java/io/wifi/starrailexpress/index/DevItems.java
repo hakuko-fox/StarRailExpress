@@ -25,6 +25,7 @@ import io.wifi.starrailexpress.customrole.CustomRoleToolItem;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 
 // OP以及建造使用的物品
 public class DevItems {
@@ -37,6 +38,9 @@ public class DevItems {
     public static Item LOOPING_MIRROR_TOOL = register(
             new LoopingMirrorToolItem(new Item.Properties().stacksTo(1)),
             "looping_mirror_tool");
+    public static Item VERTICAL_LOOPING_MIRROR_TOOL = register(
+            new VerticalLoopingMirrorToolItem(new Item.Properties().stacksTo(1)),
+            "vertical_looping_mirror_tool");
     public static Item MAP_TOOL = register(new MapBuildHelperItem(new Item.Properties().stacksTo(1)),
             "map_tool");
 
@@ -45,7 +49,7 @@ public class DevItems {
             "breaking_bridge_tool");
     public static Item FAKE_BLOCK_TOOL = register(new BreakingBridgeToolItem(new Item.Properties().stacksTo(1),ModSceneBlocks.FAKE_BLOCK),
             "fake_block_tool");
-    public static Item CUSTOM_ROLE_TOOL = register(new CustomRoleToolItem(new Item.Properties().stacksTo(1)),
+    public static Item CUSTOM_ROLE_TOOL = register(new CustomRoleToolItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)),
             "custom_role_tool");
 
     @SuppressWarnings("unchecked")

@@ -29,6 +29,7 @@ import io.wifi.starrailexpress.cca.SRERoleWorldComponent;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import io.wifi.starrailexpress.index.IntroMobEffect;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
@@ -55,6 +56,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.ModdedRoleRemoved;
@@ -514,6 +517,8 @@ public class RoleUtils extends MCItemsUtils {
             return getRoleName(r);
         } else if (role instanceof SREModifier m) {
             return getModifierName(m);
+        } else if (role instanceof IntroMobEffect effect) {
+            return effect.getDisplayName();
         } else {
             return Component.translatable("Unknown");
         }
@@ -526,6 +531,8 @@ public class RoleUtils extends MCItemsUtils {
             return getRoleName(r).withColor(0xff000000 | r.color());
         } else if (role instanceof SREModifier m) {
             return m.getName(true);
+        } else if (role instanceof IntroMobEffect effect) {
+            return effect.getDisplayName().copy().withColor(effect.getColor());
         } else {
             return Component.translatable("Unknown");
         }
@@ -584,6 +591,8 @@ public class RoleUtils extends MCItemsUtils {
             return 0xff000000 | r.color();
         } else if (role instanceof SREModifier m) {
             return 0xff000000 | m.color();
+        } else if (role instanceof IntroMobEffect effect) {
+            return effect.getColor();
         } else if (role instanceof Item) {
             return java.awt.Color.CYAN.getRGB();
         } else if (role instanceof AreasSettings) {
@@ -608,13 +617,17 @@ public class RoleUtils extends MCItemsUtils {
             return r.identifier();
         } else if (role instanceof SREModifier m) {
             return m.identifier();
+        } else if (role instanceof IntroMobEffect effect) {
+            return effect.id();
         } else {
             return null;
         }
     }
 
     public static MutableComponent getRoleOrModifierOrItemNameWithColor(Object selectedRole) {
-        if (selectedRole instanceof Item it) {
+        if (selectedRole instanceof IntroMobEffect effect) {
+            return effect.getDisplayName().copy().withColor(effect.getColor());
+        } else if (selectedRole instanceof Item it) {
             return it.getDescription().copy().withStyle(ChatFormatting.WHITE);
         } else if (selectedRole instanceof AreasSettings) {
             return Component.translatable("screen.roleintroduce.detail.map_areas_settings")
@@ -625,7 +638,9 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static int getRoleOrModifierOrItemColor(Object obj) {
-        if (obj instanceof Item) {
+        if (obj instanceof IntroMobEffect effect) {
+            return effect.getColor();
+        } else if (obj instanceof Item) {
             return (ChatFormatting.WHITE.getColor());
         } else {
             return getRoleOrModifierColor(obj);
@@ -633,7 +648,9 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static ResourceLocation getRoleOrModifierOrItemIdentifier(Object selectedRole) {
-        if (selectedRole instanceof Item it) {
+        if (selectedRole instanceof IntroMobEffect effect) {
+            return effect.id();
+        } else if (selectedRole instanceof Item it) {
             return BuiltInRegistries.ITEM.getKey(it);
         } else if (selectedRole instanceof AreasSettings) {
             if (FabricLoader.getInstance().getEnvironmentType().equals(EnvType.CLIENT)) {
@@ -649,7 +666,9 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static Component getRoleOrModifierOrItemName(Object selectedRole) {
-        if (selectedRole instanceof Item it) {
+        if (selectedRole instanceof IntroMobEffect effect) {
+            return effect.getDisplayName();
+        } else if (selectedRole instanceof Item it) {
             return it.getDescription().copy();
         } else if (selectedRole instanceof AreasSettings) {
             return Component.translatable("screen.roleintroduce.detail.map_areas_settings");
@@ -659,7 +678,9 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static MutableComponent getRoleOrModifierOrItemTypeName(Object role) {
-        if (role instanceof Item) {
+        if (role instanceof IntroMobEffect) {
+            return Component.translatable("display.type.effect");
+        } else if (role instanceof Item) {
             return Component.translatable("display.type.item");
         } else if (role instanceof AreasSettings) {
             return Component.translatable("screen.roleintroduce.detail.map_areas_settings");
@@ -669,7 +690,9 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static MutableComponent getRoleOrModifierOrItemSimpleDescription(Object selectedRole) {
-        if (selectedRole instanceof Item it) {
+        if (selectedRole instanceof IntroMobEffect effect) {
+            return getEffectDescription(effect);
+        } else if (selectedRole instanceof Item it) {
             String key = it.getDescriptionId() + ".desc.simple";
             if (Language.getInstance().has(key))
                 return Component.translatable(key);
@@ -686,7 +709,9 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static MutableComponent getRoleOrModifierOrItemDescription(Object selectedRole) {
-        if (selectedRole instanceof Item it) {
+        if (selectedRole instanceof IntroMobEffect effect) {
+            return getEffectDescription(effect);
+        } else if (selectedRole instanceof Item it) {
             String key = it.getDescriptionId() + ".desc";
             if (Language.getInstance().has(key))
                 return Component.translatable(key);
@@ -713,6 +738,45 @@ public class RoleUtils extends MCItemsUtils {
 
     public static MutableComponent getItemExtraDescription(Item item) {
         return Component.translatable(getItemExtraDescriptionKey(item));
+    }
+
+    public static String getEffectDescriptionKey(IntroMobEffect effect) {
+        return effect.getDescriptionId() + ".desc";
+    }
+
+    public static String getEffectExtraDescriptionKey(IntroMobEffect effect) {
+        return effect.getDescriptionId() + ".desc.detail";
+    }
+
+    public static MutableComponent getEffectDescription(IntroMobEffect effect) {
+        String descKey = getEffectDescriptionKey(effect);
+        if (Language.getInstance().has(descKey)) {
+            return Component.translatable(descKey);
+        }
+        String legacyKey = effect.getDescriptionId() + ".description";
+        if (Language.getInstance().has(legacyKey)) {
+            return Component.translatable(legacyKey);
+        }
+        return effect.getDisplayName().copy();
+    }
+
+    public static boolean hasEffectExtraDescription(IntroMobEffect effect) {
+        return effect != null && Language.getInstance().has(getEffectExtraDescriptionKey(effect));
+    }
+
+    public static MutableComponent getEffectExtraDescription(IntroMobEffect effect) {
+        return Component.translatable(getEffectExtraDescriptionKey(effect));
+    }
+
+    public static MutableComponent getEffectCategoryName(IntroMobEffect effect) {
+        return switch (effect.getCategory()) {
+            case BENEFICIAL -> Component.translatable("display.type.effect.beneficial")
+                    .withStyle(ChatFormatting.GREEN);
+            case HARMFUL -> Component.translatable("display.type.effect.harmful")
+                    .withStyle(ChatFormatting.RED);
+            default -> Component.translatable("display.type.effect.neutral")
+                    .withStyle(ChatFormatting.YELLOW);
+        };
     }
 
     public static Component getTeamName(int roleType) {
@@ -917,6 +981,60 @@ public class RoleUtils extends MCItemsUtils {
 
     public static SRERole getRoleByPath(String rolePath) {
         return TMMRoles.getRoleByPath(rolePath);
+    }
+
+    /**
+     * 把目标玩家放到执行者身前 {@code maxDistance} 格内的合适空位。
+     * <p>
+     * 算法参考绳索拉人（{@code RopeItem#pullPlayer}）：沿执行者的水平视线以 0.2 格为步长由近及远试探，
+     * 取最远的无碰撞位置；一个空位都没有时与执行者重合。
+     *
+     * @param player      落点参考者（视线与位置基准）
+     * @param target      被移动的目标
+     * @param maxDistance 身前的最大搜索距离
+     */
+    public static void placeInFrontOf(Player player, Player target, double maxDistance) {
+        Vec3 spot = findFreeSpotInFrontOf(player, target, maxDistance);
+        if (target instanceof ServerPlayer serverTarget) {
+            serverTarget.teleportTo(spot.x, spot.y, spot.z);
+        } else {
+            target.moveTo(spot.x, spot.y, spot.z);
+        }
+    }
+
+    /**
+     * 只计算落点、不移动实体。找不到空位时返回执行者自身位置（即与执行者重合）。
+     *
+     * @see #placeInFrontOf(Player, Player, double)
+     */
+    public static Vec3 findFreeSpotInFrontOf(Player player, Player target, double maxDistance) {
+        final double step = 0.2;
+        final int steps = (int) Math.ceil(maxDistance / step) + 1;
+        final var level = player.level();
+        final Vec3 viewVector = player.getViewVector(1.0F);
+        Vec3 origin = player.position();
+        Vec3 lastValidPos = origin;
+
+        for (int i = 0; i <= steps; i++) {
+            double currentDistance = Math.min(i * step, maxDistance);
+            Vec3 candidate = origin.add(viewVector.x * currentDistance, 0.0, viewVector.z * currentDistance);
+
+            var dimensions = target.getDimensions(target.getPose());
+            double width = dimensions.width();
+            double height = dimensions.height();
+            AABB candidateBox = new AABB(
+                    candidate.x - width / 2, candidate.y, candidate.z - width / 2,
+                    candidate.x + width / 2, candidate.y + height, candidate.z + width / 2);
+
+            if (!level.noCollision(target, candidateBox)) {
+                // 遇到第一个无效位置：退回上一个有效位置
+                return lastValidPos;
+            }
+            lastValidPos = candidate;
+        }
+
+        // 所有尝试距离均有效：使用最远处
+        return lastValidPos;
     }
 
 }

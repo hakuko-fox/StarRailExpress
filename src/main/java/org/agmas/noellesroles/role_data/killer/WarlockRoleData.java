@@ -19,7 +19,6 @@ import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.data.PlayerEconomyManager;
 import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -40,12 +39,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.game.roles.killer.warlock.WarlockDomainManager;
-import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.utils.MoneyUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -279,11 +278,9 @@ public class WarlockRoleData extends SimpleRoleData {
             return;
 
         boolean changed = false;
-        Iterator<Map.Entry<UUID, Long>> it = cursedPlayers.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<UUID, Long> entry = it.next();
+        for (Map.Entry<UUID, Long> entry : new ArrayList<>(cursedPlayers.entrySet())) {
             if (now >= entry.getValue()) {
-                it.remove();
+                cursedPlayers.remove(entry.getKey(), entry.getValue());
                 changed = true;
                 continue;
             }
@@ -314,7 +311,7 @@ public class WarlockRoleData extends SimpleRoleData {
             if (end == null || GameUtils.getTicksFromGameStart(sv.level()) >= end)
                 continue;
             comp.cursedPlayers.remove(sv.getUUID());
-            PlayerEconomyManager.addCoinNum(candidate, CURSE_REWARD_COINS);
+            MoneyUtils.addToBalance(candidate, CURSE_REWARD_COINS);
             candidate.displayClientMessage(Component
                     .translatable("message.noellesroles.warlock.curse_reward", CURSE_REWARD_COINS)
                     .withStyle(ChatFormatting.GOLD), true);

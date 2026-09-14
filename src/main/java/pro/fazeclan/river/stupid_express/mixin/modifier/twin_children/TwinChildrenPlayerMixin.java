@@ -22,12 +22,13 @@ import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import pro.fazeclan.river.stupid_express.modifier.twin_children.TwinChildrenHandler;
 
 /**
- * Lower twin: 1.1-block collision so the unit cannot crawl into 1-block gaps.
- * Upper twin: 0.7-block collision so weapons from above do not sit inside the
+ * Lower twin: 1.3-block collision so the unit cannot crawl into 1-block gaps.
+ * Upper twin: 0.5-block collision so weapons from above do not sit inside the
  * rider. The upper twin also cannot sneak-dismount.
  */
 @Mixin(Player.class)
@@ -59,5 +60,10 @@ public abstract class TwinChildrenPlayerMixin {
         if (TwinChildrenHandler.shouldStayRiding(self)) {
             cir.setReturnValue(false);
         }
+    }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void stupidExpress$positionStackedTwin(CallbackInfo ci) {
+        TwinChildrenHandler.positionStackedRider((Player) (Object) this);
     }
 }

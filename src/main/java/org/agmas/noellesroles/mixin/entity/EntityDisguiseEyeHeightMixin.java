@@ -32,6 +32,7 @@ import org.spongepowered.asm.mixin.injection.At;
 /**
  * 皮革噶的：伪装成猪期间把玩家的眼高压到猪的眼高。
  * 幻灵：伪装成悦灵期间改用悦灵碰撞箱与眼高。
+ * 亡语杀手 / 咸鱼：伪装成尸体期间改用尸体碰撞箱（眼高保持原值，否则第三人称相机会掉到地里）。
  *
  * <p>
  * 猪的碰撞箱（0.6×1.8）保持不变——地图是按人的尺寸做的。只改眼高，于是相机、准星射线、
@@ -39,7 +40,6 @@ import org.spongepowered.asm.mixin.injection.At;
  */
 @Mixin(Player.class)
 public abstract class EntityDisguiseEyeHeightMixin {
-
     @ModifyReturnValue(method = "getDefaultDimensions", at = @At("RETURN"))
     private EntityDimensions noellesroles$lowerEyeToPig(EntityDimensions dimensions, Pose pose) {
         Player self = (Player) (Object) this;
