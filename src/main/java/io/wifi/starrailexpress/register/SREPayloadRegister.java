@@ -43,6 +43,14 @@ public class SREPayloadRegister {
 
     public static void registerPayloadTypes() {
         SceneAssetNetwork.registerPayloadTypes();
+        // 自定义列车物品·投掷物的区域粒子（服务端发一次，客户端自己渲染）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.CustomAreaParticlePayload.ID,
+                io.wifi.starrailexpress.network.CustomAreaParticlePayload.CODEC);
+        // 自定义修饰符「死亡后倒计时」状态（只发给当事人，客户端画倒计时 HUD）
+        PayloadTypeRegistry.playS2C().register(
+                io.wifi.starrailexpress.network.packet.CustomModifierCountdownPacket.ID,
+                io.wifi.starrailexpress.network.packet.CustomModifierCountdownPacket.CODEC);
         // 商店价格同步 / Shop price sync
         PayloadTypeRegistry.playS2C().register(
                 io.wifi.starrailexpress.shop.network.ShopPriceHandshakeS2CPayload.TYPE,
@@ -191,6 +199,9 @@ public class SREPayloadRegister {
         PayloadTypeRegistry.playC2S().register(KnifeStabPayload.ID, KnifeStabPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(GunShootPayload.ID, GunShootPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SniperShootPayload.TYPE, SniperShootPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(
+                io.wifi.starrailexpress.network.original.CustomItemFirePayload.TYPE,
+                io.wifi.starrailexpress.network.original.CustomItemFirePayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(StoreBuyPayload.ID, StoreBuyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestOpenClueArchivePayload.ID,
@@ -244,6 +255,10 @@ public class SREPayloadRegister {
                 EntityInteractionBlockPayload.SyncBlockEntity.CODEC);
         PayloadTypeRegistry.playC2S().register(EntityInteractionBlockPayload.SaveConfig.TYPE,
                 EntityInteractionBlockPayload.SaveConfig.CODEC);
+
+        // 展示方块（文本展示 / 方块展示）数据包：保存后的同步复用原版方块实体更新包，不需要额外类型
+        PayloadTypeRegistry.playS2C().register(DisplayBlockPayload.OpenUI.TYPE, DisplayBlockPayload.OpenUI.CODEC);
+        PayloadTypeRegistry.playC2S().register(DisplayBlockPayload.Save.TYPE, DisplayBlockPayload.Save.CODEC);
 
         // 小游戏任务点数据包
         PayloadTypeRegistry.playS2C().register(MinigameQuestPayload.OpenConfig.TYPE,

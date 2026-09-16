@@ -61,6 +61,15 @@ public class SREClientCommand {
                             return 1;
                           })))
               .then(SceneAssetClient.sceneSubcommand())
+              .then(
+                  ClientCommandManager.literal("customblock")
+                      .executes((ctx) -> {
+                        // 打开自定义方块管理界面（与方块工具物品右键等价）
+                        ctx.getSource().getClient().setScreen(
+                            new io.wifi.starrailexpress.customblock.CustomBlockManageScreen(
+                                () -> new io.wifi.starrailexpress.customblock.CustomBlockScreen()));
+                        return 1;
+                      }))
               .then(ClientCommandManager.literal("debug")
                   .then(ClientCommandManager.literal("rhythm_game")
                       .executes((ctx) -> {
@@ -176,6 +185,14 @@ public class SREClientCommand {
                         ClientScheduler.schedule(() -> {
                           context.getSource().getClient()
                               .setScreen(new org.agmas.noellesroles.client.screen.AreaMapScreen());
+                        }, 1);
+                        return 1;
+                      }))
+                  .then(ClientCommandManager.literal("speaker")
+                      .executes(context -> {
+                        ClientScheduler.schedule(() -> {
+                          context.getSource().getClient()
+                              .setScreen(new org.agmas.noellesroles.client.screen.SpeakerScreen());
                         }, 1);
                         return 1;
                       }))

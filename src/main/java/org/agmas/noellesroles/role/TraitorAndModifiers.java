@@ -284,6 +284,11 @@ public class TraitorAndModifiers {
         // 起义军修饰符排除巫毒师职业
         REBEL.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.VOODOO));
 
+        // 侏儒与体型类/双子修饰符互斥（与 TINY/TALL 共用同一套互斥机制）
+        DWARF.addTwoWayOpposingModifier(SEModifiers.TINY, SEModifiers.TALL, SEModifiers.TWIN_CHILDREN);
+        // 狂躁症与任务大师/工作狂互斥（取代 registerModifierEvents 里逐条 removeModifier 的手写逻辑）
+        MANIC.addTwoWayOpposingModifier(SEModifiers.TASKMASTER, WORKAHOLIC);
+
         registerModifierEvents();
         registerDeathEvents();
         registerGameEvents();
@@ -298,24 +303,8 @@ public class TraitorAndModifiers {
 
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(player.level());
 
-            // === 狂躁症互斥 - 与任务大师和工作狂互斥 ===
-            if (modifier.equals(MANIC)) {
-                // 移除任务大师
-                if (worldModifierComponent.isModifier(player.getUUID(), SEModifiers.TASKMASTER)) {
-                    worldModifierComponent.removeModifier(player.getUUID(), SEModifiers.TASKMASTER);
-                }
-                // 移除工作狂
-                if (worldModifierComponent.isModifier(player.getUUID(), WORKAHOLIC)) {
-                    worldModifierComponent.removeModifier(player.getUUID(), WORKAHOLIC);
-                }
-            }
-
-            // === 任务大师和工作狂与狂躁症互斥 ===
-            if (modifier.equals(SEModifiers.TASKMASTER) || modifier.equals(WORKAHOLIC)) {
-                if (worldModifierComponent.isModifier(player.getUUID(), MANIC)) {
-                    worldModifierComponent.removeModifier(player.getUUID(), MANIC);
-                }
-            }
+            // 狂躁症与任务大师/工作狂的互斥由 ModifierOpposingHelper 统一处理
+            // （声明见 TraitorAndModifiers#init），这里不再逐条判断与移除
 
             // 强壮 - 添加击退抗性
             if (modifier.equals(STRONG)) {
@@ -326,18 +315,7 @@ public class TraitorAndModifiers {
 
             // 侏儒 - 缩小50%（同时移除高大/矮小修饰符）
             if (modifier.equals(DWARF)) {
-                pro.fazeclan.river.stupid_express.modifier.twin_children.TwinChildrenHandler
-                        .removePairForConflictingModifier(player);
-                // 移除高大修饰符（如果存在）
-                if (worldModifierComponent.isModifier(player.getUUID(), SEModifiers.TALL)) {
-                    worldModifierComponent.removeModifier(player.getUUID(), SEModifiers.TALL);
-                    player.getAttribute(Attributes.SCALE).removeModifier(SEModifiers.TALL_MODIFIER);
-                }
-                // 移除矮小修饰符（如果之前有）
-                if (worldModifierComponent.isModifier(player.getUUID(), SEModifiers.TINY)) {
-                    worldModifierComponent.removeModifier(player.getUUID(), SEModifiers.TINY);
-                    player.getAttribute(Attributes.SCALE).removeModifier(SEModifiers.TINY_MODIFIER);
-                }
+                // 与 TINY / TALL / TWIN_CHILDREN 的互斥由 ModifierOpposingHelper 统一处理
                 player.getAttribute(Attributes.SCALE).removeModifier(DWARF_MODIFIER);
                 player.getAttribute(Attributes.SCALE).addPermanentModifier(DWARF_MODIFIER);
             }

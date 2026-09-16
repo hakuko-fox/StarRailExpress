@@ -44,6 +44,9 @@ public class SRECommandRegister {
                 SingletonArgumentInfo.contextFree(SkinArgumentType::string));
         ArgumentTypeRegistry.registerArgumentType(SRE.id("map_load"), MapLoadArgumentType.class,
                 SingletonArgumentInfo.contextFree(MapLoadArgumentType::string));
+        // 实体类型参数直接用原版的 `minecraft:resource`（/summon 用的那个），无需自建与注册。
+        // 自定义内容 id（/sre:give、/sre:setblock 的 <id>[组件] 参数）
+        io.wifi.starrailexpress.customcontent.CustomContentArgument.register();
     }
 
     public static void registerCommands() {
@@ -69,6 +72,7 @@ public class SRECommandRegister {
             net.exmo.sre.record.MatchRecordCommand.register(dispatcher);
             SetAutoTrainResetCommand.register(dispatcher);
             SetBoundCommand.register(dispatcher);
+            SetAbilitiesCommand.register(dispatcher);
             AutoStartCommand.register(dispatcher);
             ParticipationCommand.register(dispatcher);
             AutoShutdownWhenNotRunningCommand.register(dispatcher);
@@ -101,12 +105,23 @@ public class SRECommandRegister {
             ShieldCommand.register(dispatcher);
             PoisonCommand.register(dispatcher);
             StaminaCommand.register(dispatcher);
+            // 地图状态条数值：/sre:state <状态名|all|now> add|set|get <玩家> [数值]
+            StateCommand.register(dispatcher);
             SceneCommand.register(dispatcher);
             SceneEventCommand.register(dispatcher);
             SceneTaskCommand.register(dispatcher);
             io.wifi.starrailexpress.content.command.MinigameTaskCommand.register(dispatcher);
             io.wifi.starrailexpress.cca.network.SkinsNetworkSyncCommand.register(dispatcher);
             io.wifi.starrailexpress.customrole.CustomRoleReloadCommand.register(dispatcher);
+            io.wifi.starrailexpress.custommodifier.CustomModifierReloadCommand.register(dispatcher);
+            io.wifi.starrailexpress.customitem.CustomItemReloadCommand.register(dispatcher);
+            io.wifi.starrailexpress.customblock.CustomBlockReloadCommand.register(dispatcher);
+            // 自定义内容统一指令：/sre:give、/sre:setblock（参数借原版物品参数解析组件，需要 buildContext）
+            io.wifi.starrailexpress.customcontent.CustomContentCommands.register(dispatcher, registryAccess);
+            // 区域整块复制：/sre:clone
+            io.wifi.starrailexpress.content.command.SRECloneCommand.register(dispatcher);
+            io.wifi.starrailexpress.content.command.EntityDisguiseCommand.register(dispatcher, registryAccess);
+            io.wifi.starrailexpress.content.command.MorphCommand.register(dispatcher);
             // CoinModifier.register(dispatcher, registryAccess);
             net.exmo.sre.nametag.NameTagCommand.register(dispatcher, registryAccess);
             net.exmo.sre.subtitle.SubtitleCommand.register(dispatcher, registryAccess);

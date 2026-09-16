@@ -87,12 +87,21 @@ public class SREReceiverRegister {
                         payload.matchId()));
         ServerPlayNetworking.registerGlobalReceiver(GunShootPayload.ID, new GunShootPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(SniperShootPayload.TYPE, new SniperShootPayload.Receiver());
+        // 自定义枪械「左键发射」请求
+        ServerPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.network.original.CustomItemFirePayload.TYPE,
+                new io.wifi.starrailexpress.network.original.CustomItemFirePayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(StoreBuyPayload.ID, new StoreBuyPayload.Receiver());
         // 商店价格同步：客户端缓存未命中时请求完整价格表 / Shop price sync: full-table request on cache miss
         ServerPlayNetworking.registerGlobalReceiver(
                 io.wifi.starrailexpress.shop.network.ShopPriceRequestC2SPayload.TYPE,
                 (payload, context) -> context.server().execute(() -> io.wifi.starrailexpress.shop.ShopPriceSyncServer
                         .handleRequest(context.player(), payload.hash())));
+        // 自定义内容同步：客户端本地缓存未命中时请求该通道的完整内容
+        ServerPlayNetworking.registerGlobalReceiver(
+                io.wifi.starrailexpress.synccontent.ContentRequestC2SPayload.TYPE,
+                (payload, context) -> context.server().execute(() -> io.wifi.starrailexpress.synccontent.ContentSyncServer
+                        .serve(context.player(), payload.channel(), payload.hash())));
         ServerPlayNetworking.registerGlobalReceiver(NoteEditPayload.ID, new NoteEditPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(RequestOpenClueArchivePayload.ID,
                 new RequestOpenClueArchivePayload.Receiver());
@@ -103,6 +112,8 @@ public class SREReceiverRegister {
 
         // 实体交互方块服务端网络处理
         EntityInteractionBlockServerNetwork.register();
+        // 展示方块（文本展示 / 方块展示）服务端网络处理
+        DisplayBlockServerNetwork.register();
         MinigameQuestServerNetwork.register();
         TicketOfficeServerNetwork.register();
         EffectGeneratorServerNetwork.register();

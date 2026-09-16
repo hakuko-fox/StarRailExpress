@@ -51,6 +51,27 @@ public class DevItems {
             "fake_block_tool");
     public static Item CUSTOM_ROLE_TOOL = register(new CustomRoleToolItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)),
             "custom_role_tool");
+    public static Item CUSTOM_MODIFIER_TOOL = register(
+            new io.wifi.starrailexpress.custommodifier.CustomModifierToolItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)),
+            "custom_modifier_tool");
+    /**
+     * 自定义列车物品：全模组只有这一个物品，所有自定义列车物品都是它 + 物品数据，
+     * 默认没有材质（模型引用到不存在的地方）。
+     */
+    public static Item CUSTOM_ITEM = register(
+            new io.wifi.starrailexpress.customitem.CustomItem(new Item.Properties().stacksTo(1)),
+            "custom_item");
+    /** 自定义列车物品工具（材质继承原版木棍）。 */
+    public static Item CUSTOM_ITEM_TOOL = register(
+            new io.wifi.starrailexpress.customitem.CustomItemToolItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)),
+            "custom_item_tool");
+    /** 自定义方块工具（材质继承原版木棍）。方块本体与其物品在 SREBlocks 里注册。 */
+    public static Item CUSTOM_BLOCK_TOOL = register(
+            new io.wifi.starrailexpress.customblock.CustomBlockToolItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)),
+            "custom_block_tool");
 
     @SuppressWarnings("unchecked")
     public static Item register(Item item, String id) {
@@ -65,5 +86,9 @@ public class DevItems {
 
     public static void init() {
         registrar.registerEntries();
+        // 自定义列车物品的行为引擎（事件注册幂等）
+        io.wifi.starrailexpress.customitem.CustomItemRuntime.init();
+        // 自定义方块的交互事件引擎（事件注册幂等）
+        io.wifi.starrailexpress.customblock.CustomBlockRuntime.init();
     }
 }

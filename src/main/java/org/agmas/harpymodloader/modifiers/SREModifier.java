@@ -15,6 +15,7 @@
 
 package org.agmas.harpymodloader.modifiers;
 
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SREAbstractInfoClass;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -41,6 +42,28 @@ public class SREModifier extends SREAbstractInfoClass {
     public boolean killerOnly = false;
     public boolean civilianOnly = false;
     public boolean notVigilante = false;
+    /**
+     * 互斥修饰符：同一名玩家身上不会同时出现这些修饰符。
+     *
+     * <p>
+     * 与 {@link SRERole#opposingRoles}（互斥职业）对应，共三处生效：
+     * <ul>
+     * <li>生成阶段：{@code SREMurderGameMode.canAssignModifierToPlayer} 会跳过已有互斥修饰符的玩家</li>
+     * <li>运行时：{@link ModifierOpposingHelper} 兜底移除与该修饰符冲突的旧修饰符（后到者优先）</li>
+     * <li>介绍页面（U 键）：「互斥修饰符」分组</li>
+     * </ul>
+     */
+    public final HashSet<SREModifier> opposingModifiers = new HashSet<>();
+    /**
+     * 按阵营整体排除：这些阵营的职业不会获得此修饰符。
+     * 与 {@link #cannotBeAppliedTo}（按具体职业排除）叠加生效，见 {@link #setCannotAppliedToTeam}。
+     */
+    public final EnumSet<RoleTeam> cannotBeAppliedToTeams = EnumSet.noneOf(RoleTeam.class);
+    /**
+     * 只作用于这些阵营：设置后只有它们的职业会获得此修饰符（为空表示不限制）。
+     * 与 {@link #cannotBeAppliedToTeams} 同时设置时，黑名单优先否决。见 {@link #setCanOnlyBeAppliedToTeam}。
+     */
+    public final EnumSet<RoleTeam> canOnlyBeAppliedToTeams = EnumSet.noneOf(RoleTeam.class);
     public Consumer<ServerPlayer> serverTickEvent = null;
     public Consumer<Player> clientTickEvent = null;
     public int defaultMaxCount = 1;
@@ -137,6 +160,112 @@ public class SREModifier extends SREAbstractInfoClass {
                 this.relatedModifiers.remove(i);
         }
         return this;
+    }
+
+    /**
+     * 删除互斥修饰符（单向，只清本实例这一侧声明的记录）。
+     *
+     * @param modifier 要删除的修饰符，{@code null} 会被忽略
+     * @return this
+     */
+    public SREModifier removeOpposingModifier(SREModifier... modifier) {
+        for (var m : modifier) {
+            if (m != null)
+                this.opposingModifiers.remove(m);
+        }
+        return this;
+    }
+
+    /**
+     * 获取互斥修饰符（按 identifier 去重，避免重载后的重复展示）。
+     *
+     * @return 互斥修饰符副本，可直接用于介绍页面渲染
+     */
+    public Set<SREModifier> getOpposingModifiers() {
+        Set<SREModifier> result = new HashSet<>();
+        Set<ResourceLocation> seen = new HashSet<>();
+        for (SREModifier m : this.opposingModifiers) {
+            if (m != null && m.identifier() != null && seen.add(m.identifier())) {
+                result.add(m);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 添加双向互斥修饰符：双方都不会与对方出现在同一名玩家身上。
+     *
+     * @param modifier 互斥的修饰符，{@code null} 与自身会被忽略
+     * @return this
+     */
+    public SREModifier addTwoWayOpposingModifier(SREModifier... modifier) {
+        for (var m : modifier) {
+            if (m == null || m == this)
+                continue;
+            this.opposingModifiers.add(m);
+            m.opposingModifiers.add(this);
+        }
+        return this;
+    }
+
+    /**
+     * 添加单向互斥修饰符：本修饰符不会被分配给已持有该修饰符的玩家。
+     *
+     * <p>
+     * 判定时同时读取双方的声明（见 {@link #isOpposingModifier}），因此单向声明同样能阻止两者共存。
+     *
+     * @param modifier 互斥的修饰符，{@code null} 与自身会被忽略
+     * @return this
+     */
+    public SREModifier addOpposingModifier(SREModifier... modifier) {
+        for (var m : modifier) {
+            if (m != null && m != this)
+                this.opposingModifiers.add(m);
+        }
+        return this;
+    }
+
+    /**
+     * 设置单向互斥修饰符（先清空原有列表）。
+     *
+     * @param modifiers 互斥修饰符，{@code null} 表示只清空
+     * @return this
+     */
+    public SREModifier setOpposingModifiers(Collection<SREModifier> modifiers) {
+        this.opposingModifiers.clear();
+        if (modifiers != null) {
+            for (SREModifier m : modifiers) {
+                if (m != null && m != this)
+                    this.opposingModifiers.add(m);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 是否为互斥关系（双向判定：任意一侧声明过即成立）。
+     *
+     * @param other 另一个修饰符，{@code null} 或自身时返回 {@code false}
+     */
+    public boolean isOpposingModifier(SREModifier other) {
+        if (other == null || other == this)
+            return false;
+        return this.opposingModifiers.contains(other) || other.opposingModifiers.contains(this);
+    }
+
+    /**
+     * 是否与给定集合中的任意一个修饰符互斥。
+     *
+     * @param others 待判定的修饰符集合，{@code null} 或空集合返回 {@code false}
+     */
+    public boolean isOpposingWithAny(Collection<SREModifier> others) {
+        if (others == null || others.isEmpty())
+            return false;
+        for (SREModifier other : others) {
+            if (isOpposingModifier(other))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -446,6 +575,126 @@ public class SREModifier extends SREAbstractInfoClass {
     public SREModifier setCannotAppliedToVigilante(boolean flag) {
         this.notVigilante = flag;
         return this;
+    }
+
+    /**
+     * 按阵营排除：不把此修饰符分配给这些阵营的职业（可多次调用叠加）。
+     *
+     * <p>
+     * 例：{@code setCannotAppliedToTeam(RoleTeam.KILLER, RoleTeam.NEUTRAL_KILLER)}
+     * 表示不给杀手与杀手方中立。
+     *
+     * @param teams 阵营，{@code null} 会被忽略
+     * @return this
+     */
+    public SREModifier setCannotAppliedToTeam(RoleTeam... teams) {
+        if (teams != null) {
+            for (RoleTeam team : teams) {
+                if (team != null) {
+                    this.cannotBeAppliedToTeams.add(team);
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 取消 {@link #setCannotAppliedToTeam} 添加的阵营排除。
+     *
+     * @param teams 要取消的阵营，{@code null} 会被忽略
+     * @return this
+     */
+    public SREModifier removeCannotAppliedToTeam(RoleTeam... teams) {
+        if (teams != null) {
+            for (RoleTeam team : teams) {
+                if (team != null) {
+                    this.cannotBeAppliedToTeams.remove(team);
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 该职业是否因阵营排除（{@link #cannotBeAppliedToTeams}）而不应获得此修饰符。
+     *
+     * @param role 目标职业，{@code null} 时返回 false
+     */
+    public boolean isTeamExcluded(SRERole role) {
+        if (role == null || this.cannotBeAppliedToTeams.isEmpty()) {
+            return false;
+        }
+        for (RoleTeam team : this.cannotBeAppliedToTeams) {
+            if (team.matches(role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 只作用于指定阵营：设置后，只有这些阵营的职业会获得此修饰符（可多次调用叠加，命中其中任意一个即可）。
+     *
+     * <p>
+     * 例：{@code setCanOnlyBeAppliedToTeam(RoleTeam.CIVILIAN, RoleTeam.SHERIFF)} 表示只给好人阵营。
+     * 若同时设置了 {@link #setCannotAppliedToTeam}，黑名单优先（命中黑名单必定不通过）。
+     *
+     * @param teams 阵营，{@code null} 会被忽略
+     * @return this
+     */
+    public SREModifier setCanOnlyBeAppliedToTeam(RoleTeam... teams) {
+        if (teams != null) {
+            for (RoleTeam team : teams) {
+                if (team != null) {
+                    this.canOnlyBeAppliedToTeams.add(team);
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 取消 {@link #setCanOnlyBeAppliedToTeam} 添加的阵营白名单。
+     *
+     * @param teams 要取消的阵营，{@code null} 会被忽略
+     * @return this
+     */
+    public SREModifier removeCanOnlyBeAppliedToTeam(RoleTeam... teams) {
+        if (teams != null) {
+            for (RoleTeam team : teams) {
+                if (team != null) {
+                    this.canOnlyBeAppliedToTeams.remove(team);
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * 阵营综合判定：该职业是否允许获得此修饰符。
+     *
+     * <ul>
+     * <li>命中 {@link #cannotBeAppliedToTeams} 中任意一个阵营 → 不允许</li>
+     * <li>{@link #canOnlyBeAppliedToTeams} 非空且一个都没命中 → 不允许</li>
+     * <li>两者都未设置（或白名单非空但职业未知）→ 允许</li>
+     * </ul>
+     *
+     * @param role 目标职业，{@code null} 时只做黑名单判定
+     */
+    public boolean isTeamApplicable(SRERole role) {
+        if (isTeamExcluded(role)) {
+            return false;
+        }
+        if (this.canOnlyBeAppliedToTeams.isEmpty() || role == null) {
+            // 职业未知时按原 canOnlyBeAppliedTo 的处理方式：不否决
+            return true;
+        }
+        for (RoleTeam team : this.canOnlyBeAppliedToTeams) {
+            if (team.matches(role)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
