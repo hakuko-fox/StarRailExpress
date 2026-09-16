@@ -129,6 +129,24 @@ public class SREEventRegister {
             net.exmo.sre.client.chat.ChatDialogueManager.getInstance(server);
             SRE.REPLAY_MANAGER = new GameReplayManager(server);
             SyncMapConfigPayload.sendToAllPlayers();
+            // 加载自定义列车物品（必须在自定义职业之前：职业的初始物品 / 任务奖励支持
+            // [custom_item] 前缀，要在职业解析时就能查到自定义物品索引）
+            try {
+                io.wifi.starrailexpress.customitem.CustomItemLoader.reload(server);
+                io.wifi.starrailexpress.network.CustomItemServerNetwork.clearCache();
+                io.wifi.starrailexpress.network.CustomItemServerNetwork.syncToAllPlayers(server);
+            } catch (Throwable e) {
+                SRE.LOGGER.error("[CustomItem] Failed to load custom items on server start", e);
+            }
+            // 加载自定义方块
+            try {
+                io.wifi.starrailexpress.customblock.CustomBlockLoader.reload(server);
+                io.wifi.starrailexpress.synccontent.ContentSyncServer.invalidate(
+                        io.wifi.starrailexpress.synccontent.ContentChannel.CUSTOM_BLOCK);
+                io.wifi.starrailexpress.synccontent.ContentSyncServer.broadcastHandshake(server);
+            } catch (Throwable e) {
+                SRE.LOGGER.error("[CustomBlock] Failed to load custom blocks on server start", e);
+            }
             // 加载自定义职业
             try {
                 io.wifi.starrailexpress.customrole.CustomRoleLoader.reload(server);
@@ -137,6 +155,14 @@ public class SREEventRegister {
                 CustomRoleServerNetwork.syncToAllPlayers(server);
             } catch (Throwable e) {
                 SRE.LOGGER.error("[CustomRole] Failed to load custom roles on server start", e);
+            }
+            // 加载自定义修饰符
+            try {
+                io.wifi.starrailexpress.custommodifier.CustomModifierLoader.reload(server);
+                io.wifi.starrailexpress.network.CustomModifierServerNetwork.clearCache();
+                io.wifi.starrailexpress.network.CustomModifierServerNetwork.syncToAllPlayers(server);
+            } catch (Throwable e) {
+                SRE.LOGGER.error("[CustomModifier] Failed to load custom modifiers on server start", e);
             }
             // 拉取赞助者名单（异步）
             io.wifi.starrailexpress.sponsor.SponsorManager.fetchAsync(server);
@@ -176,8 +202,9 @@ public class SREEventRegister {
                             handler.player.getScoreboardName());
                 }
             }
-            // 同步自定义职业配置给新加入的玩家
-            CustomRoleServerNetwork.syncToPlayer(server, handler.player);
+            // 自定义内容（职业 / 修饰符 / 列车物品 / 方块）统一发一次握手：
+            // 只带各通道的哈希，客户端本地缓存命中就什么都不用发，未命中才回来请求完整内容
+            io.wifi.starrailexpress.synccontent.ContentSyncServer.handshakeTo(handler.player);
             SceneAssetServer.sendCurrentManifest(handler.player);
             // 同步当前路径点给新加入的玩家
             io.wifi.starrailexpress.util.WaypointSync.syncTo(handler.player);
@@ -186,7 +213,9 @@ public class SREEventRegister {
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             io.wifi.starrailexpress.anticheat.ClickAntiCheat.onPlayerDisconnect(handler.player.getUUID());
-            CustomRoleServerNetwork.onPlayerDisconnect(handler.player.getUUID());
+            // 自定义内容的按玩家运行时状态：物品的命中计数 / 蓄力 / 自动开火窗口，方块的冷却与一次性记录
+            io.wifi.starrailexpress.customitem.CustomItemRuntime.clearPlayer(handler.player.getUUID());
+            io.wifi.starrailexpress.customblock.CustomBlockRuntime.clearPlayer(handler.player.getUUID());
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(handler.player.level());
             var psychocca = SREPlayerPsychoComponent.KEY.get(handler.player);
             if (psychocca.psychoTicks > 0) {

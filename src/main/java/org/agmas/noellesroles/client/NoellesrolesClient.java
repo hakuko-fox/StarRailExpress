@@ -336,9 +336,16 @@ public class NoellesrolesClient implements ClientModInitializer {
                         registrationHelper.register(new C4BackFeatureRenderer(pr));
                         registrationHelper.register(new HandCuffsFeatureRenderer(pr));
                         registrationHelper.register(new OraGoldArmFeatureRenderer(pr));
+                        registrationHelper.register(new SpeakerShoulderFeatureRenderer(pr));
                     }
                 });
 
+        SpeakerItem.openScreenCallback = (stack, hand) -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player == null)
+                return;
+            client.execute(() -> client.setScreen(new SpeakerScreen()));
+        };
         MercenaryContractItem.openGuiRunner = () -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null)
@@ -517,6 +524,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         RoleInstinctRegister.registerInstinctEvents();
         BeeFamilyClientManager.registerEvents();
 
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.SpeakerS2CPacket.ID,
+                (payload, context) -> context.client().execute(() ->
+                        org.agmas.noellesroles.client.sound.SpeakerClientSounds
+                                .apply(payload.playerId(), payload.trackId(), payload.playing())));
         ClientPlayNetworking.registerGlobalReceiver(RefreshDimensionsS2CPacket.ID, (payload, context) -> {
             ClientScheduler.schedule(() -> {
                 if (context.client().player != null) {
@@ -798,6 +809,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     // client.player.sendSystemMessage(Component.translatable("screen.noellesroles.guess_role.reset")
                     // .withColor(Color.ORANGE.getRGB()));
                     GuessRoleScreen.clearData();
+                    org.agmas.noellesroles.client.sound.SpeakerClientSounds.clear();
                     client.player.containerMenu.setCarried(ItemStack.EMPTY);
                     // 清除窃皮者皮肤映射，确保游戏结束时皮肤能正确还原
                     ClientSkincrawlerState.clearAll();
@@ -1167,9 +1179,13 @@ public class NoellesrolesClient implements ClientModInitializer {
             ClientAmonState.clearAll();
             ClientSkincrawlerState.clearAll();
             CustomRoleLoader.removeClientCache();
+            io.wifi.starrailexpress.custommodifier.CustomModifierLoader.removeClientCache();
+            org.agmas.noellesroles.client.sound.SpeakerClientSounds.clear();
             // 在断开连接时，强制清理所有玩家的渲染缓存
 
         });
+        ClientTickEvents.END_CLIENT_TICK.register(client ->
+                org.agmas.noellesroles.client.sound.SpeakerClientSounds.tick());
         ClientTickEvents.END_WORLD_TICK.register((client) -> {
             ClientVoteCache.clientTick();
 

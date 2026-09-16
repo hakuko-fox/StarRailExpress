@@ -1,4 +1,4 @@
-{
+﻿{
   "item.noellesroles.crystal_ball.desc": "For fortune tellers only. Right-click on the corpse and start casting for 10 seconds (stay still during the period). After completion, the time of death + random murderer clues will be revealed (choose one of three: murderer alive/dead + name, murderer role, murderer global highlight for 1 second). 50% chance of breaking, 60 seconds cooldown. If the divination object is a corpse disguised as a Deathrattle Killer, it is deemed that he stabbed himself to death with a knife.",
   "item.noellesroles.deduction_book.desc": "For the Great Detective. Right-click to review clues; right-click a corpse and stay still to investigate. Each page is one killer; at 3+ clues you may check position or vitality.",
   "item.exposure.photograph_frame.desc": "Special props for photographers. The price is 200 coin, and you can buy up to two times in one game. Can also be placed in Adventure mode. After placing the photo taken by the photographer into the frame, any player who passes through the frame can be teleported to the location where the photo was taken; each time they pass through, they will be blinded for 3 seconds and need to be cooled down for 3 seconds before they can pass through again. The round starts by clearing only the frames placed by the photographer.",
@@ -50,6 +50,7 @@
   "item.noellesroles.giant_note.desc": "Generate a sticky note 5 times the size that reporters can paste on others.",
   "item.starrailexpress.binding_tool.desc": "Binding tool for binding monitoring.",
   "item.starrailexpress.looping_mirror_tool.desc": "Map tool. Pick one looping mirror, then box-select two planes bound to it. The client builds the opposite scene behind each plane; walking through either side loops.",
+  "item.starrailexpress.vertical_looping_mirror_tool.desc": "Map tool. Pick a looping mirror, then corners A and B. Crossing the top or bottom loops vertically. The client stacks a limited number of copies above; the bottom is fog.",
   "item.starrailexpress.nunchuck.desc": "Twin sticks, weapons exclusive to martial arts instructors. For detailed tutorials, see martial arts instructor role.",
   "item.starrailexpress.lockpick.desc": "Right-click on any door to open it, and shift-right-click on the door to lock it.",
   "item.noellesroles.a_bottle_of_water.desc": "A bottle of water for drinking.",
@@ -144,6 +145,7 @@
   "item.noellesroles.leon_blue_herb.desc": "Lyon exclusive items. Right-click to use immediately to refresh the cooldown of fighting skills. Obtained when there are only 6 players left on the field; Leon will not drop with the pistol after death.",
   "item.noellesroles.leon_red_herb.desc": "Lyon exclusive items. Press and hold the right button to use it to put a layer of shield on yourself (cannot be superimposed). Obtained when there are only 3 players left on the field; Leon will not drop with the pistol after death.",
   "item.noellesroles.radio.desc": "Right-click to use to communicate remotely with other players.",
+  "item.noellesroles.speaker.desc": "A portable speaker. Right-click the real control panel, pick a disc or mod track, then hit the red power key to loop it. While on, it sits on your shoulder and the sound follows you.",
   "item.noellesroles.short_shotgun.desc": "Disposable items. Right-click to charge and shoot, and the killing fan range will increase smoothly with charging (2-4 blocks); after the killing range reaches 3 blocks, players within the 2-block sector outside the current killing range will receive 1 point of damage and be knocked back.",
   "item.noellesroles.executioner_gun.desc": "The Fool's exclusive weapon can only cause damage to players with the \"Heresy\" effect (one-hit kill). The initial number of bullets is 1, and bullets can only be replenished through Tarot Club.",
   "item.noellesroles.honored_note.desc": "Purchased from the Fool's Store. Right-click the wall/floor attachment to generate an indestructible text entity. The player presses the J key to pray against the note to join the \"Tarot Club members\".",
@@ -224,7 +226,6 @@
   "item.noellesroles.tomato.desc.simple": "Press Q to throw. Walking over a landed tomato trips and picks it up (20s cooldown for both). Hitting a player smears sauce for 3s.",
   "item.noellesroles.loan_contract.desc": "Right-click to repay the loan principal and interest.",
   "item.noellesroles.insurance.desc": "Choose a death cause to sign the policy; right-click and pay 25 gold to activate it.",
-  "item.starrailexpress.vertical_looping_mirror_tool.desc": "Map tool. Pick a looping mirror, then corners A and B. Crossing the top or bottom loops vertically. The client stacks a limited number of copies above; the bottom is fog.",
   "item.noellesroles.spellbreaker_potion.desc": "Spellbreaker only. Use on a living player to seal their next skill for 80 seconds.",
   "item.trainmurdermystery.weak_defense_vial.desc": "Weak shield vial. Desperados can drink it; others can pour it onto a tray. Grants a ~20s weak shield that blocks one knife hit.",
   "item.noellesroles.sanity_meds.desc": "Repair-mode sedative. Restores 40 sanity. Darkness and nearby pursuers still drain sanity.",

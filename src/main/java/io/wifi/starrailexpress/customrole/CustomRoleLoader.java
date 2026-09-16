@@ -22,9 +22,11 @@ import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
+import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.customrole.CustomRoleData.EffectEntry;
 import io.wifi.starrailexpress.customrole.CustomRoleData.InstinctModeData;
 import io.wifi.starrailexpress.event.OnGameEnd;
@@ -54,6 +56,7 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.modifier.lovers.LoversWinCheckEvent;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 
 /**
  * 自定义职业加载器
@@ -490,6 +493,20 @@ public class CustomRoleLoader {
             } catch (IllegalArgumentException ignored) {
             }
         }
+        // 组合特性条件（setSpecialMapRolesCondition）：全部满足 / 任一满足
+        Set<MapSpecialFeatures> specialMapRoles = CustomRoleSpawnCondition.parseFeatures(data.specialMapRoles);
+        if (!specialMapRoles.isEmpty()) {
+            final boolean matchAllFeatures = data.specialMapRolesMatchAll;
+            role.setSpecialMapRolesCondition(features -> matchAllFeatures
+                    ? features.containsAll(specialMapRoles)
+                    : specialMapRoles.stream().anyMatch(features::contains));
+        }
+        // 自定义生成条件（setCanSpawnInMap）：按地图 id / 地图配置项自定义判定
+        BiPredicate<String, AreasSettings> mapCondition = CustomRoleSpawnCondition.parse(
+                data.canSpawnInMapConditions, data.canSpawnInMapMatchAll);
+        if (mapCondition != null) {
+            role.setCanSpawnInMap(mapCondition);
+        }
         if (data.specialVigilante != null)
             role.setSpecialVigilante(data.specialVigilante);
         if (data.refreshableSpecialVigilante != null)
@@ -539,16 +556,9 @@ public class CustomRoleLoader {
         if (data.taskRewardCount > 0 && !data.taskRewardItems.isEmpty()) {
             List<ItemStack> rewardStacks = new ArrayList<>();
             for (CustomRoleData.InitialItemEntry entry : data.taskRewardItems) {
-                if (entry.itemId == null || entry.itemId.isEmpty())
-                    continue;
-                try {
-                    ResourceLocation itemId = ResourceLocation.parse(entry.itemId);
-                    Optional<Item> itemOpt = BuiltInRegistries.ITEM.getOptional(itemId);
-                    if (itemOpt.isPresent()) {
-                        int count = Math.max(1, entry.count);
-                        rewardStacks.add(new ItemStack(itemOpt.get(), count));
-                    }
-                } catch (Exception ignored) {
+                ItemStack stack = parseConfiguredItem(entry.itemId, entry.count);
+                if (!stack.isEmpty()) {
+                    rewardStacks.add(stack);
                 }
             }
             if (!rewardStacks.isEmpty()) {
@@ -591,6 +601,30 @@ public class CustomRoleLoader {
         }
         role.setSpawnInfo(customSpawn);
 
+        // === 任务刷新黑 / 白名单 ===
+        SREPlayerTaskComponent.Task[] unrefreshable = parseTasks(data.unrefreshableTasks);
+        if (unrefreshable.length > 0) {
+            role.addUnrefreshableTasks(unrefreshable);
+        }
+        SREPlayerTaskComponent.Task[] onlyRefreshable = parseTasks(data.onlyRefreshableTasks);
+        if (onlyRefreshable.length > 0) {
+            role.addOnlyRefreshableTasks(onlyRefreshable);
+        }
+
+        // === 杂项开关（null = 不设置，保持基类默认） ===
+        if (data.independentMinigameTiming != null)
+            role.setIndependentMinigameTiming(data.independentMinigameTiming);
+        if (data.hideRoleInfoWhenSeen != null)
+            role.setHideRoleInfoWhenSeen(data.hideRoleInfoWhenSeen);
+        if (data.canXiaonao != null)
+            role.setCanXiaonao(data.canXiaonao);
+        if (data.canBeXiaonao != null)
+            role.setCanBeXiaonao(data.canBeXiaonao);
+        if (data.canIncreaseSurvivingInnocents != null)
+            role.setCanIncreaseSurvivingInnocents(data.canIncreaseSurvivingInnocents);
+        if (data.canIncreaseSurvivingKillers != null)
+            role.setCanIncreaseSurvivingKillers(data.canIncreaseSurvivingKillers);
+
         // 互斥和绑定生成（需要在所有角色注册完成后处理，这里只存储引用）
         // 这些将在 postInit 中处理
 
@@ -599,16 +633,9 @@ public class CustomRoleLoader {
         if (!data.initialItems.isEmpty()) {
             List<ItemStack> stacks = new ArrayList<>();
             for (CustomRoleData.InitialItemEntry entry : data.initialItems) {
-                if (entry.itemId == null || entry.itemId.isEmpty())
-                    continue;
-                try {
-                    ResourceLocation itemId = ResourceLocation.parse(entry.itemId);
-                    Optional<Item> itemOpt = BuiltInRegistries.ITEM.getOptional(itemId);
-                    if (itemOpt.isPresent()) {
-                        int count = Math.max(1, entry.count);
-                        stacks.add(new ItemStack(itemOpt.get(), count));
-                    }
-                } catch (Exception ignored) {
+                ItemStack stack = parseConfiguredItem(entry.itemId, entry.count);
+                if (!stack.isEmpty()) {
+                    stacks.add(stack);
                 }
             }
             if (role instanceof CustomNormalRole customRole) {
@@ -776,6 +803,17 @@ public class CustomRoleLoader {
                 }
             }
 
+            // 关联（绑定生成）职业：先清空 / 移除，再按 bindWithRoles 添加，便于「声明式重写」
+            if (data.clearOccupationRoles) {
+                role.clearOccupationRole();
+            }
+            for (String removeId : data.removeOccupationRoles) {
+                SRERole other = findRole(removeId);
+                if (other != null) {
+                    role.removeOccupationRole(other);
+                }
+            }
+
             // 绑定生成
             for (String bindId : data.bindWithRoles) {
                 SRERole bindRole = findRole(bindId);
@@ -783,6 +821,9 @@ public class CustomRoleLoader {
                     Harpymodloader.addOccupationRole(role, bindRole);
                 }
             }
+
+            // 相关职业 / 相关修饰符（介绍页展示，需要所有职业都已注册好再解析）
+            applyRelations(data, role);
         }
 
         // 注册地图限制事件处理（仅首次，避免重复注册）
@@ -878,6 +919,92 @@ public class CustomRoleLoader {
             id = SRE.id(roleId);
         }
         return TMMRoles.ROLES.get(id);
+    }
+
+    /** 按「完整 id 或路径」查找修饰符。 */
+    private static SREModifier findModifier(String modifierId) {
+        if (modifierId == null || modifierId.isBlank()) {
+            return null;
+        }
+        String id = modifierId.trim();
+        ResourceLocation location = ResourceLocation.tryParse(id);
+        if (location != null) {
+            SREModifier modifier = HMLModifiers.getModifier(location);
+            if (modifier != null) {
+                return modifier;
+            }
+        }
+        String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
+        return HMLModifiers.getModifierByPath(path);
+    }
+
+    /**
+     * 应用相关职业 / 相关修饰符设置（仅作用于职业介绍页面）。
+     *
+     * <p>
+     * 需要在所有职业注册完成之后调用（{@link #postInit()}），否则引用不到尚未注册的自定义职业。
+     */
+    private static void applyRelations(CustomRoleData data, SRERole role) {
+        for (String id : safeList(data.bothRelatedRoles)) {
+            SRERole other = findRole(id);
+            if (other != null && other != role) {
+                role.addBothRelatedRole(other);
+            }
+        }
+        for (String id : safeList(data.relatedRoles)) {
+            SRERole other = findRole(id);
+            if (other != null && other != role) {
+                role.addRelatedRole(other);
+            }
+        }
+        for (String id : safeList(data.removeRelatedRoles)) {
+            SRERole other = findRole(id);
+            if (other != null) {
+                role.removeRelatedRole(other);
+            }
+        }
+        for (String id : safeList(data.bothRelatedModifiers)) {
+            SREModifier other = findModifier(id);
+            if (other != null) {
+                role.addBothRelatedModifier(other);
+            }
+        }
+        for (String id : safeList(data.relatedModifiers)) {
+            SREModifier other = findModifier(id);
+            if (other != null) {
+                role.addRelatedModifier(other);
+            }
+        }
+        for (String id : safeList(data.removeRelatedModifiers)) {
+            SREModifier other = findModifier(id);
+            if (other != null) {
+                role.removeRelatedModifier(other);
+            }
+        }
+    }
+
+    /** 解析任务枚举名列表（忽略非法名并记录警告）。 */
+    private static SREPlayerTaskComponent.Task[] parseTasks(List<String> names) {
+        List<SREPlayerTaskComponent.Task> result = new ArrayList<>();
+        for (String raw : safeList(names)) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            try {
+                SREPlayerTaskComponent.Task task = SREPlayerTaskComponent.Task
+                        .valueOf(raw.trim().toUpperCase(Locale.ROOT));
+                if (!result.contains(task)) {
+                    result.add(task);
+                }
+            } catch (IllegalArgumentException e) {
+                SRE.LOGGER.warn("[CustomRole] 未知的任务类型：'{}'（已忽略）", raw);
+            }
+        }
+        return result.toArray(new SREPlayerTaskComponent.Task[0]);
+    }
+
+    private static List<String> safeList(List<String> list) {
+        return list == null ? List.of() : list;
     }
 
     /**
@@ -1137,41 +1264,37 @@ public class CustomRoleLoader {
         for (CustomRoleData.ShopEntryData entry : data.shopEntries) {
             final int cooldownTicks = entry.cooldownSeconds * 20;
             switch (entry.type) {
-                case "item": {
-                    if (!entry.itemId.isEmpty()) {
-                        try {
-                            ResourceLocation itemId = ResourceLocation.parse(entry.itemId);
-                            Optional<Item> item = BuiltInRegistries.ITEM.getOptional(itemId);
-                            if (item.isPresent()) {
-                                final Item theItem = item.get();
-                                if (entry.allowDuplicate && cooldownTicks <= 0) {
-                                    // 避免Mamizou不能购买所有的自定义职业的物品。
-                                    entries.add(new ShopEntry(
-                                            new ItemStack(theItem), entry.price, ShopEntry.Type.TOOL));
-                                } else {
-                                    entries.add(new ShopEntry(
-                                            new ItemStack(theItem), entry.price, ShopEntry.Type.TOOL) {
-                                        @Override
-                                        public boolean onBuy(net.minecraft.world.entity.player.Player player) {
-                                            // 禁止重复购买：检查快捷栏是否已有该物品
-                                            if (!entry.allowDuplicate) {
-                                                for (var stack : player.getInventory().items) {
-                                                    if (stack.is(theItem))
-                                                        return false;
-                                                }
-                                            }
-                                            boolean result = super.onBuy(player);
-                                            // 冷却
-                                            if (result && cooldownTicks > 0
-                                                    && player instanceof net.minecraft.server.level.ServerPlayer sp) {
-                                                sp.getCooldowns().addCooldown(theItem, cooldownTicks);
-                                            }
-                                            return result;
+                case "item":
+                case "custom_item": {
+                    // 统一的「物品」条目：id 先按自定义列车物品解析，找不到再当原版物品
+                    //（custom_item 是旧配置里的写法，等价处理）
+                    ItemStack base = parseConfiguredItem(entry.itemId, 1);
+                    if (!base.isEmpty()) {
+                        final ItemStack shopStack = base.copy();
+                        final Item theItem = shopStack.getItem();
+                        if (entry.allowDuplicate && cooldownTicks <= 0) {
+                            // 避免Mamizou不能购买所有的自定义职业的物品。
+                            entries.add(new ShopEntry(shopStack.copy(), entry.price, ShopEntry.Type.TOOL));
+                        } else {
+                            entries.add(new ShopEntry(shopStack.copy(), entry.price, ShopEntry.Type.TOOL) {
+                                @Override
+                                public boolean onBuy(net.minecraft.world.entity.player.Player player) {
+                                    // 禁止重复购买：检查快捷栏是否已有该物品（自定义物品连组件一起比对）
+                                    if (!entry.allowDuplicate) {
+                                        for (var stack : player.getInventory().items) {
+                                            if (ItemStack.isSameItemSameComponents(stack, shopStack))
+                                                return false;
                                         }
-                                    });
+                                    }
+                                    boolean result = super.onBuy(player);
+                                    // 冷却
+                                    if (result && cooldownTicks > 0
+                                            && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+                                        sp.getCooldowns().addCooldown(theItem, cooldownTicks);
+                                    }
+                                    return result;
                                 }
-                            }
-                        } catch (Exception ignored) {
+                            });
                         }
                     }
                     break;
@@ -1547,6 +1670,61 @@ public class CustomRoleLoader {
         } else {
             // 无自定义文本时使用 CUSTOM 模式，走翻译键
             RoleUtils.customWinnerWin(serverLevel, data.englishId, color);
+        }
+    }
+
+    /**
+     * 解析职业配置里的「物品 id」：<b>先按自定义列车物品解析，找不到再当原版物品</b>。
+     *
+     * <p>
+     * 两种物品共用同一个 id 字段，所以自定义列车物品与模组/原版物品可以混在一张表里写。
+     * 兼容两种历史写法：
+     * <ul>
+     * <li>{@code [custom_item] my_sword} / {@code [item] minecraft:stone} —— 前缀会被忽略，
+     * 直接按统一规则解析（前缀不再有实际作用，仅为不破坏已保存的配置而保留）；</li>
+     * <li>旧配置里 {@code type = custom_item} 的条目走的是同一个 id，因此照常生效。</li>
+     * </ul>
+     *
+     * <p>
+     * 解析失败返回空栈，调用方直接跳过。
+     */
+    public static ItemStack parseConfiguredItem(String spec, int count) {
+        if (spec == null || spec.isBlank()) {
+            return ItemStack.EMPTY;
+        }
+        String value = spec.trim();
+        int amount = Math.max(1, count);
+
+        if (value.startsWith("[")) {
+            int close = value.indexOf(']');
+            if (close < 0) {
+                return ItemStack.EMPTY;
+            }
+            value = value.substring(close + 1).trim();
+            if (value.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+        }
+
+        // ① 自定义列车物品（同名 id）
+        String customId = value.toLowerCase(java.util.Locale.ROOT);
+        io.wifi.starrailexpress.customitem.CustomItemData custom = io.wifi.starrailexpress.customitem.CustomItemLoader
+                .get(customId);
+        if (custom != null) {
+            return io.wifi.starrailexpress.customitem.CustomItemLoader.buildStack(custom, amount);
+        }
+
+        // ② 原版 / 模组物品
+        try {
+            ResourceLocation itemId = ResourceLocation.tryParse(value);
+            if (itemId == null) {
+                return ItemStack.EMPTY;
+            }
+            return BuiltInRegistries.ITEM.getOptional(itemId)
+                    .map(item -> new ItemStack(item, amount))
+                    .orElse(ItemStack.EMPTY);
+        } catch (Exception e) {
+            return ItemStack.EMPTY;
         }
     }
 }

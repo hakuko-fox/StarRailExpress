@@ -16,9 +16,11 @@
 package io.wifi.starrailexpress.content.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -32,12 +34,16 @@ public class CustomReplayEventCommand {
     dispatcher.register(
         Commands.literal("sre:custom_replay")
             .requires(source -> source.hasPermission(2))
-            .then(Commands.literal("record")
-                .then(Commands.argument("message", ComponentArgument.textComponent(registryAccess))
-                    .executes(ctx -> execute(ctx, false))))
-            .then(Commands.literal("record_hidden")
-                .then(Commands.argument("message", ComponentArgument.textComponent(registryAccess))
-                    .executes(ctx -> execute(ctx, true)))));
+            .then(Commands.argument("message", ComponentArgument.textComponent(registryAccess))
+                .executes(ctx -> execute(ctx, false, true))
+                // hidden：该词条是否在回放中隐藏
+                .then(Commands.argument("hidden", BoolArgumentType.bool())
+                    .executes(ctx -> execute(ctx, BoolArgumentType.getBool(ctx, "hidden"), true))
+                    // resolver：文本里的选择器是否用回放显示文本解析
+                    .then(Commands.argument("resolver", BoolArgumentType.bool())
+                        .executes(ctx -> execute(ctx,
+                            BoolArgumentType.getBool(ctx, "hidden"),
+                            BoolArgumentType.getBool(ctx, "resolver")))))));
     dispatcher.register(
         Commands.literal("sre:show_replay")
             .requires(source -> source.hasPermission(2))
@@ -52,25 +58,22 @@ public class CustomReplayEventCommand {
     return 1;
   }
 
-  private static int execute(CommandContext<CommandSourceStack> ctx, boolean hidden) {
-    ServerPlayer serverPlayer = ctx.getSource().getPlayer();
+  private static int execute(CommandContext<CommandSourceStack> ctx, boolean hidden, boolean resolver) {
+    CommandSourceStack source = ctx.getSource();
     Component res = ComponentArgument.getComponent(ctx, "message");
-    if (serverPlayer != null) {
-      try {
-        res = ComponentUtils.updateForEntity(
-            (CommandSourceStack) ctx.getSource(),
-            res,
-            serverPlayer, 0);
-      } catch (CommandSyntaxException e) {
-        e.printStackTrace();
-        ctx.getSource().sendFailure(Component.literal("ERROR: " + e.getMessage()));
-        return 0;
+    try {
+      if (resolver) {
+        res = GameReplayManager.resolveReplaySelectors(source, res);
       }
-    } else {
+      res = ComponentUtils.updateForEntity(source, res, source.getEntity(), 0);
+    } catch (CommandSyntaxException e) {
+      e.printStackTrace();
+      source.sendFailure(Component.literal("ERROR: " + e.getMessage()));
+      return 0;
     }
     Component result = SRE.REPLAY_MANAGER.recordCustomEvent(res, hidden);
-    ctx.getSource().sendSuccess(() -> Component.literal("Successfully record custom event!"), true);
-    ctx.getSource().sendSystemMessage(Component.literal("[ADD REPLAY] ").append(result));
+    source.sendSuccess(() -> Component.literal("Successfully record custom event!"), true);
+    source.sendSystemMessage(Component.literal("[ADD REPLAY] ").append(result));
     return 1;
   }
 }

@@ -116,7 +116,9 @@ public class BipedEntityModelMixin<T extends LivingEntity> {
             return true;
         if (stack.getItem() instanceof HeldLikeRevolver)
             return true;
-        return false;
+        // 自定义列车物品：只有「枪械道具」把手持姿势设为「左轮手枪式」时才摆持枪姿势
+        // （holdPose 的默认值就是 REVOLVER，不加性质判断会把蓄力道具等也带上持枪姿势）
+        return io.wifi.starrailexpress.customitem.CustomItemLoader.isHeldLikeRevolver(stack);
     }
 
     @Unique

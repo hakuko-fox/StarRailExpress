@@ -1,4 +1,4 @@
-{
+﻿{
   "schemaVersion": 1,
   "id": "starrailexpress",
   "version": "${version}",
@@ -53,9 +53,9 @@
     "modmenu": [
       "io.wifi.ConfigCompact.modmenu.StarRailConfigEntry"
     ],
-		"dynamiclights": [
-			"org.agmas.noellesroles.client.DynamiclightsEntry"
-		]
+    "dynamiclights": [
+      "org.agmas.noellesroles.client.DynamiclightsEntry"
+    ]
   },
   "accessWidener": "StarRailExpress.accesswidener",
   "custom": {
@@ -120,6 +120,8 @@
       "starrailexpress:player_nunchuck",
       "starrailexpress:mailbox",
       "starrailexpress:player_damage_tracker",
+      "starrailexpress:custom_item_hit_marker",
+      "starrailexpress:custom_item_cooldown",
       "noellesroles:cake_maker"
     ],
     "loom:injected_interfaces": {

@@ -71,7 +71,7 @@ public class SREMonitorWorldComponent implements AutoSyncedComponent, CommonTick
         }
 
         if (!hasMonitors)
-            areas.disabledRoles.add(ModRoles.GUARD_ID.toString());
+            areas.areasSettings.disabledRoles.add(ModRoles.GUARD_ID.toString());
         areas.sync();
         sync();
     }

@@ -740,6 +740,8 @@ public class RoleIntroduceScreen extends Screen {
         private final List<SRERole> otherRoles = new ArrayList<>();
         // 修饰符和物品
         private final List<SREModifier> relatedModifiers = new ArrayList<>();
+        // 互斥修饰符（选中项为修饰符时才有内容），对应互斥职业的 oppositeRoles
+        private final List<SREModifier> oppositeModifiers = new ArrayList<>();
         private final List<Item> relatedItems = new ArrayList<>();
         private MutableComponent otherRoleName = Component.translatable("screen.roleintroduce.related.other");
 
@@ -761,6 +763,7 @@ public class RoleIntroduceScreen extends Screen {
             fetchRelatedObjects();
             if (occupationRoles.isEmpty() &&
                     oppositeRoles.isEmpty() &&
+                    oppositeModifiers.isEmpty() &&
                     otherRoles.isEmpty() &&
                     relatedModifiers.isEmpty() &&
                     relatedItems.isEmpty())
@@ -779,6 +782,7 @@ public class RoleIntroduceScreen extends Screen {
             {
                 occupationRoles.clear();
                 oppositeRoles.clear();
+                oppositeModifiers.clear();
                 otherRoles.clear();
                 relatedModifiers.clear();
                 relatedItems.clear();
@@ -786,6 +790,7 @@ public class RoleIntroduceScreen extends Screen {
             {
                 List<SRERole> localoccupationRoles = new ArrayList<>();
                 List<SRERole> localoppositeRoles = new ArrayList<>();
+                List<SREModifier> localoppositeModifiers = new ArrayList<>();
                 List<SRERole> localotherRoles = new ArrayList<>();
                 List<SREModifier> localrelatedModifiers = new ArrayList<>();
                 List<Item> localrelatedItems = new ArrayList<>();
@@ -794,6 +799,9 @@ public class RoleIntroduceScreen extends Screen {
                         localoccupationRoles.addAll(role.getoccupationRoles());
                         localotherRoles.addAll(role.occupationedRoles);
                         localoppositeRoles.addAll(role.getOpposingRoles());
+                    }
+                    if (abic instanceof SREModifier modifier) {
+                        localoppositeModifiers.addAll(modifier.getOpposingModifiers());
                     }
                     localotherRoles.addAll(abic.getRelatedRoles());
                     localrelatedModifiers.addAll(abic.getRelatedModifiers());
@@ -806,6 +814,7 @@ public class RoleIntroduceScreen extends Screen {
                 {
                     occupationRoles.addAll(new LinkedHashSet<>(localoccupationRoles));
                     oppositeRoles.addAll(new LinkedHashSet<>(localoppositeRoles));
+                    oppositeModifiers.addAll(new LinkedHashSet<>(localoppositeModifiers));
                     otherRoles.addAll(new LinkedHashSet<>(localotherRoles));
                     relatedModifiers.addAll(new LinkedHashSet<>(localrelatedModifiers));
                     relatedItems.addAll(new LinkedHashSet<>(localrelatedItems));
@@ -818,6 +827,7 @@ public class RoleIntroduceScreen extends Screen {
             int h = 0;
             h += getGroupHeight(occupationRoles);
             h += getGroupHeight(oppositeRoles);
+            h += getGroupHeight(oppositeModifiers);
             h += getGroupHeight(otherRoles);
             h += getGroupHeight(relatedModifiers);
             h += getGroupHeight(relatedItems);
@@ -842,6 +852,10 @@ public class RoleIntroduceScreen extends Screen {
             curY = drawGroup(g, x, y, h, curY, w, oppositeRoles,
                     Component.translatable("screen.roleintroduce.related.opposite").withStyle(ChatFormatting.BOLD,
                             ChatFormatting.RED),
+                    mouseX, mouseY);
+            curY = drawGroup(g, x, y, h, curY, w, oppositeModifiers,
+                    Component.translatable("screen.roleintroduce.related.opposite_modifiers")
+                            .withStyle(ChatFormatting.BOLD, ChatFormatting.RED),
                     mouseX, mouseY);
             curY = drawGroup(g, x, y, h, curY, w, otherRoles,
                     otherRoleName.withStyle(ChatFormatting.BOLD,
@@ -939,6 +953,17 @@ public class RoleIntroduceScreen extends Screen {
                     return true;
                 }
                 curY += oppositeRoles.size() * (ITEM_H + GAP);
+            }
+
+            if (!oppositeModifiers.isEmpty()) {
+                curY += TITLE_H + GAP;
+                int idx = (relY - curY) / (ITEM_H + GAP);
+                if (relY >= curY && idx >= 0 && idx < oppositeModifiers.size()) {
+                    RoleIntroduceScreen.this.navigateToItem(oppositeModifiers.get(idx));
+                    minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    return true;
+                }
+                curY += oppositeModifiers.size() * (ITEM_H + GAP);
             }
 
             if (!otherRoles.isEmpty()) {
