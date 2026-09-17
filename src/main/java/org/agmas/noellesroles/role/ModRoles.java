@@ -1644,7 +1644,7 @@ public class ModRoles {
     public static SRERole MOCHEN = TMMRoles.registerRole(new MochenRole(MOCHEN_ID, 0x607A9E, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").addFlag("twvtuber");
     public static SRERole TINALIS = TMMRoles.registerRole(new TinalisRole(TINALIS_ID, 0x7850A8, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").addFlag("twvtuber");
     public static SRERole LUNA = TMMRoles.registerRole(new LunaRole(LUNA_ID, 0xE9D5FF, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber")
-            .setOccupiedRoleCount(2).setDefaultMax(0).addFlag("twvtuber");
+            .setOccupiedRoleCount(2).setDefaultMax(1).addFlag("twvtuber");
     public static SRERole YORU = TMMRoles.registerRole(new YoruRole(YORU_ID, 0x475B8F, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setDefaultMax(0)
             .addFlag("twvtuber");
     public static SRERole YOUJIN = TMMRoles.registerRole(new YoujinRole(YOUJIN_ID, 0xD67A42, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").addFlag("myvtuber");
@@ -1660,6 +1660,7 @@ public class ModRoles {
 
     static {
         LUNA.addOccupationRoleOnce(YORU);
+        YORU.addOccupationRoleOnce(LUNA);
 
     }
 
