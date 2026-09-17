@@ -16,9 +16,8 @@
 package io.wifi.starrailexpress.client.gui.screen.map_dev.modules;
 
 import io.wifi.starrailexpress.client.gui.screen.map_dev.*;
+import io.wifi.starrailexpress.client.gui.widget.SreButton;
 import net.minecraft.network.chat.Component;
-import org.agmas.noellesroles.client.widget.custom_button.ModernButton;
-import org.agmas.noellesroles.client.widget.custom_button.ModernButton.AccentSide;
 import java.util.List;
 
 public class PositionsModule implements TabModule {
@@ -33,19 +32,31 @@ public class PositionsModule implements TabModule {
         int bw = layout.columnWidth(2, gap);
         int leftX = layout.leftColumnX(), rightX = layout.rightColumnX(2, gap);
 
+        // 坐标与朝向按「面板头部显示的那种紧凑格式」输出，不出现 12.300000 这种长尾巴
         placements.add(new WidgetPlacement(
-                ModernButton
+                SreButton
                         .builder(Component.translatable("sre.map_helper.set_spawn"),
-                                b -> ctx.sendAndClose(String.format("sre:area_manager set spawnPos %f %f %f %.1f %.1f",
-                                        ctx.ax(), ctx.ay(), ctx.az(), ctx.playerYaw(), ctx.playerPitch())))
-                        .bounds(leftX, y, bw, bh).accentBar(AccentSide.LEFT).build(),
+                                b -> ctx.sendAndClose(String.format("sre:area_manager set spawnPos %s %s %s %.1f %.1f",
+                                        num(ctx.ax()), num(ctx.ay()), num(ctx.az()), ctx.playerYaw(),
+                                        ctx.playerPitch())))
+                        .bounds(leftX, y, bw, bh).build(),
                 y));
         placements.add(new WidgetPlacement(
-                ModernButton.builder(Component.translatable("sre.map_helper.set_spectator_spawn"),
-                        b -> ctx.sendAndClose(String.format("sre:area_manager set spectatorSpawnPos %f %f %f %.1f %.1f",
-                                ctx.ax(), ctx.ay(), ctx.az(), ctx.playerYaw(), ctx.playerPitch())))
-                        .bounds(rightX, y, bw, bh).accentBar(AccentSide.RIGHT).build(),
+                SreButton.create(Component.translatable("sre.map_helper.set_spectator_spawn"),
+                        b -> ctx.sendAndClose(
+                                String.format("sre:area_manager set spectatorSpawnPos %s %s %s %.1f %.1f",
+                                        num(ctx.ax()), num(ctx.ay()), num(ctx.az()), ctx.playerYaw(),
+                                        ctx.playerPitch())))
+                        .bounds(rightX, y, bw, bh).build(),
                 y));
+    }
+
+    /** 数值格式：整数不带小数点，其余最多 4 位小数（与头部坐标显示一致）。 */
+    private static String num(double v) {
+        if (v == Math.floor(v) && !Double.isInfinite(v) && Math.abs(v) < 1e9) {
+            return String.valueOf((long) v);
+        }
+        return String.format("%.4f", v).replaceAll("0+$", "").replaceAll("\\.$", "");
     }
 
     @Override
