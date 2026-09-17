@@ -31,6 +31,7 @@ import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.ShouldDropOnDeath;
+import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMEntities;
@@ -215,6 +216,10 @@ public final class CustomItemRuntime {
         OnPlayerDeath.EVENT.register((player, reason) -> handlePassOnDeath(player));
         OnPlayerDeathWithKiller.EVENT.register((player, killer, reason) -> handlePassOnDeath(player));
 
+        // 被自定义手铐铐住的玩家死亡：手铐自动消失（不掉落），也不再对已成为旁观者的他生效
+        OnPlayerDeath.EVENT.register((player, reason) -> removeCuffOnDeath(player));
+        OnPlayerDeathWithKiller.EVENT.register((player, killer, reason) -> removeCuffOnDeath(player));
+
         // 手持不可见：客户端事件，返回 EMPTY 即可让第一人称 / 第三人称 / 手臂姿势全部隐藏该物品
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             AllowItemShowInHand.EVENT.register((player, stack, mainHand) -> {
@@ -265,6 +270,84 @@ public final class CustomItemRuntime {
         }
         String path = wanted.contains(":") ? wanted.substring(wanted.indexOf(':') + 1) : wanted;
         return role.identifier().getPath().equalsIgnoreCase(path);
+    }
+
+    // ==================== 使用限制（仅指定职业 / 修饰符 / 阵营） ====================
+
+    /**
+     * 玩家是否满足这件物品的使用限制。
+     *
+     * <p>
+     * 三项限制都为空 = 不限制；任意一项非空即要求玩家命中该项（同项内多项之间是「或」）。
+     * 三项之间是「与」的关系：全部满足才能使用。
+     */
+    public static boolean canUse(Player player, CustomItemData data) {
+        if (player == null || data == null) {
+            return false;
+        }
+        // 职业：命中任意一个职业 id 即可
+        List<String> roles = CustomItemData.splitIds(data.useOnlyRoles);
+        if (!roles.isEmpty()) {
+            boolean matched = false;
+            for (String roleId : roles) {
+                if (roleMatches(player, roleId)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                return false;
+            }
+        }
+        // 修饰符：带有任意一个修饰符即可
+        List<String> modifiers = CustomItemData.splitIds(data.useOnlyModifiers);
+        if (!modifiers.isEmpty()) {
+            WorldModifierComponent modifierComponent = WorldModifierComponent.KEY.get(player.level());
+            boolean matched = false;
+            for (String modifierId : modifiers) {
+                SREModifier modifier = CustomModifierLoader.findModifier(modifierId);
+                if (modifier != null && modifierComponent != null
+                        && modifierComponent.isModifier(player, modifier)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                return false;
+            }
+        }
+        // 阵营：属于列表中的任意一个阵营即可
+        if (data.useOnlyTeams != null && !data.useOnlyTeams.isEmpty()) {
+            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+            SRERole role = gameWorld == null ? null : gameWorld.getRole(player);
+            boolean matched = false;
+            for (String teamName : data.useOnlyTeams) {
+                if (teamName == null || teamName.isBlank()) {
+                    continue;
+                }
+                try {
+                    if (RoleTeam.valueOf(teamName.trim().toUpperCase(Locale.ROOT)).matches(role)) {
+                        matched = true;
+                        break;
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    // 配置里填了不存在的阵营：跳过该项
+                }
+            }
+            if (!matched) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 使用限制不满足时向玩家提示并返回 false；满足时返回 true。 */
+    public static boolean ensureCanUse(ServerPlayer player, CustomItemData data) {
+        if (canUse(player, data)) {
+            return true;
+        }
+        player.displayClientMessage(Component.translatable("sre.custom_item.use_denied"), true);
+        return false;
     }
 
     /**
@@ -520,6 +603,9 @@ public final class CustomItemRuntime {
      * @return 是否成功射击
      */
     public static boolean useGun(ServerPlayer player, ItemStack stack, CustomItemData data) {
+        if (!ensureCanUse(player, data)) {
+            return false;
+        }
         if (data.autoFire) {
             if (isServerAutoFiring(player, data.id)) {
                 // 自动射击期间右键不再触发射击与其它效果
@@ -737,6 +823,12 @@ public final class CustomItemRuntime {
             setAmmo(stack, Math.min(data.maxAmmo, getAmmo(stack, data) + 1));
         }
 
+        // 射线命中即致死：这一枪就把目标打死，不再累计命中次数（也就不会有最终效果）
+        if (data.lethalOnRayHit) {
+            applyLethal(shooter, victim, data);
+            return;
+        }
+
         // 非自动枪械：按「被第几次命中」触发最终效果。
         // 命中标记记在被击中的玩家身上、按物品 id 分开存，超过 hitMarkerTicks 没触发就自动消失
         if (!autoMode) {
@@ -774,11 +866,29 @@ public final class CustomItemRuntime {
     private static void triggerFinalEffect(ServerPlayer shooter, ServerPlayer victim, ItemStack stack,
             CustomItemData data) {
         CustomItemLoader.executeCommands(data.finalHitCommands, victim, shooter);
-        if (data.lethalOnHit && GameUtils.isPlayerAliveAndSurvival(victim)) {
-            GameUtils.killPlayer(victim, true, shooter, parseDeathReason(data.lethalDeathReason,
-                    io.wifi.starrailexpress.game.GameConstants.DeathReasons.REVOLVER));
+        // 「只有触发最终效果时才致死」：致死时机是这里（射线命中致死是另一条独立开关）
+        if (data.lethalOnFinal) {
+            applyLethal(shooter, victim, data);
         }
         applyCooldown(shooter, stack, data.finalCooldownTicks);
+    }
+
+    /**
+     * 命中致死（两个致死开关共用）：按配置的死因打死被击中的玩家，
+     * <b>并把开枪者作为击杀者记录下来</b>。
+     *
+     * <p>
+     * 击杀者必须填 {@code shooter}：小脑（误杀）惩罚挂在 {@code OnTeammateKilledTeammate} 上，
+     * 而那条链在 {@code killer == null} 时直接 return —— 不记攻击者就等于绕开小脑惩罚
+     * （原版左轮打死好人触发的那条判定就是这么走的）。{@code GameUtils.killPlayer} 会把
+     * {@code killer} 一路带给该事件、击杀统计与回放，所以这里不能传 null。
+     */
+    private static void applyLethal(ServerPlayer shooter, ServerPlayer victim, CustomItemData data) {
+        if (victim == null || !GameUtils.isPlayerAliveAndSurvival(victim)) {
+            return;
+        }
+        GameUtils.killPlayer(victim, true, shooter,
+                parseDeathReason(data.lethalDeathReason, GameConstants.DeathReasons.REVOLVER));
     }
 
     // ==================== 弹药系统 ====================
@@ -1079,9 +1189,35 @@ public final class CustomItemRuntime {
         return getCuffData(player) != null;
     }
 
+    /**
+     * 玩家死亡时把身上的自定义手铐取下来（手铐<b>自动消失</b>，不掉落）。
+     *
+     * <p>
+     * 光靠 {@code ExtraSlotComponent} 的 {@code NEVER_COPY} 不够：那是复活 / 重置时才清空，
+     * 而死亡到复活这段时间玩家已经是旁观者，手铐还挂在他身上会继续给他挂药水效果。
+     * 两个死亡事件（有 / 无击杀者）都登记，第二次调用取不到手铐，直接返回。
+     */
+    private static void removeCuffOnDeath(Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer) || serverPlayer.level().isClientSide()) {
+            return;
+        }
+        ItemStack cuff = getCuffOn(serverPlayer);
+        CustomItemData data = CustomItemLoader.getData(cuff);
+        if (data == null || data.kind() != CustomItemData.Kind.CUFF) {
+            return;
+        }
+        ExtraSlotComponent.removeSlot(serverPlayer, cuffSlot(data));
+        clearCuffEffects(serverPlayer, data);
+        LAST_POS.remove(serverPlayer.getUUID());
+    }
+
     /** 右键玩家：把这份自定义手铐铐进目标玩家的特殊栏位。 */
     public static InteractionResult cuffPlayer(ServerPlayer user, ItemStack stack, CustomItemData data, Player target) {
         if (!(target instanceof ServerPlayer targetPlayer) || user == targetPlayer) {
+            return InteractionResult.PASS;
+        }
+        // 旁观者（含已死亡的玩家）不能被铐住
+        if (targetPlayer.isSpectator()) {
             return InteractionResult.PASS;
         }
         if (!GameUtils.isPlayerAliveAndSurvival(user) || !GameUtils.isPlayerAliveAndSurvival(targetPlayer)) {
@@ -1223,6 +1359,13 @@ public final class CustomItemRuntime {
                 LAST_POS.remove(player.getUUID());
                 continue;
             }
+            // 旁观者（含已死亡的玩家）：手铐自动消失，且不再给他挂效果 / 限行 / 定时指令
+            if (player.isSpectator()) {
+                ExtraSlotComponent.removeSlot(player, cuffSlot(data));
+                clearCuffEffects(player, data);
+                LAST_POS.remove(player.getUUID());
+                continue;
+            }
             applyCuffEffects(player, data);
             applyCuffRestriction(player, data);
 
@@ -1340,9 +1483,14 @@ public final class CustomItemRuntime {
      * （= 非创造 / 非旁观）。之前多这一层会让「创造 / 旁观状态的真实玩家」被射线静默穿过：
      * 不执行命中指令、不计命中次数，于是 {@code hitsToFinal} 永远到不了，最终效果与最终冷却都不会触发，
      * 而同一个目标用原版左轮是打得到的，排查时极易被误判成「物品没生效」。
+     *
+     * <p>
+     * 只有<b>旁观者</b>是例外：旁观（含死亡后的玩家）永远不是合法目标，所有自定义道具
+     * （枪械射线 / 范围与指向型道具）默认都不对旁观者生效，避免「人已经出局却还被道具打」。
+     * 创造模式的真实玩家仍然可被命中（保持上面的口径）。
      */
     private static boolean isValidTarget(ServerPlayer shooter, Entity entity) {
-        return entity instanceof ServerPlayer player && player != shooter;
+        return entity instanceof ServerPlayer player && player != shooter && !player.isSpectator();
     }
 
     /**

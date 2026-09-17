@@ -115,7 +115,7 @@ public class RoleShopHandler {
 
     public static boolean haveRegistered = false;
     /** 商店内容版本号，客户端 tooltip 索引据此重建。 */
-    public static int shopVersion = 0;
+    public static long shopVersion = 0;
 
     private static List<ShopEntry> createPoisonerShopEntries() {
         var entries = new ArrayList<ShopEntry>();
@@ -2317,7 +2317,7 @@ public class RoleShopHandler {
         {
             var SHOP = new java.util.ArrayList<ShopEntry>();
             SHOP.add(new ShopEntry(ModItems.CRYSTAL_BALL.getDefaultInstance(),
-                    org.agmas.noellesroles.config.NoellesRolesConfig.HANDLER.instance().divinerCrystalBallPrice,
+                    org.agmas.noellesroles.role_data.innocence.DivinerRoleData.CRYSTAL_BALL_PRICE,
                     ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
