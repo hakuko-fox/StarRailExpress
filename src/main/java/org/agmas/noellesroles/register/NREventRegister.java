@@ -46,8 +46,12 @@ public class NREventRegister {
         net.exmo.sre.repair.event.RepairCombatEvents.register();
         net.exmo.sre.repair.event.RepairWorldInteractions.register();
 
+        // 注册入梦药水效果处理
+        org.agmas.noellesroles.content.effects.DreamEffectHandler.register();
+
         // 注册疫使胜利检测
         org.agmas.noellesroles.game.roles.neutral.infected.InfectedWinChecker.registerEvent();
+        org.agmas.noellesroles.game.roles.neutral.priest.PriestEventHandler.register();
         org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.register();
         org.agmas.noellesroles.game.MirrorReunionEndEgg.register();
         org.agmas.noellesroles.content.speaker.SpeakerPlayback.register();

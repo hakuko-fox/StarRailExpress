@@ -1,3 +1,5 @@
+# 請先閱讀 `AGENT.md`
+
 # AI指导
 尽量使用API和各种Event而不是直接写进代码甚至是mixin。
 

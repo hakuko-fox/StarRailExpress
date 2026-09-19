@@ -68,10 +68,12 @@ public class GameConstants {
     static void reloadItemCooldowns() {
         ITEM_COOLDOWNS.clear();
         ITEM_COOLDOWNS.put(TMMItems.KNIFE, SREConfig.instance().knifeCooldown * 20);
+        ITEM_COOLDOWNS.put(ModItems.DESPERADO_KNIFE, SREConfig.instance().knifeCooldown * 20);
         ITEM_COOLDOWNS.put(Items.TRIDENT, 5 * 20);
         ITEM_COOLDOWNS.put(TMMItems.REVOLVER, SREConfig.instance().revolverCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.STANDARD_REVOLVER, SREConfig.instance().revolverCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.DERRINGER, SREConfig.instance().derringerCooldown * 20);
+        ITEM_COOLDOWNS.put(ModItems.DESPERADO_GUN, SREConfig.instance().derringerCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.GRENADE, SREConfig.instance().grenadeCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.LOCKPICK, SREConfig.instance().lockpickCooldown * 20);
         ITEM_COOLDOWNS.put(TMMItems.CROWBAR, SREConfig.instance().crowbarCooldown * 20);
@@ -104,7 +106,7 @@ public class GameConstants {
     public static int MINIGAME_ROTATION_MAX_NORMAL_TASKS = 3;
     // 理智流失：单个任务从满到空的时间，4分钟→6分钟，减轻任务treadmill
     public static float MOOD_DRAIN = 1f / getInTicks(6, 0);
-    public static int TIME_TO_FIRST_TASK = getInTicks(0, 30);
+    public static int TIME_TO_FIRST_TASK = getInTicks(0, 5);
     public static int MIN_TASK_COOLDOWN = getInTicks(0, 40);
     public static int MAX_TASK_COOLDOWN = getInTicks(1, 15);
 
@@ -279,6 +281,7 @@ public class GameConstants {
         public static ResourceLocation NINJA_KNIFE_KILL = Noellesroles.id("ninja_knife_kill");
         public static ResourceLocation SHORT_SHOTGUN = Noellesroles.id("short_shotgun");
         public static ResourceLocation THROWING_KNIFE_HIT = Noellesroles.id("throwing_knife_hit");
+        public static ResourceLocation BAMBOO_SPEAR = Noellesroles.id("bamboo_spear");
         public static ResourceLocation YINYANG_SWORD_AOE = Noellesroles.id("yinyang_sword_aoe");
         public static ResourceLocation FAIL_EXAM = Noellesroles.id("fail_exam");
         public static ResourceLocation BAKA = Noellesroles.id("baka");
@@ -304,6 +307,8 @@ public class GameConstants {
         public static ResourceLocation DREAM_DIAMOND_SWORD = Noellesroles.id("dream_diamond_sword");
         public static ResourceLocation DREAM_MACE = Noellesroles.id("dream_mace");
         public static ResourceLocation FIREWORK_CROSSBOW = Noellesroles.id("firework_crossbow");
+        /** 下界合金矛（骑兵）：原版伤害 ×2 转为虚拟伤害，归零时按此死因判死 */
+        public static ResourceLocation SPEAR = Noellesroles.id("spear");
 
         public static ResourceLocation RADIATION = Noellesroles.id("radiation");
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");

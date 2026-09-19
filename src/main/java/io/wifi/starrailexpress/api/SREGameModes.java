@@ -82,6 +82,9 @@ public class SREGameModes {
     // All Role Rotation Mode (sre) — 跨多局輪跑全部職業
     public static final ResourceLocation ALL_ROLE_ROTATION_MODE_ID = SRE.shortId("all_role_rotation");
 
+    // Volunteer Open Select Mode (haiman)
+    public static final ResourceLocation VOLUNTEER_OPEN_SELECT_MODE_ID = SRE.haimanId("volunteer_open_select");
+
     // Tradition Mode (sre)
     public static final ResourceLocation TRADITION_MODE_ID = SRE.shortId("tradition");
 
@@ -153,6 +156,10 @@ public class SREGameModes {
     // All Role Rotation Mode (sre) — 跨多局輪跑全部職業
     public static final GameMode ALL_ROLE_ROTATION_MODE = registerGameMode(
             new SREAllRoleRotationGameMode(ALL_ROLE_ROTATION_MODE_ID));
+
+    // Volunteer Open Select Mode (haiman)
+    public static final GameMode VOLUNTEER_OPEN_SELECT_MODE = registerGameMode(
+            new SREVolunteerOpenSelectGameMode(VOLUNTEER_OPEN_SELECT_MODE_ID));
 
     // Tradition Mode (sre)
     public static final GameMode TRADITION_MODE = registerGameMode(new SRETraditionGameMode(TRADITION_MODE_ID));

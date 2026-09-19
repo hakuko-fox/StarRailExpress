@@ -33,6 +33,8 @@
     "item.SealedArtifactEatMixin",
     "item.SealedArtifactQuestMixin",
     "item.ThrowingKnifeCooldownMixin",
+    "item.ItemStackSpearMixin",
+    "item.BambooHangRideMixin",
     "modifier.SREPlayerTaskComponentMixin",
     "modifier.StingyPurchaseMixin",
     "modifier.VegetarianFoodMixin",
@@ -70,6 +72,7 @@
     "roles.morphling.MorphlingDummyGunPayloadMixin",
     "roles.nostalgist.NostalgistKnifeImmuneMixin",
     "roles.painter.PainterItemPickupMixin",
+    "roles.priest.PriestDoorCollisionMixin",
     "roles.photographer.PhotographerFramePlaceMixin",
     "roles.photographer.PhotographerMixin",
     "roles.photographer.PhotographFrameEntityMixin",
@@ -91,7 +94,8 @@
     "time_stop.ServerPacketBlocker",
     "CrashReportCategoryMixin",
     "roles.hakukofox.HakukoFoxEyeHeightMixin",
-    "roles.hakukofox.HakukoFoxAttackBlockMixin"
+    "roles.hakukofox.HakukoFoxAttackBlockMixin",
+    "spear.LivingEntitySpearMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -128,6 +132,8 @@
     "client.general.FearPlayerRenderCleanupMixin",
     "client.general.LimpPlayerModelMixin",
     "client.general.MirrorReunionCameraMixin",
+    "client.general.MirrorReunionEntityCullMixin",
+    "client.general.MirrorReunionBlockEntityCullMixin",
     "client.general.MobEffectKeyMixin",
     "client.general.MobEffectMouseHandleSuppressMixin",
     "client.general.PlayerIsolationClientMixin",
@@ -138,6 +144,7 @@
     "client.general.SoundEngineListenerMixin",
     "client.general.SpeakerSoundEngineMixin",
     "client.general.ThrowItemMixin",
+    "client.general.TimeRevealMixin",
     "client.general.UpsideDownEffectMouseMixin",
     "client.general.VoicechatALSpeakerBaseMixin",
     "client.general.VoicechatFreecamUtilMixin",
@@ -161,6 +168,10 @@
     "client.roles.manipulator.KeyBindingMixin",
     "client.roles.manipulator.ManipulatorControllerInputMixin",
     "client.roles.manipulator.ManipulatorUseSuppressMixin",
+    "client.roles.priest.PriestChantInputMixin",
+    "client.roles.priest.PriestLocalPlayerMixin",
+    "client.roles.priest.PriestHeavenCameraMixin",
+    "client.roles.priest.PriestHeavenHandMixin",
     "client.roles.monokuma.MonokumaInkShaderMixin",
     "client.roles.phantom.PhantomRattatoulieMixin",
     "client.roles.puppeteer.PuppeteerBodyKnifeTargetMixin",
@@ -185,7 +196,10 @@
     "client.roles.lafina.LafinaPlayerRenderMixin",
     "client.roles.hakukofox.HakukoFoxPlayerRenderMixin",
     "client.roles.hakukofox.HakukoFoxPOVBodyRenderMixin",
-    "client.sodium.HakukoFoxPOVSodiumSectionMixin"
+    "client.sodium.HakukoFoxPOVSodiumSectionMixin",
+    "client.spear.ItemInHandRendererSpearMixin",
+    "client.spear.MinecraftSpearAttackMixin",
+    "client.spear.HumanoidModelSpearMixin"
   ],
   "overwrites": {
     "requireAnnotations": true
