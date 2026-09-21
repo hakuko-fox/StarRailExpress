@@ -283,6 +283,12 @@ public class ModItems {
     public static final Item BARBARIAN_KNIFE = register(
             new BarbarianKnifeItem(new Item.Properties().stacksTo(1)),
             "barbarian_knife", WEAPONS_GROUP);
+    public static final Item DESPERADO_KNIFE = register(
+            new DesperadoKnifeItem(new Item.Properties().stacksTo(1)),
+            "desperado_knife", WEAPONS_GROUP);
+    public static final Item DESPERADO_GUN = register(
+            new DesperadoGunItem(new Item.Properties().stacksTo(1)),
+            "desperado_gun", WEAPONS_GROUP);
     public static final Item NIAOSHOU_SHOU_KNIFE = register(
             new NiaoshoushouKnifeItem(new Item.Properties().stacksTo(1).durability(4)),
             "niaoshoushou_knife", WEAPONS_GROUP);
@@ -524,6 +530,22 @@ public class ModItems {
     public static final Item SILENCE_TOTEM = register(
             new SilenceTotemItem(new Item.Properties().stacksTo(8)),
             "silence_totem", ROLE_ITEMS_GROUP);
+
+    /**
+     * 锣（更夫专属，一次性道具）
+     * - 使用后使周围「非平民 / 非警长」阵营玩家 10 秒内无法使用技能与背包
+     */
+    public static final Item GONG = register(
+            new GongItem(new Item.Properties().stacksTo(1)),
+            "gong", ROLE_ITEMS_GROUP);
+
+    /**
+     * 梆（更夫专属，一次性道具）
+     * - 持续 10 秒，每 2 秒按周围玩家人数扣减游戏时间，并使周围玩家获得 1 分钟入梦
+     */
+    public static final Item BANG = register(
+            new BangItem(new Item.Properties().stacksTo(1)),
+            "bang", ROLE_ITEMS_GROUP);
 
     /**
      * 加固门道具
@@ -851,6 +873,15 @@ public class ModItems {
     // 飞斧 - 强盗的可投掷武器：直线飞行、穿透击杀 2 名玩家、撞墙钉住 5 秒后消失
     public static final Item THROWING_AXE = register(
             new ThrowingAxeItem((new Item.Properties()).stacksTo(1)), "throwing_axe",
+            WEAPONS_GROUP);
+
+    // 竹子 - 蓄力投掷，途中最多挂上 2 名玩家，从发射起 10 秒后消失
+    public static final Item BAMBOO = register(
+            new ThrownBambooItem((new Item.Properties()).stacksTo(8)), "bamboo",
+            WEAPONS_GROUP);
+    // 竹枪 - 右键沿视线伸长最多 10 格 / 3 秒，命中玩家击杀后收回
+    public static final Item BAMBOO_SPEAR = register(
+            new BambooSpearItem((new Item.Properties()).stacksTo(1).durability(3)), "bamboo_spear",
             WEAPONS_GROUP);
 
     // 灵梦的御币
@@ -1458,6 +1489,16 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.angler.AnglerOddityItem(new Item.Properties().stacksTo(1),
                     org.agmas.noellesroles.content.item.angler.AnglerOddityItem.Kind.EMPTY_HOOK),
             "angler_empty_hook", ROLE_ITEMS_GROUP);
+
+    /**
+     * 下界合金矛（骑兵专属武器）
+     * - 左键直刺：需要满蓄力；命中玩家时原版伤害 ×2 转为虚拟伤害，死因为 spear
+     * - 右键举矛蓄力冲锋：速度越快伤害越高，并可击退 / 击落坐骑
+     * - 可附魔「突进」：命中后沿视线向前冲刺
+     */
+    public static final Item NETHERITE_SPEAR = register(
+            new NetheriteSpearItem(NetheriteSpearItem.createProperties()),
+            "netherite_spear", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
 
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);

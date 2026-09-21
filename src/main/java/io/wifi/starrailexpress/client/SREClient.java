@@ -882,7 +882,7 @@ public class SREClient implements ClientModInitializer {
             context.client().execute(() -> {
                 // 如果倍镜被卸下，退出开镜状态
                 if (!payload.scopeAttached()) {
-                    ScopeOverlayRenderer.setInScopeView(false);
+                    ScopeOverlayRenderer.forceClose();
                 }
             });
         });
@@ -1091,6 +1091,8 @@ public class SREClient implements ClientModInitializer {
         // 注册职业轮选网络包
         RoleRotationClientReceiver.register();
         VolunteerModeClientReceiver.register();
+        // 志愿海选模式网络包
+        io.wifi.starrailexpress.content.vote.client.VolunteerOpenClientReceiver.register();
         // Chat Dialogue
         ClientPlayNetworking.registerGlobalReceiver(
                 net.exmo.sre.client.chat.OpenChatDialoguePayload.ID, (payload, context) -> {
@@ -1212,6 +1214,8 @@ public class SREClient implements ClientModInitializer {
             }
             FourthRoomCameraDirector.renderOverlay(guiGraphics);
             net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
+            // 亡命徒登场演出：与运镜同步的血色滤镜
+            org.agmas.noellesroles.client.RefugeeDesperadoClientFx.renderOverlay(guiGraphics, deltaTick);
         });
         // Run map rules inside the project's frame lifecycle so text remains visible
         // while a Letter is held.
@@ -1307,9 +1311,10 @@ public class SREClient implements ClientModInitializer {
                 }
             }
 
-            // 职业轮选GUI - 综合管理：声音、关闭、重新打开
+            // 职业轮选 / 志愿海选 GUI - 综合管理：声音、关闭、重新打开
             boolean currentMyTurn = RoleRotationCache.getWasMyTurn();
-            boolean isRotationActive = RoleRotationCache.canReOpen();
+            boolean isRotationActive = RoleRotationCache.canReOpen()
+                    || io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.canReOpen();
 
             // 检测轮到自己选职业的音效
             if (!previousMyTurn && currentMyTurn && client.player != null) {
@@ -1317,21 +1322,43 @@ public class SREClient implements ClientModInitializer {
             }
             previousMyTurn = currentMyTurn;
 
+            // 志愿海选：开局运镜（地图开场动画）期间不抢屏，已经在播运镜时把界面收掉
+            boolean volunteerOpen = io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache
+                    .isVolunteerOpenMode();
+            boolean canShowRoleSelect = io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleSelectionScreenFactory
+                    .canShowNow();
+            if (volunteerOpen && !canShowRoleSelect
+                    && client.screen instanceof io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.VolunteerOpenSelectScreen) {
+                client.setScreen(null);
+            }
+
             // 轮选结束，关闭界面
             if (!isRotationActive) {
-                if (client.screen instanceof RoleRotationScreen) {
+                if (client.screen instanceof RoleRotationScreen
+                        || client.screen instanceof io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.VolunteerOpenSelectScreen) {
                     client.setScreen(null);
                 }
             }
 
-            // 职业轮选GUI - 若无UI则5tick强制打开一次
+            // 职业轮选 / 志愿海选GUI - 若无UI则5tick强制打开一次
             if (client.screen == null && client.level != null && client.level.getGameTime() % 5 == 0
-                    && isRotationActive) {
+                    && isRotationActive && canShowRoleSelect) {
                 // 排除职业介绍页面，查看职业介绍时不应该强制跳转回轮选页面
                 boolean isViewingRoleIntro = client.screen instanceof org.agmas.noellesroles.client.screen.RoleIntroduceScreen;
-                if (!isViewingRoleIntro && (client.screen == null || !(client.screen instanceof RoleRotationScreen))) {
-                    client.setScreen(new RoleRotationScreen());
+                if (!isViewingRoleIntro) {
+                    client.setScreen(
+                            io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleSelectionScreenFactory
+                                    .create());
                 }
+            }
+
+            // 志愿海选：界面确实已经显示了（开局动画早已播完）才告诉服务端可以开始一阶段计时。
+            // 服务端要等所有玩家的这个上报，因此玩家在看开场动画 / 发车黑幕时不会白白消耗 8 秒。
+            if (volunteerOpen
+                    && client.screen instanceof io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.VolunteerOpenSelectScreen
+                    && io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.markUiReported()) {
+                ClientPlayNetworking.send(
+                        new io.wifi.starrailexpress.network.packet.VolunteerOpenReadyC2SPacket());
             }
         });
         SREClientEvents.registerClientEvents();
