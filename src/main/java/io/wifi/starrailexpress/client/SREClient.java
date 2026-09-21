@@ -329,6 +329,7 @@ public class SREClient implements ClientModInitializer {
                     io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.clear();
                     io.wifi.starrailexpress.client.morph.ClientMorphCache.clear();
                     io.wifi.starrailexpress.client.plush.ClientPlushEquipmentCache.clear();
+                    ClientPlayerDataCache.clear();
                 });
         io.wifi.starrailexpress.client.mirror.MirrorReflectionManager.init();
         ClientConfigEvents.register();

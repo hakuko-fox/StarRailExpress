@@ -30,6 +30,10 @@ public final class BackpackState {
     public Map<FactionCardType, Integer> cards = new EnumMap<>(FactionCardType.class);
     /** 跨局 Vtuber Coin。與局內 {@code SREPlayerShopComponent} 金幣完全分離。 */
     public int vtuberCoins;
+    /** 連續勝場，用於計算 VTuber Coin 連勝加成。 */
+    public int vtuberWinStreak;
+    /** 連續敗場，用於計算 VTuber Coin 連敗補償。 */
+    public int vtuberLossStreak;
     /** 商店購買的永久皮膚權益，元素格式為 {@code skin:<type>:<id>}。 */
     public Set<String> purchasedSkins = new HashSet<>();
     /** 可指定下一局具體職業的自選卡數量。 */
@@ -68,6 +72,8 @@ public final class BackpackState {
         // 钳制负值
         cards.replaceAll((type, count) -> count == null ? 0 : Math.max(0, count));
         vtuberCoins = Math.max(0, vtuberCoins);
+        vtuberWinStreak = Math.max(0, vtuberWinStreak);
+        vtuberLossStreak = Math.max(0, vtuberLossStreak);
         roleChoiceCards = Math.max(0, roleChoiceCards);
         if (purchasedSkins == null) {
             purchasedSkins = new HashSet<>();
@@ -114,6 +120,8 @@ public final class BackpackState {
         }
         this.migrated = other.migrated;
         this.vtuberCoins = other.vtuberCoins;
+        this.vtuberWinStreak = other.vtuberWinStreak;
+        this.vtuberLossStreak = other.vtuberLossStreak;
         this.roleChoiceCards = other.roleChoiceCards;
         this.pendingRoleId = other.pendingRoleId;
         this.pendingFactionCard = other.pendingFactionCard;

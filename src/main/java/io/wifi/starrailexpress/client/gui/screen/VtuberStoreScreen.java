@@ -127,8 +127,16 @@ public final class VtuberStoreScreen extends Screen {
                 l.leftX + panelWidth / 2, l.gridY + 18, TEXT_SECONDARY);
         int textX = l.leftX + 24;
         int textY = l.gridY + 52;
+        var rewards = ClientVtuberStoreCache.rewards();
         for (int index = 1; index <= 5; index++) {
-            graphics.drawString(font, Component.translatable("screen.sre.vtuber_store.info.line" + index),
+            Component line = switch (index) {
+                case 2 -> Component.translatable("screen.sre.vtuber_store.info.line2",
+                        rewards.winnerAlive(), rewards.winnerDead());
+                case 3 -> Component.translatable("screen.sre.vtuber_store.info.line3",
+                        rewards.loserAlive(), rewards.loserDead());
+                default -> Component.translatable("screen.sre.vtuber_store.info.line" + index);
+            };
+            graphics.drawString(font, line,
                     textX, textY + (index - 1) * 24, index == 1 ? TEXT_PRIMARY : 0xFFE8D8B8, true);
         }
     }

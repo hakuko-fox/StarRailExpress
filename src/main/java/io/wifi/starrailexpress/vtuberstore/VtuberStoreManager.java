@@ -24,10 +24,12 @@ import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import io.wifi.starrailexpress.util.SREPlayerUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -42,6 +44,7 @@ import java.util.UUID;
 public final class VtuberStoreManager {
     private static final Gson GSON = new GsonBuilder().create();
     private static final Map<ResourceKey<Level>, UUID> ACTIVE_ROUNDS = new HashMap<>();
+    private static final Map<UUID, LinkedHashMap<UUID, PendingRoundReward>> PENDING_ROUND_REWARDS = new HashMap<>();
     private static volatile VtuberStoreConfig config = new VtuberStoreConfig();
 
     private VtuberStoreManager() {
@@ -52,8 +55,12 @@ public final class VtuberStoreManager {
             config = VtuberStoreConfig.loadAndMergeDefaults();
             warnUnknownConfigProducts();
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ACTIVE_ROUNDS.clear());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            ACTIVE_ROUNDS.clear();
+            PENDING_ROUND_REWARDS.clear();
+        });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> sendCatalog(handler.getPlayer()));
+        ServerTickEvents.END_SERVER_TICK.register(VtuberStoreManager::processPendingRewards);
         OnGameStarted.EVENT.register(world -> ACTIVE_ROUNDS.put(world.dimension(), UUID.randomUUID()));
     }
 
@@ -141,14 +148,54 @@ public final class VtuberStoreManager {
         boolean alive = SREPlayerUtils.isPlayerAlive(world, player.getUUID());
         int amount = winner
                 ? (alive ? config.rewards.winnerAlive : config.rewards.winnerDead)
-                : config.rewards.loser;
+                : (alive ? config.rewards.loserAlive : config.rewards.loserDead);
         if (!BackpackManager.isLoaded(player.getUUID())) {
-            SRE.LOGGER.warn("Skipped Vtuber Coin reward for {} in round {} because backpack data is not loaded",
+            queuePendingReward(player.getUUID(), roundId, amount, winner, alive);
+            SRE.LOGGER.warn("Queued Vtuber Coin reward for {} in round {} until backpack data is loaded",
                     player.getUUID(), roundId);
             return;
         }
-        if (BackpackManager.awardVtuberCoins(player, roundId, amount)) {
-            Component message = Component.translatable("message.sre.vtuber_store.round_reward", amount);
+        awardRoundReward(player, roundId, amount, winner, alive);
+    }
+
+    private static void queuePendingReward(UUID playerUuid, UUID roundId, int baseAmount, boolean winner,
+            boolean alive) {
+        PENDING_ROUND_REWARDS.computeIfAbsent(playerUuid, ignored -> new LinkedHashMap<>())
+                .putIfAbsent(roundId, new PendingRoundReward(baseAmount, winner, alive));
+    }
+
+    private static void processPendingRewards(MinecraftServer server) {
+        var playerEntries = PENDING_ROUND_REWARDS.entrySet().iterator();
+        while (playerEntries.hasNext()) {
+            var playerEntry = playerEntries.next();
+            ServerPlayer player = server.getPlayerList().getPlayer(playerEntry.getKey());
+            if (player == null || !BackpackManager.isLoaded(player.getUUID())) {
+                continue;
+            }
+            var rewards = playerEntry.getValue();
+            var rewardEntries = rewards.entrySet().iterator();
+            while (rewardEntries.hasNext()) {
+                var rewardEntry = rewardEntries.next();
+                PendingRoundReward reward = rewardEntry.getValue();
+                awardRoundReward(player, rewardEntry.getKey(), reward.baseAmount(), reward.winner(), reward.alive());
+                rewardEntries.remove();
+            }
+            if (rewards.isEmpty()) {
+                playerEntries.remove();
+            }
+        }
+    }
+
+    private static void awardRoundReward(ServerPlayer player, UUID roundId, int baseAmount, boolean winner,
+            boolean alive) {
+        int amount = BackpackManager.awardVtuberCoinsForRound(player, roundId, baseAmount, winner);
+        if (amount >= 0) {
+            String messageKey = winner
+                    ? (alive ? "message.sre.vtuber_store.round_reward.winner_alive"
+                            : "message.sre.vtuber_store.round_reward.winner_dead")
+                    : (alive ? "message.sre.vtuber_store.round_reward.loser_alive"
+                            : "message.sre.vtuber_store.round_reward.loser_dead");
+            Component message = Component.translatable(messageKey, amount);
             player.sendSystemMessage(message);
             player.displayClientMessage(message, true);
         }
@@ -165,7 +212,9 @@ public final class VtuberStoreManager {
                     product.translationKey(), product.rarity() == null ? "" : product.rarity().name(),
                     Boolean.TRUE.equals(setting.enabled), setting.price));
         }
-        return new CatalogSnapshot(entries);
+        return new CatalogSnapshot(entries,
+                new RewardSummary(config.rewards.winnerAlive, config.rewards.winnerDead,
+                        config.rewards.loserAlive, config.rewards.loserDead));
     }
 
     private static CatalogProduct findProduct(String id) {
@@ -197,10 +246,16 @@ public final class VtuberStoreManager {
                 BackpackManager.isLoaded(player.getUUID()) ? BackpackManager.getVtuberCoins(player) : 0, -1));
     }
 
-    public record CatalogSnapshot(List<CatalogEntry> products) {
+    public record CatalogSnapshot(List<CatalogEntry> products, RewardSummary rewards) {
+    }
+
+    public record RewardSummary(int winnerAlive, int winnerDead, int loserAlive, int loserDead) {
     }
 
     public record CatalogEntry(String id, String kind, String subtype, String value, String translationKey,
             String rarity, boolean enabled, int price) {
+    }
+
+    private record PendingRoundReward(int baseAmount, boolean winner, boolean alive) {
     }
 }

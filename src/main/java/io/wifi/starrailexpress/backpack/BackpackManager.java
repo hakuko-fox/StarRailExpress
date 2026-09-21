@@ -174,22 +174,75 @@ public final class BackpackManager {
     }
 
     public static boolean awardVtuberCoins(ServerPlayer player, UUID roundId, int amount) {
-        if (roundId == null || amount < 0 || !isLoaded(player.getUUID())) {
-            return false;
+        return awardVtuberCoinsInternal(player, roundId, amount, null) >= 0;
+    }
+
+    /**
+     * Awards the round reward and applies the persistent VTuber Coin streak rule.
+     * A win streak of three or more adds 25%; a loss streak of three or more adds
+     * 10%. Both bonuses are rounded up to the next integer.
+     *
+     * @return the actual awarded amount, or {@code -1} when the award was rejected
+     */
+    public static int awardVtuberCoinsForRound(ServerPlayer player, UUID roundId, int baseAmount,
+            boolean winner) {
+        return awardVtuberCoinsInternal(player, roundId, baseAmount, winner);
+    }
+
+    private static int awardVtuberCoinsInternal(ServerPlayer player, UUID roundId, int baseAmount,
+            Boolean winner) {
+        if (roundId == null || baseAmount < 0 || !isLoaded(player.getUUID())) {
+            return -1;
         }
         Entry entry = getEntry(player.getUUID());
         String id = roundId.toString();
         if (id.equals(entry.state.lastVtuberCoinRoundId)) {
-            return false;
+            return -1;
+        }
+
+        int amount = baseAmount;
+        int nextWinStreak = entry.state.vtuberWinStreak;
+        int nextLossStreak = entry.state.vtuberLossStreak;
+        if (winner != null) {
+            if (winner) {
+                nextWinStreak = incrementStreak(nextWinStreak);
+                nextLossStreak = 0;
+                if (nextWinStreak >= 3) {
+                    amount = roundUpPercent(baseAmount, 25);
+                }
+            } else {
+                nextWinStreak = 0;
+                nextLossStreak = incrementStreak(nextLossStreak);
+                if (nextLossStreak >= 3) {
+                    amount = roundUpPercent(baseAmount, 10);
+                }
+            }
+        }
+        if (amount < 0) {
+            return -1;
         }
         long next = (long) entry.state.vtuberCoins + amount;
         if (next > Integer.MAX_VALUE) {
-            return false;
+            return -1;
         }
         entry.state.vtuberCoins = (int) next;
+        if (winner != null) {
+            entry.state.vtuberWinStreak = nextWinStreak;
+            entry.state.vtuberLossStreak = nextLossStreak;
+        }
         entry.state.lastVtuberCoinRoundId = id;
         markDirty(player, entry);
-        return true;
+        return amount;
+    }
+
+    private static int incrementStreak(int streak) {
+        return streak == Integer.MAX_VALUE ? streak : streak + 1;
+    }
+
+    private static int roundUpPercent(int amount, int bonusPercent) {
+        long numerator = (long) amount * (100L + bonusPercent);
+        long rounded = (numerator + 99L) / 100L;
+        return rounded > Integer.MAX_VALUE ? -1 : (int) rounded;
     }
 
     public static boolean tryBuyStoreSkin(ServerPlayer player, String skinType, String skinId, int price) {
@@ -464,7 +517,7 @@ public final class BackpackManager {
 
     public static boolean flushBlocking(UUID playerUuid) {
         Entry entry = ENTRIES.get(playerUuid);
-        if (entry == null || !isDatabaseEnabled()) {
+        if (entry == null || !entry.loaded || !isDatabaseEnabled()) {
             return false;
         }
         boolean success = MysqlPlayerDataStore.saveBatchBlocking(

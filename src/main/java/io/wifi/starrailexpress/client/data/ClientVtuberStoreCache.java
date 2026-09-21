@@ -14,7 +14,10 @@ import java.util.List;
 
 public final class ClientVtuberStoreCache {
     private static final Gson GSON = new GsonBuilder().create();
+    private static final VtuberStoreManager.RewardSummary DEFAULT_REWARDS =
+            new VtuberStoreManager.RewardSummary(6, 3, 2, 1);
     private static volatile List<VtuberStoreManager.CatalogEntry> products = List.of();
+    private static volatile VtuberStoreManager.RewardSummary rewards = DEFAULT_REWARDS;
 
     private ClientVtuberStoreCache() {
     }
@@ -24,8 +27,10 @@ public final class ClientVtuberStoreCache {
             VtuberStoreManager.CatalogSnapshot snapshot = GSON.fromJson(json,
                     VtuberStoreManager.CatalogSnapshot.class);
             products = snapshot == null || snapshot.products() == null ? List.of() : List.copyOf(snapshot.products());
+            rewards = snapshot == null || snapshot.rewards() == null ? DEFAULT_REWARDS : snapshot.rewards();
         } catch (RuntimeException ignored) {
             products = List.of();
+            rewards = DEFAULT_REWARDS;
         }
     }
 
@@ -33,7 +38,12 @@ public final class ClientVtuberStoreCache {
         return products;
     }
 
+    public static VtuberStoreManager.RewardSummary rewards() {
+        return rewards;
+    }
+
     public static void clear() {
         products = List.of();
+        rewards = DEFAULT_REWARDS;
     }
 }

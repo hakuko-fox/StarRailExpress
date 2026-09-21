@@ -68,7 +68,8 @@ public final class VtuberStoreConfig {
         }
         rewards.winnerAlive = Math.max(0, rewards.winnerAlive);
         rewards.winnerDead = Math.max(0, rewards.winnerDead);
-        rewards.loser = Math.max(0, rewards.loser);
+        rewards.loserAlive = rewards.loserAlive == null ? 2 : Math.max(0, rewards.loserAlive);
+        rewards.loserDead = rewards.loserDead == null ? 1 : Math.max(0, rewards.loserDead);
         if (products == null) {
             products = new LinkedHashMap<>();
         }
@@ -100,9 +101,10 @@ public final class VtuberStoreConfig {
     }
 
     public static final class Rewards {
-        public int winnerAlive = 4;
-        public int winnerDead = 2;
-        public int loser = 1;
+        public int winnerAlive = 6;
+        public int winnerDead = 3;
+        public Integer loserAlive = 2;
+        public Integer loserDead = 1;
     }
 
     public static final class ProductSetting {
