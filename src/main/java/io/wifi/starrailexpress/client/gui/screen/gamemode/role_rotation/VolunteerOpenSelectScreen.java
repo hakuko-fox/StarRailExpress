@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -94,11 +95,13 @@ public class VolunteerOpenSelectScreen extends Screen {
 
     private int poolX, poolY, poolW, poolH;
     private int detailX, detailY, detailW, detailH;
-    private int gridX, gridY, poolCellW, poolCellH, cellGap;
+    private int gridX, gridY, gridRows, gridCols, poolCellW, poolCellH, cellGap;
     private int hoveredPoolIndex = -1;
 
     private int autoToggleX, autoToggleY, autoToggleW;
     private int confirmX, confirmY;
+    private Checkbox hideChosenRolesCheckbox;
+    private Checkbox hideRoleDetailCheckbox;
 
     // ==================== 状态 ====================
     private int tickCounter;
@@ -138,6 +141,8 @@ public class VolunteerOpenSelectScreen extends Screen {
         if (lastPhase == VolunteerOpenCache.PHASE_VOLUNTEER) {
             refreshRoleList();
             ensureSearchBox();
+        } else if (lastPhase == VolunteerOpenCache.PHASE_OPEN) {
+            ensureHideChosenRolesCheckbox();
         }
     }
 
@@ -157,8 +162,13 @@ public class VolunteerOpenSelectScreen extends Screen {
             if (phase == VolunteerOpenCache.PHASE_VOLUNTEER) {
                 refreshRoleList();
                 ensureSearchBox();
+                removeHideChosenRolesCheckbox();
+            } else if (phase == VolunteerOpenCache.PHASE_OPEN) {
+                removeSearchBox();
+                ensureHideChosenRolesCheckbox();
             } else {
                 removeSearchBox();
+                removeHideChosenRolesCheckbox();
             }
         }
         updateAutoScroll();
@@ -186,6 +196,49 @@ public class VolunteerOpenSelectScreen extends Screen {
             searchBox = null;
             searchText = "";
         }
+    }
+
+    private void ensureHideChosenRolesCheckbox() {
+        if (hideChosenRolesCheckbox == null) {
+            hideChosenRolesCheckbox = Checkbox.builder(
+                    Component.translatable("gui.sre.volunteer_open.hide_chosen_roles"), font)
+                    .pos(poolX + font.width(Component.translatable("gui.sre.volunteer_open.pool_header")) + GAP,
+                            rightY + PAD - 2)
+                    .selected(false)
+                    .build();
+            addRenderableWidget(hideChosenRolesCheckbox);
+        }
+        if (hideRoleDetailCheckbox == null) {
+            hideRoleDetailCheckbox = Checkbox.builder(
+                    Component.translatable("gui.sre.volunteer_open.hide_role_detail"), font)
+                    .pos(hideChosenRolesCheckbox.getX() + hideChosenRolesCheckbox.getWidth() + GAP,
+                            rightY + PAD - 2)
+                    .selected(false)
+                    .build();
+            addRenderableWidget(hideRoleDetailCheckbox);
+        }
+    }
+
+    private void removeHideChosenRolesCheckbox() {
+        if (hideChosenRolesCheckbox != null) {
+            removeWidget(hideChosenRolesCheckbox);
+            hideChosenRolesCheckbox = null;
+        }
+        if (hideRoleDetailCheckbox != null) {
+            removeWidget(hideRoleDetailCheckbox);
+            hideRoleDetailCheckbox = null;
+        }
+    }
+
+    private boolean shouldHidePoolCell(int index) {
+        return hideChosenRolesCheckbox != null
+                && hideChosenRolesCheckbox.selected()
+                && index != VolunteerOpenCache.getMyPickIndex()
+                && VolunteerOpenCache.getChosenIndices().contains(index);
+    }
+
+    private boolean isRoleDetailHidden() {
+        return hideRoleDetailCheckbox != null && hideRoleDetailCheckbox.selected();
     }
 
     private void refreshRoleList() {
@@ -247,11 +300,23 @@ public class VolunteerOpenSelectScreen extends Screen {
         poolY = rightY + PAD + 24;
         poolW = Math.max(60, rightW - PAD * 2);
         int available = Math.max(60, bodyBottom - poolY - GAP);
-        poolH = Math.max(40, (int) (available * 0.40F));
+        poolH = isRoleDetailHidden()
+                ? Math.max(40, bodyBottom - poolY)
+                : Math.max(40, (int) (available * 0.40F));
         detailX = poolX;
         detailY = poolY + poolH + GAP;
         detailW = poolW;
         detailH = Math.max(40, bodyBottom - detailY);
+
+        if (hideChosenRolesCheckbox != null) {
+            hideChosenRolesCheckbox.setX(poolX + font.width(Component.translatable("gui.sre.volunteer_open.pool_header"))
+                    + GAP);
+            hideChosenRolesCheckbox.setY(rightY + PAD - 2);
+        }
+        if (hideRoleDetailCheckbox != null && hideChosenRolesCheckbox != null) {
+            hideRoleDetailCheckbox.setX(hideChosenRolesCheckbox.getX() + hideChosenRolesCheckbox.getWidth() + GAP);
+            hideRoleDetailCheckbox.setY(rightY + PAD - 2);
+        }
 
         // 底部控件
         confirmX = (width - CONFIRM_W) / 2;
@@ -271,8 +336,33 @@ public class VolunteerOpenSelectScreen extends Screen {
         int rows = Math.max(1, VolunteerOpenCache.getPoolRows());
         int cols = Math.max(1, VolunteerOpenCache.getPoolCols());
         cellGap = 3;
+
+        if (isRoleDetailHidden()) {
+            int size = Math.max(1, VolunteerOpenCache.getPoolSize());
+            double bestScore = Double.MAX_VALUE;
+            for (int candidateRows = 1; candidateRows <= size; candidateRows++) {
+                int candidateCols = (int) Math.ceil(size / (double) candidateRows);
+                int candidateW = (poolW - cellGap * (candidateCols - 1)) / candidateCols;
+                int candidateH = (poolH - cellGap * (candidateRows - 1)) / candidateRows;
+                if (candidateW < 14 || candidateH < 14) {
+                    continue;
+                }
+                double aspect = candidateW / (double) candidateH;
+                int emptyCells = candidateRows * candidateCols - size;
+                double score = Math.abs(Math.log(aspect / 3.0D)) + emptyCells * 0.03D;
+                if (score < bestScore) {
+                    bestScore = score;
+                    rows = candidateRows;
+                    cols = candidateCols;
+                }
+            }
+        }
+
+        gridRows = rows;
+        gridCols = cols;
         poolCellW = Math.max(14, (poolW - cellGap * (cols - 1)) / cols);
-        poolCellH = Mth.clamp((poolH - cellGap * (rows - 1)) / rows, 14, 32);
+        int availableCellH = Math.max(14, (poolH - cellGap * (rows - 1)) / rows);
+        poolCellH = isRoleDetailHidden() ? availableCellH : Math.min(32, availableCellH);
         int gridW = cols * poolCellW + cellGap * (cols - 1);
         int gridH = rows * poolCellH + cellGap * (rows - 1);
         gridX = poolX + Math.max(0, (poolW - gridW) / 2);
@@ -522,6 +612,10 @@ public class VolunteerOpenSelectScreen extends Screen {
     private void drawVolunteerPhase(GuiGraphics g, int mouseX, int mouseY) {
         Component header = Component.translatable("gui.sre.volunteer_open.volunteer_header");
         g.drawString(font, header, searchX, rightY + PAD, TEXT, false);
+        if (!VolunteerOpenCache.isLocalPlayerParticipant()) {
+            Component notParticipating = Component.translatable("hud.sre.participation.not_participating");
+            g.drawString(font, notParticipating, searchX + font.width(header) + GAP, rightY + PAD, MUTED, false);
+        }
 
         drawTimer(g);
 
@@ -547,7 +641,8 @@ public class VolunteerOpenSelectScreen extends Screen {
             }
             SRERole role = filteredRoles.get(i);
             boolean isMine = !volunteerId.isEmpty() && volunteerId.equals(role.identifier().toString());
-            boolean hover = inside(mouseX, mouseY, x, y, volCellW, volCellH)
+            boolean hover = VolunteerOpenCache.isLocalPlayerParticipant()
+                    && inside(mouseX, mouseY, x, y, volCellW, volCellH)
                     && mouseY >= volListY && mouseY < volListY + volListH;
             if (hover) {
                 hoveredRoleIndex = i;
@@ -607,15 +702,16 @@ public class VolunteerOpenSelectScreen extends Screen {
         drawTimer(g);
 
         computePoolGrid();
-        int rows = VolunteerOpenCache.getPoolRows();
-        int cols = VolunteerOpenCache.getPoolCols();
         int size = VolunteerOpenCache.getPoolSize();
 
         for (int index = 0; index < size; index++) {
-            int row = index / cols;
-            int col = index % cols;
-            if (row >= rows) {
+            int row = index / gridCols;
+            int col = index % gridCols;
+            if (row >= gridRows) {
                 break;
+            }
+            if (shouldHidePoolCell(index)) {
+                continue;
             }
             int x = gridX + col * (poolCellW + cellGap);
             int y = gridY + row * (poolCellH + cellGap);
@@ -626,10 +722,12 @@ public class VolunteerOpenSelectScreen extends Screen {
             drawPoolCell(g, index, x, y, poolCellW, poolCellH, hover);
         }
 
-        // 底部：介绍
-        SREPanelStyle.drawPanel(g, detailX, detailY, detailW, detailH, 0xAA1A1008, 0xAA0B1722);
-        int shownIndex = hoveredPoolIndex >= 0 ? hoveredPoolIndex : VolunteerOpenCache.getMyPickIndex();
-        drawRoleDetail(g, roleAtPoolIndex(shownIndex), detailX, detailY, detailW, detailH);
+        if (!isRoleDetailHidden()) {
+            // 底部：介绍
+            SREPanelStyle.drawPanel(g, detailX, detailY, detailW, detailH, 0xAA1A1008, 0xAA0B1722);
+            int shownIndex = hoveredPoolIndex >= 0 ? hoveredPoolIndex : VolunteerOpenCache.getMyPickIndex();
+            drawRoleDetail(g, roleAtPoolIndex(shownIndex), detailX, detailY, detailW, detailH);
+        }
     }
 
     private void drawPoolCell(GuiGraphics g, int index, int x, int y, int w, int h, boolean hover) {
@@ -644,19 +742,22 @@ public class VolunteerOpenSelectScreen extends Screen {
         }
 
         String roleId = VolunteerOpenCache.getVisibleRoles().get(index);
-        int textY = y + (h - 8) / 2;
+        float textScale = poolCellTextScale(w, h);
+        int maxTextWidth = Math.max(4, (int) ((w - 6) / textScale));
         if (roleId == null || roleId.isEmpty()) {
-            g.drawCenteredString(font, "???", x + w / 2, textY, MUTED);
+            drawPoolCellText(g, Component.literal("???"), x, y, w, h, MUTED, textScale);
             return;
         }
         if (VolunteerOpenCache.getHiddenRevealed().contains(index)) {
             Component hidden = Component.translatable("gui.sre.volunteer_open.hidden_role");
-            g.drawCenteredString(font, trim(hidden.getString(), w - 6), x + w / 2, textY, MUTED);
+            drawPoolCellText(g, Component.literal(trim(hidden.getString(), maxTextWidth)),
+                    x, y, w, h, MUTED, textScale);
             return;
         }
         SRERole role = getRoleByPath(roleId);
         if (role == null) {
-            g.drawCenteredString(font, trim(roleId, w - 6), x + w / 2, textY, MUTED);
+            drawPoolCellText(g, Component.literal(trim(roleId, maxTextWidth)),
+                    x, y, w, h, MUTED, textScale);
             return;
         }
         boolean card = VolunteerOpenCache.getCardRevealed().contains(index);
@@ -664,8 +765,25 @@ public class VolunteerOpenSelectScreen extends Screen {
         Component name = RoleUtils.getRoleName(role).copy()
                 .withStyle(style -> style.withColor(color).withBold(card));
         // 不要先转成 String，否则卡牌额外揭示的橙色加粗样式会被丢掉。
-        Component displayedName = Component.literal(trim(name.getString(), w - 6)).withStyle(name.getStyle());
-        g.drawCenteredString(font, displayedName, x + w / 2, textY, color);
+        Component displayedName = Component.literal(trim(name.getString(), maxTextWidth)).withStyle(name.getStyle());
+        drawPoolCellText(g, displayedName, x, y, w, h, color, textScale);
+    }
+
+    private float poolCellTextScale(int w, int h) {
+        if (!isRoleDetailHidden()) {
+            return 1.0F;
+        }
+        return Mth.clamp(Math.min(h / 32.0F, w / 110.0F), 1.0F, 2.25F);
+    }
+
+    private void drawPoolCellText(GuiGraphics g, Component text, int x, int y, int w, int h,
+            int color, float scale) {
+        float centerX = x + w / 2.0F;
+        float textY = y + (h - font.lineHeight * scale) / 2.0F;
+        g.pose().pushPose();
+        g.pose().scale(scale, scale, 1.0F);
+        g.drawCenteredString(font, text, Math.round(centerX / scale), Math.round(textY / scale), color);
+        g.pose().popPose();
     }
 
     private int poolCellBorder(int index, boolean hover) {
@@ -891,7 +1009,8 @@ public class VolunteerOpenSelectScreen extends Screen {
     // ==================== 确认按钮 ====================
 
     private boolean isConfirmStageActive() {
-        return VolunteerOpenCache.getPhase() == VolunteerOpenCache.PHASE_CONFIRM
+        return VolunteerOpenCache.isLocalPlayerParticipant()
+                && VolunteerOpenCache.getPhase() == VolunteerOpenCache.PHASE_CONFIRM
                 && VolunteerOpenCache.getConfirmCountdown() > 0
                 && VolunteerOpenCache.isConfirmRequired();
     }
@@ -951,7 +1070,8 @@ public class VolunteerOpenSelectScreen extends Screen {
                     return true;
                 }
             }
-            if (VolunteerOpenCache.getPhase() == VolunteerOpenCache.PHASE_VOLUNTEER) {
+            if (VolunteerOpenCache.getPhase() == VolunteerOpenCache.PHASE_VOLUNTEER
+                    && VolunteerOpenCache.isLocalPlayerParticipant()) {
                 if (hoveredRoleIndex >= 0 && hoveredRoleIndex < filteredRoles.size()) {
                     String clickedId = filteredRoles.get(hoveredRoleIndex).identifier().toString();
                     // 一阶段内可以随时改选；重复点已选中的那个就不发包了

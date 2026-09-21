@@ -246,6 +246,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         FakeSteveClient.register();
+        PurpleMonsterClient.register();
         // ClientFakeSteveHuntState.register();
         TimeRewindClientEffect.initialize();
         DynamiclightsEntry.registerClientEvents();
@@ -517,6 +518,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         CognitiveBiasClientHandle.register();
         MuffledHearingClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
+        ScoutClimbClient.register();
+        FatFishSkinHandler.register();
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);

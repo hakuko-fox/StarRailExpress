@@ -42,8 +42,6 @@ import org.agmas.noellesroles.init.SREFumoBlocks;
 import org.agmas.noellesroles.utils.MCItemsUtils;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.include.com.google.gson.JsonSyntaxException;
-
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.text2speech.Narrator;
 
@@ -116,7 +114,6 @@ import io.wifi.starrailexpress.event.client.OnGameFinishedClient;
 import io.wifi.starrailexpress.event.client.OnGameStartedClient;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.game.data.MapConfig;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.SREDisplayBlocks;
@@ -1312,7 +1309,11 @@ public class SREClient implements ClientModInitializer {
             }
 
             // 职业轮选 / 志愿海选 GUI - 综合管理：声音、关闭、重新打开
-            boolean currentMyTurn = RoleRotationCache.getWasMyTurn();
+            boolean volunteerOpen = io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache
+                    .isVolunteerOpenMode();
+            boolean currentMyTurn = volunteerOpen
+                    ? io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.canSelect()
+                    : RoleRotationCache.getWasMyTurn();
             boolean isRotationActive = RoleRotationCache.canReOpen()
                     || io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.canReOpen();
 
@@ -1323,8 +1324,6 @@ public class SREClient implements ClientModInitializer {
             previousMyTurn = currentMyTurn;
 
             // 志愿海选：开局运镜（地图开场动画）期间不抢屏，已经在播运镜时把界面收掉
-            boolean volunteerOpen = io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache
-                    .isVolunteerOpenMode();
             boolean canShowRoleSelect = io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.RoleSelectionScreenFactory
                     .canShowNow();
             if (volunteerOpen && !canShowRoleSelect

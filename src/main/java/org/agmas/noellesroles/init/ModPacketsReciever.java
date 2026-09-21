@@ -113,6 +113,9 @@ import java.util.function.Predicate;
 
 public class ModPacketsReciever {
   public static void registerPackets() {
+    ServerPlayNetworking.registerGlobalReceiver(PurpleMonsterEventC2SPacket.ID, (payload, context) ->
+        context.server().execute(() -> org.agmas.noellesroles.role.bouns.roles.PurpleMonsterRole
+            .handleAction(context.player(), payload)));
     ServerPlayNetworking.registerGlobalReceiver(LoanContractSubmitC2SPacket.ID, (payload, context) ->
         context.server().execute(() ->
             org.agmas.noellesroles.game.roles.neutral.lender.LenderRoleHandler.submit(
@@ -673,6 +676,12 @@ public class ModPacketsReciever {
             return;
           inControlCCA.applyControlInput(payload.movementBits(), payload.yaw(), payload.pitch());
         });
+
+    // 童子军攀爬请求：薄转发到职业类做二次校验与状态维护
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.ScoutClimbC2SPacket.ID, (payload, context) -> context.server()
+            .execute(() -> org.agmas.noellesroles.role.bouns.roles.ScoutRole.handleClimbPacket(
+                context.player(), payload.start(), payload.normal())));
 
     // 操纵师附身期间：以目标身份释放目标自身技能（冷却记在目标身上）
     ServerPlayNetworking.registerGlobalReceiver(

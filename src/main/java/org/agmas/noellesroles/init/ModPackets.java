@@ -57,6 +57,12 @@ public class ModPackets {
                 FakeSteveControlS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(FakeSteveApparitionS2CPacket.ID,
                 FakeSteveApparitionS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(PurpleMonsterEventS2CPacket.ID,
+                PurpleMonsterEventS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(PurpleMonsterProgressS2CPacket.ID,
+                PurpleMonsterProgressS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(PurpleMonsterEventC2SPacket.ID,
+                PurpleMonsterEventC2SPacket.CODEC);
         // PayloadTypeRegistry.playS2C().register(FakeSteveHuntS2CPacket.ID,
         //         FakeSteveHuntS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(FakeSteveApparitionObservationC2SPacket.ID,
@@ -157,6 +163,8 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(AmonSelectTargetC2SPacket.ID, AmonSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorControlInputC2SPacket.ID,
                 ManipulatorControlInputC2SPacket.CODEC);
+        // 童子军：空手右键紧贴的墙壁 → 开始攀爬；松手 → 结束攀爬
+        PayloadTypeRegistry.playC2S().register(ScoutClimbC2SPacket.ID, ScoutClimbC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ManipulatorAbilityC2SPacket.ID,
                 ManipulatorAbilityC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(OpenLockGuiS2CPacket.ID, OpenLockGuiS2CPacket.CODEC);

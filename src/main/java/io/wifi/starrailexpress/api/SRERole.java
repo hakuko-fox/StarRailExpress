@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
@@ -70,7 +71,8 @@ import java.awt.Color;
 import java.util.*;
 import java.util.function.*;
 
-// 此类AI禁止修改。
+// 禁止AI直接修改，如需修改请询问用户许可。
+// 请先阅读根目录的 AGENT.md 获取项目架构。
 public abstract class SRERole extends SREAbstractInfoClass {
     protected ResourceLocation identifier;
     protected boolean canSetSpawnInfoInConfig = true;
@@ -200,6 +202,14 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public int defaultEnableMaxPlayerCount = -1;
     protected MapSpecialFeatures specialMapRole = MapSpecialFeatures.ALL;
     protected BiPredicate<String, AreasSettings> canSpawnInMapPredicate = null;
+
+    /**
+     * 本职业的专属随机事件（每局开局掷一次的启用骰、本局状态与「强制下一局」）。
+     * <p>
+     * 机制与状态语义全部在 {@link RoleRoundEvent} 内，这里只持有它；声明入口是
+     * {@link #setEventEnableChance(BiConsumer, int)}，查询入口是 {@link #isEventEnabled()}。
+     */
+    protected final RoleRoundEvent roundEvent = new RoleRoundEvent(this);
 
     protected boolean specialVigilante = false;
     protected boolean refreshableSpecialVigilante = false;
@@ -466,6 +476,23 @@ public abstract class SRERole extends SREAbstractInfoClass {
 
     public boolean canSetSpawnInfoInConfig() {
         return this.canSetSpawnInfoInConfig;
+    }
+
+    /**
+     * 是否可以在指定地图被随机
+     * 
+     * @param world
+     * @return
+     */
+    public boolean canBeRandomed(@Nullable Level world) {
+        if (world == null) {
+            return this.canBeRandomed();
+        }
+        AreasWorldComponent cca = AreasWorldComponent.KEY.get(world);
+        if (!canSpawnInMap(cca.mapName, cca.areasSettings)) {
+            return false;
+        }
+        return this.canBeRandomed();
     }
 
     public boolean canBeRandomed() {
@@ -883,6 +910,18 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean canUseSabotage = false;
     protected boolean canJumpManhole = false;
     protected boolean canAcrossFog = false;
+    /**
+     * 是否启用「墙壁攀爬」能力（童子军那套攀爬逻辑，实现在 noellesroles 的 {@code ScoutRole}）。
+     *
+     * <p>
+     * 默认判定只看这个开关；子类可以覆写 {@link #canClimbWalls(Player)}，
+     * 按玩家状态 / 当前地图做动态判断（例如冒险家只在 PEAK 爬山图上能攀爬）。
+     *
+     * <p>
+     * 攀爬的运行状态挂在 Player 自己身上（和体力条一样），**不需要**额外绑定 RoleData；
+     * 只有「动作姿态」技能才需要（noellesroles 的 {@code ClimbPoseRoleData}）。
+     */
+    protected boolean canClimbWalls = false;
 
     public boolean isNeutrals() {
         return this.isNeutrals;
@@ -1444,6 +1483,28 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this.ableToPickUpRevolver;
     }
 
+    /** 静态开关：该职业是否配置了墙壁攀爬能力 */
+    public boolean canClimbWalls() {
+        return this.canClimbWalls;
+    }
+
+    /**
+     * 该玩家此刻能否使用墙壁攀爬。
+     * <p>
+     * 默认返回静态开关；需要按玩家状态 / 地图判断的职业覆写这个方法。
+     *
+     * @param player 目标玩家（判断地图时可用 player.level()）
+     */
+    public boolean canClimbWalls(Player player) {
+        return canClimbWalls();
+    }
+
+    /** 开启 / 关闭该职业的墙壁攀爬能力 */
+    public SRERole setCanClimbWalls(boolean able) {
+        this.canClimbWalls = able;
+        return this;
+    }
+
     public SRERole setCanSeeCoin(boolean able) {
         this.canSeeCoin = able;
         return this;
@@ -1584,6 +1645,300 @@ public abstract class SRERole extends SREAbstractInfoClass {
         this.spawnInfo.enableChance = chance;
         return this;
     };
+
+    /**
+     * 为本职业声明一个「每局开局掷一次」的专属随机事件：掷骰回调（带结果）+ 局末回调 + 固定概率。
+     * <p>
+     * 机制的完整说明（判定顺序、维度通用、跨局状态）见 {@link RoleRoundEvent}。声明后本职业会进入
+     * {@link TMMRoles} 的事件职业列表（职业被注销时自动移出），每局正式开局与局末分别由
+     * {@link #rollAllEventEnableChances} / {@link #resetAllEventEnableStates} 统一处理。
+     * <p>
+     * 两个回调各司其职，互不影响：
+     * <ul>
+     *   <li>{@code resultHandler}——<b>每次</b>掷骰后调用，没掷中也会收到 {@code (level, false)}，
+     *       需要处理「启用失败」时用它；</li>
+     *   <li>{@code roundEndHandler}——<b>只在本局掷中过时</b>于局末调用，用于收尾（与开场一一对应）；
+     *       它先于状态清空执行，回调里 {@link #isEventEnabled()} 仍反映本局结果。</li>
+     * </ul>
+     * 其他写法：概率读配置见 {@link #setEventEnableChance(BiConsumer, Consumer, IntSupplier)}；
+     * 只关心掷中见 {@link #setEventEnableChance(Consumer, Consumer, int)}；只要查询见
+     * {@link #setEventEnableChance(int)}。
+     *
+     * @param resultHandler   掷骰回调（带结果），每次掷骰都会调用；可为 null，也可改用只关心掷中的重载
+     * @param roundEndHandler 局末回调，只在本局掷中过时调用；可为 null
+     * @param chance          万分比概率，例如 6000 表示 60%；超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     */
+    public SRERole setEventEnableChance(BiConsumer<ServerLevel, Boolean> resultHandler,
+            Consumer<ServerLevel> roundEndHandler, int chance) {
+        roundEvent.setChance(resultHandler, roundEndHandler, chance);
+        return this;
+    }
+
+    /**
+     * 同上，但概率在每次掷骰时动态读取，适合直接绑定配置项。
+     *
+     * @param resultHandler   掷骰回调（带结果），可为 null
+     * @param roundEndHandler 局末回调，只在本局掷中过时调用；可为 null
+     * @param chanceSupplier  万分比概率供应器；读取值超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     * @throws NullPointerException {@code chanceSupplier} 为 null 时抛出
+     */
+    public SRERole setEventEnableChance(BiConsumer<ServerLevel, Boolean> resultHandler,
+            Consumer<ServerLevel> roundEndHandler, IntSupplier chanceSupplier) {
+        roundEvent.setChance(resultHandler, roundEndHandler, chanceSupplier);
+        return this;
+    }
+
+    /**
+     * 同上，但掷骰回调只在本局掷中时触发，不需要关心「启用失败」。
+     *
+     * @param enabledHandler  掷骰回调，只在本局掷中时调用；为 null 表示不注册掷骰回调
+     *                        （字面量 null 需显式转型，只挂局末回调更推荐 {@link #setRoundEventEndHandler(Consumer)}）
+     * @param roundEndHandler 局末回调，只在本局掷中过时调用；可为 null
+     * @param chance          万分比概率，超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     */
+    public SRERole setEventEnableChance(Consumer<ServerLevel> enabledHandler,
+            Consumer<ServerLevel> roundEndHandler, int chance) {
+        roundEvent.setChance(enabledHandler, roundEndHandler, chance);
+        return this;
+    }
+
+    /**
+     * 同上，但概率在每次掷骰时动态读取。
+     *
+     * @param enabledHandler  掷骰回调，只在本局掷中时调用；可为 null
+     * @param roundEndHandler 局末回调，只在本局掷中过时调用；可为 null
+     * @param chanceSupplier  万分比概率供应器；读取值超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     * @throws NullPointerException {@code chanceSupplier} 为 null 时抛出
+     */
+    public SRERole setEventEnableChance(Consumer<ServerLevel> enabledHandler,
+            Consumer<ServerLevel> roundEndHandler, IntSupplier chanceSupplier) {
+        roundEvent.setChance(enabledHandler, roundEndHandler, chanceSupplier);
+        return this;
+    }
+
+    /**
+     * 只注册掷骰回调（带结果），不要局末回调。
+     * <p>
+     * 注意：局末<b>不再</b>回调（旧行为里局末也会收到一次 {@code false}，现已拆分到局末回调）。
+     *
+     * @param resultHandler 掷骰回调，每次掷骰都会调用，可为 null
+     * @param chance        万分比概率，超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     */
+    public SRERole setEventEnableChance(BiConsumer<ServerLevel, Boolean> resultHandler, int chance) {
+        roundEvent.setChance(resultHandler, chance);
+        return this;
+    }
+
+    /**
+     * 同上，但概率在每次掷骰时动态读取，适合直接绑定配置项。
+     *
+     * @param resultHandler  掷骰回调（带结果），每次掷骰都会调用；可为 null
+     * @param chanceSupplier 万分比概率供应器；读取值超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     * @throws NullPointerException {@code chanceSupplier} 为 null 时抛出
+     */
+    public SRERole setEventEnableChance(BiConsumer<ServerLevel, Boolean> resultHandler,
+            IntSupplier chanceSupplier) {
+        roundEvent.setChance(resultHandler, chanceSupplier);
+        return this;
+    }
+
+    /**
+     * 只注册掷骰回调、且只在本局掷中时触发，不要局末回调。
+     *
+     * @param enabledHandler 掷骰回调，只在本局掷中时调用
+     * @param chance         万分比概率，超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     */
+    public SRERole setEventEnableChance(@NotNull Consumer<ServerLevel> enabledHandler, int chance) {
+        roundEvent.setChance(Objects.requireNonNull(enabledHandler, "enabledHandler"), chance);
+        return this;
+    }
+
+    /**
+     * 同上，但概率在每次掷骰时动态读取。
+     *
+     * @param enabledHandler 掷骰回调，只在本局掷中时调用
+     * @param chanceSupplier 万分比概率供应器；读取值超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     * @throws NullPointerException {@code chanceSupplier} 为 null 时抛出
+     */
+    public SRERole setEventEnableChance(@NotNull Consumer<ServerLevel> enabledHandler,
+            IntSupplier chanceSupplier) {
+        roundEvent.setChance(Objects.requireNonNull(enabledHandler, "enabledHandler"), chanceSupplier);
+        return this;
+    }
+
+    /**
+     * 只声明事件、不注册回调：本局是否启用通过 {@link #isEventEnabled()} 按需查询。
+     * <p>
+     * 适合「满足条件时才触发」型事件（见 {@code BounsRoles.PURPLE_MONSTER}），
+     * 调用方不必再自己维护一份启用状态。
+     *
+     * @param chance 万分比概率，超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     */
+    public SRERole setEventEnableChance(int chance) {
+        roundEvent.setChance((BiConsumer<ServerLevel, Boolean>) null, chance);
+        return this;
+    }
+
+    /**
+     * 只声明事件、不注册回调，且概率每次掷骰动态读取（适合直接绑定配置项）。
+     * <p>
+     * 与 {@link #setEventEnableChance(int)} 的区别只在概率来源；本局是否启用同样用
+     * {@link #isEventEnabled()} 查询。
+     *
+     * @param chanceSupplier 万分比概率供应器；读取值超出 0–10000 会被裁剪
+     * @return this，便于链式调用
+     * @throws NullPointerException {@code chanceSupplier} 为 null 时抛出
+     */
+    public SRERole setEventEnableChance(@NotNull IntSupplier chanceSupplier) {
+        roundEvent.setChance(Objects.requireNonNull(chanceSupplier, "chanceSupplier"));
+        return this;
+    }
+
+    /**
+     * 单独注册局末回调：只在本局掷中过时调用，且先于状态清空执行
+     * （回调里 {@link #isEventEnabled()} 仍反映本局结果）。
+     * <p>
+     * 不改变已声明的掷骰回调与概率，因此可以链在任意 {@link #setEventEnableChance} 之后，包括
+     * {@link #setEventEnableChance(int)} / {@link #setEventEnableChance(IntSupplier)} 这类纯查询式声明；
+     * 已注册的局末回调也不会被后续的 {@code setEventEnableChance} 覆盖。三参重载里的局末回调
+     * 参数与它是同一件事，二选一即可。
+     *
+     * @param roundEndHandler 局末回调，只在本局掷中过时调用；不能为 null
+     * @return this，便于链式调用
+     * @throws NullPointerException {@code roundEndHandler} 为 null 时抛出
+     */
+    public SRERole setRoundEventEndHandler(@NotNull Consumer<ServerLevel> roundEndHandler) {
+        roundEvent.setRoundEndHandler(Objects.requireNonNull(roundEndHandler, "roundEndHandler"));
+        return this;
+    }
+
+
+    /**
+     * 本职业是否声明过专属随机事件，即是否会参与每局开局的掷骰。
+     *
+     * @return 调用过 {@link #setEventEnableChance(BiConsumer, int)} 时为 true
+     */
+    public boolean hasRoundEvent() {
+        return roundEvent.hasChance();
+    }
+
+    /**
+     * 掷出所有声明过专属随机事件职业的本局启用状态。
+     * <p>
+     * 由 {@link io.wifi.starrailexpress.register.SREEventRegister#registerEventHandlers()} 注册的监听器
+     * 在每局正式开局时调用一次，只遍历 {@link TMMRoles} 维护的事件职业列表：
+     * 未声明事件的职业完全不参与，也不会有任何回调；已注销的职业自然不在列表里。
+     * <p>
+     * 事件状态是维度通用的（同一职业在所有维度共用一份），{@code level} 只影响地图限制判定与回调入参：
+     * 传 null 时以主世界为准，服务器尚未就绪时直接跳过。
+     *
+     * @param level 本局所在的服务端世界，可为 null（默认主世界）
+     */
+    public static void rollAllEventEnableChances(@Nullable ServerLevel level) {
+        ServerLevel target = resolveEventLevel(level);
+        if (target == null) {
+            return;
+        }
+        TMMRoles.forEachEventRole(role -> role.roundEvent.roll(target));
+    }
+
+    /**
+     * 清空所有事件职业本局的启用状态，并以 {@code (level, false)} 回调它们。
+     * <p>
+     * 由 {@link io.wifi.starrailexpress.register.SREEventRegister#registerEventHandlers()} 注册的监听器
+     * 在每局结束时调用一次。等待生效的「强制下一局」请求不受影响，仍然会在下一次开局掷骰时生效。
+     *
+     * @param level 本局所在的服务端世界，可为 null（默认主世界）
+     */
+    public static void resetAllEventEnableStates(@Nullable ServerLevel level) {
+        ServerLevel target = resolveEventLevel(level);
+        if (target == null) {
+            return;
+        }
+        TMMRoles.forEachEventRole(role -> role.roundEvent.reset(target));
+    }
+
+    /**
+     * 解析事件判定使用的世界：优先用调用方给的世界，其次主世界；服务器未就绪时返回 null。
+     *
+     * @param level 调用方手上的世界，可为 null
+     * @return 用于地图限制判定与回调的世界
+     */
+    private static @Nullable ServerLevel resolveEventLevel(@Nullable ServerLevel level) {
+        if (level != null) {
+            return level;
+        }
+        MinecraftServer server = SRE.SERVER;
+        return server == null ? null : server.overworld();
+    }
+
+    /**
+     * 本职业的事件是否通过了本局开局的掷骰。
+     * <p>
+     * 状态维度通用，不需要世界参数。
+     *
+     * @return 本局该职业的专属事件是否启用
+     * @see RoleRoundEvent#isEnabled()
+     */
+    public boolean isEventEnabled() {
+        return roundEvent.isEnabled();
+    }
+
+    /**
+     * 强制本职业的事件在下一局必定掷中（管理员命令用，见 {@code /sre:fake_steve next}）。
+     *
+     * @return 本次是否成功排队；本职业未声明事件或已有等待中的请求时返回 false
+     * @see RoleRoundEvent#forceNextRound()
+     */
+    public boolean forceEventEnableNextRound() {
+        return roundEvent.forceNextRound();
+    }
+
+    /**
+     * 本局是否由「强制下一局」请求掷中，用于区分命令强开与自然掷中
+     * （例如日志文案与 {@code ActivationSource}）。
+     *
+     * @return 本局该职业的事件是否由命令强制启用
+     * @see RoleRoundEvent#wasForcedByCommand()
+     */
+    public boolean wasEventForceEnabled() {
+        return roundEvent.wasForcedByCommand();
+    }
+
+    /**
+     * 是否有「强制下一局」的请求在等待下一次开局。
+     *
+     * @return 是否已排队但尚未生效
+     * @see RoleRoundEvent#isForcePending()
+     */
+    public boolean isEventForcePending() {
+        return roundEvent.isForcePending();
+    }
+
+    /**
+     * 本职业的地图限制是否允许其专属事件在本局发生。
+     * <p>
+     * 供 {@link RoleRoundEvent#roll} 在掷骰前调用；地图信息缺失时，只有完全不限制地图的职业算通过。
+     *
+     * @param level 本局所在的服务端世界
+     * @return 本职业的地图限制是否通过
+     */
+    boolean isEventMapAllowed(ServerLevel level) {
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(level);
+        if (areas == null || areas.mapName == null || areas.areasSettings == null) {
+            return false;
+        }
+        return canSpawnInMap(areas.mapName, areas.areasSettings);
+    }
 
     /**
      * 给予疯魔物品

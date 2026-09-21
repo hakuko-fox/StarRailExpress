@@ -77,7 +77,7 @@ public class SEModifiers {
             false,
             false))
             .setDefaultEnableChance(1000)
-            .setDefaultEnableNeededPlayerCount(12)
+            .setDefaultEnableNeededPlayerCount(16)
             .setHidden(true)
             .addBothRelatedRole(TMMRoles.LOOSE_END);
 
@@ -240,7 +240,7 @@ public class SEModifiers {
             null,
             null,
             false,
-            false))
+            true))
             // 一次自然分配会由处理器补齐第二名玩家，因此 max=1 表示一对。
             .setDefaultEnableChance(3000).setDefaultMax(1)
             .setServerGameTickEvent(TwinChildrenHandler::serverTick)
