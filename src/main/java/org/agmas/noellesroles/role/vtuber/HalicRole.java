@@ -23,6 +23,8 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MoneyUtils;
 
 public class HalicRole extends NormalRole {
+    private static final float SKILL_SOUND_CHANCE = 0.2F;
+
     public HalicRole(ResourceLocation id, int color, boolean innocent, boolean killer,
             MoodType mood, int sprint, boolean seeTime) {
         super(id, color, innocent, killer, mood, sprint, seeTime);
@@ -70,7 +72,9 @@ public class HalicRole extends NormalRole {
         if (!level.addFreshEntity(decoy)) return false;
         MoneyUtils.addToBalance(sp, -cost);
 
-        playSoundToPlayers(level, sp.getX(), sp.getY(), sp.getZ(), 5.0, NRSounds.HALIC_HELLO);
+        if (sp.getRandom().nextFloat() < SKILL_SOUND_CHANCE) {
+            playSoundToPlayers(level, sp.getX(), sp.getY(), sp.getZ(), 5.0, NRSounds.HALIC_HELLO);
+        }
 
         level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
                 SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -122,13 +126,15 @@ public class HalicRole extends NormalRole {
             }
         }
 
-        var soundRecipients = new java.util.HashSet<ServerPlayer>();
-        addSoundRecipients(soundRecipients, sp.serverLevel(), sp.getX(), sp.getY(), sp.getZ(), range);
-        for (var decoy : decoys) {
-            addSoundRecipients(soundRecipients, sp.serverLevel(), decoy.getX(), decoy.getY(), decoy.getZ(), range);
-        }
-        for (ServerPlayer recipient : soundRecipients) {
-            recipient.playNotifySound(NRSounds.HALIC_ARRR, SoundSource.PLAYERS, 1.0F, 1.0F);
+        if (sp.getRandom().nextFloat() < SKILL_SOUND_CHANCE) {
+            var soundRecipients = new java.util.HashSet<ServerPlayer>();
+            addSoundRecipients(soundRecipients, sp.serverLevel(), sp.getX(), sp.getY(), sp.getZ(), range);
+            for (var decoy : decoys) {
+                addSoundRecipients(soundRecipients, sp.serverLevel(), decoy.getX(), decoy.getY(), decoy.getZ(), range);
+            }
+            for (ServerPlayer recipient : soundRecipients) {
+                recipient.playNotifySound(NRSounds.HALIC_ARRR, SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
         }
 
         int count = 0;
