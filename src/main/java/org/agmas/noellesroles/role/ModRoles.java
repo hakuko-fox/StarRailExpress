@@ -33,6 +33,7 @@ import org.agmas.noellesroles.role.vtuber.*;
 import org.agmas.noellesroles.game.roles.innocence.mortician.MorticianRole;
 import org.agmas.noellesroles.game.roles.innocence.watchman.WatchmanRole;
 import org.agmas.noellesroles.game.roles.innocence.insurance.InsuranceRole;
+import org.agmas.noellesroles.game.roles.innocence.waiter.WaiterRole;
 import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
@@ -42,6 +43,7 @@ import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinRole;
 import org.agmas.noellesroles.game.roles.killer.nature_spirit.NatureSpiritRole;
 import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
+import org.agmas.noellesroles.game.roles.neutral.mushroom_scholar.MushroomScholarRole;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterHandler;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterRole;
@@ -54,6 +56,7 @@ import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerCompon
 import org.agmas.noellesroles.game.fake_steve.FakeSteveDirector;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenRole;
 import org.agmas.noellesroles.game.roles.vigilante.genshin.TartagliaRole;
+import org.agmas.noellesroles.game.roles.vigilante.magic_apprentice.MagicApprenticeRole;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
@@ -168,6 +171,7 @@ public class ModRoles {
     public static ResourceLocation JESTER_ID = Noellesroles.id("jester");
     public static ResourceLocation CONDUCTOR_ID = Noellesroles.id("conductor");
     public static ResourceLocation BARTENDER_ID = Noellesroles.id("bartender");
+    public static ResourceLocation WAITER_ID = Noellesroles.id("waiter");
     public static ResourceLocation NOISEMAKER_ID = Noellesroles.id("noisemaker");
     public static ResourceLocation AWESOME_BINGLUS_ID = Noellesroles.id("awesome_binglus");
     public static ResourceLocation VOODOO_ID = Noellesroles.id("voodoo");
@@ -199,6 +203,7 @@ public class ModRoles {
     public static ResourceLocation ELF_ID = Noellesroles.id("elf");
     public static ResourceLocation WIND_YAOSE_ID = Noellesroles.id("wind_yaose");
     public static ResourceLocation CHEF_ID = Noellesroles.id("chef");
+    public static final ResourceLocation MUSHROOM_SCHOLAR_ID = Noellesroles.id("mushroom_scholar");
     public static ResourceLocation MAGICIAN_ID = Noellesroles.id("magician");
     public static ResourceLocation CLOCKMAKER_ID = Noellesroles.id("clockmaker");
     public static final ResourceLocation PRIEST_ID = Noellesroles.id("priest");
@@ -230,6 +235,7 @@ public class ModRoles {
     public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
     // 巫师角色 ID
     public static final ResourceLocation WIZARD_ID = Noellesroles.id("wizard");
+    public static final ResourceLocation MAGIC_APPRENTICE_ID = Noellesroles.id("magic_apprentice");
     public static final ResourceLocation CAKE_MAKER_ID = Noellesroles.id("cake_maker");
     public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     public static final ResourceLocation SALTED_FISH_ID = Noellesroles.id("salted_fish");
@@ -604,6 +610,15 @@ public class ModRoles {
     )).setCanSeeCoin(false).setRoleData(WizardRoleData::new).setCanBeRandomedByOtherRoles(false)
             .setNoCoinSystem(true) // 不拥有金币系统，金币数始终为 0
             .setDefaultMax(1).setDefaultEnableChance(2500);
+
+    /** 魔法学徒：特殊警长。法杖法术由独立魔力池驱动，金币收入仍保留为被动收入。 */
+    public static SRERole MAGIC_APPRENTICE = TMMRoles.registerRole(new MagicApprenticeRole(
+            MAGIC_APPRENTICE_ID, new Color(62, 143, 210).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setVigilanteTeam(true).setSpecialVigilante(true).setCanSeeCoin(true)
+            .setCanAutoAddMoney(true)
+            .setRoleData(org.agmas.noellesroles.role_data.vigilante.MagicApprenticeRoleData::new)
+            .setDefaultMax(1).setDefaultEnableChance(5000);
 
     /**
      * 亡灵之主（杀手阵营，控场 / 滚雪球）。
@@ -1074,6 +1089,14 @@ public class ModRoles {
             .setComponentKey(FoodDrinkGlowComponent.KEY)
             .setTaskReward(1, -1, ModItems.FOOD_STUFF.getDefaultInstance())
             .setTaskRewardSilent(true); // 每完成一个任务给 1 个食材，不限次数，静默发放
+    public static SRERole MUSHROOM_SCHOLAR = TMMRoles.registerRole(
+            new MushroomScholarRole(MUSHROOM_SCHOLAR_ID, new Color(116, 87, 58).getRGB(),
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true)
+            .setRoleData(org.agmas.noellesroles.role_data.neutral.MushroomScholarRoleData::new)
+            .setCanSpawnInMap((map, settings) -> settings == null || settings.disabledTasks == null
+                    || !settings.disabledTasks.contains("sleep"));
     public static SRERole CAKE_MAKER = TMMRoles.registerRole(
             new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
@@ -1156,6 +1179,10 @@ public class ModRoles {
             .registerRole(new NormalRole(BARTENDER_ID, new Color(217, 241, 240).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setComponentKey(FoodDrinkGlowComponent.KEY).setDefaultMax(1);
+    public static SRERole WAITER = TMMRoles
+            .registerRole(new WaiterRole(WAITER_ID, new Color(232, 190, 142).getRGB(), true,
+                    false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true).setDefaultMax(1);
     public static SRERole NOISEMAKER = TMMRoles
             .registerRole(new NormalRole(NOISEMAKER_ID, new Color(200, 255, 0).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
@@ -3374,6 +3401,7 @@ public class ModRoles {
         BUILDER.setAddedVersion("4.2");
         JADE_GENERAL.setAddedVersion("4.3");
         WIZARD.setAddedVersion("4.3");
+        MAGIC_APPRENTICE.setAddedVersion("4.4");
         UNDEAD_LORD.setAddedVersion("4.3");
         GUEST_GHOST.setAddedVersion("4.0");
         MA_CHEN_XU.setAddedVersion("4.0");
@@ -3401,6 +3429,8 @@ public class ModRoles {
         GHOST_EYE.setAddedVersion("4.3");
         WIND_YAOSE.setAddedVersion("3.2");
         CHEF.setAddedVersion("3.2");
+        WAITER.setAddedVersion("4.4");
+        MUSHROOM_SCHOLAR.setAddedVersion("4.4");
         CAKE_MAKER.setAddedVersion("4.3");
         ADVENTURER.setAddedVersion("4.3");
         WAYFARER.setAddedVersion("3.2");

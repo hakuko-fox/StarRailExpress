@@ -65,6 +65,7 @@ import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.entity.ThrowingKnifeEntity;
 import org.agmas.noellesroles.content.item.ChefFoodItem;
+import org.agmas.noellesroles.game.roles.neutral.mushroom_scholar.MushroomScholarRole;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.content.item.ThrowingKnife;
 import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
@@ -410,6 +411,20 @@ public class ModPacketsReciever {
       ChefFoodItem.randomModel(cooked_food);
       RoleUtils.insertStackInFreeSlot(player, cooked_food);
     });
+    ServerPlayNetworking.registerGlobalReceiver(MushroomCultivationC2SPacket.ID, (payload, context) ->
+            context.server().execute(() -> MushroomScholarRole.handleCultivationResult(context.player(), payload.pours())));
+    ServerPlayNetworking.registerGlobalReceiver(MushroomScholarSkillC2SPacket.ID, (payload, context) ->
+            context.server().execute(() -> {
+              ServerPlayer player = context.player();
+              SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+              if (!gameWorld.isRole(player, ModRoles.MUSHROOM_SCHOLAR)
+                      || !GameUtils.isPlayerAliveAndSurvival(player)) return;
+              var data = RoleData.getNullable(
+                      org.agmas.noellesroles.role_data.neutral.MushroomScholarRoleData.class, player);
+              if (data == null) return;
+              if (payload.toggle()) data.toggleSkill();
+              else data.useSelectedSkill(player);
+            }));
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORPH_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;

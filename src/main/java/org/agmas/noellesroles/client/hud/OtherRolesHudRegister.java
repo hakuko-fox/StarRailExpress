@@ -81,6 +81,8 @@ public class OtherRolesHudRegister {
         GodfatherHud.register();
         WarlockHud.register();
         WizardHud.register();
+        MagicApprenticeHud.register();
+        MushroomScholarHud.register();
         RavenHud.register();
         DoomedSinnerHud.register();
         WraithAssassinHud.register();

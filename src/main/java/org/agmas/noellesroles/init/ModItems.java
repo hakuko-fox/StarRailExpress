@@ -397,6 +397,9 @@ public class ModItems {
     public static final Item ANTIDOTE_REAGENT = register(
             new AntidoteReagentItem(new Item.Properties().stacksTo(16).durability(5)),
             "antidote_reagent", CONSUMABLES_GROUP);
+    public static final Item TRAY_PURIFYING_REAGENT = register(
+            new Item(new Item.Properties().stacksTo(16)),
+            "tray_purifying_reagent", CONSUMABLES_GROUP);
 
     /**
      * 阴谋之书页
@@ -499,6 +502,21 @@ public class ModItems {
     public static final Item FLASH_GRENADE = register(
             new FlashGrenadeItem(new Item.Properties().stacksTo(8)),
             "flash_grenade", WEAPONS_GROUP);
+
+    public static final Item MUSHROOM_SAMPLE = register(
+            new Item(new Item.Properties().stacksTo(16)), "mushroom_sample", ROLE_ITEMS_GROUP);
+    public static final Item SAFE_MUSHROOM = register(
+            new MushroomFoodItem(new Item.Properties().stacksTo(16).food(Foods.APPLE), false),
+            "safe_mushroom", CONSUMABLES_GROUP);
+    public static final Item POISONOUS_MUSHROOM = register(
+            new MushroomFoodItem(new Item.Properties().stacksTo(16).food(Foods.APPLE), true),
+            "poisonous_mushroom", CONSUMABLES_GROUP);
+    public static final Item MUSHROOM_ESSENCE = register(
+            new MushroomEssenceItem(new Item.Properties().stacksTo(16), false),
+            "mushroom_essence", ROLE_ITEMS_GROUP);
+    public static final Item POISONOUS_MUSHROOM_ESSENCE = register(
+            new MushroomEssenceItem(new Item.Properties().stacksTo(16), true),
+            "poisonous_mushroom_essence", ROLE_ITEMS_GROUP);
 
     /** 特码头死后掉落的西红柿：Q 键可丢得很远，砸中玩家会糊满番茄酱 */
     public static final Item TOMATO = register(
@@ -734,6 +752,9 @@ public class ModItems {
     public static final Item WIZARD_STAFF = register(
             new org.agmas.noellesroles.content.item.WizardStaffItem(new Item.Properties().stacksTo(1)),
             "wizard_staff", ROLE_ITEMS_GROUP);
+    public static final Item APPRENTICE_WAND = register(
+            new org.agmas.noellesroles.content.item.ApprenticeWandItem(new Item.Properties().stacksTo(1)),
+            "apprentice_wand", ROLE_ITEMS_GROUP);
     public static final Item WIZARD_POTION = register(
             new org.agmas.noellesroles.content.item.WizardPotionItem(new Item.Properties().stacksTo(16)),
             "wizard_potion", ROLE_ITEMS_GROUP);

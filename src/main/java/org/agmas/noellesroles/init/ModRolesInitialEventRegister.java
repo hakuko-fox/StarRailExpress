@@ -62,6 +62,7 @@ import org.agmas.noellesroles.role_data.innocence.AlchemistRoleData;
 import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
 import org.agmas.noellesroles.role_data.innocence.GhostRoleData;
 import org.agmas.noellesroles.game.roles.neutral.priest.PriestRole;
+import org.agmas.noellesroles.game.roles.neutral.mushroom_scholar.MushroomScholarRole;
 import org.agmas.noellesroles.role_data.innocence.ClockmakerRoleData;
 import org.agmas.noellesroles.role_data.innocence.ConductorRoleData;
 import org.agmas.noellesroles.role_data.innocence.NoiseMakerRoleData;
@@ -76,6 +77,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.role_data.innocence.BuilderRoleData;
 import org.agmas.noellesroles.role_data.innocence.BarbarianRoleData;
 import org.agmas.noellesroles.role_data.vigilante.JojoRoleData;
+import org.agmas.noellesroles.role_data.vigilante.MagicApprenticeRoleData;
 import org.agmas.noellesroles.role_data.innocence.FortunetellerRoleData;
 import org.agmas.noellesroles.role_data.neutral.AmonRoleData;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
@@ -1111,6 +1113,25 @@ public class ModRolesInitialEventRegister {
                             if (thiefData != null) {
                                 thiefData.toggleMode();
                             }
+                            return true;
+                        }).shifted(true).modeSwitch(true).announceToSelf(false).showOnHud(false).build());
+
+        RoleSkill.register(ModRoles.MUSHROOM_SCHOLAR,
+                RoleSkill.skill(SRE.id("mushroom_scholar_cultivate"),
+                        "skill.noellesroles.mushroom_scholar.cultivate",
+                        context -> MushroomScholarRole.tryOpenCultivation(context.player())).build(),
+                RoleSkill.skill(SRE.id("mushroom_scholar_essence"),
+                        "skill.noellesroles.mushroom_scholar.essence",
+                        context -> MushroomScholarRole.convertHeldMushroom(context.player()))
+                        .shifted(true).cooldownSeconds(90).build());
+
+        RoleSkill.register(ModRoles.MAGIC_APPRENTICE,
+                RoleSkill.skill(SRE.id("magic_apprentice_switch"),
+                        "skill.noellesroles.magic_apprentice.switch", context -> {
+                            MagicApprenticeRoleData data = RoleData.getNullable(MagicApprenticeRoleData.class,
+                                    context.player());
+                            if (data == null) return false;
+                            data.cycleSpell();
                             return true;
                         }).shifted(true).modeSwitch(true).announceToSelf(false).showOnHud(false).build());
 
