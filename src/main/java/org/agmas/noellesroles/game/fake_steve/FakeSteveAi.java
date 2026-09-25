@@ -815,33 +815,11 @@ public class FakeSteveAi {
             state.lastWanderGoal = social.immutable();
             return state.lastWanderGoal;
         }
-        for (int range : new int[] { 24, 16, 8 }) {
-            for (int attempt = 0; attempt < 6; attempt++) {
-                int dx = level.getRandom().nextInt(range * 2 + 1) - range;
-                int dz = level.getRandom().nextInt(range * 2 + 1) - range;
-                BlockPos candidate = origin.offset(dx, 0, dz);
-                if (previous != null && candidate.closerThan(previous,
-                        FakeSteveWanderPolicy.AVOID_LAST_DISTANCE)) {
-                    continue;
-                }
-                if (FakeSteveNavigator.safeStand(level, candidate)) {
-                    state.lastWanderGoal = candidate.immutable();
-                    return state.lastWanderGoal;
-                }
-            }
+        BlockPos randomGoal = FakeSteveNavigator.randomWanderGoal(level, origin, previous);
+        if (randomGoal != null) {
+            state.lastWanderGoal = randomGoal;
         }
-        for (int attempt = 0; attempt < 12; attempt++) {
-            BlockPos candidate = origin.offset(level.getRandom().nextInt(17) - 8, 0,
-                    level.getRandom().nextInt(17) - 8);
-            if (previous != null && candidate.closerThan(previous, 2.0D)) {
-                continue;
-            }
-            if (FakeSteveNavigator.safeStand(level, candidate)) {
-                state.lastWanderGoal = candidate.immutable();
-                return state.lastWanderGoal;
-            }
-        }
-        return null;
+        return randomGoal;
     }
 
     private static BlockPos wanderTaskPoint(ServerLevel level, ServerPlayer body,

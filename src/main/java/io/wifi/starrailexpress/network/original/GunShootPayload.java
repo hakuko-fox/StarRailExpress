@@ -222,7 +222,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                         && BrokenGunDropUtils.shouldBreakKillerGunOnGunKill(game, player, target, mainHandStack);
                 if (backfire) {
                     GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.BACKFIRE);
-                } else if (shouldDropRevolver || shouldDropBrokenKillerGun) {
+                } else if (!bodyEntity.isHalicDecoy() && (shouldDropRevolver || shouldDropBrokenKillerGun)) {
                     {
                         Scheduler.schedule(() -> {
                             {

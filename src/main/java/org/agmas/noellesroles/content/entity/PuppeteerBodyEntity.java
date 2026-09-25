@@ -17,7 +17,7 @@ package org.agmas.noellesroles.content.entity;
 
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
-import io.wifi.starrailexpress.util.Scheduler;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -34,6 +34,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
+import org.agmas.noellesroles.game.fake_steve.HalicDecoyWalker;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
@@ -91,6 +92,9 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     /** 所有者玩家引用（缓存） */
     private Player ownerCache = null;
+
+    /** Transient navigation state; a reloaded decoy chooses a fresh route. */
+    private HalicDecoyWalker halicDecoyWalker;
 
     public boolean isPersistenceRequired() {
         return this.persistenceRequired;
@@ -208,6 +212,19 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     @Override
     public void tick() {
+        if (!level().isClientSide() && isHalicDecoy()
+                && level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            var game = SREGameWorldComponent.KEY.get(level());
+            if (game != null && game.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE
+                    && !SREGameTimeComponent.KEY.get(level()).isTimeFrozen()) {
+                if (halicDecoyWalker == null) {
+                    halicDecoyWalker = new HalicDecoyWalker();
+                }
+                halicDecoyWalker.tick(serverLevel, this);
+            } else {
+                setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
+            }
+        }
         super.tick();
         if (level().isClientSide())
             return;
@@ -335,8 +352,6 @@ public class PuppeteerBodyEntity extends LivingEntity {
         attacker.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, duration, 0, false, false, true));
         attacker.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
         attacker.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
-        var weapon = attacker.getMainHandItem().getItem();
-        Scheduler.schedule(() -> attacker.getCooldowns().removeCooldown(weapon), 1);
     }
 
     @Override

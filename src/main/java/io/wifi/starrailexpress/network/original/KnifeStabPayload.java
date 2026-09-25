@@ -98,10 +98,27 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                 if (bodyEntity.distanceTo(player) > 4.0)
                     return;
 
+                ItemStack knife = player.getMainHandItem();
+                boolean halicDurabilityKnife = bodyEntity.isHalicDecoy()
+                        && KillerKnifeDurability.isDurabilityModeEnabled(player.level())
+                        && KillerKnifeDurability.isMarkedKnife(knife);
+                if (halicDurabilityKnife && KillerKnifeDurability.isDepleted(knife)) {
+                    player.displayClientMessage(
+                            Component.translatable("message.sre.knife.depleted")
+                                    .withStyle(ChatFormatting.DARK_RED), true);
+                    return;
+                }
+
                 // 对傀儡本体造成致命伤害（20点以上确保击杀）
                 org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.consumeKanaKnife(player);
                 bodyEntity.playerHurt(player, GameConstants.DeathReasons.PUPPETEER_KNIFE);
                 org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.finishKanaKnifeAttack(player);
+
+                if (halicDurabilityKnife && KillerKnifeDurability.consumeOne(knife, player)) {
+                    player.displayClientMessage(
+                            Component.translatable("message.sre.knife.broken")
+                                    .withStyle(ChatFormatting.DARK_RED), true);
+                }
 
                 bodyEntity.playSound(TMMSounds.ITEM_KNIFE_STAB, 1.0f, 1.0f);
                 player.swing(InteractionHand.MAIN_HAND);

@@ -20,6 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,11 +48,11 @@ final class FakeSteveNavigator {
     private FakeSteveNavigator() {
     }
 
-    static ArrayDeque<BlockPos> find(ServerLevel level, ServerPlayer mover, BlockPos goal) {
+    static ArrayDeque<BlockPos> find(ServerLevel level, LivingEntity mover, BlockPos goal) {
         return find(level, mover, goal, false);
     }
 
-    static ArrayDeque<BlockPos> find(ServerLevel level, ServerPlayer mover, BlockPos goal,
+    static ArrayDeque<BlockPos> find(ServerLevel level, LivingEntity mover, BlockPos goal,
                                      boolean explicitTarget) {
         BlockPos start = mover.blockPosition();
         Set<BlockPos> occupied = occupiedByPlayers(level, mover);
@@ -134,6 +135,35 @@ final class FakeSteveNavigator {
             }
         }
         return false;
+    }
+
+    /** Shared idle destination selection for Fake Steve and Halic's decoy. */
+    static BlockPos randomWanderGoal(ServerLevel level, BlockPos origin, BlockPos previous) {
+        for (int range : new int[] { 24, 16, 8 }) {
+            for (int attempt = 0; attempt < 6; attempt++) {
+                int dx = level.getRandom().nextInt(range * 2 + 1) - range;
+                int dz = level.getRandom().nextInt(range * 2 + 1) - range;
+                BlockPos candidate = origin.offset(dx, 0, dz);
+                if (previous != null && candidate.closerThan(previous,
+                        FakeSteveWanderPolicy.AVOID_LAST_DISTANCE)) {
+                    continue;
+                }
+                if (safeStand(level, candidate)) {
+                    return candidate.immutable();
+                }
+            }
+        }
+        for (int attempt = 0; attempt < 12; attempt++) {
+            BlockPos candidate = origin.offset(level.getRandom().nextInt(17) - 8, 0,
+                    level.getRandom().nextInt(17) - 8);
+            if (previous != null && candidate.closerThan(previous, 2.0D)) {
+                continue;
+            }
+            if (safeStand(level, candidate)) {
+                return candidate.immutable();
+            }
+        }
+        return null;
     }
 
     /**
@@ -284,7 +314,7 @@ final class FakeSteveNavigator {
         return belowShape.isEmpty() ? feet.getY() : below.getY() + belowShape.max(Direction.Axis.Y);
     }
 
-    private static Set<BlockPos> occupiedByPlayers(ServerLevel level, ServerPlayer mover) {
+    private static Set<BlockPos> occupiedByPlayers(ServerLevel level, LivingEntity mover) {
         Set<BlockPos> occupied = new HashSet<>();
         for (ServerPlayer player : level.players()) {
             if (player == mover || !player.isAlive() || player.isSpectator()) {
