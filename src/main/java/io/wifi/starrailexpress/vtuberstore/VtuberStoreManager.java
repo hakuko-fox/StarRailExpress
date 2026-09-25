@@ -140,7 +140,8 @@ public final class VtuberStoreManager {
     public static void rewardPlayerForRound(ServerLevel world, GameMode gameMode,
             SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent,
             ServerPlayer player, SRERole role, boolean winner) {
-        if (roundEnd.getWinStatus() == GameUtils.WinStatus.NONE || role == null
+        if (roundEnd.getWinStatus() == GameUtils.WinStatus.NONE
+                || (role == null && gameMode.requiresAssignedRole())
                 || gameComponent.getStartingPlayerCount() < gameMode.minPlayerCount) {
             return;
         }

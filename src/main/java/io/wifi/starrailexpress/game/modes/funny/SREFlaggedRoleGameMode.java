@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
+import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
@@ -49,6 +50,7 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
         List<SRERole> roles = TMMRoles.ROLES.values().stream()
                 .filter(role -> role.isFlag(roleFlag))
                 .filter(role -> !role.isOtherModeRole())
+                .filter(role -> !SREDisableManager.isRoleDisabled(role))
                 // GameInitializeEvent already resolves map-specific roles into ROLE_MAX.
                 // Respect that result here too, otherwise flagged modes can draw a role
                 // on a map where its special-map category is disabled (for example Zora).
@@ -57,6 +59,7 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
                 // Companion roles are inserted by expandWithCompanionRoles; drawing them
                 // directly can split a required pair (for example Luna/Yoru).
                 .filter(role -> role.occupationedRoles.isEmpty())
+                .filter(role -> role.occupationRoles.stream().noneMatch(SREDisableManager::isRoleDisabled))
                 .collect(Collectors.toList());
         if (roles.isEmpty())
             roles = List.of(TMMRoles.CIVILIAN);

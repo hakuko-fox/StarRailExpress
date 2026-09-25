@@ -24,6 +24,7 @@ import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.modes.WTLooseEndsGameMode;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -749,6 +750,19 @@ public class SREEvilWarGameMode extends WTLooseEndsGameMode {
     @Override
     public boolean autoTriggerGameTrueStarted() {
         return false;
+    }
+
+    @Override
+    public boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
+            SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
+        if (playerRole == null) {
+            return false;
+        }
+        return switch (roundEnd.getWinStatus()) {
+            case LOOSE_END -> roundEnd.CustomWinnerPlayers.contains(player.getUUID());
+            case KILLERS -> SREMurderGameMode.isPlayerTheWinner(world, player, playerRole, roundEnd, gameComponent);
+            default -> false;
+        };
     }
 
     @Override

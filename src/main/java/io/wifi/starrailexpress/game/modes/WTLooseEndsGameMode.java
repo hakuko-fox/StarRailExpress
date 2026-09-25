@@ -232,7 +232,7 @@ public class WTLooseEndsGameMode extends GameMode {
             looseEndWinner = gameComponent.getLooseEndWinner();
         }
         {
-            if (looseEndWinner == player.getUUID()) {
+            if (player.getUUID().equals(looseEndWinner)) {
                 return true;
             }
         }

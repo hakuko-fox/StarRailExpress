@@ -16,7 +16,9 @@
 package org.agmas.noellesroles.game.modes.fourthroom.duel;
 
 import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import org.agmas.noellesroles.game.modes.fourthroom.config.FourthRoomConfig;
@@ -95,6 +97,14 @@ public final class FourthRoomDuelManager {
         data.phase = FourthRoomPhase.FINISHED;
         data.active = false;
         data.setDirty(true);
+        SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(manager.level());
+        roundEnd.CustomWinnerTitle = Component.literal("Fourth Room winner: " + winner.name());
+        roundEnd.CustomWinnerPlayers.clear();
+        data.players.values().stream().filter(state -> state.team == winner)
+                .forEach(state -> roundEnd.CustomWinnerPlayers.add(state.playerId));
+        roundEnd.setRoundEndData(manager.level().players().stream()
+                .filter(player -> data.players.containsKey(player.getUUID())).toList(),
+                GameUtils.WinStatus.CUSTOM_COMPONENT);
         manager.broadcast("Fourth Room winner: " + winner.name() + " (" + reason + ")");
         manager.syncMatchState();
         GameUtils.stopGame(manager.level());

@@ -483,8 +483,7 @@ public class RoleIntroduceScreen extends Screen {
     private boolean isRoleChoiceEligible(SRERole role) {
         if (role == null || role == TMMRoles.DISCOVERY_CIVILIAN || role == TMMRoles.LOOSE_END
                 || role.isOtherModeRole() || isRepairRole(role) || role.getOccupiedRoleCount() > 1
-                || SREDisableManager.isRoleDisabled(role)
-                || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 1) <= 0) {
+                || SREDisableManager.isRoleDisabled(role)) {
             return false;
         }
         var roster = io.wifi.starrailexpress.client.data.ClientRoleRosterCache.snapshot();

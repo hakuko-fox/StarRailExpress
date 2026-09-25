@@ -4500,6 +4500,7 @@
   "message.sre.backpack.choice.mode_refund": "此遊戲模式不支援自選角色，自選卡已退回。",
   "message.sre.backpack.choice.admin_refund": "管理員強制職業優先，自選卡已退回。",
   "message.sre.backpack.choice.unavailable_refund": "預約職業已不可用，自選卡已退回。",
+  "message.sre.backpack.choice.minimum_players_refund": "預約職業至少需要 %s 人，開局時只有 %s 人；自選卡已退回。",
   "message.sre.backpack.choice.conflict_refund": "此職業名額已滿，自選卡已退回。",
   "== 文件末尾 END ==": "",
   "sre.map_helper.settings.meetingVoteProcessorFunctionPermission": "會議投票結果處理函式權限等級"

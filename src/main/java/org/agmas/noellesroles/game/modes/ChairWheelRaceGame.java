@@ -44,7 +44,10 @@ import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModEntities;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public class ChairWheelRaceGame extends GameMode {
     public static final ResourceLocation identifier = ResourceLocation.tryBuild("noellesroles", "chair_wheel_race");
@@ -64,6 +67,7 @@ public class ChairWheelRaceGame extends GameMode {
     }
 
     public List<ServerPlayer> isWin = new ArrayList<>();
+    private final Set<UUID> raceParticipants = new HashSet<>();
 
     @Override
     public void tickServerGameLoop(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent) {
@@ -132,7 +136,12 @@ public class ChairWheelRaceGame extends GameMode {
         roundComponent.CustomWinnerSubtitle = Component.translatable("game.win.star.chair_wheel_race.subtitle");
         roundComponent.CustomWinnerTitle = Component.translatable("game.win.star.chair_wheel_race",
                 player == null ? "滚木" : player.getScoreboardName());
-        roundComponent.setWinStatus(GameUtils.WinStatus.CUSTOM_COMPONENT);
+        roundComponent.setRoundEndData(serverLevel.players().stream()
+                .filter(participant -> raceParticipants.contains(participant.getUUID())).toList(),
+                GameUtils.WinStatus.CUSTOM_COMPONENT);
+        if (player != null) {
+            roundComponent.CustomWinnerPlayers.add(player.getUUID());
+        }
         roundComponent.sync();
         executeFunction(serverLevel.getServer().createCommandSourceStack(), "harpymodloader:chair_wheel_race/over");
         GameUtils.stopGame(serverLevel);
@@ -142,6 +151,8 @@ public class ChairWheelRaceGame extends GameMode {
     public void initializeGame(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> list) {
         isWin.clear();
+        raceParticipants.clear();
+        list.forEach(participant -> raceParticipants.add(participant.getUUID()));
         gamePrepareTime = 20 * 10;
         executeFunction(serverLevel.getServer().createCommandSourceStack(), "harpymodloader:chair_wheel_race/init");
         for (ServerPlayer player : list) {
@@ -175,6 +186,6 @@ public class ChairWheelRaceGame extends GameMode {
     @Override
     public boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
             SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
-        return false;
+        return !isWin.isEmpty() && isWin.getFirst().getUUID().equals(player.getUUID());
     }
 }

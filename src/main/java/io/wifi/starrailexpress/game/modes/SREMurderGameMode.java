@@ -436,6 +436,12 @@ public class SREMurderGameMode extends GameMode {
      */
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
             int forcedRoleSize, List<SRERole> forcedRoles) {
+        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, forcedRoles,
+                Map.of());
+    }
+
+    private static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount,
+            int playerSize, int forcedRoleSize, List<SRERole> forcedRoles, Map<Integer, Integer> cardRequests) {
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
@@ -475,7 +481,7 @@ public class SREMurderGameMode extends GameMode {
             Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
         }
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
-                neutralsPool, vigilantePool, civilianPool, true, forcedRoles);
+                neutralsPool, vigilantePool, civilianPool, true, forcedRoles, 10, cardRequests);
     }
 
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
@@ -502,6 +508,14 @@ public class SREMurderGameMode extends GameMode {
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
             List<SRERole> forcedRoles,
             int maxDepth) {
+        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, killerPool,
+                neutralsPool, vigilantePool, civilianPool, haveOccupationRoles, forcedRoles, maxDepth, Map.of());
+    }
+
+    private static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount,
+            int playerSize, int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
+            RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
+            List<SRERole> forcedRoles, int maxDepth, Map<Integer, Integer> cardRequests) {
         // 第一步，减少强制职业
         if (forcedRoles != null) {
             for (var role : forcedRoles) {
@@ -520,14 +534,27 @@ public class SREMurderGameMode extends GameMode {
         // 杀手池
         if (playerSize - forcedRoleSize <= 0)
             return List.of();
-        List<SRERole> assignedKillers = killerPool.selectRoles(killerCount);
+        List<SRERole> assignedKillers = new ArrayList<>();
+        reserveCardRoles(assignedKillers, killerPool, killerCount, cardRequests.getOrDefault(4, 0), 4);
+        assignedKillers.addAll(killerPool.selectRoles(killerCount - assignedKillers.size()));
 
         // 警卫池 - 使用无限重复模式，因为警卫职业数量有限
         Harpymodloader.setRoleMaximum(ModRoles.SHERIFF_ID, 100);
 
         List<SRERole> assignedVigilantes = vigilantePool.selectRoles(vigilanteCount);
 
-        List<SRERole> assignedNatures = neutralsPool.selectRoles(neutralsCount);
+        List<SRERole> assignedNatures = new ArrayList<>();
+        List<Integer> neutralCardTypes = new ArrayList<>();
+        for (int type : List.of(2, 3)) {
+            for (int i = 0; i < cardRequests.getOrDefault(type, 0); i++) {
+                neutralCardTypes.add(type);
+            }
+        }
+        Collections.shuffle(neutralCardTypes);
+        for (int type : neutralCardTypes) {
+            reserveCardRoles(assignedNatures, neutralsPool, neutralsCount, 1, type);
+        }
+        assignedNatures.addAll(neutralsPool.selectRoles(neutralsCount - assignedNatures.size()));
 
         // 处理 setOccupiedRoleCount(0) 的职业：这些职业不占用原有杀手/中立/警长名额，
         // 而是替换一个平民位。统计各阵营中 occupied=0 的数量，额外补充同阵营职业并减少平民数。
@@ -568,7 +595,9 @@ public class SREMurderGameMode extends GameMode {
         int civilianCount = playerSize - assignedSpecialCount - forcedRoleSize;
 
         civilianPool.setIgnoreRoleOccupiedCount(true);
-        List<SRERole> assignedCivilians = civilianPool.selectRoles(civilianCount);
+        List<SRERole> assignedCivilians = new ArrayList<>();
+        reserveCardRoles(assignedCivilians, civilianPool, civilianCount, cardRequests.getOrDefault(1, 0), 1);
+        assignedCivilians.addAll(civilianPool.selectRoles(civilianCount - assignedCivilians.size()));
 
         // 平民（非警长阵营）如果设置了 setOccupiedRoleCount(0)，兜底改为1，避免平民自身触发"替换平民"逻辑
         for (SRERole civilian : assignedCivilians) {
@@ -603,6 +632,18 @@ public class SREMurderGameMode extends GameMode {
         for (int i = 0; i < needCivilian; i++)
             resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
         return resultRoleInstances;
+    }
+
+    private static void reserveCardRoles(List<SRERole> selected, RoleAssignmentPool pool, int limit,
+            int requestCount, int roleType) {
+        for (int i = 0; i < requestCount && selected.size() < limit; i++) {
+            SRERole role = pool.selectRole(candidate -> PlayerRoleWeightManager.getRoleType(candidate) == roleType
+                    && candidate.getOccupiedRoleCount() == 1);
+            if (role == null) {
+                break;
+            }
+            selected.add(role);
+        }
     }
 
     private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {
@@ -644,8 +685,18 @@ public class SREMurderGameMode extends GameMode {
         vigilanteCount = Math.max(0, vigilanteCount);
         neutralsCount = Math.max(0, neutralsCount);
 
+        Map<Integer, Integer> cardRequests = new HashMap<>();
+        for (ServerPlayer player : players) {
+            if (roleAssignments.get(player) != null) {
+                continue;
+            }
+            var forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+            if (forced != null && forced.type() == ForceTeamType.CARD) {
+                cardRequests.merge(forced.roleType(), 1, Integer::sum);
+            }
+        }
         List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                forcedRolesMap.size(), forcedRoles);
+                forcedRolesMap.size(), forcedRoles, cardRequests);
 
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色
@@ -713,9 +764,8 @@ public class SREMurderGameMode extends GameMode {
                     var forceTeamInfo = entry.getValue();
                     int roleType = forceTeamInfo.roleType();
                     var roleSelector = roleSelectors.get(roleType);
-                    if (roleSelector == null)
-                        continue;
-                    RoleInstance roleInstant = roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
+                    RoleInstance roleInstant = roleSelector == null ? null
+                            : roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
                     SRERole selectedRole = null;
                     if (roleInstant != null) {
                         hashMap.remove(roleInstant);

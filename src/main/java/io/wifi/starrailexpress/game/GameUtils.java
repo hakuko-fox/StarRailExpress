@@ -653,6 +653,14 @@ public class GameUtils {
         RadioItem.RADIO_GROUP.clear();
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverWorld);
         gameComponent.clear();
+        SREGameRoundEndComponent roundEnd = SREGameRoundEndComponent.KEY.get(serverWorld);
+        roundEnd.CustomWinnerPlayers.clear();
+        roundEnd.CustomWinnerExtraRoleIds.clear();
+        roundEnd.CustomWinnerID = "";
+        roundEnd.CustomWinnerTitle = null;
+        roundEnd.CustomWinnerSubtitle = null;
+        roundEnd.CustomWinnerColor = 0;
+        roundEnd.setRoundEndData(List.of(), WinStatus.NONE);
         gameComponent.isSkillAvailable = true;
         // AreasWorldComponent areasWorldComponent =
         // AreasWorldComponent.KEY.get(serverWorld);
@@ -691,6 +699,10 @@ public class GameUtils {
         gameComponent.sync();
 
         gameComponent.getGameMode().recordPlayerStats(serverWorld, gameComponent, readyPlayerList);
+        if (!gameComponent.getGameMode().shouldRecordPlayerStats()
+                && gameComponent.getGameMode().requiresAssignedRole()) {
+            recordPlayerStats(serverWorld, gameComponent, readyPlayerList);
+        }
 
         gameComponent.getGameMode().gameStarted(serverWorld, gameComponent, readyPlayerList);
 
@@ -1165,7 +1177,12 @@ public class GameUtils {
 
         isGameStarted = false;
 
-        gameComponent.getGameMode().recordWinStats(world, roundEnd, gameComponent);
+        GameMode gameMode = gameComponent.getGameMode();
+        gameMode.recordWinStats(world, roundEnd, gameComponent);
+        if (!gameMode.shouldRecordPlayerStats()) {
+            recordWinStats(world, gameMode, roundEnd, gameComponent, false);
+        }
+        rewardVtuberCoinsForRound(world, roundEnd, gameComponent);
         // --- 结束新增统计数据更新逻辑 (胜利/失败) ---
         // roundEnd.sync();
         // Show replay to all players
@@ -1229,27 +1246,42 @@ public class GameUtils {
 
     public static void recordWinStats(ServerLevel world, GameMode gameMode, SREGameRoundEndComponent roundEnd,
             SREGameWorldComponent gameComponent) {
+        recordWinStats(world, gameMode, roundEnd, gameComponent, true);
+    }
+
+    private static void recordWinStats(ServerLevel world, GameMode gameMode, SREGameRoundEndComponent roundEnd,
+            SREGameWorldComponent gameComponent, boolean recordProgression) {
         // --- 新增统计数据更新逻辑 (胜利/失败) ---
         GameUtils.WinStatus winStatus = roundEnd.getWinStatus();
+        if (winStatus == WinStatus.NONE) {
+            return;
+        }
         // SREWorldBlackoutComponent.KEY.get(world).reset();
         // 修复4: 检查是否为恋人胜利
         boolean isLoversWin = winStatus == WinStatus.LOVERS;
         {
             for (ServerPlayer player : world.players()) {
-                PlayerStats stats = PlayerStatsManager.get(player);
-
                 SRERole playerRole = gameComponent.getRole(player);
+                if (playerRole == null && (gameMode.requiresAssignedRole() || roundEnd.players.stream()
+                        .noneMatch(detail -> detail.player.getId().equals(player.getUUID())))) {
+                    continue;
+                }
+                PlayerStats stats = PlayerStatsManager.get(player);
 
                 boolean isWinner = gameMode.isPlayerWinning(world, player, playerRole, roundEnd, gameComponent);
 
                 if (isWinner) {
                     roundEnd.setPlayerWin(player.getUUID(), isWinner);
-                    roundEnd.CustomWinnerPlayers.add(player.getUUID());
+                    if (!roundEnd.CustomWinnerPlayers.contains(player.getUUID())) {
+                        roundEnd.CustomWinnerPlayers.add(player.getUUID());
+                    }
                     stats.incrementTotalWins();
                     if (playerRole != null) {
                         stats.getOrCreateRoleStats(playerRole.identifier()).incrementWinsAsRole();
+                    }
 
-                        // 统计阵营胜利
+                    // 统计阵营胜利
+                    if (playerRole != null) {
                         if (playerRole.isVigilanteTeam()) {
                             stats.incrementTotalSheriffWins();
                         } else if (playerRole.canUseKiller()) {
@@ -1271,11 +1303,28 @@ public class GameUtils {
                         stats.getOrCreateRoleStats(playerRole.identifier()).incrementLossesAsRole();
                     }
                 }
-                ProgressionDataManager.onRoundSettled(player, playerRole, isWinner);
-                io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.rewardPlayerForRound(
-                        world, gameMode, roundEnd, gameComponent, player, playerRole, isWinner);
+                if (recordProgression) {
+                    ProgressionDataManager.onRoundSettled(player, playerRole, isWinner);
+                }
             }
-            TitleUnlockManager.processRound(world, roundEnd, gameComponent);
+            if (recordProgression) {
+                TitleUnlockManager.processRound(world, roundEnd, gameComponent);
+            }
+        }
+    }
+
+    private static void rewardVtuberCoinsForRound(ServerLevel world, SREGameRoundEndComponent roundEnd,
+            SREGameWorldComponent gameComponent) {
+        GameMode gameMode = gameComponent.getGameMode();
+        for (ServerPlayer player : world.players()) {
+            SRERole role = gameComponent.getRole(player);
+            if (role == null && (gameMode.requiresAssignedRole() || roundEnd.players.stream()
+                    .noneMatch(detail -> detail.player.getId().equals(player.getUUID())))) {
+                continue;
+            }
+            boolean winner = roundEnd.didWin(player.getUUID());
+            io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.rewardPlayerForRound(
+                    world, gameMode, roundEnd, gameComponent, player, role, winner);
         }
     }
 

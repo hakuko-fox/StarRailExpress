@@ -4493,5 +4493,6 @@
   "message.sre.backpack.choice.mode_refund": "此游戏模式不支持自选角色，自选卡已退回。",
   "message.sre.backpack.choice.admin_refund": "管理员强制职业优先，自选卡已退回。",
   "message.sre.backpack.choice.unavailable_refund": "预约职业已不可用，自选卡已退回。",
+  "message.sre.backpack.choice.minimum_players_refund": "预约职业至少需要 %s 人，开局时只有 %s 人；自选卡已退回。",
   "message.sre.backpack.choice.conflict_refund": "此职业名额已满，自选卡已退回。"
 }

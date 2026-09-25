@@ -19,11 +19,13 @@ import io.wifi.starrailexpress.api.GameMode;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameRoundEndComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public final class FourthRoomGameMode extends GameMode {
 
@@ -53,6 +55,14 @@ public final class FourthRoomGameMode extends GameMode {
     }
 
     @Override
+    public void recordPlayerStats(ServerLevel world, SREGameWorldComponent gameComponent,
+            ArrayList<ServerPlayer> readyPlayerList) {
+        var participants = FourthRoomSavedData.get(world).players;
+        GameUtils.recordPlayerStats(world, gameComponent, new ArrayList<>(readyPlayerList.stream()
+                .filter(player -> participants.containsKey(player.getUUID())).toList()));
+    }
+
+    @Override
     public void finalizeGame(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         FourthRoomGameManager.of(serverWorld).shutdownMatch();
     }
@@ -69,6 +79,6 @@ public final class FourthRoomGameMode extends GameMode {
     @Override
     public boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
             SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
-        return false;
+        return roundEnd.CustomWinnerPlayers.contains(player.getUUID());
     }
 }

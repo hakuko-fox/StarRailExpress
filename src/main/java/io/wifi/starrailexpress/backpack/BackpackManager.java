@@ -446,6 +446,14 @@ public final class BackpackManager {
                 refundPendingRole(player, "message.sre.backpack.choice.unavailable_refund");
                 continue;
             }
+            int minimumPlayers = role.spawnInfo.minEnabledPlayer;
+            if (minimumPlayers > players.size()) {
+                Component message = Component.translatable("message.sre.backpack.choice.minimum_players_refund",
+                        minimumPlayers, players.size());
+                refundPendingRole(player, message);
+                player.sendSystemMessage(message);
+                continue;
+            }
             applicants.add(new BackpackRoleChoiceResolver.Request(player.getUUID(), role.identifier().toString()));
         }
         for (ServerPlayer player : players) {
@@ -458,7 +466,9 @@ public final class BackpackManager {
         Map<String, Integer> capacities = new HashMap<>();
         for (BackpackRoleChoiceResolver.Request request : applicants) {
             ResourceLocation roleId = ResourceLocation.tryParse(request.roleId());
-            capacities.put(request.roleId(), Math.max(0, Harpymodloader.ROLE_MAX.getOrDefault(roleId, 1)));
+            // ROLE_MAX is recalculated for random spawning each round and may still be 0
+            // from the previous round. An enabled role chosen with a card needs one slot.
+            capacities.put(request.roleId(), Math.max(1, Harpymodloader.ROLE_MAX.getOrDefault(roleId, 1)));
         }
         BackpackRoleChoiceResolver.Resolution resolution = BackpackRoleChoiceResolver.resolve(
                 applicants, capacities, reserved, new Random(world.random.nextLong()));
@@ -485,7 +495,7 @@ public final class BackpackManager {
                 || SREDisableManager.isRoleDisabled(role) || !RoleRosterManager.isRoleEnabled(role)) {
             return false;
         }
-        return Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 1) > 0;
+        return true;
     }
 
     private static void clearPendingRole(ServerPlayer player) {
@@ -495,6 +505,10 @@ public final class BackpackManager {
     }
 
     private static void refundPendingRole(ServerPlayer player, String messageKey) {
+        refundPendingRole(player, Component.translatable(messageKey));
+    }
+
+    private static void refundPendingRole(ServerPlayer player, Component message) {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry == null || !entry.loaded || entry.state.pendingRoleId.isBlank()) {
             return;
@@ -502,7 +516,7 @@ public final class BackpackManager {
         entry.state.pendingRoleId = "";
         entry.state.roleChoiceCards = Math.min(Integer.MAX_VALUE, entry.state.roleChoiceCards + 1);
         markDirty(player, entry);
-        player.displayClientMessage(Component.translatable(messageKey), true);
+        player.displayClientMessage(message, true);
     }
 
     /** 命令开屏前可调用以保证客户端数据新鲜。 */

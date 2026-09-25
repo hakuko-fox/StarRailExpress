@@ -30,6 +30,7 @@ import net.exmo.sre.repair.logic.RepairRoleSelection;
 import net.exmo.sre.repair.logic.RepairSanitySystem;
 import net.exmo.sre.repair.logic.RepairWinConditions;
 import net.exmo.sre.repair.role.RepairForcedRoleState;
+import net.exmo.sre.repair.role.RepairRoleDefinition;
 import net.exmo.sre.repair.state.RepairLockedDoorState;
 import net.exmo.sre.repair.state.RepairModeState;
 import net.exmo.sre.repair.state.RepairSearchState;
@@ -38,6 +39,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * 修机逃脱模式入口：生命周期钩子只做编排，
@@ -122,6 +124,18 @@ public class RepairEscapeGameMode extends GameMode {
     @Override
     public boolean isPlayerWinning(ServerLevel world, ServerPlayer player, SRERole playerRole,
             SREGameRoundEndComponent roundEnd, SREGameWorldComponent gameComponent) {
-        return false;
+        if (roundEnd.getWinStatus() == io.wifi.starrailexpress.game.GameUtils.WinStatus.CUSTOM) {
+            return roundEnd.CustomWinnerPlayers.contains(player.getUUID());
+        }
+        RepairRoleDefinition.Faction faction = Arrays.stream(RepairRoleDefinition.values())
+                .filter(definition -> definition.sreRole() == playerRole)
+                .map(definition -> definition.faction)
+                .findFirst().orElse(null);
+        return switch (roundEnd.getWinStatus()) {
+            case PASSENGERS -> faction == RepairRoleDefinition.Faction.SURVIVOR
+                    || faction == RepairRoleDefinition.Faction.NEUTRAL;
+            case KILLERS -> faction == RepairRoleDefinition.Faction.HUNTER;
+            default -> false;
+        };
     }
 }
