@@ -44,7 +44,6 @@ import org.agmas.harpymodloader.events.OnGamePlayerRolesConfirm;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 
@@ -233,46 +232,20 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                     HarpyModLoaderConfig.HANDLER.instance().roleWeights.getOrDefault(ri.role().getIdentifier(), 1f));
         }
 
-        // 按陣營分組的選擇器，用於 ForcePlayerTeam
-        Map<Integer, RoleWeightedUtil> roleSelectors = new HashMap<>();
-        Map<Integer, HashMap<RoleInstance, Float>> byType = new HashMap<>();
-        for (RoleInstance ri : hashMap.keySet()) {
-            int type = PlayerRoleWeightManager.getRoleType(ri.role());
-            byType.computeIfAbsent(type, k -> new HashMap<>()).put(ri, hashMap.get(ri));
-        }
-        for (Map.Entry<Integer, HashMap<RoleInstance, Float>> e : byType.entrySet())
-            roleSelectors.putIfAbsent(e.getKey(), new RoleWeightedUtil(e.getValue()));
-
         List<ServerPlayer> unassignedPlayers = new ArrayList<>();
         for (ServerPlayer player : players)
             if (roleAssignments.get(player) == null)
                 unassignedPlayers.add(player);
 
-        // 分配 ForcePlayerTeam（陣營卡）：盡量配發符合陣營的職業，無法配發則退回卡片
-        for (Map.Entry<UUID, ForceTeamInfo> entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
-            UUID uid = entry.getKey();
-            ServerPlayer selected = unassignedPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst()
-                    .orElse(null);
-            if (selected == null)
-                continue;
-            ForceTeamInfo forceTeam = entry.getValue();
-            int roleType = forceTeam.roleType();
-            RoleWeightedUtil selector = roleSelectors.get(roleType);
-            if (selector == null) {
-                if (forceTeam.type() == ForceTeamType.CARD)
-                    refundFactionCard(selected, roleType);
-                continue;
-            }
-            RoleInstance ri = selector.selectRandomKeyBasedOnWeightsAndRemoved();
-            if (ri != null) {
-                hashMap.remove(ri);
-                roleAssignments.put(selected, ri.role());
-                unassignedPlayers.remove(selected);
-            } else {
-                if (forceTeam.type() == ForceTeamType.CARD)
-                    refundFactionCard(selected, roleType);
-            }
-        }
+        FactionCardUtils.assignForcedTeams(unassignedPlayers, ServerPlayer::getUUID,
+                PlayerRoleWeightManager.ForcePlayerTeam, hashMap,
+                role -> PlayerRoleWeightManager.getRoleType(role.role()),
+                slots -> new RoleWeightedUtil(slots).selectRandomKeyBasedOnWeightsAndRemoved(),
+                (player, role) -> roleAssignments.put(player, role.role()),
+                (player, forced) -> {
+                    if (forced.type() == ForceTeamType.CARD)
+                        FactionCardUtils.refund(player, forced.roleType());
+                });
 
         // 剩餘職業以反權重方式分配給未分配玩家
         RoleWeightedUtil roleSelector = new RoleWeightedUtil(hashMap);
@@ -413,15 +386,4 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         return out;
     }
 
-    /** 退還一張陣營卡給玩家（當無法配發符合陣營的職業時呼叫）。 */
-    private static void refundFactionCard(ServerPlayer player, int roleType) {
-        io.wifi.starrailexpress.progression.ProgressionState.FactionCardType cardType =
-                io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.fromRoleType(roleType);
-        if (cardType != io.wifi.starrailexpress.progression.ProgressionState.FactionCardType.NONE) {
-            ProgressionDataManager.addFactionCard(player, cardType, 1);
-            player.displayClientMessage(
-                    net.minecraft.network.chat.Component.translatable("message.sre.role_rotation.card_limit")
-                            .withStyle(net.minecraft.ChatFormatting.RED), true);
-        }
-    }
 }

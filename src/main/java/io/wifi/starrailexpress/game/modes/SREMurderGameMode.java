@@ -31,9 +31,9 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import io.wifi.starrailexpress.game.data.ModifierRotationSavedData;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
+import io.wifi.starrailexpress.game.modes.funny.FactionCardUtils;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.impl.util.log.Log;
@@ -662,7 +662,7 @@ public class SREMurderGameMode extends GameMode {
         // 处理强制分配的角色，减少对应角色类型的数量需求
         for (Map.Entry<UUID, SRERole> entry : forcedRolesMap.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
-            if (player != null) {
+            if (player != null && players.contains(player)) {
                 SRERole role = entry.getValue();
                 if (role != null) {
                     forcedRoles.add(role);
@@ -696,7 +696,7 @@ public class SREMurderGameMode extends GameMode {
             }
         }
         List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                forcedRolesMap.size(), forcedRoles, cardRequests);
+                forcedRoles.size(), forcedRoles, cardRequests);
 
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色
@@ -736,70 +736,27 @@ public class SREMurderGameMode extends GameMode {
                         (existing, replacement) -> existing, // 如果键重复，保留第一个值
                         LinkedHashMap::new));
         var hashMap = new LinkedHashMap<>(collect);
-        {
-            var roleSelectors = new HashMap<Integer, RoleWeightedUtil>();
-            {
-                var roleIdToRoleMaps = new HashMap<Integer, HashMap<RoleInstance, Float>>();
-                for (var entry : hashMap.entrySet()) {
-                    var role = entry.getKey();
-                    Float roleWeight = entry.getValue();
-                    int roleType = PlayerRoleWeightManager.getRoleType(role.role());
-                    if (!roleIdToRoleMaps.containsKey(roleType)) {
-                        roleIdToRoleMaps.put(roleType, new HashMap<>());
-                    }
-                    roleIdToRoleMaps.get(roleType).put(role, roleWeight);
-                }
-                for (var entry : roleIdToRoleMaps.entrySet()) {
-                    roleSelectors.putIfAbsent(entry.getKey(), new RoleWeightedUtil(entry.getValue()));
-                }
-            }
-            {
-                // 分配forceTeam
-                for (var entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
-                    UUID playerUid = entry.getKey();
-                    var selectedPlayer = unassignedPlayers.stream().filter((p) -> p.getUUID().equals(playerUid))
-                            .findFirst().orElse(null);
-                    if (selectedPlayer == null)
-                        continue;
-                    var forceTeamInfo = entry.getValue();
-                    int roleType = forceTeamInfo.roleType();
-                    var roleSelector = roleSelectors.get(roleType);
-                    RoleInstance roleInstant = roleSelector == null ? null
-                            : roleSelector.selectRandomKeyBasedOnWeightsAndRemoved();
-                    SRERole selectedRole = null;
-                    if (roleInstant != null) {
-                        hashMap.remove(roleInstant);
-                        selectedRole = roleInstant.role();
-                        roleAssignments.put(selectedPlayer, selectedRole);
-                        unassignedPlayers.remove(selectedPlayer);
-                        Harpymodloader.LOGGER.debug(
-                                "Assign player [{}] to {} ({})",
-                                playerUid, selectedRole.getIdentifier().toString(),
-                                roleType);
+        FactionCardUtils.assignForcedTeams(unassignedPlayers, ServerPlayer::getUUID,
+                PlayerRoleWeightManager.ForcePlayerTeam, hashMap,
+                role -> PlayerRoleWeightManager.getRoleType(role.role()),
+                slots -> new RoleWeightedUtil(slots).selectRandomKeyBasedOnWeightsAndRemoved(),
+                (player, role) -> {
+                    roleAssignments.put(player, role.role());
+                    Harpymodloader.LOGGER.debug("Assign player [{}] to {}", player.getUUID(),
+                            role.role().getIdentifier());
+                },
+                (player, forced) -> {
+                    Harpymodloader.LOGGER.warn("Couldn't force player [{}]'s role to {} because there are no roles available for him.",
+                            player.getUUID(), forced.roleType());
+                    if (forced.type() == ForceTeamType.CARD) {
+                        FactionCardUtils.refund(player, forced.roleType());
                     } else {
-                        PlayerRoleWeightManager.boostKillerSideAfterForceFailure(playerUid);
-                        Harpymodloader.LOGGER.warn(
-                                "Couldn't force player [{}]'s role to {} because there are no roles available for him.",
-                                playerUid,
-                                roleType);
-                        FactionCardType cardType = FactionCardType.fromRoleType(roleType);
-                        if (cardType != FactionCardType.NONE) {
-                            if (forceTeamInfo.type() == ForceTeamType.CARD) {
-
-                                ProgressionDataManager.addFactionCard((ServerPlayer) selectedPlayer, cardType, 1);
-                                BroadcastCommand.BroadcastMessage(selectedPlayer,
-                                        Component.translatable("message.sre.pass.faction.assign_failed")
-                                                .withStyle(ChatFormatting.RED));
-                            } else {
-                                BroadcastCommand.BroadcastMessage(selectedPlayer,
-                                        Component.translatable("message.sre.force_team.assign_failed")
-                                                .withStyle(ChatFormatting.RED));
-                            }
-                        }
+                        PlayerRoleWeightManager.boostKillerSideAfterForceFailure(player.getUUID());
+                        BroadcastCommand.BroadcastMessage(player,
+                                Component.translatable("message.sre.force_team.assign_failed")
+                                        .withStyle(ChatFormatting.RED));
                     }
-                }
-            }
-        }
+                });
         RoleWeightedUtil roleSelector = new RoleWeightedUtil(hashMap);
         // 分配展开后的角色给未分配的玩家
 

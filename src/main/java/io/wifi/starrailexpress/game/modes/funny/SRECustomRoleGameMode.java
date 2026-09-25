@@ -161,7 +161,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         {
             {
                 // 分配forceTeam
-                for (var entry : PlayerRoleWeightManager.ForcePlayerTeam.entrySet()) {
+                for (var entry : FactionCardUtils.orderedRequests(PlayerRoleWeightManager.ForcePlayerTeam)) {
                     UUID playerUid = entry.getKey();
                     var selectedPlayer = unassignedPlayers.stream().filter((p) -> p.getUUID().equals(playerUid))
                             .findFirst().orElse(null);
@@ -173,26 +173,34 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                             "Assign player [{}] to {}",
                             playerUid,
                             roleType);
-                    int nc = roleTypesCount.getOrDefault(roleType, 0);
+                    int assignedType = roleType;
+                    if (t.type() == ForceTeamType.CARD && roleType == 1
+                            && roleTypesCount.getOrDefault(1, 0) == 0
+                            && roleTypesCount.getOrDefault(5, 0) > 0) {
+                        assignedType = 5;
+                    }
+                    int nc = roleTypesCount.getOrDefault(assignedType, 0);
                     if (nc > 0) {
-                        roleTypesCount.put(roleType, nc - 1);
+                        roleTypesCount.put(assignedType, nc - 1);
                         var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(selectedPlayer);
                         ccca.setSelected(false);
-                        ccca.setTeamAndSync(roleType);
-                        PlayerRoleWeightManager.addWeight(selectedPlayer, roleType, 1);
+                        ccca.setTeamAndSync(assignedType);
+                        PlayerRoleWeightManager.addWeight(selectedPlayer, assignedType, 1);
                         unassignedPlayers.remove(selectedPlayer);
                     } else {
-                        PlayerRoleWeightManager.boostKillerSideAfterForceFailure(playerUid);
                         Harpymodloader.LOGGER.warn(
                                 "Couldn't force player [{}]'s role to {} because there are no roles available for him.",
                                 playerUid,
                                 roleType);
                         FactionCardType cardType = FactionCardType.fromRoleType(roleType);
                         if (cardType != FactionCardType.NONE && t.type() == ForceTeamType.CARD) {
+                            PlayerRoleWeightManager.ForcePlayerTeam.remove(playerUid);
                             ProgressionDataManager.addFactionCard(selectedPlayer, cardType, 1);
                             BroadcastCommand.BroadcastMessage(selectedPlayer,
                                     Component.translatable("message.sre.pass.faction.assign_failed")
                                             .withStyle(ChatFormatting.RED));
+                        } else {
+                            PlayerRoleWeightManager.boostKillerSideAfterForceFailure(playerUid);
                         }
                     }
 
