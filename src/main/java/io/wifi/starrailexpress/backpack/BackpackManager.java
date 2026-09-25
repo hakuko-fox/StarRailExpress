@@ -20,7 +20,9 @@ import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
@@ -49,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -412,6 +415,7 @@ public final class BackpackManager {
             return;
         }
 
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
         List<BackpackRoleChoiceResolver.Request> applicants = new ArrayList<>();
         Map<String, Integer> reserved = new HashMap<>();
         for (ServerPlayer player : players) {
@@ -444,6 +448,10 @@ public final class BackpackManager {
             SRERole role = roleId == null ? null : TMMRoles.getRole(roleId);
             if (!isSelectableRole(role)) {
                 refundPendingRole(player, "message.sre.backpack.choice.unavailable_refund");
+                continue;
+            }
+            if (areas == null || !isRoleAllowedOnMap(role, areas.mapName, areas.areasSettings)) {
+                refundPendingRole(player, "message.sre.backpack.choice.map_refund");
                 continue;
             }
             int minimumPlayers = role.spawnInfo.minEnabledPlayer;
@@ -496,6 +504,32 @@ public final class BackpackManager {
             return false;
         }
         return true;
+    }
+
+    private static boolean isRoleAllowedOnMap(SRERole role, String mapName, AreasSettings settings) {
+        if (mapName == null || settings == null) {
+            return false;
+        }
+        if (containsConfiguredRole(settings.disabledRoles, role)) {
+            return false;
+        }
+        // 地图显式启用或强制的职业不受普通地图生成限制。
+        if (containsConfiguredRole(settings.enabledRoles, role)
+                || containsConfiguredRole(settings.forcedRoles, role)) {
+            return true;
+        }
+        return role.canSpawnInMap(mapName, settings)
+                && (role.spawnInfo.map.isEmpty() || role.spawnInfo.map.contains(mapName));
+    }
+
+    private static boolean containsConfiguredRole(Set<String> configuredRoles, SRERole role) {
+        if (configuredRoles == null) {
+            return false;
+        }
+        String fullId = role.identifier().toString();
+        String path = role.identifier().getPath();
+        return configuredRoles.stream().anyMatch(id -> id != null
+                && (fullId.equals(id.trim()) || path.equals(id.trim())));
     }
 
     private static void clearPendingRole(ServerPlayer player) {

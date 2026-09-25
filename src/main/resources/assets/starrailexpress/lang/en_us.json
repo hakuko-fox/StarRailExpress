@@ -4362,6 +4362,7 @@
   "message.sre.backpack.choice.mode_refund": "This game mode does not support role choices; your card was refunded.",
   "message.sre.backpack.choice.admin_refund": "The administrator-forced role had priority; your card was refunded.",
   "message.sre.backpack.choice.unavailable_refund": "Your reserved role is unavailable; your card was refunded.",
+  "message.sre.backpack.choice.map_refund": "Your reserved role is not available on this map; your card was refunded.",
   "message.sre.backpack.choice.minimum_players_refund": "Your reserved role needs at least %s players, but this round has %s; your card was refunded.",
   "message.sre.backpack.choice.conflict_refund": "That role's slots were full; your card was refunded."
 }
