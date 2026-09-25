@@ -18,6 +18,7 @@ package org.agmas.noellesroles.content.entity;
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
+import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -25,6 +26,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -37,9 +40,12 @@ import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.game.fake_steve.HalicDecoyWalker;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -95,6 +101,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     /** Transient navigation state; a reloaded decoy chooses a fresh route. */
     private HalicDecoyWalker halicDecoyWalker;
+    private final Map<UUID, Long> nextHalicGreetingTick = new HashMap<>();
 
     public boolean isPersistenceRequired() {
         return this.persistenceRequired;
@@ -213,7 +220,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
     @Override
     public void tick() {
         if (!level().isClientSide() && isHalicDecoy()
-                && level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                && level() instanceof ServerLevel serverLevel) {
             var game = SREGameWorldComponent.KEY.get(level());
             if (game != null && game.getGameStatus() == SREGameWorldComponent.GameStatus.ACTIVE
                     && !SREGameTimeComponent.KEY.get(level()).isTimeFrozen()) {
@@ -221,6 +228,7 @@ public class PuppeteerBodyEntity extends LivingEntity {
                     halicDecoyWalker = new HalicDecoyWalker();
                 }
                 halicDecoyWalker.tick(serverLevel, this);
+                greetNearbyPlayers(serverLevel);
             } else {
                 setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
             }
@@ -352,6 +360,19 @@ public class PuppeteerBodyEntity extends LivingEntity {
         attacker.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, duration, 0, false, false, true));
         attacker.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
         attacker.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
+    }
+
+    private void greetNearbyPlayers(ServerLevel level) {
+        long now = GameUtils.getTicksFromGameStart(level);
+        for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class,
+                getBoundingBox().inflate(2.0D), GameUtils::isPlayerAliveAndSurvival)) {
+            if (distanceToSqr(player) > 4.0D
+                    || now < nextHalicGreetingTick.getOrDefault(player.getUUID(), Long.MIN_VALUE)) {
+                continue;
+            }
+            player.playNotifySound(NRSounds.HALIC_HELLO, SoundSource.PLAYERS, 1.0F, 1.0F);
+            nextHalicGreetingTick.put(player.getUUID(), now + 30L * 20L);
+        }
     }
 
     @Override
