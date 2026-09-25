@@ -23,6 +23,7 @@ import org.agmas.noellesroles.component.InfectedPlayerComponent;
 import org.agmas.noellesroles.component.ModComponents;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.content.entity.SaltedFishBodyEntity;
+import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
 import org.agmas.noellesroles.content.item.SignedPaperItem;
 import org.agmas.noellesroles.role_data.innocence.AgentRoleData;
 import org.agmas.noellesroles.role_data.innocence.LeatherPigRoleData;
@@ -930,6 +931,14 @@ public class RoleInstinctRegister {
 
     // ---------- 通用兜底逻辑 ----------
     public static void registerNormalLogic() {
+        CommonInstinctEvents.ALIVE_COMMON_AFTER_EVENT.register((self, target, hasInstinct) -> {
+            if (hasInstinct && target instanceof PuppeteerBodyEntity body && body.isHalicDecoy()
+                    && SREClient.gameComponent != null && SREClient.gameComponent.isKillerTeam(self)) {
+                return TrueFalseAndCustomResult.custom(TMMRoles.CIVILIAN.color());
+            }
+            return TrueFalseAndCustomResult.pass();
+        });
+
         CommonInstinctEvents.ALIVE_COMMON_BEFORE_EVENT.register((self, target, hasInstinct) -> {
             if (target == null)
                 return TrueFalseAndCustomResult.pass();
