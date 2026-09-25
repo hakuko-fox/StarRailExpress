@@ -29,7 +29,9 @@ import org.agmas.noellesroles.game.roles.innocence.adventurer.AdventurerRole;
 import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerRole;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
 import org.agmas.noellesroles.game.roles.innocence.mortician.MorticianRole;
+import org.agmas.noellesroles.game.roles.innocence.watchman.WatchmanRole;
 import org.agmas.noellesroles.game.roles.innocence.insurance.InsuranceRole;
+import org.agmas.noellesroles.game.roles.innocence.waiter.WaiterRole;
 import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
@@ -37,7 +39,9 @@ import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
 import org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordRole;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinRole;
+import org.agmas.noellesroles.game.roles.killer.nature_spirit.NatureSpiritRole;
 import org.agmas.noellesroles.game.roles.neutral.chef.ChefRole;
+import org.agmas.noellesroles.game.roles.neutral.mushroom_scholar.MushroomScholarRole;
 import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterHandler;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterRole;
@@ -45,9 +49,13 @@ import org.agmas.noellesroles.game.roles.neutral.leader.LeaderRole;
 import org.agmas.noellesroles.game.roles.neutral.mafia.MafiaRole;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaRole;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
+import org.agmas.noellesroles.game.roles.neutral.priest.PriestRole;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
+import org.agmas.noellesroles.game.fake_steve.FakeSteveDirector;
 import org.agmas.noellesroles.game.roles.neutral.raven.RavenRole;
+import org.agmas.noellesroles.game.roles.neutral.skeleton.SkeletonRole;
 import org.agmas.noellesroles.game.roles.vigilante.genshin.TartagliaRole;
+import org.agmas.noellesroles.game.roles.vigilante.magic_apprentice.MagicApprenticeRole;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
@@ -159,6 +167,7 @@ public class ModRoles {
     public static ResourceLocation JESTER_ID = Noellesroles.id("jester");
     public static ResourceLocation CONDUCTOR_ID = Noellesroles.id("conductor");
     public static ResourceLocation BARTENDER_ID = Noellesroles.id("bartender");
+    public static ResourceLocation WAITER_ID = Noellesroles.id("waiter");
     public static ResourceLocation NOISEMAKER_ID = Noellesroles.id("noisemaker");
     public static ResourceLocation AWESOME_BINGLUS_ID = Noellesroles.id("awesome_binglus");
     public static ResourceLocation VOODOO_ID = Noellesroles.id("voodoo");
@@ -190,8 +199,10 @@ public class ModRoles {
     public static ResourceLocation ELF_ID = Noellesroles.id("elf");
     public static ResourceLocation WIND_YAOSE_ID = Noellesroles.id("wind_yaose");
     public static ResourceLocation CHEF_ID = Noellesroles.id("chef");
+    public static final ResourceLocation MUSHROOM_SCHOLAR_ID = Noellesroles.id("mushroom_scholar");
     public static ResourceLocation MAGICIAN_ID = Noellesroles.id("magician");
     public static ResourceLocation CLOCKMAKER_ID = Noellesroles.id("clockmaker");
+    public static final ResourceLocation PRIEST_ID = Noellesroles.id("priest");
     public static final ResourceLocation RESCUER_ID = Noellesroles.id("rescuer");
     public static final ResourceLocation FIREFIGHTER_ID = Noellesroles.id("firefighter");
     public static final ResourceLocation ACCOUNTANT_ID = Noellesroles.id("accountant");
@@ -220,6 +231,7 @@ public class ModRoles {
     public static final ResourceLocation JADE_GENERAL_ID = Noellesroles.id("jade_general");
     // 巫师角色 ID
     public static final ResourceLocation WIZARD_ID = Noellesroles.id("wizard");
+    public static final ResourceLocation MAGIC_APPRENTICE_ID = Noellesroles.id("magic_apprentice");
     public static final ResourceLocation CAKE_MAKER_ID = Noellesroles.id("cake_maker");
     public static final ResourceLocation ADVENTURER_ID = Noellesroles.id("adventurer");
     public static final ResourceLocation SALTED_FISH_ID = Noellesroles.id("salted_fish");
@@ -284,6 +296,7 @@ public class ModRoles {
     public static final ResourceLocation GUEST_GHOST_ID = Noellesroles.id("guest_ghost");
     public static final ResourceLocation SILENCER_ID = Noellesroles.id("silencer");
     public static final ResourceLocation WATCHER_ID = Noellesroles.id("watcher");
+    public static final ResourceLocation NATURE_SPIRIT_ID = Noellesroles.id("nature_spirit");
     public static final ResourceLocation YOULU_ID = Noellesroles.id("youlu");
     public static final ResourceLocation IMITATOR_ID = Noellesroles.id("imitator");
     public static final ResourceLocation NOSTALGIST_ID = Noellesroles.id("nostalgist");
@@ -334,6 +347,8 @@ public class ModRoles {
     public static final ResourceLocation SILVER_WING_ID = Noellesroles.id("silver_wing");
 
     public static final ResourceLocation WAYFARER_ID = Noellesroles.id("wayfarer");
+    // 骷髅 - PEAK 爬山图专属中立，只能由骸骨之书复活得到
+    public static final ResourceLocation SKELETON_ID = Noellesroles.id("skeleton");
     public static final ResourceLocation DIO_ID = Noellesroles.id("dio");
     public static final ResourceLocation JOJO_ID = Noellesroles.id("jojo");
 
@@ -365,6 +380,32 @@ public class ModRoles {
     )).setCanSeeCoin(true).setCanBeRandomedByOtherRoles(false)
             .setSpecialMapRole(MapSpecialFeatures.FLY).setDefaultMax(0)
             .setRoleData(PilotRoleData::new);
+
+    // 更夫角色 ID
+    public static final ResourceLocation WATCHMAN_ID = Noellesroles.id("watchman");
+
+    /**
+     * 更夫 - 平民阵营
+     * - 属于平民阵营 (isInnocent = true)
+     * - 不能使用杀手能力 (canUseKiller = false)
+     * - 真实心情系统、标准冲刺时间
+     * - 可以透视到游戏时间 (canSeeTime = true)
+     * - 技能「敲钟」：按下技能键敲钟，使附近玩家短暂透视游戏时间 15 秒（CD 90 秒）
+     * - 商店：锣（100）、梆（100），每次购买价格 +25（冷却固定 120 秒）
+     * - 职业相关规则全部集中在 WatchmanRole / WatchmanRoleData 里
+     */
+    public static SRERole WATCHMAN = TMMRoles.registerRole(new WatchmanRole(
+            WATCHMAN_ID, // 角色 ID
+            new Color(96, 112, 200).getRGB(), // 夜幕蓝 - 代表更夫/夜间报时
+            true, // isInnocent = 平民阵营
+            false, // canUseKiller = 无杀手能力
+            SRERole.MoodType.REAL, // 真实心情
+            TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准冲刺时间
+            true // 可以透视游戏时间
+    ))
+            .setCanSeeCoin(true)
+            .setCanBeRandomedByOtherRoles(true)
+            .setRoleData(WatchmanRoleData::new);
 
     /**
      * 影隼角色 - 杀手阵营
@@ -564,6 +605,15 @@ public class ModRoles {
     )).setCanSeeCoin(false).setRoleData(WizardRoleData::new).setCanBeRandomedByOtherRoles(false)
             .setNoCoinSystem(true) // 不拥有金币系统，金币数始终为 0
             .setDefaultMax(1).setDefaultEnableChance(2500);
+
+    /** 魔法学徒：特殊警长。法杖法术由独立魔力池驱动，金币收入仍保留为被动收入。 */
+    public static SRERole MAGIC_APPRENTICE = TMMRoles.registerRole(new MagicApprenticeRole(
+            MAGIC_APPRENTICE_ID, new Color(62, 143, 210).getRGB(), true, false,
+            SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setVigilanteTeam(true).setSpecialVigilante(true).setCanSeeCoin(true)
+            .setCanAutoAddMoney(true)
+            .setRoleData(org.agmas.noellesroles.role_data.vigilante.MagicApprenticeRoleData::new)
+            .setDefaultMax(1).setDefaultEnableChance(5000);
 
     /**
      * 亡灵之主（杀手阵营，控场 / 滚雪球）。
@@ -908,6 +958,7 @@ public class ModRoles {
      * - 真实心情系统
      * - 与平民一致的体力，隐藏计分板
      * - 无金币系统，不显示金币
+     * - 完成普通任务获得 1 个游戏代币；完成小游戏任务额外获得 1 个游戏代币
      * - 完成小游戏任务额外恢复 30% 理智；小游戏任务刷新不受轮换模式普通任务限制
      * - 商店使用小游戏代币依次购买 Dream 铁斧/钻石剑/重锤（见 RoleShopHandler）
      * - 用 Dream 武器击杀玩家后武器进入 20 秒冷却；死亡时武器掉落为左轮手枪
@@ -1033,6 +1084,14 @@ public class ModRoles {
             .setComponentKey(FoodDrinkGlowComponent.KEY)
             .setTaskReward(1, -1, ModItems.FOOD_STUFF.getDefaultInstance())
             .setTaskRewardSilent(true); // 每完成一个任务给 1 个食材，不限次数，静默发放
+    public static SRERole MUSHROOM_SCHOLAR = TMMRoles.registerRole(
+            new MushroomScholarRole(MUSHROOM_SCHOLAR_ID, new Color(116, 87, 58).getRGB(),
+                    true, false, SRERole.MoodType.REAL,
+                    TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true)
+            .setRoleData(org.agmas.noellesroles.role_data.neutral.MushroomScholarRoleData::new)
+            .setCanSpawnInMap((map, settings) -> settings == null || settings.disabledTasks == null
+                    || !settings.disabledTasks.contains("sleep"));
     public static SRERole CAKE_MAKER = TMMRoles.registerRole(
             new CakeMakerRole(CAKE_MAKER_ID, new Color(244, 173, 193).getRGB(), true, false,
                     SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
@@ -1094,6 +1153,28 @@ public class ModRoles {
             .setCanUseInstinctAndNightVision(true)
             .setDefaultMax(0)
             .setAddedVersion("4.4");
+
+    // 骷髅：PEAK 爬山图专属中立职业，常态不刷新，只能由骸骨之书把死亡玩家复活而来
+    public static SRERole SKELETON = TMMRoles.registerRole(
+            new SkeletonRole(SKELETON_ID, new Color(199, 195, 191).getRGB(),
+                    false, false, SRERole.MoodType.FAKE,
+                    Integer.MAX_VALUE, true)
+                    // 常态药水效果（ExtraEffectRole 每秒自动续期）：
+                    // 静音（别人听不到他说话）+ 禁用聊天栏（文字聊天没人看得到）+ 速度 1
+                    .addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, 30 * 20, 0, true, false, false))
+                    .addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, 30 * 20, 0, true, false, false))
+                    .addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 30 * 20, 0, true, false, false)))
+            .setRoleData(SkeletonRoleData::new)
+            .setNeutrals(true)
+            .setCanUseInstinctAndNightVision(false)   // 无法打开本能透视
+            .setCanSeeCoin(true)
+            .setCanPickUpRevolver(false)
+            .setCanClimbWalls(true)                   // 可以爬墙（复用童子军的攀爬系统）
+            .addFlag("peak")
+            .setCanBeRandomedByOtherRoles(false)      // 无法被其它职业（赌徒等）随机到
+            .setSpecialMapRolesCondition((t) -> t.contains(MapSpecialFeatures.PEAK)) // 仅 PEAK 地图
+            .setDefaultMax(0)                         // 常态不刷新
+            .setAddedVersion("4.4");
     public static SRERole JESTER = TMMRoles
             .registerRole(new JesterRole(JESTER_ID, new Color(186, 85, 211).getRGB(), false,
                     false, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -1115,6 +1196,10 @@ public class ModRoles {
             .registerRole(new NormalRole(BARTENDER_ID, new Color(217, 241, 240).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setComponentKey(FoodDrinkGlowComponent.KEY).setDefaultMax(1);
+    public static SRERole WAITER = TMMRoles
+            .registerRole(new WaiterRole(WAITER_ID, new Color(232, 190, 142).getRGB(), true,
+                    false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setCanPickUpRevolver(true).setDefaultMax(1);
     public static SRERole NOISEMAKER = TMMRoles
             .registerRole(new NormalRole(NOISEMAKER_ID, new Color(200, 255, 0).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
@@ -1607,6 +1692,8 @@ public class ModRoles {
             SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setCanSeeCoin(true)
             .setCanUseInstinctAndNightVision(false)
+            // 初始金币 175：走通用机制（ModdedRoleAssigned 事件统一按 getInitialCoinCount 设置余额）
+            .setInitialCoinCount(175)
             .setDefaultMax(1)
             .setDefaultEnableChance(5000);
 
@@ -1623,6 +1710,32 @@ public class ModRoles {
             .setNeutrals(false).setCanSeeCoin(true)
             .setSpecialMapRole(MapSpecialFeatures.HORSE).setDefaultMax(0)
             .setCanBeRandomedByOtherRoles(false);
+
+    /**
+     * 骑兵角色（警长阵营特殊警长）
+     * - 属于警长阵营 (isInnocent = true, setVigilanteTeam = true)，为特殊警长
+     * - 真实心情系统；体力为平民的 2.5 倍
+     * - 仅在 HORSE 类型地图中刷新（与驯马师一致）
+     * - 开局自带一个超级猪马蹄铁；商店可买下界合金矛 / 突进 III 附魔 / 超级猪马蹄铁
+     * - 开启了 canUseSpVanillaWeapon：可用下界合金矛削他人虚拟血量并击杀（死因 spear）
+     */
+    public static final ResourceLocation CAVALRY_ID = Noellesroles.id("cavalry");
+    public static SRERole CAVALRY = TMMRoles
+            .registerRole(new org.agmas.noellesroles.role.vigilante.CavalryRole(
+                    CAVALRY_ID, new Color(150, 90, 40).getRGB(), true,
+                    false, SRERole.MoodType.REAL,
+                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 2.5), false))
+            .setCanSeeCoin(true)
+            .setVigilanteTeam(true)
+            .setSpecialVigilante(true)
+            .setCanUseSpVanillaWeapon(true)
+            .setSpecialMapRole(MapSpecialFeatures.HORSE)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(7000)
+            .setCanBeRandomedByOtherRoles(false)
+            .setCanPickUpRevolver(false)
+            .setRoleData(org.agmas.noellesroles.role_data.vigilante.CavalryRoleData::new);
+
     public static SRERole HUNTER = TMMRoles
             .registerRole(new NormalRole(HUNTER_ID, new Color(160, 82, 45).getRGB(), false,
                     true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
@@ -1750,6 +1863,9 @@ public class ModRoles {
             .setCanBeRandomedByOtherRoles(false)
             .setCanSetSpawnInfoInConfig(false)
             .setDefaultMax(0)
+            .setEventEnableChance(FakeSteveDirector::onEventRollResult,
+                    FakeSteveDirector::onEventRoundEnd,
+                    () -> org.agmas.noellesroles.config.NoellesRolesConfig.instance().fakeSteveEnableChance)
             .setAddedVersion("4.4");
     public static SRERole VULTURE = TMMRoles
             .registerRole(new NormalRole(VULTURE_ID, new Color(210, 105, 30).getRGB(), false,
@@ -2739,6 +2855,26 @@ public class ModRoles {
             .setDefaultEnableNeededPlayerCount(12);
 
     /**
+     * 神父：平民阵营，由持有神的使命的钟表匠转变而来，随平民获胜。
+     * 不参与自然刷新，也不能被其他角色随机到。
+     */
+    public static SRERole PRIEST = TMMRoles.registerRole(new PriestRole(
+            PRIEST_ID,
+            new Color(244, 232, 192).getRGB(),
+            RoleType.CIVILIAN,
+            SRERole.MoodType.REAL,
+            Integer.MAX_VALUE,
+            true
+    )).setRoleData(PriestRoleData::new)
+            .setCanSeeTime(true)
+            .setCanSeeCoin(true)
+            .setCanUseInstinctAndNightVision(true)
+            .setDefaultMax(0)
+            .setCanBeRandomedByOtherRoles(false)
+            .setCanSetSpawnInfoInConfig(false)
+            .setHiddenForRoleRotation(true);
+
+    /**
      * 强盗角色 - 杀手阵营
      * - 杀手阵营 (isInnocent = false, canUseKiller = true)
      * - 假心情系统
@@ -2835,6 +2971,19 @@ public class ModRoles {
             Integer.MAX_VALUE, // 无限冲刺时间
             true // 隐藏计分板
     )).setRoleData(YouluRoleData::new).setCanSeeCoin(true).setDefaultEnableChance(5000);
+
+    /**
+     * 自然精灵：杀手阵营。技能键伪装成脚下方块并对齐格子；商店有竹枪/竹子/范围关灯/开锁器。
+     */
+    public static SRERole NATURE_SPIRIT = TMMRoles.registerRole(new NatureSpiritRole(
+            NATURE_SPIRIT_ID,
+            new Color(46, 160, 87).getRGB(),
+            false,
+            true,
+            SRERole.MoodType.FAKE,
+            Integer.MAX_VALUE,
+            true
+    )).setCanSeeCoin(true).setDefaultMax(1).setDefaultEnableChance(5000);
 
     // 模仿者 - 杀手角色，右键尸体吃掉获得永久能力
     public static SRERole IMITATOR = TMMRoles.registerRole(new NormalRole(
@@ -3123,6 +3272,7 @@ public class ModRoles {
         BUILDER.setAddedVersion("4.2");
         JADE_GENERAL.setAddedVersion("4.3");
         WIZARD.setAddedVersion("4.3");
+        MAGIC_APPRENTICE.setAddedVersion("4.4");
         UNDEAD_LORD.setAddedVersion("4.3");
         GUEST_GHOST.setAddedVersion("4.0");
         MA_CHEN_XU.setAddedVersion("4.0");
@@ -3150,6 +3300,8 @@ public class ModRoles {
         GHOST_EYE.setAddedVersion("4.3");
         WIND_YAOSE.setAddedVersion("3.2");
         CHEF.setAddedVersion("3.2");
+        WAITER.setAddedVersion("4.4");
+        MUSHROOM_SCHOLAR.setAddedVersion("4.4");
         CAKE_MAKER.setAddedVersion("4.3");
         ADVENTURER.setAddedVersion("4.3");
         WAYFARER.setAddedVersion("3.2");
@@ -3237,6 +3389,7 @@ public class ModRoles {
         MERCENARY.setAddedVersion("4.1");
         CANDLE_BEARER.setAddedVersion("4.0");
         RAVEN.setAddedVersion("4.3");
+        NATURE_SPIRIT.setAddedVersion("4.4");
         REASONER.setAddedVersion("4.3");
         VOICE_CHANGER.setAddedVersion("4.4");
         AMON.setAddedVersion("4.3");

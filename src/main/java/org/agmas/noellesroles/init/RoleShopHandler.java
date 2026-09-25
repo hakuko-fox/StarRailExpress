@@ -69,6 +69,7 @@ import org.agmas.noellesroles.role_data.innocence.PhotographerRoleData;
 import org.agmas.noellesroles.role_data.killer.StalkerRoleData;
 import org.agmas.noellesroles.role_data.killer.WaterGhostRoleData;
 import org.agmas.noellesroles.role_data.killer.WizardRoleData;
+import org.agmas.noellesroles.role_data.vigilante.MagicApprenticeRoleData;
 import org.agmas.noellesroles.role_data.killer.WatcherRoleData;
 import org.agmas.noellesroles.role_data.killer.WraithAssassinRoleData;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
@@ -3682,16 +3683,32 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.WIZARD_ID, WIZARD_SHOP);
         }
 
+        // 魔法学徒法术解锁：购买后加入法杖的可切换法术列表。
+        {
+            var APPRENTICE_SHOP = new ArrayList<ShopEntry>();
+            APPRENTICE_SHOP.add(apprenticeSpellEntry(Items.SNOWBALL, "frostball",
+                    MagicApprenticeRoleData.Spell.FROSTBALL, 50));
+            APPRENTICE_SHOP.add(apprenticeSpellEntry(Items.SPIDER_EYE, "poison",
+                    MagicApprenticeRoleData.Spell.POISON, 150));
+            APPRENTICE_SHOP.add(apprenticeSpellEntry(Items.FEATHER, "knockback",
+                    MagicApprenticeRoleData.Spell.KNOCKBACK, 150));
+            APPRENTICE_SHOP.add(apprenticeSpellEntry(Items.FIRE_CHARGE, "fire_field",
+                    MagicApprenticeRoleData.Spell.FIRE_FIELD, 250));
+            APPRENTICE_SHOP.add(apprenticeSpellEntry(Items.POWDER_SNOW_BUCKET, "ice_field",
+                    MagicApprenticeRoleData.Spell.ICE_FIELD, 150));
+            ShopContent.customEntries.put(ModRoles.MAGIC_APPRENTICE_ID, APPRENTICE_SHOP);
+        }
+
         // 疫使商店
         {
             var INFECTED_SHOP_LIST = new ArrayList<ShopEntry>();
             // 催化剂 - 450金币
             // 使所有感染玩家和中毒玩家致死，但不会使杀手阵营/杀手方中立玩家致死
             INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.CATALYST.getDefaultInstance(), 450, ShopEntry.Type.TOOL));
-            // 乘务员钥匙 - 100金币
-            INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
-            // 开锁器 - 50金币
-            INFECTED_SHOP_LIST.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            // 乘务员钥匙 - 50金币
+            INFECTED_SHOP_LIST.add(new ShopEntry(ModItems.MASTER_KEY_P.getDefaultInstance(), 50, ShopEntry.Type.TOOL));
+            // 开锁器 - 150金币
+            INFECTED_SHOP_LIST.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 150, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.INFECTED.getIdentifier(), INFECTED_SHOP_LIST);
         }
 
@@ -3799,6 +3816,32 @@ public class RoleShopHandler {
                     return false;
                 }
                 return comp.quickCast(spell);
+            }
+        };
+    }
+
+    private static ShopEntry apprenticeSpellEntry(net.minecraft.world.item.Item icon, String nameKey,
+            MagicApprenticeRoleData.Spell spell, int price) {
+        ItemStack stack = new ItemStack(icon);
+        stack.set(DataComponents.CUSTOM_NAME,
+                Component.translatable("shop.noellesroles.magic_apprentice." + nameKey));
+        stack.set(DataComponents.LORE, new ItemLore(java.util.List.of(Component.translatable(
+                "shop.noellesroles.magic_apprentice." + nameKey + ".desc").withStyle(ChatFormatting.GRAY))));
+        return new ShopEntry(stack, price, ShopEntry.Type.TOOL) {
+            @Override
+            public boolean onBuy(@NotNull Player player) {
+                if (!(player instanceof ServerPlayer serverPlayer)
+                        || !SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.MAGIC_APPRENTICE)) {
+                    return false;
+                }
+                MagicApprenticeRoleData data = RoleData.getNullable(MagicApprenticeRoleData.class, serverPlayer);
+                if (data == null || data.isUnlocked(spell)) return false;
+                data.unlock(spell);
+                serverPlayer.displayClientMessage(Component.translatable(
+                        "message.noellesroles.magic_apprentice.unlocked",
+                        Component.translatable("hud.noellesroles.magic_apprentice.spell." + spell.name().toLowerCase()))
+                        .withStyle(ChatFormatting.GREEN), true);
+                return true;
             }
         };
     }

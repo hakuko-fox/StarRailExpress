@@ -65,6 +65,7 @@ import org.agmas.noellesroles.content.block_entity.LotteryMachineBlockEntity;
 import org.agmas.noellesroles.content.block_entity.VendingMachinesBlockEntity;
 import org.agmas.noellesroles.content.entity.ThrowingKnifeEntity;
 import org.agmas.noellesroles.content.item.ChefFoodItem;
+import org.agmas.noellesroles.game.roles.neutral.mushroom_scholar.MushroomScholarRole;
 import org.agmas.noellesroles.content.item.StalkerKnifeItem;
 import org.agmas.noellesroles.content.item.ThrowingKnife;
 import org.agmas.noellesroles.content.item.ZeroOneFiveShootPayload;
@@ -113,6 +114,9 @@ import java.util.function.Predicate;
 
 public class ModPacketsReciever {
   public static void registerPackets() {
+    ServerPlayNetworking.registerGlobalReceiver(PurpleMonsterEventC2SPacket.ID, (payload, context) ->
+        context.server().execute(() -> org.agmas.noellesroles.role.bouns.roles.PurpleMonsterRole
+            .handleAction(context.player(), payload)));
     ServerPlayNetworking.registerGlobalReceiver(LoanContractSubmitC2SPacket.ID, (payload, context) ->
         context.server().execute(() ->
             org.agmas.noellesroles.game.roles.neutral.lender.LenderRoleHandler.submit(
@@ -396,6 +400,20 @@ public class ModPacketsReciever {
       ChefFoodItem.randomModel(cooked_food);
       RoleUtils.insertStackInFreeSlot(player, cooked_food);
     });
+    ServerPlayNetworking.registerGlobalReceiver(MushroomCultivationC2SPacket.ID, (payload, context) ->
+            context.server().execute(() -> MushroomScholarRole.handleCultivationResult(context.player(), payload.pours())));
+    ServerPlayNetworking.registerGlobalReceiver(MushroomScholarSkillC2SPacket.ID, (payload, context) ->
+            context.server().execute(() -> {
+              ServerPlayer player = context.player();
+              SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+              if (!gameWorld.isRole(player, ModRoles.MUSHROOM_SCHOLAR)
+                      || !GameUtils.isPlayerAliveAndSurvival(player)) return;
+              var data = RoleData.getNullable(
+                      org.agmas.noellesroles.role_data.neutral.MushroomScholarRoleData.class, player);
+              if (data == null) return;
+              if (payload.toggle()) data.toggleSkill();
+              else data.useSelectedSkill(player);
+            }));
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.MORPH_PACKET, (payload, context) -> {
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
@@ -663,6 +681,12 @@ public class ModPacketsReciever {
           inControlCCA.applyControlInput(payload.movementBits(), payload.yaw(), payload.pitch());
         });
 
+    // 童子军攀爬请求：薄转发到职业类做二次校验与状态维护
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.ScoutClimbC2SPacket.ID, (payload, context) -> context.server()
+            .execute(() -> org.agmas.noellesroles.role.bouns.roles.ScoutRole.handleClimbPacket(
+                context.player(), payload.start(), payload.normal())));
+
     // 操纵师附身期间：以目标身份释放目标自身技能（冷却记在目标身上）
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ManipulatorAbilityC2SPacket.ID, (payload, context) -> {
@@ -875,6 +899,12 @@ public class ModPacketsReciever {
         (payload, context) ->
           context.server().execute(() ->
             ProgrammerRole.executeTerminalCommand(context.player(), payload.command())));
+
+    ServerPlayNetworking.registerGlobalReceiver(PriestChantC2SPacket.ID,
+        (payload, context) ->
+          context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.neutral.priest.PriestRole.submitLyric(
+                context.player(), payload.text())));
 
     ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BroadcasterC2SPacket.ID,
         (payload, context) -> {

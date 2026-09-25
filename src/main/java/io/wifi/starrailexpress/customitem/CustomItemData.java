@@ -88,6 +88,10 @@ public class CustomItemData {
     @SerializedName("animatedTextures")
     public List<String> animatedTextures = new ArrayList<>();
 
+    /** 动态模型的帧（{@link TextureMode#ANIMATED} 用）。每一帧填写资源包里的模型 json 地址。 */
+    @SerializedName("animatedModels")
+    public List<String> animatedModels = new ArrayList<>();
+
     /** 动态贴图每帧停留的 tick（{@link TextureMode#ANIMATED} 用）。 */
     @SerializedName("animatedFrameTicks")
     public int animatedFrameTicks = 8;
@@ -292,6 +296,10 @@ public class CustomItemData {
     /** 是否对其它玩家作用。 */
     @SerializedName("affectOthers")
     public boolean affectOthers = false;
+
+    /** 是否只影响作用范围最外侧一格内的玩家。 */
+    @SerializedName("affectOnlyMaxRange")
+    public boolean affectOnlyMaxRange = false;
 
     /** 作用范围（{@link TargetMode} 名称）。 */
     @SerializedName("targetMode")
@@ -613,11 +621,11 @@ public class CustomItemData {
 
     // ==================== 投掷物 ====================
 
-    /** 是否需要拉栓：为是时按住右键蓄力后投出（同手榴弹）；为否时右键直接投出并播放拉栓音效。 */
+    /** 是否需要拉栓：为是时按住右键拉栓蓄力、松手投出（蓄满可继续举着瞄准）；为否时右键直接投出并播放拉栓音效。 */
     @SerializedName("throwNeedPin")
     public boolean throwNeedPin = true;
 
-    /** 拉栓/蓄力时间（tick），仅 {@link #throwNeedPin} 为是时有意义。 */
+    /** 拉栓/蓄力时间（tick）：蓄满该时间＝最大投掷力度，未蓄满也能投出、只是更近；仅 {@link #throwNeedPin} 为是时有意义。 */
     @SerializedName("throwPinTicks")
     public int throwPinTicks = 20;
 
@@ -751,6 +759,21 @@ public class CustomItemData {
             return result;
         }
         for (String path : animatedTextures) {
+            if (path == null || path.isBlank()) {
+                continue;
+            }
+            result.add(path.trim());
+        }
+        return result;
+    }
+
+    /** 动态模型的帧路径：按填写顺序循环，自动跳过空行。 */
+    public List<String> animatedModelFramePaths() {
+        List<String> result = new ArrayList<>();
+        if (animatedModels == null) {
+            return result;
+        }
+        for (String path : animatedModels) {
             if (path == null || path.isBlank()) {
                 continue;
             }
@@ -963,6 +986,7 @@ public class CustomItemData {
             textureMode = textureMode().name();
         }
         animatedTextures = safeList(animatedTextures);
+        animatedModels = safeList(animatedModels);
         tooltip = safeList(tooltip);
         commands = safeList(commands);
         selfCommands = safeList(selfCommands);

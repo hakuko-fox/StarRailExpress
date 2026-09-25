@@ -37,6 +37,7 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.GhostStateComponent;
 import org.agmas.noellesroles.content.effects.LimpEffect;
+import org.agmas.noellesroles.content.effects.NegativeEffectResistanceEffect;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.PuppetWanderEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
@@ -146,6 +147,10 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> PUPPET_WANDER = register("puppet_wander",
             new PuppetWanderEffect());
+
+    /** 持续期间清除并阻止所有有害药水效果。 */
+    public static final Holder<MobEffect> NEGATIVE_EFFECT_RESISTANCE = register(
+            "negative_effect_resistance", new NegativeEffectResistanceEffect());
 
     /**
      * 时间停止效果
@@ -358,6 +363,20 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> DREAMCORE_FILTER = register("dreamcore_filter",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFC0F5));
+
+    /**
+     * 入梦（更夫的「梆」给予）：拥有者在睡觉时恢复理智并获得迅捷，触发一次后清除。
+     * 等级越高，恢复的理智与给予的迅捷等级越高。
+     * 触发逻辑见 {@link org.agmas.noellesroles.content.effects.DreamEffectHandler}。
+     */
+    public static final Holder<MobEffect> ENTER_DREAM = register("enter_dream",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x8E7CFF));
+
+    /**
+     * 时间透视（更夫敲钟给予）：仅作客户端标记，让拥有者短暂看到游戏时间。
+     */
+    public static final Holder<MobEffect> TIME_REVEAL = register("time_reveal",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xB8C6FF));
 
     /**
      * 沉浸式滤镜效果：后室

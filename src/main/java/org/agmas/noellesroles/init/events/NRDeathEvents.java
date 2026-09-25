@@ -16,6 +16,7 @@
 package org.agmas.noellesroles.init.events;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.LooseEndRole;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -643,6 +644,7 @@ public class NRDeathEvents {
     // ==================== 事件注册 ====================
 
     public static void register() {
+        LooseEndRole.registerEvents();
         registerAllowPlayerDeath();
         registerAfterShieldAllowPlayerDeath();
         registerOnPlayerDeath();
@@ -891,6 +893,13 @@ public class NRDeathEvents {
             while (dropCount > 0) {
                 player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
                 dropCount--;
+            }
+        }
+        if (gameWorldComponent.isRole(player, ModRoles.CAVALRY)) {
+            int spearCount = SREItemUtils.clearItem(player, ModItems.NETHERITE_SPEAR);
+            while (spearCount > 0) {
+                player.drop(TMMItems.REVOLVER.getDefaultInstance(), false);
+                spearCount--;
             }
         }
         // 网警：身上的 Dream 铁斧/钻石剑/重锤 掉落为左轮手枪（参考游侠弓弩）

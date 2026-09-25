@@ -242,7 +242,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 player.getXRot());
         SREArmorPlayerComponent armorCCA = SREArmorPlayerComponent.KEY.get(player);
         int size = serverLevel.getPlayers(GameUtils::isPlayerAliveAndSurvival).size();
-        armorCCA.addArmor((Math.clamp(size / 6, 1, 6)));
+        armorCCA.addArmor((Math.clamp(size / 6, 1, 3)));
         player.setGameMode(GameType.ADVENTURE);
 
         player.addEffect(ModEffects.of(ModEffects.SAFE_TIME, 10, 1, false, false, true));
@@ -270,6 +270,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
         // Change role to LOOSE_END and remove REFUGEE modifier
         RoleUtils.changeRole(player, TMMRoles.LOOSE_END, false, false);
+        org.agmas.noellesroles.game.modifier.refugee.RefugeeDesperadoFx.replaceStarterWeapons(player);
+        org.agmas.noellesroles.game.modifier.refugee.RefugeeDesperadoFx.playSpawn(serverLevel, player);
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), TMMRoles.LOOSE_END);
         RoleUtils.sendWelcomeAnnouncement(player);
 
@@ -384,11 +386,17 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         };
         // 给予 2 tick 的deathPenalty
         for (var player : players) {
-            var dpc = DeathPenaltyComponent.KEY.get(player);
-            if (dpc.hasPenalty()) {
-                continue;
+            {
+
+                if (players_stats.containsKey(player.getUUID()) ||
+                        playerTimeRewindSnapshots.containsKey(player.getUUID())) {
+                    var dpc = DeathPenaltyComponent.KEY.get(player);
+                    if (dpc.hasPenalty()) {
+                        continue;
+                    }
+                    dpc.setPenalty(2, true);
+                }
             }
-            dpc.setPenalty(2, true);
         }
         for (var player : players) {
             var ppc = SREPlayerPsychoComponent.KEY.get(player);

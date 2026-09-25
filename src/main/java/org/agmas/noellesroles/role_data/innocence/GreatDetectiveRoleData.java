@@ -33,7 +33,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -455,21 +454,21 @@ public class GreatDetectiveRoleData extends SimpleRoleData {
     }
 
     private void playChannelStartFx(ServerPlayer sp) {
+        // 推理尸体粒子仅对大侦探自己显示，翻书音效仅自己可听
         if (sp.level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.SMOKE, sp.getX(), sp.getY() + 1.2, sp.getZ(),
-                    6, 0.2, 0.2, 0.2, 0.01);
-            sl.playSound(null, sp.blockPosition(), SoundEvents.BOOK_PAGE_TURN,
-                    SoundSource.PLAYERS, 0.7f, 0.9f);
+            sl.sendParticles(sp, ParticleTypes.SMOKE, true,
+                    sp.getX(), sp.getY() + 1.2, sp.getZ(), 6, 0.2, 0.2, 0.2, 0.01);
         }
+        sp.playSound(SoundEvents.BOOK_PAGE_TURN, 0.7f, 0.9f);
     }
 
     public void playCompleteFx(ServerPlayer sp) {
+        // 推理尸体粒子仅对大侦探自己显示，附魔音效仅自己可听
         if (sp.level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.ENCHANT, sp.getX(), sp.getY() + 1.2, sp.getZ(),
-                    16, 0.3, 0.4, 0.3, 0.12);
-            sl.playSound(null, sp.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE,
-                    SoundSource.PLAYERS, 0.6f, 1.2f);
+            sl.sendParticles(sp, ParticleTypes.ENCHANT, true,
+                    sp.getX(), sp.getY() + 1.2, sp.getZ(), 16, 0.3, 0.4, 0.3, 0.12);
         }
+        sp.playSound(SoundEvents.ENCHANTMENT_TABLE_USE, 0.6f, 1.2f);
     }
 
     public record DeathNote(String victimName, int secondsAgo) {

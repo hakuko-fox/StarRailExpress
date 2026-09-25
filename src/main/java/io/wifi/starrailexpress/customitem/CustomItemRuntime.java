@@ -509,9 +509,12 @@ public final class CustomItemRuntime {
 
         if (mode == TargetMode.LOOKED_PLAYER) {
             HitResult hit = ProjectileUtil.getHitResultOnViewVector(player,
-                    entity -> isValidTarget(player, entity), range);
+                    entity -> isValidTarget(player, entity)
+                            && isTerminalRangeTarget(player.getEyePosition(), entity.getEyePosition(), data), range);
             if (hit instanceof EntityHitResult entityHit && entityHit.getEntity() instanceof ServerPlayer target) {
-                result.add(target);
+                if (isTerminalRangeTarget(player.getEyePosition(), target.getEyePosition(), data)) {
+                    result.add(target);
+                }
             }
             return result;
         }
@@ -528,6 +531,9 @@ public final class CustomItemRuntime {
             Vec3 targetPos = other.getEyePosition();
             double distance = eye.distanceTo(targetPos);
             if (distance > range) {
+                continue;
+            }
+            if (!isTerminalRangeTarget(eye, targetPos, data)) {
                 continue;
             }
             if (mode == TargetMode.CIRCLE) {
@@ -548,6 +554,21 @@ public final class CustomItemRuntime {
             }
         }
         return result;
+    }
+
+    /**
+     * “仅终点玩家”把作用范围收窄到最外侧一格，而不是改变配置的最大距离。
+     * 例如范围为 5 格时，只接受距离 4（含）到 5 格（含）的玩家；默认关闭时不改变旧行为。
+     */
+    private static boolean isTerminalRangeTarget(Vec3 origin, Vec3 target, CustomItemData data) {
+        if (!data.affectOnlyMaxRange) {
+            return true;
+        }
+        double maxRange = Math.max(0.0D, data.range);
+        if (maxRange <= 0.0D) {
+            return false;
+        }
+        return origin.distanceTo(target) >= Math.max(0.0D, maxRange - 1.0D);
     }
 
     // ==================== 枪械道具 ====================
@@ -635,6 +656,10 @@ public final class CustomItemRuntime {
             return false;
         }
         if (!isStillHolding(player, data.id)) {
+            return false;
+        }
+        // 冷却中（含开局安全时间的强制冷却）：不给任何反馈，也不向服务端发包
+        if (isOnCooldown(player, stack)) {
             return false;
         }
         // 自动射击期间不再给任何反馈（不摆臂、无后坐力、无音效）
@@ -1525,6 +1550,37 @@ public final class CustomItemRuntime {
         return CustomItemCooldownComponent.KEY.get(player).isOnCooldown(data.id);
     }
 
+    /**
+     * 开局安全时间：把「全部」自定义物品都按物品 id 压上冷却。
+     *
+     * <p>
+     * 所有自定义物品共用同一个注册物品（{@code starrailexpress:custom_item}），
+     * {@link GameUtils#addItemCooldowns} 加的原版冷却是按 {@link net.minecraft.world.item.Item} 记的，
+     * 而 {@link #isOnCooldown} 对已登记的自定义物品只认 {@link CustomItemCooldownComponent} 的
+     * 「玩家 + 物品 id」冷却，于是安全时间对它们形同虚设。这里改成按 id 压冷却：
+     * 安全时间内左键 / 右键都无法使用；又因为按 id 记，安全时间内新获得的同 id 物品也一并处于冷却。
+     *
+     * @param ticks 冷却时长（tick），与安全时间一致
+     */
+    public static void applySafeTimeCooldown(ServerPlayer player, int ticks) {
+        if (player == null || ticks <= 0) {
+            return;
+        }
+        List<CustomItemData> all = CustomItemLoader.getAllData();
+        if (all.isEmpty()) {
+            return;
+        }
+        List<String> ids = new ArrayList<>(all.size());
+        for (CustomItemData data : all) {
+            if (data != null && data.id != null && !data.id.isEmpty()) {
+                ids.add(data.id);
+            }
+        }
+        if (!ids.isEmpty()) {
+            CustomItemCooldownComponent.KEY.get(player).setCooldowns(ids, ticks);
+        }
+    }
+
     private static void consumeItem(ServerPlayer player, ItemStack stack, boolean consume) {
         if (consume && !player.isCreative()) {
             stack.shrink(1);
@@ -1542,8 +1598,21 @@ public final class CustomItemRuntime {
 
     // ==================== 投掷物 ====================
 
-    /** 投出（需要拉栓时由蓄力完成触发，否则直接投掷，两条路都走这里）。 */
+    /** 投出（满力度）：不需要拉栓的投掷物直接右键投出时走这里。 */
     public static void throwCustom(ServerPlayer user, ItemStack stack, CustomItemData data) {
+        throwCustom(user, stack, data, 1.0F);
+    }
+
+    /**
+     * 投出。
+     *
+     * <p>
+     * 需要拉栓的投掷物由 {@code CustomItem.releaseUsing} 传入松手时的蓄力进度：
+     * 蓄力时间决定投掷初速度，没蓄满也能投出，只是扔得近；蓄满＝全力投出。
+     *
+     * @param chargeRatio 拉栓蓄力进度 0~1（1 = 蓄满）
+     */
+    public static void throwCustom(ServerPlayer user, ItemStack stack, CustomItemData data, float chargeRatio) {
         if (isOnCooldown(user, stack)) {
             return;
         }
@@ -1553,7 +1622,7 @@ public final class CustomItemRuntime {
 
         CustomThrowableEntity entity = new CustomThrowableEntity(TMMEntities.CUSTOM_THROWABLE, user, user.level());
         entity.setItem(stack.copyWithCount(1));
-        entity.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, 1.0F, 1.0F);
+        entity.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, throwVelocity(chargeRatio), 1.0F);
         user.level().addFreshEntity(entity);
 
         // 耐久：每次投出算一次使用（耗尽时物品已碎裂）
@@ -1561,6 +1630,12 @@ public final class CustomItemRuntime {
             return;
         }
         stack.shrink(1);
+    }
+
+    /** 拉栓蓄力进度 → 投掷初速度：0 = 随手甩出去，1 = 全力投出（与手榴弹一致的力度曲线）。 */
+    private static float throwVelocity(float chargeRatio) {
+        float ratio = Math.max(0.0F, Math.min(1.0F, chargeRatio));
+        return 0.4F + 0.6F * ratio;
     }
 
     /** 钳子拆除入口（由空手 / 钳子右键投掷物触发）。 */

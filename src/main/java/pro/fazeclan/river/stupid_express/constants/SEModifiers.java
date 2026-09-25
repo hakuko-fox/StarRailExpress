@@ -16,6 +16,7 @@
 package pro.fazeclan.river.stupid_express.constants;
 
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGameEnd;
@@ -76,7 +77,7 @@ public class SEModifiers {
             false,
             false))
             .setDefaultEnableChance(1000)
-            .setDefaultEnableNeededPlayerCount(12)
+            .setDefaultEnableNeededPlayerCount(16)
             .setHidden(true)
             .addBothRelatedRole(TMMRoles.LOOSE_END);
 
@@ -239,7 +240,7 @@ public class SEModifiers {
             null,
             null,
             false,
-            false))
+            true))
             // 一次自然分配会由处理器补齐第二名玩家，因此 max=1 表示一对。
             .setDefaultEnableChance(3000).setDefaultMax(1)
             .setServerGameTickEvent(TwinChildrenHandler::serverTick)
@@ -251,6 +252,9 @@ public class SEModifiers {
         SPLIT_PERSONALITY.setDefaultMax(SREConfig.instance().splitPersonalityMax);
         SPLIT_PERSONALITY.civilianOnly = true;
         VIGOROUS.civilianOnly = true;
+        // 双生之子：不会出现在杀手阵营身上（杀手与杀手方中立都不分配）。
+        // 一次自然分配会由 TwinChildrenHandler 补齐同阵营的第二名玩家，故这里只需挡住第一名。
+        TWIN_CHILDREN.setCannotAppliedToTeam(RoleTeam.KILLER, RoleTeam.NEUTRAL_KILLER);
 
         // 体型类修饰符互斥声明（与互斥职业同一套写法：SREModifier#addTwoWayOpposingModifier）。
         // 生成时由 SREMurderGameMode#canAssignModifierToPlayer 排除，运行时由 ModifierOpposingHelper 兜底移除，

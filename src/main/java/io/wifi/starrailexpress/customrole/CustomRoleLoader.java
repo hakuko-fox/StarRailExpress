@@ -84,6 +84,7 @@ public class CustomRoleLoader {
     private static boolean initialCooldownHandlerRegistered = false;
     private static boolean instinctHandlerRegistered = false;
     private static boolean gameEndHandlerRegistered = false;
+    private static boolean factionFriendlyFireHandlerRegistered = false;
 
     // 游戏结束时自动执行的指令：englishRoleId -> 指令列表
     private static final Map<String, List<String>> gameEndCommandsByRoleId = new HashMap<>();
@@ -402,9 +403,15 @@ public class CustomRoleLoader {
             if (!data.instinctModes.isEmpty()) {
                 // 将模式 0 的默认值应用到 SRERole（静态配置作为兜底）
                 InstinctModeData mode0 = data.instinctModes.get(0);
-                role.setInstinctType(
-                        parseInstinctType(mode0.seeingOff),
-                        parseInstinctType(mode0.seeingOn));
+                if (mode0.factionEnabled) {
+                    // 启用「同阵营」分类后，基础「看别人」不再生效（改由同阵营自定义本能接管）；
+                    // 「被别人看」不受影响，照常应用。
+                    role.setInstinctType(InstinctType.DEFAULT, InstinctType.DEFAULT);
+                } else {
+                    role.setInstinctType(
+                            parseInstinctType(mode0.seeingOff),
+                            parseInstinctType(mode0.seeingOn));
+                }
                 role.setBeSeenInstinctType(
                         parseInstinctType(mode0.beSeenOff),
                         parseInstinctType(mode0.beSeenOn));
@@ -844,6 +851,34 @@ public class CustomRoleLoader {
             registerInitialCooldownHandler();
             initialCooldownHandlerRegistered = true;
         }
+
+        // 注册「同阵营玩家无法互相伤害」事件处理（仅首次）
+        if (!factionFriendlyFireHandlerRegistered) {
+            registerFactionFriendlyFireHandler();
+            factionFriendlyFireHandlerRegistered = true;
+        }
+    }
+
+    /**
+     * 「同阵营玩家无法互相伤害」：参考教父家族，任一同阵营配置命中（攻击者与受害者都属于该阵营）时否决死亡。
+     */
+    private static void registerFactionFriendlyFireHandler() {
+        io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller.EVENT.register((victim, killer, deathReason) -> {
+            if (deathReason != null && deathReason.equals(io.wifi.starrailexpress.game.GameConstants.DeathReasons.FELL_OUT_OF_TRAIN))
+                return true;
+            if (!(killer instanceof ServerPlayer attacker) || !(victim instanceof ServerPlayer attacked))
+                return true;
+            for (CustomRoleData data : loadedRoles.values()) {
+                if (data.instinctModes == null || data.instinctModes.isEmpty())
+                    continue;
+                InstinctModeData mode = data.instinctModes.get(0);
+                if (mode == null || !mode.factionEnabled || !mode.factionNoFriendlyFire)
+                    continue;
+                if (isFactionMember(data, mode, attacker) && isFactionMember(data, mode, attacked))
+                    return false;
+            }
+            return true;
+        });
     }
 
     /**
@@ -1171,6 +1206,35 @@ public class CustomRoleLoader {
                             return TrueFalseAndCustomResult.pass();
                         net.minecraft.world.entity.player.Player tp = (net.minecraft.world.entity.player.Player) target;
 
+                        SRERole targetRole = io.wifi.starrailexpress.client.SREClient.gameComponent != null
+                                ? io.wifi.starrailexpress.client.SREClient.gameComponent.getRole(tp)
+                                : null;
+
+                        // 启用「同阵营」分类后，基础「看别人」不再生效，全部由同阵营自定义本能接管
+                        if (mode.factionEnabled) {
+                            boolean sameFaction = isFactionMember(data, mode, tp);
+                            if (sameFaction) {
+                                // 同阵营：可选择不受「透视范围」限制
+                                if (!mode.factionUnlimitedRange && !isWithinRange(self, tp, null, mode.maxRange))
+                                    return TrueFalseAndCustomResult.disallow();
+                                InstinctType type = hasInstinct
+                                        ? parseInstinctType(mode.factionSeeingOn)
+                                        : parseInstinctType(mode.factionSeeingOff);
+                                return applyType(type, self, tp, role, targetRole,
+                                        TrueFalseAndCustomResult.pass());
+                            }
+                            // 非同阵营：开启「仅能看同阵营」时直接看不到
+                            if (mode.factionOnly)
+                                return TrueFalseAndCustomResult.disallow();
+                            if (!isWithinRange(self, tp, mode, mode.maxRange))
+                                return TrueFalseAndCustomResult.disallow();
+                            InstinctType type = hasInstinct
+                                    ? parseInstinctType(mode.factionOtherSeeingOn)
+                                    : parseInstinctType(mode.factionOtherSeeingOff);
+                            return applyType(type, self, tp, role, targetRole,
+                                    TrueFalseAndCustomResult.pass());
+                        }
+
                         if (!isWithinRange(self, tp, mode, mode.maxRange))
                             return TrueFalseAndCustomResult.disallow();
 
@@ -1178,10 +1242,7 @@ public class CustomRoleLoader {
                                 ? parseInstinctType(mode.seeingOn)
                                 : parseInstinctType(mode.seeingOff);
 
-                        return applyType(type, self, tp, role,
-                                io.wifi.starrailexpress.client.SREClient.gameComponent != null
-                                        ? io.wifi.starrailexpress.client.SREClient.gameComponent.getRole(tp)
-                                        : null,
+                        return applyType(type, self, tp, role, targetRole,
                                 TrueFalseAndCustomResult.pass());
                     });
 
@@ -1513,6 +1574,85 @@ public class CustomRoleLoader {
     }
 
     /**
+     * 解析「存活到最后」的细分模式。
+     *
+     * @return {@code ""}（关闭）/ {@code INNOCENT} / {@code KILLER} / {@code BOTH}
+     */
+    private static String resolveSurviveToLastMode(CustomRoleData data) {
+        String mode = data.customWinSurviveToLastMode == null ? ""
+                : data.customWinSurviveToLastMode.trim().toUpperCase(java.util.Locale.ROOT);
+        if (mode.equals("INNOCENT") || mode.equals("KILLER") || mode.equals("BOTH")) {
+            return mode;
+        }
+        // 兼容旧布尔开关：旧配置里打开过的按「顶替双方」处理
+        return data.customWinSurviveToLast ? "BOTH" : "";
+    }
+
+    // ==================== 中立同阵营透视（参考教父家族） ====================
+
+    /** 逗号（中英文）/ 分号 / 空白分隔的 id 列表。 */
+    private static List<String> splitIds(String raw) {
+        if (raw == null || raw.isBlank())
+            return List.of();
+        List<String> out = new ArrayList<>();
+        for (String part : raw.split("[,，;；\\s]+")) {
+            String t = part.trim();
+            if (!t.isEmpty())
+                out.add(t);
+        }
+        return out;
+    }
+
+    private static boolean modifierIdMatches(ResourceLocation actual, String configuredId) {
+        if (actual == null || configuredId == null)
+            return false;
+        String id = configuredId.trim();
+        if (id.isEmpty())
+            return false;
+        return actual.toString().equalsIgnoreCase(id) // 例如 noellesroles:leader
+                || actual.getPath().equalsIgnoreCase(id) // 例如 leader
+                || (actual.getNamespace() + ":" + actual.getPath()).equalsIgnoreCase(id);
+    }
+
+    /**
+     * 目标玩家是否属于该配置定义的「同阵营」：
+     * 该自定义职业本身 / 配置里列出的职业 / 拥有配置里列出的修饰符。
+     */
+    private static boolean isFactionMember(CustomRoleData data, InstinctModeData mode,
+            net.minecraft.world.entity.player.Player target) {
+        if (data == null || mode == null || target == null || target.level() == null)
+            return false;
+        SRERole targetRole = null;
+        var game = SREGameWorldComponent.KEY.get(target.level());
+        if (game != null)
+            targetRole = game.getRole(target);
+        if (targetRole != null) {
+            // 该自定义职业自身也算同阵营
+            if (targetRole.identifier().getPath().equalsIgnoreCase(data.englishId))
+                return true;
+            for (String roleId : splitIds(mode.factionRoles)) {
+                if (roleIdMatches(targetRole, roleId))
+                    return true;
+            }
+        }
+        List<String> modifierIds = splitIds(mode.factionModifiers);
+        if (!modifierIds.isEmpty()) {
+            Set<SREModifier> modifiers = RoleUtils.getPlayerModifier(target);
+            if (modifiers != null) {
+                for (SREModifier modifier : modifiers) {
+                    if (modifier == null)
+                        continue;
+                    for (String modifierId : modifierIds) {
+                        if (modifierIdMatches(modifier.identifier(), modifierId))
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * 检查所有启用了独立胜利的自定义角色是否满足胜利条件。
      * 在 {@link org.agmas.noellesroles.CustomWinnerClass} 中调用。
      *
@@ -1561,9 +1701,13 @@ public class CustomRoleLoader {
                 continue;
 
             // 条件6: 当场上只剩下自己和某职业时 (类似教父)
-            // 优先级低于 TIME 与 LOVER：TIME 时不触发；恋人已赢时让位
-            if (!data.customWinLastWithRoles.isEmpty() && (currentWinStatus == WinStatus.KILLERS
-                    || currentWinStatus == WinStatus.PASSENGERS || currentWinStatus == WinStatus.NO_PLAYER)) {
+            // 说明：该条件不再依赖 currentWinStatus。当「结算计入存活好人 / 结算计入存活杀手」两项均为真时，
+            // 自己（及指定职业）存活会让常规结算一直停留在 NONE（即阻止游戏结束），永远不会进入
+            // KILLERS / PASSENGERS，导致本条件无法触发。因此这里改为按「实际存活构成」判定：
+            // 1) 只剩自己 + 指定职业（无外人）-> 直接独立获胜
+            // 2) 仍有外人存活且常规结算即将发生 -> 阻止游戏结束，直到外人被杀光
+            // 优先级仍低于 TIME 与 LOVER：TIME 时不触发；恋人已赢时让位
+            if (!data.customWinLastWithRoles.isEmpty()) {
 
                 // 统计除自己以外的存活玩家：分成「指定职业」与「外人（非指定职业）」两类
                 boolean specifiedAlive = false;
@@ -1594,25 +1738,28 @@ public class CustomRoleLoader {
                     }
                 }
 
-                // 只要「自己 + 至少一个指定职业」都还活着，条件6 就介入：
-                // 1) 仍有外人存活 -> 阻止游戏结束，直到外人被杀光
-                // 2) 外人已清空（只剩自己 + 指定职业）-> 直接独立获胜，不再判断指定职业阵营
-                if (specifiedAlive) {
-                    if (outsiderAlive) {
-                        // 倒计时归零时不得阻止结束，让 TIME 正常结算
-                        if (!canBlockGameEnd)
-                            return WinStatus.NOT_MODIFY;
-                        // 恋人已赢时让位给恋人
-                        if (loversWin)
-                            return WinStatus.NOT_MODIFY;
-                        return WinStatus.NONE; // 拖延游戏结束，直至非 A/指定职业的玩家全部死亡
-                    }
-
+                // 1) 只剩自己 + 指定职业（无外人）-> 直接独立获胜，不再判断指定职业阵营。
+                // TIME（倒计时归零）时不触发，让 TIME 正常结算，也不阻塞后续更高优先级的条件。
+                // 不再要求 currentWinStatus 为 KILLERS/PASSENGERS，这样即使两项「结算计入存活」都为真、
+                // 常规结算停留在 NONE，也能正常取得独立胜利。
+                if (specifiedAlive && !outsiderAlive && currentWinStatus != WinStatus.TIME) {
                     // 恋人胜利优先级高于条件6：让位给后注册的恋人监听器
                     if (loversWin)
                         return WinStatus.NOT_MODIFY;
                     doCustomWin(serverLevel, data, customPlayer, specifiedWinners);
                     return WinStatus.CUSTOM;
+                }
+
+                // 2) 仍有外人存活、且常规结算即将发生 -> 阻止游戏结束，直到外人被杀光。
+                // 若自己/指定职业已通过「结算计入存活」阻止结算（winStatus 保持 NONE），无需额外干预。
+                if (specifiedAlive && outsiderAlive && canBlockGameEnd
+                        && (currentWinStatus == WinStatus.KILLERS
+                                || currentWinStatus == WinStatus.PASSENGERS
+                                || currentWinStatus == WinStatus.NO_PLAYER)) {
+                    // 恋人已赢时让位给恋人
+                    if (loversWin)
+                        return WinStatus.NOT_MODIFY;
+                    return WinStatus.NONE; // 拖延游戏结束，直至非自己/指定职业的玩家全部死亡
                 }
                 // 自己虽存活，但指定职业已全灭 -> 条件6 不介入，让原胜利方正常结算
                 // （自己已死的情况在上方 customPlayer == null 处就已 continue 跳过）
@@ -1634,16 +1781,24 @@ public class CustomRoleLoader {
                 return WinStatus.NONE;
             }
 
-            // 条件4: 存活到最后 (类似芙兰朵露) —— 优先级最高，高于 TIME 与 LOVER
-            if (data.customWinSurviveToLast && (alivePlayerCount <= 1 || currentWinStatus == WinStatus.TIME)) {
-                doCustomWin(serverLevel, data, customPlayer, List.of());
-                return WinStatus.CUSTOM;
-            }
-            if (data.customWinSurviveToLast && canBlockGameEnd && !currentWinStatus.equals(WinStatus.NONE)) {
-                // 仅「拖延」阻止；TIME 时不得阻止；恋人已赢时让位给恋人（条件4 真正胜利时不会被拦截）
-                if (loversWin)
-                    return WinStatus.NOT_MODIFY;
-                return WinStatus.NONE;
+            // 条件4: 存活到最后 —— 细分为「顶替平民 / 顶替杀手 / 顶替双方」三种模式。
+            // 优先级最高，高于 TIME 与 LOVER。该条件只「改判」常规胜负，**不会**拖延 / 阻止游戏正常结束。
+            String surviveMode = resolveSurviveToLastMode(data);
+            if (!surviveMode.isEmpty()) {
+                boolean replaceInnocent = "INNOCENT".equals(surviveMode) || "BOTH".equals(surviveMode);
+                boolean replaceKiller = "KILLER".equals(surviveMode) || "BOTH".equals(surviveMode);
+                boolean replace =
+                        // 只剩自己存活（真正「存活到最后」）
+                        alivePlayerCount <= 1
+                                // 顶替平民：平民获胜 / 时间耗尽
+                                || (replaceInnocent && (currentWinStatus == WinStatus.PASSENGERS
+                                        || currentWinStatus == WinStatus.TIME))
+                                // 顶替杀手：杀手获胜
+                                || (replaceKiller && currentWinStatus == WinStatus.KILLERS);
+                if (replace) {
+                    doCustomWin(serverLevel, data, customPlayer, List.of());
+                    return WinStatus.CUSTOM;
+                }
             }
 
             // 条件7: 拥有指定标签时躺在床上取得独立胜利 (类似小偷)

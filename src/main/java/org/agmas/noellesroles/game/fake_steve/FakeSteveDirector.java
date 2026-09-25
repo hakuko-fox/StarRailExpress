@@ -23,7 +23,6 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.event.AllowPlayerWin;
 import io.wifi.starrailexpress.event.OnGameEnd;
-import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -31,7 +30,6 @@ import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -44,7 +42,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.Noellesroles;
-import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.init.ModEffects;
 // import org.agmas.noellesroles.packet.FakeSteveHuntS2CPacket;
@@ -52,7 +49,6 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -67,7 +63,6 @@ public final class FakeSteveDirector {
     /** Longer than any round, without synchronizing the psycho component every tick. */
     private static final int PERMANENT_PSYCHO_TICKS = Integer.MAX_VALUE;
     private static final Map<ResourceLocation, Session> SESSIONS = new HashMap<>();
-    private static final Set<ResourceLocation> FORCE_NEXT_ROUND = new HashSet<>();
     private static boolean registered;
 
     private FakeSteveDirector() {
@@ -79,29 +74,7 @@ public final class FakeSteveDirector {
         }
         registered = true;
         FakeSteveAi.register();
-
-        OnGameTrueStarted.EVENT.register((level) -> {
-            if (!(SREGameWorldComponent.KEY.get(level).getGameMode() instanceof SREMurderGameMode)) {
-                return;
-            }
-            int startingPlayers = (int) level.getPlayers((p) -> GameUtils.isPlayerAliveAndSurvival(p)).stream().count();
-            Session session = new Session(startingPlayers);
-            SESSIONS.put(level.dimension().location(), session);
-            boolean forced = consumeForceNextRound(level);
-            if (canGenerate(level)
-                    && (forced || level.getRandom().nextInt(10000)
-                    <= NoellesRolesConfig.instance().fakeSteveEnableChance)) {
-                SRE.LOGGER.info(forced
-                        ? "[Fake Steve] Event is enabled by next-round command!"
-                        : "[Fake Steve] Event is enabled!");
-                session.active = true;
-                session.pendingEvents = 1;
-                session.activationSource = forced
-                        ? ActivationSource.COMMAND_NEXT
-                        : ActivationSource.NATURAL_ROLL;
-                announceNaturalEvent(level);
-            }
-        });
+        FakeSteveTrailRecorder.register();
 
         OnGameEnd.EVENT.register((level, game) -> clear(level));
         ServerTickEvents.END_WORLD_TICK.register(FakeSteveDirector::tick);
@@ -155,6 +128,56 @@ public final class FakeSteveDirector {
         });
     }
 
+    /**
+     * 假史蒂夫事件的掷骰回调，由 {@code ModRoles.FAKE_STEVE} 通过
+     * {@link SRERole#setEventEnableChance(java.util.function.BiConsumer, java.util.function.Consumer, java.util.function.IntSupplier)}
+     * 注册（概率读配置 {@code fakeSteveEnableChance}）。
+     * <p>
+     * 每局正式开局调用一次，<b>没掷中也会调用</b>：总是先按当前存活人数重建本局的 {@link Session}，
+     * 掷中且当前模式允许时才激活本局派系事件（{@code active}、首个待触发事件、公告），并据
+     * {@code ModRoles.FAKE_STEVE.wasEventForceEnabled()} 区分命令强开与自然掷中。
+     * 局末的收尾在 {@link #onEventRoundEnd(ServerLevel)}。
+     */
+    public static void onEventRollResult(ServerLevel level, boolean enabled) {
+        if (!(SREGameWorldComponent.KEY.get(level).getGameMode() instanceof SREMurderGameMode)) {
+            return;
+        }
+        Session session = resetSession(level);
+        if (canGenerate(level) && enabled) {
+            boolean forced = ModRoles.FAKE_STEVE.wasEventForceEnabled();
+            SRE.LOGGER.info(forced
+                    ? "[Fake Steve] Event is enabled by next-round command!"
+                    : "[Fake Steve] Event is enabled!");
+            session.active = true;
+            session.pendingEvents = 1;
+            session.activationSource = forced
+                    ? ActivationSource.COMMAND_NEXT
+                    : ActivationSource.NATURAL_ROLL;
+            announceNaturalEvent(level);
+        }
+    }
+
+    /**
+     * 假史蒂夫事件的局末回调：只在本局掷中过时调用，把本局 Session 复位成未激活。
+     * <p>
+     * 真正的清收（取消幻象、清理被替换者的控制器）仍由 {@code OnGameEnd} 上的
+     * {@link #clear(ServerLevel)} 负责，这里只保证状态不跨局残留。
+     */
+    public static void onEventRoundEnd(ServerLevel level) {
+        if (!(SREGameWorldComponent.KEY.get(level).getGameMode() instanceof SREMurderGameMode)) {
+            return;
+        }
+        resetSession(level);
+    }
+
+    /** 按当前存活人数重建本局的 {@link Session}（未激活），返回新实例。 */
+    private static Session resetSession(ServerLevel level) {
+        int startingPlayers = (int) level.getPlayers((p) -> GameUtils.isPlayerAliveAndSurvival(p)).stream().count();
+        Session session = new Session(startingPlayers);
+        SESSIONS.put(level.dimension().location(), session);
+        return session;
+    }
+
     public static boolean isEnabled() {
         return !Noellesroles.isRoleDisabled(ModRoles.FAKE_STEVE);
     }
@@ -195,15 +218,12 @@ public final class FakeSteveDirector {
         if (!canGenerate(level)) {
             return false;
         }
-        return FORCE_NEXT_ROUND.add(level.dimension().location());
+        return ModRoles.FAKE_STEVE.forceEventEnableNextRound();
     }
 
-    public static boolean isNextRoundForced(ServerLevel level) {
-        return level != null && FORCE_NEXT_ROUND.contains(level.dimension().location());
-    }
-
-    private static boolean consumeForceNextRound(ServerLevel level) {
-        return FORCE_NEXT_ROUND.remove(level.dimension().location());
+    /** 是否已经排过「强制下一局」（事件状态维度通用，因此不需要世界参数）。 */
+    public static boolean isNextRoundForced() {
+        return ModRoles.FAKE_STEVE.isEventForcePending();
     }
 
     public static boolean queueApparition(ServerLevel level) {
@@ -251,7 +271,11 @@ public final class FakeSteveDirector {
         if (originalRole != null && originalRole.canUseKiller()) {
             SREPlayerShopComponent.KEY.get(player).addToBalance(200);
         }
-        session.agents.put(player.getUUID(), new FakeSteveAgentState(player.getUUID(), cause));
+        FakeSteveAgentState agentState = new FakeSteveAgentState(player.getUUID(), cause);
+        // 把「生前」的移动路线交给 AI：替换后空闲时优先沿它巡逻，
+        // 不再依赖 A*（见 FakeSteveAi#driveTrail），也就不会再卡在原地转圈。
+        FakeSteveTrailRecorder.capture(player, agentState);
+        session.agents.put(player.getUUID(), agentState);
         applyControl(player);
         checkVictory(player.serverLevel(), session);
         return true;
@@ -326,6 +350,9 @@ public final class FakeSteveDirector {
                 applyControl(player);
                 FakeSteveMotionController.applyServerMotion(player, session.agents.get(id));
                 FakeSteveAi.tick(level, player, session.agents.get(id));
+                // 最后一层保底：连续 12 秒位置都没变化超过 2 格，直接传送回可用的记录路径点。
+                // 放在 tick 之后，这样无论本 tick 走的是哪条行为分支都会被覆盖。
+                FakeSteveAi.rescueIfStuck(level, player, session.agents.get(id));
             } else {
                 FakeSteveMotionController.clear(player, session.agents.get(id));
                 removeControl(player);
@@ -365,6 +392,7 @@ public final class FakeSteveDirector {
         Session removed = SESSIONS.remove(level.dimension().location());
         FakeSteveApparitions.cancelAll(level);
         FakeSteveVoiceDetector.clear();
+        FakeSteveTrailRecorder.clearAll();
         if (removed != null && removed.huntPhase) {
             sendHuntScene(level, false);
         }
@@ -527,6 +555,9 @@ public final class FakeSteveDirector {
         state.ambushGoal = null;
         state.ambushTarget = null;
         state.nextPathTick = gameTime;
+        // 被拉回房间后轨迹下标已失效：清掉计时与朝向，下一 tick 会重新吸附到最近的轨迹点。
+        state.trailWaypointTick = 0L;
+        state.hasStableRouteYaw = false;
         state.brain.disengage();
     }
 

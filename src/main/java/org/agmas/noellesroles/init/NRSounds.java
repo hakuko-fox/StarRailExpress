@@ -59,6 +59,16 @@ public class NRSounds {
     // 皮革噶的：疯魔模式神秘追杀音效
     public static final SoundEvent MANHUNT_CHASE = registrar.create("noellesroles.manhunt_chase");
     public static final SoundEvent TOMATO_SPLAT = registrar.create("noellesroles.tomato_splat");
+    public static final SoundEvent[] PRIEST_CHANT = new SoundEvent[15];
+    public static final SoundEvent PRIEST_CHANTING;
+    public static final SoundEvent PRIEST_ENDING;
+    static {
+        for (int i = 0; i < PRIEST_CHANT.length; i++) {
+            PRIEST_CHANT[i] = registrar.create("priest.chant." + String.format("%02d", i));
+        }
+        PRIEST_CHANTING = registrar.create("priest.chanting");
+        PRIEST_ENDING = registrar.create("priest.ending");
+    }
     public static final SoundEvent CIRCUS_INDOOR = registrar.create("noellesroles.dasiy_bell");
     public static final SoundEvent FLOWER_OUTDOOR = registrar.create("noellesroles.flower_outdoor");
     public static final SoundEvent MUSIC_INDOOR = registrar.create("noellesroles.music_indoor");
@@ -68,6 +78,12 @@ public class NRSounds {
     public static final SoundEvent MUSIC_SAKURA_MOYU = registrar.create("music.sakura_moyu");
     public static final SoundEvent MUSIC_UNWELCOME_SCHOOL = registrar.create("music.unwelcome_school");
     public static final SoundEvent MUSIC_ZENRIANBANKA = registrar.create("music.zenrianbanka");
+
+    // 下界合金矛相关音效
+    public static final SoundEvent SPEAR_ATTACK = registrar.create("noellesroles.spear_attack");
+    public static final SoundEvent SPEAR_HIT = registrar.create("noellesroles.spear_hit");
+    public static final SoundEvent SPEAR_USE = registrar.create("noellesroles.spear_use");
+    public static final SoundEvent SPEAR_LUNGE = registrar.create("noellesroles.spear_lunge");
 
     public static final SoundEvent ROLES_LAODA_SEE_YOU_AGAIN = registrar.create("roles.see_you_again");
     public static final SoundEvent ROLES_FURANDORU_FINAL = registrar.create("roles.furandoru.final");

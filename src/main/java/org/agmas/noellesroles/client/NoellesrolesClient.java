@@ -247,6 +247,7 @@ public class NoellesrolesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         FakeSteveClient.register();
+        PurpleMonsterClient.register();
         // ClientFakeSteveHuntState.register();
         TimeRewindClientEffect.initialize();
         DynamiclightsEntry.registerClientEvents();
@@ -266,6 +267,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 g.fill(0, 0, g.guiWidth(), g.guiHeight(), 0x33707078);
             }
         });
+        org.agmas.noellesroles.client.event.CommonHudRenderCallback.EVENT.register(PriestHeavenClient::renderHud);
         // 注册游戏结束事件，清除建筑师客户端墙
         {
             NewspaperItem.runner = (stack, hand) -> {
@@ -294,6 +296,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
+            if (PriestHeavenClient.consumePendingEnding()) {
+                PriestHeavenClient.playEnding();
+            }
+            PriestHeavenClient.reset();
             // 关闭推理师罗盘界面
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.screen instanceof ReasonerCompassScreen) {
@@ -301,6 +307,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         });
         // 注册HUD渲染
+        org.agmas.noellesroles.client.RefugeeDesperadoClientFx.register();
         LimitedInventoryScreen.NotAllowItemTakePredicates.add(stack -> stack.is(ModItems.BOMB));
 
         BlockEntityRenderers.register(
@@ -429,6 +436,8 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         };
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MUSHROOM_ESSENCE,
+                net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.MINECART,
                 (c) -> new MinecartRenderer<SREMinecart>(c, ModelLayers.MINECART));
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR_FIELD_ITEM, WheelchairFieldItemRenderer::new);
@@ -495,6 +504,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientEmbalmerState.register();
         ClientSkincrawlerState.register();
         SaltedFishClientHandle.register();
+        NatureSpiritClientHandle.register();
         TomatoHeadClientHandle.register();
         DeathReactionClientHandle.register();
         PhantomSpiritClientHandle.register();
@@ -509,6 +519,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         CognitiveBiasClientHandle.register();
         MuffledHearingClientHandle.register();
         org.agmas.noellesroles.client.ClientAmonState.register();
+        ScoutClimbClient.register();
+        FatFishSkinHandler.register();
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
@@ -526,7 +538,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.SpeakerS2CPacket.ID,
                 (payload, context) -> context.client().execute(() ->
                         org.agmas.noellesroles.client.sound.SpeakerClientSounds
-                                .apply(payload.playerId(), payload.trackId(), payload.playing())));
+                                .apply(payload.playerId(), payload.trackId(), payload.playing(), payload.volume())));
         ClientPlayNetworking.registerGlobalReceiver(RefreshDimensionsS2CPacket.ID, (payload, context) -> {
             ClientScheduler.schedule(() -> {
                 if (context.client().player != null) {
@@ -537,6 +549,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(OpenScreenPayload.ID, (payload, context) -> {
             ClientOpenScreenManager.openScreen(payload, context);
         });
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.PriestHeavenStateS2CPacket.ID,
+                (payload, context) -> context.client().execute(() -> PriestHeavenClient.apply(payload)));
         ClientPlayNetworking.registerGlobalReceiver(LoanContractOpenS2CPacket.ID, (payload, context) ->
                 context.client().execute(() -> context.client().setScreen(new LoanContractScreen(payload))));
         ClientPlayNetworking.registerGlobalReceiver(InsuranceOpenS2CPacket.ID, (payload, context) ->

@@ -85,6 +85,10 @@ public class ModItems {
     public static final Item DEDUCTION_BOOK = register(
             new DeductionBookItem(new Item.Properties().stacksTo(1)),
             "deduction_book", ROLE_ITEMS_GROUP);
+    // 骸骨之书 - 一次性道具：对着玩家尸体蓄力 1 秒，把死亡的玩家复活成骷髅
+    public static final Item BONE_BOOK = register(
+            new BoneBookItem(new Item.Properties().stacksTo(1)),
+            "bone_book", ROLE_ITEMS_GROUP);
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);
@@ -283,6 +287,12 @@ public class ModItems {
     public static final Item BARBARIAN_KNIFE = register(
             new BarbarianKnifeItem(new Item.Properties().stacksTo(1)),
             "barbarian_knife", WEAPONS_GROUP);
+    public static final Item DESPERADO_KNIFE = register(
+            new DesperadoKnifeItem(new Item.Properties().stacksTo(1)),
+            "desperado_knife", WEAPONS_GROUP);
+    public static final Item DESPERADO_GUN = register(
+            new DesperadoGunItem(new Item.Properties().stacksTo(1)),
+            "desperado_gun", WEAPONS_GROUP);
     public static final Item NIAOSHOU_SHOU_KNIFE = register(
             new NiaoshoushouKnifeItem(new Item.Properties().stacksTo(1).durability(4)),
             "niaoshoushou_knife", WEAPONS_GROUP);
@@ -391,6 +401,9 @@ public class ModItems {
     public static final Item ANTIDOTE_REAGENT = register(
             new AntidoteReagentItem(new Item.Properties().stacksTo(16).durability(5)),
             "antidote_reagent", CONSUMABLES_GROUP);
+    public static final Item TRAY_PURIFYING_REAGENT = register(
+            new Item(new Item.Properties().stacksTo(16)),
+            "tray_purifying_reagent", CONSUMABLES_GROUP);
 
     /**
      * 阴谋之书页
@@ -494,6 +507,21 @@ public class ModItems {
             new FlashGrenadeItem(new Item.Properties().stacksTo(8)),
             "flash_grenade", WEAPONS_GROUP);
 
+    public static final Item MUSHROOM_SAMPLE = register(
+            new Item(new Item.Properties().stacksTo(16)), "mushroom_sample", ROLE_ITEMS_GROUP);
+    public static final Item SAFE_MUSHROOM = register(
+            new MushroomFoodItem(new Item.Properties().stacksTo(16).food(Foods.APPLE), false),
+            "safe_mushroom", CONSUMABLES_GROUP);
+    public static final Item POISONOUS_MUSHROOM = register(
+            new MushroomFoodItem(new Item.Properties().stacksTo(16).food(Foods.APPLE), true),
+            "poisonous_mushroom", CONSUMABLES_GROUP);
+    public static final Item MUSHROOM_ESSENCE = register(
+            new MushroomEssenceItem(new Item.Properties().stacksTo(16), false),
+            "mushroom_essence", ROLE_ITEMS_GROUP);
+    public static final Item POISONOUS_MUSHROOM_ESSENCE = register(
+            new MushroomEssenceItem(new Item.Properties().stacksTo(16), true),
+            "poisonous_mushroom_essence", ROLE_ITEMS_GROUP);
+
     /** 特码头死后掉落的西红柿：Q 键可丢得很远，砸中玩家会糊满番茄酱 */
     public static final Item TOMATO = register(
             new TomatoItem(new Item.Properties().stacksTo(1)),
@@ -524,6 +552,22 @@ public class ModItems {
     public static final Item SILENCE_TOTEM = register(
             new SilenceTotemItem(new Item.Properties().stacksTo(8)),
             "silence_totem", ROLE_ITEMS_GROUP);
+
+    /**
+     * 锣（更夫专属，一次性道具）
+     * - 使用后使周围「非平民 / 非警长」阵营玩家 10 秒内无法使用技能与背包
+     */
+    public static final Item GONG = register(
+            new GongItem(new Item.Properties().stacksTo(1)),
+            "gong", ROLE_ITEMS_GROUP);
+
+    /**
+     * 梆（更夫专属，一次性道具）
+     * - 持续 10 秒，每 2 秒按周围玩家人数扣减游戏时间，并使周围玩家获得 1 分钟入梦
+     */
+    public static final Item BANG = register(
+            new BangItem(new Item.Properties().stacksTo(1)),
+            "bang", ROLE_ITEMS_GROUP);
 
     /**
      * 加固门道具
@@ -604,6 +648,14 @@ public class ModItems {
     public static final Item SHILIJIA = register(
             new ShilijiaItem(new Item.Properties().stacksTo(16)),
             "shilijia", CONSUMABLES_GROUP);
+    /**
+     * 小鱼干
+     * - 大肥鱼专属商店的小零食，吃下恢复 {@code SmallDriedFishItem.STAMINA_RESTORE} 点体力
+     * - 也是可以拿去投喂大肥鱼的食物（大肥鱼只认带 FOOD 组件的东西）
+     */
+    public static final Item SMALL_DRIED_FISH = register(
+            new org.agmas.noellesroles.content.item.SmallDriedFishItem(new Item.Properties().stacksTo(16)),
+            "small_dried_fish", CONSUMABLES_GROUP);
     /**
      * 前人留下的马铠 - 装备到残月萨马/彩虹马时提升移动速度与生命上限
      */
@@ -690,6 +742,9 @@ public class ModItems {
     public static final Item WIZARD_STAFF = register(
             new org.agmas.noellesroles.content.item.WizardStaffItem(new Item.Properties().stacksTo(1)),
             "wizard_staff", ROLE_ITEMS_GROUP);
+    public static final Item APPRENTICE_WAND = register(
+            new org.agmas.noellesroles.content.item.ApprenticeWandItem(new Item.Properties().stacksTo(1)),
+            "apprentice_wand", ROLE_ITEMS_GROUP);
     public static final Item WIZARD_POTION = register(
             new org.agmas.noellesroles.content.item.WizardPotionItem(new Item.Properties().stacksTo(16)),
             "wizard_potion", ROLE_ITEMS_GROUP);
@@ -837,6 +892,15 @@ public class ModItems {
     // 飞斧 - 强盗的可投掷武器：直线飞行、穿透击杀 2 名玩家、撞墙钉住 5 秒后消失
     public static final Item THROWING_AXE = register(
             new ThrowingAxeItem((new Item.Properties()).stacksTo(1)), "throwing_axe",
+            WEAPONS_GROUP);
+
+    // 竹子 - 蓄力投掷，途中最多挂上 2 名玩家，从发射起 10 秒后消失
+    public static final Item BAMBOO = register(
+            new ThrownBambooItem((new Item.Properties()).stacksTo(8)), "bamboo",
+            WEAPONS_GROUP);
+    // 竹枪 - 右键沿视线伸长最多 10 格 / 3 秒，命中玩家击杀后收回
+    public static final Item BAMBOO_SPEAR = register(
+            new BambooSpearItem((new Item.Properties()).stacksTo(1).durability(3)), "bamboo_spear",
             WEAPONS_GROUP);
 
     // 灵梦的御币
@@ -1444,6 +1508,16 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.angler.AnglerOddityItem(new Item.Properties().stacksTo(1),
                     org.agmas.noellesroles.content.item.angler.AnglerOddityItem.Kind.EMPTY_HOOK),
             "angler_empty_hook", ROLE_ITEMS_GROUP);
+
+    /**
+     * 下界合金矛（骑兵专属武器）
+     * - 左键直刺：需要满蓄力；命中玩家时原版伤害 ×2 转为虚拟伤害，死因为 spear
+     * - 右键举矛蓄力冲锋：速度越快伤害越高，并可击退 / 击落坐骑
+     * - 可附魔「突进」：命中后沿视线向前冲刺
+     */
+    public static final Item NETHERITE_SPEAR = register(
+            new NetheriteSpearItem(NetheriteSpearItem.createProperties()),
+            "netherite_spear", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
 
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);

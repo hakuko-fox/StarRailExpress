@@ -54,6 +54,8 @@ import org.agmas.noellesroles.role_data.innocence.AccountantRoleData;
 import org.agmas.noellesroles.role_data.innocence.AlchemistRoleData;
 import org.agmas.noellesroles.game.roles.innocence.attendant.AttendantHandler;
 import org.agmas.noellesroles.role_data.innocence.GhostRoleData;
+import org.agmas.noellesroles.game.roles.neutral.priest.PriestRole;
+import org.agmas.noellesroles.game.roles.neutral.mushroom_scholar.MushroomScholarRole;
 import org.agmas.noellesroles.role_data.innocence.ClockmakerRoleData;
 import org.agmas.noellesroles.role_data.innocence.ConductorRoleData;
 import org.agmas.noellesroles.role_data.innocence.NoiseMakerRoleData;
@@ -68,6 +70,7 @@ import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.role_data.innocence.BuilderRoleData;
 import org.agmas.noellesroles.role_data.innocence.BarbarianRoleData;
 import org.agmas.noellesroles.role_data.vigilante.JojoRoleData;
+import org.agmas.noellesroles.role_data.vigilante.MagicApprenticeRoleData;
 import org.agmas.noellesroles.role_data.innocence.FortunetellerRoleData;
 import org.agmas.noellesroles.role_data.neutral.AmonRoleData;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
@@ -77,6 +80,7 @@ import org.agmas.noellesroles.role_data.neutral.RecorderRoleData;
 import org.agmas.noellesroles.role_data.neutral.MorticianBodyMakerRoleData;
 import org.agmas.noellesroles.role_data.innocence.LeatherPigRoleData;
 import org.agmas.noellesroles.role_data.innocence.TomatoHeadRoleData;
+import org.agmas.noellesroles.role_data.innocence.WatchmanRoleData;
 import org.agmas.noellesroles.role_data.neutral.PhantomSpiritRoleData;
 import org.agmas.noellesroles.role_data.neutral.ZhangAngelRoleData;
 import org.agmas.noellesroles.role_data.innocence.MagicianRoleData;
@@ -91,6 +95,7 @@ import org.agmas.noellesroles.role_data.killer.PartyRoleData;
 import org.agmas.noellesroles.role_data.killer.SpellbreakerRoleData;
 import org.agmas.noellesroles.role_data.killer.WatcherRoleData;
 import org.agmas.noellesroles.role_data.killer.YouluRoleData;
+import org.agmas.noellesroles.game.roles.killer.nature_spirit.NatureSpiritRole;
 import org.agmas.noellesroles.role_data.neutral.NianShouRoleData;
 import org.agmas.noellesroles.role_data.neutral.PelicanRoleData;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
@@ -1019,6 +1024,18 @@ public class ModRolesInitialEventRegister {
                     return true;
                 }).cooldownSeconds(130).build());
 
+        // 更夫技能注册：敲钟，使附近玩家短暂透视游戏时间15秒，冷却90秒
+        RoleSkill.register(ModRoles.WATCHMAN, RoleSkill.skill(
+                SRE.id("watchman_ring_bell"),
+                "skill.noellesroles.watchman.ring_bell",
+                context -> {
+                    ServerPlayer player = context.player();
+                    var data = RoleData.getNullable(WatchmanRoleData.class, player);
+                    if (data == null)
+                        return false;
+                    return data.ringBell();
+                }).cooldownSeconds(90).showOnHud(true).announceToSelf(false).build());
+
         // 侍者技能注册：开启灯光，冷却60秒
         RoleSkill.register(ModRoles.ATTENDANT, RoleSkill.skill(
                 SRE.id("attendant_light"),
@@ -1063,6 +1080,25 @@ public class ModRolesInitialEventRegister {
                             if (thiefData != null) {
                                 thiefData.toggleMode();
                             }
+                            return true;
+                        }).shifted(true).modeSwitch(true).announceToSelf(false).showOnHud(false).build());
+
+        RoleSkill.register(ModRoles.MUSHROOM_SCHOLAR,
+                RoleSkill.skill(SRE.id("mushroom_scholar_cultivate"),
+                        "skill.noellesroles.mushroom_scholar.cultivate",
+                        context -> MushroomScholarRole.tryOpenCultivation(context.player())).build(),
+                RoleSkill.skill(SRE.id("mushroom_scholar_essence"),
+                        "skill.noellesroles.mushroom_scholar.essence",
+                        context -> MushroomScholarRole.convertHeldMushroom(context.player()))
+                        .shifted(true).cooldownSeconds(90).build());
+
+        RoleSkill.register(ModRoles.MAGIC_APPRENTICE,
+                RoleSkill.skill(SRE.id("magic_apprentice_switch"),
+                        "skill.noellesroles.magic_apprentice.switch", context -> {
+                            MagicApprenticeRoleData data = RoleData.getNullable(MagicApprenticeRoleData.class,
+                                    context.player());
+                            if (data == null) return false;
+                            data.cycleSpell();
                             return true;
                         }).shifted(true).modeSwitch(true).announceToSelf(false).showOnHud(false).build());
 
@@ -1279,6 +1315,12 @@ public class ModRolesInitialEventRegister {
                             .ifPresent(ClockmakerRoleData::useSkill);
                     return true;
                 }).build());
+
+        RoleSkill.register(ModRoles.PRIEST, RoleSkill.skill(
+                SRE.id("priest_open_chant"),
+                "skill.noellesroles.priest.open_chant",
+                context -> PriestRole.openChant(context.player())
+        ).showOnHud(true).cooldownTicks(0).build());
 
         // 超级亡命徒技能注册：使用技能，蹲下+ G 为特殊模式
         RoleSkill.register(SpecialGameModeRoles.SUPER_LOOSE_END,
@@ -1560,6 +1602,17 @@ public class ModRolesInitialEventRegister {
                     return RoleData.getOptional(TomatoHeadRoleData.class, player)
                             .map(data -> data.useTransform(player)).orElse(false);
                 }).cooldownSeconds(90).showOnHud(true).announceToSelf(true).build());
+
+        RoleSkill.register(ModRoles.NATURE_SPIRIT,
+                RoleSkill.skill(SRE.id("nature_spirit_camouflage"), "skill.noellesroles.nature_spirit.camouflage",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator()) {
+                                return false;
+                            }
+                            return NatureSpiritRole.triggerSkill(player);
+                        }).cooldownSeconds(NatureSpiritRole.SKILL_COOLDOWN_SECONDS).showOnHud(true)
+                        .announceToSelf(true).build());
 
     }
 
