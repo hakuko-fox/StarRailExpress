@@ -137,7 +137,7 @@ public class LightningDraftState {
         rolePool.clear();
         canReplaceRole.clear();
 
-        int killerCount = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
+        int killerCount = RoleCountManager.getDraftKillerCount(totalPlayers);
         int vigilanteCount = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
         int neutralsCount = Math.max(0, RoleCountManager.getNeutralCount(totalPlayers));
 

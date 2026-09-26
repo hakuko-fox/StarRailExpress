@@ -117,6 +117,12 @@ public class RoleCountManager {
         }
     }
 
+    /** 轮选和自荐的自动模式至少生成一名杀手；手动设置（包括 0）优先。 */
+    public static int getDraftKillerCount(int playerCount) {
+        int count = getKillerCount(playerCount);
+        return forcedKillerCount >= 0 ? count : Math.min(playerCount, Math.max(1, count));
+    }
+
     // 获取实际使用的侦探数量（考虑强制设置或自动计算）
     public static int getVigilanteCount(int playerCount) {
         if (forcedVigilanteCount >= 0) {

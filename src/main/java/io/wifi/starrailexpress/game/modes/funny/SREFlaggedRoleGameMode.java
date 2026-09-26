@@ -15,15 +15,18 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.SREDisableManager;
+import org.agmas.harpymodloader.RoleWeightedUtil;
+import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
-import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
-import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
+import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
@@ -61,52 +64,43 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
                 .filter(role -> role.occupationedRoles.isEmpty())
                 .filter(role -> role.occupationRoles.stream().noneMatch(SREDisableManager::isRoleDisabled))
                 .collect(Collectors.toList());
-        if (roles.isEmpty())
-            roles = List.of(TMMRoles.CIVILIAN);
-        else
-            Collections.shuffle(roles);
-
-        List<ServerPlayer> remaining = new ArrayList<>();
-        List<ServerPlayer> shuffled = new ArrayList<>(players);
-        Collections.shuffle(shuffled);
+        // 保留此模式允许重复职业的规则，但先按配置生成各阵营的实际名额。
+        RoleAssignmentPool killers = RoleAssignmentPool.createUnlimited("Flagged killers",
+                role -> roles.contains(role) && PlayerRoleWeightManager.getRoleType(role) == 4);
+        RoleAssignmentPool vigilantes = RoleAssignmentPool.createUnlimited("Flagged vigilantes",
+                role -> roles.contains(role) && PlayerRoleWeightManager.getRoleType(role) == 5);
+        RoleAssignmentPool neutrals = RoleAssignmentPool.createUnlimited("Flagged neutrals",
+                role -> roles.contains(role) && (PlayerRoleWeightManager.getRoleType(role) == 2
+                        || PlayerRoleWeightManager.getRoleType(role) == 3));
+        RoleAssignmentPool civilians = RoleAssignmentPool.createUnlimited("Flagged civilians",
+                role -> roles.contains(role) && PlayerRoleWeightManager.getRoleType(role) == 1);
+        List<RoleInstance> roleInstances = getAllRoles(RoleCountManager.getKillerCount(players.size()),
+                RoleCountManager.getVigilanteCount(players.size()), RoleCountManager.getNeutralCount(players.size()),
+                players.size(), 0, killers, neutrals, vigilantes, civilians, true);
+        Map<RoleInstance, Float> availableSlots = new LinkedHashMap<>();
+        for (RoleInstance role : roleInstances)
+            availableSlots.put(role, 1f);
+        List<ServerPlayer> remaining = new ArrayList<>(players);
+        Map<ServerPlayer, SRERole> assignments = new LinkedHashMap<>();
+        FactionCardUtils.assignForcedTeams(remaining, ServerPlayer::getUUID,
+                PlayerRoleWeightManager.ForcePlayerTeam, availableSlots,
+                slot -> PlayerRoleWeightManager.getRoleType(slot.role()),
+                slots -> new RoleWeightedUtil(slots).selectRandomKeyBasedOnWeightsAndRemoved(),
+                (player, slot) -> assignments.put(player, slot.role()),
+                (player, forced) -> {
+                    if (forced.type() == ForceTeamType.CARD)
+                        FactionCardUtils.refund(player, forced.roleType());
+                });
+        Collections.shuffle(remaining);
+        RoleWeightedUtil selector = new RoleWeightedUtil(availableSlots);
+        for (ServerPlayer player : remaining) {
+            RoleInstance slot = selector.selectRandomKeyBasedOnWeightsAndRemoved();
+            assignments.put(player, slot == null ? TMMRoles.CIVILIAN : slot.role());
+        }
         int killerCount = 0;
-
-        List<ServerPlayer> assignedPlayers = new ArrayList<>();
-        List<SRERole> assignedRoles = new ArrayList<>();
-        for (ServerPlayer player : shuffled) {
-            ForceTeamInfo forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
-            if (forced == null) {
-                remaining.add(player);
-                continue;
-            }
-            SRERole match = roles.stream()
-                    .filter(role -> FactionCardUtils.roleMatchesCard(role, forced.roleType()))
-                    .findFirst().orElse(null);
-            if (match == null) {
-                if (forced.type() == ForceTeamType.CARD)
-                    FactionCardUtils.refund(player, forced.roleType());
-                remaining.add(player);
-                continue;
-            }
-            assignedPlayers.add(player);
-            assignedRoles.add(match);
-        }
-
-        for (int i = 0; i < remaining.size(); i++) {
-            ServerPlayer player = remaining.get(i);
-            SRERole role = roles.get(i % roles.size());
-            assignedPlayers.add(player);
-            assignedRoles.add(role);
-        }
-
-        List<RoleInstance> roleInstances = assignedRoles.stream()
-                .map(role -> new RoleInstance(java.util.UUID.randomUUID(), role))
-                .toList();
-        List<RoleInstance> expandedRoles = RoleAssignmentManager.expandWithCompanionRoles(roleInstances);
-        for (int i = 0; i < assignedPlayers.size() && i < expandedRoles.size(); i++) {
-            SRERole role = expandedRoles.get(i).role();
-            gameWorldComponent.addRole(assignedPlayers.get(i), role, false);
-            killerCount += giveKillerStartingMoney(assignedPlayers.get(i), role) ? 1 : 0;
+        for (Map.Entry<ServerPlayer, SRERole> assignment : assignments.entrySet()) {
+            gameWorldComponent.addRole(assignment.getKey(), assignment.getValue(), false);
+            killerCount += giveKillerStartingMoney(assignment.getKey(), assignment.getValue()) ? 1 : 0;
         }
 
         gameWorldComponent.syncRoles();

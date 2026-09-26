@@ -102,10 +102,9 @@ public class SingleSelectDraftState {
             finalPhaseThreshold = (int) Math.floor(totalPlayers / 2.0 + totalPlayers / 7.0);
         }
 
-        int killerCount = RoleCountManager.getKillerCount(totalPlayers);
+        int killerCount = RoleCountManager.getDraftKillerCount(totalPlayers);
         int vigilanteCount = RoleCountManager.getVigilanteCount(totalPlayers);
         int neutralsCount = RoleCountManager.getNeutralCount(totalPlayers);
-        killerCount = Math.max(1, killerCount);
         vigilanteCount = Math.max(0, vigilanteCount);
         neutralsCount = Math.max(0, neutralsCount);
 
@@ -586,7 +585,7 @@ public class SingleSelectDraftState {
             }
         }
 
-        int targetKillers = Math.max(1, RoleCountManager.getKillerCount(totalPlayers));
+        int targetKillers = RoleCountManager.getDraftKillerCount(totalPlayers);
         int targetVigilantes = Math.max(0, RoleCountManager.getVigilanteCount(totalPlayers));
         int targetNeutrals = Math.max(0, RoleCountManager.getNeutralCount(totalPlayers));
 

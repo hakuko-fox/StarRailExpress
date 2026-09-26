@@ -75,7 +75,7 @@ public class VolunteerDraftState {
 
     private void initializePools(ServerLevel world) {
         int total = players.size();
-        int killerCount = Math.max(1, RoleCountManager.getKillerCount(total));
+        int killerCount = RoleCountManager.getDraftKillerCount(total);
         int vigilanteCount = Math.max(0, RoleCountManager.getVigilanteCount(total));
         int neutralsCount = Math.max(0, RoleCountManager.getNeutralCount(total));
 
