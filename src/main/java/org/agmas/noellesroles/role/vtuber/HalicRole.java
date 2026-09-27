@@ -73,7 +73,7 @@ public class HalicRole extends NormalRole {
         MoneyUtils.addToBalance(sp, -cost);
 
         if (sp.getRandom().nextFloat() < SKILL_SOUND_CHANCE) {
-            playSoundToPlayers(level, sp.getX(), sp.getY(), sp.getZ(), 5.0, NRSounds.HALIC_HELLO);
+            playSoundToPlayers(level, sp.getX(), sp.getY(), sp.getZ(), 5.0, NRSounds.HALIC_HELLO, sp);
         }
 
         level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
@@ -153,9 +153,10 @@ public class HalicRole extends NormalRole {
     }
 
     private static void playSoundToPlayers(ServerLevel level, double x, double y, double z,
-            double range, net.minecraft.sounds.SoundEvent sound) {
+            double range, net.minecraft.sounds.SoundEvent sound, ServerPlayer excluded) {
         var recipients = new java.util.HashSet<ServerPlayer>();
         addSoundRecipients(recipients, level, x, y, z, range);
+        recipients.remove(excluded);
         for (ServerPlayer recipient : recipients) {
             recipient.playNotifySound(sound, SoundSource.PLAYERS, 1.0F, 1.0F);
         }

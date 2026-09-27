@@ -364,14 +364,17 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     private void greetNearbyPlayers(ServerLevel level) {
         long now = GameUtils.getTicksFromGameStart(level);
+        UUID ownerUuid = getOwnerUuid().orElse(null);
         for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class,
                 getBoundingBox().inflate(2.0D), GameUtils::isPlayerAliveAndSurvival)) {
-            if (distanceToSqr(player) > 4.0D
+            if (player.getUUID().equals(ownerUuid) || distanceToSqr(player) > 4.0D
                     || now < nextHalicGreetingTick.getOrDefault(player.getUUID(), Long.MIN_VALUE)) {
                 continue;
             }
-            player.playNotifySound(NRSounds.HALIC_HELLO, SoundSource.PLAYERS, 1.0F, 1.0F);
             nextHalicGreetingTick.put(player.getUUID(), now + 30L * 20L);
+            if (level.getRandom().nextBoolean()) {
+                player.playNotifySound(NRSounds.HALIC_HELLO, SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
         }
     }
 
