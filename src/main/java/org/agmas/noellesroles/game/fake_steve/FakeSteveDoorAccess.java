@@ -21,6 +21,9 @@ import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import org.agmas.noellesroles.content.entity.LockEntityManager;
 
 /** Identifies blocks that the possessed body may open while following a route. */
 final class FakeSteveDoorAccess {
@@ -40,6 +43,19 @@ final class FakeSteveDoorAccess {
     static boolean isOpen(BlockState state) {
         return !state.hasProperty(BlockStateProperties.OPEN)
                 || state.getValue(BlockStateProperties.OPEN);
+    }
+
+    static boolean hasExternalDoorLock(BlockPos lower) {
+        BlockPos anchor = lower.above();
+        if (LockEntityManager.getInstance().getLockEntity(anchor) != null) {
+            return true;
+        }
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            if (LockEntityManager.getInstance().getLockEntity(anchor.relative(direction)) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean isInsideApproachCorridor(double bodyX, double bodyZ,
