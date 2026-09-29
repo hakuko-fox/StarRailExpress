@@ -29,7 +29,7 @@ for match in re.finditer(r'public static SRERole (\w+)\s*=([\s\S]*?);', registry
     require(owner is not None, f'{name}: expected named role implementation')
     if owner:
         roles[name] = (ids[name], owner[1], declaration)
-require(len(roles) == 27, f'Expected 27 VTuber roles, found {len(roles)}; update coverage when adding roles')
+require(len(roles) == 26, f'Expected 26 VTuber roles, found {len(roles)}; update coverage when adding roles')
 
 sources = [read(p) for p in (JAVA / 'role/vtuber').glob('*.java')]
 sources += [read(p) for p in (JAVA / 'role_data/vtuber').glob('*.java')]
@@ -54,7 +54,7 @@ for source in sources:
 literal_keys = set(re.findall(r'Component.translatable\("([\w.]+)"', joined))
 literal_keys |= set(re.findall(r'RoleSkill.skill\([^,]+,\s*"([\w.]+)"', joined))
 literal_keys = {k for k in literal_keys if not k.endswith('.')}
-item_ids = ['alin_wrench', 'alin_screwdriver', 'yuyue_note', 'toy_hammer', 'fake_revolver', 'fake_knife']
+item_ids = ['alin_wrench', 'alin_screwdriver', 'yuyue_note', 'fake_revolver', 'fake_knife']
 for language in ['zh_cn', 'zh_tw', 'en_us']:
     merged = {}
     for path in RES.glob(f'*/lang/{language}.json'):

@@ -247,6 +247,5 @@
   "item.noellesroles.apprentice_wand.desc": "For the Magic Apprentice. Hold right-click for 0.3 seconds to cast the selected spell; each successful cast has a shared 12-second cooldown.",
   "item.noellesroles.alin_wrench.desc": "Alin only. A single-use tool that repairs and opens a broken small door. Each door can be repaired once per round.",
   "item.noellesroles.alin_screwdriver.desc": "Alin only. A single-use tool that breaks an intact small door. Each door can be broken once per round.",
-  "item.noellesroles.yuyue_note.desc": "A writable sticky note. Once written, use it on a living entity to attach it to their back. Sneaking uses the ordinary note interaction.",
-  "item.noellesroles.toy_hammer.desc": "Juka only. Hitting a player deals no damage and blocks their movement, item use and inventory for 2 seconds. Gives the wielder Slowness II for 2 seconds. Cooldown: 60 seconds."
+  "item.noellesroles.yuyue_note.desc": "A writable sticky note. Once written, use it on a living entity to attach it to their back. Sneaking uses the ordinary note interaction."
 }

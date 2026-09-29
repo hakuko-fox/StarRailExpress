@@ -110,7 +110,7 @@ public final class VtuberRoleSupport {
         var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
         if (role instanceof HoshizoraRole) return HoshizoraRole.canBuy(entry);
         if (role instanceof HalicRole || role instanceof SeptemberOneRole || role instanceof ShenwuBingfengRole
-                || role instanceof MaolunRole || role instanceof JukaRole || role instanceof KanaRole) {
+                || role instanceof MaolunRole || role instanceof KanaRole) {
             return entry.type() != ShopEntry.Type.WEAPON;
         }
         return true;

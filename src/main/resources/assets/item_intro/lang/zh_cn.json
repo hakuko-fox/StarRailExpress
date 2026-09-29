@@ -239,6 +239,5 @@
   "item.noellesroles.apprentice_wand.desc": "魔法学徒专用见习法杖。右键蓄力 0.3 秒释放当前法术；成功释放后统一冷却 12 秒。技能切换键可在已解锁法术间切换。",
   "item.noellesroles.alin_wrench.desc": "阿麟专用的一次性工具。修复并打开一扇被破坏的小门；同一扇门每局只能修复一次。",
   "item.noellesroles.alin_screwdriver.desc": "阿麟专用的一次性工具。破坏一扇完整的小门；同一扇门每局只能破坏一次。",
-  "item.noellesroles.yuyue_note.desc": "可书写的一般便利贴。写好后对生物使用，可贴到对方背上；潜行时使用一般便利贴交互。",
-  "item.noellesroles.toy_hammer.desc": "Juka 专用。攻击玩家不造成伤害，令目标无法移动、使用物品及操作背包 2 秒，自己缓速 II 2 秒。冷却 60 秒。"
+  "item.noellesroles.yuyue_note.desc": "可书写的一般便利贴。写好后对生物使用，可贴到对方背上；潜行时使用一般便利贴交互。"
 }

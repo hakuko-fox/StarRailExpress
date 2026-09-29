@@ -14,7 +14,6 @@ public final class VtuberRoleItems {
         if (role == ModRoles.YOZORA) { YozoraRole.giveInitialItems(player); return true; }
         if (role == ModRoles.XIANMIAO) { XianmiaoRole.giveInitialItems(player); return true; }
         if (role == ModRoles.YUZU_FENGLING) { YuzuFenglingRole.giveInitialItems(player); return true; }
-        if (role == ModRoles.JUKA) { JukaRole.giveInitialItems(player); return true; }
         if (role == ModRoles.BAIYU) { BaiyuRole.giveInitialItems(player); return true; }
         if (role == ModRoles.AYERS) { AyersRole.giveInitialItems(player); return true; }
         return false;

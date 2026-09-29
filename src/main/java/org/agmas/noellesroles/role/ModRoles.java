@@ -1679,7 +1679,6 @@ public class ModRoles {
     public static final ResourceLocation YOUJIN_ID = Noellesroles.id("youjin");
     public static final ResourceLocation KANA_ID = Noellesroles.id("kana");
     public static final ResourceLocation YUZU_FENGLING_ID = Noellesroles.id("yuzu_fengling");
-    public static final ResourceLocation JUKA_ID = Noellesroles.id("juka");
     public static final ResourceLocation BAIYU_ID = Noellesroles.id("baiyu");
     public static final ResourceLocation AYERS_ID = Noellesroles.id("ayers");
 
@@ -1736,10 +1735,6 @@ public class ModRoles {
     public static SRERole KANA = TMMRoles.registerRole(new KanaRole(KANA_ID, 0xC84278, false, true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber").setCanUseKiller(true).addFlag("vtuber");
     public static SRERole YUZU_FENGLING = TMMRoles.registerRole(new YuzuFenglingRole(YUZU_FENGLING_ID, 0x83A86B, false, true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setCanUseKiller(true)
             .addFlag("twvtuber");
-    public static SRERole JUKA = TMMRoles.registerRole(new JukaRole(JUKA_ID, 0xE7B85A,
-            false, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setCanPickUpRevolver(false).setNeutrals(true)
-            .setNeutralForKiller(false).setCanUseInstinctAndNightVision(false)
-            .setDefaultMax(1).addFlag("vtuber").addFlag("twvtuber");
     public static SRERole BAIYU = TMMRoles.registerRole(new BaiyuRole(BAIYU_ID, 0xD8E8F0, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setVigilanteTeam(true).setCanPickUpRevolver(true).addFlag("twvtuber");
     public static SRERole AYERS = TMMRoles.registerRole(new AyersRole(AYERS_ID, 0x678BD4, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setVigilanteTeam(true).setCanPickUpRevolver(true).addFlag("twvtuber");
 

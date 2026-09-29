@@ -731,9 +731,6 @@ public class ModItems {
     public static final Item YUYUE_NOTE = register(
             new org.agmas.noellesroles.content.item.YuyueNoteItem(new Item.Properties().stacksTo(4)),
             "yuyue_note", ROLE_ITEMS_GROUP);
-    public static final Item TOY_HAMMER = register(
-            new org.agmas.noellesroles.content.item.ToyHammerItem(new Item.Properties().stacksTo(1)),
-            "toy_hammer", ROLE_ITEMS_GROUP);
     /**
      * 炸弹
      * - 炸弹客专属物品
