@@ -376,6 +376,7 @@
   "text.autoconfig.noellesroles.title": "Star Rail Express Noellesroles 配置",
   "text.autoconfig.noellesroles.option.insanePlayersSeeMorphs": "亡語是否會隨機看玩家已經變形",
   "text.autoconfig.noellesroles.option.fakeSteveEnableChance": "偽人啟用概率（1/10000）",
+  "text.autoconfig.noellesroles.option.fake_stave_chat": "允許偽人在聊天室發話",
   "text.autoconfig.noellesroles.option.roleDetails": "職業資訊",
   "text.autoconfig.noellesroles.option.modifierDetails": "修飾符資訊",
   "text.autoconfig.noellesroles.option.roleDetails.title": "職業 %s",

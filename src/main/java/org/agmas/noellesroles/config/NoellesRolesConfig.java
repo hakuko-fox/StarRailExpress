@@ -86,6 +86,10 @@ public class NoellesRolesConfig implements ConfigData {
     @ConfigEntry.Category(value = "detail")
     public int fakeSteveEnableChance = 1;
 
+    /** Whether Fake Steve can send dialogue to the server chat. */
+    @ConfigEntry.Category(value = "detail")
+    public boolean fake_stave_chat = true;
+
     @ConfigEntry.Category(value = "detail")
     public int chanceOfTouhouRoles = 5;
     @ConfigEntry.Category(value = "detail")

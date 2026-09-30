@@ -63,6 +63,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.agmas.noellesroles.content.entity.LockEntityManager;
+import org.agmas.noellesroles.config.NoellesRolesConfig;
 import io.wifi.starrailexpress.content.item.GrenadeItem;
 
 /** Server-side controller for a replaced player body. */
@@ -2275,6 +2276,11 @@ public class FakeSteveAi {
     }
 
     private static void maybeSpeak(ServerLevel level, ServerPlayer body, FakeSteveAgentState state) {
+        if (!NoellesRolesConfig.HANDLER.instance().fake_stave_chat) {
+            state.directedReplyPending = false;
+            state.nextDialogueTick = 0L;
+            return;
+        }
         long now = level.getGameTime();
         if (!state.directedReplyPending
                 && state.mode != AgentMode.DISGUISE_IDLE && state.mode != AgentMode.DISGUISE_TASK) {
