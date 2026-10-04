@@ -26,6 +26,7 @@ import io.wifi.starrailexpress.api.replay.GameReplayManager;
 import io.wifi.starrailexpress.api.replay.board.ReplayBoardService;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
+import io.wifi.starrailexpress.content.block.SpaceAirGravityRuntime;
 import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -34,6 +35,7 @@ import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode;
 import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationSingleSelectGameMode;
+import io.wifi.starrailexpress.game.modes.funny.SREVolunteerOpenSelectGameMode;
 import io.wifi.starrailexpress.network.*;
 import io.wifi.starrailexpress.scenery.server.SceneAssetServer;
 import net.exmo.sre.sync.MysqlPlayerDataStore;
@@ -167,6 +169,8 @@ public class SREEventRegister {
             VoteManager.onServerTick();
             ReplayBoardService.tick(serv);
             SceneAssetServer.tick(serv);
+            // 太空空气：此时所有维度的实体都已 tick 完，统一结算本 tick 身处方块的生物的重力
+            SpaceAirGravityRuntime.flush();
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             SRE.isLobby = SREConfig.instance().isLobby;
@@ -238,11 +242,12 @@ public class SREEventRegister {
         });
     }
 
-    /** 轮选（闪电轮抽 / 单选）在 OnGameStarted 时职业尚未确定，开场镜头应延后。 */
+    /** 轮选（闪电轮抽 / 单选）与志愿海选在 OnGameStarted 时职业尚未确定，开场镜头应延后。 */
     private static boolean defersIntroUntilRolesChosen(ServerLevel serverLevel) {
         var mode = SREGameWorldComponent.KEY.get(serverLevel).getGameMode();
         return mode instanceof SRERoleRotationGameMode
-                || mode instanceof SRERoleRotationSingleSelectGameMode;
+                || mode instanceof SRERoleRotationSingleSelectGameMode
+                || mode instanceof SREVolunteerOpenSelectGameMode;
     }
 
     private static void sendDefaultIntroIfParticipant(ServerPlayer player) {

@@ -40,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 /**
- * 竹枪 —— 右键后竹子模型沿视线向前伸长，最长 10 格 / 最多 3 秒；碰到玩家即击杀并收回。
+ * 竹刀 —— 右键后竹子沿视线向前伸长，最长 10 格、<b>1.5 秒</b>伸到底；碰到玩家即击杀并立刻收回。
  * 3 点耐久，每次成功释放消耗 1 点；冷却 15 秒。
  */
 public class BambooSpearItem extends Item implements TrainWeapon {
@@ -79,7 +79,12 @@ public class BambooSpearItem extends Item implements TrainWeapon {
                     SoundSource.PLAYERS, 0.8f, 1.35f);
             user.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
             EquipmentSlot slot = hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+            // 最后一点耐久：物品会直接碎裂消失，但竹枪实体仍要完成本次伸长与伤害结算
+            boolean willBreak = stack.getMaxDamage() > 0 && stack.getDamageValue() + 1 >= stack.getMaxDamage();
             stack.hurtAndBreak(1, serverPlayer, slot);
+            if (willBreak) {
+                spear.setItemCheckBypassed(true);
+            }
         }
         user.swing(hand);
         return InteractionResultHolder.consume(stack);

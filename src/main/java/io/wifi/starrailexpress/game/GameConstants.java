@@ -176,6 +176,18 @@ public class GameConstants {
         };
     }
 
+    /**
+     * 被动游戏币收入节拍器：每 25 秒（500 tick）固定发放 1 枚游戏币（MiniGameToken）。
+     */
+    public static Function<Long, Integer> getPassiveMiniGameTokenTicker() {
+        return time -> {
+            if (time % (25 * 20) == 0) {
+                return 1;
+            }
+            return 0;
+        };
+    }
+
     public static int getMoneyPerKill() {
         return SREConfig.instance().moneyPerKill;
     }
@@ -310,6 +322,8 @@ public class GameConstants {
         public static ResourceLocation FIREWORK_CROSSBOW = Noellesroles.id("firework_crossbow");
         /** 下界合金矛（骑兵）：原版伤害 ×2 转为虚拟伤害，归零时按此死因判死 */
         public static ResourceLocation SPEAR = Noellesroles.id("spear");
+        /** 武士刀：三连招扣除虚拟血量，归零时按此死因判死 */
+        public static ResourceLocation KATANA = Noellesroles.id("katana");
 
         public static ResourceLocation RADIATION = Noellesroles.id("radiation");
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");

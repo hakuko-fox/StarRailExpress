@@ -113,9 +113,10 @@ public class VolunteerOpenDraftState {
      * 等客户端的兜底上限（tick）：超时后即使有人没上报也照常开始计时。
      *
      * <p>
-     * 要留够地图开场运镜（开场动画）的时长——客户端在运镜播完之前不会把界面顶出来。
+     * 15 秒强制兜底：开场动画（含飞机坠毁）已延后到全部选择结束之后才播放，
+     * 选择阶段不会被打断；这里只是防止个别客户端卡住不上报导致整局等待。
      */
-    public static final int CLIENT_READY_TIMEOUT = 20 * 20;
+    public static final int CLIENT_READY_TIMEOUT = 15 * 20;
 
     // ===== 确认 =====
     public boolean confirmRequired = false;
@@ -315,15 +316,24 @@ public class VolunteerOpenDraftState {
             startConfirmPhase();
             return;
         }
-        // 与职业轮选模式进入下一轮时使用同一声铃声；第一组没有“下一轮”提示音。
-        if (groupIndex > 0) {
-            for (ServerPlayer player : world.players()) {
-                RoleUtils.playSound(player, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.MASTER, 1.0f, 1.5f);
-            }
+        // 与职业轮选模式进入下一轮时使用同一声铃声；每组（含第一组）都播放"下一轮"提示音。
+        for (ServerPlayer player : world.players()) {
+            RoleUtils.playSound(player, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.MASTER, 1.0f, 1.5f);
         }
         List<UUID> group = groups.get(groupIndex);
         revealForGroup(group);
         grantCardReveals(world, group);
+        // forcerole：被强制指定职业的玩家，轮到自己这组时由系统直接锁定对应职业，无需手动抢
+        for (UUID id : group) {
+            Integer forcedIndex = forcedRoleReveals.get(id);
+            if (forcedIndex == null || pickedBy[forcedIndex] != null) {
+                continue;
+            }
+            ServerPlayer sp = world.getServer().getPlayerList().getPlayer(id);
+            if (sp != null) {
+                processPick(world, sp, forcedIndex);
+            }
+        }
         phaseStartTime = world.getGameTime();
         phaseTimeLimit = computeGroupTimeLimit();
         waitingForClients = false;
@@ -593,12 +603,21 @@ public class VolunteerOpenDraftState {
                 case OPEN -> {
                     if (groupIndex >= 0 && groupIndex < groups.size()
                             && groups.get(groupIndex).contains(id) && !picks.containsKey(id)) {
-                        int index = randomFreeIndex();
+                        Integer forced = forcedRoleReveals.get(id);
+                        int index;
+                        boolean randomMarker;
+                        if (forced != null && pickedBy[forced] == null) {
+                            index = forced;
+                            randomMarker = false;
+                        } else {
+                            index = randomFreeIndex();
+                            randomMarker = true;
+                        }
                         if (index < 0) {
                             picks.put(id, -1);
                             randomChoosers.add(id);
                         } else {
-                            applyPick(id, index, true);
+                            applyPick(id, index, randomMarker);
                         }
                         changed = true;
                     }

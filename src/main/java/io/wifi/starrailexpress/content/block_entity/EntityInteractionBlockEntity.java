@@ -141,6 +141,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     private boolean receivedRedstoneSignal = false; // 是否接收到红石信号
     private boolean isOutputtingRedstone = false; // 是否正在输出红石信号
     private int redstoneOutputStrength = 15; // 输出的红石信号强度（0-15）
+    // 上次红石检测的游戏时间（用于按「内置间隔」检测是否继续输出）
+    private long lastRedstoneCheckGameTime = 0;
     // 是否启用碰撞箱
     private boolean collisionEnabled = false;
     private int collisionRemainingTicks = 0;
@@ -313,12 +315,15 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         }
 
         boolean result = switch (targetTeamType) {
-            case CIVILIAN -> role.isInnocent() && !role.isVigilanteTeam();
-            case SHERIFF -> role.isVigilanteTeam();
-            case NEUTRAL -> role.isNeutrals() || (!role.isInnocent() && !role.canUseKiller());
-            case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
-            case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
-            case KILLER -> role.canUseKiller() && !role.isInnocent();
+            case CIVILIAN -> io.wifi.starrailexpress.api.RoleTeam.CIVILIAN.matches(role);
+            case SHERIFF -> io.wifi.starrailexpress.api.RoleTeam.SHERIFF.matches(role);
+            case NEUTRAL -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL.matches(role);
+            case NEUTRAL_INNOCENT -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_INNOCENT.matches(role);
+            case NEUTRAL_KILLER -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_KILLER.matches(role);
+            case NEUTRAL_SPECIAL -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_SPECIAL.matches(role);
+            case NEUTRAL_EVENT -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_EVENT.matches(role);
+            case NEUTRAL_INDEPENDENT_WIN -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_INDEPENDENT_WIN.matches(role);
+            case KILLER -> io.wifi.starrailexpress.api.RoleTeam.KILLER.matches(role);
             default -> true;
         };
 
@@ -455,7 +460,16 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         this.blockCooldownEndGameTime = 0;
         this.playerClicks.clear();
         this.triggeredClicks.clear();
+        this.lastRedstoneCheckGameTime = 0;
+        this.timerTick = 0;
+        boolean wasOutputting = this.isOutputtingRedstone;
+        this.isOutputtingRedstone = false;
         setChanged();
+        if (wasOutputting && this.level != null && !this.level.isClientSide) {
+            // 立即刷新红石信号：只清字段不更新邻居的话，相邻红石线会保持通电缓存跨局残留
+            this.level.updateNeighborsAt(this.worldPosition, this.getBlockState().getBlock());
+            this.level.updateNeighbourForOutputSignal(this.worldPosition, this.getBlockState().getBlock());
+        }
     }
 
     // 红石信号相关 getter/setter
@@ -527,12 +541,40 @@ public class EntityInteractionBlockEntity extends BlockEntity {
 
         entity.tryTrack();
 
+        // 游戏未运行（已结束 / 未开始）：停止红石输出并清理触发状态，然后停摆。
+        // 否则结算期间 elapsedGameTime 冻结在已满足阈值，「游戏经过 X」类条件会持续重新
+        // 点亮红石信号；且 elapsed 冻结/回退后「内置间隔」复查（elapsed - lastCheck >= interval）
+        // 永远不成立，信号就会一直保持输出、跨局残留。
+        SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(world);
+        if (gameComponent == null || !gameComponent.isRunning()) {
+            if (entity.isOutputtingRedstone || entity.timerTick != 0 || !entity.lastTriggerTime.isEmpty()
+                    || !entity.playerClicks.isEmpty() || !entity.triggeredClicks.isEmpty()
+                    || entity.blockCooldownEndGameTime != 0 || entity.lastRedstoneCheckGameTime != 0) {
+                entity.resetAllCooldowns();
+            }
+            return;
+        }
+
         // 获取游戏世界组件
         SREGameTimeComponent timeComponent = SREGameTimeComponent.KEY.get(world);
         // 使用 resetTime - time 计算游戏开始后经过的时间（tick）
         long elapsedGameTime = timeComponent.getResetTime() - timeComponent.getTime();
         // 获取剩余时间（tick）
         long remainingTime = timeComponent.getTime();
+
+        // elapsed 回退保护：ADD_TIME / SET_TIME 动作会瞬间增大剩余时间，使 elapsed 变小，
+        // 之前的「未来时间戳」会把玩家触发冷却与红石复查（elapsed - last >= interval）永久锁死。
+        // 检测到回退时把时间基准夹回当前值。
+        if (elapsedGameTime < entity.lastRedstoneCheckGameTime) {
+            entity.lastRedstoneCheckGameTime = elapsedGameTime;
+        }
+        if (!entity.lastTriggerTime.isEmpty()) {
+            entity.lastTriggerTime.replaceAll((uuid, t) -> t > elapsedGameTime ? elapsedGameTime : t);
+        }
+        if (entity.blockCooldownEndGameTime != 0
+                && entity.blockCooldownEndGameTime - elapsedGameTime > entity.blockCooldownTicks) {
+            entity.blockCooldownEndGameTime = (int) (elapsedGameTime + entity.blockCooldownTicks);
+        }
 
         // 处理碰撞箱计时
         if (entity.collisionEnabled) {
@@ -542,9 +584,6 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 entity.collisionEnabled = false;
             }
         }
-
-        // 每tick重置红石输出状态
-        entity.isOutputtingRedstone = false;
 
         // 检查方块冷却（使用经过的时间计算）
         if (entity.isInCooldown(elapsedGameTime)) {
@@ -579,11 +618,22 @@ public class EntityInteractionBlockEntity extends BlockEntity {
             }
         }
 
-        // 如果有玩家触发了条件，且存在 OUTPUT_REDSTONE 动作，则更新红石输出并刷新邻居
+        // 红石输出：触发时置位并保持，直到下一次「内置间隔」检测时条件仍不满足才关闭
+        int checkInterval = Math.max(1, entity.cooldownTicks);
         if (anyPlayerTriggered && entity.isOutputtingRedstone) {
+            // 本次触发即一次检测：记录时刻并保持信号持续输出
+            entity.lastRedstoneCheckGameTime = elapsedGameTime;
             // 刷新方块状态，使红石信号更新
             serverWorld.updateNeighborsAt(pos, state.getBlock());
             serverWorld.updateNeighbourForOutputSignal(pos, state.getBlock());
+        } else if (elapsedGameTime - entity.lastRedstoneCheckGameTime >= checkInterval) {
+            // 到达下一次检测时刻仍未触发 → 条件不再满足，停止输出
+            entity.lastRedstoneCheckGameTime = elapsedGameTime;
+            if (entity.isOutputtingRedstone) {
+                entity.isOutputtingRedstone = false;
+                serverWorld.updateNeighborsAt(pos, state.getBlock());
+                serverWorld.updateNeighbourForOutputSignal(pos, state.getBlock());
+            }
         }
     }
 
@@ -595,6 +645,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
     public static void onPlayerDeath(ServerLevel world, ServerPlayer victim,
             net.minecraft.resources.ResourceLocation deathReason) {
         if (world == null || victim == null)
+            return;
+        // 游戏未运行（结算期间 / 未开始）：死亡事件不触发任何方块动作
+        SREGameWorldComponent deathGameComponent = SREGameWorldComponent.KEY.get(world);
+        if (deathGameComponent == null || !deathGameComponent.isRunning())
             return;
         String key = getMapKey(world);
         if (key.isEmpty())
@@ -912,12 +966,16 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     yield false;
                 yield switch (condition.teamType) {
                     case ALL -> true; // 所有职业都匹配
-                    case CIVILIAN -> role.isInnocent() && !role.isVigilanteTeam();
-                    case SHERIFF -> role.isVigilanteTeam();
-                    case NEUTRAL -> role.isNeutrals();
-                    case NEUTRAL_KILLER -> role.isNeutrals() && role.isNeutralForKiller();
-                    case NEUTRAL_SPECIAL -> role.isNeutrals() && !role.isNeutralForKiller();
-                    case KILLER -> role.canUseKiller() && !role.isNeutrals() && !role.isNeutralForKiller();
+                    case CIVILIAN -> io.wifi.starrailexpress.api.RoleTeam.CIVILIAN.matches(role);
+                    case SHERIFF -> io.wifi.starrailexpress.api.RoleTeam.SHERIFF.matches(role);
+                    case NEUTRAL -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL.matches(role);
+                    case NEUTRAL_INNOCENT -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_INNOCENT.matches(role);
+                    case NEUTRAL_KILLER -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_KILLER.matches(role);
+                    case NEUTRAL_SPECIAL -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_SPECIAL.matches(role);
+                    case NEUTRAL_EVENT -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_EVENT.matches(role);
+                    case NEUTRAL_INDEPENDENT_WIN -> io.wifi.starrailexpress.api.RoleTeam.NEUTRAL_INDEPENDENT_WIN
+                            .matches(role);
+                    case KILLER -> io.wifi.starrailexpress.api.RoleTeam.KILLER.matches(role);
                 };
             }
             case HAS_KILLED -> {
@@ -1092,7 +1150,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                     yield false; // 玩家不在范围内
                 }
                 // 检查是否在时间窗口内受到玩家伤害
-                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, elapsedGameTime);
+                // 注意：受伤记录使用原版 gameTime 计时，这里必须传同一时钟（elapsedGameTime 是
+                // resetTime-time，与原版时间数值差一个量级，会导致 10 秒窗口判定恒为负差值失效）
+                yield SREPlayerDamageTrackerComponent.hasPlayerDamage(player, world.getGameTime());
             }
             case PLAYER_DAMAGED_BY_NON_PLAYER -> {
                 // 玩家受到非玩家来源的原版伤害
@@ -1102,8 +1162,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
                 if (!checkBox.contains(player.getBoundingBox().getCenter())) {
                     yield false; // 玩家不在范围内
                 }
-                // 检查是否在时间窗口内受到非玩家伤害
-                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, elapsedGameTime);
+                // 检查是否在时间窗口内受到非玩家伤害（与受伤记录统一使用原版 gameTime）
+                yield SREPlayerDamageTrackerComponent.hasNonPlayerDamage(player, world.getGameTime());
             }
             case REDSTONE_SIGNAL -> {
                 // 实体交互方块接收到红石信号
@@ -1906,7 +1966,9 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         tag.putBoolean("IsTeleportPoint", isTeleportPoint);
         tag.putInt("TeleportPointId", teleportPointId);
         tag.putInt("BlockCooldownTicks", blockCooldownTicks);
-        tag.putInt("BlockCooldownEndGameTime", blockCooldownEndGameTime);
+        // BlockCooldownEndGameTime（基于每局 elapsed 的冷却截止）不持久化：
+        // 它以「本局游戏经过时间」为基准，保存于局内、加载于另一局时语义完全错乱，
+        // 会让方块在下一局开局被幽灵冷却冻结，属于纯运行时状态。
 
         // 任务路标相关
         tag.putBoolean("IsTaskMarker", isTaskMarker);
@@ -1950,7 +2012,8 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         // 使用 contains 检查，避免旧数据或缺失时覆盖默认值 -1
         teleportPointId = tag.contains("TeleportPointId") ? tag.getInt("TeleportPointId") : -1;
         blockCooldownTicks = tag.getInt("BlockCooldownTicks");
-        blockCooldownEndGameTime = tag.getInt("BlockCooldownEndGameTime");
+        // 不再读取 BlockCooldownEndGameTime（旧存档中的残留值直接废弃，见 saveAdditional 注释）
+        blockCooldownEndGameTime = 0;
 
         // 任务路标相关
         isTaskMarker = tag.getBoolean("IsTaskMarker");
@@ -2031,9 +2094,10 @@ public class EntityInteractionBlockEntity extends BlockEntity {
         EQUALS, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL
     }
 
-    // 阵营类型枚举
+    // 阵营类型枚举（中立细分与 io.wifi.starrailexpress.api.RoleTeam 对齐）
     public enum TeamType {
-        ALL, CIVILIAN, SHERIFF, NEUTRAL, NEUTRAL_KILLER, NEUTRAL_SPECIAL, KILLER
+        ALL, CIVILIAN, SHERIFF, NEUTRAL, NEUTRAL_INNOCENT, NEUTRAL_KILLER, NEUTRAL_SPECIAL, NEUTRAL_EVENT,
+        NEUTRAL_INDEPENDENT_WIN, KILLER
     }
 
     // 直线范围方向枚举

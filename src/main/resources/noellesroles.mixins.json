@@ -172,6 +172,7 @@
     "client.roles.manipulator.KeyBindingMixin",
     "client.roles.manipulator.ManipulatorControllerInputMixin",
     "client.roles.manipulator.ManipulatorUseSuppressMixin",
+    "client.roles.nurse.NurseBodyGlowMixin",
     "client.roles.priest.PriestChantInputMixin",
     "client.roles.priest.PriestLocalPlayerMixin",
     "client.roles.priest.PriestHeavenCameraMixin",
@@ -203,7 +204,12 @@
     "client.sodium.HakukoFoxPOVSodiumSectionMixin",
     "client.spear.ItemInHandRendererSpearMixin",
     "client.spear.MinecraftSpearAttackMixin",
-    "client.spear.HumanoidModelSpearMixin"
+    "client.spear.HumanoidModelSpearMixin",
+    "client.roles.nature_spirit.HumanoidModelBambooSpearMixin",
+    "client.katana.LivingEntityKatanaEventMixin",
+    "client.katana.MinecraftKatanaAttackMixin",
+    "client.katana.ItemInHandRendererKatanaMixin",
+    "client.katana.HumanoidModelKatanaMixin"
   ],
   "overwrites": {
     "requireAnnotations": true

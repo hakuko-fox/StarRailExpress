@@ -26,8 +26,12 @@ import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.modes.funny.SREEvilWarGameMode;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
+import io.wifi.starrailexpress.event.OnPlayerDeathWithBody;
+import org.agmas.noellesroles.game.roles.innocence.nurse.NurseRole;
+import org.agmas.noellesroles.game.roles.killer.boom_maniac.BoomManiacRole;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.util.SREItemUtils;
@@ -76,7 +80,7 @@ import org.agmas.noellesroles.role_data.killer.MaChenXuRoleData;
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
 import org.agmas.noellesroles.role_data.innocence.BuilderRoleData;
 import org.agmas.noellesroles.role_data.innocence.BarbarianRoleData;
-import org.agmas.noellesroles.role_data.vigilante.JojoRoleData;
+import org.agmas.noellesroles.content.item.ora.OraPunchManager;
 import org.agmas.noellesroles.role_data.vigilante.MagicApprenticeRoleData;
 import org.agmas.noellesroles.role_data.innocence.FortunetellerRoleData;
 import org.agmas.noellesroles.role_data.neutral.AmonRoleData;
@@ -153,7 +157,8 @@ public class ModRolesInitialEventRegister {
         TomatoHeadRoleData.registerEvents();
         PhantomSpiritRoleData.registerEvents();
         BarbarianRoleData.registerEvents();
-        JojoRoleData.registerEvents();
+        // 欧拉一拳（不限职业，按玩家 UUID 维护连打状态）
+        OraPunchManager.registerEvents();
         // 初始化操纵师操控限制（被拖入水/岩浆/虚空/摔落致死时否决并弹回）
         InControlCCA.registerEvents();
         ModdedRoleAssigned.EVENT.register((player, role) -> {
@@ -489,6 +494,17 @@ public class ModRolesInitialEventRegister {
                             return true;
                         }).cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
 
+        // 爆炸狂技能：将主手物品切换至副手（参考网警）
+        RoleSkill.register(ModRoles.BOOM_MANIAC,
+                RoleSkill.skill(SRE.id("boom_maniac_swap_hands"),
+                        "skill.noellesroles.boom_maniac.swap_hands",
+                        context -> BoomManiacRole.swapHeldItem(context.player()))
+                        .cooldownTicks(0).showOnHud(true).announceToSelf(false).build());
+
+        // 护士：因虚拟血量归零（dream_axe）死亡的尸体，自生成起 30 秒内可被护士透视
+        OnPlayerDeathWithBody.EVENT.register((victim, killer, deathReason, body) ->
+                NurseRole.onBodySpawn(victim, killer, deathReason, body));
+
         RoleSkill.register(ModRoles.DOOMED_SINNER,
                 RoleSkill.skill(SRE.id("doomed_sinner_revelation"),
                         "skill.noellesroles.doomed_sinner.revelation",
@@ -514,6 +530,16 @@ public class ModRolesInitialEventRegister {
                             return org.agmas.noellesroles.role_data.neutral.DoomedSinnerRoleData
                                     .reboot(player);
                         }).cooldownSeconds(75).shifted(true).showOnHud(true).announceToSelf(true).build());
+
+        RoleSkill.register(ModRoles.SWORDSMAN,
+                RoleSkill.skill(SRE.id("swordsman_quxue"),
+                        "skill.noellesroles.swordsman.quxue",
+                        context -> org.agmas.noellesroles.role.vigilante.SwordsmanRole.useQuXue(context))
+                        .cooldownTicks(org.agmas.noellesroles.role.vigilante.SwordsmanRole.QUXUE_COOLDOWN_TICKS)
+                        .showOnHud(true)
+                        .recordReplay()
+                        .announceToSelf(false)
+                        .build());
 
         RoleSkill.register(ModRoles.LIN_FAMILY,
                 RoleSkill.skill(SRE.id("lin_family_generosity"),
@@ -677,7 +703,9 @@ public class ModRolesInitialEventRegister {
         RoleSkill.register(ModRoles.SILENT_KILLER,
                 RoleSkill.skill(SRE.id("silent_killer/kill"), "skill.noellesroles.silent_killer", (ctx) -> {
                     final var player = ctx.player();
-                    if (MoneyUtils.getBalance(player) > 5) {
+                    SREGameWorldComponent gwc = SREGameWorldComponent.KEY.get(player.level());
+                    boolean evilWar = gwc != null && gwc.gameMode instanceof SREEvilWarGameMode;
+                    if (!evilWar && MoneyUtils.getBalance(player) > 5) {
                         player.displayClientMessage(Component.translatable("skill.noellesroles.silent_killer.failed")
                                 .withStyle(ChatFormatting.RED), true);
                         return false;
@@ -780,7 +808,7 @@ public class ModRolesInitialEventRegister {
         // 见 WarlockRoleScreenExtension / WarlockDomainWidget /
         // WarlockDomainC2SPacket（冷却记在组件里，60s）。
 
-        // Dream（梦魇）技能注册：制酒 —— 酿一瓶酒，喝下隐身10s（期间无法攻击/无法受伤）
+        // Dream（Dream）技能注册：制酒 —— 酿一瓶酒，喝下隐身10s（期间无法攻击/无法受伤）
         RoleSkill.register(ModRoles.DREAM,
                 RoleSkill.skill(SRE.id("dream_brew"), "skill.noellesroles.dream.brew", context -> {
                     ServerPlayer player = context.player();

@@ -20,6 +20,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.replay.ReplayDisplayUtils;
+import io.wifi.starrailexpress.client.gui.HudMoodRenderer;
 import io.wifi.starrailexpress.stats.PlayerStats;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -369,10 +370,15 @@ public class RoleStatsPanel extends AbstractWidget {
         }
 
         private Component getRoleTypeDisplay(SRERole r) {
+            // 名称 + 颜色统一由阵营枚举 RoleTeam 提供
+            io.wifi.starrailexpress.api.RoleTeam team = io.wifi.starrailexpress.api.RoleTeam.of(r);
+            if (team != null) {
+                return team.displayName();
+            }
             return switch (PlayerRoleWeightManager.getRoleType(r)) {
                 case 0, 1 -> Component.translatable("display.type.role.innocent")
                         .withStyle(s -> s.withColor(0xFF44BB66));
-                case 2 -> Component.translatable("display.type.role.neutral")
+                case 2 -> Component.translatable("display.type.role.neutral_all")
                         .withStyle(s -> s.withColor(0xFFCCAA22));
                 case 3 -> Component.translatable("display.type.role.neutral_for_killer")
                         .withStyle(s -> s.withColor(0xFFAA44CC));
@@ -385,14 +391,8 @@ public class RoleStatsPanel extends AbstractWidget {
         }
 
         private ResourceLocation getTypeIcon(SRERole role) {
-            return switch (PlayerRoleWeightManager.getRoleType(role)) {
-                case 0, 1 -> ResourceLocation.tryParse("wathe:textures/gui/sprites/hud/mood_happy.png");
-                case 2 -> ResourceLocation.tryParse("noellesroles:textures/gui/sprites/hud/mood_neu.png");
-                case 3 -> ResourceLocation.tryParse("noellesroles:textures/gui/sprites/hud/mood_jester.png");
-                case 4 -> ResourceLocation.tryParse("wathe:textures/gui/sprites/hud/mood_killer.png");
-                case 5 -> ResourceLocation.tryParse("noellesroles:textures/gui/sprites/hud/mood_vig.png");
-                default -> null;
-            };
+            // 与 HUD 一致：严格按照 RoleTeam 阵营选择图标（好人方中立使用 mood_good_neu.png）
+            return HudMoodRenderer.getMoodTextureByTeam(role);
         }
 
         @Override

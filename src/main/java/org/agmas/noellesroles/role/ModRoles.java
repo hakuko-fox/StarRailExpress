@@ -31,6 +31,8 @@ import org.agmas.noellesroles.game.roles.innocence.cake_maker.CakeMakerRole;
 import org.agmas.noellesroles.game.roles.innocence.great_detective.GreatDetectiveRole;
 import org.agmas.noellesroles.role.vtuber.*;
 import org.agmas.noellesroles.game.roles.innocence.mortician.MorticianRole;
+import org.agmas.noellesroles.game.roles.innocence.nurse.NurseRole;
+import org.agmas.noellesroles.game.roles.killer.boom_maniac.BoomManiacRole;
 import org.agmas.noellesroles.game.roles.innocence.watchman.WatchmanRole;
 import org.agmas.noellesroles.game.roles.innocence.insurance.InsuranceRole;
 import org.agmas.noellesroles.game.roles.innocence.waiter.WaiterRole;
@@ -38,6 +40,7 @@ import org.agmas.noellesroles.game.roles.innocence.veteran.VeteranKnifeHandler;
 import org.agmas.noellesroles.game.roles.killer.manipulator.ManipulatorRole;
 import org.agmas.noellesroles.game.roles.killer.ninja.NinjaRole;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistRole;
+import org.agmas.noellesroles.game.roles.killer.siege.SiegeRole;
 import org.agmas.noellesroles.game.roles.killer.undead_lord.UndeadLordRole;
 import org.agmas.noellesroles.game.roles.killer.watcher.WatcherRole;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithAssassinRole;
@@ -48,6 +51,7 @@ import org.agmas.noellesroles.game.roles.neutral.gambler.GamblerRole;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterHandler;
 import org.agmas.noellesroles.game.roles.neutral.jester.JesterRole;
 import org.agmas.noellesroles.game.roles.neutral.leader.LeaderRole;
+import org.agmas.noellesroles.game.roles.neutral.lender.LenderRole;
 import org.agmas.noellesroles.game.roles.neutral.mafia.MafiaRole;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaRole;
 import org.agmas.noellesroles.game.roles.neutral.nian_shou.NianShouRole;
@@ -183,6 +187,8 @@ public class ModRoles {
     public static ResourceLocation DOCTOR_ID = Noellesroles.id("doctor");
     public static ResourceLocation ATTENDANT_ID = Noellesroles.id("attendant");
     public static ResourceLocation CORONER_ID = Noellesroles.id("coroner");
+    /** 攻城手角色 ID - 仅攻城手（SIEGE）地图刷新 */
+    public static final ResourceLocation SIEGE_ID = Noellesroles.id("siege");
     public static ResourceLocation PATROLLER_ID = Noellesroles.id("patroller");
     public static final ResourceLocation SHERIFF_ID = Noellesroles.id("sheriff");
     // 鬼眼·杨间角色 ID - 警长阵营
@@ -413,7 +419,8 @@ public class ModRoles {
     ))
             .setCanSeeCoin(true)
             .setCanBeRandomedByOtherRoles(true)
-            .setRoleData(WatchmanRoleData::new);
+            .setRoleData(WatchmanRoleData::new)
+            .setAddedVersion("4.4");
 
     /**
      * 影隼角色 - 杀手阵营
@@ -693,7 +700,9 @@ public class ModRoles {
             TMMRoles.CIVILIAN.getMaxSprintTime(),
             false // 不隐藏计分板
     )).setCanSeeCoin(true).setVigilanteTeam(true).setCanBeRandomedByOtherRoles(false).setDefaultMax(0)
-            .setCanSetSpawnInfoInConfig(false).setCanPickUpRevolver(true).setRoleData(JojoRoleData::new);
+            .setCanSetSpawnInfoInConfig(false).setCanPickUpRevolver(true);
+    // 欧拉一拳的连打状态不再挂在职业数据上（改为 OraPunchManager 按 UUID 维护），
+    // 这样任何职业拿到欧拉一拳都能用，所以这里不再 setRoleData。
 
     // ==================== 已注册角色定义 ====================
     // 乘客阵营角色
@@ -966,6 +975,7 @@ public class ModRoles {
      * - 真实心情系统
      * - 与平民一致的体力，隐藏计分板
      * - 无金币系统，不显示金币
+     * - 拥有被动游戏币收入（canAutoAddMiniGameToken），随时间自然获得游戏币
      * - 完成普通任务获得 1 个游戏代币；完成小游戏任务额外获得 1 个游戏代币
      * - 完成小游戏任务额外恢复 30% 理智；小游戏任务刷新不受轮换模式普通任务限制
      * - 商店使用小游戏代币依次购买 Dream 铁斧/钻石剑/重锤（见 RoleShopHandler）
@@ -983,7 +993,43 @@ public class ModRoles {
                     && t.contains(MapSpecialFeatures.MINIGAME_QUEST))
             // 小游戏任务独立计算：不并入轮换派发，始终独立计时刷新
             .setIndependentMinigameTiming(true)
+            .setCanAutoAddMiniGameToken(true)
             .setRoleData(NetCopRoleData::new);
+    /**
+     * 护士角色（平民阵营，与爆炸狂绑定生成）
+     * - 属于平民阵营 (isInnocent = true)，真实心情，平民体力，看不到计时/计分板
+     * - 每局最多 1 人，不会被其它职业随机到
+     * - 始终能看到其它玩家的虚拟血量条；能透视 30 格内虚拟血量不满的玩家
+     * - 因虚拟血量归零（dream_axe）死亡的尸体，自生成起 30 秒内可被护士透视
+     * - 开局自带一个康复试剂；商店可购买康复药丸（50金币）与康复试剂（150金币）
+     * - 规则集中在 NurseRole（game/roles/innocence/nurse）
+     */
+    public static final ResourceLocation NURSE_ID = Noellesroles.id("nurse");
+    public static SRERole NURSE = TMMRoles.registerRole(new NurseRole(
+            NURSE_ID, 0xE88BB0,
+            true, false, SRERole.MoodType.REAL,
+            TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setDefaultMax(0)
+            .setCanBeRandomedByOtherRoles(false)
+            .setAddedVersion("4.4");
+    /**
+     * 爆炸狂角色（杀手阵营，与护士绑定生成）
+     * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)，假心情，无限体力，看得到计分板
+     * - 可使用 Dream 武器（canUseSpVanillaWeapon）
+     * - 初始物品：一把弩
+     * - 商店：85 金币购买飞行时间为 3 的小型球状烟花火箭；
+     *   其余为通用杀手商店去掉刀 / 左轮手枪 / 短管霰弹枪 / 疯狂模式（价格沿用配置项）
+     * - 技能：将主手物品切换至副手（参考网警）
+     * - 规则集中在 BoomManiacRole（game/roles/killer/boom_maniac）
+     */
+    public static final ResourceLocation BOOM_MANIAC_ID = Noellesroles.id("boom_maniac");
+    public static SRERole BOOM_MANIAC = TMMRoles.registerRole(new BoomManiacRole(
+            BOOM_MANIAC_ID, 0xD2572A,
+            false, true, SRERole.MoodType.FAKE,
+            -1, true))
+            .setCanUseSpVanillaWeapon(true)
+            .setDefaultMax(1)
+            .setAddedVersion("4.4");
     public static final ResourceLocation GUARD_ID = Noellesroles.id("guard");
     public static SRERole GUARD = TMMRoles.registerRole(new NormalRole(GUARD_ID, new Color(170, 170, 170).getRGB(),
             true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false) {
@@ -1182,6 +1228,8 @@ public class ModRoles {
             .setCanBeRandomedByOtherRoles(false)      // 无法被其它职业（赌徒等）随机到
             .setSpecialMapRolesCondition((t) -> t.contains(MapSpecialFeatures.PEAK)) // 仅 PEAK 地图
             .setDefaultMax(0)                         // 常态不刷新
+            // 特殊中立
+            .setSpecialNeutral(true)
             .setAddedVersion("4.4");
     public static SRERole JESTER = TMMRoles
             .registerRole(new JesterRole(JESTER_ID, new Color(186, 85, 211).getRGB(), false,
@@ -1830,8 +1878,8 @@ public class ModRoles {
                         // 其余（杀手、好人、杀手方中立、好人方中立、自己） → 领袖色
                         return InstinctType.custom(new Color(255, 0, 255).getRGB());
                     }));
-    /** 放贷人：中立阵营，以合同把金币借给其他玩家。 */
-    public static SRERole LENDER = TMMRoles.registerRole(new NormalRole(
+    /** 放贷人：中立阵营，以合同把金币借给其他玩家。存活到最后随任意一方获胜（非独立胜利）。 */
+    public static SRERole LENDER = TMMRoles.registerRole(new LenderRole(
             LENDER_ID, new Color(184, 134, 11).getRGB(), RoleType.NEUTRALS,
             SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
             .setCanSeeCoin(true)
@@ -1839,7 +1887,9 @@ public class ModRoles {
             // 初始金币 175：走通用机制（ModdedRoleAssigned 事件统一按 getInitialCoinCount 设置余额）
             .setInitialCoinCount(175)
             .setDefaultMax(1)
-            .setDefaultEnableChance(5000);
+            .setDefaultEnableChance(5000)
+            // 特殊中立
+            .setSpecialNeutral(true);
 
     /** 保险职员：平民阵营，可以在职业商店购买保险。 */
     public static SRERole INSURANCE = TMMRoles.registerRole(new InsuranceRole(
@@ -1878,7 +1928,82 @@ public class ModRoles {
             .setDefaultEnableChance(7000)
             .setCanBeRandomedByOtherRoles(false)
             .setCanPickUpRevolver(false)
-            .setRoleData(org.agmas.noellesroles.role_data.vigilante.CavalryRoleData::new);
+            .setRoleData(org.agmas.noellesroles.role_data.vigilante.CavalryRoleData::new)
+            .setAddedVersion("4.4");
+
+    /**
+     * 剑客角色（警长阵营特殊警）
+     * - 属于警长阵营 (isInnocent = true, setVigilanteTeam = true)，为特殊警
+     * - 开启了 canUseSpVanillaWeapon：可用武士刀削他人虚拟血量（死因 katana）
+     * - 真实心情系统；25% 刷新概率；单局最多 1 人
+     * - 开局自带一把武士刀
+     * - 技能「淬血」：扣除自身虚拟血量上限 50% 的血量（不会低于 1 点，虚拟血量为 1 时无法使用），
+     * 15 秒内武士刀附带附魔光效、虚拟血量伤害 ×2，并获得速度 II + 急迫 II
+     * - 商店：回复虚拟血量（200 金币，虚拟血量满时不可购买）、
+     * 锻刀（100 金币，回复手上武士刀 3 点耐久，耐久满时不可购买）
+     */
+    public static final ResourceLocation SWORDSMAN_ID = Noellesroles.id("swordsman");
+    public static SRERole SWORDSMAN = TMMRoles
+            .registerRole(new org.agmas.noellesroles.role.vigilante.SwordsmanRole(
+                    SWORDSMAN_ID, new Color(198, 72, 72).getRGB(), true,
+                    false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true)
+            .setVigilanteTeam(true)
+            .setSpecialVigilante(true)
+            .setCanUseSpVanillaWeapon(true)
+            .setCanPickUpRevolver(false)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(2500)
+            .setCanBeRandomedByOtherRoles(true)
+            .setRoleData(org.agmas.noellesroles.role_data.vigilante.SwordsmanRoleData::new)
+            .setAddedVersion("4.4");
+
+    /**
+     * 独裁者角色（警长阵营特殊警卫）
+     * - 占用 2 个警长位 (setOccupiedRoleCount(2))；仅 18 人及以上对局出现；默认最大 1 人
+     * - 假心情（心情条为蓝色，参考大妖精 setMoodColor）；能看到计分板（构造器最后一项 true）
+     * - 体力为平民的 2.5 倍；拥有被动收入 (setCanAutoAddMoney)；刷新概率 30%
+     * - 本能透视仅 8 格，且所有玩家都显示为自己的颜色（客户端注册见 RoleInstinctRegister）
+     * - 开局自带一把左轮手枪；商店可买裁决之剑（150，每次涨价 25）/ 独裁之书（150，仅一次）
+     * - 死亡时掉落两把左轮手枪
+     */
+    public static final ResourceLocation DICTATOR_ID = Noellesroles.id("dictator");
+    public static SRERole DICTATOR = TMMRoles.registerRole(
+            new org.agmas.noellesroles.role.vigilante.DictatorRole(DICTATOR_ID,
+                    new Color(60, 96, 176).getRGB(), true, false, SRERole.MoodType.FAKE,
+                    (int) (TMMRoles.CIVILIAN.getMaxSprintTime() * 2.5), true))
+            .setCanSeeCoin(true)
+            .setVigilanteTeam(true)
+            .setSpecialVigilante(true)
+            .setOccupiedRoleCount(2)
+            .setDefaultEnableNeededPlayerCount(18)
+            .setDefaultMax(1)
+            .setCanBeRandomedByOtherRoles(false)
+            .setCanAutoAddMoney(true)
+            .setDefaultEnableChance(3000)
+            .setMoodColor(new Color(40, 110, 255))
+            .setCanUseInstinctAndNightVision(true)
+            .setToggledOnInstinctType(InstinctType.OBSERVER_ROLE_COLOR)
+            .setRoleData(org.agmas.noellesroles.role_data.vigilante.DictatorRoleData::new)
+            .setAddedVersion("4.4");
+
+    /**
+     * 攻城手 - 杀手阵营
+     * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)
+     * - 假心情系统、无限冲刺时间、在计分板上显示
+     * - 仅在使用「攻城手」（{@code MapSpecialFeatures.SIEGE}）标签的地图刷新，刷新概率 30%
+     * - 无法被其它职业（赌徒等）随机到
+     * - 商店：普通杀手商店 + 破墙弹（200 金币）/ 粘液弹（140 金币），见
+     * {@link SiegeRole#getShopEntries()}
+     */
+    public static SRERole SIEGE = TMMRoles
+            .registerRole(new SiegeRole(SIEGE_ID, new Color(178, 84, 42).getRGB(), false,
+                    true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true))
+            .setSpecialMapRole(MapSpecialFeatures.SIEGE) // 仅攻城手地图
+            .setCanBeRandomedByOtherRoles(false)         // 无法被其它职业随机到
+            .setDefaultEnableChance(3000)                // 刷新概率 30%
+            .setAddedVersion("4.4")
+            .setDefaultMax(1);
 
     public static SRERole HUNTER = TMMRoles
             .registerRole(new NormalRole(HUNTER_ID, new Color(160, 82, 45).getRGB(), false,
@@ -2010,6 +2135,8 @@ public class ModRoles {
             .setEventEnableChance(FakeSteveDirector::onEventRollResult,
                     FakeSteveDirector::onEventRoundEnd,
                     () -> org.agmas.noellesroles.config.NoellesRolesConfig.instance().fakeSteveEnableChance)
+            // 事件中立：登场由每局开局的随机事件掷骰决定
+            .setEventNeutral(true)
             .setAddedVersion("4.4");
     public static SRERole VULTURE = TMMRoles
             .registerRole(new NormalRole(VULTURE_ID, new Color(210, 105, 30).getRGB(), false,
@@ -2722,7 +2849,9 @@ public class ModRoles {
             true)).setRoleData(MercenaryRoleData::new).setCanSeeCoin(true).setNeutrals(true)
             .setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(false).setDefaultMax(1)
             .setDefaultEnableChance(1000).setDefaultEnableNeededPlayerCount(12)
-            .setBeSeenInstinctType(InstinctType.DEFAULT, InstinctType.NONE);
+            .setBeSeenInstinctType(InstinctType.DEFAULT, InstinctType.NONE)
+            // 特殊中立
+            .setSpecialNeutral(true);
 
     /**
      * 秉烛人角色 - 中立阵营
@@ -2750,7 +2879,7 @@ public class ModRoles {
             SRERole.MoodType.FAKE,
             Integer.MAX_VALUE,
             true))
-            .setRoleData(RavenRoleData::new).setCanSeeCoin(true).setNeutrals(true)
+            .setRoleData(RavenRoleData::new).setCanSeeCoin(true).setNeutrals(true).setCanBeRandomedByOtherRoles(false)
             .setCanSeeTeammateKillerRole(false).setCanUseInstinctAndNightVision(true)
             .setDefaultEnableNeededPlayerCount(10);
 
@@ -3016,7 +3145,8 @@ public class ModRoles {
             .setDefaultMax(0)
             .setCanBeRandomedByOtherRoles(false)
             .setCanSetSpawnInfoInConfig(false)
-            .setHiddenForRoleRotation(true);
+            .setHiddenForRoleRotation(true)
+            .setAddedVersion("4.4");
 
     /**
      * 强盗角色 - 杀手阵营
@@ -3208,7 +3338,9 @@ public class ModRoles {
             .setInstinctType(InstinctType.DEFAULT, InstinctType.NONE)
             .setDefaultMax(0)
             .setCanBeRandomedByOtherRoles(false).addBothRelatedModifier(SEModifiers.BLACK_WHITE)
-            .setAllBeSeenInstinctType(InstinctType.NONE);
+            .setAllBeSeenInstinctType(InstinctType.NONE)
+            // 特殊中立
+            .setSpecialNeutral(true);
 
     // ─────────────────────── 信使 Courier ───────────────────────
     public static final ResourceLocation COURIER_ID = Noellesroles.id("courier");
@@ -3261,7 +3393,7 @@ public class ModRoles {
             .setDefaultMax(1)
             .setCanUseInstinctAndNightVision(true).setCanSeeCoin(true);
 
-    // ==================== Dream（梦魇）====================
+    // ==================== Dream（Dream）====================
     // "噢，皮革噶的，i want to 和你蹦蹦蹦。"
     public static SRERole DREAM = TMMRoles.registerRole(new EggRole(
             DREAM_ID, new Color(0, 168, 107).getRGB(), false,

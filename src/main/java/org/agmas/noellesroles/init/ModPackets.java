@@ -95,6 +95,12 @@ public class ModPackets {
                 (payload, context) -> context.server().execute(() -> org.agmas.noellesroles.spear.SpearCombat
                         .handleStab(context.player(), payload.entityId())));
 
+        // 武士刀：第二招（突刺）左键空挥也能触发，客户端拦 startAttack 主动发包
+        PayloadTypeRegistry.playC2S().register(KatanaThrustC2SPacket.ID, KatanaThrustC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(KatanaThrustC2SPacket.ID,
+                (payload, context) -> context.server().execute(() -> org.agmas.noellesroles.katana.KatanaCombat
+                        .handleThrust(context.player(), context.player().getMainHandItem())));
+
         // 幽露：自由摄像机进入/退出（S2C）、摄像机位置上报与 ESC 取消（C2S）
         PayloadTypeRegistry.playS2C().register(YouluFreeCamS2CPacket.ID, YouluFreeCamS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(YouluCamPosC2SPacket.ID, YouluCamPosC2SPacket.CODEC);
@@ -221,6 +227,12 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ReasonerSubmitC2SPacket.ID,
                 ReasonerSubmitC2SPacket::handle);
+
+        // 独裁者：裁决之剑（死因+凶手）与独裁之书（猜职业）
+        PayloadTypeRegistry.playC2S().register(DictatorJudgeC2SPacket.ID, DictatorJudgeC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DictatorJudgeC2SPacket.ID, DictatorJudgeC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(DictatorGuessC2SPacket.ID, DictatorGuessC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DictatorGuessC2SPacket.ID, DictatorGuessC2SPacket::handle);
 
         PayloadTypeRegistry.playS2C().register(DoomedSinnerFateRevealS2CPacket.ID,
                 DoomedSinnerFateRevealS2CPacket.CODEC);

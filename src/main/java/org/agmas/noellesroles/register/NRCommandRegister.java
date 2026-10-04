@@ -49,7 +49,9 @@ public class NRCommandRegister {
         TimeRewindCommand.register();
         FakeSteveCommand.register();
         PurpleMonsterCommand.register();
+        VirtualHealthCommand.register();
         MirrorReunionEndEggCommand.register();
+        DraftPriorityCommand.register();
 
         // 注册疫使测试指令
         org.agmas.noellesroles.commands.InfectedCommand.register();

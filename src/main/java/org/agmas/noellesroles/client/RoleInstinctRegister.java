@@ -43,6 +43,7 @@ import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role_data.neutral.GodfatherRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
 import org.agmas.noellesroles.role_data.neutral.RecorderRoleData;
+import org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
 import org.agmas.noellesroles.role_data.neutral.PelicanRoleData;
@@ -211,6 +212,21 @@ public class RoleInstinctRegister {
                         return TrueFalseAndCustomResult.custom(Color.GRAY.getRGB());
                     }
                     return TrueFalseAndCustomResult.pass();
+                });
+        // 独裁者：本能只能透视 8 格内的玩家，且所有玩家都显示为自己的颜色
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.DICTATOR_ID,
+                (client, self, target, hasInstinct) -> {
+                    if (!hasInstinct || !(target instanceof Player targetPlayer)) {
+                        return TrueFalseAndCustomResult.pass();
+                    }
+                    if (targetPlayer.distanceToSqr(self) > (double) org.agmas.noellesroles.role.vigilante.DictatorRole.INSTINCT_RANGE_SQR) {
+                        return TrueFalseAndCustomResult.disallow();
+                    }
+                    // 无法被透视的职业（小透明/秉烛人/雇佣兵/捣蛋鬼等）
+                    if (isTargetInvisibleToInstinct(targetPlayer)) {
+                        return TrueFalseAndCustomResult.disallow();
+                    }
+                    return TrueFalseAndCustomResult.custom(ModRoles.DICTATOR.color());
                 });
         // 丘比特
         RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.CUPID_ID, (client, self, target, hasInstinct) -> {
@@ -496,6 +512,23 @@ public class RoleInstinctRegister {
                         if (comp.target.equals(targetPlayer.getUUID())
                                 && !SREClient.gameComponent.isRole(targetPlayer, ModRoles.GHOST))
                             return TrueFalseAndCustomResult.custom(new Color(0, 254, 254).getRGB());
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
+
+        // 护士：透视 30 格内虚拟血量不满（≠满值）的玩家
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(ModRoles.NURSE_ID,
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (viewer.hasEffect(ModEffects.SAFE_TIME))
+                        return TrueFalseAndCustomResult.pass();
+                    if (target instanceof Player targetPlayer) {
+                        if (viewer.distanceToSqr(targetPlayer) > 30.0 * 30.0)
+                            return TrueFalseAndCustomResult.pass();
+                        DreamHealthComponent health = DreamHealthComponent.KEY.get(targetPlayer);
+                        if (health.getEffectiveHealth(targetPlayer.level().getGameTime())
+                                < DreamHealthComponent.maxHealth()) {
+                            return TrueFalseAndCustomResult.custom(new Color(0xFF, 0x8A, 0xB3).getRGB());
+                        }
                     }
                     return TrueFalseAndCustomResult.pass();
                 });

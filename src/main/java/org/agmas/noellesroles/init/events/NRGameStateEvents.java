@@ -42,6 +42,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import io.wifi.starrailexpress.customrole.CustomRoleData;
+import io.wifi.starrailexpress.customrole.CustomRoleLoader;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.item.ItemStack;
@@ -109,6 +111,8 @@ public class NRGameStateEvents {
 
     private static void registerOnGameStarted() {
         OnGameStarted.EVENT.register((serverLevel) -> {
+            // 物资箱：清空上局遗留的物资与领取记录，间隔重新计时并复位开启状态
+            org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity.resetAll(serverLevel);
             TarotAssemblyManager.havingMeeting = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
@@ -150,6 +154,8 @@ public class NRGameStateEvents {
 
     private static void registerOnGameEnd() {
         OnGameEnd.EVENT.register((world, gameWorldComponent) -> {
+            // 物资箱：清空本局物资与领取记录，间隔重新计时并复位开启状态
+            org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity.resetAll(world);
             nianShouFirecrackersDistributedThisGame = false;
             HoanMeirinFistPunchHandler.PUNCH_RECORDS.clear();
             RoleShopHandler.resetOldmanEasterEggState();
@@ -307,6 +313,7 @@ public class NRGameStateEvents {
             boolean hasDio = false, hasRecorder = false, hasCandlebearer = false, hasRaven = false, hasBee = false;
             boolean hasNianShou = false, hasArsonist = false, hasCuckoo = false, hasPelican = false,
                     hasGodfather = false, hasLeader = false, hasLicensedVillain = false, hasNatureSpirit = false;
+            boolean hasDictator = false;
             final var all_players = serverLevel.players();
 
             for (var p : all_players) {
@@ -349,6 +356,8 @@ public class NRGameStateEvents {
                     hasLicensedVillain = true;
                 } else if (gameWorldComponent.isRole(p, ModRoles.NATURE_SPIRIT)) {
                     hasNatureSpirit = true;
+                } else if (gameWorldComponent.isRole(p, ModRoles.DICTATOR)) {
+                    hasDictator = true;
                 }
             }
 
@@ -410,7 +419,7 @@ public class NRGameStateEvents {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.nature_spirit.entry")
-                                .withStyle(ChatFormatting.YELLOW));
+                                .withStyle(ChatFormatting.RED));
                     }
                 });
             }
@@ -438,6 +447,15 @@ public class NRGameStateEvents {
                     }
                 });
             }
+            // 独裁者：全场播报（蓝色）
+            if (hasDictator) {
+                all_players.forEach((p) -> {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component
+                                .translatable("message.noellesroles.dictator.entry").withStyle(ChatFormatting.AQUA));
+                    }
+                });
+            }
             if (hasLeader) {
                 all_players.forEach((p) -> {
                     if (p != null) {
@@ -445,6 +463,43 @@ public class NRGameStateEvents {
                                 .translatable("message.noellesroles.leader.entry").withStyle(ChatFormatting.YELLOW));
                     }
                 });
+            }
+            // 自定义职业：开局入场提示（与布谷鸟/纵火犯一致——场上存在该职业即向所有玩家广播）
+            java.util.Set<String> announcedCustomRoles = new java.util.HashSet<>();
+            java.util.List<CustomRoleData> customEntranceHints = new java.util.ArrayList<>();
+            for (var p : all_players) {
+                if (p == null) {
+                    continue;
+                }
+                SRERole role = gameWorldComponent.getRole(p);
+                if (role == null || !"customrole".equals(role.identifier().getNamespace())) {
+                    continue;
+                }
+                String rolePath = role.identifier().getPath();
+                if (announcedCustomRoles.contains(rolePath)) {
+                    continue;
+                }
+                CustomRoleData cd = CustomRoleLoader.getCustomRoleData(rolePath);
+                if (cd == null || cd.entranceHint == null || cd.entranceHint.isBlank()) {
+                    continue;
+                }
+                announcedCustomRoles.add(rolePath);
+                customEntranceHints.add(cd);
+            }
+            for (CustomRoleData cd : customEntranceHints) {
+                ChatFormatting hintColor = ChatFormatting.YELLOW;
+                if (cd.entranceHintColor != null && !cd.entranceHintColor.isBlank()) {
+                    try {
+                        hintColor = ChatFormatting.valueOf(cd.entranceHintColor.toUpperCase(java.util.Locale.ROOT));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+                final ChatFormatting finalColor = hintColor;
+                for (var p : all_players) {
+                    if (p != null) {
+                        BroadcastCommand.BroadcastMessage(p, Component.literal(cd.entranceHint).withStyle(finalColor));
+                    }
+                }
             }
             if (hasGodfather) {
                 GameUtils.serverAsynTaskLists.add(new ServerTaskInfoClasses.SchedulerTask(20 * 6, () -> {

@@ -20,6 +20,7 @@ import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
 import io.wifi.starrailexpress.api.EggRole;
 import io.wifi.starrailexpress.api.InstinctType;
 import io.wifi.starrailexpress.api.NormalRole;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.NormalRole.RoleType;
@@ -39,6 +40,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.noellesroles.role_data.innocence.AnglerRoleData;
 import org.agmas.noellesroles.role_data.innocence.ClimbPoseRoleData;
 import org.agmas.noellesroles.role_data.innocence.FatFishRoleData;
@@ -441,7 +443,7 @@ public class BounsRoles {
             // 只在爬山地图刷新（枚举里 PEAK 就是为童子军预留的）
             .setSpecialMapRolesCondition((t) -> t.contains(MapSpecialFeatures.PEAK))
             .setDefaultMax(1)
-            .setDefaultEnableChance(8000) // 彩蛋刷新率 2%
+            .setDefaultEnableChance(0) // 彩蛋刷新率 2%
             .setCanBeRandomedByOtherRoles(false);
 
     /**
@@ -450,7 +452,7 @@ public class BounsRoles {
      * - 属于杀手阵营 (isInnocent = false, canUseKiller = true)：吃默认杀手商店，不覆写
      * getShopEntries()
      * - 只在带 {@link MapSpecialFeatures#PEAK} 特性的爬山图出现
-     * - 默认刷新数 0：不单独刷新，靠 {@link #SCOUT} 的 addOccupationRole 绑定生成
+     * - 作为主职业：通过 addOccupationRole 绑定生成 {@link #SCOUT}（见类末尾静态块）
      * - 技能：与童子军相同的站立 / 匍匐姿态
      */
     public static SRERole FOREST_MUSHROOM_ZOMBIE = TMMRoles.registerRole(new ScoutRole(
@@ -466,7 +468,7 @@ public class BounsRoles {
             .setCanClimbWalls(true)
             .addFlag("peak")
             .setSpecialMapRolesCondition((t) -> t.contains(MapSpecialFeatures.PEAK))
-            .setDefaultMax(0) // 不单独刷新，跟着童子军一起出现
+            .setDefaultMax(8000)
             .setCanBeRandomedByOtherRoles(false);
 
     /**
@@ -503,7 +505,7 @@ public class BounsRoles {
 
     /**
      * 大肥鱼（DeepSeek 娘化形象）
-     * - 彩蛋职业 · 乘客阵营，全地图刷新（不限制地图）
+     * - 彩蛋职业 · 偏好中立（与好人一同获胜），全地图刷新（不限制地图）
      * - 技能：鲸歌（范围声波震慑，冷却 60s）、摆尾冲刺（冲刺 + 撞飞，冷却 25s）
      * - 被动：浑水鱼（水下呼吸 / 海豚恩惠 / 水下额外回体力）、圆滚滚（抗击退 + 移动时顶开别人）
      * - 吃东西会投喂团子：周围 6 格内的友军回体力并挂短时再生
@@ -514,7 +516,7 @@ public class BounsRoles {
     public static SRERole FAT_FISH = TMMRoles.registerRole(new FatFishRole(
             FAT_FISH_ID, // 角色 ID
             new Color(70, 130, 200).getRGB(), // 深海蓝
-            RoleType.CIVILIAN,
+            RoleTeam.NEUTRAL_INNOCENT, // 偏好中立：随好人一同胜利
             SRERole.MoodType.REAL, // 真实心情
             TMMRoles.CIVILIAN.getMaxSprintTime(), // 标准体力
             false // 不隐藏计分板
@@ -543,7 +545,9 @@ public class BounsRoles {
             .setCanBeRandomedByOtherRoles(false)
             .setSpecialMapRolesCondition(features -> features.contains(MapSpecialFeatures.LAB))
             // 每局 60% 且在 LAB 地图才启用；触发条件由 PurpleMonsterRole 按需查询 isEventEnabled
-            .setEventEnableChance(6000);
+            .setEventEnableChance(6000)
+            // 事件中立：登场由每局开局的随机事件掷骰决定
+            .setEventNeutral(true);
 
     public static void init() {
         THRedHouseRoles.init();
@@ -610,8 +614,8 @@ public class BounsRoles {
         FOREST_MUSHROOM_ZOMBIE.setAddedVersion("4.4");
         FAT_FISH.setAddedVersion("4.4");
         PURPLE_MONSTER.setAddedVersion("4.4");
-        // 森蕈僵尸与童子军绑定生成（分配童子军时也会分配森蕈僵尸）；
-        // 它的默认刷新数是 0，所以不会自己单独刷新出来。
-        SCOUT.addOccupationRole(FOREST_MUSHROOM_ZOMBIE);
+        // 森蕈僵尸与童子军绑定生成（分配森蕈僵尸时也会分配童子军）；
+        // 森蕈僵尸为主职业，童子军为关联职业。
+        Harpymodloader.addOccupationRole(FOREST_MUSHROOM_ZOMBIE, SCOUT);
     }
 }

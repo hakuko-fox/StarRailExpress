@@ -28,7 +28,7 @@ import org.agmas.noellesroles.role_data.killer.DreamRoleData;
 import org.agmas.noellesroles.init.ModEffects;
 
 /**
- * Dream（梦魇）客户端逻辑。
+ * Dream（Dream）客户端逻辑。
  *
  * <ul>
  * <li><b>颤抖</b>（{@link ModEffects#TREMBLE}）：准星/视角每 tick 缓慢随机漂移
@@ -62,14 +62,18 @@ public class DreamClientHandler {
             player.turn(yawDrift / 0.15f, pitchDrift / 0.15f);
         });
 
-        // 虚拟血量条：受伤后才显示
+        // 虚拟血量条：受伤后才显示；只有护士与开了 canUseSpVanillaWeapon 的职业能看到，平民不可见
         OnRenderRoleName.RENDER_PLAYER_EXTRA.register((self, target, context, tickCounter, renderer) -> {
             if (self == null || target == null || self.level() == null) {
                 return;
             }
+            // 可见性门禁：观察者必须是护士，或开启了 canUseSpVanillaWeapon 的职业
+            if (!canViewerSeeVirtualHealth(self)) {
+                return;
+            }
             long gameTime = self.level().getGameTime();
             DreamHealthComponent health = DreamHealthComponent.KEY.get(target);
-            if (!health.shouldShowBar(gameTime)) {
+            if (!isViewerNurse(self) && !health.shouldShowBar(gameTime)) {
                 return;
             }
             int current = health.getEffectiveHealth(gameTime);
@@ -85,6 +89,29 @@ public class DreamClientHandler {
             context.drawString(renderer, text, -renderer.width(text) / 2, y + 6, 0xFFFF6B6B);
             context.pose().translate(0, 16, 0);
         });
+    }
+
+    /** 本地玩家（观察者）是否是护士：护士始终能看到其它玩家的虚拟血量条。 */
+    private static boolean isViewerNurse(Player viewer) {
+        var gameComponent = io.wifi.starrailexpress.client.SREClient.gameComponent;
+        return gameComponent != null && gameComponent.isRole(viewer,
+                org.agmas.noellesroles.role.ModRoles.NURSE);
+    }
+
+    /**
+     * 观察者能否看到其它玩家的虚拟血量条：
+     * 护士始终可见；开启了 {@code canUseSpVanillaWeapon} 的职业可见；平民等其余职业不可见。
+     */
+    private static boolean canViewerSeeVirtualHealth(Player viewer) {
+        var gameComponent = io.wifi.starrailexpress.client.SREClient.gameComponent;
+        if (gameComponent == null) {
+            return false;
+        }
+        if (isViewerNurse(viewer)) {
+            return true;
+        }
+        io.wifi.starrailexpress.api.SRERole role = gameComponent.getRole(viewer);
+        return role != null && role.canUseSpVanillaWeapon();
     }
 
     /**

@@ -23,6 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -31,8 +32,12 @@ import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
- * Dream（梦魇）虚拟血量组件 —— 挂在<b>所有玩家</b>身上。
+ * Dream（Dream）虚拟血量组件 —— 挂在<b>所有玩家</b>身上。
  *
  * <p>
  * 在所有人眼中每名玩家默认都有 {@code dreamMaxHealth}（默认 20）滴血；
@@ -55,11 +60,44 @@ public class DreamHealthComponent implements RoleComponent {
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "dream_health"),
             DreamHealthComponent.class);
 
+    /**
+     * 因虚拟血量归零而被判死的玩家：uuid -> 判死时的游戏时间。
+     * 供护士尸体透视判定（见 {@code NurseRole.onBodySpawn}），
+     * 这样不必逐个枚举武器死因，后续新增虚拟血量武器也能自动覆盖。
+     */
+    private static final Map<UUID, Long> VIRTUAL_HEALTH_DEATH_MARKS = new ConcurrentHashMap<>();
+
+    /**
+     * 一次性消费「该玩家是否刚刚因虚拟血量归零而死」的标记。
+     *
+     * @param uuid     玩家 UUID
+     * @param gameTime 当前游戏时间（服务端）
+     * @return 该玩家是否刚因虚拟血量归零而死
+     */
+    public static boolean consumeVirtualHealthDeath(UUID uuid, long gameTime) {
+        if (uuid == null) {
+            return false;
+        }
+        Long marked = VIRTUAL_HEALTH_DEATH_MARKS.remove(uuid);
+        if (marked == null) {
+            return false;
+        }
+        long delta = gameTime - marked;
+        // 只认「刚刚」打标的死亡，避免陈旧标记影响该玩家之后的其它死法
+        return delta >= 0 && delta <= 40;
+    }
+
     static {
         // 开局重置所有玩家的虚拟血量（本组件不绑定职业 componentKey，自行挂开局事件）
         GameInitializeEvent.EVENT.register((serverLevel, gameWorldComponent, players) -> {
             for (ServerPlayer p : serverLevel.getServer().getPlayerList().getPlayers()) {
                 KEY.get(p).initWhenNecessary();
+            }
+        });
+        // 游戏结束时重置所有玩家的虚拟血量，避免残留到下一局
+        OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
+            for (ServerPlayer p : serverLevel.getServer().getPlayerList().getPlayers()) {
+                KEY.get(p).init();
             }
         });
     }
@@ -128,13 +166,25 @@ public class DreamHealthComponent implements RoleComponent {
         init(true);
     }
 
+    /** 是否启用「脱战自动回血」（配置项 {@code dreamHealthRegenEnabled}，默认关闭）。 */
+    public static boolean regenEnabled() {
+        return NoellesRolesConfig.HANDLER.instance().dreamHealthRegenEnabled;
+    }
+
     /**
-     * 按游戏时间推算当前血量：脱战 30s 后每秒恢复 1 点，直至回满。
+     * 按游戏时间推算当前血量。
+     *
+     * <p>脱战回血开关（{@link #regenEnabled()}）开启时：脱战
+     * {@code dreamHealthRegenDelaySeconds} 秒后每秒恢复 1 点，直至回满；
+     * 关闭时：保持受伤后的血量，不再随时间自动回升（仍可用康复药丸 / 康复试剂等手段恢复）。
      */
     public int getEffectiveHealth(long gameTime) {
         int max = maxHealth();
         if (baseHealth >= max || lastHurtGameTime <= 0) {
             return Math.min(baseHealth, max);
+        }
+        if (!regenEnabled()) {
+            return Mth.clamp(baseHealth, 0, max);
         }
         long regenStart = lastHurtGameTime + regenDelayTicks();
         if (gameTime <= regenStart) {
@@ -168,6 +218,8 @@ public class DreamHealthComponent implements RoleComponent {
         if (baseHealth <= 0) {
             baseHealth = 0;
             sync();
+            // 打标：本条命是「虚拟血量归零」判死的（护士尸体透视据此判定，不依赖具体死因）
+            VIRTUAL_HEALTH_DEATH_MARKS.put(sp.getUUID(), gameTime);
             GameUtils.killPlayer(sp, true, attacker, deathReason);
             return true;
         }
@@ -196,6 +248,89 @@ public class DreamHealthComponent implements RoleComponent {
         lastHurtGameTime = gameTime;
         sync();
         return true;
+    }
+
+    /**
+     * 恢复虚拟血量（护士体系：康复药丸 / 虚拟血量恢复药水效果）。
+     *
+     * <p>回血后把 {@code lastHurtGameTime} 重置为当前时刻：懒回血基线从「现在」重新起算，
+     * 避免旧基线与新基准值叠加导致多算；回满时清零进入「默认满血态」省同步。
+     *
+     * @param amount 恢复量，至少 1 点
+     * @return 是否实际恢复了血量（已满或非服务端玩家时为 false）
+     */
+    public boolean restore(int amount) {
+        if (!(player instanceof ServerPlayer sp) || amount <= 0) {
+            return false;
+        }
+        if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
+            return false;
+        }
+        long gameTime = sp.level().getGameTime();
+        int current = getEffectiveHealth(gameTime);
+        int max = maxHealth();
+        if (current >= max) {
+            return false;
+        }
+        baseHealth = Math.min(max, current + amount);
+        if (baseHealth >= max) {
+            lastHurtGameTime = 0;
+        } else {
+            lastHurtGameTime = gameTime;
+        }
+        sync();
+        return true;
+    }
+
+    /**
+     * 读取当前虚拟血量（按游戏时间推算后的实际值）。
+     */
+    public int currentHealth() {
+        if (player == null) {
+            return maxHealth();
+        }
+        return getEffectiveHealth(player.level().getGameTime());
+    }
+
+    /**
+     * 直接增加 / 减少虚拟血量，结果夹在 {@code [0, 上限]}，<b>不触发死亡判定</b>。
+     *
+     * @param delta 变化量，正数为增加、负数为减少
+     * @return 变化后的血量；未生效（非服务端玩家 / 玩家不存活）时返回 -1
+     */
+    public int addHealth(int delta) {
+        if (!(player instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(sp)) {
+            return -1;
+        }
+        long gameTime = sp.level().getGameTime();
+        return applyHealth(getEffectiveHealth(gameTime) + delta, gameTime);
+    }
+
+    /**
+     * 直接设置虚拟血量，结果夹在 {@code [0, 上限]}，<b>不触发死亡判定</b>。
+     *
+     * @param value 目标血量
+     * @return 设置后的血量；未生效（非服务端玩家 / 玩家不存活）时返回 -1
+     */
+    public int setHealth(int value) {
+        if (!(player instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(sp)) {
+            return -1;
+        }
+        return applyHealth(value, sp.level().getGameTime());
+    }
+
+    /** 写入血量并重置懒回血基线（与 {@link #restore(int)} 保持一致的处理）。 */
+    private int applyHealth(int value, long gameTime) {
+        int max = maxHealth();
+        int next = Mth.clamp(value, 0, max);
+        baseHealth = next;
+        if (next >= max) {
+            lastHurtGameTime = 0; // 回满：进入默认满血态
+        } else {
+            lastHurtGameTime = gameTime;
+        }
+        sync();
+        return next;
     }
 
     // ── NBT 同步 ───────────────────────────────────────────────

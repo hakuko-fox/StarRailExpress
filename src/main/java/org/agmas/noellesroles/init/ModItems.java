@@ -89,6 +89,14 @@ public class ModItems {
     public static final Item BONE_BOOK = register(
             new BoneBookItem(new Item.Properties().stacksTo(1)),
             "bone_book", ROLE_ITEMS_GROUP);
+    // 裁决之剑 - 独裁者专属一次性道具：右键尸体选死因与凶手，全对则闪电处决
+    public static final Item JUDGMENT_SWORD = register(
+            new JudgmentSwordItem(new Item.Properties().stacksTo(1)),
+            "judgment_sword", ROLE_ITEMS_GROUP);
+    // 独裁之书 - 独裁者专属一次性道具：猜玩家职业，猜中闪电处决
+    public static final Item DICTATOR_BOOK = register(
+            new DictatorBookItem(new Item.Properties().stacksTo(1)),
+            "dictator_book", ROLE_ITEMS_GROUP);
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);
@@ -522,6 +530,23 @@ public class ModItems {
             new MushroomEssenceItem(new Item.Properties().stacksTo(16), true),
             "poisonous_mushroom_essence", ROLE_ITEMS_GROUP);
 
+    /**
+     * 康复药丸（护士体系）
+     * - 食用后将自己的虚拟血量条补满
+     */
+    public static final Item RECOVERY_PILL = register(
+            new RecoveryPillItem(new Item.Properties().stacksTo(16)),
+            "recovery_pill", ROLE_ITEMS_GROUP);
+
+    /**
+     * 康复试剂（护士体系）
+     * - 可投掷物品
+     * - 丢出后落地使半径4格内的玩家获得虚拟血量恢复效果30秒
+     */
+    public static final Item RECOVERY_REAGENT = register(
+            new RecoveryReagentItem(new Item.Properties().stacksTo(16)),
+            "recovery_reagent", ROLE_ITEMS_GROUP);
+
     /** 特码头死后掉落的西红柿：Q 键可丢得很远，砸中玩家会糊满番茄酱 */
     public static final Item TOMATO = register(
             new TomatoItem(new Item.Properties().stacksTo(1)),
@@ -926,7 +951,7 @@ public class ModItems {
     public static final Item MINI_BAGUALU = register(
             new MinibagualuItem((new Item.Properties()).stacksTo(1).durability(1)), "mini_bagualu",
             WEAPONS_GROUP);
-    // ==================== Dream（梦魇）专属 ====================
+    // ==================== Dream（Dream）专属 ====================
     /**
      * Dream 的铁斧
      * - 12点耐久，命中消耗1点；商店第二次购买半价
@@ -1529,6 +1554,19 @@ public class ModItems {
     public static final Item NETHERITE_SPEAR = register(
             new NetheriteSpearItem(NetheriteSpearItem.createProperties()),
             "netherite_spear", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+
+    /**
+     * 武士刀（三连招近战武器）
+     * - 左键三连招：横扫（6 虚拟伤害 + 0.5 格击退）→ 突刺（7 虚拟伤害 + 2 格突进位移）→ 劈砍（7 虚拟伤害 + 1.5 格击退），
+     *   实际命中玩家后才推进招式；每招附带 1 点原版伤害作为击退载体
+     * - 右键格挡：可格挡死亡原因同防暴盾牌，前摇 0.4s / 有效 1.2s，命中后衔接为 0 前摇；
+     *   格挡成功 -1 耐久（不低于 1），耐久等于 1 时无法格挡
+     * - 击杀玩家后进入 10 秒物品冷却；仅限 canUseSpVanillaWeapon 的职业使用
+     */
+    public static final Item KATANA = register(
+            new org.agmas.noellesroles.content.item.KatanaItem(
+                    org.agmas.noellesroles.content.item.KatanaItem.createProperties()),
+            "katana", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
 
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);

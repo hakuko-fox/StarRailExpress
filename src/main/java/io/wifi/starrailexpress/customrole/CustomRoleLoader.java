@@ -80,7 +80,6 @@ public class CustomRoleLoader {
     private static final Map<String, List<InstinctModeData>> instinctModeDataMap = new HashMap<>();
     // 技能初始冷却配置：roleIdentifier -> initialCooldownTicks
     private static final Map<ResourceLocation, Integer> initialCooldownMap = new HashMap<>();
-    private static boolean mapRestrictionHandlerRegistered = false;
     private static boolean initialCooldownHandlerRegistered = false;
     private static boolean instinctHandlerRegistered = false;
     private static boolean gameEndHandlerRegistered = false;
@@ -476,6 +475,10 @@ public class CustomRoleLoader {
         role.setDefaultMax(data.maxCount);
         if (data.canAutoAddMoney != null)
             role.setCanAutoAddMoney(data.canAutoAddMoney);
+        if (data.canAutoAddMiniGameToken != null)
+            role.setCanAutoAddMiniGameToken(data.canAutoAddMiniGameToken);
+        if (data.canClimbWalls != null)
+            role.setCanClimbWalls(data.canClimbWalls);
         role.setCanBeRandomedByOtherRoles(data.canBeRandomedByOtherRoles);
         if (data.canIgnoreBlackout != null)
             role.setCanIgnoreBlackout(data.canIgnoreBlackout);
@@ -491,6 +494,11 @@ public class CustomRoleLoader {
         // === 职业通用属性补全 ===
         if (data.neutralForInnocent != null)
             role.setNeutralForInnocent(data.neutralForInnocent);
+        // 事件中立：自定义职业工具无法配置事件中立，恒为 false
+        role.setEventNeutral(false);
+        // 特殊中立：显式标记；未标记的其余中立会由 isIndependentWinNeutral() 自动归入独立胜利中立
+        if (data.specialNeutral != null)
+            role.setSpecialNeutral(data.specialNeutral);
         if (data.canSeeBodyName != null)
             role.setCanSeeBodyName(data.canSeeBodyName);
         if (data.canUseSkillWhileSpectator != null)
@@ -518,6 +526,19 @@ public class CustomRoleLoader {
         // 自定义生成条件（setCanSpawnInMap）：按地图 id / 地图配置项自定义判定
         BiPredicate<String, AreasSettings> mapCondition = CustomRoleSpawnCondition.parse(
                 data.canSpawnInMapConditions, data.canSpawnInMapMatchAll);
+        // 「仅出现在指定地图」：统一走 setCanSpawnInMap（canBeRandomed(Level) / getRoundMaxCount
+        // 都经由它判定）。输入仍为地图 id 列表，大小写不敏感，任一匹配即可。
+        List<String> restrictedMapIds = data.mapRestrictedTo == null ? List.of()
+                : data.mapRestrictedTo.stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+        if (!restrictedMapIds.isEmpty()) {
+            BiPredicate<String, AreasSettings> mapAllowed = (mapId, settings) -> mapIdsContains(
+                    restrictedMapIds, mapId);
+            mapCondition = mapCondition == null ? mapAllowed : mapAllowed.and(mapCondition);
+        }
         if (mapCondition != null) {
             role.setCanSpawnInMap(mapCondition);
         }
@@ -536,6 +557,8 @@ public class CustomRoleLoader {
         // === 免疫 / 经济 / 战斗 / 杀手同伙 / 心情颜色 / 任务奖励 补全 ===
         if (data.fallDamageImmune != null)
             role.setFallDamageImmune(data.fallDamageImmune);
+        if (data.fallToDeathHeight >= 0)
+            role.setFallToDeathHeightOverride(data.fallToDeathHeight);
         if (data.darknessImmune != null)
             role.setDarknessImmune(data.darknessImmune);
         if (data.environmentalImmune != null)
@@ -603,16 +626,6 @@ public class CustomRoleLoader {
             customSpawn.setMinEnabledPlayer(role.defaultEnableNeedPlayerCount);
         if (role.defaultEnableChance >= 0)
             customSpawn.setEnableChance(role.defaultEnableChance);
-        if (data.mapRestrictedTo != null) {
-            for (String mapId : data.mapRestrictedTo) {
-                if (mapId == null)
-                    continue;
-                String trimmed = mapId.trim();
-                if (!trimmed.isEmpty()) {
-                    customSpawn.map.add(trimmed);
-                }
-            }
-        }
         role.setSpawnInfo(customSpawn);
 
         // === 任务刷新黑 / 白名单 ===
@@ -840,12 +853,6 @@ public class CustomRoleLoader {
             applyRelations(data, role);
         }
 
-        // 注册地图限制事件处理（仅首次，避免重复注册）
-        if (!mapRestrictionHandlerRegistered) {
-            registerMapRestrictionHandler();
-            mapRestrictionHandlerRegistered = true;
-        }
-
         // 注册技能初始冷却事件处理（仅首次）
         if (!initialCooldownHandlerRegistered) {
             registerInitialCooldownHandler();
@@ -882,44 +889,6 @@ public class CustomRoleLoader {
     }
 
     /**
-     * 注册限定地图刷新的事件处理器
-     * 在游戏初始化时，检查自定义职业的地图限制列表，
-     * 如果列表非空且当前地图不在列表中，则将该职业最大数量设为0
-     */
-    private static void registerMapRestrictionHandler() {
-        org.agmas.harpymodloader.events.GameInitializeEvent.EVENT
-                .register((serverLevel, gameWorldComponent, players) -> {
-                    CustomRoleConfig config = CustomRoleConfig.getInstance();
-
-                    // 获取当前地图ID
-                    final String currentMap = getCurrentMapName(serverLevel);
-
-                    for (CustomRoleData data : config.roles) {
-                        if (data.mapRestrictedTo == null || data.mapRestrictedTo.isEmpty()) {
-                            continue; // 没有地图限制，所有地图都可以刷新
-                        }
-
-                        SRERole role = registeredRoles.get(data.englishId);
-                        if (role == null)
-                            continue;
-
-                        final String mapName = currentMap == null ? "" : currentMap.trim();
-                        boolean allowed = data.mapRestrictedTo.stream()
-                                .filter(Objects::nonNull)
-                                .map(String::trim)
-                                .anyMatch(mapId -> mapId.equalsIgnoreCase(mapName));
-
-                        if (!allowed) {
-                            // 当前地图不在允许列表中，禁用该职业
-                            org.agmas.harpymodloader.Harpymodloader.setRoleMaximum(role.identifier(), 0);
-                            SRE.LOGGER.info("[CustomRole] Map restriction: disabled '{}' (map: {})",
-                                    data.englishId, mapName);
-                        }
-                    }
-                });
-    }
-
-    /**
      * 注册技能初始冷却事件处理器
      * 在角色分配给玩家后，检查是否需要设置初始冷却
      */
@@ -942,14 +911,17 @@ public class CustomRoleLoader {
         });
     }
 
-    private static String getCurrentMapName(net.minecraft.server.level.ServerLevel serverLevel) {
-        if (serverLevel.getServer() != null) {
-            var areas = io.wifi.starrailexpress.cca.AreasWorldComponent.KEY.get(serverLevel);
-            if (areas != null && areas.mapName != null) {
-                return areas.mapName;
+    /**
+     * 地图限制匹配：{@code mapId} 与限制列表中任一条目相等（忽略大小写与首尾空白）即命中。
+     */
+    private static boolean mapIdsContains(List<String> mapIds, String mapId) {
+        String name = mapId == null ? "" : mapId.trim();
+        for (String allowed : mapIds) {
+            if (allowed.equalsIgnoreCase(name)) {
+                return true;
             }
         }
-        return "unknown";
+        return false;
     }
 
     private static SRERole findRole(String roleId) {
@@ -1371,6 +1343,8 @@ public class CustomRoleLoader {
         List<ShopEntry> entries = new ArrayList<>();
         for (CustomRoleData.ShopEntryData entry : data.shopEntries) {
             final int cooldownTicks = entry.cooldownSeconds * 20;
+            // 商品货币类型：默认金币（money），可选游戏币（minigame_token），参考网警商店
+            final ShopEntry.Currency currency = ShopEntry.Currency.fromSerializedName(entry.currency);
             switch (entry.type) {
                 case "item":
                 case "custom_item": {
@@ -1382,9 +1356,9 @@ public class CustomRoleLoader {
                         final Item theItem = shopStack.getItem();
                         if (entry.allowDuplicate && cooldownTicks <= 0) {
                             // 避免Mamizou不能购买所有的自定义职业的物品。
-                            entries.add(new ShopEntry(shopStack.copy(), entry.price, ShopEntry.Type.TOOL));
+                            entries.add(new ShopEntry(shopStack.copy(), entry.price, ShopEntry.Type.TOOL, currency));
                         } else {
-                            entries.add(new ShopEntry(shopStack.copy(), entry.price, ShopEntry.Type.TOOL) {
+                            entries.add(new ShopEntry(shopStack.copy(), entry.price, ShopEntry.Type.TOOL, currency) {
                                 @Override
                                 public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                                     // 禁止重复购买：检查快捷栏是否已有该物品（自定义物品连组件一起比对）
@@ -1410,7 +1384,7 @@ public class CustomRoleLoader {
                 case "psycho":
                     entries.add(new ShopEntry(
                             io.wifi.starrailexpress.index.TMMItems.PSYCHO_MODE.getDefaultInstance(),
-                            entry.price, ShopEntry.Type.WEAPON) {
+                            entry.price, ShopEntry.Type.WEAPON, currency) {
                         @Override
                         public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                             return io.wifi.starrailexpress.cca.SREPlayerShopComponent.usePsychoMode(player);
@@ -1420,7 +1394,7 @@ public class CustomRoleLoader {
                 case "blackout":
                     entries.add(new ShopEntry(
                             io.wifi.starrailexpress.index.TMMItems.BLACKOUT.getDefaultInstance(),
-                            entry.price, ShopEntry.Type.TOOL) {
+                            entry.price, ShopEntry.Type.TOOL, currency) {
                         @Override
                         public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                             return io.wifi.starrailexpress.cca.SREPlayerShopComponent.useBlackout(player);
@@ -1430,7 +1404,7 @@ public class CustomRoleLoader {
                 case "monitor_fail":
                     entries.add(new ShopEntry(
                             io.wifi.starrailexpress.index.TMMItems.MONITOR_BROKEN.getDefaultInstance(),
-                            entry.price, ShopEntry.Type.TOOL) {
+                            entry.price, ShopEntry.Type.TOOL, currency) {
                         @Override
                         public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                             return io.wifi.starrailexpress.cca.SREPlayerShopComponent.useMonitorBroken(player,
@@ -1450,7 +1424,7 @@ public class CustomRoleLoader {
                                 display.set(net.minecraft.core.component.DataComponents.ITEM_NAME,
                                         net.minecraft.network.chat.Component.literal(entry.displayName));
                             }
-                            entries.add(new ShopEntry(display, entry.price, ShopEntry.Type.TOOL) {
+                            entries.add(new ShopEntry(display, entry.price, ShopEntry.Type.TOOL, currency) {
                                 @Override
                                 public boolean onBuy(net.minecraft.world.entity.player.Player player) {
                                     for (String cmd : cmds) {
@@ -1738,11 +1712,16 @@ public class CustomRoleLoader {
                     }
                 }
 
+                // 指定职业是否需要存活（默认 true = 原行为）；关闭后指定职业全灭、场上只剩自己时也能获胜
+                boolean needSpecifiedAlive = data.customWinLastWithRolesNeedAlive;
+
                 // 1) 只剩自己 + 指定职业（无外人）-> 直接独立获胜，不再判断指定职业阵营。
+                // 「指定职业是否需存活」关闭时：无外人存活即可（指定职业是否存活不作要求）。
                 // TIME（倒计时归零）时不触发，让 TIME 正常结算，也不阻塞后续更高优先级的条件。
                 // 不再要求 currentWinStatus 为 KILLERS/PASSENGERS，这样即使两项「结算计入存活」都为真、
                 // 常规结算停留在 NONE，也能正常取得独立胜利。
-                if (specifiedAlive && !outsiderAlive && currentWinStatus != WinStatus.TIME) {
+                if (!outsiderAlive && (!needSpecifiedAlive || specifiedAlive)
+                        && currentWinStatus != WinStatus.TIME) {
                     // 恋人胜利优先级高于条件6：让位给后注册的恋人监听器
                     if (loversWin)
                         return WinStatus.NOT_MODIFY;
@@ -1751,8 +1730,9 @@ public class CustomRoleLoader {
                 }
 
                 // 2) 仍有外人存活、且常规结算即将发生 -> 阻止游戏结束，直到外人被杀光。
+                // 「指定职业是否需存活」关闭时：指定职业全灭也会继续阻止，直至外人死光后由分支1 结算。
                 // 若自己/指定职业已通过「结算计入存活」阻止结算（winStatus 保持 NONE），无需额外干预。
-                if (specifiedAlive && outsiderAlive && canBlockGameEnd
+                if (outsiderAlive && (!needSpecifiedAlive || specifiedAlive) && canBlockGameEnd
                         && (currentWinStatus == WinStatus.KILLERS
                                 || currentWinStatus == WinStatus.PASSENGERS
                                 || currentWinStatus == WinStatus.NO_PLAYER)) {
@@ -1761,7 +1741,7 @@ public class CustomRoleLoader {
                         return WinStatus.NOT_MODIFY;
                     return WinStatus.NONE; // 拖延游戏结束，直至非自己/指定职业的玩家全部死亡
                 }
-                // 自己虽存活，但指定职业已全灭 -> 条件6 不介入，让原胜利方正常结算
+                // 自己虽存活，但（需要存活时）指定职业已全灭 -> 条件6 不介入，让原胜利方正常结算
                 // （自己已死的情况在上方 customPlayer == null 处就已 continue 跳过）
             }
 

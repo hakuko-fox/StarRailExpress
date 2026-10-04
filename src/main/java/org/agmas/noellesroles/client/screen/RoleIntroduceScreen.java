@@ -22,6 +22,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.*;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.client.gui.HudMoodRenderer;
 import io.wifi.starrailexpress.client.gui.screen.ingame.LimitedInventoryScreen;
 import io.wifi.starrailexpress.client.util.PinYinUtils;
 import io.wifi.starrailexpress.game.GameUtils;
@@ -140,20 +141,35 @@ public class RoleIntroduceScreen extends Screen {
         }
     }
 
+    /**
+     * 一级分类：所有、平民阵营、警长阵营、杀手阵营、中立阵营（聚合，可点开展开二级）、修饰符、物品、药水、其他。
+     */
     public static final List<RoleCategory> CATEGORIES = new ArrayList<>();
+    /**
+     * 「中立阵营」展开后的二级细分：返回、杀手方中立、偏好中立、独立胜利中立、特殊中立、事件中立。
+     */
+    public static final List<RoleCategory> NEUTRAL_SUBCATEGORIES = new ArrayList<>();
+    /** 「所有」与二级菜单里「返回」按钮的颜色（中性白）。 */
+    private static final int COLOR_NEUTRAL_BAR = 0xFFEEEEEE;
+    // 阵营配色统一取自 RoleTeam#color()，本类不再另建一份映射
+
+    /** 二级菜单中「返回」按钮所在下标。 */
+    public static final int BACK_INDEX = 0;
+    /** 一级菜单中「中立阵营」所在下标。 */
+    public static final int NEUTRAL_CATEGORY_INDEX = 4;
+
     static {
-        CATEGORIES.add(new RoleCategory("screen.roleintroduce.category.all", 0xFFEEEEEE, item -> true));
-        CATEGORIES.add(new RoleCategory("display.type.role.innocent", 0xFF44BB66,
+        CATEGORIES.add(new RoleCategory("screen.roleintroduce.category.all", COLOR_NEUTRAL_BAR, item -> true));
+        CATEGORIES.add(new RoleCategory("display.type.role.innocent", 0xFF55FF55,
                 item -> item instanceof SRERole r && (PlayerRoleWeightManager.getRoleType(r) == 0
                         || PlayerRoleWeightManager.getRoleType(r) == 1)));
         CATEGORIES.add(new RoleCategory("display.type.role.vigilante", 0xFF22BBCC,
                 item -> item instanceof SRERole r && PlayerRoleWeightManager.getRoleType(r) == 5));
-        CATEGORIES.add(new RoleCategory("display.type.role.neutral", 0xFFCCAA22,
-                item -> item instanceof SRERole r && PlayerRoleWeightManager.getRoleType(r) == 2));
-        CATEGORIES.add(new RoleCategory("display.type.role.neutral_for_killer", 0xFFAA44CC,
-                item -> item instanceof SRERole r && PlayerRoleWeightManager.getRoleType(r) == 3));
         CATEGORIES.add(new RoleCategory("display.type.role.killer", 0xFFCC2233,
                 item -> item instanceof SRERole r && PlayerRoleWeightManager.getRoleType(r) == 4));
+        // 中立阵营：聚合入口，点开后展开为二级细分（NEUTRAL_SUBCATEGORIES）
+        CATEGORIES.add(new RoleCategory("display.type.role.neutral_all", 0xFFCCAA22,
+                item -> item instanceof SRERole r && RoleTeam.NEUTRAL.matches(r)));
         CATEGORIES.add(new RoleCategory("screen.roleintroduce.category.modifier", 0xFF8877BB,
                 item -> item instanceof SREModifier));
         CATEGORIES
@@ -164,6 +180,29 @@ public class RoleIntroduceScreen extends Screen {
                 item -> (item instanceof Item it
                         && io.wifi.starrailexpress.client.data.ClientSponsorCache.isSponsorPlush(it))
                         || item instanceof AreasSettings));
+    }
+
+    static {
+        // 下标 0 是「返回」：点击时不改变过滤，只退出二级菜单回到一级
+        NEUTRAL_SUBCATEGORIES
+                .add(new RoleCategory("screen.roleintroduce.category.back", COLOR_NEUTRAL_BAR, item -> true));
+        // 展示顺序：偏好中立 → 杀手方中立 → 事件中立 → 特殊中立 → 独立胜利中立
+        // 名称与配色直接取 RoleTeam（唯一权威来源）
+        NEUTRAL_SUBCATEGORIES.add(new RoleCategory(RoleTeam.NEUTRAL_INNOCENT.displayKey(),
+                RoleTeam.NEUTRAL_INNOCENT.color(),
+                item -> item instanceof SRERole r && RoleTeam.NEUTRAL_INNOCENT.matches(r)));
+        NEUTRAL_SUBCATEGORIES.add(new RoleCategory(RoleTeam.NEUTRAL_KILLER.displayKey(),
+                RoleTeam.NEUTRAL_KILLER.color(),
+                item -> item instanceof SRERole r && RoleTeam.NEUTRAL_KILLER.matches(r)));
+        NEUTRAL_SUBCATEGORIES.add(new RoleCategory(RoleTeam.NEUTRAL_EVENT.displayKey(),
+                RoleTeam.NEUTRAL_EVENT.color(),
+                item -> item instanceof SRERole r && RoleTeam.NEUTRAL_EVENT.matches(r)));
+        NEUTRAL_SUBCATEGORIES.add(new RoleCategory(RoleTeam.NEUTRAL_SPECIAL.displayKey(),
+                RoleTeam.NEUTRAL_SPECIAL.color(),
+                item -> item instanceof SRERole r && RoleTeam.NEUTRAL_SPECIAL.matches(r)));
+        NEUTRAL_SUBCATEGORIES.add(new RoleCategory(RoleTeam.NEUTRAL_INDEPENDENT_WIN.displayKey(),
+                RoleTeam.NEUTRAL_INDEPENDENT_WIN.color(),
+                item -> item instanceof SRERole r && RoleTeam.NEUTRAL_INDEPENDENT_WIN.matches(r)));
     }
 
     private static final int MAX_USABLE_WIDTH = 700;
@@ -198,7 +237,7 @@ public class RoleIntroduceScreen extends Screen {
 
     private static ResourceLocation getTypeIcon(Object role) {
         if (role instanceof SRERole rrole)
-            return TYPE_ICON_MAP.getOrDefault("role_" + PlayerRoleWeightManager.getRoleType(rrole), ICON_DEFAULT);
+            return HudMoodRenderer.getMoodTextureByTeam(rrole);
         return TYPE_ICON_MAP.getOrDefault("modifier", ICON_DEFAULT);
     }
 
@@ -211,6 +250,8 @@ public class RoleIntroduceScreen extends Screen {
     private int topBarY;
 
     private int selectedCategoryIndex = 0;
+    /** 是否处于「中立阵营」展开后的二级细分菜单。 */
+    private boolean inNeutralSubMenu = false;
     private final int[] tabX = new int[64];
     private final int[] tabW = new int[64];
 
@@ -475,6 +516,10 @@ public class RoleIntroduceScreen extends Screen {
                     || PinYinUtils.contains(searchContent, name))
                 filteredItems.add(item);
         }
+        // 所有列表视图都按统一的「大阵营顺序 + 中立细分顺序」排序：
+        // 平民 → 警长 → 杀手 → 中立（偏好→杀手方→事件→特殊→独立胜利）→ 其它（修饰符/物品等）
+        // 「中立」这个大阵营不会整体提前，只是在轮到展示中立那一段时，内部再细分排序。
+        sortItemsByFaction();
         int totalH = filteredItems.size() * (CARD_H + CARD_SPACING) - CARD_SPACING;
         maxListScroll = Math.max(0, totalH - listAreaH());
         listScrollOffset = Mth.clamp(listScrollOffset, 0, maxListScroll);
@@ -493,6 +538,49 @@ public class RoleIntroduceScreen extends Screen {
     private void updateRoleSelectButton() {
         if (roleSelectButton != null)
             roleSelectButton.active = selectedRole instanceof SRERole;
+    }
+
+    /**
+     * 把所有 {@link SRERole} 条目按阵营顺序排序，非 SRERole 条目（修饰符 / 物品 / 药水 / 其他）保持原有相对顺序置于最后。
+     * 同阵营内部保持原顺序（{@code List.sort} 稳定）。
+     */
+    private void sortItemsByFaction() {
+        List<Object> roles = new ArrayList<>();
+        List<Object> others = new ArrayList<>();
+        for (Object o : filteredItems) {
+            if (o instanceof SRERole) {
+                roles.add(o);
+            } else {
+                others.add(o);
+            }
+        }
+        if (!roles.isEmpty()) {
+            roles.sort(java.util.Comparator.comparingInt(o -> factionDisplayOrder((SRERole) o)));
+        }
+        filteredItems.clear();
+        filteredItems.addAll(roles);
+        filteredItems.addAll(others);
+    }
+
+    /** 大阵营顺序 + 中立细分顺序，数值越小越靠前。 */
+    private static int factionDisplayOrder(SRERole role) {
+        RoleTeam team = RoleTeam.of(role);
+        if (team == null) {
+            return 400; // 未归类职业置于最后
+        }
+        return switch (team) {
+            case CIVILIAN -> 0; // 平民
+            case SHERIFF -> 1; // 警长
+            case KILLER -> 2; // 杀手
+            // 中立内部细分：偏好 → 杀手方 → 事件 → 特殊 → 独立胜利
+            case NEUTRAL_INNOCENT -> 310;
+            case NEUTRAL_KILLER -> 320;
+            case NEUTRAL_EVENT -> 330;
+            case NEUTRAL_SPECIAL -> 340;
+            case NEUTRAL_INDEPENDENT_WIN -> 350;
+            case NEUTRAL -> 360; // 其它未细分中立兜底
+            default -> 400;
+        };
     }
 
     private boolean matchesMode(SRERole role) {
@@ -619,10 +707,25 @@ public class RoleIntroduceScreen extends Screen {
         };
     }
 
+    /** 当前正在展示的分类列表：二级细分菜单或一级分类。 */
+    private List<RoleCategory> currentCategories() {
+        return inNeutralSubMenu ? NEUTRAL_SUBCATEGORIES : CATEGORIES;
+    }
+
     private RoleCategory currentCategory() {
-        return (selectedCategoryIndex >= 0 && selectedCategoryIndex < CATEGORIES.size())
-                ? CATEGORIES.get(selectedCategoryIndex)
-                : CATEGORIES.get(0);
+        List<RoleCategory> cats = currentCategories();
+        return (selectedCategoryIndex >= 0 && selectedCategoryIndex < cats.size())
+                ? cats.get(selectedCategoryIndex)
+                : cats.get(0);
+    }
+
+    /** 切换分类后：若原先选中的条目已不在新过滤结果里，改为选中第一条。 */
+    private void resetSelectionAfterFilter() {
+        if (selectedRole != null && !filteredItems.contains(selectedRole)) {
+            clearPrevStatus();
+            selectedRole = filteredItems.isEmpty() ? null : filteredItems.get(0);
+            onSelectionChanged();
+        }
     }
 
     private int listAreaH() {
@@ -1971,23 +2074,22 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     private void renderCategoryBar(GuiGraphics g, int mouseX, int mouseY, int barX, int barY, int barW, int barH) {
-        int n = CATEGORIES.size();
-        int[] naturalW = new int[n];
-        int totalNatural = TAB_GAP * (n - 1);
-        for (int i = 0; i < n; i++) {
-            naturalW[i] = font.width(Component.translatable(CATEGORIES.get(i).labelKey)) + 10;
-            totalNatural += naturalW[i];
-        }
-        float scale = totalNatural > barW ? (float) barW / totalNatural : 1f;
+        List<RoleCategory> cats = currentCategories();
+        int n = cats.size();
+        // 均匀分配：每个标签等宽，整除余下的 1px 分摊给前面几个，保证末尾刚好贴到 barW 右侧
+        int gaps = TAB_GAP * (n - 1);
+        int avail = Math.max(n, barW - gaps);
+        int baseW = avail / n;
+        int extra = avail - baseW * n;
         int curX = barX;
         for (int i = 0; i < n; i++) {
-            int tw = (int) (naturalW[i] * scale);
+            int tw = baseW + (i < extra ? 1 : 0);
             tabX[i] = curX;
             tabW[i] = tw;
 
             boolean active = (i == selectedCategoryIndex);
             boolean hovered = !active && isInRect(mouseX, mouseY, curX, barY, tw, barH);
-            int baseColor = CATEGORIES.get(i).activeColor;
+            int baseColor = cats.get(i).activeColor;
 
             if (active) {
                 g.fillGradient(curX, barY, curX + tw, barY + barH,
@@ -2006,7 +2108,7 @@ public class RoleIntroduceScreen extends Screen {
                 g.renderOutline(curX, barY, tw, barH, 0x338B6914);
             }
 
-            String label = Component.translatable(CATEGORIES.get(i).labelKey).getString();
+            String label = Component.translatable(cats.get(i).labelKey).getString();
             String truncated = font.plainSubstrByWidth(label, tw - 4);
             int textColor = active ? (baseColor | 0xFF000000) : hovered ? 0xFFFFF4DC : 0xFF9E8B6E;
             g.drawCenteredString(font, truncated, curX + tw / 2, barY + (barH - font.lineHeight) / 2, textColor);
@@ -2114,15 +2216,8 @@ public class RoleIntroduceScreen extends Screen {
 
     private Component getCardSubText(Object role) {
         if (role instanceof SRERole r) {
-            return switch (PlayerRoleWeightManager.getRoleType(r)) {
-                case 0, 1 -> Component.translatable("display.type.role.innocent").withStyle(ChatFormatting.GREEN);
-                case 2 -> Component.translatable("display.type.role.neutral").withStyle(ChatFormatting.YELLOW);
-                case 3 -> Component.translatable("display.type.role.neutral_for_killer")
-                        .withStyle(ChatFormatting.LIGHT_PURPLE);
-                case 4 -> Component.translatable("display.type.role.killer").withStyle(ChatFormatting.RED);
-                case 5 -> Component.translatable("display.type.role.vigilante").withStyle(ChatFormatting.AQUA);
-                default -> Component.literal("UNKNOWN");
-            };
+            // 走 RoleUtils：会按 RoleTeam 把中立细分为偏好 / 杀手方 / 事件 / 特殊 / 独立胜利中立
+            return RoleUtils.getRoleTypeName(r);
         }
         if (role instanceof IntroMobEffect effect) {
             return RoleUtils.getEffectCategoryName(effect);
@@ -2373,19 +2468,27 @@ public class RoleIntroduceScreen extends Screen {
                 }
             }
 
-            for (int i = 0; i < CATEGORIES.size(); i++) {
+            List<RoleCategory> cats = currentCategories();
+            for (int i = 0; i < cats.size(); i++) {
                 if (tabW[i] > 0 && isInRect((int) mx, (int) my, tabX[i], topBarY, tabW[i], TOP_BAR_H)) {
-                    if (selectedCategoryIndex != i) {
+                    this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
+                    if (inNeutralSubMenu && i == BACK_INDEX) {
+                        // 二级菜单的「返回」：收起细分菜单，回到一级的「中立阵营」
+                        inNeutralSubMenu = false;
+                        selectedCategoryIndex = NEUTRAL_CATEGORY_INDEX;
+                        refreshFilter();
+                        resetSelectionAfterFilter();
+                    } else if (!inNeutralSubMenu && i == NEUTRAL_CATEGORY_INDEX) {
+                        // 一级的「中立阵营」：展开为二级细分，默认落在「杀手方中立」
+                        inNeutralSubMenu = true;
+                        selectedCategoryIndex = 1;
+                        refreshFilter();
+                        resetSelectionAfterFilter();
+                    } else if (selectedCategoryIndex != i) {
                         selectedCategoryIndex = i;
                         listScrollOffset = 0;
-                        this.minecraft.getSoundManager()
-                                .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
                         refreshFilter();
-                        if (selectedRole != null && !filteredItems.contains(selectedRole)) {
-                            clearPrevStatus();
-                            selectedRole = filteredItems.isEmpty() ? null : filteredItems.get(0);
-                            onSelectionChanged();
-                        }
+                        resetSelectionAfterFilter();
                     }
                     setFocusArea(FocusArea.CATEGORY_BAR);
                     return true;
@@ -2656,7 +2759,8 @@ public class RoleIntroduceScreen extends Screen {
                     refreshFilter(newMode);
                 return true;
             } else {
-                int newIdx = Mth.clamp(selectedCategoryIndex + (keyCode == 263 ? -1 : 1), 0, CATEGORIES.size() - 1);
+                int newIdx = Mth.clamp(selectedCategoryIndex + (keyCode == 263 ? -1 : 1), 0,
+                        currentCategories().size() - 1);
                 if (newIdx != selectedCategoryIndex) {
                     selectedCategoryIndex = newIdx;
                     listScrollOffset = 0;

@@ -491,7 +491,8 @@ public final class CustomItemRuntime {
             }
             // 空放走「独立冷却」：与命中后的冷却无关，默认 0 = 空放不进入冷却
             applyCooldown(player, stack, data.emptyFireCooldownTicks);
-            consumeItem(player, stack, data.consumeItem);
+            // 空放是否消耗单独区分（consumeOnEmptyFire，默认是 = 与命中一致按 consumeItem 消耗）
+            consumeItem(player, stack, data.consumeItem && data.consumeOnEmptyFire);
             return true;
         }
 
@@ -1263,6 +1264,11 @@ public final class CustomItemRuntime {
 
         applyCuffEffects(targetPlayer, data);
         applyCuffRestriction(targetPlayer, data);
+
+        // 铐上瞬间立即执行一轮「被拷住玩家执行的指令」：
+        // 定时结算（tickCuffs）按 cuffCommandIntervalTicks 周期触发，
+        // 不立即执行的话，铐上后最长要等一个完整周期（周期配得大时观感就是「不执行」）
+        CustomItemLoader.executeCommands(data.cuffCommands, targetPlayer, user);
 
         user.displayClientMessage(
                 Component.translatable("sre.custom_item.cuff.put", targetPlayer.getName().getString()), true);
