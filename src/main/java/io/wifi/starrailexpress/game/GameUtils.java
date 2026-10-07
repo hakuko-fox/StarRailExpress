@@ -43,8 +43,11 @@ import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPunchHandler;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.init.events.NRDeathEvents;
+import org.agmas.noellesroles.init.events.NRGameStateEvents;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
 import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.LocalDateData;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -760,6 +763,13 @@ public class GameUtils {
     public static void addItemCooldowns(ServerLevel world, int time) {
         if (cooldownItems.isEmpty()) {
             BuiltInRegistries.ITEM.forEach(item -> {
+                // starrailexpress:custom_item 是「所有自定义列车物品共用的那一个注册物品」，
+                // 它的冷却键不是它自己，而是每件自定义物品各自专属的键（见 CustomItemCooldownKeys）。
+                // 所以这里必须把它排除，否则原版按 Item 记的冷却会同时点亮玩家身上所有自定义物品，
+                // 表现为「同一件物品出现原版冷却 + 自定义冷却两套状态」。
+                if (item == io.wifi.starrailexpress.index.DevItems.CUSTOM_ITEM) {
+                    return;
+                }
                 if (!(item instanceof LetterItem)) {
                     String namespace = BuiltInRegistries.ITEM.getKey(item).getNamespace();
                     if (namespace.equals(StarRailExpressID.MOD_ID)
@@ -795,10 +805,8 @@ public class GameUtils {
             cooldownItems.forEach(
                     item -> cooldowns.addCooldown(item, time));
 
-            // 自定义列车物品：全都共用同一个注册物品，上面那句按 Item 记的原版冷却会被
-            // CustomItemRuntime.isOnCooldown 忽略（已登记的自定义物品只认「玩家 + 物品 id」的组件冷却）。
-            // 这里把「全部」自定义物品按 id 压上同款冷却：安全时间内左键 / 右键都无法使用，
-            // 且因为按 id 记，安全时间内新获得的同 id 物品也一并处于冷却。
+            // 自定义列车物品：冷却条目同样写在原版 ItemCooldowns 里，但按自定义物品 id 逐个压，
+            // 安全时间内左键 / 右键都无法使用，且 A 物品的冷却不会牵连 B 物品。
             CustomItemRuntime.applySafeTimeCooldown(player, time);
 
             // cooldowns.addCooldown(ModItems.SP_KNIFE, time);
@@ -1564,6 +1572,17 @@ public class GameUtils {
         return p.isSpectator();
     }
 
+    public static void reJudgeSpectatorsPenalty(Level world) {
+        if (world.isClientSide)
+            return;
+        NRDeathEvents.reJudgeSpectatorsPenalty(world);
+    }
+
+    public static void pendingReJudgeSpectatorsPenalty() {
+        // 推迟到下一个tick执行
+        NRGameStateEvents.pendingRejudgingSpectatorDeathPeanlty.set(true);
+    }
+
     public static boolean isPlayerAliveAndSurvivalIgnoreShitSplit(Player player) {
         return player != null && !player.isSpectator() && !player.isCreative();
     }
@@ -1711,6 +1730,22 @@ public class GameUtils {
         return level.players().stream().filter((p) -> isPlayerAliveAndSurvivalIgnoreShitSplit(p)).count();
     }
 
+    /**
+     * 给阴谋家：旁观者死亡惩罚
+     * 
+     * @param player
+     * @return
+     */
+    public static boolean shouldGiveSpectatorsDeathPenalty(Player player) {
+        var gameWorldComponent = SREGameWorldComponent.getInstance(player);
+        if (gameWorldComponent.isRole(player, ModRoles.CONSPIRATOR)
+                // 无我或无妄存活时，与阴谋家一样进入死亡惩罚（视角限制）
+                || gameWorldComponent.isRole(player, ModRoles.ANATMAN)
+                || gameWorldComponent.isRole(player, ModRoles.ASATYA))
+            return true;
+        return false;
+    }
+
     public static void revivePlayerToItsRoom(ServerPlayer player) {
         DeathPenaltyComponent.KEY.get(player).clear();
         DefibrillatorComponent.KEY.get(player).clear();
@@ -1727,11 +1762,17 @@ public class GameUtils {
             }
         }
         TrainVoicePlugin.resetPlayer(player.getUUID());
+        if (shouldGiveSpectatorsDeathPenalty(player)) {
+            pendingReJudgeSpectatorsPenalty();
+        }
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
         player.addEffect(ModEffects.of(ModEffects.SAFE_TIME, 10, 1, false, false, true));
         if (MeetingManager.isActive()) {
             DefibrillatorComponent.KEY.get(player).triggerDeath(10, null, player.position());
         }
+
+        player.updateFluidOnEyes();
+        player.updateInWaterStateAndDoFluidPushing();
     }
 
     public static void revivePlayer(ServerPlayer player, double x, double y, double z) {
@@ -1751,11 +1792,19 @@ public class GameUtils {
         player.teleportTo(x, y, z);
         player.setGameMode(GameType.ADVENTURE);
         TrainVoicePlugin.resetPlayer(player.getUUID());
+
+        if (shouldGiveSpectatorsDeathPenalty(player)) {
+            pendingReJudgeSpectatorsPenalty();
+        }
+
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
 
         if (MeetingManager.isActive()) {
             DefibrillatorComponent.KEY.get(player).triggerDeath(10, null, player.position());
         }
+        
+        player.updateFluidOnEyes();
+        player.updateInWaterStateAndDoFluidPushing();
     }
 
     public static boolean isGameRunning(Player player) {

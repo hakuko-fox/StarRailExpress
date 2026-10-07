@@ -295,6 +295,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
+            ClientChefTrayManager.clearAll();
             if (PriestHeavenClient.consumePendingEnding()) {
                 PriestHeavenClient.playEnding();
             }
@@ -320,6 +321,14 @@ public class NoellesrolesClient implements ClientModInitializer {
                 HunterCageBlockEntityRenderer::new);
 
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
+
+        // 厨师「客户端」食物盘 / 饮料盘：盘内物品居中渲染，参数与原版食物盘一致
+        BlockEntityRenderers.register(
+                ModBlocks.CHEF_TRAY_BLOCK_ENTITY,
+                org.agmas.noellesroles.client.render.ChefPlateRenderer::new);
+        // cutout 渲染层：剔除盘体贴图的透明像素（与原版食物盘 / 饮料盘同属 cutout 一致）
+        BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
+                ModBlocks.CHEF_FOOD_TRAY, ModBlocks.CHEF_DRINK_TRAY);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.LOTTERY_MACHINE_BLOCK, RenderType.translucent());
@@ -597,6 +606,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 (payload, context) -> {
                     ClientWallManager.removeWall(payload.wallId());
                 });
+        // 厨师「客户端」食物盘 / 饮料盘
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.ChefTrayS2CPacket.ID,
+                (payload, context) -> ClientChefTrayManager.handle(payload));
         ClientPlayNetworking.registerGlobalReceiver(CreateCreeperBombAreaPacket.ID, (payload, context) -> {
             final var p = context.player();
             final var level = context.client().level;
@@ -670,6 +682,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             ClientSmokeAreaManager.tick();
             ClientWallManager.tick();
+            ClientChefTrayManager.tick();
         });
         // 幽露自由摄像机：每 tick 推进（相机移动/位置上报/ESC 取消/球烟内缓存）
         ClientTickEvents.END_CLIENT_TICK.register(YouluFreeCamClient::tick);

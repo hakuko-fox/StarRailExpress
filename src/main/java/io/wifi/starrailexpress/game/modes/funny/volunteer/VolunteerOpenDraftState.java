@@ -337,6 +337,20 @@ public class VolunteerOpenDraftState {
         phaseStartTime = world.getGameTime();
         phaseTimeLimit = computeGroupTimeLimit();
         waitingForClients = false;
+        // 轮到本组：给组内所有还没选定的成员播放村民赞成音。
+        // 原来这个音效是由客户端对 canSelect 做「false→true」上升沿检测播放的（见 SREClient）：
+        // 同步包只要因为网络延迟跨过了组切换（上一组的 true 还没落地就被新组的 true 覆盖），
+        // 上升沿就被吃掉，同组里就会有人听不到。服务端在推进分组时统一下发，保证人人听到。
+        for (UUID id : group) {
+            if (picks.containsKey(id)) {
+                // forcerole 已被系统直接锁定的玩家没有可选项，不播
+                continue;
+            }
+            ServerPlayer member = world.getServer().getPlayerList().getPlayer(id);
+            if (member != null) {
+                RoleUtils.playSound(member, SoundEvents.VILLAGER_YES, SoundSource.MASTER, 1.0f, 1.0f);
+            }
+        }
     }
 
     /**
@@ -760,6 +774,38 @@ public class VolunteerOpenDraftState {
             }
         }
         return -1;
+    }
+
+    /**
+     * 查询某玩家「当前」应该被蓝框标出的海选池下标。
+     *
+     * @param id 玩家 UUID
+     * @return 应标注蓝框的池下标（{@code -1} 表示没有可标注的志愿职业）
+     */
+    public int volunteerPoolIndexOf(UUID id) {
+        String roleId = volunteerRoleIds.get(id);
+        if (roleId == null || roleId.isBlank()) {
+            return -1;
+        }
+        ResourceLocation loc = ResourceLocation.tryParse(roleId);
+        if (loc == null) {
+            return -1;
+        }
+        int firstMatch = -1;
+        for (int i = 0; i < pool.size(); i++) {
+            SRERole r = pool.get(i).role();
+            if (r == null || !r.identifier().equals(loc)) {
+                continue;
+            }
+            if (firstMatch < 0) {
+                firstMatch = i;
+            }
+            // 优先返回还没被任何人选走的那一份
+            if (i < pickedBy.length && pickedBy[i] == null) {
+                return i;
+            }
+        }
+        return firstMatch;
     }
 
     private static SRERole resolveRole(String roleId) {

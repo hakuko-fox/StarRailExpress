@@ -570,8 +570,8 @@ public class ModRoles {
      * - 技能：建造模式（默认）- 按技能键在自身位置建造一堵客户端墙
      * - 墙长4格高3格厚1格，沿视角朝向垂直建造
      * - 只替换空气方块
-     * - 墙会在60秒后消失
-     * - 技能冷却100秒，开局120秒冷却
+     * - 墙会在25秒后消失
+     * - 技能冷却45秒，开局120秒冷却
      * - 技能：拆除模式 - 按技能键拆除墙体，无冷却
      * - 蹲下按技能键切换模式（不受冷却影响）
      * - 游戏结束时清除所有客户端墙
@@ -1135,6 +1135,7 @@ public class ModRoles {
                     true, false, SRERole.MoodType.REAL,
                     TMMRoles.CIVILIAN.getMaxSprintTime(), false))
             .setCanSeeCoin(true).setCanPickUpRevolver(true)
+            .setRoleData(org.agmas.noellesroles.role_data.neutral.ChefRoleData::new)
             .setComponentKey(FoodDrinkGlowComponent.KEY)
             .setTaskReward(1, -1, ModItems.FOOD_STUFF.getDefaultInstance())
             .setTaskRewardSilent(true); // 每完成一个任务给 1 个食材，不限次数，静默发放
@@ -1308,7 +1309,8 @@ public class ModRoles {
             .registerRole(new NormalRole(BETTER_VIGILANTE_ID, new Color(0, 255, 255).getRGB(), true, false,
                     SRERole.MoodType.FAKE, TMMRoles.CIVILIAN.getMaxSprintTime(), false)
                     .setRoleData(BetterVigilanteRoleData::new))
-            .setCanBeRandomedByOtherRoles(false).setDefaultMax(0);
+            .setCanBeRandomedByOtherRoles(false).setDefaultMax(0)
+            .setCanUseSpVanillaWeapon(true);
     public static SRERole BROADCASTER = TMMRoles
             .registerRole(new NormalRole(BROADCASTER_ID, new Color(0, 255, 0).getRGB(), true,
                     false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), true)

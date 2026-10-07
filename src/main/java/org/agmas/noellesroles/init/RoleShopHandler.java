@@ -440,6 +440,7 @@ public class RoleShopHandler {
         ArrayList<ShopEntry> WRAITH_ASSASSIN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> REASONER_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> DISC_MASTER_SHOP = new ArrayList<>();
+        ArrayList<ShopEntry> DOOMED_SINNER_SHOP = new ArrayList<>();
 
         // ---- 柜子区的商店（执行者） ----
         {
@@ -1858,6 +1859,15 @@ public class RoleShopHandler {
             }
         }
 
+        // ==================== 宿命的罪人商店 ====================
+        {
+            // 劣质开锁器 - 250金币
+            DOOMED_SINNER_SHOP.add(new ShopEntry(
+                    ModItems.INFERIOR_LOCKPICK.getDefaultInstance(),
+                    250,
+                    ShopEntry.Type.TOOL));
+        }
+
         // ==================== 推理师商店 ====================
         {
             // 罗盘 - 100金币（游戏时间>=2分钟且没有罗盘时才能购买）
@@ -1882,7 +1892,8 @@ public class RoleShopHandler {
                             return false;
                         }
                     }
-                    return true;
+                    // 必须调用默认实现发放罗盘（否则只扣钱不给货）
+                    return super.onBuy(player);
                 }
             });
         }
@@ -3280,6 +3291,12 @@ public class RoleShopHandler {
         {
             ShopContent.customEntries.put(
                     ModRoles.REASONER_ID, REASONER_SHOP);
+        }
+
+        // 宿命的罪人商店
+        {
+            ShopContent.customEntries.put(
+                    ModRoles.DOOMED_SINNER_ID, DOOMED_SINNER_SHOP);
         }
 
         // 小偷商店（注释部分，保留）

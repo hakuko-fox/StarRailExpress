@@ -127,6 +127,7 @@ import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.morph.MorphApiClient;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
 import io.wifi.starrailexpress.network.CloseUiPayload;
+import io.wifi.starrailexpress.network.CustomItemCooldownS2CPayload;
 import io.wifi.starrailexpress.network.IsLobbyConfigPayload;
 import io.wifi.starrailexpress.network.JoinSpecGroupPayload;
 import io.wifi.starrailexpress.network.MapVotingResultsPayload;
@@ -836,6 +837,7 @@ public class SREClient implements ClientModInitializer {
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
+        CustomItemCooldownS2CPayload.registerReceiver();
 
         // 注册自定义职业同步接收器（客户端）
         io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.register();
@@ -1318,7 +1320,9 @@ public class SREClient implements ClientModInitializer {
                     || io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.canReOpen();
 
             // 检测轮到自己选职业的音效
-            if (!previousMyTurn && currentMyTurn && client.player != null) {
+            // 志愿海选不在这里播：那边由服务端在推进分组时给该组所有成员统一下发，
+            // 若这里再按 canSelect 上升沿播一次会变成双响，且上升沿仍会因包延迟而漏播。
+            if (!volunteerOpen && !previousMyTurn && currentMyTurn && client.player != null) {
                 client.player.playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
             }
             previousMyTurn = currentMyTurn;
