@@ -919,6 +919,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     GameUtils.killPlayer(player, false,
                             player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.CANNOT_SWIM);
+                            
+                    player.updateFluidOnEyes();
+                    player.updateInWaterStateAndDoFluidPushing();
+
                     if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             && player.isUnderWater()) {
                         GameUtils.forceKillPlayer(player, false,
@@ -937,6 +941,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     GameUtils.killPlayer(player, false,
                             player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.CANNOT_SWIM);
+                    player.updateFluidOnEyes();
+                    player.updateInWaterStateAndDoFluidPushing();
+
                     if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             && checkPlayerIsInDeepWater(player, areas)) {
                         GameUtils.forceKillPlayer(player, false,
@@ -972,6 +979,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     GameUtils.killPlayer(player, false,
                             player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
                             GameConstants.DeathReasons.LAVA);
+                            
+                    player.updateFluidOnEyes();
+                    player.updateInWaterStateAndDoFluidPushing();
+
                     if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
                             && checkPlayerIsInLava(player, areas)) {
                         GameUtils.forceKillPlayer(player, false,
@@ -1161,9 +1172,6 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     private static boolean checkPlayerIsInLava(ServerPlayer player, AreasWorldComponent areas) {
-
-        if (player.hasEffect(ModEffects.SAFE_TIME))
-            return false;
         if (player.isInLava()) {
             return true;
         }
@@ -1182,16 +1190,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     private static boolean checkPlayerUnderwater(ServerPlayer player) {
-        if (player.hasEffect(ModEffects.SAFE_TIME)) {
-            return false;
-        }
         return player.isUnderWater();
     }
 
     private static boolean checkPlayerIsInDeepWater(ServerPlayer player, AreasWorldComponent areas) {
-
-        if (player.hasEffect(ModEffects.SAFE_TIME))
-            return false;
         if (player.isUnderWater()) {
             return true;
         }
@@ -1212,9 +1214,6 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     private static boolean checkPlayerIsSwiming(ServerPlayer player, AreasWorldComponent areas) {
-        if (player.hasEffect(ModEffects.SAFE_TIME))
-            return false;
-
         if (!player.isUnderWater()) {
             if (player.getVehicle() != null) {
                 if (!player.getVehicle().isUnderWater())
@@ -1338,11 +1337,63 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return false;
     }
 
+    /**
+     * 好人方阵营判定（{@link #isKillerTeamRoleStatic(SRERole)} 的好人方对偶）。
+     *
+     * <p>包含：平民阵营、以及好人方中立（{@code isNeutralForInnocent}）。
+     * <p>排除：
+     * <ul>
+     * <li>可以使用杀手道具的职业（{@code canUseKiller}）；</li>
+     * <li>杀手阵营与杀手方中立（{@code isKillerTeam} / {@code isNeutralForKiller}）；</li>
+     * <li>其余中立：既非好人方中立、也非杀手方的独立/事件中立一律不算好人方。</li>
+     * </ul>
+     */
+    public static boolean isInnocentTeamRoleStatic(SRERole role) {
+        if (role == null)
+            return false;
+        if (role.canUseKiller())
+            return false;
+        if (role.isKillerTeam())
+            return false;
+        if (role.isNeutralForKiller())
+            return false;
+        return role.isInnocent() || role.isNeutralForInnocent();
+    }
+
+    public boolean isInnocentTeam(UUID player) {
+        if (player != null) {
+            return isInnocentTeamRoleStatic(this.getRole(player));
+        }
+        return false;
+    }
+
+    public boolean isInnocentTeam(Player player) {
+        if (player != null) {
+            return isInnocentTeam(player.getUUID());
+        }
+        return false;
+    }
+
+    public static boolean isInnocentTeamStatic(Player player) {
+        if (player != null) {
+            return getInstance(player).isInnocentTeam(player.getUUID());
+        }
+        return false;
+    }
+
     public boolean canAutoAddMoney(ServerPlayer player) {
         var role = this.getRole(player);
         if (role == null)
             return false;
         return role.canAutoAddMoney();
+    }
+
+    /** 该职业是否拥有被动游戏币收入（自然增长游戏币）。 */
+    public boolean canAutoAddMiniGameToken(ServerPlayer player) {
+        var role = this.getRole(player);
+        if (role == null)
+            return false;
+        return role.canAutoAddMiniGameToken();
     }
 
     public boolean isVigilanteTeam(ServerPlayer player) {
@@ -1454,9 +1505,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public boolean isInnocentTeamRole(SRERole role) {
-        if (role == null)
-            return false;
-        return role.isInnocent();
+        return isInnocentTeamRoleStatic(role);
     }
 
     public static BlockPos findNearestSupportBelow(Player player, int maxDistance) {
@@ -1501,6 +1550,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         var role = getRole(player);
         if (role == null)
             return false;
+        if (isDualCountDeadlock(role)) {
+            return false;
+        }
         return role.canIncreaseSurvivingInnocents();
     }
 
@@ -1508,7 +1560,43 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         var role = getRole(player);
         if (role == null)
             return false;
+        if (isDualCountDeadlock(role)) {
+            return false;
+        }
         return role.canIncreaseSurvivingKillers();
+    }
+
+    /**
+     * 「双重计数」死锁判定与放行。
+     *
+     * <p>
+     * 当一个职业同时被设置了「结算计入好人」与「结算计入杀手」时，它会被同时计入两侧
+     * （相当于一个职业占 1 好人 + 1 杀手共 2 人）。若场上<b>所有</b>存活玩家的职业都是这类
+     * 双重计数职业，好人与杀手计数恒 ≥ 1，常规阵营结算（KILLERS / PASSENGERS）永远无法
+     * 发生，游戏无法结束。
+     *
+     * <p>
+     * 该情况下两个计数方法对双重计数职业均返回 false（放行）：结算流程继续走
+     * AllowGameEnd → CustomWinnerClass 的各职业胜利判断逻辑（独立胜利「只剩自己」
+     * 「只剩自己和指定职业」「存活到最后」、跟随获胜等按各自条件判定结算）。
+     */
+    private boolean isDualCountDeadlock(SRERole role) {
+        // 非双重计数职业快速短路，不做全场遍历
+        if (!role.canIncreaseSurvivingInnocents() || !role.canIncreaseSurvivingKillers()) {
+            return false;
+        }
+        boolean anyDualCounted = false;
+        for (var p : world.players()) {
+            if (!(p instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(sp)) {
+                continue;
+            }
+            var r = getRole(sp);
+            if (r == null || !r.canIncreaseSurvivingInnocents() || !r.canIncreaseSurvivingKillers()) {
+                return false;
+            }
+            anyDualCounted = true;
+        }
+        return anyDualCounted;
     }
 
     public int refreshPsychoCount(boolean sync) {

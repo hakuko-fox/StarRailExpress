@@ -37,13 +37,14 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent;
+import org.agmas.noellesroles.katana.KatanaHandler;
 import org.agmas.noellesroles.role_data.killer.DreamRoleData;
 
 
 import java.util.List;
 
 /**
- * Dream（梦魇）的铁斧。
+ * Dream（Dream）的铁斧。
  *
  * <ul>
  * <li>12 点耐久，每次命中消耗 1 点；第二次购买半价（见商店注册）。</li>
@@ -90,6 +91,11 @@ public class DreamAxeItem extends Item implements SREItemProperties.LeftClickHur
             attacker.displayClientMessage(Component
                     .translatable("item.noellesroles.dream_axe.no_durability")
                     .withStyle(ChatFormatting.RED), true);
+            return false;
+        }
+        // 格挡判定：武士刀格挡有效窗口优先，其次防暴盾牌
+        if (KatanaHandler.tryBlockAttack(target, attacker)
+                || RiotShieldHandler.tryBlockAttack(target, attacker)) {
             return false;
         }
 

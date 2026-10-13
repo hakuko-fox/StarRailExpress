@@ -76,6 +76,7 @@
       "noellesroles:infected",
       "noellesroles:c4_back",
       "noellesroles:dream_health",
+      "noellesroles:virtual_shield",
       "starrailexpress:minigame_task",
       "stupid_express:custom_winner",
       "stupid_express:lovers",
@@ -120,8 +121,7 @@
       "starrailexpress:player_nunchuck",
       "starrailexpress:mailbox",
       "starrailexpress:player_damage_tracker",
-      "starrailexpress:custom_item_hit_marker",
-      "starrailexpress:custom_item_cooldown"
+      "starrailexpress:custom_item_hit_marker"
     ],
     "loom:injected_interfaces": {
       "net/minecraft/class_5483/class_5496": [

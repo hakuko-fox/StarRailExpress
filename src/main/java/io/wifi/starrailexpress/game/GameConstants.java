@@ -176,6 +176,18 @@ public class GameConstants {
         };
     }
 
+    /**
+     * 被动游戏币收入节拍器：每 25 秒（500 tick）固定发放 1 枚游戏币（MiniGameToken）。
+     */
+    public static Function<Long, Integer> getPassiveMiniGameTokenTicker() {
+        return time -> {
+            if (time % (25 * 20) == 0) {
+                return 1;
+            }
+            return 0;
+        };
+    }
+
     public static int getMoneyPerKill() {
         return SREConfig.instance().moneyPerKill;
     }
@@ -303,6 +315,8 @@ public class GameConstants {
         public static ResourceLocation YUYUKO_EATEN = Noellesroles.id("yuyuko_eaten");
         /** 黑警（Licensed Villain）：黑警时刻后误杀非目标阵营玩家，因悔恨自尽而死 */
         public static ResourceLocation REGRET_SUICIDE = Noellesroles.id("regret_suicide");
+        /** 独裁者（Dictator）：裁决之剑 / 独裁之书猜中后由闪电处决 */
+        public static ResourceLocation DICTATOR_JUDGMENT = Noellesroles.id("dictator_judgment");
 
         // Dream 特殊原版武器死因（伤害扣除虚拟血量），与铁斧/消防斧同类
         public static ResourceLocation DREAM_DIAMOND_SWORD = Noellesroles.id("dream_diamond_sword");
@@ -310,6 +324,8 @@ public class GameConstants {
         public static ResourceLocation FIREWORK_CROSSBOW = Noellesroles.id("firework_crossbow");
         /** 下界合金矛（骑兵）：原版伤害 ×2 转为虚拟伤害，归零时按此死因判死 */
         public static ResourceLocation SPEAR = Noellesroles.id("spear");
+        /** 武士刀：三连招扣除虚拟血量，归零时按此死因判死 */
+        public static ResourceLocation KATANA = Noellesroles.id("katana");
 
         public static ResourceLocation RADIATION = Noellesroles.id("radiation");
         public static ResourceLocation BROKEN_HEART = StupidExpress.id("broken_heart");
@@ -325,6 +341,18 @@ public class GameConstants {
         public static ResourceLocation MISSING_LUNGS = Noellesroles.id("missing_lungs");
         public static ResourceLocation TIMEOUT = Noellesroles.id("timeout");
         public static ResourceLocation BEE_USED_OUT_SKILL = Noellesroles.id("bee_used_out_skill");
+
+        // 封印物致死（SealedArtifactHandler）：扼喉 / 雷击 / 火柴
+        public static ResourceLocation SEALED_CHOKE = Noellesroles.id("sealed_choke");
+        public static ResourceLocation SEALED_LIGHTNING = Noellesroles.id("sealed_lightning");
+        public static ResourceLocation SEALED_MATCH = Noellesroles.id("sealed_match");
+        // 垂钓者（Angler）：体力耗尽而死 / 被钓上钩而死
+        public static ResourceLocation ANGLER_EXHAUSTED = Noellesroles.id("angler_exhausted");
+        public static ResourceLocation ANGLER_CATCH = Noellesroles.id("angler_catch");
+        /** Dream 铁斧死因（与消防斧 fire_axe 区分） */
+        public static ResourceLocation DREAM_AXE = Noellesroles.id("dream_axe");
+        /** 弹幕弹（DanmukuEntity）命中致死 */
+        public static ResourceLocation DANMUKU = Noellesroles.id("danmuku");
 
         private static ResourceLocation itemId(Item item) {
             return BuiltInRegistries.ITEM.getKey(item);
@@ -353,6 +381,7 @@ public class GameConstants {
             set.add(itemId(ModItems.THROWING_AXE));
             set.add(itemId(ModItems.NINJA_SHURIKEN));
             set.add(itemId(ModItems.SCARLET_PERCEPTION_SWORD));
+            set.add(itemId(ModItems.YOUMU_SWORD));
             set.add(GUN_SHOT);
             set.remove(null);
             return set;

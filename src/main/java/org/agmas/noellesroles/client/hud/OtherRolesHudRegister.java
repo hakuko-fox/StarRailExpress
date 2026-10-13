@@ -77,11 +77,13 @@ public class OtherRolesHudRegister {
         MorticianHud.register();
         MediumHud.register();
         BuilderHud.register();
+        ChefHud.register();
         PelicanHud.register();
         GodfatherHud.register();
         WarlockHud.register();
         WizardHud.register();
         MagicApprenticeHud.register();
+        SwordsmanHud.register();
         MushroomScholarHud.register();
         RavenHud.register();
         DoomedSinnerHud.register();

@@ -27,6 +27,7 @@ import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -39,6 +40,7 @@ import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import io.wifi.starrailexpress.game.modes.funny.SREThreeWayWarGameMode;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.ChatFormatting;
@@ -210,6 +212,15 @@ public class BeeFamilyManager {
                                 true);
                         return false;
                     }
+                    // 已退出游戏的玩家（退出重进过 / 退赛不参与）不能被标记为继承人
+                    if (SREAbilityPlayerComponent.KEY.get(marktargetplayer).hasExited()
+                            || !ParticipationComponent.KEY.get(player.level()).isParticipating(marktargetplayer)) {
+                        player.displayClientMessage(
+                                Component.translatable("tip.noellesroles.bee_queen.owner_left_game")
+                                        .withStyle(ChatFormatting.RED),
+                                true);
+                        return false;
+                    }
                     if (GameUtils.isPlayerAliveAndSurvival(marktargetplayer)) {
                         player.displayClientMessage(
                                 Component.translatable("tip.noellesroles.no_target").withStyle(ChatFormatting.RED),
@@ -271,10 +282,25 @@ public class BeeFamilyManager {
             // check if the selected body can be revived
             var revived = (ServerPlayer) serverLevel.getPlayerByUUID(body.getPlayerUuid());
             if (revived == null) {
+                // 尸体主人已退出游戏（离线），无法复活
+                player.displayClientMessage(
+                        Component.translatable("tip.noellesroles.bee_queen.owner_left_game")
+                                .withStyle(ChatFormatting.RED),
+                        true);
                 return InteractionResult.PASS;
             }
 
             if (!revived.isSpectator()) {
+                return InteractionResult.PASS;
+            }
+
+            // 已退出游戏的玩家（退出重进过 / 退赛不参与）不能被复活
+            if (SREAbilityPlayerComponent.KEY.get(revived).hasExited()
+                    || !ParticipationComponent.KEY.get(level).isParticipating(revived)) {
+                player.displayClientMessage(
+                        Component.translatable("tip.noellesroles.bee_queen.owner_left_game")
+                                .withStyle(ChatFormatting.RED),
+                        true);
                 return InteractionResult.PASS;
             }
             // activate cooldown
@@ -314,6 +340,12 @@ public class BeeFamilyManager {
             RoleUtils.changeRole(revived, selectedRole);
             GameUtils.revivePlayer(revived, body.getX(), body.getY(), body.getZ());
             body.discard(); // like it never existed
+
+            // 三方会战专属：蜂后复活出的工蜂资金减少 70%
+            if (selectedRole == BounsRoles.BEE_WORKER && SREThreeWayWarGameMode.isActive(level)) {
+                SREPlayerShopComponent shop = SREPlayerShopComponent.KEY.get(revived);
+                shop.setBalance((int) (shop.balance * SREThreeWayWarGameMode.BEE_WORKER_REVIVE_MONEY_KEEP));
+            }
 
             RoleUtils.sendWelcomeAnnouncement(revived);
             if (!(beforeRole instanceof BeeFamilyRole))

@@ -69,7 +69,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.utils.DisguisedBodyUtils;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.Nullable;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
@@ -262,6 +265,10 @@ public final class MeetingManager {
         if (!GameUtils.isPlayerAliveAndSurvival(reporter)) {
             return false;
         }
+        // 伪装尸体（咸鱼晒咸鱼、亡语杀手假扮尸体）不代表真实死亡，不可用于召开会议
+        if (DisguisedBodyUtils.isUnreportableDisguisedBody(body)) {
+            return false;
+        }
         if (reportedBodies.contains(body.getUUID())) {
             // SRE.LOGGER.info("[MEETING] Body has already reported");
 
@@ -379,7 +386,7 @@ public final class MeetingManager {
                 }
             }
         }
-
+        TarotAssemblyManager.endMeeting(serverLevel);
         level = serverLevel;
         phase = PHASE_INTRO;
         phaseEndTick = now + INTRO_TICKS;

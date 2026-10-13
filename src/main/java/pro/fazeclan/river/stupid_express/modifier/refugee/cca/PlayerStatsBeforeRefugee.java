@@ -97,6 +97,9 @@ public record PlayerStatsBeforeRefugee(Vec3 pos, int money, ListTag inventory, V
 
         bartenderPlayerComponent.armor = playerStats.shieldAmount;
         if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+            if (GameUtils.shouldGiveSpectatorsDeathPenalty(player)) {
+                GameUtils.pendingReJudgeSpectatorsPenalty();
+            }
             SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), role);
             player.setGameMode(GameType.ADVENTURE);
         }
@@ -105,6 +108,10 @@ public record PlayerStatsBeforeRefugee(Vec3 pos, int money, ListTag inventory, V
         player.setPos(playerStats.pos());
         player.setXRot(playerStats.rotation().x);
         player.setYRot(playerStats.rotation().y);
+        
+        player.updateFluidOnEyes();
+        player.updateInWaterStateAndDoFluidPushing();
+        
         TrainVoicePlugin.resetPlayer(player.getUUID());
         var shopComponent = SREPlayerShopComponent.KEY.get(player);
         var moodComponent = SREPlayerMoodComponent.KEY.get(player);

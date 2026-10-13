@@ -306,18 +306,31 @@ public class SREMurderGameMode extends GameMode {
             }
         }
 
-        // 统一将临时存储的修饰符添加到组件中
-        for (Map.Entry<UUID, HashSet<SREModifier>> entry : tempModifierAssignments.entrySet()) {
-            final UUID playerUuid = entry.getKey();
-            final var player = serverWorld.getPlayerByUUID(playerUuid);
-            if (player == null)
+        // 绑定职业强制补发：声明了「绑定职业」的修饰符必然发给这些职业的玩家，
+        // 不受刷新数量 / 生成概率 / 玩家修饰符上限限制（等价于内置职业在
+        // SRERole#onAssignedModifiers 里自带修饰符，例如 hinanawi_tenshi 自带夜猫子）。
+        // 放在随机刷新之后、职业自带修饰符之前，保证不与 onAssignedModifiers 的添加互相覆盖。
+        for (ServerPlayer player : players) {
+            SRERole role = gameWorldComponent.getRole(player.getUUID());
+            if (role == null) {
+                continue;
+            }
+            for (SREModifier mod : HMLModifiers.getModifiersBoundToRole(role)) {
+                addModifierAssignment(tempModifierAssignments, player.getUUID(), mod);
+            }
+        }
+
+        // 统一将临时存储的修饰符添加到组件中。（遍历玩家，保证玩家必定遍历到！）
+        for (final var player : players) {
+            final UUID playerUuid = player.getUUID();
+            final var modifiers = tempModifierAssignments.getOrDefault(playerUuid, new HashSet<>());
+            if (modifiers == null)
                 continue;
             SRERole role = gameWorldComponent.getRole(playerUuid);
-            final var set = entry.getValue();
             if (player instanceof ServerPlayer sp)
-                role.onAssignedModifiers(sp, set);
+                role.onAssignedModifiers(sp, modifiers);
 
-            for (SREModifier mod : set) {
+            for (SREModifier mod : modifiers) {
                 worldModifierComponent.addModifier(playerUuid, mod, false);
                 ModifierAssigned.EVENT.invoker().assignModifier(player, mod);
             }
@@ -523,16 +536,20 @@ public class SREMurderGameMode extends GameMode {
         }
 
         // ===== 领袖特判 =====
-        // 领袖需要"非杀手方中立"（type 2）职业作为追随者。
-        // 若本次抽选出的中立职业中，除领袖外没有其它 type 2 职业，说明本局领袖没有可招募对象，
+        // 领袖需要一个「能被它招募」的职业作为追随者，即：
+        //   1) 非杀手方中立（type 2，排除 isInnocent / canUseKiller / 亡命徒 / 假史蒂夫 / 非教父的 mafia 家族）；
+        //   2) 其中「好人方中立」（isNeutralForInnocent）只有失忆患者(amnesiac)与初学者(initiate)可被招募，
+        //      其余好人方中立职业一律不可。
+        // 若本次抽选出的中立职业中，除领袖外没有任何可招募对象，说明本局领袖必然空放技能，
         // 将其从池中移除，并补抽等量的中立职业（排除领袖），保证中立名额数量不变。
         long leaderDrawn = assignedNatures.stream()
                 .filter(r -> r != null && ModRoles.LEADER_ID.equals(r.identifier())).count();
         if (leaderDrawn > 0) {
-            boolean hasOtherNonKillerNeutral = assignedNatures.stream()
+            boolean hasRecruitableNeutral = assignedNatures.stream()
                     .anyMatch(r -> r != null && !ModRoles.LEADER_ID.equals(r.identifier())
-                            && PlayerRoleWeightManager.getRoleType(r) == 2);
-            if (!hasOtherNonKillerNeutral) {
+                            && org.agmas.noellesroles.game.roles.neutral.leader.LeaderFollowerEffects
+                                    .isRecruitableRole(r));
+            if (!hasRecruitableNeutral) {
                 assignedNatures.removeIf(r -> r != null && ModRoles.LEADER_ID.equals(r.identifier()));
                 assignedNatures.addAll(neutralsPool.selectRoles((int) leaderDrawn,
                         r -> r != null && !ModRoles.LEADER_ID.equals(r.identifier())));
@@ -775,6 +792,13 @@ public class SREMurderGameMode extends GameMode {
                     Integer balanceToAdd = GameConstants.getPassiveMoneyTicker().apply(serverWorld.getGameTime());
                     if (balanceToAdd > 0)
                         SREPlayerShopComponent.KEY.get(player).addToBalance(balanceToAdd);
+                }
+                // passive minigame token（被动游戏币收入：每次自然增加 1 枚游戏币）
+                if (gameWorldComponent.canAutoAddMiniGameToken(player)) {
+                    Integer tokensToAdd = GameConstants.getPassiveMiniGameTokenTicker()
+                            .apply(serverWorld.getGameTime());
+                    if (tokensToAdd > 0)
+                        SREPlayerMinigameTaskComponent.KEY.get(player).addTokens(tokensToAdd);
                 }
                 if (gameWorldComponent.isRole(player, TMMRoles.VIGILANTE)
                         && !GameUtils.isPlayerEliminated(player)

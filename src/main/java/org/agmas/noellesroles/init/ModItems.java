@@ -29,6 +29,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.food.Foods;
@@ -89,6 +90,14 @@ public class ModItems {
     public static final Item BONE_BOOK = register(
             new BoneBookItem(new Item.Properties().stacksTo(1)),
             "bone_book", ROLE_ITEMS_GROUP);
+    // 裁决之剑 - 独裁者专属一次性道具：右键尸体选死因与凶手，全对则闪电处决
+    public static final Item JUDGMENT_SWORD = register(
+            new JudgmentSwordItem(new Item.Properties().stacksTo(1)),
+            "judgment_sword", ROLE_ITEMS_GROUP);
+    // 独裁之书 - 独裁者专属一次性道具：猜玩家职业，猜中闪电处决
+    public static final Item DICTATOR_BOOK = register(
+            new DictatorBookItem(new Item.Properties().stacksTo(1)),
+            "dictator_book", ROLE_ITEMS_GROUP);
     public static final Item REASONER_COMPASS = register(
             new ReasonerCompassItem(new Item.Properties().stacksTo(1)),
             "reasoner_compass", ROLE_ITEMS_GROUP);
@@ -522,6 +531,25 @@ public class ModItems {
             new MushroomEssenceItem(new Item.Properties().stacksTo(16), true),
             "poisonous_mushroom_essence", ROLE_ITEMS_GROUP);
 
+    /**
+     * 康复药丸（护士体系）
+     * - 食用后将自己的虚拟血量条补满
+     */
+    public static final Item RECOVERY_PILL = register(
+            new RecoveryPillItem((new Item.Properties()).stacksTo(16)
+                    .food((new FoodProperties.Builder()).nutrition(1).saturationModifier(0.1F)
+                            .alwaysEdible().build())),
+            "recovery_pill", ROLE_ITEMS_GROUP);
+
+    /**
+     * 康复试剂（护士体系）
+     * - 可投掷物品
+     * - 丢出后落地使半径4格内的玩家获得虚拟血量恢复效果30秒
+     */
+    public static final Item RECOVERY_REAGENT = register(
+            new RecoveryReagentItem(new Item.Properties().stacksTo(16)),
+            "recovery_reagent", ROLE_ITEMS_GROUP);
+
     /** 特码头死后掉落的西红柿：Q 键可丢得很远，砸中玩家会糊满番茄酱 */
     public static final Item TOMATO = register(
             new TomatoItem(new Item.Properties().stacksTo(1)),
@@ -893,6 +921,13 @@ public class ModItems {
     public static final Item THROWING_AXE = register(
             new ThrowingAxeItem((new Item.Properties()).stacksTo(1)), "throwing_axe",
             WEAPONS_GROUP);
+    /**
+     * 飞斧唯一的死亡原因（与飞斧物品注册 id 一致）。
+     *
+     * <p>飞斧实体命中时优先用自身物品栈的注册 id 作为死因，物品栈为空时回退到这里；
+     * 两者同为 {@code noellesroles:throwing_axe}，不再存在 {@code throwing_axe_hit}。
+     */
+    public static final ResourceLocation THROWING_AXE_DEATH_REASON = Noellesroles.id("throwing_axe");
 
     // 竹子 - 蓄力投掷，途中最多挂上 2 名玩家，从发射起 10 秒后消失
     public static final Item BAMBOO = register(
@@ -915,7 +950,7 @@ public class ModItems {
     public static final Item MINI_BAGUALU = register(
             new MinibagualuItem((new Item.Properties()).stacksTo(1).durability(1)), "mini_bagualu",
             WEAPONS_GROUP);
-    // ==================== Dream（梦魇）专属 ====================
+    // ==================== Dream（Dream）专属 ====================
     /**
      * Dream 的铁斧
      * - 12点耐久，命中消耗1点；商店第二次购买半价
@@ -1003,8 +1038,14 @@ public class ModItems {
     public static final Item ROPE = register(
             new RopeItem(new Item.Properties().stacksTo(1).durability(2)),
             "rope", TOOLS_GROUP);
+    /**
+     * 钳子（滞时鬼初始物品）
+     * - 无耐久，可无限次使用
+     * - 右键摄像头：使其失灵 90 秒
+     * - 每成功破坏一个摄像头，进入 30 秒原版物品冷却
+     */
     public static final Item CAMERA_SHEARS = register(
-            new CameraShearsItem(new Item.Properties().stacksTo(1).durability(3)),
+            new CameraShearsItem(new Item.Properties().stacksTo(1)),
             "camera_shears", TOOLS_GROUP);
     /**
      * 灭火器
@@ -1518,6 +1559,79 @@ public class ModItems {
     public static final Item NETHERITE_SPEAR = register(
             new NetheriteSpearItem(NetheriteSpearItem.createProperties()),
             "netherite_spear", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+
+    /**
+     * 武士刀（三连招近战武器）
+     * - 左键三连招：横扫（6 虚拟伤害 + 0.5 格击退）→ 突刺（7 虚拟伤害 + 2 格突进位移）→ 劈砍（7 虚拟伤害 + 1.5 格击退），
+     *   实际命中玩家后才推进招式；每招附带 1 点原版伤害作为击退载体
+     * - 右键格挡：可格挡死亡原因同防暴盾牌，前摇 0.4s / 有效 1.2s，命中后衔接为 0 前摇；
+     *   格挡成功 -1 耐久（不低于 1），耐久等于 1 时无法格挡
+     * - 击杀玩家后进入 10 秒物品冷却；仅限 canUseSpVanillaWeapon 的职业使用
+     */
+    public static final Item KATANA = register(
+            new org.agmas.noellesroles.content.item.KatanaItem(
+                    org.agmas.noellesroles.content.item.KatanaItem.createProperties()),
+            "katana", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+
+    public static final Item STONE_SPEAR = register(
+            new org.agmas.noellesroles.game.command_block.item.StoneSpearItem(
+                    org.agmas.noellesroles.game.command_block.item.StoneSpearItem.properties()),
+            "stone_spear", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item THROW_STONE = register(
+            new org.agmas.noellesroles.game.command_block.item.ThrowStoneItem(new Item.Properties().stacksTo(16)),
+            "throw_stone", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item SUMMON_ROLLING_STONE = register(
+            new org.agmas.noellesroles.game.command_block.item.SummonRollingStoneItem(new Item.Properties().stacksTo(16)),
+            "summon_rolling_stone", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item HIM_FIREBALL = register(
+            new org.agmas.noellesroles.game.command_block.item.HimFireballItem(new Item.Properties().stacksTo(1)),
+            "him_fireball", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item HIM_SWORD = register(
+            new org.agmas.noellesroles.game.command_block.item.HimSwordItem(
+                    org.agmas.noellesroles.game.command_block.item.HimSwordItem.properties()),
+            "him_sword", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item ERROR_CORE = register(
+            new org.agmas.noellesroles.game.command_block.item.ErrorCoreItem(new Item.Properties().stacksTo(1)),
+            "error_core", ROLE_ITEMS_GROUP);
+    public static final Item PEEL_BLADE = register(
+            new org.agmas.noellesroles.game.command_block.item.PeelBladeItem(new Item.Properties().stacksTo(1)),
+            "peel_blade", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item VOID_STEP = register(
+            new org.agmas.noellesroles.game.command_block.item.VoidStepItem(new Item.Properties().stacksTo(1)),
+            "void_step", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item FARLANDS_RIFT = register(
+            new org.agmas.noellesroles.game.command_block.item.FarlandsRiftItem(new Item.Properties().stacksTo(1)),
+            "farlands_rift", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item EYE_NEEDLE = register(
+            new org.agmas.noellesroles.game.command_block.item.EyeNeedleItem(new Item.Properties().stacksTo(1)),
+            "eye_needle", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item THREAD_SPOOL = register(
+            new org.agmas.noellesroles.game.command_block.item.ThreadSpoolItem(new Item.Properties().stacksTo(1)),
+            "thread_spool", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item THREAD_BLADE = register(
+            new org.agmas.noellesroles.game.command_block.item.ThreadBladeItem(new Item.Properties().stacksTo(1)),
+            "thread_blade", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item PAPER_CUT = register(
+            new org.agmas.noellesroles.game.command_block.item.PaperCutItem(new Item.Properties().stacksTo(1)),
+            "paper_cut", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item FOG_BELL = register(
+            new org.agmas.noellesroles.game.command_block.item.FogBellItem(new Item.Properties().stacksTo(1)),
+            "fog_bell", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item FOG_BLADE = register(
+            new org.agmas.noellesroles.game.command_block.item.FogBladeItem(new Item.Properties().stacksTo(1)),
+            "fog_blade", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item CLOCK_HAMMER = register(
+            new org.agmas.noellesroles.game.command_block.item.ClockHammerItem(new Item.Properties().stacksTo(1)),
+            "clock_hammer", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item SECOND_NEEDLE = register(
+            new org.agmas.noellesroles.game.command_block.item.SecondNeedleItem(new Item.Properties().stacksTo(1)),
+            "second_needle", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item LAMP_OIL = register(
+            new org.agmas.noellesroles.game.command_block.item.LampOilItem(new Item.Properties().stacksTo(1)),
+            "lamp_oil", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item CANDLE_SNIP = register(
+            new org.agmas.noellesroles.game.command_block.item.CandleSnipItem(new Item.Properties().stacksTo(1)),
+            "candle_snip", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
 
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);

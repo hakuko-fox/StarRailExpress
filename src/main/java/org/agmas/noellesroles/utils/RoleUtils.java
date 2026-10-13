@@ -72,6 +72,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role_data.innocence.DisabledPatientRoleData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -153,7 +154,8 @@ public class RoleUtils extends MCItemsUtils {
     /**
      * 清除玩家身上的所有药水效果。
      *
-     * <p>不要直接调用 {@code LivingEntity#removeAllEffects()}：原版实现在迭代
+     * <p>
+     * 不要直接调用 {@code LivingEntity#removeAllEffects()}：原版实现在迭代
      * {@code activeEffects} 这个 {@link java.util.HashMap} 的 {@code values()} 时回调
      * {@code onEffectRemoved}，而 {@code ServerPlayerEntityMixin} 会在这里派发
      * {@code SimpleMobEffect#onEffectEnded}。只要该回调顺带移除了<b>另一个</b>效果
@@ -161,7 +163,8 @@ public class RoleUtils extends MCItemsUtils {
      * {@code USED_BANED}），HashMap 的 modCount 就会变化，下一次 {@code Iterator#remove()}
      * 直接抛 {@link java.util.ConcurrentModificationException}，并在死亡流程中把服务器线程打崩。
      *
-     * <p>这里改为先对效果列表做快照，再按 {@link LivingEntity#removeEffect(net.minecraft.core.Holder)}
+     * <p>
+     * 这里改为先对效果列表做快照，再按 {@link LivingEntity#removeEffect(net.minecraft.core.Holder)}
      * 逐个移除：该重载不会触发 {@code onEffectRemoved}，因此回调期间对效果表的任何增删都不会
      * 再与迭代器冲突；快照中的效果若已被回调移除，用 {@code getEffect} 跳过即可，语义与原版一致。
      */
@@ -408,6 +411,7 @@ public class RoleUtils extends MCItemsUtils {
                             player.getInventory().removeItem(itemStack);
                         });
             }
+            DisabledPatientRoleData.clearGrantedEffects(player);
             if (!noEventCall)
                 ((ModdedRoleRemoved) ModdedRoleRemoved.EVENT.invoker()).removeModdedRole(player, oldRole);
         }
@@ -436,14 +440,17 @@ public class RoleUtils extends MCItemsUtils {
         }
         // 触发事件
         if (player instanceof ServerPlayer sp) {
-            if (!noEventCall)
+            if (!noEventCall) {
                 (ModdedRoleAssigned.EVENT.invoker()).assignModdedRole(sp, role);
-            else {
+            } else {
                 // 还是需要初始化一下RoleData类
                 {
                     final var cca = SRERoleDataPlayerComponent.KEY.get(player);
                     cca.init();
                 }
+            }
+            if (GameUtils.shouldGiveSpectatorsDeathPenalty(player)) {
+                GameUtils.pendingReJudgeSpectatorsPenalty();
             }
         }
     }
@@ -826,7 +833,8 @@ public class RoleUtils extends MCItemsUtils {
         if (roleType == 1) {
             teamName = Component.translatable("display.type.role.innocent").withStyle(ChatFormatting.GREEN);
         } else if (roleType == 2) {
-            teamName = Component.translatable("display.type.role.neutral").withStyle(ChatFormatting.YELLOW);
+            // 仅有 int 阵营号、无法细分时退回「中立阵营」（细分由 getNeutralSubTeamName 处理）
+            teamName = Component.translatable("display.type.role.neutral_all").withStyle(ChatFormatting.YELLOW);
         } else if (roleType == 3) {
             teamName = Component.translatable("display.type.role.neutral_for_killer")
                     .withStyle(ChatFormatting.LIGHT_PURPLE);
@@ -843,7 +851,7 @@ public class RoleUtils extends MCItemsUtils {
         if (roleType == 1) {
             teamName = Component.translatable("display.type.role.innocent");
         } else if (roleType == 2) {
-            teamName = Component.translatable("display.type.role.neutral");
+            teamName = Component.translatable("display.type.role.neutral_all");
         } else if (roleType == 3) {
             teamName = Component.translatable("display.type.role.neutral_for_killer");
         } else if (roleType == 4) {
@@ -863,15 +871,40 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static Component getRoleTypeName(SRERole role) {
+        // 优先按阵营枚举取中立细分名
+        Component sub = getNeutralSubTeamName(role, true);
+        if (sub != null) {
+            return sub;
+        }
         return switch (PlayerRoleWeightManager.getRoleType(role)) {
             case 0, 1 -> Component.translatable("display.type.role.innocent").withStyle(ChatFormatting.GREEN);
-            case 2 -> Component.translatable("display.type.role.neutral").withStyle(ChatFormatting.YELLOW);
+            case 2 -> Component.translatable("display.type.role.neutral_all").withStyle(ChatFormatting.YELLOW);
             case 3 -> Component.translatable("display.type.role.neutral_for_killer")
                     .withStyle(ChatFormatting.LIGHT_PURPLE);
             case 4 -> Component.translatable("display.type.role.killer").withStyle(ChatFormatting.RED);
             case 5 -> Component.translatable("display.type.role.vigilante").withStyle(ChatFormatting.AQUA);
             default -> Component.literal("UNKNOWN");
         };
+    }
+
+    /**
+     * 取该职业「最具体的中立细分」阵营名（偏好中立 / 杀手方中立 / 事件中立 / 特殊中立 / 独立胜利中立）。
+     * 不属于任何中立细分时返回 {@code null}，调用方再退回按 roleType 的粗略阵营名。
+     *
+     * @param role      职业
+     * @param withColor 是否附带阵营色调
+     * @return 细分阵营名；非中立细分则为 null
+     */
+    private static Component getNeutralSubTeamName(SRERole role, boolean withColor) {
+        if (role == null) {
+            return null;
+        }
+        // 名称与颜色统一由阵营枚举 RoleTeam 提供（唯一权威来源）
+        io.wifi.starrailexpress.api.RoleTeam sub = io.wifi.starrailexpress.api.RoleTeam.getNeutralSubTeam(role);
+        if (sub == null) {
+            return null;
+        }
+        return withColor ? sub.displayName() : Component.translatable(sub.displayKey());
     }
 
     public static Component getTeamNameWithoutColor(ResourceLocation roleId) {
@@ -887,11 +920,21 @@ public class RoleUtils extends MCItemsUtils {
     }
 
     public static Component getTeamNameWithoutColor(SRERole role) {
+        // 优先按阵营枚举取中立细分名，让轮选 / 志愿海选等界面能区分
+        // 偏好中立、特殊中立、事件中立、独立胜利中立
+        Component sub = getNeutralSubTeamName(role, false);
+        if (sub != null) {
+            return sub;
+        }
         int roleType = PlayerRoleWeightManager.getRoleType(role);
         return getTeamNameWithoutColor(roleType);
     }
 
     public static Component getTeamName(SRERole role) {
+        Component sub = getNeutralSubTeamName(role, true);
+        if (sub != null) {
+            return sub;
+        }
         int roleType = PlayerRoleWeightManager.getRoleType(role);
         return getTeamName(roleType);
     }

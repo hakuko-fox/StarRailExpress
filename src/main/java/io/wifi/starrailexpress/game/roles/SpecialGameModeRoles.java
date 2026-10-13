@@ -45,7 +45,9 @@ public class SpecialGameModeRoles {
       "inner.other_gamemode")
       .setCanPickUpRevolver(false).setNeutrals(true).setNeutralForKiller(false)
       .setCanBeRandomedByOtherRoles(false)
-      .setDefaultMax(0).setOtherModeRole(true);
+      .setDefaultMax(0).setOtherModeRole(true)
+      // 特殊中立（职业待定）
+      .setSpecialNeutral(true);
 
   /**
    * 职业：超级亡命徒

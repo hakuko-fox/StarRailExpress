@@ -18,7 +18,6 @@ package io.wifi.starrailexpress.customitem;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.cca.CustomItemCooldownComponent;
 import io.wifi.starrailexpress.cca.CustomItemHitMarkerComponent;
 import io.wifi.starrailexpress.cca.ExtraSlotComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -65,6 +64,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.food.FoodProperties;
@@ -84,6 +84,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -189,7 +190,7 @@ public final class CustomItemRuntime {
             for (ServerPlayer online : serverLevel.getServer().getPlayerList().getPlayers()) {
                 CustomItemHitMarkerComponent.KEY.get(online).clearAllMarkers();
                 // 冷却同样要清：否则上一局残留的冷却会被带进新的一局
-                CustomItemCooldownComponent.KEY.get(online).clearAllCooldowns();
+                clearCooldowns(online);
             }
             AUTO_FIRES.clear();
             CHARGE_FIRED.clear();
@@ -199,7 +200,7 @@ public final class CustomItemRuntime {
         // 游戏结束时清空所有在线玩家的自定义物品冷却（冷却过的物品不该把冷却带出本局）
         OnGameEnd.EVENT.register((serverLevel, gameWorldComponent) -> {
             for (ServerPlayer online : serverLevel.getServer().getPlayerList().getPlayers()) {
-                CustomItemCooldownComponent.KEY.get(online).clearAllCooldowns();
+                clearCooldowns(online);
             }
         });
 
@@ -491,7 +492,8 @@ public final class CustomItemRuntime {
             }
             // 空放走「独立冷却」：与命中后的冷却无关，默认 0 = 空放不进入冷却
             applyCooldown(player, stack, data.emptyFireCooldownTicks);
-            consumeItem(player, stack, data.consumeItem);
+            // 空放是否消耗单独区分（consumeOnEmptyFire，默认是 = 与命中一致按 consumeItem 消耗）
+            consumeItem(player, stack, data.consumeItem && data.consumeOnEmptyFire);
             return true;
         }
 
@@ -824,6 +826,19 @@ public final class CustomItemRuntime {
             victim = target;
             handleGunHit(shooter, victim, stack, data, autoMode);
             applyDistanceRules(shooter, victim, data);
+        } else if (hit instanceof EntityHitResult dummyHit
+                && dummyHit.getEntity() instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                && dummy.canReceiveHits()) {
+            if (data.knockbackOnHit) {
+                dummy.invulnerableTime = 0;
+                dummy.hurt(dummy.damageSources().playerAttack(shooter), 1.0F);
+            }
+            if (data.lethalOnRayHit || data.lethalOnFinal) {
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, shooter,
+                        parseDeathReason(data.lethalDeathReason, GameConstants.DeathReasons.REVOLVER));
+            } else {
+                dummy.showHit(shooter);
+            }
         }
 
         if (!autoMode) {
@@ -1021,9 +1036,11 @@ public final class CustomItemRuntime {
 
         DreamHealthComponent health = DreamHealthComponent.KEY.get(target);
         long now = target.level().getGameTime();
+        // ignoreVirtualShield 只绕过虚拟护盾，普通护盾仍按原有死亡管线结算
         boolean damaged = health.hurt(attacker, data.virtualDamage,
                 parseDeathReason(data.killDeathReason,
-                        io.wifi.starrailexpress.game.GameConstants.DeathReasons.GENERAL_ATTACK));
+                        io.wifi.starrailexpress.game.GameConstants.DeathReasons.GENERAL_ATTACK),
+                data.ignoreVirtualShield, false);
 
         // 攻击者 / 被攻击者指令
         CustomItemLoader.executeCommands(data.attackerHitCommands, attacker);
@@ -1263,6 +1280,11 @@ public final class CustomItemRuntime {
 
         applyCuffEffects(targetPlayer, data);
         applyCuffRestriction(targetPlayer, data);
+
+        // 铐上瞬间立即执行一轮「被拷住玩家执行的指令」：
+        // 定时结算（tickCuffs）按 cuffCommandIntervalTicks 周期触发，
+        // 不立即执行的话，铐上后最长要等一个完整周期（周期配得大时观感就是「不执行」）
+        CustomItemLoader.executeCommands(data.cuffCommands, targetPlayer, user);
 
         user.displayClientMessage(
                 Component.translatable("sre.custom_item.cuff.put", targetPlayer.getName().getString()), true);
@@ -1515,50 +1537,61 @@ public final class CustomItemRuntime {
      * 创造模式的真实玩家仍然可被命中（保持上面的口径）。
      */
     private static boolean isValidTarget(ServerPlayer shooter, Entity entity) {
+        if (entity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy) {
+            return dummy.canReceiveHits();
+        }
         return entity instanceof ServerPlayer player && player != shooter && !player.isSpectator();
     }
 
     /**
-     * 让某件自定义物品进入冷却。
+     * 让某件自定义物品进入冷却（<b>冷却状态的唯一入口</b>）。
      *
      * <p>
-     * 所有自定义物品共用同一个注册物品，用原版 {@code ItemCooldowns}（按 {@code Item} 记）会让
-     * 不同自定义物品互相顶掉冷却，所以这里按「玩家 + 物品 id」记在
-     * {@link CustomItemCooldownComponent} 上；只有拿不到配置的异常数据才退回原版冷却。
+     * 冷却条目写在<b>原版</b> {@link net.minecraft.world.item.ItemCooldowns} 里，
+     * 但键是这件物品<b>专属</b>的（见 {@link CustomItemCooldownKeys}）：
+     * 所有自定义列车物品共用同一个注册物品，若直接用 {@code stack.getItem()} 当键，
+     * A 枪进入冷却会把 B 刀、绷带、手铐一起顶掉。换成按自定义物品 id 分配的独立键后，
+     * 不同自定义物品各有各的冷却，而计时、剩余比例、过期清理、时间静止 / 时间回溯
+     * 全部仍是原版那一套逻辑。
      */
-    private static void applyCooldown(ServerPlayer player, ItemStack stack, int ticks) {
-        if (ticks <= 0) {
+    public static void applyCooldown(ServerPlayer player, ItemStack stack, int ticks) {
+        if (player == null || stack == null || ticks <= 0) {
             return;
         }
-        CustomItemData data = CustomItemLoader.getData(stack);
-        if (data == null || data.id == null || data.id.isEmpty()) {
-            player.getCooldowns().addCooldown(stack.getItem(), ticks);
+        net.minecraft.world.item.Item key = CustomItemCooldownKeys.keyFor(stack);
+        if (key == null) {
             return;
         }
-        CustomItemCooldownComponent.KEY.get(player).setCooldown(data.id, ticks);
+        player.getCooldowns().addCooldown(key, ticks);
+        syncCooldown(player, List.of(key), ticks);
     }
 
-    /** 该玩家手上这件自定义物品是否在冷却中（按物品 id 查，不共用原版冷却）。 */
+    public static void applyCooldown(ServerPlayer player, String customId, int ticks) {
+        if (player == null || customId == null || customId.isBlank() || ticks <= 0) {
+            return;
+        }
+        net.minecraft.world.item.Item key = CustomItemCooldownKeys.keyOf(customId);
+        if (key == null) {
+            return;
+        }
+        player.getCooldowns().addCooldown(key, ticks);
+        syncCooldown(player, List.of(key), ticks);
+    }
+    /** 该玩家手上这件自定义物品是否在冷却中（走原版 ItemCooldowns，按物品 id 独立记）。 */
     public static boolean isOnCooldown(Player player, ItemStack stack) {
         if (player == null || stack == null || stack.isEmpty()) {
             return false;
         }
-        CustomItemData data = CustomItemLoader.getData(stack);
-        if (data == null || data.id == null || data.id.isEmpty()) {
-            return player.getCooldowns().isOnCooldown(stack.getItem());
-        }
-        return CustomItemCooldownComponent.KEY.get(player).isOnCooldown(data.id);
+        net.minecraft.world.item.Item key = CustomItemCooldownKeys.keyFor(stack);
+        return key != null && player.getCooldowns().isOnCooldown(key);
     }
 
     /**
-     * 开局安全时间：把「全部」自定义物品都按物品 id 压上冷却。
+     * 开局安全时间：把「全部」自定义物品都压上冷却。
      *
      * <p>
-     * 所有自定义物品共用同一个注册物品（{@code starrailexpress:custom_item}），
-     * {@link GameUtils#addItemCooldowns} 加的原版冷却是按 {@link net.minecraft.world.item.Item} 记的，
-     * 而 {@link #isOnCooldown} 对已登记的自定义物品只认 {@link CustomItemCooldownComponent} 的
-     * 「玩家 + 物品 id」冷却，于是安全时间对它们形同虚设。这里改成按 id 压冷却：
-     * 安全时间内左键 / 右键都无法使用；又因为按 id 记，安全时间内新获得的同 id 物品也一并处于冷却。
+     * 按自定义物品 id 逐个压，所以安全时间内左键 / 右键都无法使用，
+     * 且安全时间内新获得的同 id 物品也一并处于冷却。
      *
      * @param ticks 冷却时长（tick），与安全时间一致
      */
@@ -1566,19 +1599,65 @@ public final class CustomItemRuntime {
         if (player == null || ticks <= 0) {
             return;
         }
-        List<CustomItemData> all = CustomItemLoader.getAllData();
-        if (all.isEmpty()) {
-            return;
-        }
-        List<String> ids = new ArrayList<>(all.size());
-        for (CustomItemData data : all) {
-            if (data != null && data.id != null && !data.id.isEmpty()) {
-                ids.add(data.id);
+        List<net.minecraft.world.item.Item> keys = new ArrayList<>();
+        for (CustomItemData data : CustomItemLoader.getAllData()) {
+            if (data == null || data.id == null || data.id.isEmpty()) {
+                continue;
+            }
+            net.minecraft.world.item.Item key = CustomItemCooldownKeys.keyOf(data.id);
+            if (key != null && !keys.contains(key)) {
+                keys.add(key);
             }
         }
-        if (!ids.isEmpty()) {
-            CustomItemCooldownComponent.KEY.get(player).setCooldowns(ids, ticks);
+        if (keys.isEmpty()) {
+            return;
         }
+        for (net.minecraft.world.item.Item key : keys) {
+            player.getCooldowns().addCooldown(key, ticks);
+        }
+        // 一次包同步全部，避免逐件发包
+        syncCooldown(player, keys, ticks);
+    }
+
+    /** 清空该玩家的全部自定义物品冷却（每局开始 / 结束时调用）。 */
+    public static void clearCooldowns(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        List<net.minecraft.world.item.Item> keys = new ArrayList<>();
+        for (CustomItemData data : CustomItemLoader.getAllData()) {
+            if (data == null || data.id == null || data.id.isEmpty()) {
+                continue;
+            }
+            net.minecraft.world.item.Item key = CustomItemCooldownKeys.keyOf(data.id);
+            if (key != null && player.getCooldowns().cooldowns.containsKey(key) && !keys.contains(key)) {
+                keys.add(key);
+            }
+        }
+        if (keys.isEmpty()) {
+            return;
+        }
+        for (net.minecraft.world.item.Item key : keys) {
+            player.getCooldowns().removeCooldown(key);
+        }
+        // ticks = 0 → 让客户端也立刻解除（否则要等本地表自然过期才消）
+        syncCooldown(player, keys, 0);
+    }
+
+    /** 把原版冷却表里的这些键同步给客户端（键是未注册物品，原版包发不了，只能自己带 id）。 */
+    private static void syncCooldown(ServerPlayer player, Collection<net.minecraft.world.item.Item> keys, int ticks) {
+        List<String> ids = new ArrayList<>(keys.size());
+        for (net.minecraft.world.item.Item key : keys) {
+            String id = CustomItemCooldownKeys.idOf(key);
+            if (id != null) {
+                ids.add(id);
+            }
+        }
+        if (ids.isEmpty()) {
+            return;
+        }
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                io.wifi.starrailexpress.network.CustomItemCooldownS2CPayload.of(ids, ticks));
     }
 
     private static void consumeItem(ServerPlayer player, ItemStack stack, boolean consume) {
@@ -1681,8 +1760,8 @@ public final class CustomItemRuntime {
         return rules == null ? List.of() : rules;
     }
 
-    /** 对目标施加一批药水效果（投掷物触发 / 区域触发共用）。 */
-    public static void applyEffects(ServerPlayer target, List<CustomItemData.EffectData> effects) {
+     /** 对目标施加一批药水效果（投掷物触发 / 区域触发共用）。玩家和列车假人都能吃。 */
+     public static void applyEffects(LivingEntity target, List<CustomItemData.EffectData> effects) {
         for (CustomItemData.EffectData effect : effectList(effects)) {
             Holder<MobEffect> effectHolder = resolveEffect(effect.effectId);
             if (effectHolder == null) {

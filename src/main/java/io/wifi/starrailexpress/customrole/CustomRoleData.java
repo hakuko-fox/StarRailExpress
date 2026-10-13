@@ -106,6 +106,14 @@ public class CustomRoleData {
     @SerializedName("canAutoAddMoney")
     public Boolean canAutoAddMoney = null;
 
+    /** 是否拥有被动游戏币收入（自然增长游戏币），对应 {@code SRERole#setCanAutoAddMiniGameToken}。 */
+    @SerializedName("canAutoAddMiniGameToken")
+    public Boolean canAutoAddMiniGameToken = null;
+
+    /** 是否可攀爬（爬墙），对应 {@code SRERole#setCanClimbWalls}。 */
+    @SerializedName("canClimbWalls")
+    public Boolean canClimbWalls = null;
+
     @SerializedName("canBeRandomedByOtherRoles")
     public boolean canBeRandomedByOtherRoles = true;
 
@@ -127,6 +135,13 @@ public class CustomRoleData {
     // ============ 职业通用属性补全（原 srerole 暴露、工具此前缺失） ============
     @SerializedName("neutralForInnocent")
     public Boolean neutralForInnocent = null;
+
+    /**
+     * 是否为「特殊中立」：既不属于偏好中立、也不是杀手方中立 / 事件中立的中立归类。
+     * 默认 false（与角色默认的「未标记特殊中立」一致）。
+     */
+    @SerializedName("specialNeutral")
+    public Boolean specialNeutral = false;
 
     @SerializedName("canSeeBodyName")
     public Boolean canSeeBodyName = null;
@@ -200,11 +215,55 @@ public class CustomRoleData {
     @SerializedName("customWinLastWithRoles")
     public List<String> customWinLastWithRoles = new ArrayList<>();
 
+    /**
+     * 「只剩自己和指定职业时获胜」中指定职业是否需要存活。默认 {@code true}（需要存活，原行为）。
+     * 设为 {@code false} 时指定职业无需存活——指定职业全灭、场上只剩自己时也能取得该独立胜利。
+     */
+    @SerializedName("customWinLastWithRolesNeedAlive")
+    public boolean customWinLastWithRolesNeedAlive = true;
+
     @SerializedName("customWinTagSleep")
     public String customWinTagSleep = "";
 
     @SerializedName("customWinHeldItem")
     public String customWinHeldItem = "";
+
+    // ============ 跟随获胜（任何职业均可配置，不要求中立 / 独立胜利中立） ============
+    /** 是否启用跟随获胜。启用后结算时按跟随条件与跟随目标改判个人胜负。 */
+    @SerializedName("enableFollowWin")
+    public boolean enableFollowWin = false;
+
+    /**
+     * 跟随条件：
+     * <ul>
+     * <li>{@code UNCONDITIONAL} 无条件跟随（默认）</li>
+     * <li>{@code SURVIVE_TO_END} 存活到最后：结算时该职业玩家必须存活，否则失败</li>
+     * <li>{@code NEAR_FACTION} 在该阵营玩家周围：周围 6 格内需有该阵营的存活玩家（黑白同款条件）</li>
+     * </ul>
+     */
+    @SerializedName("followWinCondition")
+    public String followWinCondition = "UNCONDITIONAL";
+
+    /**
+     * 跟随阵营：
+     * <ul>
+     * <li>{@code NONE} 不设置（默认）</li>
+     * <li>{@code FINAL_EXCL_NEUTRAL} 最终结算阵营（不含中立）：平民获胜 / 时间耗尽 / 杀手获胜</li>
+     * <li>{@code FINAL_INCL_NEUTRAL} 最终结算阵营（含中立）：任何职业胜利，只要还活着就算胜利</li>
+     * <li>{@code INNOCENT_ONLY} 仅平民：仅跟随平民获胜和时间耗尽获胜</li>
+     * <li>{@code KILLER_ONLY} 仅杀手：仅跟随杀手获胜</li>
+     * </ul>
+     */
+    @SerializedName("followWinFaction")
+    public String followWinFaction = "NONE";
+
+    /** 跟随特定职业：填职业 id（支持 {@code 命名空间:路径} 或仅路径），该职业获胜则跟随获胜。为空不启用。 */
+    @SerializedName("followWinRoleId")
+    public String followWinRoleId = "";
+
+    /** 跟随带特定修饰符的玩家获胜：填修饰符 id，带有该修饰符的玩家获胜则跟随获胜。为空不启用。 */
+    @SerializedName("followWinModifierId")
+    public String followWinModifierId = "";
 
     // ============ 职业能力选项 ============
     @SerializedName("initialItems")
@@ -400,11 +459,32 @@ public class CustomRoleData {
     @SerializedName("fallDamageImmune")
     public Boolean fallDamageImmune = null; // 免疫摔落伤害
 
+    /**
+     * 该职业专属的摔落致死高度（格）：摔落距离达到该值即判死；{@code -1} = 跟随地图的
+     * {@code fallToDeathHeight} 设置。对应 {@code SRERole#setFallToDeathHeightOverride}。
+     */
+    @SerializedName("fallToDeathHeight")
+    public int fallToDeathHeight = -1;
+
     @SerializedName("darknessImmune")
     public Boolean darknessImmune = null; // 免疫黑暗死亡
 
     @SerializedName("environmentalImmune")
     public Boolean environmentalImmune = null; // 免疫环境致死（窒息/冰冻/干渴等）
+
+    // ============ 开局入场提示 ============
+    /**
+     * 开局入场提示文本：游戏开始时向持有该自定义职业的玩家显示。为空（默认）则不显示任何提示。
+     */
+    @SerializedName("entranceHint")
+    public String entranceHint = "";
+
+    /**
+     * 开局入场提示的文本颜色（{@code ChatFormatting} 枚举名，如 {@code YELLOW}/{@code RED}）。
+     * 为空或非法时回退为 {@code YELLOW}（与原版入场提示一致）。
+     */
+    @SerializedName("entranceHintColor")
+    public String entranceHintColor = "YELLOW";
 
     // ============ 经济 / 金币 ============
     @SerializedName("initialCoinCount")
@@ -554,9 +634,16 @@ public class CustomRoleData {
 
     public static class ShopEntryData {
         /**
-         * 商品类型：{@code item} 物品（id 先按自定义列车物品解析，找不到再当原版物品；旧配置里的
-         * {@code custom_item} 等价于它）/ {@code psycho} 偏执模式 / {@code blackout} 停电 /
-         * {@code monitor_fail} 监控失效 / {@code custom} 自定义（名称+图标+指令）。
+         * 商品类型：
+         * <ul>
+         * <li>{@code item} 物品（id 先按自定义列车物品解析，找不到再当原版物品；旧配置里的
+         * {@code custom_item} 等价于它）</li>
+         * <li>{@code psycho} 疯狂模式 / {@code blackout} 停电 / {@code monitor_fail} 监控失灵 /
+         * {@code lightup} 开灯 / {@code monitor_recovery} 监控恢复（后两者的行为与钳工商店一致）</li>
+         * <li>{@code custom} 自定义（名称+图标+指令）</li>
+         * <li>{@code killer_shop} 通用杀手商店：原样展开通用杀手商店的全部商品，无需再填价格/货币/冷却</li>
+         * <li>{@code knife} 耐久刀：与通用杀手商店的刀一致（有耐久、购买后降价）</li>
+         * </ul>
          */
         @SerializedName("type")
         public String type = "item";
@@ -564,14 +651,63 @@ public class CustomRoleData {
         @SerializedName("itemId")
         public String itemId = "";
 
+        /**
+         * 价格。<ul>
+         * <li>{@code knife}（耐久刀）下 {@code -1} = 跟随配置里的刀价；</li>
+         * <li>其它类型下 {@code 0} 起填，不允许负数。</li>
+         * </ul>
+         */
         @SerializedName("price")
         public int price = 0;
 
+        /**
+         * 该商品的货币类型（参考网警商店）：{@code money} 金币（默认）/ {@code minigame_token} 游戏币。
+         * 见 {@code ShopEntry.Currency#fromSerializedName}。
+         */
+        @SerializedName("currency")
+        public String currency = "money";
+
+        /**
+         * 购买冷却（秒）：购买成功后给该商品挂的原版物品冷却。
+         * <ul>
+         * <li>{@code -1} = 使用该商品类型的默认冷却（当前配置值，见
+         * {@code CustomRoleLoader#defaultCooldownSeconds}）；</li>
+         * <li>对 {@code psycho} / {@code blackout} / {@code monitor_fail} / {@code lightup} /
+         * {@code monitor_recovery} 有意义；{@code item} / {@code custom} 下 {@code 0} 表示无冷却。</li>
+         * </ul>
+         */
         @SerializedName("cooldownSeconds")
         public int cooldownSeconds = 0;
 
+        /**
+         * 是否允许重复购买（{@code item} / {@code knife} 专用）：false 时背包/快捷栏里已有该商品就拒绝购买。
+         */
         @SerializedName("allowDuplicate")
-        public boolean allowDuplicate = true; // item类型专用：是否允许快捷栏已有该物品时继续购买
+        public boolean allowDuplicate = true;
+
+        /**
+         * 折扣模式：{@code none} 无折扣（默认）/ {@code raise} 每次购买后涨价 /
+         * {@code lower} 每次购买后降价。金额见 {@link #discountAmount}。
+         */
+        @SerializedName("discountMode")
+        public String discountMode = "none";
+
+        /**
+         * 每次购买后涨价/降价的金额（{@link #discountMode} 非 {@code none} 时生效）。
+         * <ul>
+         * <li>涨价：单次增量需保证「价格 + 增量」不超出 int 上限；</li>
+         * <li>降价：单次增量不超过商品本身价格（商品最低降到 0）。</li>
+         * </ul>
+         */
+        @SerializedName("discountAmount")
+        public int discountAmount = 0;
+
+        /**
+         * 价格变动次数：购买多少次之后价格不再变动（{@code "*"} = 不受限制，默认）。
+         * 仅 {@link #discountMode} 非 {@code none} 时生效。
+         */
+        @SerializedName("priceChangeCount")
+        public String priceChangeCount = "*";
 
         // 自定义类型专用
         @SerializedName("displayName")

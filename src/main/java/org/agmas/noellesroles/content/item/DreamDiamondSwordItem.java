@@ -36,6 +36,7 @@ import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
 import io.wifi.starrailexpress.game.GameConstants;
 import org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent;
+import org.agmas.noellesroles.katana.KatanaHandler;
 
 import java.util.List;
 
@@ -124,6 +125,11 @@ public class DreamDiamondSwordItem extends SwordItem implements SREItemPropertie
                     .withStyle(ChatFormatting.RED), true);
             return false;
         }
+        // 格挡判定：武士刀格挡有效窗口优先，其次防暴盾牌
+        if (KatanaHandler.tryBlockAttack(target, attacker)
+                || RiotShieldHandler.tryBlockAttack(target, attacker)) {
+            return false;
+        }
 
         // ── 原版伤害公式：属性伤害 × 蓄力缩放 ──
         float damage = (float) attacker.getAttributeValue(Attributes.ATTACK_DAMAGE);
@@ -181,6 +187,8 @@ public class DreamDiamondSwordItem extends SwordItem implements SREItemPropertie
                                 -Math.cos(attacker.getYRot() * (Math.PI / 180.0D)));
                     }
                 }
+                io.wifi.starrailexpress.traindummy.TrainDummyWeapons.sweep(attacker,
+                        target.getBoundingBox().inflate(1.0D, 0.25D, 1.0D), 1, DEATH_REASON);
                 attacker.sweepAttack();
                 serverLevel.playSound(null, attacker.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP,
                         SoundSource.PLAYERS, 1.0F, 1.0F);

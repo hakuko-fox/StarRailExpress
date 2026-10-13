@@ -43,8 +43,11 @@ import org.agmas.noellesroles.content.item.RadioItem;
 import org.agmas.noellesroles.game.roles.innocence.hoan_meirin.HoanMeirinFistPunchHandler;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.init.events.NRDeathEvents;
+import org.agmas.noellesroles.init.events.NRGameStateEvents;
 import org.agmas.noellesroles.packet.NameTagSyncPayload;
 import org.agmas.noellesroles.packet.RefreshDimensionsS2CPacket;
+import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.EntityClearUtils;
 import org.agmas.noellesroles.utils.LocalDateData;
 import org.agmas.noellesroles.utils.MCItemsUtils;
@@ -93,6 +96,7 @@ import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMBlocks;
 import io.wifi.starrailexpress.index.TMMEntities;
 import io.wifi.starrailexpress.index.TMMItems;
+import io.wifi.starrailexpress.index.tag.TMMBlockTags;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.network.MapDepartCancelPayload;
@@ -740,6 +744,13 @@ public class GameUtils {
     public static void addItemCooldowns(ServerLevel world, int time) {
         if (cooldownItems.isEmpty()) {
             BuiltInRegistries.ITEM.forEach(item -> {
+                // starrailexpress:custom_item 是「所有自定义列车物品共用的那一个注册物品」，
+                // 它的冷却键不是它自己，而是每件自定义物品各自专属的键（见 CustomItemCooldownKeys）。
+                // 所以这里必须把它排除，否则原版按 Item 记的冷却会同时点亮玩家身上所有自定义物品，
+                // 表现为「同一件物品出现原版冷却 + 自定义冷却两套状态」。
+                if (item == io.wifi.starrailexpress.index.DevItems.CUSTOM_ITEM) {
+                    return;
+                }
                 if (!(item instanceof LetterItem)) {
                     String namespace = BuiltInRegistries.ITEM.getKey(item).getNamespace();
                     if (namespace.equals(StarRailExpressID.MOD_ID)
@@ -775,10 +786,8 @@ public class GameUtils {
             cooldownItems.forEach(
                     item -> cooldowns.addCooldown(item, time));
 
-            // 自定义列车物品：全都共用同一个注册物品，上面那句按 Item 记的原版冷却会被
-            // CustomItemRuntime.isOnCooldown 忽略（已登记的自定义物品只认「玩家 + 物品 id」的组件冷却）。
-            // 这里把「全部」自定义物品按 id 压上同款冷却：安全时间内左键 / 右键都无法使用，
-            // 且因为按 id 记，安全时间内新获得的同 id 物品也一并处于冷却。
+            // 自定义列车物品：冷却条目同样写在原版 ItemCooldowns 里，但按自定义物品 id 逐个压，
+            // 安全时间内左键 / 右键都无法使用，且 A 物品的冷却不会牵连 B 物品。
             CustomItemRuntime.applySafeTimeCooldown(player, time);
 
             // cooldowns.addCooldown(ModItems.SP_KNIFE, time);
@@ -1366,6 +1375,12 @@ public class GameUtils {
     public static void resetPlayerAfterGame(ServerPlayer player) {
         resetPlayer(player);
 
+        // 局末修饰符由 harpymodloader:end_game 直接清空，绕过了 ModifierRemoved 事件，
+        // 客户端拿不到尺寸刷新包：兔兔万岁变回的兔子玩家结算后视角会一直停在伪装时的高度
+        // （EntityDisguiseEyeHeightMixin 缓存的 eyeHeight 不会重算）。
+        // 服务端 refreshDimensions 已在 resetPlayer 内做过，这里只需补发客户端刷新。
+        ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
+
         ServerPlayNetworking.send(player, new AnnounceEndingPayload());
         player.removeVehicle();
         AreasWorldComponent.PosWithOrientation spawnPos = null;
@@ -1422,6 +1437,28 @@ public class GameUtils {
         killPlayer(victim, spawnBody, killer, deathReason, true);
     }
 
+    /**
+     * 当前正在结算的击杀是否为强制死亡（forcekill）。
+     *
+     * <p>
+     * 整条死亡链（{@code GameMode#killPlayer} 及其 {@code AllowPlayerDeath*} 监听器）都在服务端
+     * 主线程执行，且 {@link #killPlayerOnServerThread} 是唯一入口，所以用静态值 + 进入/退出时
+     * 保存恢复（可重入）即可，不必用 ThreadLocal。
+     */
+    private static boolean forcedDeathInProgress = false;
+
+    /**
+     * 当前正在结算的死亡是否为强制死亡（{@link #forceKillPlayer}）。
+     *
+     * <p>
+     * 只在死亡链内部有意义：强制死亡在 {@code GameMode#killPlayer} 里<b>无论如何都会执行</b>
+     * （监听器返回 false 也挡不住）。因此「要消耗自身资源来抵挡」的监听器（保险、武士刀格挡等）
+     * 必须先查这个标记，否则会出现「提示/回放写着抵挡成功，玩家却照常死亡」的假象。
+     */
+    public static boolean isForcedDeathInProgress() {
+        return forcedDeathInProgress;
+    }
+
     public static void killPlayer(Player victim, boolean spawnBody, @Nullable Player _killer,
             ResourceLocation deathReason, boolean forceDeath) {
         if (victim == null)
@@ -1444,6 +1481,9 @@ public class GameUtils {
         var gameMode = SREGameWorldComponent.KEY.get(victim.level()).getGameMode();
         if (gameMode == null)
             return;
+        // 死亡链期间对外暴露「本次是否强制死亡」；嵌套击杀（死亡链里再触发击杀）时保存并恢复外层值。
+        boolean previousForced = forcedDeathInProgress;
+        forcedDeathInProgress = forceDeath;
         try {
             gameMode.killPlayer(victim, spawnBody, _killer, deathReason, forceDeath);
         } catch (Exception e) {
@@ -1480,6 +1520,8 @@ public class GameUtils {
                     deathReason,
                     forceDeath);
             throw e;
+        } finally {
+            forcedDeathInProgress = previousForced;
         }
     }
 
@@ -1494,6 +1536,17 @@ public class GameUtils {
         if (isPlayerReallyAliveOrDead(p) == SPAliveResult.ALIVE)
             return false;
         return p.isSpectator();
+    }
+
+    public static void reJudgeSpectatorsPenalty(Level world) {
+        if (world.isClientSide)
+            return;
+        NRDeathEvents.reJudgeSpectatorsPenalty(world);
+    }
+
+    public static void pendingReJudgeSpectatorsPenalty() {
+        // 推迟到下一个tick执行
+        NRGameStateEvents.pendingRejudgingSpectatorDeathPeanlty.set(true);
     }
 
     public static boolean isPlayerAliveAndSurvivalIgnoreShitSplit(Player player) {
@@ -1643,6 +1696,47 @@ public class GameUtils {
         return level.players().stream().filter((p) -> isPlayerAliveAndSurvivalIgnoreShitSplit(p)).count();
     }
 
+    /**
+     * 给阴谋家：旁观者死亡惩罚
+     * 
+     * @param player
+     * @return
+     */
+    public static boolean shouldGiveSpectatorsDeathPenalty(Player player) {
+        var gameWorldComponent = SREGameWorldComponent.getInstance(player);
+        if (gameWorldComponent.isRole(player, ModRoles.CONSPIRATOR)
+                // 无我或无妄存活时，与阴谋家一样进入死亡惩罚（视角限制）
+                || gameWorldComponent.isRole(player, ModRoles.ANATMAN)
+                || gameWorldComponent.isRole(player, ModRoles.ASATYA))
+            return true;
+        return false;
+    }
+
+    /**
+     * 永久死亡惩罚（旁观者视角限制）该用哪条提示文案的翻译键。
+     *
+     * <p>
+     * 阴谋家 与 无我 / 无妄 共用同一套惩罚（见 {@link #shouldGiveSpectatorsDeathPenalty}），
+     * 但提示必须分开：无我 / 无妄 存活时场上可能根本没有阴谋家，此时说「由于阴谋家存活」会让
+     * 玩家以为惩罚没生效、是 bug。
+     *
+     * @param penalized 被惩罚的玩家，用它取所在维度的玩家列表与阵营信息
+     * @return 翻译键；无我 / 无妄 存活时返回无我/无妄那一条，否则回退到阴谋家那一条
+     */
+    public static String spectatorsDeathPenaltyMessageKey(Player penalized) {
+        if (penalized == null || penalized.level() == null)
+            return "message.noellesroles.penalty.limit.god_job_couple";
+        var gameWorldComponent = SREGameWorldComponent.getInstance(penalized);
+        for (Player p : penalized.level().players()) {
+            if (!isPlayerAliveAndSurvival(p))
+                continue;
+            if (gameWorldComponent.isRole(p, ModRoles.ANATMAN) || gameWorldComponent.isRole(p, ModRoles.ASATYA)) {
+                return "message.noellesroles.penalty.limit.anatman_asatya";
+            }
+        }
+        return "message.noellesroles.penalty.limit.god_job_couple";
+    }
+
     public static void revivePlayerToItsRoom(ServerPlayer player) {
         DeathPenaltyComponent.KEY.get(player).clear();
         DefibrillatorComponent.KEY.get(player).clear();
@@ -1659,11 +1753,17 @@ public class GameUtils {
             }
         }
         TrainVoicePlugin.resetPlayer(player.getUUID());
+        if (shouldGiveSpectatorsDeathPenalty(player)) {
+            pendingReJudgeSpectatorsPenalty();
+        }
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
         player.addEffect(ModEffects.of(ModEffects.SAFE_TIME, 10, 1, false, false, true));
         if (MeetingManager.isActive()) {
             DefibrillatorComponent.KEY.get(player).triggerDeath(10, null, player.position());
         }
+
+        player.updateFluidOnEyes();
+        player.updateInWaterStateAndDoFluidPushing();
     }
 
     public static void revivePlayer(ServerPlayer player, double x, double y, double z) {
@@ -1683,11 +1783,19 @@ public class GameUtils {
         player.teleportTo(x, y, z);
         player.setGameMode(GameType.ADVENTURE);
         TrainVoicePlugin.resetPlayer(player.getUUID());
+
+        if (shouldGiveSpectatorsDeathPenalty(player)) {
+            pendingReJudgeSpectatorsPenalty();
+        }
+
         SRE.REPLAY_MANAGER.recordPlayerRevival(player.getUUID(), null);
 
         if (MeetingManager.isActive()) {
             DefibrillatorComponent.KEY.get(player).triggerDeath(10, null, player.position());
         }
+
+        player.updateFluidOnEyes();
+        player.updateInWaterStateAndDoFluidPushing();
     }
 
     public static boolean isGameRunning(Player player) {
@@ -1791,5 +1899,14 @@ public class GameUtils {
     public static void refreshPlayerDimension(ServerPlayer player) {
         player.refreshDimensions();
         ServerPlayNetworking.send(player, new RefreshDimensionsS2CPacket());
+    }
+
+    public static boolean isUnderSprinklers(Player player) {
+        for (int y = 0; y < 4; y++) {
+            if (player.level().getBlockState(player.blockPosition().above(y)).is(TMMBlockTags.SPRINKLERS)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

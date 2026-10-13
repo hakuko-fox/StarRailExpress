@@ -254,7 +254,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 注册各职业的背包界面扩展（旧版 ScreenMixin 的替代：SRERole 钩子，客户端注册）
         RoleScreenRegister.register();
         NoellesrolesClientAmbientSounds.register();
-        // Dream（梦魇）：颤抖视角漂移 + 虚拟血量条（准星指向受伤玩家时显示）
+        // Dream（Dream）：颤抖视角漂移 + 虚拟血量条（准星指向受伤玩家时显示）
         org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler.register();
         // 破镜重圆：药水驱动的客户端坍缩/还原与坠落方块动画
         MirrorReunionSceneManager.register();
@@ -296,6 +296,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         }
         io.wifi.starrailexpress.event.client.OnGameFinishedClient.EVENT.register(() -> {
             ClientWallManager.clearAll();
+            ClientChefTrayManager.clearAll();
             if (PriestHeavenClient.consumePendingEnding()) {
                 PriestHeavenClient.playEnding();
             }
@@ -308,6 +309,10 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         // 注册HUD渲染
         org.agmas.noellesroles.client.RefugeeDesperadoClientFx.register();
+        org.agmas.noellesroles.client.LegendRingClientFx.register();
+        org.agmas.noellesroles.client.CommandBlockProgressClient.register();
+        org.agmas.noellesroles.content.item.LetterItem.clientReplacementOpener =
+                org.agmas.noellesroles.client.CommandBlockLetter::tryOpen;
         LimitedInventoryScreen.NotAllowItemTakePredicates.add(stack -> stack.is(ModItems.BOMB));
 
         BlockEntityRenderers.register(
@@ -321,6 +326,14 @@ public class NoellesrolesClient implements ClientModInitializer {
                 HunterCageBlockEntityRenderer::new);
 
         BlockEntityRenderers.register(SREFumoBlocks.PLUSH_BLOCK_ENTITY, SREPlushBlockEntityRenderer::new);
+
+        // 厨师「客户端」食物盘 / 饮料盘：盘内物品居中渲染，参数与原版食物盘一致
+        BlockEntityRenderers.register(
+                ModBlocks.CHEF_TRAY_BLOCK_ENTITY,
+                org.agmas.noellesroles.client.render.ChefPlateRenderer::new);
+        // cutout 渲染层：剔除盘体贴图的透明像素（与原版食物盘 / 饮料盘同属 cutout 一致）
+        BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
+                ModBlocks.CHEF_FOOD_TRAY, ModBlocks.CHEF_DRINK_TRAY);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.VENDING_MACHINES_BLOCK, RenderType.translucent());
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.LOTTERY_MACHINE_BLOCK, RenderType.translucent());
@@ -436,7 +449,16 @@ public class NoellesrolesClient implements ClientModInitializer {
             }
         };
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.COMMAND_BLOCK_CRACK,
+                org.agmas.noellesroles.client.renderer.CommandBlockCrackRenderer::new);
+        EntityRendererRegistry.register(ModEntities.COMMAND_BLOCK_MARKER,
+                org.agmas.noellesroles.client.renderer.CommandBlockMarkerRenderer::new);
+        EntityRendererRegistry.register(org.agmas.noellesroles.init.ModEntities.COMMAND_BLOCK_THROWN,
+                net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.MUSHROOM_ESSENCE,
+                net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        // 康复试剂投掷物（护士体系）：与蘑菇素同样使用投掷物品渲染器
+        EntityRendererRegistry.register(ModEntities.RECOVERY_REAGENT,
                 net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.MINECART,
                 (c) -> new MinecartRenderer<SREMinecart>(c, ModelLayers.MINECART));
@@ -593,6 +615,9 @@ public class NoellesrolesClient implements ClientModInitializer {
                 (payload, context) -> {
                     ClientWallManager.removeWall(payload.wallId());
                 });
+        // 厨师「客户端」食物盘 / 饮料盘
+        ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.ChefTrayS2CPacket.ID,
+                (payload, context) -> ClientChefTrayManager.handle(payload));
         ClientPlayNetworking.registerGlobalReceiver(CreateCreeperBombAreaPacket.ID, (payload, context) -> {
             final var p = context.player();
             final var level = context.client().level;
@@ -666,6 +691,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 return;
             ClientSmokeAreaManager.tick();
             ClientWallManager.tick();
+            ClientChefTrayManager.tick();
         });
         // 幽露自由摄像机：每 tick 推进（相机移动/位置上报/ESC 取消/球烟内缓存）
         ClientTickEvents.END_CLIENT_TICK.register(YouluFreeCamClient::tick);

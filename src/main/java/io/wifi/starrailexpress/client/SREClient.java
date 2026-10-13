@@ -372,6 +372,8 @@ public class SREClient implements ClientModInitializer {
                 io.wifi.starrailexpress.client.render.entity.PurpleMonsterRenderer::new);
         EntityRendererRegistry.register(TMMEntities.PURPLE_MONSTER_SECOND,
                 io.wifi.starrailexpress.client.render.entity.PurpleMonsterSecondRenderer::new);
+        EntityRendererRegistry.register(io.wifi.starrailexpress.traindummy.TrainDummyEntity.TYPE,
+                context -> new io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer(context, false));
         net.exmo.sre.planecrash.client.PlaneCrashFakeFlames.register();
 
         // Register entity model layers
@@ -834,6 +836,7 @@ public class SREClient implements ClientModInitializer {
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
+        io.wifi.starrailexpress.client.network.CustomItemCooldownClientNetwork.register();
 
         // 注册自定义职业同步接收器（客户端）
         io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.register();
@@ -1298,7 +1301,9 @@ public class SREClient implements ClientModInitializer {
                     || io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.canReOpen();
 
             // 检测轮到自己选职业的音效
-            if (!previousMyTurn && currentMyTurn && client.player != null) {
+            // 志愿海选不在这里播：那边由服务端在推进分组时给该组所有成员统一下发，
+            // 若这里再按 canSelect 上升沿播一次会变成双响，且上升沿仍会因包延迟而漏播。
+            if (!volunteerOpen && !previousMyTurn && currentMyTurn && client.player != null) {
                 client.player.playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
             }
             previousMyTurn = currentMyTurn;
@@ -1333,7 +1338,11 @@ public class SREClient implements ClientModInitializer {
 
             // 志愿海选：界面确实已经显示了（开局动画早已播完）才告诉服务端可以开始一阶段计时。
             // 服务端要等所有玩家的这个上报，因此玩家在看开场动画 / 发车黑幕时不会白白消耗 8 秒。
+            // 必须同时检查 canShowRoleSelect：飞机坠毁等开场运镜的镜头包比本模式的同步包
+            // 晚几 tick 到达，存在「界面先打开、运镜才开始」的竞态窗口——此时界面马上会被
+            // 上面的逻辑收掉，等运镜播完后重新打开，届时才上报，服务端才开始志愿倒计时。
             if (volunteerOpen
+                    && canShowRoleSelect
                     && client.screen instanceof io.wifi.starrailexpress.client.gui.screen.gamemode.role_rotation.VolunteerOpenSelectScreen
                     && io.wifi.starrailexpress.content.vote.client.VolunteerOpenCache.markUiReported()) {
                 ClientPlayNetworking.send(

@@ -17,6 +17,7 @@ package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import net.minecraft.core.BlockPos;
@@ -37,10 +38,12 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.GhostStateComponent;
 import org.agmas.noellesroles.content.effects.LimpEffect;
+import org.agmas.noellesroles.content.effects.MapStatusBarEffect;
 import org.agmas.noellesroles.content.effects.NegativeEffectResistanceEffect;
 import org.agmas.noellesroles.content.effects.NoCollideEffect;
 import org.agmas.noellesroles.content.effects.PuppetWanderEffect;
 import org.agmas.noellesroles.content.effects.SimpleMobEffect;
+import org.agmas.noellesroles.content.effects.VirtualHealthRestoreEffect;
 import org.agmas.noellesroles.content.effects.DeathReactionHandler;
 import org.agmas.noellesroles.content.effects.StatusAilmentHandler;
 import org.agmas.noellesroles.content.effects.TimeStopEffect;
@@ -258,6 +261,74 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> BACKWORLD_OUTLINE = register("backworld_outline",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7FE7E0));
+
+    /**
+     * 虚拟血量恢复（护士体系）
+     * - 有益效果，粉红色
+     * - 拥有此效果的玩家每秒恢复 1 点虚拟血量（等级越高恢复越多），
+     *   行为见 {@link VirtualHealthRestoreEffect} 与 {@code DreamHealthComponent#restore}。
+     */
+    public static final Holder<MobEffect> VIRTUAL_HEALTH_RESTORE = register("virtual_health_restore",
+            new VirtualHealthRestoreEffect(MobEffectCategory.BENEFICIAL, 0xFF6B9D));
+
+    /**
+     * 同级透视
+     * - 正面（BENEFICIAL）效果，白色
+     * - 仅作为「客户端渲染标记」：持有该效果的玩家之间，<b>药水等级相同</b>时互相透视
+     * （原版发光后处理，描边为纯白框）；等级不同则互相看不见对方的描边。
+     * - 客户端实现见 {@code RoleInstinctRegister#peerXrayHighlight}，
+     *   等级由 {@code PeerXrayEffectSync} 广播给所有客户端。
+     */
+    public static final Holder<MobEffect> PEER_XRAY = register("peer_xray",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFFFFF));
+
+    /**
+     * 本能隐匿：效果持续期间，<b>任何</b>人都无法通过本能看到你（没有本能框）。
+     *
+     * - 正面（BENEFICIAL）效果。
+     * - 实现方式与 {@link #BACKWORLD_OUTLINE} 的「杀手无法透视」一致：在直觉高亮的<b>被看侧</b>
+     *   直接返回 {@code disallow()}，因此对所有职业（杀手、秉烛人、领袖……）一律生效。
+     *   参考 {@code RoleInstinctRegister} 中「小透明」「秉烛人」「怀旧者」的写法。
+     * - 该效果需要让<b>所有</b>客户端读到「目标是否处于隐匿状态」，因此由
+     *   {@code EffectBroadcastSync} 广播出去（隐藏图标与粒子）。
+     */
+    public static final Holder<MobEffect> INSTINCT_CONCEAL = register("instinct_conceal",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x6E5AC8));
+
+    // ───────────────────────── 地图状态条（饥饿 / 口渴 / 保暖 / 污染）─────────────────────────
+    // 每级 1 点：1 级每秒 1 点，2 级每秒 2 点，以此类推（见 MapStatusBarEffect）。
+
+    /** 饥肠辘辘：饥饿状态条每秒 -1（等级越高掉得越快）。 */
+    public static final Holder<MobEffect> STARVING = register("starving",
+            new MapStatusBarEffect(MobEffectCategory.HARMFUL, 0xC9762B, MapStatusBarType.HUNGER, -1));
+
+    /** 口渴：口渴值每秒 -1（等级越高掉得越快）。 */
+    public static final Holder<MobEffect> DEHYDRATION = register("dehydration",
+            new MapStatusBarEffect(MobEffectCategory.HARMFUL, 0x3E7BE0, MapStatusBarType.THIRST, -1));
+
+    /** 冰冷：保暖值每秒 -1（等级越高掉得越快）。 */
+    public static final Holder<MobEffect> CHILLED = register("chilled",
+            new MapStatusBarEffect(MobEffectCategory.HARMFUL, 0x8FD8FF, MapStatusBarType.WARMTH, -1));
+
+    /** 肮脏：污染值每秒 +1（等级越高涨得越快）。 */
+    public static final Holder<MobEffect> FILTHY = register("filthy",
+            new MapStatusBarEffect(MobEffectCategory.HARMFUL, 0x6E7B3A, MapStatusBarType.POLLUTION, 1));
+
+    /** 饱腹：饥饿状态条每秒 +1（等级越高回得越快）。 */
+    public static final Holder<MobEffect> SATIATED = register("satiated",
+            new MapStatusBarEffect(MobEffectCategory.BENEFICIAL, 0xFFC65C, MapStatusBarType.HUNGER, 1));
+
+    /** 保湿：口渴值每秒 +1（等级越高回得越快）。 */
+    public static final Holder<MobEffect> HYDRATED = register("hydrated",
+            new MapStatusBarEffect(MobEffectCategory.BENEFICIAL, 0x5FD8E8, MapStatusBarType.THIRST, 1));
+
+    /** 温暖：保暖值每秒 +1（等级越高回得越快）。 */
+    public static final Holder<MobEffect> WARM = register("warm",
+            new MapStatusBarEffect(MobEffectCategory.BENEFICIAL, 0xFF8A3C, MapStatusBarType.WARMTH, 1));
+
+    /** 洁净：污染值每秒 -1（等级越高降得越快）。 */
+    public static final Holder<MobEffect> CLEANSED = register("cleansed",
+            new MapStatusBarEffect(MobEffectCategory.BENEFICIAL, 0xCDEEF7, MapStatusBarType.POLLUTION, -1));
 
     public static final Holder<MobEffect> WRAITH_DIMENSION = register("wraith_dimension",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x315B7C));
@@ -622,7 +693,7 @@ public class ModEffects {
      * 漂移逻辑见
      * {@code org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler}
      * （客户端 tick，纯本地视角偏移，不发包）。
-     * Dream（梦魇）狂暴时被"看到"的玩家会获得此效果。
+     * Dream（Dream）狂暴时被"看到"的玩家会获得此效果。
      */
     public static final Holder<MobEffect> TREMBLE = register("tremble",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x8B1A1A));
@@ -1012,6 +1083,11 @@ public class ModEffects {
         // 导致手持物品仍显示 / 仍能被杀手透视。
         NostalgistBackworldEffectSync.init();
         BackworldOutlineEffectSync.init();
+        // 同级透视 / 本能隐匿同理：这两个效果都要在「别人身上」被客户端读到，
+        // 而原版只把玩家自己的 MobEffect 下发给自己，所以必须广播出去（隐藏图标与粒子）。
+        EffectBroadcastSync.register(PEER_XRAY);
+        EffectBroadcastSync.register(INSTINCT_CONCEAL);
+        EffectBroadcastSync.init();
         WraithDimensionEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
             if (pierceDeath) {

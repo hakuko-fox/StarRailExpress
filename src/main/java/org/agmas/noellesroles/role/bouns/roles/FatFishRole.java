@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 大肥鱼（DeepSeek 娘化形象）—— 彩蛋职业 · 乘客阵营，全地图刷新。
+ * 大肥鱼（DeepSeek 娘化形象）—— 彩蛋职业 · 偏好中立（与好人一同获胜），全地图刷新。
  *
  * <p>
  * 六项玩法：
@@ -79,7 +79,7 @@ public class FatFishRole extends EggRole {
     /** 消化冷却（tick） */
     public static final int FEED_COOLDOWN_TICKS = FEED_COOLDOWN_SECONDS * 20;
 
-    public FatFishRole(ResourceLocation identifier, int color, RoleType roleType,
+    public FatFishRole(ResourceLocation identifier, int color, io.wifi.starrailexpress.api.RoleTeam roleType,
             MoodType moodType, int maxSprintTime, boolean canSeeTime) {
         super(identifier, color, roleType, moodType, maxSprintTime, canSeeTime);
     }

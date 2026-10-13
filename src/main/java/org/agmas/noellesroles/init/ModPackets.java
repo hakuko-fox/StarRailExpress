@@ -60,6 +60,8 @@ public class ModPackets {
                 PurpleMonsterEventS2CPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(PurpleMonsterProgressS2CPacket.ID,
                 PurpleMonsterProgressS2CPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(org.agmas.noellesroles.packet.CommandBlockProgressS2CPacket.ID,
+                org.agmas.noellesroles.packet.CommandBlockProgressS2CPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(PurpleMonsterEventC2SPacket.ID,
                 PurpleMonsterEventC2SPacket.CODEC);
         // PayloadTypeRegistry.playS2C().register(FakeSteveHuntS2CPacket.ID,
@@ -220,6 +222,12 @@ public class ModPackets {
         PayloadTypeRegistry.playC2S().register(ReasonerSubmitC2SPacket.ID, ReasonerSubmitC2SPacket.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ReasonerSubmitC2SPacket.ID,
                 ReasonerSubmitC2SPacket::handle);
+
+        // 独裁者：裁决之剑（死因+凶手）与独裁之书（猜职业）
+        PayloadTypeRegistry.playC2S().register(DictatorJudgeC2SPacket.ID, DictatorJudgeC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DictatorJudgeC2SPacket.ID, DictatorJudgeC2SPacket::handle);
+        PayloadTypeRegistry.playC2S().register(DictatorGuessC2SPacket.ID, DictatorGuessC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(DictatorGuessC2SPacket.ID, DictatorGuessC2SPacket::handle);
 
         PayloadTypeRegistry.playS2C().register(DoomedSinnerFateRevealS2CPacket.ID,
                 DoomedSinnerFateRevealS2CPacket.CODEC);

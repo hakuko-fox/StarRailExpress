@@ -35,6 +35,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.phys.Vec3;
 import io.wifi.starrailexpress.game.GameConstants;
 import org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent;
+import org.agmas.noellesroles.katana.KatanaHandler;
 
 import java.util.List;
 
@@ -108,6 +109,11 @@ public class DreamMaceItem extends MaceItem implements SREItemProperties.LeftCli
                     .withStyle(ChatFormatting.RED), true);
             return false;
         }
+        // 格挡判定：武士刀格挡有效窗口优先，其次防暴盾牌
+        if (KatanaHandler.tryBlockAttack(target, attacker)
+                || RiotShieldHandler.tryBlockAttack(target, attacker)) {
+            return false;
+        }
 
         // ── 原版伤害公式：属性伤害 × 蓄力缩放 + 坠击加伤（加伤不受蓄力缩放） ──
         float damage = (float) attacker.getAttributeValue(Attributes.ATTACK_DAMAGE);
@@ -133,9 +139,9 @@ public class DreamMaceItem extends MaceItem implements SREItemProperties.LeftCli
             return false;
         }
 
-        // ── 扣虚拟血量（四舍五入，至少 1 点） ──
+        // ── 扣虚拟血量（四舍五入，至少 1 点；无视虚拟护盾，与狙击枪 50 格外同理） ──
         int virtualDamage = Math.max(1, Math.round(damage));
-        if (!DreamHealthComponent.KEY.get(target).hurt(attacker, virtualDamage, DEATH_REASON)) {
+        if (!DreamHealthComponent.KEY.get(target).hurt(attacker, virtualDamage, DEATH_REASON, true)) {
             return false;
         }
 
