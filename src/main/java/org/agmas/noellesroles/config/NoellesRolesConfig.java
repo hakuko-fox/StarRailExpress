@@ -71,6 +71,16 @@ public class NoellesRolesConfig implements ConfigData {
     public ArrayList<String> labRolesMaps = new ArrayList<>(List.of("areas_lab"));
 
     /**
+     * Areas that will spawn peak (climbing) roles (Scout, Forest Mushroom Zombie, Scout Captain)
+     */
+    public ArrayList<String> peakRolesMaps = new ArrayList<>(List.of("peak"));
+
+    /**
+     * Areas that will spawn siege roles (Siege)
+     */
+    public ArrayList<String> siegeRolesMaps = new ArrayList<>(List.of("areas6"));
+
+    /**
      * Areas that will spawn trap-map roles (Adventurer)
      */
     public ArrayList<String> trapRolesMaps = new ArrayList<>(List.of("areas_shamo"));
@@ -89,6 +99,11 @@ public class NoellesRolesConfig implements ConfigData {
     /** Whether Fake Steve can send dialogue to the server chat. */
     @ConfigEntry.Category(value = "detail")
     public boolean fake_stave_chat = true;
+    /**
+     * 命令方块（祸患的终端）启用概率，万分比。
+     */
+    @ConfigEntry.Category(value = "detail")
+    public int commandBlockEnableChance = 80;
 
     @ConfigEntry.Category(value = "detail")
     public int chanceOfTouhouRoles = 5;

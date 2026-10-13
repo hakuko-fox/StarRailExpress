@@ -1,4 +1,4 @@
-﻿{
+{
   "=== SODIUM-EXTRA 補充===": "",
   "sodium-extra.option.light_updates_starrailexpress": "關照更新 (已被StarRailExpress強制啟用)",
   "sodium-extra.option.light_updates_starrailexpress.tooltip": "處理光照更新。無論此選項是否啟用，始終都會更新光照。(已被StarRailExpress強制啟用)",
@@ -236,10 +236,6 @@
   "text.autoconfig.starrailexpress.option.mysqlSyncConnectTimeoutMs": "mysql 連接超時時長",
   "====== 遊戲模式 ======": "",
   "text.autoconfig.starrailexpress.option.loadServerLanguageId": "服務端：加載模組本地翻譯檔案id（輸入auto自動檢測環境，留空不加載）",
-  "text.autoconfig.starrailexpress.option.hideAndSeekRewardKillRemoveTime": "躲貓貓模式：躲藏者擊殺追捕者，獎勵時長減少(單位：秒)",
-  "text.autoconfig.starrailexpress.option.hideAndSeekRewardKillAddTime": "躲貓貓模式：追捕者擊殺躲藏者，獎勵時長(單位：秒)",
-  "text.autoconfig.starrailexpress.option.hideAndSeekBaseTime": "躲貓貓模式：時長基數（總時長=基數+玩家數*增量）(單位：秒)",
-  "text.autoconfig.starrailexpress.option.hideAndSeekTimePerPlayer": "躲貓貓模式：每個玩家的時長增量（總時長=基數+玩家數*增量）(單位：秒)",
   "text.autoconfig.starrailexpress.option.hideAndSeekHiderScale": "躲貓貓模式：躲藏者體型縮放",
   "text.autoconfig.starrailexpress.option.roleRotationPreparingConfirmRequire": "輪抽模式：確認階段需要玩家手動確認。",
   "text.autoconfig.starrailexpress.option.roleRotationPreparingConfirmTimeout": "輪抽模式：手動確認超時時長（單位：秒）",
@@ -595,7 +591,7 @@
   "text.autoconfig.noellesroles.option.photographerFrameMaxYDistance": "攝影師 - 畫框傳送的最大垂直(Y軸)距離（方塊，<=0 表示不限制）",
   "text.autoconfig.noellesroles.option.dreamMaxHealth": "Dream - 全員虛擬血量上限（Dream 斧頭攻擊扣此血量，歸零死亡）",
   "text.autoconfig.noellesroles.option.dreamHealthRegenEnabled": "Dream - 是否啟用脫戰自動回虛擬血量（關閉後殘血只能靠康復藥丸 / 康復試劑等手段恢復）",
-  "text.autoconfig.noellesroles.option.dreamHealthRegenDelaySeconds": "Dream - 脫戰多少秒後開始緩慢回血（僅在上項啟用時生效）",
+  "text.autoconfig.noellesroles.option.dreamHealthRegenDelaySeconds": "Dream - 脫戰多少秒後開始緩慢回血（僅在上項開啟時生效）",
   "text.autoconfig.noellesroles.option.dreamAxeDamage": "Dream - 鐵斧平A傷害",
   "text.autoconfig.noellesroles.option.dreamAxeCritDamage": "Dream - 鐵斧跳劈傷害",
   "text.autoconfig.noellesroles.option.dreamAxeBerserkDamage": "Dream - 狂暴時鐵斧平A傷害",
@@ -728,5 +724,9 @@
   "=== 叛徒扩展包修饰符 ===": "",
   "=== NoellesRolesConfig 补充 ===": "",
   "text.autoconfig.noellesroles.option.divinerCooldown": "占卜家 - 占卜冷卻（秒）",
-  "text.autoconfig.noellesroles.option.divinerCrystalBallPrice": "占卜家 - 水晶球商店價格（金幣）"
+  "text.autoconfig.noellesroles.option.divinerCrystalBallPrice": "占卜家 - 水晶球商店價格（金幣）",
+  "text.autoconfig.starrailexpress.option.hideAndSeekGameTime": "躲貓貓模式：遊戲時間(單位：秒)",
+  "text.autoconfig.noellesroles.option.peakRolesMaps": "會刷爬山圖角色的地圖（如童子軍、森蕈僵屍、童子軍隊長）",
+  "text.autoconfig.noellesroles.option.siegeRolesMaps": "會刷攻城手地圖角色的地圖（攻城手）",
+  "text.autoconfig.noellesroles.option.commandBlockEnableChance": "命令方塊啟用概率（1/10000）"
 }

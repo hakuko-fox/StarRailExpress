@@ -64,6 +64,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.food.FoodProperties;
@@ -825,6 +826,19 @@ public final class CustomItemRuntime {
             victim = target;
             handleGunHit(shooter, victim, stack, data, autoMode);
             applyDistanceRules(shooter, victim, data);
+        } else if (hit instanceof EntityHitResult dummyHit
+                && dummyHit.getEntity() instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
+                && dummy.canReceiveHits()) {
+            if (data.knockbackOnHit) {
+                dummy.invulnerableTime = 0;
+                dummy.hurt(dummy.damageSources().playerAttack(shooter), 1.0F);
+            }
+            if (data.lethalOnRayHit || data.lethalOnFinal) {
+                io.wifi.starrailexpress.traindummy.TrainDummyCombat.applyLethal(dummy, shooter,
+                        parseDeathReason(data.lethalDeathReason, GameConstants.DeathReasons.REVOLVER));
+            } else {
+                dummy.showHit(shooter);
+            }
         }
 
         if (!autoMode) {
@@ -1022,9 +1036,11 @@ public final class CustomItemRuntime {
 
         DreamHealthComponent health = DreamHealthComponent.KEY.get(target);
         long now = target.level().getGameTime();
+        // ignoreVirtualShield 只绕过虚拟护盾，普通护盾仍按原有死亡管线结算
         boolean damaged = health.hurt(attacker, data.virtualDamage,
                 parseDeathReason(data.killDeathReason,
-                        io.wifi.starrailexpress.game.GameConstants.DeathReasons.GENERAL_ATTACK));
+                        io.wifi.starrailexpress.game.GameConstants.DeathReasons.GENERAL_ATTACK),
+                data.ignoreVirtualShield, false);
 
         // 攻击者 / 被攻击者指令
         CustomItemLoader.executeCommands(data.attackerHitCommands, attacker);
@@ -1521,6 +1537,9 @@ public final class CustomItemRuntime {
      * 创造模式的真实玩家仍然可被命中（保持上面的口径）。
      */
     private static boolean isValidTarget(ServerPlayer shooter, Entity entity) {
+        if (entity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy) {
+            return dummy.canReceiveHits();
+        }
         return entity instanceof ServerPlayer player && player != shooter && !player.isSpectator();
     }
 
@@ -1547,6 +1566,17 @@ public final class CustomItemRuntime {
         syncCooldown(player, List.of(key), ticks);
     }
 
+    public static void applyCooldown(ServerPlayer player, String customId, int ticks) {
+        if (player == null || customId == null || customId.isBlank() || ticks <= 0) {
+            return;
+        }
+        net.minecraft.world.item.Item key = CustomItemCooldownKeys.keyOf(customId);
+        if (key == null) {
+            return;
+        }
+        player.getCooldowns().addCooldown(key, ticks);
+        syncCooldown(player, List.of(key), ticks);
+    }
     /** 该玩家手上这件自定义物品是否在冷却中（走原版 ItemCooldowns，按物品 id 独立记）。 */
     public static boolean isOnCooldown(Player player, ItemStack stack) {
         if (player == null || stack == null || stack.isEmpty()) {
@@ -1730,8 +1760,8 @@ public final class CustomItemRuntime {
         return rules == null ? List.of() : rules;
     }
 
-    /** 对目标施加一批药水效果（投掷物触发 / 区域触发共用）。 */
-    public static void applyEffects(ServerPlayer target, List<CustomItemData.EffectData> effects) {
+     /** 对目标施加一批药水效果（投掷物触发 / 区域触发共用）。玩家和列车假人都能吃。 */
+     public static void applyEffects(LivingEntity target, List<CustomItemData.EffectData> effects) {
         for (CustomItemData.EffectData effect : effectList(effects)) {
             Holder<MobEffect> effectHolder = resolveEffect(effect.effectId);
             if (effectHolder == null) {
