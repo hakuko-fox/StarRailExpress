@@ -4540,6 +4540,7 @@
   "sre.backpack.click_choose_role": "點擊查看職業並選擇下一局角色",
   "sre.backpack.pending_role": "已預約：%s（可免費改選）",
   "sre.backpack.cancel_choice": "取消",
+  "sre.backpack.pending_faction": "已預約下一局（可取消退款）",
   "message.sre.backpack.choice.success": "自選角色預約已更新。",
   "message.sre.backpack.choice.not_loaded": "你的跨局背包資料仍在載入。",
   "message.sre.backpack.choice.game_running": "遊戲進行期間無法更改自選。",
@@ -4552,7 +4553,7 @@
   "message.sre.backpack.choice.unavailable_refund": "預約職業已不可用，自選卡已退回。",
   "message.sre.backpack.choice.map_refund": "預約職業不適用於本局地圖，自選卡已退回。",
   "message.sre.backpack.choice.minimum_players_refund": "預約職業至少需要 %s 人，開局時只有 %s 人；自選卡已退回。",
-  "message.sre.backpack.choice.conflict_refund": "此職業名額已滿，自選卡已退回。",
+  "message.sre.backpack.choice.conflict_refund": "此職業或陣營名額已滿，自選卡已退回。",
   "== 文件末尾 END ==": "",
   "sre.map_helper.settings.meetingVoteProcessorFunctionPermission": "會議投票結果處理函式權限等級"
 }

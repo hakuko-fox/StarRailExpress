@@ -42,6 +42,8 @@ public final class BackpackState {
     public String pendingRoleId = "";
     /** 已啟用但尚未結算的陣營卡；與 pendingRoleId 互斥。 */
     public FactionCardType pendingFactionCard = FactionCardType.NONE;
+    /** Cooldown timestamp to restore if the pending card is refunded. */
+    public long pendingFactionCardPreviousUsedAt;
     /** 最近一次已發獎的場次 UUID，防止同一結算重複入帳。 */
     public String lastVtuberCoinRoundId = "";
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
@@ -91,6 +93,8 @@ public final class BackpackState {
         if (!pendingRoleId.isBlank()) {
             pendingFactionCard = FactionCardType.NONE;
         }
+        pendingFactionCardPreviousUsedAt = pendingFactionCard == FactionCardType.NONE
+                ? 0L : Math.max(0L, pendingFactionCardPreviousUsedAt);
         cardLastUsedAt = normalizeLastUsedAt(cardLastUsedAt);
         return this;
     }
@@ -113,6 +117,37 @@ public final class BackpackState {
         cardLastUsedAt.put(type, epochMs);
     }
 
+    public boolean reserveFactionCard(FactionCardType type, long now) {
+        int count = cards.getOrDefault(type, 0);
+        if (type == FactionCardType.NONE || pendingFactionCard != FactionCardType.NONE || count < 1) {
+            return false;
+        }
+        pendingFactionCardPreviousUsedAt = lastUsedAt(type);
+        pendingFactionCard = type;
+        cards.put(type, count - 1);
+        markUsed(type, now);
+        return true;
+    }
+
+    public boolean refundFactionCard(FactionCardType type) {
+        if (type == FactionCardType.NONE || pendingFactionCard != type) {
+            return false;
+        }
+        cards.put(type, (int) Math.min(Integer.MAX_VALUE, (long) cards.getOrDefault(type, 0) + 1L));
+        if (pendingFactionCardPreviousUsedAt > 0L) {
+            cardLastUsedAt.put(type, pendingFactionCardPreviousUsedAt);
+        } else {
+            cardLastUsedAt.remove(type);
+        }
+        consumeFactionCard();
+        return true;
+    }
+
+    public void consumeFactionCard() {
+        pendingFactionCard = FactionCardType.NONE;
+        pendingFactionCardPreviousUsedAt = 0L;
+    }
+
     public void copyFrom(BackpackState other) {
         this.cards = new EnumMap<>(FactionCardType.class);
         if (other.cards != null) {
@@ -125,6 +160,7 @@ public final class BackpackState {
         this.roleChoiceCards = other.roleChoiceCards;
         this.pendingRoleId = other.pendingRoleId;
         this.pendingFactionCard = other.pendingFactionCard;
+        this.pendingFactionCardPreviousUsedAt = other.pendingFactionCardPreviousUsedAt;
         this.purchasedSkins = other.purchasedSkins == null
                 ? new HashSet<>()
                 : new HashSet<>(other.purchasedSkins);

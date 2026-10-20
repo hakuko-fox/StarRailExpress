@@ -31,7 +31,6 @@ import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.CloseUiPayload;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -195,7 +194,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                         FactionCardType cardType = FactionCardType.fromRoleType(roleType);
                         if (cardType != FactionCardType.NONE && t.type() == ForceTeamType.CARD) {
                             PlayerRoleWeightManager.ForcePlayerTeam.remove(playerUid);
-                            ProgressionDataManager.addFactionCard(selectedPlayer, cardType, 1);
+                            io.wifi.starrailexpress.backpack.BackpackManager.refundFactionCard(selectedPlayer, cardType);
                             BroadcastCommand.BroadcastMessage(selectedPlayer,
                                     Component.translatable("message.sre.pass.faction.assign_failed")
                                             .withStyle(ChatFormatting.RED));

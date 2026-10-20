@@ -33,7 +33,6 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.exmo.sre.repair.role.RepairRole;
 import net.minecraft.ChatFormatting;
@@ -187,7 +186,7 @@ public class SingleSelectDraftState {
                 if (sp != null && removed != null && removed.type() == ForceTeamType.CARD) {
                     FactionCardType cardType = FactionCardType.fromRoleType(type);
                     if (cardType != FactionCardType.NONE) {
-                        ProgressionDataManager.addFactionCard(sp, cardType, 1);
+                        io.wifi.starrailexpress.backpack.BackpackManager.refundFactionCard(sp, cardType);
                         sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
                                 .withStyle(ChatFormatting.RED), true);
                     }
@@ -396,7 +395,7 @@ public class SingleSelectDraftState {
                 if (sp != null && removed != null && removed.type() == ForceTeamType.CARD) {
                     FactionCardType ct = FactionCardType.fromRoleType(cardType);
                     if (ct != FactionCardType.NONE) {
-                        ProgressionDataManager.addFactionCard(sp, ct, 1);
+                        io.wifi.starrailexpress.backpack.BackpackManager.refundFactionCard(sp, ct);
                         sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
                                 .withStyle(ChatFormatting.RED), true);
                     }

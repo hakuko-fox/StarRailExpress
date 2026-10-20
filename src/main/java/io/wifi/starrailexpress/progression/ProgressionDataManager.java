@@ -303,6 +303,13 @@ public final class ProgressionDataManager {
     }
 
     private static void grantQuestRewards(ServerPlayer player, Entry entry, List<PassQuest> completed) {
+        if (!BackpackManager.isLoaded(player.getUUID()) && completed.stream()
+                .anyMatch(quest -> !quest.rewarded && quest.rewardCard != null
+                        && quest.rewardCard != FactionCardType.NONE)) {
+            // Keep completed quests unclaimed until the backpack can accept their cards.
+            markDirty(player, entry);
+            return;
+        }
         for (PassQuest quest : completed) {
             if (quest.rewarded) {
                 continue;

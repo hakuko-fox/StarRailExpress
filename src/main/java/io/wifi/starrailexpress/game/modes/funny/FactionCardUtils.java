@@ -1,7 +1,7 @@
 package io.wifi.starrailexpress.game.modes.funny;
 
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
+import io.wifi.starrailexpress.backpack.BackpackManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -17,6 +17,7 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
+import java.util.function.IntPredicate;
 
 /**
  * 陣營卡（faction card）配發輔助，供各遊戲模式共用。
@@ -84,11 +85,22 @@ public final class FactionCardUtils {
         return cardType == 1 ? roleType == 1 || roleType == 5 : cardType == roleType;
     }
 
+    /** A taken draft slot cannot provide a card reveal, even if its role is still in the pool. */
+    public static <S> List<Integer> availableCardSlots(List<S> pool, ToIntFunction<S> roleType,
+            IntPredicate available, int cardType) {
+        List<Integer> slots = new ArrayList<>();
+        for (int i = 0; i < pool.size(); i++) {
+            if (available.test(i) && cardMatchesRoleType(cardType, roleType.applyAsInt(pool.get(i)))) {
+                slots.add(i);
+            }
+        }
+        return slots;
+    }
+
     /** 無法配發符合陣營的職業時，退還一張卡片並通知玩家。 */
     public static void refund(ServerPlayer player, int forcedType) {
         FactionCardType cardType = FactionCardType.fromRoleType(forcedType);
-        if (cardType != FactionCardType.NONE) {
-            ProgressionDataManager.addFactionCard(player, cardType, 1);
+        if (BackpackManager.refundFactionCard(player, cardType)) {
             player.displayClientMessage(
                     Component.translatable("message.sre.role_rotation.card_limit")
                             .withStyle(ChatFormatting.RED), true);

@@ -53,7 +53,11 @@ public class ProgressionPassScreen extends Screen {
     /** 分页行高度 */
     private static final int PG_H = 22;
     /** 底部区域高度: 信息文字 + 阵营按钮 */
-    private static final int BT_H = 70;
+    private static final int BT_H = 94;
+    private static final FactionCardType[] CARD_TYPES = {
+            FactionCardType.KILLER, FactionCardType.CIVILIAN,
+            FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER };
+    private static final int[] CARD_COLORS = { 0xFFB84141, 0xFF4EA5D9, 0xFFD9A44E, 0xFFB18AE6 };
 
     // ------- 组件状态 -------
     private ProgressionState progression;
@@ -89,7 +93,7 @@ public class ProgressionPassScreen extends Screen {
 
     private void computeLayout() {
         panelW = Math.max(240, this.width - 8);
-        panelH = Math.max(280, this.height - 8);
+        panelH = Math.max(304, this.height - 8);
         panelX = (this.width - panelW) / 2;
         panelY = (this.height - panelH) / 2;
         questAreaY = panelY + QUEST_TOP;
@@ -178,15 +182,11 @@ public class ProgressionPassScreen extends Screen {
 
         // ---- 阵营卡按钮 ----
         int bottomY = panelY + panelH - 38;
-        int cardBtnW = Math.max(60, Math.min(120, (panelW - 48 - 144 - 24) / 3));
-        cardButtons.add(addRenderableWidget(
-                createCardButton(panelX + 24, bottomY, cardBtnW, FactionCardType.KILLER, 0xFFB84141)));
-        cardButtons.add(addRenderableWidget(
-                createCardButton(panelX + 24 + (cardBtnW + 8), bottomY, cardBtnW, FactionCardType.CIVILIAN,
-                        0xFF4EA5D9)));
-        cardButtons.add(addRenderableWidget(
-                createCardButton(panelX + 24 + (cardBtnW + 8) * 2, bottomY, cardBtnW, FactionCardType.NEUTRAL,
-                        0xFFD9A44E)));
+        int cardBtnW = Math.max(1, (panelW - 48 - 24) / CARD_TYPES.length);
+        for (int i = 0; i < CARD_TYPES.length; i++) {
+            cardButtons.add(addRenderableWidget(createCardButton(panelX + 24 + (cardBtnW + 8) * i,
+                    bottomY - 24, cardBtnW, CARD_TYPES[i], CARD_COLORS[i])));
+        }
 
         // ---- 关闭按钮 ----
         addRenderableWidget(
@@ -202,14 +202,31 @@ public class ProgressionPassScreen extends Screen {
         Component label = Component.literal(
                 Component.translatable("sre.pass.faction." + type.questKey).getString() + " x" + count);
         var btn = ModernButton.builder(label, b -> {
-            if (count > 0 && !FactionCardCooldown.isOnCooldown(backpack, type)) {
+            if (backpack.cards.getOrDefault(type, 0) > 0
+                    && backpack.pendingFactionCard == FactionCardType.NONE
+                    && !FactionCardCooldown.isOnCooldown(backpack, type)) {
                 sendCommand("sre:pass activate " + type.questKey);
                 onClose();
             }
         })
                 .bounds(x, y, width, 22).accentColor(accentColor).build();
-        btn.active = count > 0 && !cooling;
+        btn.active = count > 0 && !cooling && backpack.pendingFactionCard == FactionCardType.NONE;
         return btn;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        progression = ClientPlayerDataCache.progression(player.getUUID());
+        backpack = ClientPlayerDataCache.backpack(player.getUUID()).normalized();
+        for (int i = 0; i < cardButtons.size(); i++) {
+            FactionCardType type = CARD_TYPES[i];
+            int count = backpack.cards.getOrDefault(type, 0);
+            Button button = cardButtons.get(i);
+            button.setMessage(Component.literal(Component.translatable(type.displayName).getString() + " x" + count));
+            button.active = count > 0 && backpack.pendingFactionCard == FactionCardType.NONE
+                    && !FactionCardCooldown.isOnCooldown(backpack, type);
+        }
     }
 
     @Override
@@ -278,7 +295,7 @@ public class ProgressionPassScreen extends Screen {
                 applyAlpha(0xFF9BBAD4, animAlpha), false);
 
         // ---- 底部信息 ----
-        int infoY = panelY + panelH - 62;
+        int infoY = panelY + panelH - 86;
         // 不保存这一项所以删了
         // String activeCard = true
         // ? Component.translatable("sre.pass.not_active").getString()

@@ -4533,6 +4533,7 @@
   "sre.backpack.click_choose_role": "点击查看职业并选择下一局角色",
   "sre.backpack.pending_role": "已预约：%s（可免费改选）",
   "sre.backpack.cancel_choice": "取消",
+  "sre.backpack.pending_faction": "已预约下一局（可取消退款）",
   "message.sre.backpack.choice.success": "自选角色预约已更新。",
   "message.sre.backpack.choice.not_loaded": "你的跨局背包数据仍在加载。",
   "message.sre.backpack.choice.game_running": "游戏进行期间无法更改自选。",
@@ -4545,5 +4546,5 @@
   "message.sre.backpack.choice.unavailable_refund": "预约职业已不可用，自选卡已退回。",
   "message.sre.backpack.choice.map_refund": "预约职业不适用于本局地图，自选卡已退回。",
   "message.sre.backpack.choice.minimum_players_refund": "预约职业至少需要 %s 人，开局时只有 %s 人；自选卡已退回。",
-  "message.sre.backpack.choice.conflict_refund": "此职业名额已满，自选卡已退回。"
+  "message.sre.backpack.choice.conflict_refund": "此职业或阵营名额已满，自选卡已退回。"
 }

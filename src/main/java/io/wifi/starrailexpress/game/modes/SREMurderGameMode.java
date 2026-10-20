@@ -672,12 +672,10 @@ public class SREMurderGameMode extends GameMode {
                     roleAssignments.put(player, role);
 
                     // 根据角色类型减少对应的数量需求
-                    if (role.canUseKiller()) {
-                        killerCount--;
-                    } else if (role.isVigilanteTeam()) {
-                        vigilanteCount--;
-                    } else if (!role.isInnocent()) {
-                        neutralsCount--;
+                    switch (PlayerRoleWeightManager.getRoleType(role)) {
+                        case 4 -> killerCount--;
+                        case 5 -> vigilanteCount--;
+                        case 2, 3 -> neutralsCount--;
                     }
                 }
             }

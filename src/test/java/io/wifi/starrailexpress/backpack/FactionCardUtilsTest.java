@@ -20,6 +20,20 @@ class FactionCardUtilsTest {
     private record Slot(int type, int number) {}
 
     @Test
+    void takenNeutralSlotsCannotPreventRefundForAnEmptyAvailableFaction() {
+        List<Slot> pool = List.of(new Slot(2, 1), new Slot(3, 2), new Slot(1, 3));
+        var available = FactionCardUtils.availableCardSlots(pool, Slot::type, i -> i != 0, 2);
+        assertTrue(available.isEmpty());
+        assertEquals(List.of(1), FactionCardUtils.availableCardSlots(pool, Slot::type, i -> i != 0, 3));
+    }
+
+    @Test
+    void availableCivilianCardSlotsIncludeVigilantesButExcludeTakenSlots() {
+        List<Slot> pool = List.of(new Slot(1, 1), new Slot(5, 2), new Slot(4, 3));
+        assertEquals(List.of(1), FactionCardUtils.availableCardSlots(pool, Slot::type, i -> i != 0, 1));
+    }
+
+    @Test
     void cardGetsActualSlotBeforeWeightRequestAndFailedCardReturnsToNormalAssignment() {
         UUID weighted = UUID.randomUUID();
         UUID card = UUID.randomUUID();

@@ -4402,6 +4402,7 @@
   "sre.backpack.click_choose_role": "Open the role guide and choose your next role",
   "sre.backpack.pending_role": "Reserved: %s (free to change)",
   "sre.backpack.cancel_choice": "Cancel",
+  "sre.backpack.pending_faction": "Reserved for next round (cancel to refund)",
   "message.sre.backpack.choice.success": "Your role choice reservation was updated.",
   "message.sre.backpack.choice.not_loaded": "Your persistent backpack is still loading.",
   "message.sre.backpack.choice.game_running": "Role choices cannot be changed while a game is running.",
@@ -4414,5 +4415,5 @@
   "message.sre.backpack.choice.unavailable_refund": "Your reserved role is unavailable; your card was refunded.",
   "message.sre.backpack.choice.map_refund": "Your reserved role is not available on this map; your card was refunded.",
   "message.sre.backpack.choice.minimum_players_refund": "Your reserved role needs at least %s players, but this round has %s; your card was refunded.",
-  "message.sre.backpack.choice.conflict_refund": "That role's slots were full; your card was refunded."
+  "message.sre.backpack.choice.conflict_refund": "That role or faction's slots were full; your card was refunded."
 }

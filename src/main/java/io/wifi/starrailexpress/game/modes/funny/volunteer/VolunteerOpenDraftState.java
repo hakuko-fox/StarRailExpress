@@ -20,8 +20,8 @@ import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.ParticipationComponent;
 import io.wifi.starrailexpress.game.modes.funny.rotation.LightningDraftState;
+import io.wifi.starrailexpress.game.modes.funny.FactionCardUtils;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import org.agmas.harpymodloader.Harpymodloader;
 import net.minecraft.ChatFormatting;
@@ -400,14 +400,10 @@ public class VolunteerOpenDraftState {
             Set<Integer> already = cardReveals.getOrDefault(id, Set.of());
             Integer forcedIndex = forcedRoleReveals.get(id);
             List<Integer> candidates = new ArrayList<>();
-            boolean factionInPool = false;
-            for (int i = 0; i < pool.size(); i++) {
-                SRERole role = pool.get(i).role();
-                if (role == null || FactionCardType.fromRoleType(role.getRoleType()) != cardType) {
-                    continue;
-                }
-                factionInPool = true;
-                if (pickedBy[i] != null || globallyRevealed.contains(i) || already.contains(i)
+            List<Integer> available = FactionCardUtils.availableCardSlots(pool,
+                    slot -> slot.role() == null ? -1 : slot.role().getRoleType(), i -> pickedBy[i] == null, rawType);
+            for (int i : available) {
+                if (globallyRevealed.contains(i) || already.contains(i)
                         || (forcedIndex != null && forcedIndex == i)) {
                     // 已经能看到的（含 forcerole 那个）不再占用卡牌的额外揭示名额
                     continue;
@@ -415,13 +411,13 @@ public class VolunteerOpenDraftState {
                 candidates.add(i);
             }
 
-            if (!factionInPool) {
+            if (available.isEmpty()) {
                 // 场上没有该阵营的职业：退还卡牌（与轮选模式的「无法提供匹配职业」一致）
                 PlayerRoleWeightManager.ForcePlayerTeam.remove(id);
                 ServerPlayer sp = world.getServer().getPlayerList().getPlayer(id);
                 if (sp != null) {
                     if (cardType != FactionCardType.NONE) {
-                        ProgressionDataManager.addFactionCard(sp, cardType, 1);
+                        io.wifi.starrailexpress.backpack.BackpackManager.refundFactionCard(sp, cardType);
                     }
                     sp.displayClientMessage(
                             Component.translatable("message.sre.role_rotation.card_limit")

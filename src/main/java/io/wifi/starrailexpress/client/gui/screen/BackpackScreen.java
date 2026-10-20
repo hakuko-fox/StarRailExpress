@@ -86,7 +86,7 @@ public class BackpackScreen extends Screen {
                     ClientPlayNetworking.send(new BackpackRoleChoicePayload("cancel", ""));
                     button.active = false;
                 }).bounds(rowX, rowY(DISPLAY_ORDER.length) + 9, 76, 20).build());
-        cancelChoiceButton.visible = hasPendingRole();
+        cancelChoiceButton.visible = hasPendingSelection();
     }
 
     private void computeLayout() {
@@ -108,6 +108,10 @@ public class BackpackScreen extends Screen {
 
     private boolean hasPendingRole() {
         return backpack.pendingRoleId != null && !backpack.pendingRoleId.isBlank();
+    }
+
+    private boolean hasPendingSelection() {
+        return hasPendingRole() || backpack.pendingFactionCard != FactionCardType.NONE;
     }
 
     private Component pendingRoleName() {
@@ -155,8 +159,8 @@ public class BackpackScreen extends Screen {
 
         if (cancelChoiceButton != null) {
             cancelChoiceButton.setPosition(rowX + rowW - 78, rowY(DISPLAY_ORDER.length) + 9);
-            cancelChoiceButton.visible = hasPendingRole();
-            cancelChoiceButton.active = hasPendingRole();
+            cancelChoiceButton.visible = hasPendingSelection();
+            cancelChoiceButton.active = hasPendingSelection();
         }
 
         // Widgets are rendered after the custom panel so the cancel action stays clickable.
@@ -197,7 +201,7 @@ public class BackpackScreen extends Screen {
         boolean owned = count > 0;
         long remaining = FactionCardCooldown.remainingMs(backpack, type);
         boolean cooling = remaining > 0L;
-        boolean usable = owned && !cooling;
+        boolean usable = owned && !cooling && backpack.pendingFactionCard == FactionCardType.NONE;
         int x = rowX;
         int y = rowY(index);
         boolean hovered = usable && inside(mouseX, mouseY, x, y, rowW, ROW_H);
@@ -220,7 +224,9 @@ public class BackpackScreen extends Screen {
         Component name = Component.translatable("sre.pass.faction." + type.questKey);
         g.drawString(font, name, x + 12, y + 8, usable ? TEXT : MUTED, false);
         Component hint;
-        if (cooling) {
+        if (backpack.pendingFactionCard == type) {
+            hint = Component.translatable("sre.backpack.pending_faction");
+        } else if (cooling) {
             hint = Component.translatable("sre.backpack.cooldown", FactionCardCooldown.formatRemaining(remaining));
         } else {
             hint = Component.translatable(owned ? "sre.backpack.click_activate" : "sre.backpack.unavailable");
@@ -250,7 +256,8 @@ public class BackpackScreen extends Screen {
         if (button == 0) {
             for (int i = 0; i < DISPLAY_ORDER.length; i++) {
                 FactionCardType type = DISPLAY_ORDER[i];
-                if (count(type) > 0 && !FactionCardCooldown.isOnCooldown(backpack, type)
+                if (count(type) > 0 && backpack.pendingFactionCard == FactionCardType.NONE
+                        && !FactionCardCooldown.isOnCooldown(backpack, type)
                         && inside(mouseX, mouseY, rowX, rowY(i), rowW, ROW_H)) {
                     sendCommand("sre:pass activate " + type.questKey);
                     onClose();
