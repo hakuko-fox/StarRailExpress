@@ -700,6 +700,17 @@ public class NoellesrolesClient implements ClientModInitializer {
             var client = context.client();
             client.execute(() -> client.setScreen(new ConductorDoorSelectScreen(payload.doors())));
         });
+        ClientPlayNetworking.registerGlobalReceiver(MaolunQuestionS2CPacket.ID, (payload, context) -> {
+            var client = context.client();
+            client.execute(() -> {
+                if (client.screen instanceof MathSolverScreen screen && screen.isMaolunSession(payload.sessionId())) {
+                    screen.updateMaolunQuestion(payload);
+                } else if (payload.status() == 0) {
+                    if (client.screen != null) client.screen.onClose();
+                    client.setScreen(new MathSolverScreen(payload));
+                }
+            });
+        });
         ClientPlayNetworking.registerGlobalReceiver(ProblemScreenOpenC2SPacket.ID, (payload, context) -> {
             var client = context.client();
             client.execute(() -> {

@@ -23,6 +23,8 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.packet.ProblemSetEventC2SPacket;
+import org.agmas.noellesroles.packet.MaolunAnswerC2SPacket;
+import org.agmas.noellesroles.packet.MaolunQuestionS2CPacket;
 import org.agmas.noellesroles.utils.MathProblemsManager;
 import org.agmas.noellesroles.utils.MathProblemsManager.MathProblem;
 import org.lwjgl.glfw.GLFW;
@@ -48,6 +50,46 @@ public class MathSolverScreen extends Screen {
     private boolean forced = false;
     private int timeLimitSeconds = 0;
     private boolean consecutive = false;
+    private MaolunQuestionS2CPacket serverQuestion;
+    private boolean awaitingAnswer;
+
+    public MathSolverScreen(MaolunQuestionS2CPacket question) {
+        super(Component.translatable("screen.math_solver.title"));
+        forced = true;
+        consecutive = true;
+        timeLimitSeconds = 60;
+        updateMaolunQuestion(question);
+    }
+
+    public boolean isMaolunSession(java.util.UUID sessionId) {
+        return serverQuestion != null && serverQuestion.sessionId().equals(sessionId);
+    }
+
+    public void updateMaolunQuestion(MaolunQuestionS2CPacket question) {
+        serverQuestion = question;
+        awaitingAnswer = false;
+        hasStarted = true;
+        maxTime = 60 * 20;
+        startTime = question.deadline() - maxTime;
+        currentIndex = question.progress();
+        maxTrial = question.remainingMistakes();
+        haveSendPacket = question.status() != 0;
+        failed = question.status() == 2;
+        if (question.status() == 1) currentIndex = totalPages;
+        if (failed) currentIndex = -2;
+        if (minecraft != null) {
+            if (failed) minecraft.setScreen(null);
+            else init();
+        }
+    }
+
+    private MathProblem displayedProblem() {
+        if (currentIndex < 0 || currentIndex >= totalPages) return null;
+        if (serverQuestion != null) {
+            return new MathProblem(serverQuestion.question(), serverQuestion.options(), -1, 1);
+        }
+        return currentIndex < MathProblems.size() ? MathProblems.get(currentIndex) : null;
+    }
 
     public MathSolverScreen() {
         this(false, 1);
@@ -123,7 +165,12 @@ public class MathSolverScreen extends Screen {
             return;
         }
         haveSendPacket = true;
-        ClientPlayNetworking.send(new ProblemSetEventC2SPacket(false, forced));
+        if (serverQuestion != null) {
+            ClientPlayNetworking.send(new MaolunAnswerC2SPacket(
+                    serverQuestion.sessionId(), serverQuestion.sequence(), -1));
+        } else {
+            ClientPlayNetworking.send(new ProblemSetEventC2SPacket(false, forced));
+        }
     }
 
     public void solveFailed() {
@@ -189,6 +236,12 @@ public class MathSolverScreen extends Screen {
         super.init();
         this.clearWidgets();
 
+        if (serverQuestion != null) {
+            if (serverQuestion.status() == 1) initFinished();
+            else if (serverQuestion.status() == 0) initDuring();
+            return;
+        }
+
         if (forced && !hasStarted && this.currentIndex == -1) {
             startMathSolving();
             return;
@@ -230,7 +283,8 @@ public class MathSolverScreen extends Screen {
     private void initDuring() {
         this.clearWidgets();
 
-        if (currentIndex < 0 || currentIndex >= this.MathProblems.size()) {
+        var opts = displayedProblem();
+        if (opts == null) {
             return;
         }
 
@@ -239,7 +293,6 @@ public class MathSolverScreen extends Screen {
         int buttonX = maxWidth / 2;
         int buttonY = maxHeight / 2 - 20;
 
-        var opts = this.MathProblems.get(currentIndex);
         int i = 0;
         for (var opt : opts.getOptions()) {
             i++;
@@ -252,6 +305,7 @@ public class MathSolverScreen extends Screen {
                     BUTTON_HEIGHT).build();
             btn.setTooltip(
                     Tooltip.create(Component.translatable("screen.math_solver.option_btn.tooltip", nowSelectionID)));
+            btn.active = !awaitingAnswer;
             this.addRenderableWidget(btn);
         }
     }
@@ -316,10 +370,10 @@ public class MathSolverScreen extends Screen {
             guiGraphics.drawCenteredString(font, pageInfo, width / 2, 40, 0xFFFFFF);
         }
         // 绘制题目信息
-        if (totalPages > 0 && currentIndex >= 0 && currentIndex < this.totalPages
-                && currentIndex < this.MathProblems.size()) {
+        MathProblem displayed = displayedProblem();
+        if (displayed != null) {
 
-            Component mathInfo = Component.translatable(this.MathProblems.get(currentIndex).getQuestion())
+            Component mathInfo = Component.literal(displayed.getQuestion())
                     .withStyle(ChatFormatting.WHITE);
             Component mathInfoTitle = Component.translatable("screen.math_solver.please_solve")
                     .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
@@ -387,10 +441,18 @@ public class MathSolverScreen extends Screen {
     }
 
     public void selectedSelection(int selectionIndex) {
-        if (this.currentIndex < 0) {
+        if (this.currentIndex < 0 || haveSendPacket || failed || awaitingAnswer) {
             return;
         }
-        if (this.currentIndex > this.MathProblems.size()) {
+        MathProblem displayed = displayedProblem();
+        if (displayed == null || selectionIndex < 1 || selectionIndex > displayed.getOptions().size()) {
+            return;
+        }
+        if (serverQuestion != null) {
+            awaitingAnswer = true;
+            ClientPlayNetworking.send(new MaolunAnswerC2SPacket(
+                    serverQuestion.sessionId(), serverQuestion.sequence(), selectionIndex - 1));
+            initDuring();
             return;
         }
         var currentMath = this.MathProblems.get(this.currentIndex);

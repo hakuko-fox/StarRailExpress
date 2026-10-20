@@ -16,7 +16,6 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.util.Scheduler;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,8 +60,7 @@ public final class VtuberRoleRuntime {
     }
 
     private record PlayerSnapshot(long tick, Vec3 position, float yRot, float xRot, float health,
-    List<MobEffectInstance> effects, List<ItemStack> inventory, int selectedSlot,
-    int balance, boolean alive) {
+            boolean alive) {
     }
 
     private VtuberRoleRuntime() {
@@ -245,16 +243,8 @@ public final class VtuberRoleRuntime {
     }
 
     private static void captureSnapshot(ServerPlayer player, long now) {
-        List<MobEffectInstance> effects = player.getActiveEffects().stream()
-                .map(MobEffectInstance::new)
-                .toList();
-        List<ItemStack> inventory = new ArrayList<>(player.getInventory().getContainerSize());
-        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
-            inventory.add(player.getInventory().getItem(slot).copy());
-        }
         PlayerSnapshot snapshot = new PlayerSnapshot(now, player.position(), player.getYRot(), player.getXRot(),
-                player.getHealth(), effects, inventory, player.getInventory().selected,
-                MoneyUtils.getBalance(player), GameUtils.isPlayerAliveAndSurvival(player));
+                player.getHealth(), GameUtils.isPlayerAliveAndSurvival(player));
         Deque<PlayerSnapshot> snapshots = PLAYER_SNAPSHOTS.computeIfAbsent(player.getUUID(), key -> new ArrayDeque<>());
         snapshots.addLast(snapshot);
         while (!snapshots.isEmpty() && snapshots.peekFirst().tick() < now - 20L * 6L) {
@@ -293,18 +283,8 @@ public final class VtuberRoleRuntime {
         player.teleportTo(player.serverLevel(), snapshot.position().x, snapshot.position().y, snapshot.position().z,
                 Set.of(), snapshot.yRot(), snapshot.xRot());
         player.setHealth(Math.min(snapshot.health(), player.getMaxHealth()));
-        player.removeAllEffects();
-        for (MobEffectInstance effect : snapshot.effects()) {
-            player.addEffect(new MobEffectInstance(effect));
-        }
-        player.getInventory().clearContent();
-        for (int slot = 0; slot < Math.min(snapshot.inventory().size(),
-                player.getInventory().getContainerSize()); slot++) {
-            player.getInventory().setItem(slot, snapshot.inventory().get(slot).copy());
-        }
-        player.getInventory().selected = snapshot.selectedSlot();
-        MoneyUtils.setBalance(player, snapshot.balance());
-        player.containerMenu.broadcastChanges();
+        // Transactions and role state are not rewound. Restoring inventory would duplicate
+        // dropped/traded items; restoring effects alone would desync forms and their buffs.
     }
 
     private static void tickForcedMovement(MinecraftServer server, ServerPlayer player, long now) {

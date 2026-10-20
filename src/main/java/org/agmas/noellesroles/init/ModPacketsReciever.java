@@ -299,11 +299,8 @@ public class ModPacketsReciever {
     });
     ServerPlayNetworking.registerGlobalReceiver(ProblemSetEventC2SPacket.ID, (payload, context) -> {
       ServerPlayer player = context.player();
-      // A Meowlen challenge is already active before SAFE_TIME can be checked. Always
-      // settle (or swallow a just-expired result) first so the target is not stranded.
-      if (org.agmas.noellesroles.role.vtuber.MaolunRole.finishMaolunChallenge(player, payload.success()))
-        return;
-      if (org.agmas.noellesroles.role.vtuber.MaolunRole.consumeResolvedMaolunChallengeResult(player))
+      // Legacy client success flags must never settle a server-owned Maolun question.
+      if (org.agmas.noellesroles.role.vtuber.MaolunRole.isChallengeActive(player))
         return;
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;

@@ -80,6 +80,11 @@ public class ModPackets {
                 ExecutionerSelectTargetC2SPacket.CODEC);
         PayloadTypeRegistry.playC2S().register(ProblemSetEventC2SPacket.ID,
                 ProblemSetEventC2SPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(MaolunQuestionS2CPacket.ID, MaolunQuestionS2CPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(MaolunAnswerC2SPacket.ID, MaolunAnswerC2SPacket.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(MaolunAnswerC2SPacket.ID,
+                (payload, context) -> org.agmas.noellesroles.role.vtuber.MaolunRole
+                        .handleAnswer(context.player(), payload));
                 
         PayloadTypeRegistry.playC2S().register(RhythmGameResultC2SPacket.ID,
                 RhythmGameResultC2SPacket.CODEC);
