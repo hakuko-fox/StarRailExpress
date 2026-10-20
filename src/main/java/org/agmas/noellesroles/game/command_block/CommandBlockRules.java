@@ -43,7 +43,8 @@ public final class CommandBlockRules {
         if (role == null || role == TMMRoles.CIVILIAN) {
             return false;
         }
-        if (role == ModRoles.COMMAND_BLOCK || role == ModRoles.ABNORMAL || isPoolRole(role)) {
+        if (role == ModRoles.COMMAND_BLOCK || role == ModRoles.ABNORMAL || role == ModRoles.STEVE
+                || isPoolRole(role)) {
             return true;
         }
         if (isKillerOccupation(role) || role.isKiller()) {
@@ -62,7 +63,7 @@ public final class CommandBlockRules {
         return List.of(ModRoles.STONE_MAN, ModRoles.HIM, ModRoles.ERROR_404, ModRoles.DREAM,
                 ModRoles.ENTITY_303, ModRoles.ENTITY_NULL, ModRoles.FARLANDS, ModRoles.WHITE_EYES,
                 ModRoles.STRINGER, ModRoles.PAPER_DOLL, ModRoles.FOG_GUEST, ModRoles.PENDULUM,
-                ModRoles.CANDLE_SHADE);
+                ModRoles.CANDLE_SHADE, ModRoles.DREADLORD);
     }
 
     public static boolean isPoolRole(SRERole role) {

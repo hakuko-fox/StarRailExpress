@@ -20,7 +20,6 @@ import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.data.AllRoleRotationSavedData;
-import net.exmo.sre.repair.role.RepairRole;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -100,7 +99,6 @@ public class RoleRotationCommand {
     private static boolean isGloballyEligible(SRERole role) {
         return !Harpymodloader.VANNILA_ROLES.contains(role)
                 && !role.isOtherModeRole()
-                && !(role instanceof RepairRole)
                 && role != TMMRoles.DISCOVERY_CIVILIAN
                 && role != TMMRoles.LOOSE_END
                 && role != TMMRoles.CIVILIAN;

@@ -22,6 +22,7 @@ import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.cca.SREPlayerPsychoComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
@@ -872,6 +873,44 @@ public abstract class SRERole extends SREAbstractInfoClass {
         return this;
     }
 
+    /**
+     * 设置该职业的心情值上限（默认 1.0）。
+     * <p>
+     * 供开发者在职业定义中使用，例如：{@code new MyRole(...).setMaxMood(1.5f)}，使该职业拥有更高的
+     * 心情值上限。该值只影响夹取上限，不影响心情消耗/恢复等既有逻辑。
+     */
+    public SRERole setMaxMood(float maxMood) {
+        // 保险：职业定义的心情上限不小于 0
+        this.maxMood = Math.max(0f, maxMood);
+        return this;
+    }
+
+    /** 获取该职业定义的心情值上限（默认 1.0）。 */
+    public float getMaxMood() {
+        return this.maxMood;
+    }
+
+    /**
+     * 通用方法：设置指定玩家的心情值上限（覆盖其职业默认上限）。
+     * <p>
+     * 传入负数可清除覆盖，恢复职业默认上限。实际存储于
+     * {@link SREPlayerMoodComponent#setMoodMax(float)}。
+     */
+    public static void setPlayerMoodMax(Player player, float maxMood) {
+        if (player == null) {
+            return;
+        }
+        SREPlayerMoodComponent.KEY.get(player).setMoodMax(maxMood);
+    }
+
+    /** 通用方法：获取指定玩家当前的心情值上限。 */
+    public static float getPlayerMoodMax(Player player) {
+        if (player == null) {
+            return 1.0f;
+        }
+        return SREPlayerMoodComponent.KEY.get(player).getMoodMax();
+    }
+
     public ToIntFunction<Player> getMaxSprintTimeSupplier() {
         return this.customSprintTimeGetter;
     }
@@ -895,6 +934,8 @@ public abstract class SRERole extends SREAbstractInfoClass {
     protected boolean isInnocent;
     protected boolean canUseKiller;
     protected MoodType moodType;
+    /** 该职业的心情值上限（默认 1.0）。仅对心情类型为 REAL 的职业有意义。 */
+    protected float maxMood = 1.0f;
 
     public boolean isAutoReset() {
         return autoReset;
@@ -930,6 +971,12 @@ public abstract class SRERole extends SREAbstractInfoClass {
      * 只有「动作姿态」技能才需要（noellesroles 的 {@code ClimbPoseRoleData}）。
      */
     protected boolean canClimbWalls = false;
+
+    /**
+     * 是否可取用 / 取下他人手铐（巡警队之外的补充渠道）。默认关闭；
+     * 子类（如黑警、程序员）可覆写 {@link #canUncuffOthers(Player)} 或开启本开关。
+     */
+    protected boolean canUncuffOthers = false;
 
     public boolean isNeutrals() {
         return this.isNeutrals;
@@ -1588,6 +1635,36 @@ public abstract class SRERole extends SREAbstractInfoClass {
     public SRERole setCanClimbWalls(boolean able) {
         this.canClimbWalls = able;
         return this;
+    }
+
+    /** 静态开关：该职业是否可取下他人手铐 */
+    public boolean canUncuffOthers() {
+        return this.canUncuffOthers;
+    }
+
+    /**
+     * 该玩家此刻能否取下他人手铐。
+     * <p>
+     * 默认返回静态开关；需要按玩家状态判断的职业覆写本方法（例如程序员）。
+     *
+     * @param player 目标玩家
+     */
+    public boolean canUncuffOthers(Player player) {
+        return canUncuffOthers();
+    }
+
+    /** 开启 / 关闭该职业取下他人手铐的能力 */
+    public SRERole setCanUncuffOthers(boolean able) {
+        this.canUncuffOthers = able;
+        return this;
+    }
+
+    /**
+     * 是否可取用手铐（通用判定）：警长阵营，或该职业开启了取用手铐能力
+     * （{@link #canUncuffOthers(Player)} 返回 {@code true}）时允许。
+     */
+    public boolean canTakeOffHandcuffs(Player player) {
+        return isVigilanteTeam() || canUncuffOthers(player);
     }
 
     public SRERole setCanSeeCoin(boolean able) {

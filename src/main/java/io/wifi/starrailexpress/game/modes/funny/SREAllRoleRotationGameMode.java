@@ -26,7 +26,6 @@ import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.original.AnnounceWelcomePayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import net.exmo.sre.repair.role.RepairRole;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -322,7 +321,6 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
     private static boolean baseEligible(SRERole role) {
         return !Harpymodloader.VANNILA_ROLES.contains(role)
                 && !role.isOtherModeRole()
-                && !(role instanceof RepairRole)
                 && role != TMMRoles.DISCOVERY_CIVILIAN
                 && role != TMMRoles.LOOSE_END
                 && !SREDisableManager.isRoleDisabled(role)

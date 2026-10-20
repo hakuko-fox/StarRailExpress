@@ -167,14 +167,20 @@ public class ModEntities {
                     .trackedUpdateRate(1)
                     .build());
 
-    /** 竹枪延伸体：沿视线伸长最多 10 格 / 3 秒 */
+    /**
+     * 竹枪延伸体：沿视线伸长最多 10 格 / 3 秒。
+     * <p>
+     * 追踪范围要盖住「伸长后能看到杆尖」的距离：杆最长 10 格，站在 16 格外的旁观者会整根都收不到实体
+     * （表现为别人戳出去的竹枪在自己画面上根本不出现），这里放宽到 32 格。
+     * 更新速率保持 1 tick，否则别的玩家看到的伸长过程会一顿一顿的。
+     */
     @SuppressWarnings("deprecation")
     public static final EntityType<BambooSpearEntity> BAMBOO_SPEAR = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "bamboo_spear"),
             FabricEntityTypeBuilder.<BambooSpearEntity>create(MobCategory.MISC, BambooSpearEntity::new)
                     .dimensions(EntityDimensions.fixed(0.2F, 0.2F))
-                    .trackRangeBlocks(16)
+                    .trackRangeBlocks(32)
                     .trackedUpdateRate(1)
                     .build());
     @SuppressWarnings("deprecation")
@@ -636,7 +642,7 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
-    /** 命令方块投掷物：石头、火球沿抛物线飞，石枪沿视线伸出再收回。 */
+    /** 命令方块投掷物：石头、火球和石枪都沿抛物线飞。石枪命中后飞回手里。 */
     @SuppressWarnings("deprecation")
     public static final EntityType<CommandBlockThrownEntity> COMMAND_BLOCK_THROWN = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,

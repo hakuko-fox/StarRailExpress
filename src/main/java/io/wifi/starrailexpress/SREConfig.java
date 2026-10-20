@@ -46,8 +46,6 @@ public class SREConfig implements ConfigData {
     public int minPlayerCountForMurder = 6;
 
     @ConfigEntry.Category(value = "gamemodes")
-    public boolean enableRepairMode = false;
-    @ConfigEntry.Category(value = "gamemodes")
     public boolean enableNoLimitLoversInLoverMode = false;
     @ConfigEntry.Category(value = "gamemodes")
     @Tooltip

@@ -46,7 +46,6 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.SREDisableManager;
-import net.exmo.sre.repair.role.RepairRole;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 
 import java.util.HashMap;
@@ -533,7 +532,7 @@ public final class BackpackManager {
 
     private static boolean isSelectableRole(SRERole role) {
         if (role == null || role == TMMRoles.DISCOVERY_CIVILIAN || role == TMMRoles.LOOSE_END
-                || role.isOtherModeRole() || role instanceof RepairRole || role.getOccupiedRoleCount() > 1
+                || role.isOtherModeRole() || role.getOccupiedRoleCount() > 1
                 || SREDisableManager.isRoleDisabled(role) || !RoleRosterManager.isRoleEnabled(role)) {
             return false;
         }
