@@ -127,7 +127,6 @@ import io.wifi.starrailexpress.index.TMMSounds;
 import io.wifi.starrailexpress.morph.MorphApiClient;
 import io.wifi.starrailexpress.network.BreakArmorPayload;
 import io.wifi.starrailexpress.network.CloseUiPayload;
-import io.wifi.starrailexpress.network.CustomItemCooldownS2CPayload;
 import io.wifi.starrailexpress.network.IsLobbyConfigPayload;
 import io.wifi.starrailexpress.network.JoinSpecGroupPayload;
 import io.wifi.starrailexpress.network.MapVotingResultsPayload;
@@ -375,6 +374,8 @@ public class SREClient implements ClientModInitializer {
                 io.wifi.starrailexpress.client.render.entity.PurpleMonsterRenderer::new);
         EntityRendererRegistry.register(TMMEntities.PURPLE_MONSTER_SECOND,
                 io.wifi.starrailexpress.client.render.entity.PurpleMonsterSecondRenderer::new);
+        EntityRendererRegistry.register(io.wifi.starrailexpress.traindummy.TrainDummyEntity.TYPE,
+                context -> new io.wifi.starrailexpress.client.render.entity.TrainDummyRenderer(context, false));
         net.exmo.sre.planecrash.client.PlaneCrashFakeFlames.register();
 
         // Register entity model layers
@@ -837,7 +838,7 @@ public class SREClient implements ClientModInitializer {
         TriggerScreenEdgeEffectPayload.registerReceiver();
         RemoveStatusBarPayload.registerReceiver();
         TriggerStatusBarPayload.registerReceiver();
-        CustomItemCooldownS2CPayload.registerReceiver();
+        io.wifi.starrailexpress.client.network.CustomItemCooldownClientNetwork.register();
 
         // 注册自定义职业同步接收器（客户端）
         io.wifi.starrailexpress.client.network.CustomRoleClientNetwork.register();
