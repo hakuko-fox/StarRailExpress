@@ -60,6 +60,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.game.modes.echo.EchoRoles;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.init.RoleInitialItems;
 import org.agmas.noellesroles.init.RoleShopHandler;
@@ -105,6 +106,7 @@ public class RoleIntroduceScreen extends Screen {
         CURRENT("screen.roleintroduce.mode.current", 0xFF56A5AE),
         CURRENT_ROUND("screen.roleintroduce.mode.current_round", 0xFF56A5AE),
         MURDER("screen.roleintroduce.mode.murder", 0xFFCC2233),
+        ECHO("screen.roleintroduce.mode.echo", 0xFF44BB66),
         FILTER("screen.roleintroduce.mode.flag", 0xFF11AA33);
 
         public final String labelKey;
@@ -633,6 +635,7 @@ public class RoleIntroduceScreen extends Screen {
         return switch (currentMode) {
             case ALL -> true;
             case MURDER -> !role.isOtherModeRole();
+            case ECHO -> role.getFlags().contains(EchoRoles.ECHO_MODE_FLAG);
             case FILTER -> matchesFlagFilter(role);
             case CURRENT -> {
                 if (this.minecraft.player == null || SREClient.gameComponent == null)
@@ -672,6 +675,7 @@ public class RoleIntroduceScreen extends Screen {
         return switch (currentMode) {
             case ALL -> true;
             case MURDER -> !mod.isOtherModeRole();
+            case ECHO -> false;
             case FILTER -> matchesFlagFilter(mod);
             case CURRENT -> {
                 if (this.minecraft.player == null || SREClient.modifierComponent == null)
@@ -704,6 +708,7 @@ public class RoleIntroduceScreen extends Screen {
         return switch (currentMode) {
             case ALL -> true;
             case MURDER -> !isOtherModeItem(path);
+            case ECHO -> false;
             case FILTER -> filterFlags.isEmpty();
             case CURRENT -> {
                 if (this.minecraft.player == null || this.minecraft.player.getInventory() == null)
@@ -726,6 +731,7 @@ public class RoleIntroduceScreen extends Screen {
     private boolean matchesEffectMode(IntroMobEffect effect) {
         return switch (currentMode) {
             case ALL, MURDER -> true;
+            case ECHO -> false;
             case FILTER -> filterFlags.isEmpty();
             case CURRENT -> this.minecraft != null && this.minecraft.player != null
                     && this.minecraft.player.hasEffect(effect.holder);

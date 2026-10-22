@@ -4519,5 +4519,6 @@
   "sre.custom_item.warn.model_not_resolved": "Model address \"%s\" cannot be resolved (wrong path / not baked yet); the item has fallen back to the default model. Check the path, or press F3+T to reload resources",
   "sre.custom_role.can_uncuff_others": "Can take off handcuffs",
   "sre.custom_role.label.mood_max": "Mood (San) Max",
-  "sre.custom_role.hint.mood_max_default": "Default 1.0; may be 0~1 or higher"
+  "sre.custom_role.hint.mood_max_default": "Default 1.0; may be 0~1 or higher",
+  "itemGroup.starrailexpress.echo_freight": "Echo Freight"
 }
