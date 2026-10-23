@@ -2,6 +2,7 @@ package org.agmas.noellesroles.game.command_block;
 
 import java.util.List;
 
+import org.agmas.harpymodloader.SREDisableManager;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import org.agmas.noellesroles.role.ModRoles;
@@ -18,6 +19,11 @@ public final class CommandBlockRules {
     public static int markedCount(int originalKillerCount) {
         int killers = Math.max(1, originalKillerCount);
         return (int) Math.ceil(killers * 1.5D);
+    }
+
+    /** 破坏配额（命令方块血量）= ceil(原杀手数量 * 1.5) + 2。异常人数仍只按 markedCount 算。 */
+    public static int destructionQuota(int originalKillerCount) {
+        return markedCount(originalKillerCount) + 2;
     }
 
     public static int destructionStage(int killerDeaths, int quota) {
@@ -43,7 +49,8 @@ public final class CommandBlockRules {
         if (role == null || role == TMMRoles.CIVILIAN) {
             return false;
         }
-        if (role == ModRoles.COMMAND_BLOCK || role == ModRoles.ABNORMAL || isPoolRole(role)) {
+        if (role == ModRoles.COMMAND_BLOCK || role == ModRoles.ABNORMAL || role == ModRoles.STEVE
+                || isPoolRole(role)) {
             return true;
         }
         if (isKillerOccupation(role) || role.isKiller()) {
@@ -57,12 +64,18 @@ public final class CommandBlockRules {
         return false;
     }
 
-    /** 异常改写池。Dream 复用现有杀手（铁斧 / 制酒 / 商店），不另写一套。 */
+    /**
+     * 异常改写池。Dream 复用现有杀手（铁斧 / 制酒 / 商店），不另写一套。
+     *
+     * <p>遵从职业启用管理（enableroles）：被地图、名单或配置 ban 掉的职业不会进池，
+     * 也就不会被改写出来。池内职业被全部禁用时返回空列表，由调用方停止改写。</p>
+     */
     public static List<SRERole> pool() {
-        return List.of(ModRoles.STONE_MAN, ModRoles.HIM, ModRoles.ERROR_404, ModRoles.DREAM,
+        List<SRERole> all = List.of(ModRoles.STONE_MAN, ModRoles.HIM, ModRoles.ERROR_404, ModRoles.DREAM,
                 ModRoles.ENTITY_303, ModRoles.ENTITY_NULL, ModRoles.FARLANDS, ModRoles.WHITE_EYES,
                 ModRoles.STRINGER, ModRoles.PAPER_DOLL, ModRoles.FOG_GUEST, ModRoles.PENDULUM,
-                ModRoles.CANDLE_SHADE);
+                ModRoles.CANDLE_SHADE, ModRoles.DREADLORD);
+        return all.stream().filter(role -> !SREDisableManager.isRoleDisabled(role)).toList();
     }
 
     public static boolean isPoolRole(SRERole role) {

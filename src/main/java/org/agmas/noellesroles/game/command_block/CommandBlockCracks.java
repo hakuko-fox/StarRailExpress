@@ -11,11 +11,15 @@ import io.wifi.starrailexpress.api.hit.HitPriority;
 import io.wifi.starrailexpress.api.hit.HitType;
 import io.wifi.starrailexpress.api.hit.SREHitManager;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerTaskComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -37,6 +41,8 @@ public final class CommandBlockCracks {
     public static final String TAG = "sre.command_block_crack";
     public static final int MIN_DELAY = 60 * 20;
     public static final int MAX_DELAY = 90 * 20;
+    /** 刚刷出来时全场高亮的时长。 */
+    public static final int HIGHLIGHT_TICKS = 10 * 20;
 
     private CommandBlockCracks() {
     }
@@ -83,7 +89,26 @@ public final class CommandBlockCracks {
         crack.setCustomNameVisible(false);
         level.addFreshEntity(crack);
         level.playSound(null, spot.x, spot.y, spot.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.45F, 0.55F);
+        announceSpawn(level, crack);
         return true;
+    }
+
+    /** 出现时高亮十秒并全局通报，让所有人都知道裂缝在哪。 */
+    private static void announceSpawn(ServerLevel level, CommandBlockCrackEntity crack) {
+        crack.setHighlighted(true);
+        crack.setGlowingTag(true);
+        Component text = Component.translatable("message.noellesroles.command_block.crack_spawn")
+                .withStyle(ChatFormatting.DARK_PURPLE);
+        for (ServerPlayer player : level.players()) {
+            SRENetworkMessageUtils.sendBroadcast(player, text);
+            player.playNotifySound(SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.MASTER, 0.5F, 0.75F);
+        }
+        Scheduler.schedule(() -> {
+            if (crack.isAlive()) {
+                crack.setHighlighted(false);
+                crack.setGlowingTag(false);
+            }
+        }, HIGHLIGHT_TICKS);
     }
 
     /** 好人阵营（平民和警长）的手枪才能击碎。返回 true 表示这一枪打在裂缝上并已结算。 */
@@ -170,7 +195,16 @@ public final class CommandBlockCracks {
                 occupied.add(entity.position());
             }
         }
-        List<BlockPos> points = new ArrayList<>(GameUtils.taskBlocks.keySet());
+        // 「坐下」任务的座椅周围不刷裂缝，别挡住玩家做坐下任务
+        int chairType = SREPlayerTaskComponent.Task.CHAIR.ordinal();
+        List<BlockPos> points = new ArrayList<>();
+        for (BlockPos point : GameUtils.taskBlocks.keySet()) {
+            Integer type = GameUtils.taskBlocks.get(point);
+            if (type != null && type == chairType) {
+                continue;
+            }
+            points.add(point);
+        }
         Collections.shuffle(points, new java.util.Random(level.random.nextLong()));
         List<Vec3> found = new ArrayList<>();
         for (BlockPos point : points) {

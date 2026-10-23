@@ -66,6 +66,10 @@ public class CustomRoleData {
     @SerializedName("moodType")
     public String moodType = "REAL";
 
+    /** 该职业的心情值(san)上限，默认 1.0；对应 {@code SRERole#setMaxMood}。 */
+    @SerializedName("moodMax")
+    public float moodMax = 1.0f;
+
     @SerializedName("sprintMultiplier")
     public double sprintMultiplier = 1.0;
 
@@ -113,6 +117,10 @@ public class CustomRoleData {
     /** 是否可攀爬（爬墙），对应 {@code SRERole#setCanClimbWalls}。 */
     @SerializedName("canClimbWalls")
     public Boolean canClimbWalls = null;
+
+    /** 可取用手铐（取下他人手铐），对应 {@code SRERole#setCanUncuffOthers}。 */
+    @SerializedName("canUncuffOthers")
+    public Boolean canUncuffOthers = null;
 
     @SerializedName("canBeRandomedByOtherRoles")
     public boolean canBeRandomedByOtherRoles = true;

@@ -228,6 +228,15 @@ public class CustomRoleScreen extends CustomEditorScreen {
                             data.moodType = moodIndex == 0 ? "REAL" : "FAKE";
                         }, false));
 
+        // 心情值(san)上限：默认 1.0，可设 0~1 或更高；setMaxMood 内部已夹取为 >=0
+        r = numRow(r, PREFIX + ".label.mood_max", String.valueOf(data.moodMax), 80,
+                PREFIX + ".hint.mood_max_default", value -> {
+                    try {
+                        data.moodMax = Float.parseFloat(value);
+                    } catch (Exception ignored) {
+                    }
+                });
+
         // 心情颜色覆盖（R/G/B，任一 <0 视为不覆盖）
         r = numRow(r, PREFIX + ".label.mood_color_r", String.valueOf(data.moodColorR), 60,
                 PREFIX + ".hint.minus_one_default", value -> {
@@ -327,6 +336,9 @@ public class CustomRoleScreen extends CustomEditorScreen {
         r = cluster(r, null,
                 triCell(PREFIX + ".can_climb_walls", data.canClimbWalls,
                         value -> data.canClimbWalls = value, false));
+        r = cluster(r, null,
+                triCell(PREFIX + ".can_uncuff_others", data.canUncuffOthers,
+                        value -> data.canUncuffOthers = value, false));
         r = cluster(r, null,
                 toggleCell(PREFIX + ".can_be_randomed", data.canBeRandomedByOtherRoles,
                         value -> data.canBeRandomedByOtherRoles = value, false),

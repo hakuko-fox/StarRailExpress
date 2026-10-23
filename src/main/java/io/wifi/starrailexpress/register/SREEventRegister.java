@@ -15,6 +15,8 @@
 
 package io.wifi.starrailexpress.register;
 
+import io.wifi.starrailexpress.progression.ProgressionDataManager;
+
 import org.agmas.noellesroles.init.RoleShopHandler;
 
 import com.google.gson.JsonObject;
@@ -81,6 +83,7 @@ public class SREEventRegister {
             net.exmo.sre.planecrash.PlaneCrashManager.onGameStarted(serverLevel);
             boolean planeIntro = !deferIntro && net.exmo.sre.planecrash.PlaneCrashManager.startIntro(serverLevel);
             for (ServerPlayer player : serverLevel.players()) {
+                ProgressionDataManager.onPlayMap(player, mapId);
                 // The authoritative map id also drives the opening briefing when no map vote was used.
                 PacketTracker.sendToClient(player, new OnGameStartedPayload(mapId));
                 // 轮选模式职业尚未确定，开场镜头延后到 OnGameTrueStarted
@@ -251,6 +254,12 @@ public class SREEventRegister {
     }
 
     private static void sendDefaultIntroIfParticipant(ServerPlayer player) {
+        // 回响托运站由模式自己发一条开局运镜（追捕方 → 逃脱方 → 设施 → 回到本人），
+        // 这里跳过默认的「远处俯视玩家」镜头，避免两条轨道互相抢占导演。
+        if (SREGameWorldComponent.KEY.get(player.serverLevel()).getGameMode()
+                instanceof org.agmas.noellesroles.game.modes.echo.EchoGameMode) {
+            return;
+        }
         if (player.gameMode.getGameModeForPlayer() == GameType.ADVENTURE) {
             net.exmo.sre.camera.AdvancedCameraCommand.sendIntro(player,
                     net.exmo.sre.camera.AdvancedCameraCommand.DEFAULT_INTRO_DURATION,

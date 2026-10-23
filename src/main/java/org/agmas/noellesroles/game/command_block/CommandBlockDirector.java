@@ -11,14 +11,19 @@ import java.util.Map;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.SREDisableManager;
 import org.agmas.harpymodloader.commands.RoleCountManager;
+import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.harpymodloader.events.GameInitializeEvent;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.role_data.innocence.DisabledPatientRoleData;
+import org.agmas.noellesroles.game.command_block.DreadlordRole;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.agmas.noellesroles.game.modifier.NRModifiers;
 import org.agmas.noellesroles.packet.CommandBlockProgressS2CPacket;
+import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import net.exmo.sre.subtitle.SubtitleS2CPayload;
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SRERoleDataPlayerComponent;
 import org.agmas.noellesroles.api.time.TimeRewind;
@@ -26,6 +31,9 @@ import org.agmas.noellesroles.api.time.TimeRewindAreaSnapshot;
 import org.agmas.noellesroles.api.time.TimeRewindOptions;
 import org.agmas.noellesroles.api.time.TimeRewindSnapshot;
 import org.agmas.noellesroles.init.ModEffects;
+import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.component.DeathPenaltyComponent;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
 import io.wifi.starrailexpress.api.GameMode;
@@ -43,11 +51,12 @@ import io.wifi.starrailexpress.event.OnGameStarted;
 import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode;
 import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationSingleSelectGameMode;
 import io.wifi.starrailexpress.game.modes.funny.SREVolunteerOpenSelectGameMode;
-import io.wifi.starrailexpress.util.Scheduler;
 import io.wifi.starrailexpress.event.OnKillPlayerTriggered;
+import io.wifi.starrailexpress.event.OnPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import io.wifi.starrailexpress.util.Scheduler;
 import io.wifi.starrailexpress.util.TrueFalseResult;
 import io.wifi.utils.RandomSelector;
 import io.wifi.starrailexpress.network.PacketTracker;
@@ -98,6 +107,7 @@ public final class CommandBlockDirector {
         }
         registered = true;
         HimRole.registerSkill();
+        SteveRole.registerSkill();
         Error404Role.registerSkill();
         Entity303Role.registerSkill();
         EntityNullRole.registerSkill();
@@ -108,12 +118,27 @@ public final class CommandBlockDirector {
         FogGuestRole.registerSkill();
         PendulumRole.registerSkill();
         CandleShadeRole.registerSkill();
+        DreadlordRole.registerSkill();
         CommandBlockCracks.registerAim();
         GameInitializeEvent.EVENT.register(CommandBlockDirector::prepare);
         OnGameTrueStarted.EVENT.register(CommandBlockDirector::onTrueStart);
         OnGameStarted.EVENT.register(CommandBlockDirector::onGameStarted);
         OnGameEnd.EVENT.register((level, game) -> clear(level));
         ServerTickEvents.END_WORLD_TICK.register(CommandBlockDirector::tick);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register(
+                (handler, server) -> Error404Role.disconnected(handler.player));
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) ->
+                Error404Role.isHighDimension(player) ? InteractionResult.FAIL : InteractionResult.PASS);
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world, hand, hit) ->
+                Error404Role.isHighDimension(player) ? InteractionResult.FAIL : InteractionResult.PASS);
+        net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, world, hand) -> {
+            ItemStack stack = player.getItemInHand(hand);
+            if (Error404Role.isHighDimension(player) && !stack.is(ModItems.ERROR_TERMINAL)
+                    && !stack.is(ModItems.ERROR_DETONATOR) && !stack.is(ModItems.ERROR_ACCELERATOR)) {
+                return net.minecraft.world.InteractionResultHolder.fail(stack);
+            }
+            return net.minecraft.world.InteractionResultHolder.pass(stack);
+        });
         AllowPlayerDeath.EVENT.register((player, reason) -> CommandBlockCombat.allowScriptDeath(player, null, reason,
                 GameUtils.isForcedDeathInProgress()));
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, reason) -> CommandBlockCombat.allowScriptDeath(player,
@@ -123,11 +148,16 @@ public final class CommandBlockDirector {
                     && CommandBlockRules.isPoolRole(SREGameWorldComponent.KEY.get(attacker.level()).getRole(attacker))) {
                 CommandBlockCombat.onKillerDeath(attacker, dead);
             }
+            return TrueFalseResult.PASS;
+        });
+        // 破坏进度只在真正死亡时结算：OnKillPlayerTriggered 早于护盾、闪避、石头人无敌的否决，
+        // 被挡下的命中也会走到那里，所以改听死亡通知。只认命令方块杀手（异常改写池）的死亡，
+        // 异常、平民和中立死亡不扣血。
+        OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
             if (victim instanceof ServerPlayer dead && CommandBlockRules.isPoolRole(
                     SREGameWorldComponent.KEY.get(dead.level()).getRole(dead))) {
                 addDestruction(dead.serverLevel());
             }
-            return TrueFalseResult.PASS;
         });
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(CommandBlockCombat::allowDamage);
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
@@ -164,7 +194,19 @@ public final class CommandBlockDirector {
             return result;
         }
         GameUtils.WinStatus effective = result == null || result == GameUtils.WinStatus.NOT_MODIFY ? proposed : result;
-        if (effective == GameUtils.WinStatus.KILLERS || effective == GameUtils.WinStatus.PASSENGERS) {
+        // 场上没有平民（好人死绝）：与普通对局一致放行杀手胜利，正常走结算。
+        // 特殊中立职业的锁局已经在事件链里把 result 改成非 KILLERS（如 NONE），
+        // 到这里 effective 自然不是 KILLERS，锁局不受影响。
+        if (effective == GameUtils.WinStatus.KILLERS) {
+            return result;
+        }
+        // 杀手全灭但破坏进度未满：继续对局，乘客胜利只认破坏配额。
+        if (effective == GameUtils.WinStatus.PASSENGERS) {
+            return GameUtils.WinStatus.NONE;
+        }
+        // 平滑回溯会临时把玩家切成旁观者，不能把这段保护期算作全员离场。
+        if (effective == GameUtils.WinStatus.NO_PLAYER
+                && level.players().stream().anyMatch(TimeRewind::isSmoothRewinding)) {
             return GameUtils.WinStatus.NONE;
         }
         return result;
@@ -207,8 +249,9 @@ public final class CommandBlockDirector {
         if (session == null || victim == null || killer == null) {
             return;
         }
+        // 挂在会话计时上：会议(时间冻结)期间一并停表，解冻后再继续倒数。
         session.pendingKills.add(new PendingKill(victim.getUUID(), killer.getUUID(), reason,
-                victim.level().getGameTime() + delay));
+                session.tick + delay));
     }
 
     private static void onTrueStart(ServerLevel level) {
@@ -223,7 +266,7 @@ public final class CommandBlockDirector {
         suppressOfficialRoll = false;
         session = null;
         CommandBlockCombat.clear();
-        Error404Role.clear();
+        Error404Role.clear(level);
         if (!supports(game.getGameMode()) || SREDisableManager.isRoleDisabled(ModRoles.COMMAND_BLOCK)
                 || Noellesroles.isRoleDisabled(ModRoles.COMMAND_BLOCK)) {
             suppressOfficialRoll = true;
@@ -268,8 +311,15 @@ public final class CommandBlockDirector {
         }
         spawnMarker(level);
         session.introPlayed = true;
-        // 比飞机的 +4 聚焦包晚两拍。这条开场轨道后到，会直接换掉它。
-        Scheduler.schedule(() -> sendIntro(level), 6);
+        syncProgress(level);
+        // 和飞机开场一样，先让区块及实体生成包同步到客户端，再切入远景。
+        Session introSession = session;
+        Scheduler.schedule(() -> {
+            if (session == introSession && replacesOpeningIntro(level)
+                    && SREGameWorldComponent.KEY.get(level).isRunning()) {
+                sendIntro(level);
+            }
+        }, 6);
     }
 
     private static void sendIntro(ServerLevel level) {
@@ -287,7 +337,7 @@ public final class CommandBlockDirector {
             }
             return;
         }
-        Vec3 focus = marker.position().add(0.0D, 4.0D, 0.0D);
+        Vec3 focus = marker.position();
         for (ServerPlayer player : level.players()) {
             if (player.gameMode.getGameModeForPlayer() != GameType.ADVENTURE) {
                 continue;
@@ -328,16 +378,16 @@ public final class CommandBlockDirector {
         }
         session.active = true;
         occupySlots = true;
-        session.quota = CommandBlockRules.markedCount(session.originalKillers);
+        session.quota = CommandBlockRules.destructionQuota(session.originalKillers);
         markAbnormals(level);
-        scheduleNextConversion(level, level.getGameTime());
-        session.nextEventAt = level.getGameTime() + EVENT_INTERVAL;
+        assignSteve(level);
+        scheduleNextConversion(level, session.tick);
+        session.nextEventAt = session.tick + EVENT_INTERVAL;
         session.pendingEvent = pickEvent(level);
-        armRewind(level.getGameTime());
-        tellAbnormals(level, Component.translatable("message.noellesroles.command_block.event_soon",
-                Component.translatable(session.pendingEvent.key())));
+        armRewind(session.tick);
+        announceNextEvent(level, session.pendingEvent);
         spawnMarker(level);
-        session.nextCrackAt = level.getGameTime() + CommandBlockCracks.rollDelay(level);
+        session.nextCrackAt = session.tick + CommandBlockCracks.rollDelay(level);
         syncProgress(level);
         if (!session.introPlayed) {
             beginIntro(level);
@@ -346,18 +396,38 @@ public final class CommandBlockDirector {
     }
 
     private static void tick(ServerLevel level) {
-        if (!SREGameWorldComponent.KEY.get(level).isRunning()) {
+        boolean held = SREGameWorldComponent.KEY.get(level).isRunning() && holdsTheRound(level);
+        if (!held) {
+            if (level.getGameTime() % 40L == 0L) {
+                discardMarkers(level);
+            }
             return;
         }
-        if (session == null || !session.active || !session.levelKey.equals(level.dimension().location())) {
+        if (!session.active) {
             return;
         }
         long now = level.getGameTime();
         spinMarker(level);
+        // 会议(时间冻结)期间暂停事件推进：小事件、异常改写、裂缝与待定击杀全部停表，
+        // 只保留标记旋转和 HUD 同步，解冻后按会话自己的计时继续，不会把会议时间算进去。
+        if (SREGameTimeComponent.KEY.get(level).isTimeFrozen()) {
+            if (now % 40L == 0L) {
+                syncProgress(level);
+            }
+            return;
+        }
+        session.tick++;
+        now = session.tick;
         tickConversions(level, now);
         tickEvents(level, now);
         tickPendingKills(level, now);
+        SteveBuilder.tick(level);
         CommandBlockCombat.tick(level);
+        if (session.jumpRestoreAt > 0 && now >= session.jumpRestoreAt) {
+            session.jumpRestoreAt = 0;
+            SREGameWorldComponent.KEY.get(level)
+                    .setJumpAvailable(AreasWorldComponent.KEY.get(level).areasSettings.canJump);
+        }
         if (now >= session.nextCrackAt) {
             CommandBlockCracks.spawnOne(level);
             session.nextCrackAt = now + CommandBlockCracks.rollDelay(level);
@@ -365,7 +435,6 @@ public final class CommandBlockDirector {
         if (now % 40L == 0L) {
             syncProgress(level);
         }
-        Error404Role.tick(level);
     }
 
     private static void tickConversions(ServerLevel level, long now) {
@@ -394,11 +463,16 @@ public final class CommandBlockDirector {
         session.nextWarnAt = 0;
         session.nextRole = null;
         session.previewed = false;
+        if (CommandBlockRules.pool().isEmpty()) {
+            // 池内职业被全部禁用（enableroles / ban）时不再改写
+            return;
+        }
         while (!session.queue.isEmpty()) {
             UUID id = session.queue.get(0);
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
             if (player != null && GameUtils.isPlayerAliveAndSurvival(player)
-                    && !CommandBlockRules.isPoolRole(SREGameWorldComponent.KEY.get(level).getRole(player))) {
+                    && !CommandBlockRules.isPoolRole(SREGameWorldComponent.KEY.get(level).getRole(player))
+                    && !hasTwinChildren(player)) {
                 session.nextConvert = id;
                 session.nextConvertAt = now + CONVERT_INTERVAL;
                 beginPreview(level, player);
@@ -406,6 +480,91 @@ public final class CommandBlockDirector {
             }
             session.queue.remove(0);
         }
+    }
+
+    /** 双生之子修饰符绑定双人配对，不参与异常标记与改写。 */
+    private static boolean hasTwinChildren(ServerPlayer player) {
+        return player != null
+                && WorldModifierComponent.getInstance(player).isModifier(player, SEModifiers.TWIN_CHILDREN);
+    }
+
+    /** 命令方块局开局把一名平民改成 Steve。已经有人是 Steve 时不重复改。 */
+    private static void assignSteve(ServerLevel level) {
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
+        List<ServerPlayer> civilians = new ArrayList<>();
+        for (ServerPlayer player : level.players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+                continue;
+            }
+            if (game.isRole(player, ModRoles.STEVE)) {
+                org.agmas.noellesroles.init.RoleInitialItems.addInitialItemsForRole(player, ModRoles.STEVE);
+                return;
+            }
+            SRERole role = game.getRole(player);
+            if (role != null && role.isInnocent() && !role.isVigilanteTeam()
+                    && !CommandBlockRules.isPoolRole(role) && !session.abnormals.contains(player.getUUID())) {
+                civilians.add(player);
+            }
+        }
+        if (civilians.isEmpty()) {
+            return;
+        }
+        ServerPlayer chosen = civilians.get(level.random.nextInt(civilians.size()));
+        RoleUtils.changeRoleAndSendWelcome(chosen, ModRoles.STEVE);
+    }
+
+    /** 拉杆：把下一次改写换成另一个还没变成杀手的异常，并重新抽职业。 */
+    public static boolean rerollNext(ServerLevel level) {
+        if (session == null || !session.active || session.nextConvert == null
+                || !session.levelKey.equals(level.dimension().location())
+                || SREGameTimeComponent.KEY.get(level).isTimeFrozen()) {
+            return false;
+        }
+        List<ServerPlayer> marked = new ArrayList<>();
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
+        for (ServerPlayer player : level.players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(player) || !session.abnormals.contains(player.getUUID())
+                    || player.getUUID().equals(session.nextConvert) || hasTwinChildren(player)
+                    || Error404Role.isAssimilated(player)) {
+                continue;
+            }
+            SRERole role = game.getRole(player);
+            if (role == null || CommandBlockRules.isPoolRole(role)) {
+                continue;
+            }
+            marked.add(player);
+        }
+        if (marked.isEmpty()) {
+            return false;
+        }
+        ServerPlayer chosen = marked.get(level.random.nextInt(marked.size()));
+        List<SRERole> pool = new ArrayList<>(CommandBlockRules.pool());
+        pool.remove(session.nextRole);
+        if (pool.isEmpty()) {
+            return false;
+        }
+        SRERole next = pool.get(level.random.nextInt(pool.size()));
+        ServerPlayer previous = level.getServer().getPlayerList().getPlayer(session.nextConvert);
+        session.queue.remove(chosen.getUUID());
+        session.queue.add(0, chosen.getUUID());
+        session.nextConvert = chosen.getUUID();
+        session.nextRole = next;
+        session.previewed = true;
+        if (!game.isRole(chosen, ModRoles.ABNORMAL)) {
+            RoleUtils.changeRole(chosen, ModRoles.ABNORMAL, false, false, false, false, true);
+            // 变成异常（中立空壳）时清掉只适用于旧阵营的修饰符
+            RoleUtils.removeInapplicableModifiers(chosen, ModRoles.ABNORMAL);
+            RoleUtils.addModifier(chosen, NRModifiers.ABNORMAL);
+        }
+        PacketTracker.sendToClient(chosen,
+                new SubtitleS2CPayload(Component.translatable("message.noellesroles.command_block.preview",
+                        next.getName()), Component.empty(), 80, 0xFFE7D4FF, false,
+                        SubtitleS2CPayload.POS_TOP, false));
+        if (previous != null) {
+            previous.displayClientMessage(Component.translatable("message.noellesroles.steve.preview_cancelled")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE), false);
+        }
+        return true;
     }
 
     private static void beginPreview(ServerLevel level, ServerPlayer player) {
@@ -418,10 +577,13 @@ public final class CommandBlockDirector {
         session.previewed = true;
         session.nextWarnAt = 0;
         RoleUtils.changeRole(player, ModRoles.ABNORMAL, false, false, false, false, true);
+        // 变成异常（中立空壳）时清掉只适用于旧阵营的修饰符，避免平民专属修饰符跟到中立身上
+        RoleUtils.removeInapplicableModifiers(player, ModRoles.ABNORMAL);
         RoleUtils.addModifier(player, NRModifiers.ABNORMAL);
-        SRENetworkMessageUtils.sendCODSubtitleToPlayer(player,
-                Component.translatable("message.noellesroles.command_block.preview", role.getName()),
-                Component.empty(), 80, 0xFFE7D4FF, false, SubtitleS2CPayload.POS_CENTER);
+        PacketTracker.sendToClient(player,
+                new SubtitleS2CPayload(Component.translatable("message.noellesroles.command_block.preview",
+                        role.getName()), Component.empty(), 80, 0xFFE7D4FF, false,
+                        SubtitleS2CPayload.POS_TOP, false));
     }
 
     private static void convertNext(ServerLevel level) {
@@ -434,11 +596,15 @@ public final class CommandBlockDirector {
         session.previewed = false;
         SRERole role = session.nextRole;
         session.nextRole = null;
-        if (player == null || !GameUtils.isPlayerAliveAndSurvival(player)) {
+        if (player == null || !GameUtils.isPlayerAliveAndSurvival(player) || Error404Role.isAssimilated(player)) {
             return;
         }
         if (role == null || !CommandBlockRules.isPoolRole(role)) {
             List<SRERole> pool = CommandBlockRules.pool();
+            if (pool.isEmpty()) {
+                // 池内职业被全部禁用时保持异常空壳，不改写
+                return;
+            }
             role = pool.get(level.random.nextInt(pool.size()));
         }
         RoleUtils.removeModifier(player, NRModifiers.ABNORMAL, true, true);
@@ -455,9 +621,9 @@ public final class CommandBlockDirector {
     private static void announceBirth(ServerLevel level, SRERole role) {
         Component text = Component.translatable("message.noellesroles.command_block.born", role.getName());
         for (ServerPlayer player : level.players()) {
-            SRENetworkMessageUtils.sendCODSubtitleToPlayer(player, text, Component.empty(), 80, 0xFFB44DFF, false,
-                    SubtitleS2CPayload.POS_CENTER);
-            player.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0F, 1.0F);
+            PacketTracker.sendToClient(player, new SubtitleS2CPayload(text, Component.empty(), 80, 0xFFB44DFF,
+                    false, SubtitleS2CPayload.POS_TOP, false));
+            player.playNotifySound(SoundEvents.EVOKER_CAST_SPELL, SoundSource.MASTER, 0.8F, 0.65F);
         }
     }
 
@@ -470,9 +636,10 @@ public final class CommandBlockDirector {
         fire(level, session.pendingEvent);
         session.pendingEvent = pickEvent(level);
         session.nextEventAt = now + EVENT_INTERVAL;
+        // 事件刚触发，倒计时立刻回满，不等下一次 40 tick 的例行同步。
+        syncProgress(level);
         armRewind(now);
-        tellAbnormals(level, Component.translatable("message.noellesroles.command_block.event_soon",
-                Component.translatable(session.pendingEvent.key())));
+        announceNextEvent(level, session.pendingEvent);
     }
 
     private static void fire(ServerLevel level, FieldEvent event) {
@@ -488,24 +655,38 @@ public final class CommandBlockDirector {
                 }
             }
             case REWIND -> applyRewind(level);
-            case LEVITY -> {
-                for (ServerPlayer player : level.players()) {
-                    if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                        player.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 40, 0));
-                        player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 80, 0));
-                    }
-                }
-            }
             case HUSH -> {
                 for (ServerPlayer player : level.players()) {
                     if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                        player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, 8 * 20, 0));
-                        player.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, 8 * 20, 0));
+                        player.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, 20 * 20, 0));
+                        player.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, 20 * 20, 0));
+                    }
+                }
+            }
+            case TRACE -> {
+                for (ServerPlayer player : level.players()) {
+                    if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                        player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 12 * 20, 0));
+                    }
+                }
+            }
+            case JAM -> {
+                SREGameWorldComponent.KEY.get(level).setJumpAvailable(false);
+                session.jumpRestoreAt = session.tick + 15 * 20;
+            }
+            case INJECT -> {
+                for (ServerPlayer player : level.players()) {
+                    if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                        DisabledPatientRoleData.applyRandomTemporary(player, 12 * 20);
                     }
                 }
             }
             case ANCHOR -> applyAnchor(level);
         }
+        // 事件回放：记录本次命令方块小事件，形如「命令方块事件触发了：命令注入」
+        SRE.REPLAY_MANAGER.recordCustomEvent(
+                Component.translatable("replay.event.command_block.event_fired",
+                        Component.translatable(event.key())));
         Component text = Component.translatable(event.firedKey()).withStyle(ChatFormatting.DARK_PURPLE);
         for (ServerPlayer player : level.players()) {
             SRENetworkMessageUtils.sendBroadcast(player, text);
@@ -558,17 +739,17 @@ public final class CommandBlockDirector {
 
     private static void applyRewind(ServerLevel level) {
         if (!session.rewindSaved) {
-            maybeSaveRewind(level, level.getGameTime());
+            maybeSaveRewind(level, session.tick);
         }
         for (Map.Entry<UUID, TimeRewindSnapshot> entry : session.rewindNodes.entrySet()) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.getKey());
-            if (player == null) {
+            // 节点之后死亡的人留在死亡状态，不因回溯复活。
+            if (player == null || !GameUtils.isPlayerAliveAndSurvival(player)) {
                 continue;
             }
-            if (!GameUtils.isPlayerAliveAndSurvival(player)) {
-                GameUtils.revivePlayer(player, player.getX(), player.getY(), player.getZ());
-            }
             TimeRewind.smoothRestore(player, entry.getValue(), 40);
+            // 回溯会把旁观者切回存活，先挂上死亡惩罚，避免这段时间看见职业。
+            DeathPenaltyComponent.KEY.get(player).setPenalty(80, true);
         }
         if (session.rewindArea != null) {
             TimeRewind.restoreArea(level, session.rewindArea);
@@ -602,7 +783,7 @@ public final class CommandBlockDirector {
 
     private static void applyAnchor(ServerLevel level) {
         if (!session.anchorSaved) {
-            maybeSaveAnchor(level, level.getGameTime());
+            maybeSaveAnchor(level, session.tick);
         }
         for (ServerPlayer player : level.players()) {
             if (!GameUtils.isPlayerAliveAndSurvival(player)) {
@@ -658,13 +839,18 @@ public final class CommandBlockDirector {
             if (!GameUtils.isPlayerAliveAndSurvival(player)) {
                 continue;
             }
+            // 双生之子绑定双人配对，不标记异常、不进改写队列
+            if (hasTwinChildren(player)) {
+                continue;
+            }
             SRERole role = game.getRole(player);
             if (role != null && role.isInnocent() && !role.isVigilanteTeam() && !CommandBlockRules.isPoolRole(role)) {
                 civilians.add(player);
             }
         }
         Collections.shuffle(civilians, new java.util.Random(level.getGameTime()));
-        int n = Math.min(session.quota, civilians.size());
+        // 血量（破坏配额）比异常人数多 2，标记异常的人数仍按原杀手数量的 1.5 倍算。
+        int n = Math.min(CommandBlockRules.markedCount(session.originalKillers), civilians.size());
         for (int i = 0; i < n; i++) {
             session.abnormals.add(civilians.get(i).getUUID());
             session.queue.add(civilians.get(i).getUUID());
@@ -672,12 +858,18 @@ public final class CommandBlockDirector {
         }
     }
 
-    private static void tellAbnormals(ServerLevel level, Component message) {
-        for (UUID id : session.abnormals) {
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(id);
-            if (player != null) {
-                player.displayClientMessage(message, false);
-            }
+    /**
+     * 下个小事件的全场广播引导：形如「即将发生：命令注入」。
+     * 替代早年只通知被标记异常的做法，现在所有人共享同一条倒计时引导。
+     */
+    private static void announceNextEvent(ServerLevel level, FieldEvent event) {
+        if (event == null) {
+            return;
+        }
+        Component text = Component.translatable("message.noellesroles.command_block.event_soon",
+                Component.translatable(event.key())).withStyle(ChatFormatting.LIGHT_PURPLE);
+        for (ServerPlayer player : level.players()) {
+            SRENetworkMessageUtils.sendBroadcast(player, text);
         }
     }
 
@@ -696,9 +888,20 @@ public final class CommandBlockDirector {
         if (level == null) {
             return;
         }
+        boolean show = session != null && !session.ended
+                && session.levelKey.equals(level.dimension().location())
+                && (session.active || session.introPlayed);
         int progress = session == null ? 0 : session.killerDeaths;
-        int goal = session == null || !session.active || session.ended ? 0 : session.quota;
-        CommandBlockProgressS2CPacket packet = new CommandBlockProgressS2CPacket(progress, goal);
+        int goal = show ? Math.max(1, session.quota) : 0;
+        int eventRemaining = 0;
+        int eventTotal = 0;
+        if (show && session.nextEventAt > 0L) {
+            long left = session.nextEventAt - session.tick;
+            eventRemaining = (int) Math.max(0L, Math.min(EVENT_INTERVAL, left));
+            eventTotal = EVENT_INTERVAL;
+        }
+        CommandBlockProgressS2CPacket packet = new CommandBlockProgressS2CPacket(progress, goal, eventRemaining,
+                eventTotal);
         for (ServerPlayer player : level.players()) {
             ServerPlayNetworking.send(player, packet);
         }
@@ -744,7 +947,7 @@ public final class CommandBlockDirector {
         Vec3 center = markerPos(level);
         level.getChunk(BlockPos.containing(center));
         CommandBlockMarkerEntity marker = new CommandBlockMarkerEntity(ModEntities.COMMAND_BLOCK_MARKER, level);
-        marker.setPos(center.x, center.y - 4.0D, center.z);
+        marker.setPos(center.x, center.y, center.z);
         marker.setStage(CommandBlockRules.destructionStage(session.killerDeaths, session.quota));
         level.addFreshEntity(marker);
         session.markerId = marker.getId();
@@ -767,21 +970,21 @@ public final class CommandBlockDirector {
 
     private static Vec3 markerPos(ServerLevel level) {
         AreasWorldComponent areas = AreasWorldComponent.KEY.get(level);
-        Vec3 anchor = null;
-        if (areas.getSpawnPos() != null && areas.getSpawnPos().pos != null) {
-            anchor = areas.getSpawnPos().pos;
+        AABB play = areas.getPlayArea();
+        // getSpawnPos() 是世界重生点，可能在大厅；和飞机事件一样按本局游玩区域定位。
+        if (play != null && (play.getXsize() >= 2.0D || play.getZsize() >= 2.0D)) {
+            Vec3 center = play.getCenter();
+            return openSky(level, center.x, center.z, Mth.floor(play.minY));
         }
-        if (anchor == null && !level.players().isEmpty()) {
-            anchor = level.players().get(0).position();
-        }
-        if (anchor == null) {
-            AABB play = areas.getPlayArea();
-            anchor = play == null ? new Vec3(0.0D, 80.0D, 0.0D) : play.getCenter();
-        }
+        Vec3 anchor = level.players().stream()
+                .filter(player -> player.gameMode.getGameModeForPlayer() == GameType.ADVENTURE)
+                .map(ServerPlayer::position)
+                .findFirst()
+                .orElseGet(() -> Vec3.atCenterOf(level.getSharedSpawnPos()));
         return openSky(level, anchor.x, anchor.z, Mth.floor(anchor.y));
     }
 
-    /** 沿出生点那一列爬过屋顶，把方块中心放在最高实心方块上方。 */
+    /** 沿游玩区域中心那一列爬过屋顶，把方块中心放在最高实心方块上方。 */
     private static Vec3 openSky(ServerLevel level, double x, double z, int startY) {
         int bx = Mth.floor(x);
         int bz = Mth.floor(z);
@@ -843,15 +1046,23 @@ public final class CommandBlockDirector {
                 RoleUtils.removeModifier(player, NRModifiers.ABNORMAL, true, true);
             }
             CommandBlockCracks.discard(level);
-            CommandBlockProgressS2CPacket hide = new CommandBlockProgressS2CPacket(0, 0);
+            CommandBlockProgressS2CPacket hide = new CommandBlockProgressS2CPacket(0, 0, 0, 0);
             for (ServerPlayer player : level.players()) {
                 ServerPlayNetworking.send(player, hide);
             }
+            // 封锁事件可能没到时间就结束对局，结束时无条件还原跳跃开关。
+            SREGameWorldComponent.KEY.get(level)
+                    .setJumpAvailable(AreasWorldComponent.KEY.get(level).areasSettings.canJump);
         }
         discardMarkers(level);
         session = null;
         CommandBlockCombat.clear();
-        Error404Role.clear();
+        if (level != null) {
+            Error404Role.clear(level);
+        } else {
+            Error404Role.clear();
+        }
+        SteveBuilder.clear();
     }
 
     private static boolean supports(GameMode mode) {
@@ -872,12 +1083,16 @@ public final class CommandBlockDirector {
                 "message.noellesroles.command_block.event.static_fired"),
         REWIND("message.noellesroles.command_block.event.rewind",
                 "message.noellesroles.command_block.event.rewind_fired"),
-        LEVITY("message.noellesroles.command_block.event.levity",
-                "message.noellesroles.command_block.event.levity_fired"),
         HUSH("message.noellesroles.command_block.event.hush",
                 "message.noellesroles.command_block.event.hush_fired"),
         ANCHOR("message.noellesroles.command_block.event.anchor",
-                "message.noellesroles.command_block.event.anchor_fired");
+                "message.noellesroles.command_block.event.anchor_fired"),
+        TRACE("message.noellesroles.command_block.event.trace",
+                "message.noellesroles.command_block.event.trace_fired"),
+        JAM("message.noellesroles.command_block.event.jam",
+                "message.noellesroles.command_block.event.jam_fired"),
+        INJECT("message.noellesroles.command_block.event.inject",
+                "message.noellesroles.command_block.event.inject_fired");
 
         private final String key;
         private final String fired;
@@ -899,6 +1114,11 @@ public final class CommandBlockDirector {
     private static final class Session {
         private final ResourceLocation levelKey;
         private final int originalKillers;
+        /**
+         * 会话自己的计时（tick）：只在非冻结期自增。
+         * 会议(时间冻结)期间所有排期一起停表，避免一会长会把事件计时烧掉。
+         */
+        private long tick;
         private final List<UUID> abnormals = new ArrayList<>();
         private final List<UUID> queue = new ArrayList<>();
         private final List<PendingKill> pendingKills = new ArrayList<>();
@@ -912,6 +1132,7 @@ public final class CommandBlockDirector {
         private long nextWarnAt;
         private long nextEventAt;
         private long nextCrackAt;
+        private long jumpRestoreAt;
         private UUID nextConvert;
         private SRERole nextRole;
         private boolean previewed;
