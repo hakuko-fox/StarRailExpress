@@ -1,4 +1,8 @@
-﻿{
+{
+  "message.sre.backpack.assignment_success": "實際分配符合卡片選擇，已使用卡片。",
+  "message.sre.backpack.faction_mismatch_refund": "實際陣營與卡片不符，或未分配到角色；已退還陣營卡並還原冷卻時間。",
+  "message.sre.backpack.role_mismatch_refund": "實際角色與自選角色不符，或未分配到角色；已退還自選卡。",
+  "message.sre.backpack.faction_no_card": "你沒有這種陣營卡。",
   "=== END ===": "",
   "=== 遊戲管理UI ===": "",
   "============ 地圖構建助手 ============": "",
@@ -2249,7 +2253,7 @@
   "message.sre.minigame_wrong_type": "請前往指定的%s任務點",
   "message.sre.pass.faction.assign_failed": "很抱歉，您這局沒有玩到您強制選中的陣營。我們已補償您一張對應職業卡片。",
   "message.sre.force_team.assign_failed": "很抱歉，強制陣營失效了。但由於您並非使用陣營卡，故不會補償。",
-  "message.sre.progression.faction_card_activated": "你的%s已生效並消耗。",
+  "message.sre.progression.faction_card_activated": "已預約使用%s；若實際分配的陣營不符，將退還卡片。",
   "message.sre.progression.faction_card_activate_failed": "陣營卡 %s 當前暫不可用！",
   "message.sre.progression.faction_card_already_active": "你已經啟動了一張陣營卡。",
   "message.sre.progression.faction_card_on_cooldown": "%1$s冷卻中，還需等待 %2$s。",

@@ -46,6 +46,9 @@ public final class ProgressionCommand {
             return 1;
         }
         Component message = switch (result) {
+            case NOT_LOADED -> Component.translatable("message.sre.backpack.choice.not_loaded");
+            case GAME_RUNNING -> Component.translatable("message.sre.backpack.choice.game_running");
+            case NO_CARD -> Component.translatable("message.sre.backpack.faction_no_card");
             case ON_COOLDOWN -> Component.translatable("message.sre.progression.faction_card_on_cooldown",
                     Component.translatable(type.displayName),
                     FactionCardCooldown.formatRemaining(BackpackManager.remainingCooldownMs(player, type)));
@@ -53,6 +56,7 @@ public final class ProgressionCommand {
             case INVALID, SUCCESS -> Component.translatable("message.sre.progression.faction_card_activate_failed",
                     Component.translatable(type.displayName));
         };
+        player.sendSystemMessage(message);
         player.displayClientMessage(message, true);
         return 0;
     }

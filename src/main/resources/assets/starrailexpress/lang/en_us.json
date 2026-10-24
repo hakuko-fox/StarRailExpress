@@ -1,4 +1,8 @@
 {
+  "message.sre.backpack.assignment_success": "Your assigned role matches your card. The card has been consumed.",
+  "message.sre.backpack.faction_mismatch_refund": "Your assigned faction did not match the card, or no role was assigned. The faction card and its cooldown have been refunded.",
+  "message.sre.backpack.role_mismatch_refund": "Your assigned role did not match your choice, or no role was assigned. Your role choice card has been refunded.",
+  "message.sre.backpack.faction_no_card": "You do not own this faction card.",
   "=== END ===": "",
   "=== 游戏管理UI ===": "",
   "============ 地图构建助手 ============": "",
@@ -2206,7 +2210,7 @@
   "message.sre.minigame_cooldown": "This task point is on cooldown. Come back later",
   "message.sre.minigame_no_task": "No matching minigame task available",
   "message.sre.minigame_wrong_type": "Please go to the designated %s task point",
-  "message.sre.progression.faction_card_activated": "Your %s has been activated and consumed.",
+  "message.sre.progression.faction_card_activated": "Your %s is reserved. It will be refunded if your assigned faction does not match.",
   "message.sre.progression.faction_card_activate_failed": "Faction card %s is currently unavailable!",
   "message.sre.progression.faction_card_already_active": "You have already activated a faction card.",
   "message.sre.progression.faction_card_on_cooldown": "%1$s on cooldown, please wait %2$s.",

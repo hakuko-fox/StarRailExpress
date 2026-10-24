@@ -68,6 +68,7 @@ public final class BackpackManager {
     private static final long FLUSH_INTERVAL_MS = 5_000L;
     private static final long FLUSH_TIMEOUT_MS = 4_000L;
     private static final Map<UUID, Entry> ENTRIES = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, Set<UUID>> ROUND_PARTICIPANTS = new HashMap<>();
 
     private BackpackManager() {
     }
@@ -78,24 +79,44 @@ public final class BackpackManager {
         ServerTickEvents.END_SERVER_TICK.register(BackpackManager::tick);
         OnGameStarted.EVENT.register(world -> {
             if (SREGameWorldComponent.KEY.get(world).getGameMode().autoTriggerGameTrueStarted()) {
-                consumeAssignedFactionCards(world);
+                settleAssignedCards(world);
             }
         });
-        OnGameTrueStarted.EVENT.register(BackpackManager::consumeAssignedFactionCards);
+        OnGameTrueStarted.EVENT.register(BackpackManager::settleAssignedCards);
         ServerLifecycleEvents.SERVER_STOPPING.register(BackpackManager::flushAllBlocking);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ENTRIES.clear());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            ENTRIES.clear();
+            ROUND_PARTICIPANTS.clear();
+        });
     }
 
     // ====================== 公开服务端 API ======================
 
-    private static void consumeAssignedFactionCards(net.minecraft.server.level.ServerLevel world) {
+    private static void settleAssignedCards(net.minecraft.server.level.ServerLevel world) {
         var game = SREGameWorldComponent.KEY.get(world);
+        Set<UUID> participants = ROUND_PARTICIPANTS.remove(world.dimension().location());
+        if (participants == null) return;
         for (ServerPlayer player : world.players()) {
+            if (!participants.contains(player.getUUID())) continue;
             Entry entry = ENTRIES.get(player.getUUID());
-            if (entry != null && entry.loaded && game.getRole(player) != null
-                    && entry.state.pendingFactionCard != FactionCardType.NONE) {
-                entry.state.consumeFactionCard();
+            if (entry != null && entry.loaded) {
+                SRERole actualRole = game.getRole(player);
+                var result = CardSettlement.settle(entry.state,
+                        actualRole == null ? null : actualRole.identifier().toString(),
+                        actualRole == null ? -1 : PlayerRoleWeightManager.getRoleType(actualRole));
+                if (result == CardSettlement.Result.NONE) continue;
+                var forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
+                if (forced != null && forced.type() == ForceTeamType.CARD) {
+                    PlayerRoleWeightManager.ForcePlayerTeam.remove(player.getUUID());
+                }
                 markDirty(player, entry);
+                Component message = Component.translatable(switch (result) {
+                    case SUCCESS -> "message.sre.backpack.assignment_success";
+                    case FACTION_REFUNDED -> "message.sre.backpack.faction_mismatch_refund";
+                    default -> "message.sre.backpack.role_mismatch_refund";
+                });
+                player.sendSystemMessage(message);
+                player.displayClientMessage(message, true);
             }
         }
     }
@@ -318,6 +339,9 @@ public final class BackpackManager {
     public enum ActivateResult {
         SUCCESS,
         INVALID,
+        NOT_LOADED,
+        GAME_RUNNING,
+        NO_CARD,
         ALREADY_ACTIVE,
         ON_COOLDOWN
     }
@@ -328,14 +352,13 @@ public final class BackpackManager {
     }
 
     public static ActivateResult activateCardResult(ServerPlayer player, FactionCardType type) {
-        if (type == FactionCardType.NONE || !isLoaded(player.getUUID())
-                || SREGameWorldComponent.KEY.get(player.serverLevel()).isRunning()) {
-            return ActivateResult.INVALID;
-        }
+        if (type == FactionCardType.NONE) return ActivateResult.INVALID;
+        if (!isLoaded(player.getUUID())) return ActivateResult.NOT_LOADED;
+        if (SREGameWorldComponent.KEY.get(player.serverLevel()).isRunning()) return ActivateResult.GAME_RUNNING;
         Entry entry = getEntry(player.getUUID());
         int current = entry.state.cards.getOrDefault(type, 0);
         if (current < 1) {
-            return ActivateResult.INVALID;
+            return ActivateResult.NO_CARD;
         }
         if (entry.state.pendingFactionCard != FactionCardType.NONE
                 || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
@@ -435,6 +458,8 @@ public final class BackpackManager {
     /** Resolve persistent role choices before the standard murder-role assignment starts. */
     public static void prepareRoleChoices(net.minecraft.server.level.ServerLevel world,
             List<ServerPlayer> players, boolean supportedMode) {
+        ROUND_PARTICIPANTS.put(world.dimension().location(), players.stream()
+                .map(ServerPlayer::getUUID).collect(java.util.stream.Collectors.toSet()));
         for (ServerPlayer player : players) {
             Entry entry = ENTRIES.get(player.getUUID());
             if (entry == null || !entry.loaded || entry.state.pendingFactionCard == FactionCardType.NONE
@@ -485,7 +510,6 @@ public final class BackpackManager {
                 Component message = Component.translatable("message.sre.backpack.choice.minimum_players_refund",
                         minimumPlayers, players.size());
                 refundPendingRole(player, message);
-                player.sendSystemMessage(message);
                 continue;
             }
             applicants.add(new BackpackRoleChoiceResolver.Request(player.getUUID(), role.identifier().toString(),
@@ -519,7 +543,6 @@ public final class BackpackManager {
             ServerPlayer player = world.getServer().getPlayerList().getPlayer(winner.getKey());
             if (player != null && role != null) {
                 Harpymodloader.FORCED_MODDED_ROLE.put(player.getUUID(), role);
-                clearPendingRole(player);
             }
         }
         for (UUID loser : resolution.losers()) {
@@ -565,12 +588,6 @@ public final class BackpackManager {
                 && (fullId.equals(id.trim()) || path.equals(id.trim())));
     }
 
-    private static void clearPendingRole(ServerPlayer player) {
-        Entry entry = getEntry(player.getUUID());
-        entry.state.pendingRoleId = "";
-        markDirty(player, entry);
-    }
-
     private static void refundPendingRole(ServerPlayer player, String messageKey) {
         refundPendingRole(player, Component.translatable(messageKey));
     }
@@ -583,6 +600,7 @@ public final class BackpackManager {
         entry.state.pendingRoleId = "";
         entry.state.roleChoiceCards = (int) Math.min(Integer.MAX_VALUE, (long) entry.state.roleChoiceCards + 1L);
         markDirty(player, entry);
+        player.sendSystemMessage(message);
         player.displayClientMessage(message, true);
     }
 
