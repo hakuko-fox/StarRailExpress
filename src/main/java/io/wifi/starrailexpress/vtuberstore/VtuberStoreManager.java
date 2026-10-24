@@ -22,7 +22,6 @@ import io.wifi.starrailexpress.network.VtuberStoreCatalogPayload;
 import io.wifi.starrailexpress.network.VtuberStorePurchaseResultPayload;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import io.wifi.starrailexpress.util.ItemSkinManager;
-import io.wifi.starrailexpress.util.SREPlayerUtils;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -146,10 +145,8 @@ public final class VtuberStoreManager {
             return;
         }
         UUID roundId = ACTIVE_ROUNDS.computeIfAbsent(world.dimension(), ignored -> UUID.randomUUID());
-        boolean alive = SREPlayerUtils.isPlayerAlive(world, player.getUUID());
-        int amount = winner
-                ? (alive ? config.rewards.winnerAlive : config.rewards.winnerDead)
-                : (alive ? config.rewards.loserAlive : config.rewards.loserDead);
+        boolean alive = roundEnd.wasPlayerAlive(player.getUUID());
+        int amount = config.rewards.amountForRound(winner, alive);
         if (!BackpackManager.isLoaded(player.getUUID())) {
             queuePendingReward(player.getUUID(), roundId, amount, winner, alive);
             SRE.LOGGER.warn("Queued Vtuber Coin reward for {} in round {} until backpack data is loaded",

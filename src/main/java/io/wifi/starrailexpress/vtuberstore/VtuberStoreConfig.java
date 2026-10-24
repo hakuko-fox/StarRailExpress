@@ -105,6 +105,10 @@ public final class VtuberStoreConfig {
         public int winnerDead = 3;
         public Integer loserAlive = 2;
         public Integer loserDead = 1;
+
+        public int amountForRound(boolean winner, boolean alive) {
+            return winner ? (alive ? winnerAlive : winnerDead) : (alive ? loserAlive : loserDead);
+        }
     }
 
     public static final class ProductSetting {

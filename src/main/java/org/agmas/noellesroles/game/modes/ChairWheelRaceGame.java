@@ -139,6 +139,10 @@ public class ChairWheelRaceGame extends GameMode {
         roundComponent.setRoundEndData(serverLevel.players().stream()
                 .filter(participant -> raceParticipants.contains(participant.getUUID())).toList(),
                 GameUtils.WinStatus.CUSTOM_COMPONENT);
+        // Finishers become spectators at the finish line without dying.
+        for (ServerPlayer finisher : isWin) {
+            roundComponent.setPlayerAlive(finisher.getUUID(), true);
+        }
         if (player != null) {
             roundComponent.CustomWinnerPlayers.add(player.getUUID());
         }

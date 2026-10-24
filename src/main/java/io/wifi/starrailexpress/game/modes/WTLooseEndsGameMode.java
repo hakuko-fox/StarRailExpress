@@ -161,11 +161,6 @@ public class WTLooseEndsGameMode extends GameMode {
     @Override
     public void tickServerGameLoop(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent) {
         super.tickServerGameLoop(serverWorld, gameWorldComponent);
-        GameUtils.WinStatus winStatus = GameUtils.WinStatus.NONE;
-
-        // check if out of time
-        if (!SREGameTimeComponent.KEY.get(serverWorld).hasTime())
-            winStatus = GameUtils.WinStatus.TIME;
 
         // check if last person standing in loose end
         int playersLeft = 0;
@@ -177,22 +172,9 @@ public class WTLooseEndsGameMode extends GameMode {
             }
         }
 
-        if (playersLeft <= 0) {
-            var modifiedWinStatus = AllowGameEnd.EVENT_START.invoker().allowGameEnd(serverWorld, WinStatus.NO_PLAYER,
-                    true);
-            if (modifiedWinStatus == null || modifiedWinStatus.equals(WinStatus.NOT_MODIFY)) {
-                modifiedWinStatus = AllowGameEnd.EVENT_END.invoker().allowGameEnd(serverWorld, WinStatus.NO_PLAYER,
-                        true);
-            }
-            if (modifiedWinStatus != null && !modifiedWinStatus.equals(WinStatus.NONE)) {
-                GameUtils.stopGame(serverWorld);
-                return;
-            }
-        }
-
+        WinStatus winStatus = getRoundWinStatus(playersLeft, SREGameTimeComponent.KEY.get(serverWorld).hasTime());
         if (playersLeft == 1) {
             gameWorldComponent.setLooseEndWinner(lastPlayer.getUUID());
-            winStatus = GameUtils.WinStatus.LOOSE_END;
         }
 
         var modifiedWinStatus = AllowGameEnd.EVENT_START.invoker().allowGameEnd(serverWorld, winStatus,
@@ -211,6 +193,16 @@ public class WTLooseEndsGameMode extends GameMode {
             SREGameRoundEndComponent.KEY.get(serverWorld).setRoundEndData(serverWorld.players(), winStatus);
             GameUtils.stopGame(serverWorld);
         }
+    }
+
+    static WinStatus getRoundWinStatus(int playersLeft, boolean hasTime) {
+        if (playersLeft <= 0) {
+            return WinStatus.NO_PLAYER;
+        }
+        if (playersLeft == 1) {
+            return WinStatus.LOOSE_END;
+        }
+        return hasTime ? WinStatus.NONE : WinStatus.TIME;
     }
 
     public boolean hasMood() {

@@ -152,6 +152,24 @@ public class SREGameRoundEndComponent implements AutoSyncedComponent {
         return false;
     }
 
+    public boolean wasPlayerAlive(UUID uuid) {
+        for (RoundEndData detail : this.players) {
+            if (detail.player.getId().equals(uuid)) {
+                return !detail.wasDead;
+            }
+        }
+        return false;
+    }
+
+    public void setPlayerAlive(UUID uuid, boolean alive) {
+        for (RoundEndData detail : this.players) {
+            if (detail.player.getId().equals(uuid)) {
+                detail.wasDead = !alive;
+                return;
+            }
+        }
+    }
+
     @Override
     public void writeToNbt(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup) {
         ListTag list = new ListTag();
