@@ -10,6 +10,7 @@ import org.agmas.noellesroles.game.command_block.CommandBlockRules;
 import org.agmas.noellesroles.packet.CommandBlockProgressS2CPacket;
 
 import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.client.gui.HudMoodRenderer;
 import io.wifi.starrailexpress.client.gui.MiniGameHudRenderer;
 import io.wifi.starrailexpress.api.SRERole;
@@ -54,6 +55,17 @@ public final class CommandBlockProgressClient {
 
     public static boolean isShowing() {
         return goal > 0;
+    }
+
+    /**
+     * 当前命令方块的破坏阶段（0~3），与服务端 {@code CommandBlockRules.destructionStage} 同一套换算：
+     * 进度不到 1/3 为阶段 0，1/3~2/3 为阶段 1，2/3 以上为阶段 2，打满即阶段 3（已被摧毁）。
+     */
+    public static int stage() {
+        if (!isShowing()) {
+            return 0;
+        }
+        return CommandBlockRules.destructionStage(progress, goal);
     }
 
     private static void clear() {
@@ -108,7 +120,9 @@ public final class CommandBlockProgressClient {
     }
 
     private static void tick(Minecraft client) {
-        if (eventRemaining > 0) {
+        // 会议(时间冻结)期间倒计时条与服务端一同停表，解冻后继续
+        if (eventRemaining > 0 && client.level != null
+                && !SREGameTimeComponent.KEY.get(client.level).isTimeFrozen()) {
             eventRemaining--;
         }
         tickGlow(client);

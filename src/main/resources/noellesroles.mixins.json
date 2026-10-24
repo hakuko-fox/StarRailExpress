@@ -6,6 +6,7 @@
   "plugin": "org.agmas.noellesroles.client.NRMixinPlugin",
   "mixins": [
     "AbstractContainerMenuMixin",
+    "network.EchoHotbarPacketMixin",
     "DecServerJoinPlayer",
     "EntityMixinForInvisible",
     "FireworkRocketMixin",
@@ -24,7 +25,10 @@
     "CommandBlockPlaneIntroMixin",
     "CommandBlockRolePoolMixin",
     "CommandBlockCrackGunMixin",
+    "DreadlordSoulTrackingMixin",
     "StevePickaxeBreakMixin",
+    "SteveMiningPermissionMixin",
+    "SteveMiningProgressMixin",
     "MagicianPlayerEntityMixin",
     "PlayerPsychoComponentCooldownMixin",
     "PlayerPsychoComponentMixin",
@@ -99,6 +103,7 @@
     "roles.raven.RavenKnifeLeftClickMixin",
     "roles.stalker.StalkerLeftClickKillMixin",
     "roles.stalker.StalkerOffItemMixin",
+    "roles.tailor.TailorCooldownPenaltyMixin",
     "roles.thief.DelayedCoinDisplayMixin",
     "roles.thief.ThiefsHonorMixin",
     "roles.trapper.TrapperTrapGunPayloadMixin",
@@ -120,6 +125,7 @@
     "defaultRequire": 1
   },
   "client": [
+    "client.SteveMiningPredictionMixin",
     "client.AbstractClientPlayerSkinMixin",
     "client.C4ItemEntityRendererMixin",
     "client.EmbalmerPalettePlayerRenderMixin",
@@ -249,6 +255,10 @@
     "client.echo.EchoHuntFirstPersonMixin",
     "client.echo.EchoHuntThirdPersonMixin",
     "client.echo.EchoHuntItemPoseMixin",
+    "client.echo.EchoRollPlayerMixin",
+    "client.echo.EchoRollModelMixin",
+    "client.echo.EchoRollInputMixin",
+    "client.echo.EchoRollHandMixin",
     "client.echo.EchoInterceptorScaleMixin"
   ],
   "overwrites": {

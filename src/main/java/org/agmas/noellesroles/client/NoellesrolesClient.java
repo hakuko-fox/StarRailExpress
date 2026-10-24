@@ -241,6 +241,8 @@ public class NoellesrolesClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        org.agmas.noellesroles.game.command_block.SteveMiner.clientTaskBlock =
+                pos -> taskBlocks.containsKey(pos) || TaskBlockOverlayRenderer.RoomDoorPositions.contains(pos);
         org.agmas.noellesroles.game.modes.echo.client.EchoInputClient.initialize();
         org.agmas.noellesroles.game.modes.echo.client.EchoEditorClient.initialize();
         org.agmas.noellesroles.game.modes.echo.client.EchoIntroClient.initialize();
@@ -313,6 +315,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         org.agmas.noellesroles.client.HamoonClientFx.register();
         org.agmas.noellesroles.client.RoadRollerClient.register();
         org.agmas.noellesroles.client.CommandBlockProgressClient.register();
+        org.agmas.noellesroles.client.hud.roles.PaperDollHud.register();
+        org.agmas.noellesroles.client.CommandBlockAmbientSound.register();
         org.agmas.noellesroles.content.item.LetterItem.clientReplacementOpener =
                 org.agmas.noellesroles.client.CommandBlockLetter::tryOpen;
         LimitedInventoryScreen.NotAllowItemTakePredicates.add(stack -> stack.is(ModItems.BOMB));
@@ -551,6 +555,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         Error404Client.register();
         DreadlordSkinHandler.register();
         DreadlordDreadClient.register();
+        DreadlordClientFx.register();
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
@@ -1450,7 +1455,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new org.agmas.noellesroles.game.roles.innocence.fool.FoolPrayerC2SPacket());
             }
 
-            if (abilityPressed) {
+            if (abilityPressed && !org.agmas.noellesroles.game.modes.echo.client.EchoRollClient.handleAbility(client)) {
                 ClientAbilityHandler.handler(client);
             }
 
@@ -1492,7 +1497,6 @@ public class NoellesrolesClient implements ClientModInitializer {
                 }
             }
             DreadlordDreadClient.lookAtSelf(client.player);
-            DreadlordClientFx.tickFloats(client);
 
             handleStalkerContinuousInput(client);
 

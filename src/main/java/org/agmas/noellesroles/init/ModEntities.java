@@ -39,6 +39,11 @@ public class ModEntities {
                     .clientTrackingRange(8)
                     .updateInterval(2)
                     .build("fu_tai_glitch"));
+    public static final EntityType<Error404PuppetEntity> ERROR404_PUPPET = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE, Noellesroles.id("error404_puppet"),
+            EntityType.Builder.of(Error404PuppetEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F).clientTrackingRange(16).updateInterval(1)
+                    .noSave().build("error404_puppet"));
 
     public static final EntityType<RoleMineEntity> ROLE_MINE_ENTITY_ENTITY_TYPE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
@@ -480,6 +485,17 @@ public class ModEntities {
                     .trackedUpdateRate(10)
                     .build());
 
+    /** 毛线球抛射物（裁缝的毛线球，命中玩家给予 8 秒腿瘸）。 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<YarnBallEntity> YARN_BALL = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("yarn_ball"),
+            FabricEntityTypeBuilder.<YarnBallEntity>create(MobCategory.MISC, YarnBallEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(8)
+                    .trackedUpdateRate(10)
+                    .build());
+
     @SuppressWarnings("deprecation")
     public static final EntityType<EmpBombEntity> EMP_BOMB = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
@@ -745,6 +761,7 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(PIGEON, PigeonEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MECHANICAL_BIRD, MechanicalBirdEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ERROR404_PUPPET, Error404PuppetEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MUMMY,
                 net.minecraft.world.entity.monster.Husk.createAttributes());
         FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());

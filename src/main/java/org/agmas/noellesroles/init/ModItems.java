@@ -491,6 +491,22 @@ public class ModItems {
             "bang", ROLE_ITEMS_GROUP);
 
     /**
+     * 缝纫针（裁缝专属）
+     * - 长按右键一名玩家 5 秒，消耗一个毛线球为其编织一件「裁缝的衣服」
+     */
+    public static final Item SEWING_NEEDLE = register(
+            new SewingNeedleItem(new Item.Properties().stacksTo(1)),
+            "sewing_needle", ROLE_ITEMS_GROUP);
+
+    /**
+     * 毛线球（裁缝专属消耗品）
+     * - 右键投掷，命中玩家使其获得 8 秒「腿瘸」
+     */
+    public static final Item YARN_BALL = register(
+            new YarnBallItem(new Item.Properties().stacksTo(16)),
+            "yarn_ball", ROLE_ITEMS_GROUP);
+
+    /**
      * 波纹之力（承太郎商店，50 金币）
      * - 背包已有时不可再买，购买冷却 90 秒
      * - 右键：半径 5 格拉向自己，缓慢 I 5 秒，周围玩家理智 +30%，使用冷却 60 秒
@@ -1528,6 +1544,9 @@ public class ModItems {
     public static final Item VOID_STEP = register(
             new org.agmas.noellesroles.game.command_block.item.VoidStepItem(new Item.Properties().stacksTo(1)),
             "void_step", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item NULL_ITEM_ERASER = register(
+            new org.agmas.noellesroles.game.command_block.item.NullItemEraserItem(new Item.Properties().stacksTo(16)),
+            "null_item_eraser", ROLE_ITEMS_GROUP);
     public static final Item FARLANDS_RIFT = register(
             new org.agmas.noellesroles.game.command_block.item.FarlandsRiftItem(new Item.Properties().stacksTo(1)),
             "farlands_rift", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
@@ -1568,9 +1587,23 @@ public class ModItems {
             new org.agmas.noellesroles.game.command_block.item.StevePickaxeItem(
                     new Item.Properties().stacksTo(1).durability(org.agmas.noellesroles.game.command_block.SteveMiner.USES)),
             "steve_pickaxe", ROLE_ITEMS_GROUP, TOOLS_GROUP);
-    public static final Item STEVE_LEVER = register(
-            new org.agmas.noellesroles.game.command_block.item.SteveLeverItem(new Item.Properties().stacksTo(16)),
-            "steve_lever", ROLE_ITEMS_GROUP);
+    public static final Item STEVE_DIAMOND_PICKAXE = register(
+            new org.agmas.noellesroles.game.command_block.item.StevePickaxeItem(
+                    new Item.Properties().durability(org.agmas.noellesroles.game.command_block.SteveMiner.DIAMOND_USES), 10),
+            "steve_diamond_pickaxe", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+    public static final Item STEVE_BOAT = register(
+            new org.agmas.noellesroles.game.command_block.item.SteveBoatItem(new Item.Properties().stacksTo(1)),
+            "steve_boat", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+    public static final Item STEVE_MINECART = register(
+            new org.agmas.noellesroles.game.command_block.item.SteveMinecartItem(new Item.Properties().stacksTo(1)),
+            "steve_minecart", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+    public static final Item STEVE_GOLDEN_APPLE = register(
+            new org.agmas.noellesroles.game.command_block.item.SteveGoldenAppleItem(
+                    new Item.Properties().stacksTo(16).food(net.minecraft.world.food.Foods.GOLDEN_APPLE)),
+            "steve_golden_apple", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+    public static final Item STEVE_PISTON = register(
+            new org.agmas.noellesroles.game.command_block.item.StevePistonItem(new Item.Properties().stacksTo(16)),
+            "steve_piston", ROLE_ITEMS_GROUP, TOOLS_GROUP);
 
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);
