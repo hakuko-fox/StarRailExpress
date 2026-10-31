@@ -42,20 +42,26 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.role_data.killer.UndeadLordRoleData;
 import io.wifi.starrailexpress.api.data.RoleData;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.game.halloween.HalloweenCombat;
+import org.agmas.noellesroles.game.halloween.HalloweenConfig;
+import org.agmas.noellesroles.game.night.NightEvent;
+import org.agmas.noellesroles.game.night.NightUndeadRules;
+import org.agmas.noellesroles.game.night.NightUndeadRules.Source;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 亡灵实体（亡灵之主召唤的无意识亡灵）。
+ * 亡灵实体：领主召唤保留远程追击与感染；活动及无主亡灵只在出生区域近距警戒。
  *
  * <p>
  * 特性：
  * <ul>
  * <li>使用死者生前的皮肤外观，周身环绕淡紫色雾气。</li>
- * <li>未发现目标时在召唤点附近随机徘徊；发现 21 格内活人后无视墙壁直线穿墙追击（幽灵）。</li>
- * <li>攻击不造成伤害，而是每 1.5 秒为目标增加感染值（由亡灵之主组件统一结算）。</li>
+ * <li>领主亡灵发现 40 格内活人后穿墙追击；非领主亡灵只攻击 12 格内玩家，平时在出生点 8 格内游荡。</li>
+ * <li>领主亡灵每 1.5 秒注入感染并结算配置伤害；非领主亡灵沿用活动简单近战。</li>
  * <li>持续 90 秒后化为紫色烟雾消散；剩余 30 秒减速、剩余 10 秒闪烁示警。</li>
  * <li>无实体碰撞（穿墙、无重力悬浮），无法开门、无法使用道具。</li>
  * </ul>
@@ -94,6 +100,16 @@ public class UndeadEntity extends PathfinderMob {
     private UUID currentTargetUuid = null;
     private int retargetCooldown = 0;
 
+    /** 明确区分来源，不能通过 owner 是否非空判断（万圣节亡灵也可能有主人）。 */
+    private Source source = Source.WILD;
+    /** 首次服务端 tick 捕获实际出生位置，兼容先 setup 后 moveTo 的生成顺序。 */
+    private Vec3 spawnAnchor;
+    private Vec3 wanderTarget;
+    private int wanderTicks;
+    private boolean returningToAnchor;
+    private UUID halloweenTarget = null;
+    private int halloweenTargetTicks = 0;
+
     public UndeadEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.setHealth(this.getMaxHealth());
@@ -110,7 +126,12 @@ public class UndeadEntity extends PathfinderMob {
     @Override
     protected void registerGoals() {
         // 仅保留徘徊与张望；追击与感染逻辑在 tick() 中手动处理。
-        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.6D));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.6D) {
+            @Override
+            public boolean canUse() { return isLordSummoned() && super.canUse(); }
+            @Override
+            public boolean canContinueToUse() { return isLordSummoned() && super.canContinueToUse(); }
+        });
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
 
@@ -123,12 +144,54 @@ public class UndeadEntity extends PathfinderMob {
 
     /** 初始化亡灵：设置召唤者、皮肤来源与持续时间。 */
     public void setup(Player owner, UUID skinPlayerUuid, int lifetimeTicks) {
+        resetSource(Source.LORD);
         this.ownerUuid = owner.getUUID();
         this.ownerCache = owner;
         this.entityData.set(SKIN_UUID, Optional.ofNullable(skinPlayerUuid));
         this.remainingLifetime = lifetimeTicks;
         // this.addEffect(new MobEffectInstance(MobEffects.GLOWING, lifetimeTicks + 200,
         // 0, false, false, false));
+    }
+
+    /** 活动亡灵可无召唤者；召唤者死亡或离线不影响活动亡灵。 */
+    public void setupHalloween(@Nullable Player owner, UUID skin, int lifetime, @Nullable UUID target) {
+        resetSource(Source.HALLOWEEN);
+        this.ownerUuid = owner == null ? null : owner.getUUID();
+        this.ownerCache = owner;
+        this.entityData.set(SKIN_UUID, Optional.ofNullable(skin));
+        this.remainingLifetime = Math.max(1, lifetime);
+        setHalloweenTarget(target, HalloweenConfig.get().gunShieldSuppressionTicks);
+    }
+
+    /** 黑夜事件入口：无领主归属，不依赖万圣节运行时、名额或感染。 */
+    public void setupNight(UUID skin, int lifetime) {
+        resetSource(Source.NIGHT);
+        this.ownerUuid = null;
+        this.ownerCache = null;
+        this.entityData.set(SKIN_UUID, Optional.ofNullable(skin));
+        this.remainingLifetime = Math.max(1, lifetime);
+    }
+
+    private void resetSource(Source source) {
+        this.source = source;
+        this.spawnAnchor = null;
+        this.wanderTarget = null;
+        this.returningToAnchor = false;
+        setHalloweenTarget(null, 0);
+    }
+
+    public boolean isHalloween() { return source == Source.HALLOWEEN; }
+    public boolean isNight() { return source == Source.NIGHT; }
+    public boolean isLordSummoned() { return source == Source.LORD; }
+    public boolean hasHalloweenTarget() { return halloweenTarget != null; }
+
+    /** 惊魂枪的临时优先目标，允许包含召唤者；到期、死亡、跨维度后恢复原筛选。 */
+    public void setHalloweenTarget(@Nullable UUID target, int ticks) {
+        this.halloweenTarget = ticks > 0 ? target : null;
+        this.halloweenTargetTicks = target == null ? 0 : Math.max(0, ticks);
+        this.currentTargetUuid = null;
+        this.retargetCooldown = 0;
+        this.setTarget(null);
     }
 
     public UUID getSkinUuid() {
@@ -155,7 +218,7 @@ public class UndeadEntity extends PathfinderMob {
 
     /** 延长存活时间（亡灵延命药剂 / 时之沙漏调用）。 */
     public void addLifetime(int ticks) {
-        this.remainingLifetime += ticks;
+        this.remainingLifetime = NightUndeadRules.extendLifetime(this.remainingLifetime, ticks);
     }
 
     public void setLifetime(int ticks) {
@@ -168,6 +231,18 @@ public class UndeadEntity extends PathfinderMob {
 
     @Override
     public void tick() {
+        // 活动结束/停局先于时间冻结处理，不能留下冻结中的黑夜亡灵。
+        if (!level().isClientSide && isNight()) {
+            SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level());
+            if (game == null || !game.isRunning() || !NightEvent.isUndeadActive(this)) {
+                discard();
+                return;
+            }
+        }
+        if (!level().isClientSide && isHalloween() && !HalloweenCombat.isEventUndeadActive(this)) {
+            discard();
+            return;
+        }
         if (SREGameTimeComponent.KEY.get(level()).isTimeFrozen()) {
             if (!this.isNoAi()) {
                 this.setNoAi(true);
@@ -176,6 +251,16 @@ public class UndeadEntity extends PathfinderMob {
         } else {
             if (this.isNoAi()) {
                 this.setNoAi(false);
+            }
+        }
+        this.noPhysics = true;
+        this.setNoGravity(true);
+        if (!level().isClientSide) {
+            if (spawnAnchor == null) spawnAnchor = position();
+            if (!isLordSummoned()) {
+                getNavigation().stop();
+                setSpeed(0);
+                setDeltaMovement(Vec3.ZERO);
             }
         }
         super.tick();
@@ -195,7 +280,7 @@ public class UndeadEntity extends PathfinderMob {
 
         // 召唤者掉线/死亡则消散
         Player owner = getOwner();
-        if (owner == null || !owner.isAlive() || owner.isSpectator()) {
+        if (isLordSummoned() && (owner == null || !owner.isAlive() || owner.isSpectator())) {
             disappear(serverLevel, false);
             return;
         }
@@ -234,16 +319,42 @@ public class UndeadEntity extends PathfinderMob {
             retargetCooldown--;
         }
 
-        // 当前目标若仍有效（存活、在感知范围内）则保持，否则重新选择。穿墙后无需可抵达性判定。
-        ServerPlayer victim = resolveCurrentTarget(serverLevel, gameWorldComponent);
-        if (victim == null || retargetCooldown <= 0) {
-            retargetCooldown = RETARGET_INTERVAL;
-            ServerPlayer reselected = selectBestTarget(serverLevel, gameWorldComponent);
-            if (reselected != null) {
-                victim = reselected;
-                currentTargetUuid = reselected.getUUID();
-            } else if (victim == null) {
-                currentTargetUuid = null;
+        // 非领主丢失警戒范围后先回出生点，不被远处枪械临时指令继续牵走。
+        if (!isLordSummoned() && currentTargetUuid != null
+                && serverLevel.getPlayerByUUID(currentTargetUuid) instanceof ServerPlayer previous
+                && !canEngage(previous)) {
+            returnToAnchor();
+        }
+        if (returningToAnchor && position().distanceToSqr(spawnAnchor) <= 1.0) {
+            returningToAnchor = false;
+        }
+
+        // 临时指令保留领主的远程号令；活动亡灵仍须通过相同的 12 格限制。
+        ServerPlayer victim = null;
+        if (halloweenTarget != null && halloweenTargetTicks > 0) {
+            if (serverLevel.getPlayerByUUID(halloweenTarget) instanceof ServerPlayer forced
+                    && GameUtils.isPlayerAliveAndSurvival(forced) && !forced.isSpectator()
+                    && !forced.isCreative() && !forced.hasEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME)
+                    && canEngage(forced) && !returningToAnchor) {
+                victim = forced;
+                halloweenTargetTicks--;
+            } else {
+                if (!isLordSummoned()) returnToAnchor();
+                else setHalloweenTarget(null, 0);
+            }
+        }
+        if (victim == null && !returningToAnchor) {
+            if (halloweenTarget != null) setHalloweenTarget(null, 0);
+            victim = resolveCurrentTarget(serverLevel, gameWorldComponent);
+            if (victim == null || retargetCooldown <= 0) {
+                retargetCooldown = RETARGET_INTERVAL;
+                ServerPlayer reselected = selectBestTarget(serverLevel, gameWorldComponent);
+                if (reselected != null) {
+                    victim = reselected;
+                    currentTargetUuid = reselected.getUUID();
+                } else if (victim == null) {
+                    currentTargetUuid = null;
+                }
             }
         }
 
@@ -258,7 +369,34 @@ public class UndeadEntity extends PathfinderMob {
             }
         } else {
             setTarget(null);
+            if (!isLordSummoned()) ghostWander();
         }
+    }
+
+    /** 临时枪械目标与自然目标共用警戒距离，禁止绕过来源限制。 */
+    private boolean canEngage(ServerPlayer victim) {
+        return NightUndeadRules.canEngage(source, distanceToSqr(victim),
+                position().distanceToSqr(spawnAnchor), victim.position().distanceToSqr(spawnAnchor));
+    }
+
+    private void returnToAnchor() {
+        returningToAnchor = true;
+        wanderTarget = null;
+        setHalloweenTarget(null, 0);
+    }
+
+    /** 穿墙浮游：漫游目标始终在出生点球体内；超出后回锚点，绝不累加随机漂移。 */
+    private void ghostWander() {
+        if (returningToAnchor || !NightUndeadRules.isWithinRoam(position().distanceToSqr(spawnAnchor))) {
+            wanderTarget = spawnAnchor;
+        } else if (--wanderTicks <= 0 || wanderTarget == null || position().distanceToSqr(wanderTarget) < 0.25) {
+            double angle = random.nextDouble() * Math.PI * 2;
+            double radius = random.nextDouble() * (NightUndeadRules.ROAM_RADIUS - 1);
+            wanderTarget = spawnAnchor.add(Math.cos(angle) * radius, random.nextDouble() * 2 - 1,
+                    Math.sin(angle) * radius);
+            wanderTicks = 40 + random.nextInt(60);
+        }
+        ghostMove(wanderTarget.subtract(position()), 0.6);
     }
 
     /** 幽灵穿墙移动：朝目标中心直线推进，无视方块碰撞（noPhysics）。 */
@@ -266,11 +404,14 @@ public class UndeadEntity extends PathfinderMob {
         getNavigation().stop();
         Vec3 selfCenter = this.position().add(0, this.getBbHeight() * 0.5, 0);
         Vec3 targetCenter = victim.position().add(0, victim.getBbHeight() * 0.5, 0);
-        Vec3 dir = targetCenter.subtract(selfCenter);
+        ghostMove(targetCenter.subtract(selfCenter), 1.0);
+    }
+
+    private void ghostMove(Vec3 dir, double speedFactor) {
         double dist = dir.length();
         if (dist > 0.05) {
             var attr = this.getAttribute(Attributes.MOVEMENT_SPEED);
-            double speed = (attr != null ? attr.getValue() : BASE_SPEED) * GHOST_SPEED_FACTOR;
+            double speed = (attr != null ? attr.getValue() : BASE_SPEED) * GHOST_SPEED_FACTOR * speedFactor;
             Vec3 step = dir.scale(Math.min(speed, dist) / dist);
             this.move(MoverType.SELF, step);
         }
@@ -289,7 +430,7 @@ public class UndeadEntity extends PathfinderMob {
         if (!isValidVictim(victim, gameWorldComponent)) {
             return null;
         }
-        if (this.distanceToSqr(victim) > PERCEPTION_RANGE * PERCEPTION_RANGE) {
+        if (!canEngage(victim) || this.distanceToSqr(victim) > PERCEPTION_RANGE * PERCEPTION_RANGE) {
             return null;
         }
         return victim;
@@ -299,6 +440,7 @@ public class UndeadEntity extends PathfinderMob {
     private ServerPlayer selectBestTarget(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent) {
         return serverLevel.players().stream()
                 .filter(p -> isValidVictim(p, gameWorldComponent))
+                .filter(this::canEngage)
                 .filter(p -> this.distanceToSqr(p) <= PERCEPTION_RANGE * PERCEPTION_RANGE)
                 .min(Comparator.comparingDouble(this::distanceToSqr))
                 .orElse(null);
@@ -306,6 +448,11 @@ public class UndeadEntity extends PathfinderMob {
 
     /** 目标筛选条件：存活、冒险模式、非杀手阵营、非召唤者。 */
     private boolean isValidVictim(ServerPlayer p, SREGameWorldComponent gameWorldComponent) {
+        if (!isLordSummoned()) {
+            return p.gameMode.getGameModeForPlayer() == GameType.ADVENTURE
+                    && GameUtils.isPlayerAliveAndSurvival(p)
+                    && !p.hasEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME);
+        }
         return p.gameMode.getGameModeForPlayer() == GameType.ADVENTURE
                 && GameUtils.isPlayerAliveAndSurvival(p)
                 && !p.getUUID().equals(ownerUuid)
@@ -317,6 +464,16 @@ public class UndeadEntity extends PathfinderMob {
         attackCooldown = ATTACK_INTERVAL;
         this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 
+
+        if (!isLordSummoned()) {
+            // 独立活动亡灵只有简单近战，不注入亡灵之主感染值，也不借用其职业技能。
+            if (!victim.hasEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME)) {
+                victim.hurt(this.damageSources().mobAttack(this), 2.0f);
+            }
+            serverLevel.playSound(null, victim.blockPosition(), SoundEvents.ZOMBIE_INFECT,
+                    SoundSource.HOSTILE, 0.8f, 0.7f);
+            return;
+        }
         UndeadLordRoleData lordData = RoleData.getNullable(UndeadLordRoleData.class, owner);
         if (lordData != null) {
             lordData.addInfection(victim, INFECTION_PER_HIT);
@@ -349,12 +506,13 @@ public class UndeadEntity extends PathfinderMob {
         serverLevel.playSound(null, blockPosition(), SoundEvents.ENDERMAN_TELEPORT,
                 SoundSource.HOSTILE, 0.7f, 0.6f);
         Player owner = getOwner();
-        if (owner != null) {
+        if (isLordSummoned() && owner != null) {
             UndeadLordRoleData lordData = RoleData.getNullable(UndeadLordRoleData.class, owner);
             if (lordData != null) {
                 lordData.onUndeadRemoved(this.getUUID());
             }
         }
+        if (isHalloween()) HalloweenCombat.eventUndeadRemoved(this);
         discard();
     }
 
@@ -419,14 +577,32 @@ public class UndeadEntity extends PathfinderMob {
             tag.putUUID("SkinUUID", skin);
         }
         tag.putInt("RemainingLifetime", remainingLifetime);
+        tag.putString("UndeadSource", source.name());
+        tag.putBoolean("Halloween", isHalloween()); // 向旧格式保持兼容。
+        Vec3 anchor = spawnAnchor == null ? position() : spawnAnchor;
+        tag.putDouble("SpawnAnchorX", anchor.x);
+        tag.putDouble("SpawnAnchorY", anchor.y);
+        tag.putDouble("SpawnAnchorZ", anchor.z);
+        tag.putBoolean("ReturningToAnchor", returningToAnchor);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.hasUUID("OwnerUUID")) {
-            ownerUuid = tag.getUUID("OwnerUUID");
+        source = NightUndeadRules.restoreSource(tag.getString("UndeadSource"),
+                tag.getBoolean("Halloween"), tag.hasUUID("OwnerUUID"));
+        ownerUuid = !isNight() && tag.hasUUID("OwnerUUID") ? tag.getUUID("OwnerUUID") : null;
+        ownerCache = null;
+        // 旧档没有锚点时取本次加载位置，避免回到世界原点。
+        spawnAnchor = null;
+        if (tag.contains("SpawnAnchorX") && tag.contains("SpawnAnchorY") && tag.contains("SpawnAnchorZ")) {
+            Vec3 saved = new Vec3(tag.getDouble("SpawnAnchorX"), tag.getDouble("SpawnAnchorY"),
+                    tag.getDouble("SpawnAnchorZ"));
+            if (Double.isFinite(saved.x) && Double.isFinite(saved.y) && Double.isFinite(saved.z)) spawnAnchor = saved;
         }
+        returningToAnchor = tag.getBoolean("ReturningToAnchor");
+        wanderTarget = null;
+        setHalloweenTarget(null, 0);
         if (tag.hasUUID("SkinUUID")) {
             this.entityData.set(SKIN_UUID, Optional.of(tag.getUUID("SkinUUID")));
         }

@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.agmas.noellesroles.game.modes.echo.content.EchoMachineBlock;
 import org.agmas.noellesroles.game.modes.echo.content.EchoMachines;
+import org.agmas.noellesroles.game.modes.echo.content.EchoHideBlock;
+import org.agmas.noellesroles.game.modes.echo.content.EchoTerrainBlocks;
 import org.agmas.noellesroles.game.modes.echo.map.manor.EchoManorLayout.Kind;
 import org.agmas.noellesroles.game.modes.echo.map.manor.EchoManorLayout.Layout;
 import org.jetbrains.annotations.Nullable;
@@ -29,49 +31,27 @@ public final class EchoManorScene {
 
     /** 仅供显式生成命令使用；根据布局点位区分核心信标和撤离面板，不迁移已有地图。 */
     public static BlockState state(Layout layout, int x, int y, int z) {
-        EchoMachines.Kind machine = machineKind(layout, x, y, z);
-        if (machine != null) {
-            return EchoMachines.block(machine).defaultBlockState()
-                    .setValue(EchoMachineBlock.FACING, machineFacing(layout, x, y, z));
+        var cell = layout.machineAt(x, y, z);
+        if (cell != null) {
+            return EchoMachines.block(machineKind(layout, x, y, z)).defaultBlockState()
+                    .setValue(EchoMachineBlock.FACING, machineFacing(layout, x, y, z))
+                    .setValue(EchoMachineBlock.PART, cell.part());
         }
         return sceneryState(layout.at(x, y, z), x, y, z);
     }
 
-    /** 点位到机器种类的纯映射，不触发机器注册，便于离线校验布局。 */
+    /** 根点与所有部件共用同一种机器映射，不触发机器注册。 */
     @Nullable
     public static EchoMachines.Kind machineKind(Layout layout, int x, int y, int z) {
-        return switch (layout.at(x, y, z)) {
-            case MARKER_CRYSTAL -> EchoMachines.Kind.CRYSTAL;
-            case MARKER_BEACON -> layout.beacons().stream().anyMatch(beacon ->
-                    beacon.x() == x && beacon.z() == z && beacon.region().equals("core"))
-                    ? EchoMachines.Kind.CORE_BEACON : EchoMachines.Kind.BEACON;
-            case MARKER_ALTAR -> EchoMachines.Kind.ALTAR;
-            case MARKER_CRATE -> EchoMachines.Kind.SUPPLY;
-            case MARKER_BLACK_CRATE -> EchoMachines.Kind.BLACK_MARKET;
-            case MARKER_BLACK_NODE -> EchoMachines.Kind.BLACK_NODE;
-            case MARKER_BLACK_DROPOFF -> EchoMachines.Kind.BLACK_DROPOFF;
-            case MARKER_BROKER -> EchoMachines.Kind.BROKER_EXIT;
-            case MARKER_FREE_EXIT -> EchoMachines.Kind.FREE_EXIT;
-            case PANEL -> x == layout.evacControl().x() && z == layout.evacControl().z()
-                    ? EchoMachines.Kind.EVACUATION_CONSOLE : EchoMachines.Kind.CORE_CONSOLE;
-            default -> null;
-        };
+        var cell = layout.machineAt(x, y, z);
+        return cell == null ? null : EchoMachines.Kind.valueOf(cell.machine().model().name());
     }
 
-    /** 墙上面板朝门外走廊；独立机器优先朝相邻脚部、头部均畅通的站立格。 */
+    /** 朝向来自占地规划，禁止按相邻空气重新选择而使部件旋转错位。 */
     public static Direction machineFacing(Layout layout, int x, int y, int z) {
-        if (layout.at(x, y, z) == Kind.PANEL) {
-            // 撤离面板朝西；核心面板一律朝门外（背离金库内部），用门体所在侧判断。
-            if (x == layout.evacControl().x() && z == layout.evacControl().z()) return Direction.WEST;
-            return x < layout.coreArea().minX() ? Direction.WEST : Direction.EAST;
-        }
-        for (Direction direction : new Direction[]{Direction.SOUTH, Direction.NORTH, Direction.WEST, Direction.EAST}) {
-            int nx = x + direction.getStepX(), nz = z + direction.getStepZ();
-            if (layout.solid(nx, EchoManorLayout.GROUND_Y, nz)
-                    && !layout.solid(nx, EchoManorLayout.FEET_Y, nz)
-                    && !layout.solid(nx, EchoManorLayout.FEET_Y + 1, nz)) return direction;
-        }
-        return Direction.NORTH;
+        var cell = layout.machineAt(x, y, z);
+        if (cell == null) return Direction.NORTH;
+        return Direction.valueOf(cell.machine().facing().name());
     }
 
     /** 建筑方块保持原映射与完整碰撞，门体仍为铁块。 */
@@ -109,8 +89,18 @@ public final class EchoManorScene {
             case PLATE -> (h < 80 ? Blocks.POLISHED_ANDESITE : Blocks.POLISHED_DEEPSLATE).defaultBlockState();
             case TERRACE -> (h < 85 ? Blocks.SMOOTH_STONE : Blocks.POLISHED_ANDESITE).defaultBlockState();
             case TERRACE_WALL -> (h < 75 ? Blocks.STONE_BRICKS : Blocks.MOSSY_STONE_BRICKS).defaultBlockState();
+            // 草丛：无碰撞、可穿行的隐身点，带朝向让模型不完全重复。
+            case BUSH -> EchoTerrainBlocks.HIDE.defaultBlockState()
+                    .setValue(EchoHideBlock.FACING, switch (Math.floorMod(x * 7 + z * 13, 4)) {
+                        case 0 -> Direction.NORTH;
+                        case 1 -> Direction.EAST;
+                        case 2 -> Direction.SOUTH;
+                        default -> Direction.WEST;
+                    });
+            // 矮墙：1 格高，挡视线不挡走位。
+            case LOW_WALL -> (h < 60 ? Blocks.COBBLESTONE_WALL : Blocks.MOSSY_COBBLESTONE_WALL).defaultBlockState();
             case MARKER_CRYSTAL, MARKER_BEACON, MARKER_ALTAR, MARKER_CRATE, MARKER_BLACK_CRATE,
-                    MARKER_BLACK_NODE, MARKER_BLACK_DROPOFF, MARKER_BROKER, MARKER_FREE_EXIT, PANEL ->
+                    MARKER_BLACK_NODE, MARKER_BLACK_DROPOFF, MARKER_BROKER, MARKER_FREE_EXIT, PANEL, MACHINE_PART ->
                     throw new IllegalArgumentException("机器点位必须通过布局映射: " + kind);
         };
     }

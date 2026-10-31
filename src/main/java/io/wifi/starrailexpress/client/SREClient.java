@@ -168,9 +168,6 @@ import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.exmo.sre.EXSREClient;
 import net.exmo.sre.loading.FrameAnimationRenderer;
-import net.exmo.sre.mod_whitelist.client.ModWhitelistClient;
-import net.exmo.sre.mod_whitelist.client.network.ModWhitelistClientNetworkHandler;
-import net.exmo.sre.mod_whitelist.common.network.ModWhitelistConfigPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -216,6 +213,8 @@ public class SREClient implements ClientModInitializer {
     public static boolean hasCustomSkinLoaderAndNeedToWarn = false;
     public static HPManager handParticleManager;
     public static Map<Player, Vec3> particleMap;
+    /** 副手单独一份枪口位置，避免副手的枪覆盖主手记录。 */
+    public static Map<Player, Vec3> offhandParticleMap;
     public static Map<UUID, OptionalInt> cachedHighLightMap = new ConcurrentHashMap<>();
     private static boolean previousMyTurn = false;
     private static boolean prevGameRunning;
@@ -312,6 +311,7 @@ public class SREClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        io.wifi.starrailexpress.settlement.client.SettlementClient.register();
         LetterNewspaperBuilder.init();
         RhythmMapManager.registerEvents();
         SceneAssetClient.initialize();
@@ -321,6 +321,7 @@ public class SREClient implements ClientModInitializer {
         MorphApiClient.registerClient();
         io.wifi.starrailexpress.client.disguise.EntityDisguiseClient.registerClient();
         io.wifi.starrailexpress.hat.HatEquipmentApi.registerDefaultOwnerResolvers();
+        io.wifi.starrailexpress.client.pet.PetClientDriver.register();
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
                 .register((handler, client) -> {
                     io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.clear();
@@ -332,13 +333,12 @@ public class SREClient implements ClientModInitializer {
         ClientConfigEvents.register();
         initNetworkStatisticsClient();
         new EXSREClient().onInitializeClient();
-        // Load config
-        ModWhitelistClient.onInitializeClient();
         // ModVersionPacket
         checkCustomSkinLoader();
         // Initialize ScreenParticle
         handParticleManager = new HPManager();
         particleMap = new HashMap<>();
+        offhandParticleMap = new HashMap<>();
         // Custom Baked Models
         ModelLoadingPlugin.register(new GeneralModelLoadingPlugin());
         // 自定义列车物品「模型地址」指向的模型（资源包里没被引用的模型默认不会烘焙）
@@ -518,6 +518,8 @@ public class SREClient implements ClientModInitializer {
         // ───── 场景背景音效系统 ─────
         // 列车内部（看不到天空时，仅 train 类型生效）
         OutsideSoundManager.registerEvents();
+        // 音乐盒：装配后在地图无背景音、非命令方块事件局时循环播放
+        MusicBoxAmbientSound.register();
 
         // Caching components
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
@@ -938,6 +940,9 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.PlushEquipmentSyncPayload.ID,
                 (payload, context) -> context.client()
                         .execute(() -> io.wifi.starrailexpress.client.plush.ClientPlushEquipmentCache.applySync(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.PetSyncPayload.ID,
+                (payload, context) -> context.client()
+                        .execute(() -> io.wifi.starrailexpress.client.pet.ClientPetCache.applySync(payload)));
         ClientPlayNetworking.registerGlobalReceiver(ShowStatsPayload.ID, (payload, context) -> {
             UUID targetPlayerUuid = payload.targetPlayerUuid();
             context.client().execute(() -> {
@@ -976,11 +981,6 @@ public class SREClient implements ClientModInitializer {
             GameUtils.roomToPlayer.clear();
             GameUtils.roomToPlayer.putAll(data);
         });
-        ClientPlayNetworking.registerGlobalReceiver(ModWhitelistConfigPayload.ID, (payload, context) -> {
-            ModWhitelistClientNetworkHandler.handleModWhitelistConfigPayload(payload, context);
-            ModWhitelistClientNetworkHandler.sendModWhitelistPayload();
-        });
-        net.exmo.sre.mod_whitelist.client.network.JarAuthClientHandler.register();
         // 紧急会议：客户端摄像机导演 + HUD
         net.exmo.sre.meeting.client.MeetingClientHandler.register();
         net.exmo.sre.meeting.client.MeetingHud.register();

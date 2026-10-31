@@ -24,6 +24,7 @@ import io.wifi.starrailexpress.api.impl.KnifeChargeableItem;
 import io.wifi.starrailexpress.content.item.*;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.wathe_bridge.WatheBridgerItems;
+import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
@@ -37,6 +38,7 @@ import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.LetterItem;
 import org.agmas.noellesroles.game.modes.echo.content.EchoContent;
 import org.agmas.noellesroles.game.modes.echo.content.EchoMachines;
+import org.agmas.noellesroles.game.modes.echo.content.EchoTerrainBlocks;
 import org.agmas.noellesroles.init.FunnyItems;
 import org.agmas.noellesroles.init.ModItems;
 
@@ -280,6 +282,7 @@ public interface TMMItems {
             entries.accept(EchoContent.SKILL_TOKEN);
             entries.accept(EchoContent.EDITOR);
             EchoMachines.all().forEach(block -> entries.accept(block.asItem()));
+            EchoTerrainBlocks.all().forEach(block -> entries.accept(block.asItem()));
         });
         // 局内道具同步收录进 NoellesRoles 汇总标签页（与 ModItems 的约定一致）
         ItemGroupEvents.modifyEntriesEvent(NOELLESROLES_ALL_GROUP).register(entries -> {
@@ -312,6 +315,32 @@ public interface TMMItems {
         SkinableItem.add(TMMItems.GRENADE);
 
         SkinableItem.add(TMMItems.BAT);
+
+        // 以下为扩展的可换肤物品。注意：共用一个皮肤类型的物品只登记一次（皮肤按类型存储），
+        // 例如 noellesroles:desperado_gun 与 derringer 共用 derringer 皮肤、
+        // noellesroles:inferior_lockpick 与 lockpick 共用 lockpick 皮肤。
+        SkinableItem.add(ModItems.SHORT_SHOTGUN);
+        SkinableItem.add(TMMItems.DERRINGER);
+        SkinableItem.add(TMMItems.LOCKPICK);
+        SkinableItem.add(TMMItems.CROWBAR);
+        SkinableItem.add(TMMItems.BODY_BAG);
+        SkinableItem.add(TMMItems.NOTE);
+        SkinableItem.add(TMMItems.FIRECRACKER);
+        SkinableItem.add(TMMItems.LETTER);
+        SkinableItem.add(ModItems.HANDCUFFS);
+        SkinableItem.add(ModItems.LOCK_ITEM);
+        // 钥匙：列车钥匙（TMMItems.KEY）与乘务员钥匙（noellesroles:master_key_p）共用 key 皮肤，
+        // 这里只登记列车钥匙一个页签；万能钥匙（noellesroles:master_key）不参与皮肤系统。
+        SkinableItem.add(TMMItems.KEY);
+
+        // 原版物品（无法继承 SkinableItem）：登记后由 GeneralModel 统一接管换肤，
+        // 弓/弩的分阶段模型（_pulling_0~2、_arrow、_firework）由 GeneralModelLoadingPlugin 自动识别。
+        ItemSkinManager.registerVanillaSkinItem(net.minecraft.world.item.Items.BOW,
+                ItemSkinManager.SkinTypes.BOW);
+        ItemSkinManager.registerVanillaSkinItem(net.minecraft.world.item.Items.CROSSBOW,
+                ItemSkinManager.SkinTypes.CROSSBOW);
+        SkinableItem.add(net.minecraft.world.item.Items.BOW);
+        SkinableItem.add(net.minecraft.world.item.Items.CROSSBOW);
 
         // 注册蓄力物品
         ChargeableItemRegistry.register(TMMItems.KNIFE, new KnifeChargeableItem());

@@ -10,19 +10,22 @@ public record EchoPublicState(EchoPhase phase,long tick,int remaining,boolean pa
     public record Point(double x,double y,double z) {
         public Point { if(!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z) || Math.abs(x)>30000000 || Math.abs(y)>30000000 || Math.abs(z)>30000000) throw new IllegalArgumentException("无效公开信标位置"); }
     }
-    public record Beacon(String id,int delivered,int required,int progress,boolean active,boolean stable,long lockedUntil,long pausedUntil,Point position,long submissionUntil) {
-        public Beacon(String id,int delivered,int required,int progress,boolean active,boolean stable,long lockedUntil,long pausedUntil) { this(id,delivered,required,progress,active,stable,lockedUntil,pausedUntil,null,0); }
+    /** 公开信标事实：投料、充能进度、是否已启动、被迟滞到何时。 */
+    public record Beacon(String id,int delivered,int required,int progress,boolean active,long stalledUntil,Point position,long submissionUntil) {
+        public Beacon(String id,int delivered,int required,int progress,boolean active,long stalledUntil) { this(id,delivered,required,progress,active,stalledUntil,null,0); }
         public Beacon {
             if(id==null || id.length()>64 || delivered<0 || required<1 || required>64 || delivered>required
-                    || progress<0 || progress>1000 || lockedUntil<0 || pausedUntil<0 || submissionUntil<0) throw new IllegalArgumentException("无效公开信标");
+                    || progress<0 || progress>1000 || stalledUntil<0 || submissionUntil<0) throw new IllegalArgumentException("无效公开信标");
         }
         public boolean charging() { return delivered>=required && !active; }
-        public boolean working(long now) { return charging() && now>=lockedUntil && now>=pausedUntil; }
+        /** 充能是否在推进：满料、未启动且未被迟滞。 */
+        public boolean working(long now) { return charging() && now>=stalledUntil; }
+        public boolean stalled(long now) { return now<stalledUntil; }
         public boolean highlighted(long now) { return now<submissionUntil; }
     }
     public EchoPublicState {
         Objects.requireNonNull(phase); beacons=List.copyOf(beacons);
-        if(tick<0 || remaining<0 || remaining>720000 || escaped<0 || escaped>EchoRosterPolicy.MAX_PLAYERS || quota<1 || quota>EchoRosterPolicy.MAX_PLAYERS
+        if(tick<0 || remaining<0 || remaining>720000 || escaped<0 || escaped>EchoRosterPolicy.MAX_PLAYERS || quota<0 || quota>EchoRosterPolicy.MAX_PLAYERS
                 || coreUntil<0 || closedUntil<0 || beacons.size()>3) throw new IllegalArgumentException("无效公开目标");
         if(beacons.stream().map(Beacon::id).distinct().count()!=beacons.size()) throw new IllegalArgumentException("重复公开信标");
     }

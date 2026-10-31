@@ -8,7 +8,8 @@ public enum EchoSkill {
     SWIFT_PICK(EchoSpecialization.SCOUT, 1200, 200, true),
     /** 狩猎本能：持续增益（不是一次性），窗口内锁定充满、加速、免后摇、蓄力压缩。 */
     LOCK_ON(EchoSpecialization.HUNTER, 1500, 60, false),
-    SURGE(EchoSpecialization.SABOTEUR, 1600, 200, true),
+    /** 破坏者「迟滞脉冲」：一次性窗口，让下一座充能中的信标停住更久，但不扣进度。 */
+    STALL_BURST(EchoSpecialization.SABOTEUR, 1600, 200, true),
     DARK_CACHE(EchoSpecialization.SMUGGLER, 1800, 240, true),
     BROKER_DEAL(EchoSpecialization.FIXER, 1200, 0, false),
     /**
@@ -17,7 +18,7 @@ public enum EchoSkill {
      * 职业技能不绑定专长，{@code specialization()} 为 {@code null}。
      */
     REND_DASH(null, 600, 40, true),
-    /** 织网职业「蛛网阵」：在脚下布下一片黏网，阵内主人的锁定值不衰减。 */
+    /** 旧织网技能，已无职业使用；保留枚举仅为兼容旧存档里的技能 id。 */
     WEB_NEST(null, 700, 240, false);
 
     private final EchoSpecialization specialization;
@@ -41,12 +42,6 @@ public enum EchoSkill {
     public String nameKey() { return "echo.skill." + id() + ".name"; }
     public String descriptionKey() { return "echo.skill." + id() + ".desc"; }
     public String icon() { return "noellesroles:textures/gui/echo/skills/" + id() + ".png"; }
-
-    /** 按专长取技能；追猎者的职业技能优先于专长技能，其余专长保持一一对应。 */
-    public static EchoSkill of(EchoSpecialization specialization, org.agmas.noellesroles.game.modes.echo.hunter.EchoHunterClass hunterClass) {
-        if (hunterClass != null && specialization == EchoSpecialization.HUNTER) return hunterClass.skill();
-        return of(specialization);
-    }
 
     public static EchoSkill of(EchoSpecialization specialization) {
         for (var skill : values()) if (skill.specialization == specialization) return skill;

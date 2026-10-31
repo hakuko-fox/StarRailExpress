@@ -178,7 +178,8 @@ public final class EchoBagService {
         if(draft==null && inventory.locked(packId)) throw new IllegalStateException("LOCKED");
         if(inventory.emptySlot()<0) throw new IllegalStateException("FULL");
         boolean fresh=draft==null; if(fresh) draft=new Draft(pack,match.rules());
-        if(!draft.state.begin(player.getUUID(),match.matchTick(),true,EchoDraftService.Context.all(match.faction(player.getUUID()),inventory.keyAvailable(),keyCount()<match.playerCount()+3),random)) throw new IllegalStateException("COOLDOWN");
+        if(!draft.state.begin(player.getUUID(),match.matchTick(),true,EchoDraftService.Context.all(match.faction(player.getUUID()),inventory.keyAvailable(),keyCount()<match.playerCount()+3),random))
+            throw new IllegalStateException(draft.state.state()==EchoPackDraft.State.BOUND && match.matchTick()<draft.state.readyAt()?"COOLDOWN":"BUSY");
         if(fresh) { inventory.lock(packId,draft.offer,inventory.revision()); drafts.put(player.getUUID(),draft); }
         inventory.reserve(draft.offer,inventory.revision());
         if(draft.state.requiresKeyReservation()) inventory.reserveKey(true);
@@ -220,6 +221,26 @@ public final class EchoBagService {
         project(owner,d -> d.projectDraft(null));
         var player=match.connectedPlayer(owner); if(player!=null) changed(player);
     }
+    /**
+     * 直接发放一张指定卡牌（商店购买用），不经过抽包三选一。
+     *
+     * <p>仍然走同一套所有权台账：满包时按既有规则落地，不会凭空复制实例。
+     *
+     * @param definitionId 完整卡牌 ID（{@code noellesroles:echo/<id>}）
+     * @return 是否已进入背包或落地
+     */
+    public boolean grantCard(ServerPlayer player,String definitionId,String fact) {
+        var definition=EchoCardRegistry.find(definitionId).orElse(null);
+        if(definition==null) return false;
+        UUID instance=UUID.randomUUID();
+        UUID event=UUID.nameUUIDFromBytes((match.id()+":"+fact).getBytes(StandardCharsets.UTF_8));
+        var resource=EchoResourceInstance.card(match.id(),instance,definition,event);
+        ledger.register(match.id(),instance,new Location(EchoResourceLedger.Kind.PENDING_DELIVERY,null,-1,instance));
+        catalog.put(instance,resource); pending.put(instance,player.getUUID());
+        deliver(instance,player);
+        return catalog.containsKey(instance);
+    }
+
     public void tick() {
         restrictOpening();
         for(var entry:List.copyOf(drafts.entrySet())) {

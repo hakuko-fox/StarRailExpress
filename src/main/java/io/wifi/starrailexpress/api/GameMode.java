@@ -203,6 +203,9 @@ public abstract class GameMode {
         return true;
     }
 
+    /** 默认无存活在线玩家就结束；维护断线宽限的模式可自行接管该判定。 */
+    public boolean shouldStopWhenNoPlayers() { return true; }
+
     /**
      * 是否启用环境检测（水/禁止方块/区域等）
      * 
@@ -830,6 +833,9 @@ public abstract class GameMode {
                     if (shouldGiveKillerBalance(victim, killer, deathReason)) {
                         int gift = OnGiveKillerBalance.EVENT.invoker().onGiveKillerBalance(victim, killer, deathReason);
                         gift += GameConstants.getMoneyPerKill();
+                        // 金币账本：击杀玩家收入（必须先于余额变动登记，供兜底认领）
+                        org.agmas.noellesroles.game.economy.MoneyFlow.recordIncome(killer,
+                                org.agmas.noellesroles.game.economy.MoneyFlow.IncomeType.KILL, gift);
                         SREPlayerShopComponent.KEY.get(killer).addToBalance(gift);
                     }
                     {

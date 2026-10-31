@@ -9,7 +9,7 @@ import org.agmas.noellesroles.game.modes.echo.cards.EchoCardDefinition;
 import org.agmas.noellesroles.game.modes.echo.cards.EchoCardRegistry;
 import org.agmas.noellesroles.game.modes.echo.combat.EchoCombatState;
 import org.agmas.noellesroles.game.modes.echo.inventory.*;
-import org.agmas.noellesroles.game.modes.echo.hunter.EchoHunterClass;
+import org.agmas.noellesroles.game.modes.echo.classes.EchoClass;
 import java.util.*;
 
 /** 在线时挂载会话库存/货槽；clear只撤销投影引用，不删除会话资源或隐藏候选。 */
@@ -51,19 +51,19 @@ public final class EchoRoleData extends SimpleRoleData {
     private EchoSpecialization specialization;
     private long specializationDeadline;
     private boolean specializationLocked;
-    private EchoHunterClass hunterClass;
+    private EchoClass playerClass;
     /** 未选择时回退本阵营默认项；faction 为空时给托运者默认，避免空指针。 */
     public EchoSpecialization specialization() { return specialization!=null?specialization:EchoSpecialization.starter(faction); }
     /**
      * 追猎者职业：只在专长接受职业分支（HUNTER）时生效，其余情况返回 {@code null}，
      * 让战斗服务走原版割刀分支，SABOTEUR 与其它阵营的手感完全不变。
      */
-    public EchoHunterClass hunterClass() {
-        if(!EchoHunterClass.accepts(specialization())) return null;
-        return hunterClass!=null?hunterClass:EchoHunterClass.defaultFor(0);
+    /** 本人本局职业；未投影时按阵营给一个默认值，避免客户端空指针。 */
+    public EchoClass playerClass() {
+        return playerClass!=null?playerClass:EchoClass.defaultFor(faction,0);
     }
     private long skillReadyAt, skillBuffUntil, skillPendingUntil;
-    public EchoSkill skill() { return EchoSkill.of(specialization(),hunterClass()); }
+    public EchoSkill skill() { return EchoSkill.of(specialization()); }
     public long skillReadyAt() { return skillReadyAt; }
     public long skillBuffUntil() { return skillBuffUntil; }
     public long skillPendingUntil() { return skillPendingUntil; }
@@ -81,24 +81,6 @@ public final class EchoRoleData extends SimpleRoleData {
         if(rollReadyAt==readyAt && rollUntil==until) return;
         rollReadyAt=readyAt; rollUntil=until; sync();
     }
-    // ---- 追捕者狩猎循环投影（只给本人客户端做动画与准星环） ----
-    private String huntPhase="STALK";
-    private int huntFocus;
-    private long huntPhaseUntil,huntInstinctUntil;
-    private boolean huntEmpowered;
-    public String huntPhase() { return huntPhase; }
-    public int huntFocus() { return huntFocus; }
-    public long huntPhaseUntil() { return huntPhaseUntil; }
-    public long huntInstinctUntil() { return huntInstinctUntil; }
-    public boolean huntEmpowered() { return huntEmpowered; }
-    public boolean huntInstinct() { return projectedTick<huntInstinctUntil; }
-    public void projectHunt(String phase,int focus,long phaseUntil,boolean empowered,long instinctUntil) {
-        String next=phase==null?"STALK":phase;
-        int clamped=Math.max(0,Math.min(100,focus));
-        if(huntPhase.equals(next) && huntFocus==clamped && huntPhaseUntil==phaseUntil
-                && huntEmpowered==empowered && huntInstinctUntil==instinctUntil) return;
-        huntPhase=next; huntFocus=clamped; huntPhaseUntil=phaseUntil; huntEmpowered=empowered; huntInstinctUntil=instinctUntil; sync();
-    }
     public long specializationDeadline() { return specializationDeadline; }
     public boolean specializationLocked() { return specializationLocked; }
     public void projectSpecialization(EchoSpecialization next) {
@@ -106,9 +88,10 @@ public final class EchoRoleData extends SimpleRoleData {
         if(!Objects.equals(specialization,next)) { specialization=next; sync(); }
     }
     /** 切换职业只改打法，不改专长数值；由会话在 SAFE 内调用，锁定后不再接受。 */
-    public void projectHunterClass(EchoHunterClass next) {
-        if(!EchoHunterClass.accepts(specialization())) return;
-        if(!Objects.equals(hunterClass,next)) { hunterClass=next; sync(); }
+    /** 职业是本人私有信息，只发给本人；换局或换职业时覆盖。 */
+    public void projectClass(EchoClass next) {
+        if(next==null || next.faction()!=faction) return;
+        if(!Objects.equals(playerClass,next)) { playerClass=next; sync(); }
     }
     public void projectSpecializationWindow(long deadline,boolean locked) {
         if(specializationDeadline==deadline && specializationLocked==locked) return;
@@ -124,10 +107,9 @@ public final class EchoRoleData extends SimpleRoleData {
     private EchoDraftView draft;
     private long acknowledged,projectedTick;
     private String requestError="";
-    /** 蓄力时长：狩猎本能窗口内压缩到 8 tick，其余按专长倍率。 */
+    /** 追猎刀固定蓄力 0.8 秒，不受专长或狩猎本能缩短。 */
     public int cutterChargeTicks() {
-        int scaled=EchoSpecialization.scaled(cutterChargeTicks,specialization().cutterChargeSpeed(rules.specialization()));
-        return huntInstinct()?Math.min(org.agmas.noellesroles.game.modes.echo.combat.EchoHuntLoop.INSTINCT_CHARGE_TICKS,scaled):scaled;
+        return org.agmas.noellesroles.game.modes.echo.combat.EchoCutterStrike.CHARGE_TICKS;
     }
     /** 一次性效果按当前专长判定，避免切换专长后旧窗口误用。 */
     public boolean skillPending(EchoSkill skill) { return skillPendingActive() && skill()==skill; }
@@ -156,6 +138,7 @@ public final class EchoRoleData extends SimpleRoleData {
     public EchoFaction faction() { return faction; }
     public EchoPhase phase() { return phase; }
     public EchoLifeState life() { return combat.life(); }
+    public float health() { return combat.health(); }
     public boolean controlled() { return projectedTick<combat.controlledUntil(); }
     public long bleedRemaining() { return Math.max(0,combat.bleedUntil()-projectedTick); }
     public long projectedTick() { return projectedTick; }
@@ -186,7 +169,7 @@ public final class EchoRoleData extends SimpleRoleData {
     }
     public int collectTicks(int base) { return EchoSpecialization.scaled(base,specialization().collectSpeed(rules.specialization())); }
     public int blackCollectTicks(int base) { return EchoSpecialization.scaled(base,specialization().blackCollectSpeed(rules.specialization())); }
-    public int pollutionTicks(int base) { return EchoSpecialization.scaled(base,specialization().pollutionSpeed(rules.specialization())); }
+    public int stallTicks(int base) { return EchoSpecialization.scaled(base,specialization().stallSpeed(rules.specialization())); }
     public int tradeRangeBonus() { return specialization().tradeRangeBonus(rules.specialization()); }
     public double proposalCooldownSpeed() { return specialization().proposalCooldownSpeed(rules.specialization()); }
     public int freeCargoSlot() { return cargo().size()<capacity()?cargo().size():-1; }
@@ -201,7 +184,11 @@ public final class EchoRoleData extends SimpleRoleData {
         attachedCargo.remove(instance); sync();
     }
     public void bind(UUID id,EchoContract contract,EchoPhase phase) { matchId=id; this.contract=contract; this.phase=phase; sync(); }
-    public void attachInventory(EchoInventory inventory,UUID epoch,EchoFaction faction) { this.inventory=inventory; this.epoch=epoch; this.faction=faction; sync(); }
+    public void attachInventory(EchoInventory inventory,UUID epoch,EchoFaction faction) {
+        // 回复序号和错误属于连接 epoch，不能让上一连接的 COOLDOWN 被新拆包请求误认。
+        if(!Objects.equals(this.epoch,epoch)) { acknowledged=0; requestError=""; }
+        this.inventory=inventory; this.epoch=epoch; this.faction=faction; sync();
+    }
     public void projectInventory() { sync(); }
     public void acknowledge(long request,String error) { acknowledged=request; requestError=error; sync(); }
     public void projectDraft(EchoDraftView view) { if(!Objects.equals(draft,view)) { draft=view; sync(); } }
@@ -227,14 +214,11 @@ public final class EchoRoleData extends SimpleRoleData {
         tag.putInt("echoBaseCapacity",baseCapacity); tag.putDouble("echoBaseCargoPenalty",baseCargoPenalty);
         tag.putInt("echoCutterChargeTicks",cutterChargeTicks);
         if(specialization!=null) tag.putString("echoSpecialization",specialization.name());
-        if(hunterClass!=null) tag.putString("echoHunterClass",hunterClass.name());
+        if(playerClass!=null) tag.putString("echoClass",playerClass.name());
         tag.putLong("echoSpecDeadline",specializationDeadline); tag.putBoolean("echoSpecLocked",specializationLocked);
         if(contract!=null) tag.putString("echoContract",contract.name());
         tag.putLong("echoSkillReady",skillReadyAt); tag.putLong("echoSkillBuff",skillBuffUntil); tag.putLong("echoSkillPending",skillPendingUntil);
         tag.putLong("echoRollReady",rollReadyAt); tag.putLong("echoRollUntil",rollUntil);
-        tag.putString("echoHuntPhase",huntPhase); tag.putInt("echoHuntFocus",huntFocus);
-        tag.putLong("echoHuntPhaseUntil",huntPhaseUntil); tag.putLong("echoHuntInstinctUntil",huntInstinctUntil);
-        tag.putBoolean("echoHuntEmpowered",huntEmpowered);
         tag.putLong("echoKeyPulse",keyPulseAt); tag.putString("echoInteractionError",interactionError); tag.putLong("echoInteractionUntil",interactionUntil);
         if(actionView!=null) { var a=new CompoundTag(); a.putUUID("id",actionView.id()); a.putString("kind",actionView.kind()); a.putLong("start",actionView.startedAt()); a.putInt("duration",actionView.duration()); tag.put("echoActionView",a); }
         tag.putInt("echoBlackCargo",blackCargoCount);
@@ -263,6 +247,7 @@ public final class EchoRoleData extends SimpleRoleData {
         }
         CompoundTag c=new CompoundTag(); c.putString("life",combat.life().name()); c.putLong("tick",projectedTick);
         c.putLong("bleed",combat.bleedUntil()); c.putLong("protection",combat.protectedUntil()); c.putLong("control",combat.controlledUntil());
+        c.putFloat("health",combat.health());
         c.putLong("immune",combat.controlImmuneUntil()); c.putLong("cutter",combat.cutterReadyAt()); c.putLong("shove",combat.shoveReadyAt()); tag.put("echoCombat",c);
     }
     @Override public void readFromSyncNbt(CompoundTag tag,HolderLookup.Provider provider) {
@@ -276,15 +261,11 @@ public final class EchoRoleData extends SimpleRoleData {
         baseCargoPenalty=Double.isFinite(penalty)?Math.max(0,Math.min(1,penalty)):0.10;
         cutterChargeTicks=tag.contains("echoCutterChargeTicks")?Math.max(1,Math.min(72000,tag.getInt("echoCutterChargeTicks"))):12;
         specialization=tag.contains("echoSpecialization")?EchoSpecialization.byId(tag.getString("echoSpecialization").toLowerCase(java.util.Locale.ROOT)).filter(s -> s.faction()==faction).orElse(null):null;
-        hunterClass=tag.contains("echoHunterClass")?EchoHunterClass.byId(tag.getString("echoHunterClass")).orElse(null):null;
+        playerClass=tag.contains("echoClass")?EchoClass.byId(tag.getString("echoClass")).orElse(null):null;
         specializationDeadline=Math.max(0,tag.getLong("echoSpecDeadline")); specializationLocked=tag.getBoolean("echoSpecLocked");
         phase=parse(EchoPhase.class,tag.getString("echoPhase"),EchoPhase.SAFE); contract=parse(EchoContract.class,tag.getString("echoContract"),null);
         skillReadyAt=Math.max(0,tag.getLong("echoSkillReady")); skillBuffUntil=Math.max(0,tag.getLong("echoSkillBuff")); skillPendingUntil=Math.max(0,tag.getLong("echoSkillPending"));
         rollReadyAt=Math.max(0,tag.getLong("echoRollReady")); rollUntil=Math.max(0,tag.getLong("echoRollUntil"));
-        huntPhase=tag.contains("echoHuntPhase")?tag.getString("echoHuntPhase"):"STALK";
-        huntFocus=Math.max(0,Math.min(100,tag.getInt("echoHuntFocus")));
-        huntPhaseUntil=Math.max(0,tag.getLong("echoHuntPhaseUntil")); huntInstinctUntil=Math.max(0,tag.getLong("echoHuntInstinctUntil"));
-        huntEmpowered=tag.getBoolean("echoHuntEmpowered");
         keyPulseAt=Math.max(0,tag.getLong("echoKeyPulse")); interactionError=tag.getString("echoInteractionError"); interactionUntil=Math.max(0,tag.getLong("echoInteractionUntil"));
         actionView=null;
         if(tag.contains("echoActionView")) {
@@ -316,7 +297,9 @@ public final class EchoRoleData extends SimpleRoleData {
             draft=new EchoDraftView(d.getUUID("offer"),d.getUUID("pack"),d.getString("state"),choices,d.getLong("deadline"),d.getLong("ready"));
         }
         CompoundTag c=tag.getCompound("echoCombat"); projectedTick=c.getLong("tick");
-        combat=new EchoCombatState.Snapshot(parse(EchoLifeState.class,c.getString("life"),EchoLifeState.HEALTHY),c.getLong("bleed"),c.getLong("protection"),c.getLong("control"),c.getLong("immune"),c.getLong("cutter"),c.getLong("shove"));
+        var life=parse(EchoLifeState.class,c.getString("life"),EchoLifeState.HEALTHY);
+        float health=c.contains("health")?c.getFloat("health"):life==EchoLifeState.HEALTHY?EchoCombatState.MAX_HEALTH:life==EchoLifeState.WOUNDED?EchoCombatState.CUTTER_DAMAGE:0F;
+        combat=new EchoCombatState.Snapshot(life,c.getLong("bleed"),c.getLong("protection"),c.getLong("control"),c.getLong("immune"),c.getLong("cutter"),c.getLong("shove"),Float.isFinite(health)?Math.max(0,Math.min(EchoCombatState.MAX_HEALTH,health)):0F);
     }
     private static <E extends Enum<E>> E parse(Class<E> type,String value,E fallback) { try { return Enum.valueOf(type,value); } catch(IllegalArgumentException ignored) { return fallback; } }
     @Override public void clear() {
@@ -325,12 +308,11 @@ public final class EchoRoleData extends SimpleRoleData {
         actionView=null; keyPulseAt=0; interactionUntil=0; interactionError="";
         cutterChargeTicks=12;
         tradeRange=3;
-        specialization=null; specializationDeadline=0; specializationLocked=false; hunterClass=null;
+        specialization=null; specializationDeadline=0; specializationLocked=false; playerClass=null;
         rules=org.agmas.noellesroles.game.modes.echo.rules.EchoRuleConfig.DEFAULT; rulesReady=false;
         matchId=null; epoch=null; contract=null; faction=null; phase=EchoPhase.FINISHED; cargo.clear(); actionId=null;
         skillReadyAt=0; skillBuffUntil=0; skillPendingUntil=0;
         rollReadyAt=0; rollUntil=0;
-        huntPhase="STALK"; huntFocus=0; huntPhaseUntil=0; huntInstinctUntil=0; huntEmpowered=false;
         trade=null; contractProgress=null; blackCargoCount=0;
         selectedCard=null; signals=List.of(); scenes=List.of();
         inventory=null; bagSnapshot=null; draft=null; acknowledged=0; requestError=""; projectedTick=0;

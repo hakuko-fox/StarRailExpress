@@ -256,6 +256,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         NoellesrolesClientAmbientSounds.register();
         // Dream（Dream）：颤抖视角漂移 + 虚拟血量条（准星指向受伤玩家时显示）
         org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler.register();
+        org.agmas.noellesroles.client.hud.VirtualHealthHud.register();
         // 破镜重圆：药水驱动的客户端坍缩/还原与坠落方块动画
         MirrorReunionSceneManager.register();
         // 区域地图物品：客户端扫描 playArea 生成地图纹理 + 手持时 HUD 小地图
@@ -509,6 +510,8 @@ public class NoellesrolesClient implements ClientModInitializer {
                 org.agmas.noellesroles.client.renderer.CanyuesaHorseRenderer::new);
         EntityRendererRegistry.register(ModEntities.SUPER_PIG_HORSE,
                 org.agmas.noellesroles.client.renderer.SuperPigHorseRenderer::new);
+        EntityRendererRegistry.register(ModEntities.STAR,
+                org.agmas.noellesroles.client.renderer.StarProjectileRenderer::new);
         EntityRendererRegistry.register(ModEntities.NIAOSHOU_SHOU_MISSILE,
                 net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
 
@@ -556,6 +559,7 @@ public class NoellesrolesClient implements ClientModInitializer {
         DreadlordSkinHandler.register();
         DreadlordDreadClient.register();
         DreadlordClientFx.register();
+        org.agmas.noellesroles.game.halloween.HalloweenClient.register();
         CommonClientHudRenderer.registerRenderersEvent();
         WorldRenderEvents.AFTER_TRANSLUCENT.register((renderContext) -> {
             TaskBlockOverlayRenderer.render(renderContext);
@@ -752,6 +756,7 @@ public class NoellesrolesClient implements ClientModInitializer {
             });
         });
         ClientPlayNetworking.registerGlobalReceiver(ScanAllTaskPointsPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
             Noellesroles.LOGGER.info("Recieved Tasks Points!");
             NoellesrolesClient.taskBlocks.clear();
             var tempArr = payload.taskBlocks();
@@ -763,6 +768,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     NoellesrolesClient.taskBlocks.put(set.getKey(), set.getValue());
                 }
             }
+            });
         });
         ClientPlayNetworking.registerGlobalReceiver(EnableTaskHighlightPacket.ID, (payload, context) -> {
             final var client = context.client();

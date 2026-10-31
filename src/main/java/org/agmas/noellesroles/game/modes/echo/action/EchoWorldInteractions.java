@@ -67,8 +67,10 @@ public final class EchoWorldInteractions {
             var match=EchoSessions.get(player.serverLevel());
             if(match==null || !match.phase().acceptsActions() || !match.standing(player)
                     || io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level()).isTimeFrozen()) return false;
-            // 任何原版玩家伤害（含投射物/爆炸）均不得绕过模式的机会数与服务器射线。
-            return !(source.getEntity() instanceof net.minecraft.world.entity.player.Player);
+            // 玩家原版伤害不能绕过武器；环境伤害也由同一三心/倒地状态机处理。
+            if(source.getEntity() instanceof net.minecraft.world.entity.player.Player) return false;
+            match.combat().environmentDamage(player,amount);
+            return false;
         });
         net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.AFTER_DAMAGE.register((entity,source,baseDamage,damageTaken,blocked) -> {
             if(!(entity instanceof ServerPlayer player) || blocked || damageTaken<=0 || !echo(player.level())) return;
@@ -93,6 +95,35 @@ public final class EchoWorldInteractions {
         ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.game.modes.echo.inventory.EchoInventoryPayload.ID,(payload,context) -> context.server().execute(() -> {
             var match=EchoSessions.get(context.player().serverLevel());
             if(match!=null && match.result()==null) match.inventoryRequest(context.player(),payload);
+        }));
+        // 商店：价格与余额全部由服务端判定，客户端只报「买哪一个」。
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.game.modes.echo.economy.EchoShopPayload.ID,(payload,context) -> context.server().execute(() -> {
+            var match=EchoSessions.get(context.player().serverLevel());
+            if(match==null || match.result()!=null || !match.id().equals(payload.matchId())) return;
+            var player=context.player();
+            switch(payload.action()) {
+                case BUY_PACK -> {
+                    try {
+                        var offer=org.agmas.noellesroles.game.modes.echo.economy.EchoPackOffer
+                                .valueOf(payload.offerId().toUpperCase(java.util.Locale.ROOT));
+                        match.shop().buyPack(player,offer);
+                    } catch(IllegalArgumentException unknown) { }
+                }
+                case BUY_GOOD -> {
+                    try {
+                        var good=org.agmas.noellesroles.game.modes.echo.economy.EchoShopService.VendingGood
+                                .valueOf(payload.offerId().toUpperCase(java.util.Locale.ROOT));
+                        match.shop().buyGood(player,net.minecraft.core.BlockPos.of(payload.machinePos()),good);
+                    } catch(IllegalArgumentException unknown) { }
+                }
+                case OPEN -> { }
+            }
+        }));
+        // 修机小游戏：只接受本人当前这一轮；判定由服务端按自己的 tick 重算。
+        ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.game.modes.echo.repair.EchoRepairSubmitPayload.ID,(payload,context) -> context.server().execute(() -> {
+            var match=EchoSessions.get(context.player().serverLevel());
+            if(match!=null && match.result()==null && match.id().equals(payload.matchId()))
+                match.objectives().submitRepair(context.player(),payload.checkId().toString(),payload.position());
         }));
         ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.game.modes.echo.specialization.EchoSpecializationSelectPayload.ID,(payload,context) -> context.server().execute(() -> {
             var match=EchoSessions.get(context.player().serverLevel());

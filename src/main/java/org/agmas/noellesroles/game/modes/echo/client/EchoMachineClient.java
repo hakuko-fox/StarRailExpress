@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.client.NoellesrolesClient;
 import org.agmas.noellesroles.game.modes.echo.content.EchoMachineBlock;
 import org.agmas.noellesroles.game.modes.echo.content.EchoMachines;
+import org.agmas.noellesroles.game.modes.echo.content.EchoMachineInteractions;
 import org.agmas.noellesroles.game.modes.echo.objective.EchoMachinePayload;
 import org.agmas.noellesroles.game.modes.echo.state.EchoFaction;
 import org.agmas.noellesroles.game.modes.echo.state.EchoMachineView;
@@ -45,11 +46,13 @@ public final class EchoMachineClient {
             if (machine == null || context.matrixStack() == null) return;
             Component text = Component.translatable("echo.machine.world", Component.translatable(machine.type().nameKey()), instruction(machine));
             // 文字锚在机壳正面上缘，不创建实体；NORMAL 深度测试保证不会隔墙显示。
-            Vec3 pos = new Vec3(machine.x() + 0.5, machine.y() + 1.16, machine.z() + 0.5);
+            var box = EchoMachineInteractions.bounds(client.level,new BlockPos(machine.x(),machine.y(),machine.z()));
+            Vec3 pos = new Vec3((box.minX+box.maxX)/2,box.maxY+0.16,(box.minZ+box.maxZ)/2);
             var state = client.level.getBlockState(new BlockPos(machine.x(), machine.y(), machine.z()));
             if (state.hasProperty(EchoMachineBlock.FACING)) {
                 var front = state.getValue(EchoMachineBlock.FACING);
-                pos = pos.add(front.getStepX() * 0.56, 0, front.getStepZ() * 0.56);
+                double depth = front.getStepX()!=0 ? box.getXsize() : box.getZsize();
+                pos = pos.add(front.getStepX()*(depth/2+0.06),0,front.getStepZ()*(depth/2+0.06));
             }
             var camera = context.camera().getPosition(); var pose = context.matrixStack();
             float scale = Math.min(0.019F, 3F / Math.max(1, client.font.width(text)));
@@ -72,17 +75,18 @@ public final class EchoMachineClient {
                 && own.life().potentiallyEscapable()) machine = view.machine();
         // 制图时也能辨认机器，但明确说明：放下外壳不会自动注册玩法点位。
         if (machine == null && EchoHud.view() == null && client.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
-            var kind = EchoMachines.kind(client.level.getBlockState(hit.getBlockPos()));
-            if (kind != null) machine = new EchoMachineView(hit.getBlockPos().getX(), hit.getBlockPos().getY(), hit.getBlockPos().getZ(),
+            var root = EchoMachineInteractions.root(client.level,hit.getBlockPos());
+            var kind = EchoMachines.kind(client.level.getBlockState(root));
+            if (kind != null) machine = new EchoMachineView(root.getX(),root.getY(),root.getZ(),
                     EchoMachineView.Type.valueOf(kind.name()), "", EchoMachineView.Status.UNCONFIGURED, 0, 0, 0, 0);
         }
         if (machine == null) return null;
         var pos = new BlockPos(machine.x(), machine.y(), machine.z());
         if (!client.level.hasChunkAt(pos) || client.level.getBlockState(pos).isAir()) return null;
-        Vec3 eye = client.player.getEyePosition(), center = Vec3.atCenterOf(pos), delta = center.subtract(eye);
+        Vec3 eye = client.player.getEyePosition(), center = EchoMachineInteractions.aim(client.level,Vec3.atCenterOf(pos),eye), delta = center.subtract(eye);
         if (delta.lengthSqr() > 4.5 * 4.5 || client.player.getLookAngle().dot(delta.normalize()) < 0.25) return null;
         var hit = client.level.clip(new ClipContext(eye, center, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, client.player));
-        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos) ? machine : null;
+        return hit.getType() == HitResult.Type.MISS || EchoMachineInteractions.root(client.level,hit.getBlockPos()).equals(pos) ? machine : null;
     }
 
     private static Component instruction(EchoMachineView machine) {
@@ -100,7 +104,7 @@ public final class EchoMachineClient {
                 return Component.translatable("echo.machine.status." + resource);
             }
             boolean paused = EchoHud.view() != null && EchoHud.view().state().paused();
-            if (machine.remaining() > 0 && (machine.status() == EchoMachineView.Status.COOLDOWN || machine.status() == EchoMachineView.Status.LOCKED || machine.status() == EchoMachineView.Status.CORE_OPEN))
+            if (machine.remaining() > 0 && (machine.status() == EchoMachineView.Status.COOLDOWN || machine.status() == EchoMachineView.Status.STALLED || machine.status() == EchoMachineView.Status.CORE_OPEN))
                 return Component.translatable("echo.machine.timer", Component.translatable(machine.status().key()), machine.seconds(age, paused));
             return Component.translatable(machine.status().key());
         }
@@ -111,7 +115,7 @@ public final class EchoMachineClient {
             case CORE_CONSOLE -> "unlock";
             case FREE_EXIT -> "leave";
             case BLACK_DROPOFF -> "deliver_black";
-            case BEACON, CORE_BEACON -> EchoBagClient.data() != null && EchoBagClient.data().faction() == EchoFaction.INTERCEPTOR ? "pollute" : "submit";
+            case BEACON, CORE_BEACON -> EchoBagClient.data() != null && EchoBagClient.data().faction() == EchoFaction.INTERCEPTOR ? "stall" : "submit";
             default -> "interact";
         };
         return Component.translatable("echo.machine.action." + action, client.options.keyUse.getTranslatedKeyMessage());
@@ -121,7 +125,8 @@ public final class EchoMachineClient {
     static int renderHud(FakeGuiGraphics graphics, int x, int y, int width, int limit) {
         var machine = current();
         if (machine == null || y + 31 > limit || width < 120) return y;
-        var client = Minecraft.getInstance(); var g = graphics.getDefaultGuiGraphics();
+        // 回调只在脏 tick 执行；必须入帧缓存，直接使用真实 GuiGraphics 会在中间帧消失。
+        var g = graphics;
         int accent = color(machine);
         g.fillGradient(x, y, x + width, y + 29, 0xEB1A1008, 0xEB20140A);
         g.renderOutline(x, y, width, 29, 0xFF8B6914);
@@ -148,7 +153,7 @@ public final class EchoMachineClient {
                     default -> 0xFFE0AD5B;
                 };
     }
-    private static void fit(net.minecraft.client.gui.GuiGraphics g, Component text, int x, int y, int width, int color) {
+    private static void fit(FakeGuiGraphics g, Component text, int x, int y, int width, int color) {
         var font = Minecraft.getInstance().font;
         float scale = Math.min(1F, width / (float) Math.max(1, font.width(text)));
         g.pose().pushPose(); g.pose().translate(x, y, 0); g.pose().scale(scale, scale, 1);
