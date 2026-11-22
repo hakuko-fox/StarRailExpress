@@ -43,19 +43,23 @@ public class BaiyuRole extends NormalRole {
     public static boolean useBaiyuExamine(ServerPlayer player) {
         if (RoleData.getNullable(VtuberRoleData.class, player) == null) return false;
         var hit = ProjectileUtil.getHitResultOnViewVector(player,
-                entity -> entity instanceof ServerPlayer target
-                && target != player
-                && GameUtils.isPlayerAliveAndSurvival(target), 5.0F);
+                entity -> entity instanceof PlayerBodyEntity, 5.0F);
         if (!(hit instanceof EntityHitResult entityHit)
-                    || !(entityHit.getEntity() instanceof ServerPlayer target)) {
+                    || !(entityHit.getEntity() instanceof PlayerBodyEntity body)) {
             player.displayClientMessage(Component.translatable(
                     "message.noellesroles.baiyu.no_target"), true);
             return false;
         }
-        RoleData.getNullable(VtuberRoleData.class, player).baiyuMarkedTarget = target.getUUID();
-        RoleData.getNullable(VtuberRoleData.class, player).setMarkedTargetName(target.getGameProfile().getName());
-        player.displayClientMessage(Component.translatable(
-                "message.noellesroles.baiyu.marked", target.getName()), true);
+        body.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.GLOWING, -1, 0, false, false, false));
+        var role = body.getComponent().playerRole;
+        Component roleText = org.agmas.noellesroles.utils.RoleUtils.getRoleName(role);
+        Component reasonText = Component.translatable("death_reason." + body.getDeathReason().replace(':', '.'));
+        if (body.hasEffect(org.agmas.noellesroles.init.ModEffects.FOX_BODY_HIDDEN)) {
+            roleText = Component.translatable("message.noellesroles.vtuber.fox_hidden");
+            reasonText = roleText;
+        }
+        player.displayClientMessage(Component.translatable("message.noellesroles.baiyu.corpse_result",
+                body.getComponent().getOwnerName(), roleText, reasonText), false);
         return true;
     }
 
@@ -71,6 +75,5 @@ public class BaiyuRole extends NormalRole {
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 }

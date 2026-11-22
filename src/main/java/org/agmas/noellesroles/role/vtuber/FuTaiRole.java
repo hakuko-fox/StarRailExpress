@@ -28,7 +28,7 @@ public class FuTaiRole extends NormalRole {
         if (!GameUtils.isPlayerAliveAndSurvival(user)) {
             return false;
         }
-        int cost = 200;
+        int cost = 10;
         int balance = MoneyUtils.getBalance(user);
         if (balance < cost) {
             user.displayClientMessage(Component.translatable(
@@ -40,6 +40,7 @@ public class FuTaiRole extends NormalRole {
         }
 
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(user.level());
+        int civilians = 0;
         int killers = 0;
         int neutrals = 0;
         for (ServerPlayer target : user.serverLevel().players()) {
@@ -54,10 +55,12 @@ public class FuTaiRole extends NormalRole {
                 neutrals++;
             } else if (game.isKillerTeamRole(role)) {
                 killers++;
+            } else {
+                civilians++;
             }
         }
         user.displayClientMessage(Component.translatable(
-                "message.noellesroles.fu_tai.oracle_result", killers, neutrals), true);
+                "message.noellesroles.fu_tai.oracle_result", civilians, killers, neutrals), true);
         return true;
     }
 
@@ -67,7 +70,7 @@ public class FuTaiRole extends NormalRole {
                     ServerPlayer player = context.player();
                     if (player.isSpectator()) return false;
                     return FuTaiRole.useOracleSkill(player, context);
-                }).cooldownSeconds(120).showOnHud(true).build());
+                }).cooldownSeconds(10).showOnHud(true).build());
     }
 
     @Override
@@ -82,6 +85,5 @@ public class FuTaiRole extends NormalRole {
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 }

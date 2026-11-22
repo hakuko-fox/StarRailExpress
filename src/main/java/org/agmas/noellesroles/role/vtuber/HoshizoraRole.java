@@ -63,11 +63,6 @@ public class HoshizoraRole extends NormalRole {
         var HOSHIZORA_SHOP = new ArrayList<ShopEntry>();
         HOSHIZORA_SHOP.add(new ShopEntry(new ItemStack(TMMItems.MAGNUM_BULLET, 5), 50,
                 ShopEntry.Type.TOOL));
-        HOSHIZORA_SHOP.add(maxOneScopeEntry(25));
-        HOSHIZORA_SHOP.add(maxOneItemEntry(TMMItems.SNIPER_RIFLE.getDefaultInstance(), 400,
-                ShopEntry.Type.WEAPON));
-        HOSHIZORA_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
-                SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
         return HOSHIZORA_SHOP;
     }
 
@@ -140,7 +135,7 @@ public class HoshizoraRole extends NormalRole {
     }
 
     public static boolean canBuy(ShopEntry entry) {
-        return entry.type() != ShopEntry.Type.WEAPON || entry.stack().is(TMMItems.SNIPER_RIFLE);
+        return entry.type() != ShopEntry.Type.WEAPON && !VtuberRoleSupport.isWeapon(entry.stack().getItem());
     }
 
 }

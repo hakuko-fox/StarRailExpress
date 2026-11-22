@@ -24,6 +24,7 @@ public class ShenwuBingfengRole extends CustomWinnerRole {
     public ShenwuBingfengRole(ResourceLocation id, int color, boolean innocent, boolean killer,
             MoodType mood, int sprint, boolean seeTime) {
         super(id, color, innocent, killer, mood, sprint, seeTime);
+        setCanIgnoreBlackout(true);
         setRoleData(ShenwuBingfengRoleData::new);
     }
 
@@ -46,15 +47,8 @@ public class ShenwuBingfengRole extends CustomWinnerRole {
 
     public static void giveInitialItems(Player player) {
 
-        boolean sheriffVariant = player.getRandom().nextFloat() < 0.70F;
-        RoleUtils.insertStackInFreeSlot(player,
-                sheriffVariant
-                ? ModItems.FAKE_REVOLVER.getDefaultInstance()
-                : ModItems.FAKE_KNIFE.getDefaultInstance());
-        player.displayClientMessage(Component.translatable(sheriffVariant
-                ? "message.noellesroles.kamikiri_ice.sheriff_variant"
-                : "message.noellesroles.kamikiri_ice.killer_variant"), true);
-
+        RoleUtils.insertStackInFreeSlot(player, ModItems.FAKE_REVOLVER.getDefaultInstance());
+        RoleUtils.insertStackInFreeSlot(player, ModItems.FAKE_KNIFE.getDefaultInstance());
     }
 
     public static void registerEvents() {
@@ -78,6 +72,8 @@ public class ShenwuBingfengRole extends CustomWinnerRole {
                     if (attackerGroup == null || !groups.add(attackerGroup)) {
                         return true;
                     }
+                    shenwu.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                            net.minecraft.world.effect.MobEffects.INVISIBILITY, 20 * 10, 0, false, false, true));
                     shenwu.displayClientMessage(Component.translatable("message.noellesroles.kamikiri_ice.fatal_saved"), true);
                     return false;
                 });

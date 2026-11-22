@@ -38,8 +38,8 @@ public class SeptemberOneRole extends CustomWinnerRole {
         data.tasksCompleted++;
         serverPlayer.displayClientMessage(Component.translatable(
                 "message.noellesroles.nine_one.task_progress",
-                Component.literal(Integer.toString(data.tasksCompleted)), Component.literal("15")), true);
-        if (data.tasksCompleted >= 15) {
+                Component.literal(Integer.toString(data.tasksCompleted)), Component.literal(Integer.toString(requiredTasks(serverPlayer)))), true);
+        if (data.tasksCompleted >= requiredTasks(player)) {
             win(serverPlayer);
         }
     }
@@ -47,7 +47,7 @@ public class SeptemberOneRole extends CustomWinnerRole {
     @Override
     public WinStatus checkWin(ServerPlayer player,
             WinStatus winStatus) {
-        return RoleData.getOptional(SeptemberOneRoleData.class, player).map(data -> data.tasksCompleted >= 15).orElse(false)
+        return RoleData.getOptional(SeptemberOneRoleData.class, player).map(data -> data.tasksCompleted >= requiredTasks(player)).orElse(false)
                 ? WinStatus.CUSTOM
                 : WinStatus.NOT_MODIFY;
     }
@@ -82,6 +82,7 @@ public class SeptemberOneRole extends CustomWinnerRole {
                         return true;
                     }
                     RoleData.getNullable(SeptemberOneRoleData.class, nineOne).fatalShieldUsed = true;
+                    killer.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, 20 * 6, 0, false, false, true));
                     killer.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 6, 0,
                     false, false, true));
                     nineOne.displayClientMessage(Component.translatable(
@@ -120,12 +121,19 @@ public class SeptemberOneRole extends CustomWinnerRole {
         }
     }
 
+    public static int requiredTasks(Player player) {
+        return org.agmas.noellesroles.game.roles.vtuber.VtuberV21Rules.taskGoal(SREGameWorldComponent.KEY.get(player.level()).getPlayerCount());
+    }
+
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
         var game = SREGameWorldComponent.KEY.get(player.level());
         long now = player.level().getGameTime();
         tickNineOneTaskConcealment(player, game);
+        for (var effect : java.util.List.of(ModEffects.VOICE_SILENCE, ModEffects.CHAT_BAN, ModEffects.DEAFNESS)) {
+            player.addEffect(new MobEffectInstance(effect, 10, 0, false, false, false));
+        }
         player.removeEffect(MobEffects.CONFUSION);
     }
 }

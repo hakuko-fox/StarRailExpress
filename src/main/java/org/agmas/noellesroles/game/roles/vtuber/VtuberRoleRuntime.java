@@ -74,6 +74,13 @@ public final class VtuberRoleRuntime {
         ServerTickEvents.END_SERVER_TICK.register(VtuberRoleRuntime::serverTick);
         OnGameTrueStarted.EVENT.register(level -> resetRound(level.getServer()));
         OnGameEnd.EVENT.register((level, game) -> resetRound(level.getServer()));
+        io.wifi.starrailexpress.event.OnPlayerDeathWithBody.EVENT.register((victim, killer, reason, body) -> {
+            var game = SREGameWorldComponent.KEY.get(victim.level());
+            if (org.agmas.noellesroles.role.vtuber.VtuberTraits.isFox(game.getRole(victim))
+                    || (killer != null && org.agmas.noellesroles.role.vtuber.VtuberTraits.isFox(game.getRole(killer)))) {
+                body.addEffect(new MobEffectInstance(ModEffects.FOX_BODY_HIDDEN, -1, 0, false, false, false));
+            }
+        });
         OnPlayerDeath.EVENT.register((victim, reason) -> handleDeath(victim));
         OnPlayerDeathWithKiller.EVENT.register((victim, killer, reason) -> {
             handleDeath(victim);
@@ -110,6 +117,10 @@ public final class VtuberRoleRuntime {
     }
 
     public static boolean useRewind(ServerPlayer caster, int seconds, int cost) {
+        return useRewind(caster, seconds, cost, true, -1, 0);
+    }
+
+    public static boolean useRewind(ServerPlayer caster, int seconds, int cost, boolean revive, int radius, int freezeTicks) {
         if (!GameUtils.isPlayerAliveAndSurvival(caster)) {
             return false;
         }
@@ -120,13 +131,22 @@ public final class VtuberRoleRuntime {
             return false;
         }
         long targetTick = caster.level().getGameTime() - 20L * seconds;
+        java.util.Set<UUID> freezeTargets = new java.util.HashSet<>();
+        for (ServerPlayer target : caster.serverLevel().players()) {
+            if (target != caster && GameUtils.isPlayerAliveAndSurvival(target)
+                    && (radius < 0 || target.distanceToSqr(caster) <= radius * radius)) freezeTargets.add(target.getUUID());
+        }
         int restored = 0;
         for (ServerPlayer player : caster.serverLevel().players()) {
             PlayerSnapshot snapshot = findSnapshot(player.getUUID(), targetTick);
-            if (snapshot == null) {
+            if (snapshot == null || !snapshot.alive()) {
                 continue;
             }
+            boolean wasDead = GameUtils.isPlayerEliminated(player);
+            if (wasDead && !revive) continue;
+            boolean freeze = !wasDead && freezeTargets.contains(player.getUUID());
             restoreSnapshot(player, snapshot);
+            if (freeze && freezeTicks > 0) player.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, freezeTicks, 0, false, false, true));
             restored++;
         }
         if (restored == 0) {
@@ -171,7 +191,7 @@ public final class VtuberRoleRuntime {
             ServerPlayer owner = player.getServer().getPlayerList().getPlayer(ownerUuid);
             if (owner == null || !GameUtils.isPlayerAliveAndSurvival(owner)
                     || (!SREGameWorldComponent.KEY.get(owner.level()).isRole(owner, ModRoles.YOUJIN)
-                    && !SREGameWorldComponent.KEY.get(owner.level()).isRole(owner, ModRoles.AMI))) {
+)) {
                 return;
             }
             int duration = 20 * 5;
@@ -208,9 +228,7 @@ public final class VtuberRoleRuntime {
         SREGameWorldComponent game = SREGameWorldComponent.KEY.get(caster.level());
         ServerPlayer first = caster.getServer().getPlayerList().getPlayer(firstUuid);
         ServerPlayer second = secondUuid == null ? null : caster.getServer().getPlayerList().getPlayer(secondUuid);
-        if (game.isRole(caster, ModRoles.KANA)) {
-            KanaRole.selectKanaTarget(caster, first, game);
-        } else if (game.isRole(caster, ModRoles.MAOLUN)) {
+        if (game.isRole(caster, ModRoles.MAOLUN)) {
             MaolunRole.selectMeowlenTargets(caster, first, second);
         }
     }
@@ -237,6 +255,7 @@ public final class VtuberRoleRuntime {
                 continue;
             }
 
+            org.agmas.noellesroles.role.vtuber.VtuberTraits.tick(player);
             tickForcedMovement(server, player, now);
 
         }
@@ -247,7 +266,7 @@ public final class VtuberRoleRuntime {
                 player.getHealth(), GameUtils.isPlayerAliveAndSurvival(player));
         Deque<PlayerSnapshot> snapshots = PLAYER_SNAPSHOTS.computeIfAbsent(player.getUUID(), key -> new ArrayDeque<>());
         snapshots.addLast(snapshot);
-        while (!snapshots.isEmpty() && snapshots.peekFirst().tick() < now - 20L * 6L) {
+        while (!snapshots.isEmpty() && snapshots.peekFirst().tick() < now - 20L * 61L) {
             snapshots.removeFirst();
         }
     }
@@ -264,7 +283,7 @@ public final class VtuberRoleRuntime {
                 return snapshot;
             }
         }
-        return snapshots.peekFirst();
+        return null;
     }
 
     private static void restoreSnapshot(ServerPlayer player, PlayerSnapshot snapshot) {
@@ -334,24 +353,6 @@ public final class VtuberRoleRuntime {
             }
             data.baiyuMarkedTarget = null;
             data.setMarkedTargetName("");
-        }
-        boolean demon = game.isRole(dead, ModRoles.XIAOYE)
-                || game.isRole(dead, ModRoles.TINALIS)
-                || game.isRole(dead, ModRoles.AYERS);
-        boolean spirit = game.isRole(dead, ModRoles.YOUJIN)
-                || game.isRole(dead, ModRoles.SHENWU_BINGFENG);
-        if (demon || spirit) {
-            int skillBanTicks = demon ? 20 * 3 : 20 * 5;
-            for (ServerPlayer player : dead.serverLevel().players()) {
-                if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                    player.addEffect(new MobEffectInstance(ModEffects.SKILL_BANED, skillBanTicks, 0,
-                            false, false, true));
-                    if (spirit) {
-                        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 5, 2,
-                                false, false, true));
-                    }
-                }
-            }
         }
         if (game.isRole(dead, ModRoles.LUNA) || game.isRole(dead, ModRoles.YORU)) {
             killSymbioticPair(dead, game);

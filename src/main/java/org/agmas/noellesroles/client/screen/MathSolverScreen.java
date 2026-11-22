@@ -66,6 +66,7 @@ public class MathSolverScreen extends Screen {
     }
 
     public void updateMaolunQuestion(MaolunQuestionS2CPacket question) {
+        totalPages = 8;
         serverQuestion = question;
         awaitingAnswer = false;
         hasStarted = true;

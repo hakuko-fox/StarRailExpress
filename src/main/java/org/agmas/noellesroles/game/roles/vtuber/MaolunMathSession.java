@@ -30,7 +30,7 @@ public final class MaolunMathSession {
         }
         if (choice == question.getCorrectIndex()) {
             consecutiveCorrect++;
-            if (consecutiveCorrect == 5) {
+            if (consecutiveCorrect == 8) {
                 finished = true;
                 return Result.SUCCESS;
             }

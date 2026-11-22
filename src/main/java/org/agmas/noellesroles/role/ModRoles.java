@@ -1853,11 +1853,20 @@ public class ModRoles {
     public static SRERole YORU = TMMRoles.registerRole(new YoruRole(YORU_ID, 0x475B8F, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setDefaultMax(0)
             .addFlag("twvtuber");
     public static SRERole YOUJIN = TMMRoles.registerRole(new YoujinRole(YOUJIN_ID, 0xD67A42, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").addFlag("myvtuber");
-    public static SRERole KANA = TMMRoles.registerRole(new KanaRole(KANA_ID, 0xC84278, false, true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber").setCanUseKiller(true).addFlag("vtuber");
+    public static SRERole KANA = TMMRoles.registerRole(new KanaRole(KANA_ID, 0xC84278, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("hkvtuber").addFlag("vtuber");
     public static SRERole YUZU_FENGLING = TMMRoles.registerRole(new YuzuFenglingRole(YUZU_FENGLING_ID, 0x83A86B, false, true, SRERole.MoodType.FAKE, Integer.MAX_VALUE, true)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setCanUseKiller(true)
             .addFlag("twvtuber");
     public static SRERole BAIYU = TMMRoles.registerRole(new BaiyuRole(BAIYU_ID, 0xD8E8F0, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setVigilanteTeam(true).setCanPickUpRevolver(true).addFlag("twvtuber");
-    public static SRERole AYERS = TMMRoles.registerRole(new AyersRole(AYERS_ID, 0x678BD4, true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").setVigilanteTeam(true).setCanPickUpRevolver(true).addFlag("twvtuber");
+    public static SRERole AYERS = TMMRoles.registerRole(new AyersRole(AYERS_ID, 0x678BD4, false, true, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), true)).setCanSeeCoin(true).setDefaultMax(1).addFlag("vtuber").addFlag("twvtuber");
+
+    public static final ResourceLocation ZIYUAN_ID = Noellesroles.id("ziyuan");
+    public static final ResourceLocation YUSHANG_ID = Noellesroles.id("yushang");
+    public static SRERole ZIYUAN = TMMRoles.registerRole(new ZiyuanRole(ZIYUAN_ID, 0x9675AA,
+            true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setDefaultMax(1).setDefaultEnableChance(100).addFlag("hkvtuber").addFlag("vtuber");
+    public static SRERole YUSHANG = TMMRoles.registerRole(new YushangRole(YUSHANG_ID, 0x768AA3,
+            true, false, SRERole.MoodType.REAL, TMMRoles.CIVILIAN.getMaxSprintTime(), false))
+            .setCanSeeCoin(true).setDefaultMax(1).addFlag("twvtuber").addFlag("vtuber");
 
     static {
         LUNA.addOccupationRoleOnce(YORU);

@@ -108,6 +108,7 @@ public class ForensicHud {
             }
 
             var body = targetBody;
+            if (body.hasEffect(org.agmas.noellesroles.init.ModEffects.FOX_BODY_HIDDEN)) return;
             // 死者/旁观者由验尸官 HUD 的旁观分支处理，这里只服务存活的普通玩家
             if (!SREClient.isPlayerAliveAndInSurvival()) {
                 return;

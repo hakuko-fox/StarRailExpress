@@ -21,21 +21,11 @@ import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.MoneyUtils;
 
-/**
- * 白狐 2.0 — 殺手陣營
- *
- * 主動技1（G）：獸化之力（可隨時關閉）關閉後冷卻20秒。變身成獸化型態—雪狐：
- *   - 無法攻擊
- *   - 所受攻擊不會使你死亡
- *   - 獲得速度II
- * 主動技2（Shift+G）：瞬結。冷卻60秒，消耗100金幣，令其他玩家緩速、失明3秒。
- * 被動技（修仙成狐）：開局時失明60秒，60秒後自動化身為獸化型態。
- * 標籤：香港Vtuber
- */
+/** 白狐：15秒变身冷却，单次全场定身，开局60秒技能封印。 */
 public class HakukoFoxRoleData extends SimpleRoleData {
 
     private boolean beastFormActive = false;
-    // 修仙成狐：開局失明 60 秒，時間到後自動化身
+    // 修仙成狐：开局技能封印60秒，期满后保留人形。
     private boolean cultivating = false;
     private long cultivateEndTime = 0;
 
@@ -56,7 +46,7 @@ public class HakukoFoxRoleData extends SimpleRoleData {
         cultivateEndTime = 0;
         removeBeastEffects();
         if (player instanceof ServerPlayer sp) {
-            sp.removeEffect(MobEffects.BLINDNESS);
+            sp.removeEffect(org.agmas.noellesroles.init.ModEffects.SKILL_BANED);
             sp.refreshDimensions();
             sync();
         }
@@ -85,7 +75,7 @@ public class HakukoFoxRoleData extends SimpleRoleData {
         if (cultivating) return;
         cultivating = true;
         cultivateEndTime = sp.serverLevel().getGameTime() + 60 * 20;
-        sp.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60 * 20, 0, false, false, true));
+        sp.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.SKILL_BANED, 60 * 20, 0, false, false, true));
         sp.displayClientMessage(
                 Component.translatable("message.noellesroles.hakukofox.cultivation_start"), true);
         sync();
@@ -130,7 +120,7 @@ public class HakukoFoxRoleData extends SimpleRoleData {
         }
         if (beastFormActive) {
             leaveBeastForm(sp);
-            context.setSkillCooldown(20 * 20);
+            context.setSkillCooldown(15 * 20);
             return true;
         }
         if (cultivating) {
@@ -148,7 +138,7 @@ public class HakukoFoxRoleData extends SimpleRoleData {
     public boolean useFreezeSkill(ServerPlayer sp, RoleSkillContext ctx) {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) return false;
 
-        int cost = 100;
+        int cost = 50;
         int balance = MoneyUtils.getBalance(sp);
         if (balance < cost) {
             sp.displayClientMessage(
@@ -161,8 +151,7 @@ public class HakukoFoxRoleData extends SimpleRoleData {
         ServerLevel level = sp.serverLevel();
         for (ServerPlayer other : level.players()) {
             if (other == sp || !GameUtils.isPlayerAliveAndSurvival(other)) continue;
-            other.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3 * 20, 0, false, false, true));
-            other.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 3 * 20, 0, false, false, true));
+            other.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.MOVE_BANED, 5 * 20, 0, false, false, true));
             other.displayClientMessage(
                     Component.translatable("skill.noellesroles.hakukofox.freeze_notify"), true);
         }
@@ -195,14 +184,12 @@ public class HakukoFoxRoleData extends SimpleRoleData {
             return;
         }
 
-        // 修仙之狐：開出60秒後自動化身
+        // 技能封印期满后保留人形。
         if (cultivating && !beastFormActive && GameUtils.isPlayerAliveAndSurvival(sp)
                     && sp.serverLevel().getGameTime() >= cultivateEndTime) {
             cultivating = false;
-            if (sp.hasEffect(MobEffects.BLINDNESS)) {
-                sp.removeEffect(MobEffects.BLINDNESS);
-            }
-            enterBeastForm(sp);
+            cultivateEndTime = 0;
+            sync();
         }
     }
 

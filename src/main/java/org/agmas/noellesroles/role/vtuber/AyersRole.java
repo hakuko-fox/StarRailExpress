@@ -1,66 +1,56 @@
 package org.agmas.noellesroles.role.vtuber;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.NormalRole;
-import io.wifi.starrailexpress.api.SRERole.MoodType;
+import io.wifi.starrailexpress.api.RoleSkill;
 import io.wifi.starrailexpress.api.data.RoleData;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
-import io.wifi.starrailexpress.util.SREItemUtils;
-import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role_data.vtuber.VtuberRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 
+/** 艾尔斯：手动切换伪装人格和盲视杀手人格。 */
 public class AyersRole extends NormalRole {
     public AyersRole(ResourceLocation id, int color, boolean innocent, boolean killer,
             MoodType mood, int sprint, boolean seeTime) {
         super(id, color, innocent, killer, mood, sprint, seeTime);
         setRoleData(VtuberRoleData::new);
     }
-
     public static void giveInitialItems(Player player) {
-        if (!SREItemUtils.hasItem(player, TMMItems.REVOLVER)) {
-            RoleUtils.insertOrDropItem(player, TMMItems.REVOLVER.getDefaultInstance());
-        }
+        RoleUtils.insertStackInFreeSlot(player, TMMItems.KNIFE.getDefaultInstance());
     }
-
-    public static void tickAyers(ServerPlayer player, SREGameWorldComponent game, long now) {
-        if (!game.isRole(player, ModRoles.AYERS)) {
-            return;
-        }
-        UUID id = player.getUUID();
-        if (RoleData.getNullable(VtuberRoleData.class, player).ayersFastMode == null) {
-            RoleData.getNullable(VtuberRoleData.class, player).ayersFastMode = true;
-            RoleData.getNullable(VtuberRoleData.class, player).ayersNextSwitch = now + 20L * 30L;
-            player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED,
-                    20 * 30 + 5, 0, false, false, true));
-            return;
-        }
-        if (now < RoleData.getNullable(VtuberRoleData.class, player).ayersNextSwitch) {
-            return;
-        }
-        boolean fast = !RoleData.getNullable(VtuberRoleData.class, player).ayersFastMode;
-        RoleData.getNullable(VtuberRoleData.class, player).ayersFastMode = fast;
-        RoleData.getNullable(VtuberRoleData.class, player).ayersNextSwitch = now + 20L * 30L;
-        player.removeEffect(fast ? MobEffects.MOVEMENT_SLOWDOWN : MobEffects.MOVEMENT_SPEED);
-        player.addEffect(new MobEffectInstance(fast ? MobEffects.MOVEMENT_SPEED : MobEffects.MOVEMENT_SLOWDOWN,
-                20 * 30 + 5, 0, false, false, true));
+    public static boolean isEvil(Player player) {
+        return RoleData.getOptional(VtuberRoleData.class, player).map(d -> d.ayersEvil).orElse(false);
     }
-
-    @Override
-    public void serverTick(ServerPlayer player) {
-        if (!GameUtils.isPlayerAliveAndSurvival(player)
-                    || RoleData.getNullable(VtuberRoleData.class, player) == null) return;
-        var game = SREGameWorldComponent.KEY.get(player.level());
-        long now = player.level().getGameTime();
-        tickAyers(player, game, now);
+    @Override public net.minecraft.world.InteractionResultHolder<net.minecraft.world.item.ItemStack> onItemUse(
+            Player player, net.minecraft.world.level.Level level, net.minecraft.world.InteractionHand hand) {
+        var stack = player.getItemInHand(hand);
+        return !isEvil(player) && VtuberRoleSupport.isWeapon(stack.getItem())
+                ? net.minecraft.world.InteractionResultHolder.fail(stack)
+                : net.minecraft.world.InteractionResultHolder.pass(stack);
     }
-
+    @Override public boolean onUseGun(Player player) { return isEvil(player); }
+    @Override public boolean onUseKnife(Player player) { return isEvil(player); }
+    @Override public boolean canUseInstinct(Player player) { return false; }
+    @Override public boolean haveInstinctNightVision(Player player) { return false; }
+    public static void registerSkills() {
+        RoleSkill.register(ModRoles.AYERS, RoleSkill.skill(SRE.id("ayers_personality"),
+                "skill.noellesroles.ayers.personality", context -> {
+                    ServerPlayer player = context.player();
+                    var data = RoleData.getNullable(VtuberRoleData.class, player);
+                    if (data == null || !GameUtils.isPlayerAliveAndSurvival(player)) return false;
+                    data.ayersEvil = !data.ayersEvil;
+                    if (data.ayersEvil) player.addEffect(new MobEffectInstance(ModEffects.BLIND_VISION, -1, 0, false, false, true));
+                    else player.removeEffect(ModEffects.BLIND_VISION);
+                    data.sync();
+                    return true;
+                }).cooldownSeconds(10).showOnHud(true).build());
+    }
+    @Override public void onRemove(ServerPlayer player) { player.removeEffect(ModEffects.BLIND_VISION); }
 }

@@ -769,6 +769,13 @@ public class ModEffects {
      * {@code mixin/client/general/DeafnessSoundMixin}；语音拦截见
      * {@code NoellesrolesVoiceChatPlugin#shouldBanVoice}。
      */
+    public static final Holder<MobEffect> HALIC_DECOY_SLOW = register("halic_decoy_slow",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x88BBFF).addAttributeModifier(
+                    Attributes.MOVEMENT_SPEED, Noellesroles.id("halic_decoy_slow"), -0.5D, Operation.ADD_MULTIPLIED_TOTAL));
+
+    public static final Holder<MobEffect> FOX_BODY_HIDDEN = register("fox_body_hidden",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xCCCCCC));
+
     public static final Holder<MobEffect> DEAFNESS = register("deafness",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x3A3A3A));
 
@@ -956,6 +963,8 @@ public class ModEffects {
         if (hasFullMoodLock(entity) || entity.hasEffect(MOOD_DRAIN_IMMUNITY)) {
             return 0f;
         }
+        if (entity instanceof net.minecraft.world.entity.player.Player player
+                && org.agmas.noellesroles.role.vtuber.VtuberTraits.isDemon(player)) return 0.5F;
         int amp = getAmplifier(entity, MOOD_DRAIN_REDUCTION);
         if (amp < 0) {
             return 1f;
@@ -983,6 +992,8 @@ public class ModEffects {
     }
 
     public static float getStaminaCapacityMultiplier(LivingEntity entity) {
+        if (entity instanceof net.minecraft.world.entity.player.Player player
+                && org.agmas.noellesroles.role.vtuber.VtuberTraits.isDemon(player)) return 1.2F;
         int amp = getAmplifier(entity, STAMINA_BOOST);
         if (amp < 0) {
             return 1f;
@@ -1015,6 +1026,8 @@ public class ModEffects {
     }
 
     public static float getVoiceRangeMultiplier(LivingEntity entity) {
+        if (entity instanceof net.minecraft.world.entity.player.Player player
+                && io.wifi.starrailexpress.cca.SREGameWorldComponent.KEY.get(player.level()).isRole(player, org.agmas.noellesroles.role.ModRoles.ZIYUAN)) return 1.8F;
         int amp = getAmplifier(entity, VOICE_RANGE_BOOST);
         if (amp < 0) {
             return 1f;

@@ -36,22 +36,15 @@ public class AmiRole extends NormalRole {
         RoleSkill.register(ModRoles.AMI,
                 RoleSkill.skill(SRE.id("amimi_repel"), "skill.noellesroles.amimi.repel", context ->
                 AmiRole.useAmiRepel(context.player()))
-                .cooldownSeconds(90).showOnHud(true).build(),
-                RoleSkill.skill(SRE.id("amimi_alcohol_life"), "skill.noellesroles.amimi.alcohol_life", context ->
-                AmiRole.useAmiTrap(context.player()))
-                .shifted(true).cooldownSeconds(10).showOnHud(true).build());
+                .cooldownSeconds(60).showOnHud(true).build());
     }
 
     public static boolean useAmiRepel(ServerPlayer caster) {
-        if (!VtuberRoleSupport.deduct(caster, 100)) {
+        if (!VtuberRoleSupport.deduct(caster, 50)) {
             return false;
         }
-        VtuberRoleRuntime.applyForcedMovement(caster, false, 20 * 3);
+        VtuberRoleRuntime.applyForcedMovement(caster, false, 20 * 5);
         return true;
-    }
-
-    public static boolean useAmiTrap(ServerPlayer player) {
-        return VtuberRoleRuntime.useFoodTrap(player);
     }
 
     @Override
@@ -60,8 +53,6 @@ public class AmiRole extends NormalRole {
                     || RoleData.getNullable(VtuberRoleData.class, player) == null) return;
         var game = SREGameWorldComponent.KEY.get(player.level());
         long now = player.level().getGameTime();
-        VtuberRoleSupport.tickPasserby(player, game);
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 
 }

@@ -131,7 +131,9 @@
     "CrashReportCategoryMixin",
     "roles.hakukofox.HakukoFoxEyeHeightMixin",
     "roles.hakukofox.HakukoFoxAttackBlockMixin",
-    "spear.LivingEntitySpearMixin"
+    "spear.LivingEntitySpearMixin",
+    "roles.vtuber.ServerItemCooldownsAccessor",
+    "roles.vtuber.VtuberWeaponCooldownMixin"
   ],
   "injectors": {
     "defaultRequire": 1

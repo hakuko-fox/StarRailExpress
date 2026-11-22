@@ -28,18 +28,11 @@ public class EverlyRole extends NormalRole {
         if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
             return false;
         }
-        int balance = MoneyUtils.getBalance(sp);
-        if (balance < 150) {
-            sp.displayClientMessage(Component.translatable(
-                    "message.noellesroles.vtuber.not_enough_coins", 150), true);
-            return false;
+        if (!VtuberRoleSupport.deduct(sp, 50)) return false;
+        for (ServerPlayer target : sp.serverLevel().players()) {
+            if (target != sp && GameUtils.isPlayerAliveAndSurvival(target)) target.addEffect(
+                    new net.minecraft.world.effect.MobEffectInstance(org.agmas.noellesroles.init.ModEffects.MOVE_BANED, 10 * 20, 0, false, false, true));
         }
-        boolean ok = TimeStopEffect.tryTriggerStart(sp, 5 * 20,
-                Component.translatable("skill.noellesroles.everly.timestop"));
-        if (!ok) {
-            return false;
-        }
-        MoneyUtils.addToBalance(sp, -150);
         return true;
     }
 
@@ -52,7 +45,7 @@ public class EverlyRole extends NormalRole {
                 }).charges(1).showOnHud(true).build(),
                 RoleSkill.skill(SRE.id("everly_time_reversal"), "skill.noellesroles.everly.time_reversal", context -> {
                     return VtuberRoleRuntime
-                    .useRewind(context.player(), 5, 150);
+                    .useRewind(context.player(), 5, 50, true, -1, 5 * 20);
                 }).charges(1).shifted(true).showOnHud(true).build());
     }
 

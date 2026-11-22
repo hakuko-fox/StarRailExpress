@@ -29,7 +29,7 @@ for match in re.finditer(r'public static SRERole (\w+)\s*=([\s\S]*?);', registry
     require(owner is not None, f'{name}: expected named role implementation')
     if owner:
         roles[name] = (ids[name], owner[1], declaration)
-require(len(roles) == 26, f'Expected 26 VTuber roles, found {len(roles)}; update coverage when adding roles')
+require(len(roles) == 28, f'Expected 28 VTuber roles, found {len(roles)}; update coverage when adding roles')
 
 sources = [read(p) for p in (JAVA / 'role/vtuber').glob('*.java')]
 sources += [read(p) for p in (JAVA / 'role_data/vtuber').glob('*.java')]
