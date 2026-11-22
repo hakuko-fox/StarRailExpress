@@ -126,8 +126,22 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         vigilanteCount = Math.max(0, vigilanteCount);
         neutralsCount = Math.max(0, neutralsCount);
 
-        List<RoleInstance> expandedRoles = super.getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                0);
+        List<SRERole> reserved = new ArrayList<>();
+        unassignedPlayers.removeIf(player -> {
+            SRERole role = io.wifi.starrailexpress.backpack.BackpackManager.reservedRoleChoice(player.getUUID());
+            if (role == null) return false;
+            reserved.add(role);
+            gameWorldComponent.addRole(player, role, false);
+            var selection = CustomRoleGameModeTeamsPlayerComponent.KEY.get(player);
+            selection.setTeam(role.getRoleType());
+            selection.setSelectedAndSync(true);
+            return true;
+        });
+        List<RoleInstance> expandedRoles = getAllRoles(
+                remainingFactionSlots(killerCount, reserved, 4),
+                remainingFactionSlots(vigilanteCount, reserved, 5),
+                remainingFactionSlots(neutralsCount, reserved, 2),
+                players.size(), reserved.size(), reserved);
         HashMap<Integer, Integer> roleTypesCount = new HashMap<>();
 
         var crgmwc = CustomRoleGameModeWorldComponent.KEY.get(serverWorld);

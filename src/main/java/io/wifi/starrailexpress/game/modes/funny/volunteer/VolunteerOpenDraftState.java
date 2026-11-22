@@ -138,11 +138,18 @@ public class VolunteerOpenDraftState {
 
         this.playerOrder.addAll(helper.playerOrder);
         this.pool.addAll(helper.rolePool);
+        Map<UUID, RoleInstance> reservations = new LinkedHashMap<>();
+        helper.selectedRoles.forEach((playerId, role) -> {
+            RoleInstance instance = new RoleInstance(UUID.randomUUID(), role);
+            reservations.put(playerId, instance);
+            this.pool.add(instance);
+        });
         // 打乱海选池的排布：getAllRoles 是按「杀手 → 警长 → 中立 → 平民」的顺序生成的，
         // 直接铺到格子上会把阵营信息泄露出去（越靠前越是杀手）。打乱之后任意位置都可能是任意阵营。
         Collections.shuffle(this.pool, random);
 
         this.pickedBy = new UUID[this.pool.size()];
+        reservations.forEach((playerId, role) -> applyPick(playerId, this.pool.indexOf(role), false));
         computePoolLayout(this.pool.size());
         buildGroups();
 

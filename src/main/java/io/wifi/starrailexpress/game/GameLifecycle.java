@@ -103,47 +103,58 @@ final class GameLifecycle {
     }
 
     public static void startGame(ServerLevel world, GameMode gameMode, int time) {
+        tryStartGame(world, gameMode, time);
+    }
+
+    public static boolean tryStartGame(ServerLevel world, GameMode gameMode, int time) {
         if (SRE.isLobby || isStartingGame)
-            return;
+            return false;
         if (SREGameWorldComponent.KEY.get(world).isRunning()) {
-            return;
+            return false;
         }
-        // 随机模式只负责抽取：在写入 gameMode、创建重置任务和触发开局事件之前，
-        // 整体替换成抽中的真实模式，后续流程（含 HUD、存档、模式专属逻辑）都按真实模式运行。
-        GameMode resolvedMode = SRERandomGameMode.resolve(gameMode,
-                AreasWorldComponent.KEY.get(world).gameModes, getStartingPlayers(world).size());
-        if (resolvedMode != gameMode) {
-            SRE.LOGGER.info("随机模式 {} 抽中 {}", gameMode.identifier, resolvedMode.identifier);
-            world.getServer().getPlayerList().broadcastSystemMessage(
-                    Component.translatable("sre.random_mode.selected", gameMode.getName(), resolvedMode.getName())
-                            .withStyle(ChatFormatting.GREEN),
-                    false);
-            gameMode = resolvedMode;
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
+        boolean loaded = areas.mapName == null
+                ? MapManager.loadRandomMap(world)
+                : MapManager.loadMap(world, areas.mapName);
+        if (!loaded) {
+            cancelStart(world, Component.translatable("commands.sre.start.error.map_not_supported",
+                    areas.mapName == null ? "?" : areas.mapName, gameMode.getName()));
+            return false;
+        }
+        if (gameMode instanceof SRERandomGameMode randomMode
+                && randomMode.candidatesFor(areas.gameModes).isEmpty()) {
+            cancelUnsupportedMode(world, areas, gameMode);
+            return false;
         }
         if (io.wifi.starrailexpress.settlement.SettlementManager.hasViewers()
                 && (forcedReadyPlayers == null || forcedReadyPlayers.isEmpty())) {
             setForcedReadyPlayers(getStartingPlayers(world).stream().map(ServerPlayer::getUUID).toList());
         }
+        GameMode resolvedMode = SRERandomGameMode.resolve(gameMode, areas.gameModes, getStartingPlayers(world).size());
+        if (!supportsMap(areas, resolvedMode)) {
+            cancelUnsupportedMode(world, areas, resolvedMode);
+            return false;
+        }
+        if (resolvedMode != gameMode) {
+            SRE.LOGGER.info("随机模式 {} 抽中 {}", gameMode.identifier, resolvedMode.identifier);
+            world.getServer().getPlayerList().broadcastSystemMessage(
+                    Component.translatable("sre.random_mode.selected", gameMode.getName(), resolvedMode.getName())
+                            .withStyle(ChatFormatting.GREEN), false);
+            gameMode = resolvedMode;
+        }
         io.wifi.starrailexpress.settlement.SettlementManager.stopAll(world.getServer());
         if (!AllowGameInitialize.EVENT.invoker().allow(world, gameMode, List.copyOf(getStartingPlayers(world)))) {
-            clearForcedReadyPlayers();
-            return;
+            cancelStart(world, null);
+            return false;
         }
         isStartingGame = true;
-        AreasWorldComponent areas = AreasWorldComponent.KEY.get(world);
-        if (areas.mapName == null) {
-            MapManager.loadRandomMap(world);
-        } else {
-            // 重新加载当前地图配置，确保获取最新配置
-            MapManager.loadMap(world, areas.mapName);
-        }
         MapResetManager.loadArea(world);
         if (areas.areasSettings.noReset) {
             resetEntities(world);
             SRE.LOGGER.info("NO RESET MAP!");
             io.wifi.starrailexpress.cca.SREMonitorWorldComponent.KEY.get(world).scanMap(world);
             trueStartGame(world, gameMode, time);
-            return;
+            return isStartingGame;
         }
         if (areas.areasSettings.mustCopy || resetPoints.isEmpty() || SREConfig.instance().enableAutoTrainReset) {
             var task = new ServerTaskInfoClasses.FullTrainResetTask(areas, world, gameMode, time);
@@ -152,8 +163,37 @@ final class GameLifecycle {
             var task = new ServerTaskInfoClasses.OnlySomeBlockResetTask(resetPoints, world, gameMode, time, areas);
             serverTaskQueue.add(task);
         }
+        return true;
     }
 
+
+    private static boolean supportsMap(AreasWorldComponent areas, GameMode mode) {
+        if (mode.identifier.equals(io.wifi.starrailexpress.api.SREGameModes.MOB_RIOT_MODE_ID)) {
+            return io.wifi.starrailexpress.game.modes.funny.mob.MobRiotRules.isCurrentMapEligible(areas);
+        }
+        return areas.mapName != null && (areas.gameModes == null || areas.gameModes.isEmpty()
+                || areas.gameModes.contains(mode.identifier.getPath()));
+    }
+
+    private static void cancelUnsupportedMode(ServerLevel world, AreasWorldComponent areas, GameMode mode) {
+        String messageKey = mode.identifier.equals(io.wifi.starrailexpress.api.SREGameModes.MOB_RIOT_MODE_ID)
+                ? "commands.sre.start.error.mob_riot_map" : "commands.sre.start.error.map_not_supported";
+        cancelStart(world, Component.translatable(messageKey, areas.mapName, mode.getName()));
+    }
+
+    private static void cancelStart(ServerLevel world, Component message) {
+        clearForcedReadyPlayers();
+        isStartingGame = false;
+        isGameStarted = false;
+        var game = SREGameWorldComponent.KEY.get(world);
+        game.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
+        game.setFade(0);
+        game.sync();
+        for (ServerPlayer player : world.players()) {
+            if (message != null) player.displayClientMessage(message, true);
+            ServerPlayNetworking.send(player, new MapDepartCancelPayload());
+        }
+    }
 
     public static void trueStartGame(ServerLevel world, GameMode gameMode, int time) {
         if (SRE.isLobby)
@@ -208,19 +248,21 @@ final class GameLifecycle {
         SREGameWorldComponent gameComponent = SREGameWorldComponent.KEY.get(serverWorld);
         io.wifi.starrailexpress.settlement.SettlementManager.stopAll(serverWorld.getServer());
         ArrayList<ServerPlayer> readyPlayerList = new ArrayList<>(getStartingPlayers(serverWorld));
+        AreasWorldComponent currentMap = AreasWorldComponent.KEY.get(serverWorld);
+        if (!supportsMap(currentMap, gameComponent.getGameMode())) {
+            cancelUnsupportedMode(serverWorld, currentMap, gameComponent.getGameMode());
+            return;
+        }
         if (io.wifi.starrailexpress.event.DeferGameInitialize.EVENT.invoker()
                 .defer(serverWorld, gameComponent.getGameMode(), List.copyOf(readyPlayerList))) return;
         if (!AllowGameInitialize.EVENT.invoker().allow(serverWorld, gameComponent.getGameMode(),
                 List.copyOf(readyPlayerList))) {
-            clearForcedReadyPlayers();
-            isStartingGame = false;
-            isGameStarted = false;
-            gameComponent.setGameStatus(SREGameWorldComponent.GameStatus.INACTIVE);
-            gameComponent.setFade(0);
-            gameComponent.sync();
-            for (ServerPlayer player : serverWorld.players()) {
-                ServerPlayNetworking.send(player, new MapDepartCancelPayload());
-            }
+            cancelStart(serverWorld, null);
+            return;
+        }
+        if (readyPlayerList.size() < gameComponent.getGameMode().minPlayerCount) {
+            cancelStart(serverWorld, Component.translatable("game.start_error.sre.not_enough_players",
+                    gameComponent.getGameMode().minPlayerCount));
             return;
         }
         OnGameInitialized.EVENT.invoker().onGameInitialized(serverWorld);
@@ -248,8 +290,6 @@ final class GameLifecycle {
         roundEnd.setRoundEndData(List.of(), WinStatus.NONE);
         RoleMethodDispatcher.onStartGame(serverWorld);
         org.agmas.harpymodloader.Harpymodloader.assignPersistentForcedRoles(serverWorld, readyPlayerList);
-        io.wifi.starrailexpress.backpack.BackpackManager.prepareRoleChoices(serverWorld, readyPlayerList,
-                gameComponent.getGameMode().identifier.equals(io.wifi.starrailexpress.api.SREGameModes.MURDER_ID));
         // 记录开局玩家数量，供基于开局人数的逻辑使用
         gameComponent.setStartingPlayerCount(readyPlayerList.size());
         clearForcedReadyPlayers();
@@ -267,7 +307,9 @@ final class GameLifecycle {
         GameInitializeEvent.EVENT.invoker().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化房间等
         gameComponent.getGameMode().beforeInitializeGame(serverWorld, gameComponent, readyPlayerList);
-        // 分配角色
+        // 地图规则和本局职业上限已初始化，先处理预约，再分配其余职业。
+        io.wifi.starrailexpress.backpack.BackpackManager.prepareRoleChoices(
+                serverWorld, readyPlayerList, gameComponent.getGameMode());
         gameComponent.getGameMode().initializeGame(serverWorld, gameComponent, readyPlayerList);
         // 初始化回放管理器
         gameComponent.getGameMode().afterInitializeGame(serverWorld, gameComponent, readyPlayerList);
@@ -282,6 +324,7 @@ final class GameLifecycle {
             GameStatistics.recordPlayerStats(serverWorld, gameComponent, readyPlayerList);
         }
 
+        io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.beginRound(serverWorld, readyPlayerList);
         gameComponent.getGameMode().gameStarted(serverWorld, gameComponent, readyPlayerList);
 
         // 发放地图初始物品
@@ -652,7 +695,7 @@ final class GameLifecycle {
         if (!gameComponent.getGameMode().shouldRecordPlayerStats()) {
             GameStatistics.recordWinStats(world, gameComponent.getGameMode(), roundEnd, gameComponent, false);
         }
-        rewardVtuberCoinsForRound(world, roundEnd, gameComponent);
+        io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.rewardRound(world, roundEnd);
         io.wifi.starrailexpress.settlement.SettlementSnapshot settlement = null;
         try {
             settlement = io.wifi.starrailexpress.settlement.SettlementManager.capture(world, roundEnd, gameComponent);
@@ -721,18 +764,4 @@ final class GameLifecycle {
         io.wifi.starrailexpress.settlement.SettlementManager.begin(world, settlement);
     }
 
-    private static void rewardVtuberCoinsForRound(ServerLevel world, SREGameRoundEndComponent roundEnd,
-            SREGameWorldComponent gameComponent) {
-        GameMode gameMode = gameComponent.getGameMode();
-        for (ServerPlayer player : world.players()) {
-            SRERole role = gameComponent.getRole(player);
-            if (role == null && (gameMode.requiresAssignedRole() || roundEnd.players.stream()
-                    .noneMatch(detail -> detail.player.getId().equals(player.getUUID())))) {
-                continue;
-            }
-            boolean winner = roundEnd.didWin(player.getUUID());
-            io.wifi.starrailexpress.vtuberstore.VtuberStoreManager.rewardPlayerForRound(
-                    world, gameMode, roundEnd, gameComponent, player, role, winner);
-        }
-    }
 }

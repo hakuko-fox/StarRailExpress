@@ -80,6 +80,12 @@ public class GameUtils {
         GameLifecycle.startGame(world, gameMode, time);
     }
 
+    public static boolean tryStartGame(ServerLevel world, GameMode gameMode, int time) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(world)
+                || gameMode instanceof io.wifi.starrailexpress.training.TrainingGameMode) return false;
+        return GameLifecycle.tryStartGame(world, gameMode, time);
+    }
+
     public static void trueStartGame(ServerLevel world, GameMode gameMode, int time) {
         if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(world)
                 || gameMode instanceof io.wifi.starrailexpress.training.TrainingGameMode) return;

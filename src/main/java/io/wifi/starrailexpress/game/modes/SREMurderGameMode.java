@@ -465,6 +465,16 @@ public class SREMurderGameMode extends GameMode {
         return slots;
     }
 
+    public static int remainingFactionSlots(int total, List<SRERole> reserved, int faction) {
+        int occupied = 0;
+        for (SRERole role : reserved) {
+            if (io.wifi.starrailexpress.backpack.BackpackRoleChoiceResolver.faction(role.getRoleType()) == faction) {
+                occupied += Math.max(1, role.getOccupiedRoleCount());
+            }
+        }
+        return Math.max(0, total - occupied);
+    }
+
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
             int forcedRoleSize) {
         return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize, List.of());
@@ -562,15 +572,11 @@ public class SREMurderGameMode extends GameMode {
         // 第一步，减少强制职业
         if (forcedRoles != null) {
             for (var role : forcedRoles) {
-                if (role.isKiller()) {
-                    killerPool.removeRoleCount(role, 1);
-                } else if (role.isNeutrals()) {
-                    neutralsPool.removeRoleCount(role, 1);
-                } else if (role.isVigilanteTeam()) {
-                    vigilantePool.removeRoleCount(role, 1);
-                } else {
-                    civilianPool.removeRoleCount(role, 1);
-                }
+                // A role may be eligible for more than one pool in a custom mode.
+                killerPool.removeRoleCount(role, 1);
+                neutralsPool.removeRoleCount(role, 1);
+                vigilantePool.removeRoleCount(role, 1);
+                civilianPool.removeRoleCount(role, 1);
             }
         }
         // 第二步：创建角色池并分配角色
@@ -742,12 +748,10 @@ public class SREMurderGameMode extends GameMode {
                     // 根据角色类型减少对应的数量需求。强制职业本身也可能占用多个名额，
                     // 必须按 occupiedRoleCount 扣减，否则会再抽一个同阵营职业把多占的位补回来。
                     int forcedSlots = Math.max(1, role.getOccupiedRoleCount());
-                    if (role.canUseKiller()) {
-                        killerCount -= forcedSlots;
-                    } else if (role.isVigilanteTeam()) {
-                        vigilanteCount -= forcedSlots;
-                    } else if (!role.isInnocent()) {
-                        neutralsCount -= forcedSlots;
+                    switch (role.getRoleType()) {
+                        case 4 -> killerCount -= forcedSlots;
+                        case 5 -> vigilanteCount -= forcedSlots;
+                        case 2, 3 -> neutralsCount -= forcedSlots;
                     }
                 }
             }

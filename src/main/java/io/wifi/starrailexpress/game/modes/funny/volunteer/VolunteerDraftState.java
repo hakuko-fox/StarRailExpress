@@ -58,6 +58,7 @@ public class VolunteerDraftState {
         this.commitTimeLimit = SREConfig.instance().volunteerModeSelectionTime * 20;
         this.phase = Phase.COMMIT;
         this.phaseStartTime = gameTime;
+        if (players.isEmpty()) runAssignment();
     }
 
     public VolunteerDraftState(List<ServerPlayer> players, ServerLevel world) {
@@ -67,13 +68,18 @@ public class VolunteerDraftState {
         this.volunteerCount = SREConfig.instance().volunteerModeVolunteerCount;
         if (volunteerCount < 2)
             throw new IllegalStateException("volunteerModeVolunteerCount must be at least 2");
-        initializePools(world);
+        this.players.removeIf(player -> {
+            SRERole reserved = io.wifi.starrailexpress.backpack.BackpackManager.reservedRoleChoice(player.getUUID());
+            if (reserved == null) return false;
+            finalAssignment.put(player.getUUID(), reserved);
+            return true;
+        });
+        initializePools(players.size());
         generateCandidates();
         phaseStartTime = world.getGameTime();
     }
 
-    private void initializePools(ServerLevel world) {
-        int total = players.size();
+    private void initializePools(int total) {
         int killerCount = RoleCountManager.getDraftKillerCount(total);
         int vigilanteCount = Math.max(0, RoleCountManager.getVigilanteCount(total));
         int neutralsCount = Math.max(0, RoleCountManager.getNeutralCount(total));
@@ -110,16 +116,18 @@ public class VolunteerDraftState {
             Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
         }
 
+        List<SRERole> reserved = new ArrayList<>(finalAssignment.values());
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
-                killerCount, vigilanteCount, neutralsCount,
-                total, 0,
-                killerPool, neutralsPool, vigilantePool, civilianPool, true);
+                SREMurderGameMode.remainingFactionSlots(killerCount, reserved, 4),
+                SREMurderGameMode.remainingFactionSlots(vigilanteCount, reserved, 5),
+                SREMurderGameMode.remainingFactionSlots(neutralsCount, reserved, 2),
+                total, reserved.size(), killerPool, neutralsPool, vigilantePool, civilianPool, true, reserved);
         globalRolePool.clear();
         for (RoleInstance inst : baseRoles) {
             if (inst.role() != null)
                 globalRolePool.add(inst.role());
         }
-        while (globalRolePool.size() < total) {
+        while (globalRolePool.size() < players.size()) {
             globalRolePool.add(TMMRoles.CIVILIAN);
         }
         sortNeutralsByFaction(globalRolePool);

@@ -137,8 +137,16 @@ public class SingleSelectDraftState {
             Harpymodloader.setRoleMaximum(TMMRoles.CIVILIAN.getIdentifier(), 1);
         }
 
-        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(killerCount, vigilanteCount, neutralsCount,
-                totalPlayers + 5, 0, killerPool, neutralsPool, vigilantePool, civilianPool, true);
+        for (UUID playerId : playerOrder.keySet()) {
+            SRERole reserved = io.wifi.starrailexpress.backpack.BackpackManager.reservedRoleChoice(playerId);
+            if (reserved != null) selectedRoles.put(playerId, reserved);
+        }
+        List<SRERole> reserved = new ArrayList<>(selectedRoles.values());
+        List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
+                SREMurderGameMode.remainingFactionSlots(killerCount, reserved, 4),
+                SREMurderGameMode.remainingFactionSlots(vigilanteCount, reserved, 5),
+                SREMurderGameMode.remainingFactionSlots(neutralsCount, reserved, 2),
+                totalPlayers + 5, reserved.size(), killerPool, neutralsPool, vigilantePool, civilianPool, true, reserved);
 
         for (RoleInstance inst : baseRoles) {
             if (inst.role() != null) {
@@ -614,7 +622,8 @@ public class SingleSelectDraftState {
         for (ServerPlayer player : serverWorld.players()) {
             UUID uuid = player.getUUID();
             SRERole role = selectedRoles.get(uuid);
-            if (role != null && role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam()
+            if (io.wifi.starrailexpress.backpack.BackpackManager.reservedRoleChoice(uuid) == null
+                    && role != null && role.isInnocent() && !role.canUseKiller() && !role.isVigilanteTeam()
                     && !role.isNeutrals() && !isSpecialCivilianRole(role)) {
                 civilianPlayers.add(player);
             }

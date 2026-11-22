@@ -1,10 +1,27 @@
 package io.wifi.starrailexpress.vtuberstore;
 
+import io.wifi.starrailexpress.game.GameUtils.WinStatus;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VtuberRoundRewardsTest {
+    @Test
+    void completedRoundsRewardStartingPlayersEvenWhenEveryoneIsEliminated() {
+        UUID participant = UUID.randomUUID();
+        var round = new VtuberStoreManager.RewardRound(UUID.randomUUID(), Set.of(participant));
+
+        assertTrue(round.canReward(participant, WinStatus.NO_PLAYER));
+        assertTrue(round.canReward(participant, WinStatus.CUSTOM_COMPONENT));
+        assertFalse(round.canReward(participant, WinStatus.NONE));
+        assertFalse(round.canReward(UUID.randomUUID(), WinStatus.CUSTOM_COMPONENT));
+    }
+
     @Test
     void survivingWinnersAndLosersReceiveTheirOwnRates() {
         VtuberStoreConfig.Rewards rewards = new VtuberStoreConfig.Rewards();

@@ -3,6 +3,7 @@ package io.wifi.starrailexpress.game.modes.funny;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
+import io.wifi.starrailexpress.backpack.BackpackRoleChoiceResolver;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.game.GameConstants;
@@ -24,8 +25,9 @@ import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -74,14 +76,29 @@ abstract class SREFlaggedRoleGameMode extends SREMurderGameMode {
                         || PlayerRoleWeightManager.getRoleType(role) == 3));
         RoleAssignmentPool civilians = RoleAssignmentPool.createUnlimited("Flagged civilians",
                 role -> roles.contains(role) && PlayerRoleWeightManager.getRoleType(role) == 1);
-        List<RoleInstance> roleInstances = getAllRoles(RoleCountManager.getKillerCount(players.size()),
-                RoleCountManager.getVigilanteCount(players.size()), RoleCountManager.getNeutralCount(players.size()),
-                players.size(), 0, killers, neutrals, vigilantes, civilians, true);
+        List<ServerPlayer> remaining = new ArrayList<>();
+        Map<ServerPlayer, SRERole> assignments = new LinkedHashMap<>();
+        Map<Integer, Integer> reserved = new HashMap<>();
+        for (ServerPlayer player : players) {
+            SRERole forced = Harpymodloader.FORCED_MODDED_ROLE.get(player.getUUID());
+            if (forced == null) {
+                remaining.add(player);
+                continue;
+            }
+            assignments.put(player, forced);
+            int faction = BackpackRoleChoiceResolver.faction(forced.getRoleType());
+            reserved.merge(faction, Math.max(1, forced.getOccupiedRoleCount()), Integer::sum);
+        }
+        int total = players.size();
+        List<RoleInstance> roleInstances = getAllRoles(
+                Math.max(0, RoleCountManager.getKillerCount(total) - reserved.getOrDefault(4, 0)),
+                Math.max(0, RoleCountManager.getVigilanteCount(total) - reserved.getOrDefault(5, 0)),
+                Math.max(0, RoleCountManager.getNeutralCount(total) - reserved.getOrDefault(2, 0)),
+                total, assignments.size(), killers, neutrals, vigilantes, civilians, true,
+                new ArrayList<>(assignments.values()));
         Map<RoleInstance, Float> availableSlots = new LinkedHashMap<>();
         for (RoleInstance role : roleInstances)
             availableSlots.put(role, 1f);
-        List<ServerPlayer> remaining = new ArrayList<>(players);
-        Map<ServerPlayer, SRERole> assignments = new LinkedHashMap<>();
         FactionCardUtils.assignForcedTeams(remaining, ServerPlayer::getUUID,
                 PlayerRoleWeightManager.ForcePlayerTeam, availableSlots,
                 slot -> PlayerRoleWeightManager.getRoleType(slot.role()),

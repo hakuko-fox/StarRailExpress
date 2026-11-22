@@ -19,6 +19,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -26,6 +28,7 @@ import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.event.OnGameStarted;
+import io.wifi.starrailexpress.event.OnGameEnd;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState;
@@ -72,6 +75,7 @@ public final class BackpackManager {
     private static Entry externalRefreshEntry;
     private static final Map<UUID, Entry> ENTRIES = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, Set<UUID>> ROUND_PARTICIPANTS = new HashMap<>();
+    private static final Map<UUID, SRERole> ROLE_CHOICE_RESERVATIONS = new HashMap<>();
 
     private BackpackManager() {
     }
@@ -86,10 +90,12 @@ public final class BackpackManager {
             }
         });
         OnGameTrueStarted.EVENT.register(BackpackManager::settleAssignedCards);
+        OnGameEnd.EVENT.register((world, game) -> clearRoleChoiceReservations());
         ServerLifecycleEvents.SERVER_STOPPING.register(BackpackManager::flushAllBlocking);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             ENTRIES.clear();
             ROUND_PARTICIPANTS.clear();
+            clearRoleChoiceReservations();
         });
     }
 
@@ -458,9 +464,33 @@ public final class BackpackManager {
         return ChoiceResult.SUCCESS;
     }
 
-    /** Resolve persistent role choices before the standard murder-role assignment starts. */
+    /** Resolve persistent role choices after the map and mode are finalized. */
     public static void prepareRoleChoices(net.minecraft.server.level.ServerLevel world,
-            List<ServerPlayer> players, boolean supportedMode) {
+            List<ServerPlayer> players, GameMode mode) {
+        var modeId = mode.identifier;
+        boolean draftKillerSlots = modeId.equals(SREGameModes.VOLUNTEER_MODE_ID)
+                || modeId.equals(SREGameModes.VOLUNTEER_OPEN_SELECT_MODE_ID)
+                || modeId.equals(SREGameModes.ROLE_ROTATION_MODE_ID)
+                || modeId.equals(SREGameModes.ROLE_ROTATION_HIDE_MODE_ID)
+                || modeId.equals(SREGameModes.ROLE_ROTATION_SINGLE_SELECT_MODE_ID)
+                || modeId.equals(SREGameModes.ROLE_ROTATION_SINGLE_SELECT_HIDE_MODE_ID);
+        boolean hideAndSeek = modeId.equals(SREGameModes.HIDE_AND_SEEK_MODE_ID);
+        boolean puppetRestricted = modeId.equals(SREGameModes.CLASS_CHANGE_MODE_ID)
+                || modeId.equals(SREGameModes.VOLUNTEER_MODE_ID)
+                || modeId.equals(SREGameModes.ROLE_ROTATION_SINGLE_SELECT_MODE_ID)
+                || modeId.equals(SREGameModes.ROLE_ROTATION_SINGLE_SELECT_HIDE_MODE_ID);
+        boolean supportedMode = draftKillerSlots || hideAndSeek
+                || modeId.equals(SREGameModes.MURDER_ID)
+                || modeId.equals(SREGameModes.VTUBER_MODE_ID)
+                || modeId.equals(SREGameModes.HK_VTUBER_MODE_ID)
+                || modeId.equals(SREGameModes.LOVERS_MODE_ID)
+                || modeId.equals(SREGameModes.REFUGEE_MODE_ID)
+                || modeId.equals(SREGameModes.REFUGEE_LOVER_MODE_ID)
+                || modeId.equals(SREGameModes.CLASS_CHANGE_MODE_ID)
+                || modeId.equals(SREGameModes.CUSTOM_SELECTED_MODE_ID)
+                || modeId.equals(SREGameModes.ALL_ROLE_ROTATION_MODE_ID);
+        String requiredFlag = modeId.equals(SREGameModes.HK_VTUBER_MODE_ID) ? "hkvtuber"
+                : modeId.equals(SREGameModes.VTUBER_MODE_ID) ? "vtuber" : null;
         ROUND_PARTICIPANTS.put(world.dimension().location(), players.stream()
                 .map(ServerPlayer::getUUID).collect(java.util.stream.Collectors.toSet()));
         for (ServerPlayer player : players) {
@@ -504,6 +534,13 @@ public final class BackpackManager {
                 refundPendingRole(player, "message.sre.backpack.choice.unavailable_refund");
                 continue;
             }
+            int roleType = role.getRoleType();
+            if ((requiredFlag != null && !role.isFlag(requiredFlag))
+                    || (hideAndSeek && roleType != 1 && roleType != 5)
+                    || (puppetRestricted && role == org.agmas.noellesroles.role.ModRoles.PUPPETEER)) {
+                refundPendingRole(player, "message.sre.backpack.choice.mode_refund");
+                continue;
+            }
             if (areas == null || !isRoleAllowedOnMap(role, areas.mapName, areas.areasSettings)) {
                 refundPendingRole(player, "message.sre.backpack.choice.map_refund");
                 continue;
@@ -515,27 +552,33 @@ public final class BackpackManager {
                 refundPendingRole(player, message);
                 continue;
             }
+            int maximumPlayers = role.spawnInfo.maxEnabledPlayer;
+            if (maximumPlayers >= 0 && players.size() > maximumPlayers) {
+                refundPendingRole(player, "message.sre.backpack.choice.unavailable_refund");
+                continue;
+            }
             applicants.add(new BackpackRoleChoiceResolver.Request(player.getUUID(), role.identifier().toString(),
-                    role.getRoleType()));
+                    roleType));
         }
         for (ServerPlayer player : players) {
             SRERole role = Harpymodloader.FORCED_MODDED_ROLE.get(player.getUUID());
             if (role != null) {
                 reserved.merge(role.identifier().toString(), 1, Integer::sum);
-                reservedFactions.merge(BackpackRoleChoiceResolver.faction(role.getRoleType()), 1, Integer::sum);
+                reservedFactions.merge(BackpackRoleChoiceResolver.faction(role.getRoleType()),
+                        Math.max(1, role.getOccupiedRoleCount()), Integer::sum);
             }
         }
 
         Map<String, Integer> capacities = new HashMap<>();
         for (BackpackRoleChoiceResolver.Request request : applicants) {
             ResourceLocation roleId = ResourceLocation.tryParse(request.roleId());
-            // ROLE_MAX is recalculated for random spawning each round and may still be 0
-            // from the previous round. An enabled role chosen with a card needs one slot.
+            // An enabled role can be reserved even when its random spawn chance is zero.
             capacities.put(request.roleId(), Math.max(1, Harpymodloader.ROLE_MAX.getOrDefault(roleId, 1)));
         }
-        int killers = RoleCountManager.getKillerCount(players.size());
+        int killers = draftKillerSlots ? RoleCountManager.getDraftKillerCount(players.size())
+                : RoleCountManager.getKillerCount(players.size());
         int vigilantes = RoleCountManager.getVigilanteCount(players.size());
-        int neutrals = RoleCountManager.getNeutralCount(players.size());
+        int neutrals = hideAndSeek ? 0 : RoleCountManager.getNeutralCount(players.size());
         Map<Integer, Integer> factionCapacities = Map.of(4, killers, 5, vigilantes, 2, neutrals,
                 1, Math.max(0, players.size() - killers - vigilantes - neutrals));
         BackpackRoleChoiceResolver.Resolution resolution = BackpackRoleChoiceResolver.resolve(
@@ -546,6 +589,7 @@ public final class BackpackManager {
             ServerPlayer player = world.getServer().getPlayerList().getPlayer(winner.getKey());
             if (player != null && role != null) {
                 Harpymodloader.FORCED_MODDED_ROLE.put(player.getUUID(), role);
+                ROLE_CHOICE_RESERVATIONS.put(player.getUUID(), role);
             }
         }
         for (UUID loser : resolution.losers()) {
@@ -556,9 +600,19 @@ public final class BackpackManager {
         }
     }
 
+    public static SRERole reservedRoleChoice(UUID playerId) {
+        return ROLE_CHOICE_RESERVATIONS.get(playerId);
+    }
+
+    private static void clearRoleChoiceReservations() {
+        ROLE_CHOICE_RESERVATIONS.forEach(Harpymodloader.FORCED_MODDED_ROLE::remove);
+        ROLE_CHOICE_RESERVATIONS.clear();
+    }
+
     private static boolean isSelectableRole(SRERole role) {
         if (role == null || role == TMMRoles.DISCOVERY_CIVILIAN || role == TMMRoles.LOOSE_END
-                || role.isOtherModeRole() || role.getOccupiedRoleCount() > 1
+                || role.isOtherModeRole() || role.getOccupiedRoleCount() != 1
+                || !role.occupationedRoles.isEmpty() || !role.occupationRoles.isEmpty()
                 || SREDisableManager.isRoleDisabled(role) || !RoleRosterManager.isRoleEnabled(role)) {
             return false;
         }

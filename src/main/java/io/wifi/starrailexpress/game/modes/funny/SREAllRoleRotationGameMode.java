@@ -152,15 +152,16 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
             SRERole role = entry.getValue();
             if (player instanceof ServerPlayer serverPlayer && players.contains(serverPlayer) && role != null
-                    && baseEligible(role)) {
+                    && (baseEligible(role) || io.wifi.starrailexpress.backpack.BackpackManager
+                            .reservedRoleChoice(serverPlayer.getUUID()) != null)) {
                 roleAssignments.put(serverPlayer, role);
                 forcedPlayers.add(serverPlayer);
-                if (role.canUseKiller())
-                    killerCount--;
-                else if (role.isVigilanteTeam())
-                    vigilanteCount--;
-                else if (!role.isInnocent())
-                    neutralsCount--;
+                int occupied = Math.max(1, role.getOccupiedRoleCount());
+                switch (role.getRoleType()) {
+                    case 4 -> killerCount -= occupied;
+                    case 5 -> vigilanteCount -= occupied;
+                    case 2, 3 -> neutralsCount -= occupied;
+                }
             }
         }
         killerCount = Math.max(0, killerCount);
@@ -171,6 +172,17 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         Set<String> selectedKillers = new HashSet<>();
         Set<String> selectedVigilantes = new HashSet<>();
         Set<String> selectedNeutrals = new HashSet<>();
+        Set<String> selectedCivilians = new HashSet<>();
+        for (ServerPlayer forcedPlayer : forcedPlayers) {
+            SRERole role = roleAssignments.get(forcedPlayer);
+            Set<String> selected = switch (role.getRoleType()) {
+                case 4 -> selectedKillers;
+                case 5 -> selectedVigilantes;
+                case 2, 3 -> selectedNeutrals;
+                default -> selectedCivilians;
+            };
+            selected.add(role.identifier().toString());
+        }
         List<SRERole> killers = pickForFaction(eligibleKillers(), killerCount, state, random, selectedKillers);
         List<SRERole> vigilantes = pickForFaction(eligibleVigilantes(), vigilanteCount, state, random,
                 selectedVigilantes);
@@ -192,7 +204,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         int civilianCount = players.size() - assignedSpecial - forcedPlayers.size();
 
         List<SRERole> civilians = pickForFaction(eligibleCivilians(),
-                Math.max(0, civilianCount), state, random, new HashSet<>());
+                Math.max(0, civilianCount), state, random, selectedCivilians);
 
         // 第三步：合併為 RoleInstance，並處理對立 / 伴生職業（沿用 Murder 邏輯）
         List<RoleInstance> instances = new ArrayList<>();

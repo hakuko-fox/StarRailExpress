@@ -317,10 +317,10 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
                         role.isInnocent() &&
                         role != TMMRoles.CIVILIAN);
 
-        int assignedForcedRoles = (int) roleAssignments.values().stream().filter(Objects::nonNull).count();
+        List<SRERole> assignedForcedRoles = roleAssignments.values().stream().filter(Objects::nonNull).toList();
         List<RoleInstance> expandedRoles = getAllRoles(killerCount, vigilanteCount, neutralsCount, players.size(),
-                assignedForcedRoles, killerPool,
-                neutralsPool, vigilantePool, civilianPool, false);
+                assignedForcedRoles.size(), killerPool,
+                neutralsPool, vigilantePool, civilianPool, false, assignedForcedRoles);
 
         RandomSource random = serverWorld.random;
         // 第五步：为未分配的玩家分配角色

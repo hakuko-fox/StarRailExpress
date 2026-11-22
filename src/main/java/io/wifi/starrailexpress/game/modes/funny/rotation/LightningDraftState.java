@@ -176,7 +176,12 @@ public class LightningDraftState {
             var role = flip.getValue();
             if (role == null)
                 continue;
-            rolePool.add(new RoleInstance(UUID.randomUUID(), role));
+            if (io.wifi.starrailexpress.backpack.BackpackManager.reservedRoleChoice(flip.getKey()) != null) {
+                selectedRoles.put(flip.getKey(), role);
+                remainingPlayerCount--;
+            } else {
+                rolePool.add(new RoleInstance(UUID.randomUUID(), role));
+            }
             forcedRoles.add(role);
             forceRoleCount++;
             switch (role.getRoleType()) {
@@ -196,7 +201,7 @@ public class LightningDraftState {
         }
 
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
-                killerCount, vigilanteCount, neutralsCount,
+                Math.max(0, killerCount), Math.max(0, vigilanteCount), Math.max(0, neutralsCount),
                 totalPlayers, forceRoleCount,
                 killerPool, neutralsPool, vigilantePool, civilianPool, true, forcedRoles);
 
@@ -605,6 +610,7 @@ public class LightningDraftState {
     public void adjustRoles(ServerLevel serverWorld) {
         var canReplacePlayers = new ArrayList<UUID>();
         for (Entry<UUID, SRERole> entrySet : selectedRoles.entrySet()) {
+            if (io.wifi.starrailexpress.backpack.BackpackManager.reservedRoleChoice(entrySet.getKey()) != null) continue;
             if (canReplaceRole.contains(entrySet.getValue()) || entrySet.getValue().equals(TMMRoles.CIVILIAN)) {
                 canReplacePlayers.addFirst(entrySet.getKey());
             }
