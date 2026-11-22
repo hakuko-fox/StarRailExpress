@@ -18,12 +18,15 @@ package io.wifi.starrailexpress.cca;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.AreasSettings.BackgroundAmbienceSound;
 import io.wifi.starrailexpress.event.OnGameServerTick;
+import io.wifi.starrailexpress.event.RoleAllegianceEvents;
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.GameUtils.WinStatus;
+import io.wifi.starrailexpress.game.modes.funny.SREEvilWarGameMode;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.util.ParticleFx;
 import io.wifi.starrailexpress.util.SREPlayerUtils;
@@ -42,11 +45,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -55,13 +60,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.api.time.TimeRewindPlayback;
 import org.agmas.noellesroles.api.time.TimeRewind;
-import org.agmas.noellesroles.content.item.GroselleJourneyManager;
-import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA;
-import org.agmas.noellesroles.game.roles.killer.pooler.PoolerDomainManager;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.anime.AnimeRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
+import pro.fazeclan.river.stupid_express.modifier.twin_children.TwinChildrenHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
@@ -86,6 +90,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
 
     // 本局击杀数统计（按玩家UUID存储）
     private HashMap<UUID, Integer> perPlayerKills = new HashMap<>();
+    // MVP 专用击杀数：同阵营击杀不计入，避免影响其它依赖 perPlayerKills 的条件。
+    private HashMap<UUID, Integer> perPlayerMvpKills = new HashMap<>();
     public static HashMap<UUID, Integer> perPlayerDarknessTime = new HashMap<>();
 
     // 画板系统：本局已画出的物品类别（每个物品只能被画出一次）
@@ -147,6 +153,17 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
      */
     public void resetPerPlayerKills() {
         perPlayerKills.clear();
+        perPlayerMvpKills.clear();
+    }
+
+    /** 获取玩家本局计入 MVP 的击杀数。 */
+    public int getPlayerMvpKills(UUID playerUuid) {
+        return perPlayerMvpKills.getOrDefault(playerUuid, 0);
+    }
+
+    /** 增加玩家本局计入 MVP 的击杀数。 */
+    public void addPlayerMvpKill(UUID playerUuid) {
+        perPlayerMvpKills.merge(playerUuid, 1, Integer::sum);
     }
 
     // ==================== 画板系统：已画出物品追踪 ====================
@@ -538,6 +555,20 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return roleWorldComponent.getRole(uuid);
     }
 
+    /** 查询玩家实际阵营身份，不改变当前能力职业；具体身份规则由业务模块覆盖。 */
+    public @Nullable SRERole getAllegianceRole(@Nullable Player player) {
+        if (player == null) return null;
+        SRERole override = RoleAllegianceEvents.OVERRIDE.invoker().resolve(player.level(), player.getUUID());
+        return override != null ? override : getRole(player);
+    }
+
+    /** 按 UUID 查询实际阵营，支持离线身份及世界修饰符，不依赖在线玩家实例。 */
+    public @Nullable SRERole getAllegianceRole(@Nullable UUID uuid) {
+        if (uuid == null) return null;
+        SRERole override = RoleAllegianceEvents.OVERRIDE.invoker().resolve(world, uuid);
+        return override != null ? override : getRole(uuid);
+    }
+
     /**
      * No Neutrals!
      * 
@@ -583,20 +614,24 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return roleWorldComponent.isRole(uuid, role);
     }
 
+    /** 杀手方中立（权威实现 {@link RoleTeam#isNeutralForKiller(SRERole)}）。 */
     public boolean isNeutralForKiller(@NotNull Player player) {
-        return getRole(player) != null && getRole(player).isNeutralForKiller();
+        return RoleTeam.isNeutralForKiller(getAllegianceRole(player));
     }
 
     public boolean canUseKillerFeatures(@NotNull Player player) {
-        return getRole(player) != null && getRole(player).canUseKiller();
+        var role = getAllegianceRole(player);
+        return role != null && role.canUseKiller();
     }
 
     public boolean isInnocent(@NotNull UUID player) {
-        return getRole(player) != null && getRole(player).isInnocent();
+        var role = getAllegianceRole(player);
+        return role != null && role.isInnocent();
     }
 
     public boolean isInnocent(@NotNull Player player) {
-        return getRole(player) != null && getRole(player).isInnocent();
+        var role = getAllegianceRole(player);
+        return role != null && role.isInnocent();
     }
 
     public void clearRoleMap(boolean sync) {
@@ -850,7 +885,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                             playerEnvironmentDetection(player, areas, this);
                         }
                         if (world.getGameTime() % 40 == 0) {
-                            if (GameUtils.isPlayerInLobby(player)) {
+                            if (!io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(serverWorld)
+                                    && GameUtils.isPlayerInLobby(player)) {
                                 SRE.LOGGER.info("Found a wrong player in lobby. Send it back to its houses: {}",
                                         player.getScoreboardName());
                                 GameUtils.teleportBackToRoom(player);
@@ -889,7 +925,10 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         if (player.isSpectator() || player.isCreative())
             return;
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
-        if (GroselleJourneyManager.isBanished(player.getUUID())) {
+        // 领域位于地图外（咒术师在负 Z，愚者/祈月者在正 Z），不能按地图高度、水域等规则处死。
+        if (ModEffects.isInAnyDomain(player)) {
+            gameCCA.playerBannedBlockTime.remove(player.getUUID());
+            perPlayerDarknessTime.remove(player.getUUID());
             return;
         }
         if (!(player.getZ() >= 19000)) {
@@ -897,6 +936,11 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 if (checkPlayerIsOutOfAreas(player, areas)) {
                     if (org.agmas.noellesroles.game.roles.killer.manipulator.InControlCCA
                             .bounceBackIfControlled(player)) {
+                        return;
+                    }
+                    if (player.getY() < areas.playArea.minY
+                            && gameCCA.getGameMode() instanceof SREEvilWarGameMode evilWar
+                            && evilWar.tryRescueLooseEndVariantFromVoid(player, gameCCA)) {
                         return;
                     }
                     GameUtils.killPlayer(player, false,
@@ -928,7 +972,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                     player.updateInWaterStateAndDoFluidPushing();
 
                     if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(player)
-                            && player.isUnderWater()) {
+                            && isHeadUnderWater(player)) {
                         GameUtils.forceKillPlayer(player, false,
                                 player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
                                 GameConstants.DeathReasons.CANNOT_SWIM);
@@ -999,16 +1043,14 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         } else {
             gameCCA.playerBannedBlockTime.remove(player.getUUID());
             perPlayerDarknessTime.remove(player.getUUID());
-            if (!TarotAssemblyManager.havingMeeting
-                    && !PoolerDomainManager.isInDomain(player.getUUID())) {
-                GameUtils.killPlayer(player, false,
+            // 实际领域成员已在上方返回；远端区域里的普通玩家仍须正常判定越界。
+            GameUtils.killPlayer(player, false,
+                    player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
+                    GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
+            if (!GameUtils.isPlayerEliminated(player) && (player.getZ() >= 19000)) {
+                GameUtils.forceKillPlayer(player, false,
                         player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
                         GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
-                if (!GameUtils.isPlayerEliminated(player) && (player.getZ() >= 19000)) {
-                    GameUtils.forceKillPlayer(player, false,
-                            player.getLastHurtByMob() instanceof Player killerPlayer ? killerPlayer : null,
-                            GameConstants.DeathReasons.FELL_OUT_OF_TRAIN);
-                }
             }
         }
 
@@ -1049,7 +1091,8 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
                 return;
             }
             var role = RoleUtils.getPlayerRole(player);
-            if (role == null || role.isKillerTeam()) {
+            // 黑暗致死按真实阵营：隐藏身份为杀手阵营的职业（魔术师）仍会像平民一样被黑暗吞没。
+            if (role == null || role.isActualKillerTeam()) {
                 if (perPlayerDarknessTime.containsKey(player.getUUID()))
                     perPlayerDarknessTime.remove(player.getUUID());
                 return;
@@ -1195,15 +1238,15 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     private static boolean checkPlayerUnderwater(ServerPlayer player) {
-        return player.isUnderWater();
+        return isHeadUnderWater(player);
     }
 
     private static boolean checkPlayerIsInDeepWater(ServerPlayer player, AreasWorldComponent areas) {
-        if (player.isUnderWater()) {
+        if (isHeadUnderWater(player)) {
             return true;
         }
         if (player.getVehicle() != null) {
-            if (player.getVehicle().isUnderWater())
+            if (isHeadUnderWater(player.getVehicle()))
                 return true;
         }
 
@@ -1219,9 +1262,9 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     private static boolean checkPlayerIsSwiming(ServerPlayer player, AreasWorldComponent areas) {
-        if (!player.isUnderWater()) {
+        if (!isHeadUnderWater(player)) {
             if (player.getVehicle() != null) {
-                if (!player.getVehicle().isUnderWater())
+                if (!isHeadUnderWater(player.getVehicle()))
                     return false;
             } else {
                 return false;
@@ -1239,6 +1282,65 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             return true;
         }
         return false;
+    }
+
+    /**
+     * 头部（眼睛）是否浸在水中。
+     *
+     * <p>
+     * 不能直接用 {@link net.minecraft.world.entity.Entity#isUnderWater()} 判定体型被强制缩小的玩家：
+     * 它读 {@code wasEyeInWater}，而眼高会被 SCALE 属性一起缩放（{@code LivingEntity#getDimensions}
+     * 走 {@code EntityDimensions.scale(scale)}，宽度/高度/眼高同时乘缩放）。典型受害者：
+     * <ul>
+     * <li>下方双生之子：半身缩放后眼高只剩 {@code 1.62 * 0.5 = 0.81}，但叠起来整体仍是 1.8 高；</li>
+     * <li>卡布奇诺咖啡师：{@code ChinoRole#onAssignedModifiers} 强制给侏儒修饰符
+     * （{@code TraitorAndModifiers#DWARF_MODIFIER}，{@code -0.33} 乘算 → 缩放 {@code 0.67}），
+     * 站立眼高 {@code 1.62 * 0.67 = 1.085}、蹲下 {@code 1.27 * 0.67 = 0.851}。</li>
+     * </ul>
+     * 两者都会在「普通玩家走进 1 格浅水完全没事」的水面高度（水源约 0.875）被判成眼睛入水。因此对
+     * {@link #needsNormalEyeHeight(Player)} 为真的玩家按普通玩家站立眼高判定，其余实体（含上方双生
+     * 之子与各类载具）保持原版语义。
+     */
+    private static boolean isHeadUnderWater(net.minecraft.world.entity.Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        if (!(entity instanceof Player player) || !needsNormalEyeHeight(player)) {
+            return entity.isUnderWater();
+        }
+        double eyeY = headCheckEyeY(player);
+        BlockPos eyePos = BlockPos.containing(entity.getX(), eyeY, entity.getZ());
+        FluidState fluid = entity.level().getFluidState(eyePos);
+        if (fluid.isEmpty() || !fluid.is(FluidTags.WATER)) {
+            return false;
+        }
+        return eyeY < eyePos.getY() + fluid.getHeight(entity.level(), eyePos);
+    }
+
+    /**
+     * 「头顶（眼睛）入水」判定是否需要按正常体型玩家的眼高来算。
+     *
+     * <p>目前两类玩家会被强制缩小体型，导致 {@code getEyeY()} 低于普通玩家、进浅水即被判成眼睛入水：
+     * 下方双生之子（半身缩放）与卡布奇诺咖啡师（强制侏儒修饰符 {@code -0.33} 乘算 → {@code 0.67}）。
+     * 判定按「与正常玩家一致」统一放宽，不会因此漏判真正的深水。
+     */
+    private static boolean needsNormalEyeHeight(Player player) {
+        if (player == null) {
+            return false;
+        }
+        if (TwinChildrenHandler.isStackedLower(player)) {
+            return true;
+        }
+        SREGameWorldComponent game = getInstance(player);
+        return game != null && game.isRole(player, AnimeRoles.KAFU_CHINO);
+    }
+
+    /** 见 {@link #needsNormalEyeHeight(Player)}；蹲下也按站立眼高算，判定只会更宽松。 */
+    private static double headCheckEyeY(Player player) {
+        if (player != null && TwinChildrenHandler.isStackedLower(player)) {
+            return TwinChildrenHandler.stackedHeadCheckEyeY(player);
+        }
+        return player == null ? 0.0D : player.getY() + TwinChildrenHandler.NORMAL_EYE_HEIGHT;
     }
 
     private void tickCommon() {
@@ -1285,28 +1387,41 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public boolean canSeeKillerTeammate(Player player) {
-        return getRole(player) != null && getRole(player).canSeeTeammateKillerRole();
+        var role = getAllegianceRole(player);
+        return role != null && role.canSeeTeammateKillerRole();
     }
 
+    /**
+     * 杀手团队（判定层，权威实现 {@link RoleTeam#isKillerTeam(SRERole)}）：
+     * 杀手阵营 + 杀手方中立 + 隐藏身份为杀手团队（含杀手阵营）的职业，如魔术师。
+     * <p>胜利结算 / 存活人数统计不适用，请用 {@code canIncreaseSurviving*} 等真实阵营口径。
+     */
     public boolean isKillerTeamRole(SRERole role) {
-        if (role == null)
-            return false;
-        if (role.canUseKiller())
-            return true;
-        if (role.isNeutralForKiller())
-            return true;
-        return false;
+        return RoleTeam.isKillerTeam(role);
+    }
+
+    /**
+     * 杀手团队（真实层，{@link RoleTeam#isKillerTeamReal(SRERole)}）：忽略隐藏身份，
+     * 如魔术师真实仍是平民。
+     * <p>用于小脑（误杀）判定这类必须按真实阵营结算的地方。
+     */
+    public boolean isActualKillerTeamRole(SRERole role) {
+        return RoleTeam.isKillerTeamReal(role);
+    }
+
+    /** 真正的杀手（{@link RoleTeam#isKiller(SRERole)}，不含隐藏身份为杀手阵营的职业）。 */
+    public boolean isKillerRole(SRERole role) {
+        return RoleTeam.isKiller(role);
+    }
+
+    /** 真实层：该玩家是否属于杀手阵营（不看隐藏身份）。 */
+    public boolean isActualKillerTeam(UUID player) {
+        return player != null && isActualKillerTeamRole(this.getAllegianceRole(player));
     }
 
     public boolean isKillerTeam(UUID player) {
         if (player != null) {
-            var role = this.getRole(player);
-            if (role == null)
-                return false;
-            if (role.canUseKiller())
-                return true;
-            if (role.isNeutralForKiller())
-                return true;
+            return isKillerTeamRole(this.getAllegianceRole(player));
         }
         return false;
     }
@@ -1332,46 +1447,44 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return false;
     }
 
+    /** 杀手团队（判定层）：权威实现 {@link RoleTeam#isKillerTeam(SRERole)}。 */
     public static boolean isKillerTeamRoleStatic(SRERole role) {
-        if (role == null)
-            return false;
-        if (role.canUseKiller())
-            return true;
-        if (role.isNeutralForKiller())
-            return true;
-        return false;
+        return RoleTeam.isKillerTeam(role);
+    }
+
+    /** 真正的杀手：权威实现 {@link RoleTeam#isKiller(SRERole)}。 */
+    public static boolean isKillerRoleStatic(SRERole role) {
+        return RoleTeam.isKiller(role);
     }
 
     /**
-     * 好人方阵营判定（{@link #isKillerTeamRoleStatic(SRERole)} 的好人方对偶）。
-     *
-     * <p>包含：平民阵营、以及好人方中立（{@code isNeutralForInnocent}）。
-     * <p>排除：
-     * <ul>
-     * <li>可以使用杀手道具的职业（{@code canUseKiller}）；</li>
-     * <li>杀手阵营与杀手方中立（{@code isKillerTeam} / {@code isNeutralForKiller}）；</li>
-     * <li>其余中立：既非好人方中立、也非杀手方的独立/事件中立一律不算好人方。</li>
-     * </ul>
+     * 好人团队判定（{@link #isKillerTeamRoleStatic(SRERole)} 的对偶），
+     * 权威实现 {@link RoleTeam#isInnocentTeam(SRERole)}：
+     * 乘客阵营 + 警长阵营 + 好人方中立 + 隐藏身份为好人团队（含乘客 / 警长 / 好人方中立）的职业。
+     * <p>与杀手团队互斥（隐藏身份优先）。
      */
     public static boolean isInnocentTeamRoleStatic(SRERole role) {
-        if (role == null)
-            return false;
-        if (role.canUseKiller())
-            return false;
-        if (role.isKillerTeam())
-            return false;
-        if (role.isNeutralForKiller())
-            return false;
-        return role.isInnocent() || role.isNeutralForInnocent();
+        return RoleTeam.isInnocentTeam(role);
     }
 
+    /** 好人团队（真实层，忽略隐藏身份）：{@link RoleTeam#isInnocentTeamReal(SRERole)}。 */
+    public static boolean isActualInnocentTeamRoleStatic(SRERole role) {
+        return RoleTeam.isInnocentTeamReal(role);
+    }
+
+    /**
+     * 好人团队（判定层，{@link RoleTeam#isInnocentTeam(SRERole)}）：
+     * 乘客 + 警长 + 好人方中立 + 隐藏身份为好人团队（含乘客 / 警长 / 好人方中立）的职业。
+     * <p>需要真实阵营口径请用 {@link RoleTeam#isInnocentTeamReal(SRERole)}。
+     */
     public boolean isInnocentTeam(UUID player) {
         if (player != null) {
-            return isInnocentTeamRoleStatic(this.getRole(player));
+            return isInnocentTeamRoleStatic(this.getAllegianceRole(player));
         }
         return false;
     }
 
+    /** 好人团队（判定层），与 {@link #isInnocentTeam(UUID)} 同义。 */
     public boolean isInnocentTeam(Player player) {
         if (player != null) {
             return isInnocentTeam(player.getUUID());
@@ -1379,11 +1492,22 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
         return false;
     }
 
+    /** 好人团队（判定层），静态入口。 */
     public static boolean isInnocentTeamStatic(Player player) {
         if (player != null) {
             return getInstance(player).isInnocentTeam(player.getUUID());
         }
         return false;
+    }
+
+    /** 中立团队（判定层，{@link RoleTeam#isNeutralTeam(SRERole)}）。 */
+    public boolean isNeutralTeam(@NotNull UUID player) {
+        return RoleTeam.isNeutralTeam(getAllegianceRole(player));
+    }
+
+    /** 中立团队（判定层）。 */
+    public boolean isNeutralTeam(@NotNull Player player) {
+        return isNeutralTeam(player.getUUID());
     }
 
     public boolean canAutoAddMoney(ServerPlayer player) {
@@ -1478,7 +1602,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             if (!SREPlayerUtils.isPlayerAlive(this.world, p)) {
                 continue;
             }
-            SRERole role = roleWorldComponent.getRole(p);
+            SRERole role = getAllegianceRole(p);
             if (role == null) {
                 continue;
             }
@@ -1552,7 +1676,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public boolean canIncreaseSurvivingInnocents(Player player) {
-        var role = getRole(player);
+        var role = getAllegianceRole(player);
         if (role == null)
             return false;
         if (isDualCountDeadlock(role)) {
@@ -1562,7 +1686,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
     }
 
     public boolean canIncreaseSurvivingKillers(ServerPlayer player) {
-        var role = getRole(player);
+        var role = getAllegianceRole(player);
         if (role == null)
             return false;
         if (isDualCountDeadlock(role)) {
@@ -1595,7 +1719,7 @@ public class SREGameWorldComponent implements AutoSyncedComponent, ServerTicking
             if (!(p instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(sp)) {
                 continue;
             }
-            var r = getRole(sp);
+            var r = getAllegianceRole(sp);
             if (r == null || !r.canIncreaseSurvivingInnocents() || !r.canIncreaseSurvivingKillers()) {
                 return false;
             }

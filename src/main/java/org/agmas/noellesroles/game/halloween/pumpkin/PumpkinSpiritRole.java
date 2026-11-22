@@ -3,12 +3,9 @@ package org.agmas.noellesroles.game.halloween.pumpkin;
 import io.wifi.starrailexpress.api.CustomWinnerRole;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.api.AreasSettings;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -36,21 +33,14 @@ public final class PumpkinSpiritRole extends CustomWinnerRole {
 
     /** 必须早于职业刷新配置加载调用；可重复调用但不重复注册。 */
     public static SRERole register() {
-        if (registered == null) registered = TMMRoles.registerRole(new PumpkinSpiritRole());
+        if (registered == null) registered = TMMRoles.registerRole(new PumpkinSpiritRole())
+                .setAddedVersion("4.5");
         return registered;
     }
 
     @Override public boolean canBeRandomed(Level world) {
         return world != null && HalloweenRuntime.isMapEnabled(world)
-                && SREGameWorldComponent.KEY.get(world).gameMode == io.wifi.starrailexpress.api.SREGameModes.MURDER
                 && super.canBeRandomed(world);
-    }
-
-    @Override public int getRoundMaxCount(ServerLevel level, SREGameWorldComponent game,
-            List<ServerPlayer> players, String map, AreasSettings settings) {
-        if (!canBeRandomed(level)) return 0;
-        int configured = super.getRoundMaxCount(level, game, players, map, settings);
-        return configured < 0 ? 1 : Math.min(1, configured);
     }
 
     @Override public List<ShopEntry> getShopEntries() {

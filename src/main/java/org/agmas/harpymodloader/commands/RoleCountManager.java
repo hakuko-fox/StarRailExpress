@@ -110,6 +110,8 @@ public class RoleCountManager {
 
     // 获取实际使用的杀手数量（考虑强制设置或自动计算）
     public static int getKillerCount(int playerCount) {
+        Integer override = io.wifi.starrailexpress.event.GameplayExtensionEvents.KILLER_COUNT_OVERRIDE.invoker().get(playerCount);
+        if (override != null) return override;
         if (forcedKillerCount >= 0) {
             return Math.min(forcedKillerCount, playerCount); // 确保不超过玩家总数
         } else {
@@ -124,6 +126,9 @@ public class RoleCountManager {
     }
 
     // 获取实际使用的侦探数量（考虑强制设置或自动计算）
+    // 注意：这里刻意不跟随 getKillerCount 的 KILLER_COUNT_OVERRIDE。
+    // 命令方块事件局会占满杀手名额（killer=0），但警长仍按人数正常分配（警长不会被标为异常）。
+    // 两侧数量是否真的落地由 SREMurderGameMode 的角色池补位与收尾校验负责。
     public static int getVigilanteCount(int playerCount) {
         if (forcedVigilanteCount >= 0) {
             return Math.min(forcedVigilanteCount, playerCount); // 确保不超过玩家总数

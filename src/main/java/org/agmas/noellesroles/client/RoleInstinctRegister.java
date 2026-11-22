@@ -33,6 +33,7 @@ import org.agmas.noellesroles.role_data.innocence.AwesomeRoleData;
 import org.agmas.noellesroles.role_data.innocence.FoolRoleData;
 import org.agmas.noellesroles.role_data.innocence.MonitorRoleData;
 import org.agmas.noellesroles.role_data.killer.ExecutionerRoleData;
+import org.agmas.noellesroles.role_data.killer.WraithAssassinRoleData;
 import org.agmas.noellesroles.role_data.killer.InsaneKillerRoleData;
 import org.agmas.noellesroles.role_data.killer.ManipulatorRoleData;
 import org.agmas.noellesroles.role_data.neutral.AdmirerRoleData;
@@ -47,6 +48,7 @@ import org.agmas.noellesroles.role_data.neutral.RecorderRoleData;
 import org.agmas.noellesroles.game.roles.killer.dream.DreamHealthComponent;
 import org.agmas.noellesroles.game.roles.neutral.cuckoo.CuckooEggData;
 import org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler;
+import org.agmas.noellesroles.game.roles.special.variant_loose_end.VariantLooseEndRole;
 import org.agmas.noellesroles.role_data.neutral.PelicanRoleData;
 import org.agmas.noellesroles.role_data.neutral.WayfarerRoleData;
 import org.agmas.noellesroles.role_data.special.BetterVigilanteRoleData;
@@ -74,6 +76,7 @@ import io.wifi.starrailexpress.event.client.RoleInstinctEvents;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeModifiers;
+import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.Color;
@@ -611,9 +614,12 @@ public class RoleInstinctRegister {
                     if (target instanceof Player targetPlayer && targetPlayer != viewer
                             && SREClient.isPlayerAliveAndInSurvival()) {
                         int san = Math.round(SREPlayerMoodComponent.KEY.get(targetPlayer).getMood() * 100.0f);
-                        if (san < 10)
+                        // 阈值直接引用职业数值，避免与 RoleData 里的判定脱节：
+                        // 蓝框 = 已被压到 LOW_SAN_BLUE 以下（可被未显现的冤魂突击命中 / 附近会被压迫）
+                        // 黄框 = LOW_SAN_YELLOW 以下（会吃到厉鬼嚎叫），但还没低到蓝色档
+                        if (san < WraithAssassinRoleData.LOW_SAN_BLUE)
                             return TrueFalseAndCustomResult.custom(0x2C8DFF);
-                        if (san < 30)
+                        if (san < WraithAssassinRoleData.LOW_SAN_YELLOW)
                             return TrueFalseAndCustomResult.custom(0xFFD84A);
                     }
                     return TrueFalseAndCustomResult.pass();
@@ -1048,6 +1054,37 @@ public class RoleInstinctRegister {
 
     // 特殊逻辑中保留不直接属于职业的全局事件
     public static void registerSpecialLogic() {
+        // 幽灵亡命徒：隐身期间不会被任何存活玩家的本能轮廓暴露
+        RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(SpecialGameModeRoles.GHOST_LOOSE_END.identifier(),
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (target instanceof Player targetPlayer && targetPlayer.isInvisible()) {
+                        return TrueFalseAndCustomResult.disallow();
+                    }
+                    return TrueFalseAndCustomResult.pass();
+                });
+
+        // 幽灵亡命徒的基础透视与超级亡命徒一致，但阴谋家显示其职业颜色
+        RoleInstinctEvents.OBSERVER_HIGHLIGHT_EVENT.register(SpecialGameModeRoles.GHOST_LOOSE_END.identifier(),
+                (client, viewer, target, isInstinctEnabled) -> {
+                    if (!isInstinctEnabled || !(target instanceof Player targetPlayer)
+                            || SREClient.gameComponent == null
+                            || !SREClient.gameComponent.isRole(targetPlayer, ModRoles.CONSPIRATOR)) {
+                        return TrueFalseAndCustomResult.pass();
+                    }
+                    return TrueFalseAndCustomResult.custom(ModRoles.CONSPIRATOR.color());
+                });
+
+        // 恢复邪恶战争规则：超级亡命徒的直觉不能透视处于原版隐身状态的玩家
+        // 放在 BEFORE 事件链最前面，避免后续目标职业或观察者职业的着色重新显示轮廓
+        CommonInstinctEvents.ALIVE_COMMON_BEFORE_EVENT.register((self, target, hasInstinct) -> {
+            if (!hasInstinct || !(target instanceof Player targetPlayer) || SREClient.gameComponent == null)
+                return TrueFalseAndCustomResult.pass();
+            if (VariantLooseEndRole.isVariant(SREClient.gameComponent.getRole(self))
+                    && targetPlayer.isInvisible())
+                return TrueFalseAndCustomResult.disallow();
+            return TrueFalseAndCustomResult.pass();
+        });
+
         // ── 本能隐匿（INSTINCT_CONCEAL）：目标持有该效果 → 任何人都没有本能框 ──
         // 与「小透明」「秉烛人」「怀旧者」同样在<b>被看侧</b>返回 disallow()，区别是那三个绑职业、
         // 本效果绑药水，所以走通用事件（ALIVE_COMMON_BEFORE_EVENT 在 TARGET_HIGHLIGHT_EVENT 之前触发，

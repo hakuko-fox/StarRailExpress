@@ -106,6 +106,8 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.role.bouns.roles.ProgrammerRole;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
+import org.agmas.noellesroles.utils.AnatmanAsatyaCorpseGuard;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.agmas.noellesroles.voice.HeliumBuzzPlayerComponent;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
@@ -115,6 +117,14 @@ import java.util.function.Predicate;
 
 public class ModPacketsReciever {
   public static void registerPackets() {
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.IdentityScannerRequestC2SPacket.ID,
+        (payload, context) -> context.server().execute(() ->
+            org.agmas.noellesroles.game.scanner.IdentityScannerService.handleRequest(
+                context.player(), payload.pos(), payload.scan())));
+    ServerPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.CloneDoctorActionC2SPacket.ID,
+        (payload, context) -> context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.killer.clone_doctor.CloneDoctorRole.handleAction(
+                context.player(), payload.target(), payload.returnToSelf())));
     ServerPlayNetworking.registerGlobalReceiver(PurpleMonsterEventC2SPacket.ID, (payload, context) ->
         context.server().execute(() -> org.agmas.noellesroles.role.bouns.roles.PurpleMonsterRole
             .handleAction(context.player(), payload)));
@@ -639,18 +649,21 @@ public class ModPacketsReciever {
     });
 
     // 咒术师·领域展开：背包点选一名已被诅咒且存活的目标，对其展开领域（校验/冷却由组件内部处理）
+    // 展开领域会批量 setBlock / teleportTo / 改动静态领域表，必须切回服务端主线程执行。
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.WarlockDomainC2SPacket.ID, (payload, context) -> {
-          if (context.player().hasEffect(ModEffects.SAFE_TIME))
-            return;
-          if (payload.target() == null)
-            return;
-          SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
-              .get(context.player().level());
-          if (gameWorldComponent.isRole(context.player(), ModRoles.WARLOCK)) {
-            RoleData.getOptional(WarlockRoleData.class, context.player())
-                .ifPresent(d -> d.tryOpenDomainOn(payload.target()));
-          }
+          context.server().execute(() -> {
+            if (context.player().hasEffect(ModEffects.SAFE_TIME))
+              return;
+            if (payload.target() == null)
+              return;
+            SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
+                .get(context.player().level());
+            if (gameWorldComponent.isRole(context.player(), ModRoles.WARLOCK)) {
+              RoleData.getOptional(WarlockRoleData.class, context.player())
+                  .ifPresent(d -> d.tryOpenDomainOn(payload.target()));
+            }
+          });
         });
 
     // 船长舱门调度：选择目标房间门或取消
@@ -705,6 +718,12 @@ public class ModPacketsReciever {
           inControlCCA.applyControlInput(payload.movementBits(), payload.yaw(), payload.pitch());
         });
 
+    // 金属怪钢卷形态输入包：薄转发到职业类（切回服务端线程再访问世界与 RoleData）
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.SteelCoilInputC2SPacket.ID, (payload, context) -> context.server()
+            .execute(() -> org.agmas.noellesroles.game.roles.neutral.metal_monster.MetalMonsterRole
+                .onInput(context.player(), payload.movementBits(), payload.yaw())));
+
     // 童子军攀爬请求：薄转发到职业类做二次校验与状态维护
     ServerPlayNetworking.registerGlobalReceiver(
         org.agmas.noellesroles.packet.ScoutClimbC2SPacket.ID, (payload, context) -> context.server()
@@ -735,6 +754,7 @@ public class ModPacketsReciever {
       if (player.hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       ItemStack mainHandItem = player.getMainHandItem();
+      if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksUse(player, mainHandItem)) return;
       if (org.agmas.noellesroles.content.item.TomatoItem.tryThrow(player)) {
         return;
       }
@@ -815,8 +835,12 @@ public class ModPacketsReciever {
               return playerBodyEntity.getUUID().equals(payload.playerBody());
             }));
         if (!playerBodyEntities.isEmpty()) {
+          PlayerBodyEntity vultureTarget = playerBodyEntities.getFirst();
+          // 待复活尸体（如无我/无妄的搭档仍存活时）不允许被食用
+          if (AnatmanAsatyaCorpseGuard.denyInteraction(vultureTarget, player))
+            return;
           PlayerBodyEntityComponent bodyDeathReasonComponent = PlayerBodyEntityComponent.KEY
-              .get(playerBodyEntities.getFirst());
+              .get(vultureTarget);
           if (!bodyDeathReasonComponent.vultured) {
             abilityPlayerComponent.cooldown = GameConstants.getInTicks(0,
                 NoellesRolesConfig.HANDLER.instance().vultureEatCooldown);
@@ -1010,19 +1034,42 @@ public class ModPacketsReciever {
         });
 
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.ABILITY_PACKET, (payload, context) -> {
+      if (org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.handleAbilityInput(context.player())) return;
       if (context.player().hasEffect(ModEffects.SAFE_TIME))// 安全时间
         return;
       RoleSkill.beginUseShifted(context.player());
     });
     ServerPlayNetworking.registerGlobalReceiver(UnifiedSkillInputC2SPacket.ID, (payload, context) -> {
+      if (org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.isReplaced(context.player())) {
+        if (payload.phase() == RoleSkill.Phase.PRESS) {
+          org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.handleAbilityInput(context.player());
+        }
+        return;
+      }
       if (context.player().hasEffect(ModEffects.SAFE_TIME)) {
         return;
       }
       RoleSkill.beginUse(context.player(), payload.target(), payload.slot(), payload.phase(), payload.forceShifted());
     });
-    ServerPlayNetworking.registerGlobalReceiver(UnifiedSkillSelectC2SPacket.ID,
-        (payload, context) -> RoleSkill.selectSkill(context.player(), payload.slot()));
+    ServerPlayNetworking.registerGlobalReceiver(UnifiedSkillSelectC2SPacket.ID, (payload, context) -> {
+      if (!org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.isReplaced(context.player())) {
+        RoleSkill.selectSkill(context.player(), payload.slot());
+      }
+    });
+    // 中控员：监控页面按技能键发射激光（薄转发到职业类）
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.CentralControlLaserC2SPacket.ID,
+        (payload, context) -> context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.innocence.central_control.CentralControlRole
+                .fireLaser(context.player(), payload.cameraPos(), payload.lookYaw(), payload.lookPitch())));
+    // 中控员：监控画面拖动鼠标时同步镜头方向（红外线扫描仪跟着视角照亮）
+    ServerPlayNetworking.registerGlobalReceiver(
+        org.agmas.noellesroles.packet.CameraViewLookC2SPacket.ID,
+        (payload, context) -> context.server().execute(() ->
+            org.agmas.noellesroles.game.roles.innocence.central_control.CentralControlRole
+                .updateViewerLook(context.player(), payload.cameraPos(), payload.lookYaw(), payload.lookPitch())));
     ServerPlayNetworking.registerGlobalReceiver(AbilityWithTargetC2SPacket.ID, (payload, context) -> {
+      if (org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.handleAbilityInput(context.player())) return;
       RoleSkill.beginUseShiftedWithTarget(context.player(), payload.target());
     });
     ServerPlayNetworking.registerGlobalReceiver(ModPackets.INSANE_KILLER_ABILITY_PACKET, (payload, context) -> {
@@ -1082,13 +1129,13 @@ public class ModPacketsReciever {
         return;
       }
 
-      // 检查耐久是否满
-      if (stack.getDamageValue() > 0) {
-        player.displayClientMessage(
-            Component.translatable("item.noellesroles.fire_axe.not_full_durability")
-                .withStyle(ChatFormatting.RED),
-            true);
-        return;
+      // 击杀需要剩余耐久至少3点（与客户端举起条件一致，防止改包绕过）
+      if (!org.agmas.noellesroles.content.item.FireAxeItem.canKill(stack)) {
+          player.displayClientMessage(
+              Component.translatable("item.noellesroles.fire_axe.not_full_durability")
+                  .withStyle(ChatFormatting.RED),
+              true);
+          return;
       }
 
       // 检查冷却
@@ -1100,9 +1147,10 @@ public class ModPacketsReciever {
         return;
       }
 
-      // 消耗耐久
+      // 消耗耐久（一次击杀消耗3点）
       if (!player.isCreative()) {
-        stack.hurtAndBreak(3, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+        stack.hurtAndBreak(org.agmas.noellesroles.content.item.FireAxeItem.KILL_DURABILITY_COST,
+            player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
       }
 
       // 添加冷却
@@ -1632,6 +1680,10 @@ public class ModPacketsReciever {
           comp.voiceSwapCooldown =
               org.agmas.noellesroles.game.roles.killer.embalmer.EmbalmerVoiceSwapManager.COOLDOWN_TICKS;
           comp.sync();
+          // 回放记录：xxx 交换了 xxx 和 xxx 的声带
+          ReplayEventLog.record("replay.event.embalmer.voice_swap",
+              ReplayEventLog.player(player), ReplayEventLog.player(first),
+              ReplayEventLog.player(second));
 
           player.displayClientMessage(
               Component.translatable("message.noellesroles.embalmer.voice_swap.done", first.getName(),
@@ -1670,7 +1722,8 @@ public class ModPacketsReciever {
           io.wifi.starrailexpress.content.entity.PlayerBodyEntity body = null;
           for (io.wifi.starrailexpress.content.entity.PlayerBodyEntity b : player.serverLevel().getEntitiesOfClass(
               io.wifi.starrailexpress.content.entity.PlayerBodyEntity.class, player.getBoundingBox().inflate(3.0D))) {
-            if (b.getPlayerUuid() != null && !b.getPlayerUuid().equals(player.getUUID())) {
+            if (b.getPlayerUuid() != null && !b.getPlayerUuid().equals(player.getUUID())
+                && !b.isNonInteractable()) {
               body = b;
               break;
             }

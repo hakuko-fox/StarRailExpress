@@ -5,16 +5,11 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "modifier.allergist.AllergistEatMixin",
-    "general.StuckGameExitMixin",
+    "arsonist.ArsonistWeaponLockMixin",
     "modifier.split_personality.SplitPersonalityServerInputBlockMixin",
-    "modifier.taskmaster.TaskmasterGiveCoinsMixin",
-    "modifier.twin_children.TwinChildrenShareQuestMixin",
-    "modifier.twin_children.TwinChildrenShareMinigameMixin",
     "modifier.twin_children.TwinChildrenAttachMixin",
     "modifier.twin_children.TwinChildrenPlayerMixin",
-    "modifier.twin_children.TwinChildrenTeleportMixin",
-    "modifier.twin_children.TwinChildrenMountableMixin",
-    "modifier.twin_children.TwinChildrenToiletMixin"
+    "modifier.twin_children.TwinChildrenTeleportMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -30,6 +25,9 @@
     "client.modifier.split_personality.SplitPersonalityPositionSyncMixin",
     "client.modifier.split_personality.SplitPersonalityVisibilityMixin",
     "client.modifier.twin_children.TwinChildrenLerpMixin",
-    "client.modifier.twin_children.TwinChildrenRenderMixin"
+    "client.modifier.twin_children.TwinChildrenRenderMixin",
+    "client.OilCanCameraMixin",
+    "client.ArsonistIntroCameraMixin",
+    "client.ArsonistIntroPlayerRenderMixin"
   ]
 }

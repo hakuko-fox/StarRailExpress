@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.client.SREClient;
+import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.agmas.noellesroles.client.NoellesrolesClient;
@@ -51,7 +52,8 @@ public class RecallerHud {
                         NoellesrolesClient.abilityBind.getTranslatedKeyMessage());
             } else {
                 if (playerShopComponent.balance < 100) {
-                    line = Component.translatable("tip.recaller.not_enough_money");
+                    line = Component.translatable("tip.recaller.not_enough_money",
+                            ShopEntry.Currency.MONEY.amountText(100));
                 }
             }
 

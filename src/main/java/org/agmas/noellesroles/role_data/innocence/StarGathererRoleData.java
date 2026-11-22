@@ -27,6 +27,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -49,7 +50,8 @@ import java.util.List;
  * 摘星者（{@code star_gatherer}，警长阵营）的职业数据。
  * <p>
  * <b>被动 · 星之光环</b>：6 格半径内所有存活玩家获得潮涌能量 I + 领域庇护
- * （{@link ModEffects#DOMAIN_SANCTUARY}，持有者无法被拉入除愚者会议以外的任何领域）；
+ * （{@link ModEffects#DOMAIN_SANCTUARY}，默认不显示药水图标与粒子；
+ * 持有者无法被拉入除愚者会议以外的任何领域）；
  * 摘星者死亡时立即清除全场所有庇护。
  * <p>
  * <b>星之权杖</b>（{@link ModItems#STAR_SCEPTER}）：右击蓄力锁定视线 35 格内最近的玩家，
@@ -316,6 +318,9 @@ public class StarGathererRoleData extends SimpleRoleData {
                 if (stack.isEmpty() || !isMetalItem(stack))
                     continue;
                 other.getInventory().setItem(slot, ItemStack.EMPTY);
+                // 回放记录：xxx 吸引了 xxx 背包中的 xx
+                ReplayEventLog.record("replay.event.star_gatherer.gravity_pull",
+                        ReplayEventLog.player(sp), ReplayEventLog.player(other), stack.getHoverName());
                 // 同类只留一件；已经有一件的话就直接丢弃
                 if (SREItemUtils.countItem(sp, stack.getItem()) > 0 || !SREItemUtils.insertStackInFreeSlot(sp, stack.copy())) {
                     // 丢弃：掉在原地，不进入任何人的背包
@@ -389,6 +394,9 @@ public class StarGathererRoleData extends SimpleRoleData {
                 .translatable("message.noellesroles.star_gatherer.alms_used", target.getName(),
                         hand.getHoverName())
                 .withStyle(ChatFormatting.AQUA), true);
+        // 回放记录：xxx 给予了 xxx xx
+        ReplayEventLog.record("replay.event.star_gatherer.alms",
+                ReplayEventLog.player(sp), ReplayEventLog.player(target), hand.getHoverName());
         return true;
     }
 
@@ -437,7 +445,7 @@ public class StarGathererRoleData extends SimpleRoleData {
      * 给光环内的所有存活玩家补潮涌能量 + 领域庇护；光环外的庇护不主动撤销（等自然过期）。
      * <p>
      * 庇护时长 {@link #AURA_SANCTUARY_TICKS}（60 秒）远大于刷新间隔（1 秒），
-     * 所以图标不会在剩余不足 10 秒时闪烁。
+     * 保证光环内玩家的效果不会断档；庇护默认不显示图标，也不显示粒子。
      */
     private void refreshAura(ServerPlayer sp) {
         ServerLevel level = sp.serverLevel();
@@ -450,10 +458,10 @@ public class StarGathererRoleData extends SimpleRoleData {
             target.addEffect(new MobEffectInstance(MobEffects.CONDUIT_POWER, AURA_SANCTUARY_TICKS, 0,
                     false, false, true));
             target.addEffect(new MobEffectInstance(ModEffects.DOMAIN_SANCTUARY, AURA_SANCTUARY_TICKS, 0,
-                    false, false, true));
+                    false, false, false));
         }
         // 不给光环画任何粒子：sendParticles 是服务端广播，会给 32 格内所有玩家发包，
-        // 等于把摘星者的庇护范围暴露给别人。庇护范围只在本职业 HUD 上显示。
+        // 等于把摘星者的庇护范围暴露给别人；庇护药水图标同样隐藏。庇护范围只在本职业 HUD 上显示。
     }
 
     /** 清除全场所有「领域庇护」—— 摘星者死亡时调用。 */

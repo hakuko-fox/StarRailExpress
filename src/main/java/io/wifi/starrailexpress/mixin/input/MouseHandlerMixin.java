@@ -24,7 +24,6 @@ import io.wifi.starrailexpress.customitem.CustomItemLoader;
 import io.wifi.starrailexpress.customitem.CustomItemRuntime;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.original.CustomItemFirePayload;
-import io.wifi.starrailexpress.network.original.SniperShootPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -44,6 +43,14 @@ public class MouseHandlerMixin {
     @Shadow
     private double accumulatedDY;
 
+    /**
+     * 监控画面里拖动鼠标的灵敏度倍率（相对原版转视角）。
+     * <p>
+     * 监控画面是拉近放大的远景，用原版速度拖动会严重过冲，因此整体降到 1/5。
+     * 想让镜头更慢就继续调小（0.05 会非常稳），想恢复原版手感就设为 1.0。
+     */
+    private static final double CAMERA_LOOK_SENSITIVITY = 0.2D;
+
     @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     public void TMM$turnPlayer(double d, CallbackInfo ci) {
         float lookMul = ScopeOverlayRenderer.getLookSensitivityMultiplier();
@@ -51,30 +58,61 @@ public class MouseHandlerMixin {
             this.accumulatedDX *= lookMul;
             this.accumulatedDY *= lookMul;
         }
-        // 在监控模式下，阻止正常的玩家旋转，但传递给SecurityMonitorBlock处理
+        // 监控模式下阻止玩家本体转动，但把这份鼠标位移交给「动态模块」驱动监控画面视角。
+        // 也就是说：玩家还是像平常一样拖动鼠标转视角，只是转的是摄像头画面而不是自己的身体。
+        // 记者终端的小窗显示记者自己的视角，所以不拦截本体转向：鼠标照常转动自己，
+        // 小窗画面跟着自己的视角走，主画面仍然是目标玩家的视角。
         if (SecurityCameraClientState.isInSecurityMode()) {
+            turnSecurityCameraByMouse();
             ci.cancel();
         }
     }
 
-    // 捕获鼠标移动并传递给SecurityMonitorBlock
-    @Inject(method = "onMove", at = @At("HEAD"), cancellable = true)
-    public void TMM$onMove(long window, double x, double y, CallbackInfo ci) {
-        if (SecurityCameraClientState.isInSecurityMode()) {
-            // 传递鼠标移动给监控视角控制
-            // double xOffset = x;
-            double yOffset = y;
-            // 注意：xOffset是水平旋转(yaw)，yOffset是垂直旋转(pitch)
-            // 这里的参数值是原始鼠标移动量，需要进行适当的缩放
-            SecurityCameraClientState.onPlayerRotated(yOffset);
-            ci.cancel();
+    /**
+     * 用原版 {@code turnPlayer} 里同样的换算把鼠标位移变成角度，再推给受控摄像头的动态模块。
+     * <p>
+     * 复用原版的灵敏度三次方换算与「反转鼠标」设置，再乘上
+     * {@link #CAMERA_LOOK_SENSITIVITY} 做整体降速：监控画面是放大后的远景，按平时转视角的
+     * 速度拖动会严重过冲，所以这里刻意调慢，但仍随玩家自己的灵敏度设置成比例变化。
+     * <p>
+     * 未安装动态模块时 {@code applyMouseLookToDynamicModule} 返回 false，
+     * 画面保持一致固定（与保安原来的监控画面相同）。
+     * <p>
+     * 注意：原版会在这个方法末尾把 {@code accumulatedDX/DY} 清零；我们在 HEAD 处取消了它，
+     * 所以必须自己清零，否则退出监控模式后会把积攒的位移一次性甩出去。
+     */
+    private void turnSecurityCameraByMouse() {
+        Minecraft client = Minecraft.getInstance();
+        double yawDelta = this.accumulatedDX;
+        double pitchDelta = this.accumulatedDY;
+        this.accumulatedDX = 0.0D;
+        this.accumulatedDY = 0.0D;
+        if (client == null || client.options == null) {
+            return;
         }
+        double sensitivity = client.options.sensitivity().get() * 0.6D + 0.2D;
+        double scale = sensitivity * sensitivity * sensitivity * 8.0D * CAMERA_LOOK_SENSITIVITY;
+        float yaw = (float) (yawDelta * scale);
+        float pitch = (float) (pitchDelta * scale);
+        if (client.options.invertYMouse().get()) {
+            pitch = -pitch;
+        }
+        SecurityCameraClientState.applyMouseLookToDynamicModule(yaw, pitch);
     }
     
     // 捕获鼠标点击事件用于狙击枪操作
     @Inject(method = "onPress", at = @At("HEAD"), cancellable = true)
     public void TMM$onPress(long window, int button, int action, int mods, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
+        // 记者终端页面：左键 / 右键切换正在查看的摄像头盔玩家
+        if (client != null && client.screen == null && action == GLFW.GLFW_PRESS
+                && io.wifi.starrailexpress.client.ReporterTerminalClient.isActive()
+                && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)) {
+            io.wifi.starrailexpress.client.ReporterTerminalClient
+                    .switchTarget(button == GLFW.GLFW_MOUSE_BUTTON_LEFT ? 1 : -1);
+            ci.cancel();
+            return;
+        }
         if (client != null && client.screen == null && action == GLFW.GLFW_PRESS
                 && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)
                 && ClickAntiCheatClient.isLocked()) {
@@ -110,39 +148,12 @@ public class MouseHandlerMixin {
                 return;
             }
             
-            // 检查是否按下 Shift
-            boolean isShiftKeyDown = player.isShiftKeyDown();
-            
-            // 检查冷却
+            // 倍镜装填/卸载已改为独立按键（默认 Z），左键始终只负责射击。
             if (player.getCooldowns().isOnCooldown(TMMItems.SNIPER_RIFLE)) {
                 return;
             }
-            
-            if (isShiftKeyDown) {
-                // Shift + 左键：安装/卸载倍镜
-                if (SniperRifleItem.hasScopeAttached(mainHandStack)) {
-                    ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.UNINSTALL_SCOPE, player.getId()));
-                    player.getCooldowns().addCooldown(TMMItems.SNIPER_RIFLE, 20);
-                    ci.cancel();
-                } else {
-                    boolean hasScope = false;
-                    for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                        if (player.getInventory().getItem(i).is(TMMItems.SCOPE)) {
-                            hasScope = true;
-                            break;
-                        }
-                    }
-                    if (hasScope) {
-                        ClientPlayNetworking.send(new SniperShootPayload(SniperShootPayload.Action.INSTALL_SCOPE, player.getId()));
-                        player.getCooldowns().addCooldown(TMMItems.SNIPER_RIFLE, 20);
-                        ci.cancel();
-                    }
-                }
-            } else {
-                // 左键：射击
-                SniperRifleItem.tryShootFromKeybind(player);
-                ci.cancel();
-            }
+            SniperRifleItem.tryShootFromKeybind(player);
+            ci.cancel();
         }
     }
 }

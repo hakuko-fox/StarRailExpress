@@ -40,7 +40,6 @@ import net.minecraft.world.item.ItemStack;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.role_data.killer.ExecutionerRoleData;
 import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
 import org.jetbrains.annotations.NotNull;
 
 public record BanditRevolverShootPayload(int target) implements CustomPacketPayload {
@@ -67,6 +66,8 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
     }
 
     public static void extracted(ServerPlayer player, Entity var6) {
+        if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksGun(player)) return;
+        if (!org.agmas.noellesroles.game.roles.killer.ma_chen_xu.SackGhostActions.allowAttack(player)) return;
 
         ItemStack mainHandStack = player.getMainHandItem();
         if (mainHandStack.is(TMMItemTags.GUNS)) {
@@ -82,20 +83,14 @@ public record BanditRevolverShootPayload(int target) implements CustomPacketPayl
                                 .get(player.level());
                         boolean backfire = false;
                         boolean shouldDrop = false;
-                        if (game.isInnocent(target) && !player.isCreative()) {
-                            // \
-                            if (game.isRole(player, ModRoles.BANDIT)) {
-                                shouldDrop = player.getRandom().nextInt(0, 100) <= 80;
-                            } else {
-                                if (ExecutionerRoleData.isInFrenzy(player)) {
-                                    shouldDrop = false;
-                                } else {
-                                    shouldDrop = player.getRandom().nextFloat() <= 0.2F;
-                                }
-                            }
+                        // 所有职业统一沿用刽子手的掉枪概率，狂暴期间免疫掉枪。
+                        if (game.isInnocent(target) && !player.isCreative()
+                                && !ExecutionerRoleData.isInFrenzy(player)) {
+                            shouldDrop = player.getRandom().nextFloat() <= 0.2F;
                         }
-                        boolean shouldDropBrokenKillerGun = BrokenGunDropUtils.shouldBreakKillerGunOnGunKill(game,
-                                player, target, mainHandStack);
+                        // 狂暴期间也跳过损坏掉枪，避免绕过免掉枪效果。
+                        boolean shouldDropBrokenKillerGun = !ExecutionerRoleData.isInFrenzy(player)
+                                && BrokenGunDropUtils.shouldBreakKillerGunOnGunKill(game, player, target, mainHandStack);
                         if (shouldDrop || shouldDropBrokenKillerGun) {
                             {
                                 if (player.getMainHandItem().is(TMMItemTags.GUNS)) {

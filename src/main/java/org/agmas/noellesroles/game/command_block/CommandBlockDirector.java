@@ -114,8 +114,9 @@ public final class CommandBlockDirector {
         FarlandsRole.registerSkill();
         WhiteEyesRole.registerSkill();
         StringerRole.registerSkill();
-        PaperDollRole.registerSkill();
         FogGuestRole.registerSkill();
+        PaperDollRole.registerSkill();
+        MustardRole.registerEvents();
         PendulumRole.registerSkill();
         CandleShadeRole.registerSkill();
         DreadlordRole.registerSkill();
@@ -168,6 +169,13 @@ public final class CommandBlockDirector {
             if (victim instanceof ServerPlayer dead && CommandBlockRules.isPoolRole(
                     SREGameWorldComponent.KEY.get(dead.level()).getRole(dead))) {
                 addDestruction(dead.serverLevel());
+            }
+        });
+        // 尸体已实际生成后再清除：不会把护盾、免死等被否决的命中算成抹除。
+        io.wifi.starrailexpress.event.OnPlayerDeathWithBody.EVENT.register((victim, killer, reason, body) -> {
+            if (killer != null && killer != victim && body != null
+                    && SREGameWorldComponent.KEY.get(killer.level()).isRole(killer, ModRoles.ENTITY_NULL)) {
+                body.discard();
             }
         });
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(CommandBlockCombat::allowDamage);
@@ -283,6 +291,9 @@ public final class CommandBlockDirector {
             if (GameUtils.isPlayerAliveAndSurvival(player)
                     && WorldModifierComponent.getInstance(player).isModifier(player, NRModifiers.ABNORMAL)) {
                 player.displayClientMessage(text, false);
+                SRENetworkMessageUtils.sendTitleTime(player, 10, 80, 20);
+                SRENetworkMessageUtils.sendSubtitle(player, Component.empty());
+                SRENetworkMessageUtils.sendTitle(player, text);
             }
         }
     }
@@ -552,6 +563,8 @@ public final class CommandBlockDirector {
         // 变成异常（中立空壳）时清掉只适用于旧阵营的修饰符，避免平民专属修饰符跟到中立身上
         RoleUtils.removeInapplicableModifiers(player, ModRoles.ABNORMAL);
         RoleUtils.addModifier(player, NRModifiers.ABNORMAL);
+        // 变成异常职业后给玩家发送欢迎报幕
+        RoleUtils.sendWelcomeAnnouncement(player);
         PacketTracker.sendToClient(player,
                 new SubtitleS2CPayload(Component.translatable("message.noellesroles.command_block.preview",
                         role.getName()), Component.empty(), 80, 0xFFE7D4FF, false,

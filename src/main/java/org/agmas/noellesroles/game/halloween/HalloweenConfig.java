@@ -26,24 +26,26 @@ public final class HalloweenConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static volatile HalloweenConfig instance = new HalloweenConfig();
 
-    public int knockCooldownTicks = 300;
+    public int knockCooldownTicks = 700;
     public int knockUndeadTicks = 200;
     public int candyNpcLifetimeTicks = 600;
     public int undeadLifetimeTicks = 1800;
     public int maxEventUndead = 32;
-    public int gunCooldownTicks = 200;
+    public int gunCooldownTicks = 600;
     public int gunFreezeTicks = 100;
     public int gunSummonCount = 3;
     public int candyNpcRewardCount = 1;
     public int gunShieldSuppressionTicks = 600;
-    public int sawChargeTicks = 10;
+    public int sawChargeTicks = 12;
     public int heartDelayTicks = 300;
     public int candyDurationTicks = 600;
     public int costumeBagIntervalTicks = 2400;
     public int linkInviteTicks = 300;
     public int npcKillRadius = 8;
     public int pactReviveTicks = 1200;
+    // 兼容旧配置保留；魂契现固定每 3 个真实任务进行一次 20% 抽取。
     public int questTaskCount = 3;
+    // 旧亡魂夜字段仅为配置文件兼容而保留，事件已移除，不再读取这些值触发。
     public int nightStartTicks = 2400;
     public int nightDurationTicks = 1200;
     public int nightIntervalTicks = 3600;
@@ -101,6 +103,8 @@ public final class HalloweenConfig {
                 int value = field.getInt(this);
                 int min = switch (field.getName()) {
                     case "nightStartTicks", "nightDarkThreshold", "maxEventUndead" -> 0;
+                    case "sawChargeTicks" -> 12;
+                    case "knockCooldownTicks" -> 700;
                     default -> 1;
                 };
                 int max = switch (field.getName()) {
@@ -148,10 +152,27 @@ public final class HalloweenConfig {
                     && isVillageTradeAllowed(entry.item)
                     && entry.count > 0 && entry.count <= 64 && entry.pumpkins >= 0 && entry.pumpkins <= 4096
                     && entry.coins >= 0 && entry.coins <= 1000000 && (entry.pumpkins > 0 || entry.coins > 0)) {
+                migrateDefaultTradePrice(entry);
                 cleanTrades.add(entry);
             } else warn.accept("忽略无效 trades 条目（禁止直接出售魂契和献血锯子、负价格或免费商品）");
         }
         trades = cleanTrades;
+    }
+
+    /** 仅迁移旧默认定价；新价格不会重复加价，自定义商品数量及定价保持不变。 */
+    private static void migrateDefaultTradePrice(Trade entry) {
+        if (entry.count != 1) return;
+        int oldPumpkins = switch (entry.item) {
+            case "noellesroles:halloween_fright_gun" -> 10;
+            case "noellesroles:halloween_pumpkin_helmet", "noellesroles:halloween_pumpkin_boots" -> 3;
+            case "noellesroles:halloween_pumpkin_chestplate" -> 5;
+            case "noellesroles:halloween_pumpkin_leggings" -> 4;
+            default -> -1;
+        };
+        boolean gun = "noellesroles:halloween_fright_gun".equals(entry.item);
+        if (entry.pumpkins == oldPumpkins && entry.coins == (gun ? 30 : 5)) {
+            entry.pumpkins += gun ? 7 : 2;
+        }
     }
 
     /** 固定 NPC 禁售物品；旧配置和交易请求都必须遵循同一限制。 */
@@ -162,6 +183,12 @@ public final class HalloweenConfig {
 
     private static boolean validId(String id, Predicate<String> validItem) {
         return id != null && id.matches("[a-z0-9_.-]+:[a-z0-9/._-]+") && validItem.test(id);
+    }
+
+    /** 好人阵营糖果袋先移除血锯条目，再按剩余权重抽取，兼容旧配置。 */
+    static Loot rollCandyBagLoot(List<Loot> pool, double roll, boolean innocent) {
+        return rollLoot(pool.stream().filter(entry -> !innocent
+                || !"noellesroles:halloween_blood_saw".equals(entry.item)).toList(), roll);
     }
 
     /** 抽签区间为 [0,1)，长整型累计避免可配置权重相加溢出。 */
@@ -204,13 +231,13 @@ public final class HalloweenConfig {
                 new Trade("noellesroles:halloween_candy_bag", 1, 3, 0),
                 new Trade("noellesroles:halloween_pumpkin_president", 1, 5, 10),
                 new Trade("noellesroles:halloween_heart", 1, 8, 0),
-                new Trade("noellesroles:halloween_pumpkin_helmet", 1, 3, 5),
-                new Trade("noellesroles:halloween_pumpkin_chestplate", 1, 5, 5),
-                new Trade("noellesroles:halloween_pumpkin_leggings", 1, 4, 5),
-                new Trade("noellesroles:halloween_pumpkin_boots", 1, 3, 5),
+                new Trade("noellesroles:halloween_pumpkin_helmet", 1, 5, 5),
+                new Trade("noellesroles:halloween_pumpkin_chestplate", 1, 7, 5),
+                new Trade("noellesroles:halloween_pumpkin_leggings", 1, 6, 5),
+                new Trade("noellesroles:halloween_pumpkin_boots", 1, 5, 5),
                 new Trade("noellesroles:halloween_bone_sword", 1, 6, 15),
                 new Trade("noellesroles:halloween_soul_link", 1, 8, 20),
-                new Trade("noellesroles:halloween_fright_gun", 1, 10, 30)));
+                new Trade("noellesroles:halloween_fright_gun", 1, 17, 30)));
     }
 
     public static class Loot {

@@ -277,10 +277,6 @@ public class BeeFamilyManager {
             }
             // 主人即将被复活的尸体不可交互
             if (PlayerBodyEntityComponent.KEY.get(body).nonInteractable) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.corpse.pending_revive")
-                                .withStyle(ChatFormatting.RED),
-                        true);
                 return InteractionResult.CONSUME;
             }
             if (!gameWorldComponent.isSkillAvailable) {
@@ -308,6 +304,9 @@ public class BeeFamilyManager {
                 return InteractionResult.PASS;
             }
 
+            if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksRevival(player, revived)
+                    || org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.isRestrictedAt(body.level(), body.position(),
+                            org.agmas.noellesroles.game.roles.innocence.decree.Decree.REVIVAL)) return InteractionResult.FAIL;
             // 已退出游戏的玩家（退出重进过 / 退赛不参与）不能被复活
             if (SREAbilityPlayerComponent.KEY.get(revived).hasExited()
                     || !ParticipationComponent.KEY.get(level).isParticipating(revived)) {

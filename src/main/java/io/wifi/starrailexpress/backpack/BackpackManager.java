@@ -67,6 +67,9 @@ public final class BackpackManager {
     private static final Gson GSON = new GsonBuilder().create();
     private static final long FLUSH_INTERVAL_MS = 5_000L;
     private static final long FLUSH_TIMEOUT_MS = 4_000L;
+    private static final long EXTERNAL_REFRESH_INTERVAL_MS = 15_000L;
+    private static long nextExternalRefreshAt;
+    private static Entry externalRefreshEntry;
     private static final Map<UUID, Entry> ENTRIES = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, Set<UUID>> ROUND_PARTICIPANTS = new HashMap<>();
 
@@ -616,7 +619,7 @@ public final class BackpackManager {
 
     public static boolean flushBlocking(UUID playerUuid) {
         Entry entry = ENTRIES.get(playerUuid);
-        if (entry == null || !entry.loaded || !isDatabaseEnabled()) {
+        if (entry == null || !entry.loaded || entry.loadInFlight || entry.saveInFlight || !isDatabaseEnabled()) {
             return false;
         }
         boolean success = MysqlPlayerDataStore.saveBatchBlocking(
@@ -683,19 +686,26 @@ public final class BackpackManager {
     }
 
     private static void reloadFromDatabase(ServerPlayer player, Entry entry) {
-        if (!isDatabaseEnabled() || entry.loadInFlight) {
+        reloadFromDatabase(player, entry, false);
+    }
+
+    private static void reloadFromDatabase(ServerPlayer player, Entry entry, boolean externalRefresh) {
+        if (!isDatabaseEnabled() || entry.loadInFlight || entry.saveInFlight) {
             return;
         }
         entry.loadInFlight = true;
         entry.lastLoadAttemptAt = System.currentTimeMillis();
+        Map<FactionCardType, Integer> beforeRead = new HashMap<>(entry.state.cards);
         MysqlPlayerDataStore.loadBatchAsync(player.getUUID(), List.of(PART))
                 .whenComplete((records, throwable) -> {
-                    entry.loadInFlight = false;
                     MinecraftServer server = player.getServer();
                     if (server == null) {
+                        entry.loadInFlight = false;
                         return;
                     }
                     server.execute(() -> {
+                        // Keep saves excluded until the payload AND its baseline are installed.
+                        entry.loadInFlight = false;
                         if (ENTRIES.get(player.getUUID()) != entry) {
                             return;
                         }
@@ -705,15 +715,40 @@ public final class BackpackManager {
                         }
                         MysqlPlayerDataStore.SyncRecord record = records.get(PART);
                         if (record != null && record.payload() != null && !record.payload().isBlank()) {
-                            entry.state = fromJson(record.payload());
+                            BackpackState loaded = fromJson(record.payload());
+                            if (externalRefresh) {
+                                // Only the changes made while this clean-cache read was in flight
+                                // are local deltas. Never re-add the old cached balance.
+                                mergeExternalRefresh(entry.state, loaded, beforeRead);
+                            } else {
+                                entry.dirty = false;
+                            }
+                            entry.state = loaded;
                             entry.updatedAt = Math.max(entry.updatedAt, record.updatedAt());
-                            entry.dirty = false;
                         }
                         entry.loaded = true;
+                        if (!entry.online) {
+                            // Disconnect during a refresh must not drop its in-flight local deltas.
+                            if (entry.dirty) flushAsync(player, entry);
+                            else ENTRIES.remove(player.getUUID(), entry);
+                            return;
+                        }
                         send(player, entry);
                         migrateIfNeeded(player);
                     });
                 });
+    }
+
+    static void mergeExternalRefresh(BackpackState local, BackpackState loaded,
+            Map<FactionCardType, Integer> beforeRead) {
+        for (FactionCardType type : FactionCardType.values()) {
+            if (type == FactionCardType.NONE) continue;
+            int delta = local.cards.getOrDefault(type, 0) - beforeRead.getOrDefault(type, 0);
+            loaded.cards.put(type, Math.max(0, loaded.cards.getOrDefault(type, 0) + delta));
+            long used = local.lastUsedAt(type);
+            if (used > loaded.lastUsedAt(type)) loaded.markUsed(type, used);
+        }
+        loaded.migrated |= local.migrated;
     }
 
     private static void onDisconnect(ServerPlayer player) {
@@ -723,40 +758,55 @@ public final class BackpackManager {
             if (!isDatabaseEnabled()) {
                 saveLocal(player, entry);
                 ENTRIES.remove(player.getUUID(), entry);
-            } else if (flushBlocking(player.getUUID())) {
-                ENTRIES.remove(player.getUUID(), entry);
-            } else {
-                SRE.LOGGER.warn("Keeping unsaved backpack data for {} in memory after disconnect",
-                        player.getUUID());
+                return;
+            }
+            // An in-flight read first merges local deltas, then flushes them.
+            // An in-flight save's completion also retains any newer dirty state.
+            if (!entry.loadInFlight && !entry.saveInFlight) {
+                if (entry.dirty) flushAsync(player, entry);
+                else ENTRIES.remove(player.getUUID(), entry);
             }
         }
     }
 
     private static void tick(MinecraftServer server) {
         long now = System.currentTimeMillis();
+        ServerPlayer refreshPlayer = null;
+        Entry refreshCandidate = null;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             Entry entry = ENTRIES.get(player.getUUID());
-            if (entry == null || !entry.online) {
-                continue;
-            }
-            if (!entry.loaded && !entry.loadInFlight
-                    && now - entry.lastLoadAttemptAt >= FLUSH_INTERVAL_MS) {
+            if (entry == null || !entry.online || entry.saveInFlight || entry.loadInFlight) continue;
+            if (!entry.loaded && now - entry.lastLoadAttemptAt >= FLUSH_INTERVAL_MS) {
                 reloadFromDatabase(player, entry);
                 continue;
             }
             if (entry.loaded && now - entry.lastMigrationAttemptAt >= FLUSH_INTERVAL_MS) {
                 migrateIfNeeded(player);
             }
-            if (!entry.dirty || entry.saveInFlight
-                    || now - entry.lastFlushAt < FLUSH_INTERVAL_MS) {
-                continue;
+            if (entry.dirty) {
+                if (now - entry.lastFlushAt >= FLUSH_INTERVAL_MS) flushAsync(player, entry);
+            } else if (entry.loaded && isDatabaseEnabled()
+                    && now >= nextExternalRefreshAt
+                    && now - entry.lastExternalRefreshAt >= EXTERNAL_REFRESH_INTERVAL_MS
+                    && (externalRefreshEntry == null || !externalRefreshEntry.loadInFlight)) {
+                // Oldest first: a fixed player-list order must not starve larger servers.
+                if (refreshCandidate == null || entry.lastExternalRefreshAt < refreshCandidate.lastExternalRefreshAt) {
+                    refreshPlayer = player;
+                    refreshCandidate = entry;
+                }
             }
-            flushAsync(player, entry);
+        }
+        if (refreshCandidate != null) {
+            // Single server-wide lane: <=1 SELECT/second, <=1 in flight.
+            nextExternalRefreshAt = now + 1_000L;
+            refreshCandidate.lastExternalRefreshAt = now;
+            externalRefreshEntry = refreshCandidate;
+            reloadFromDatabase(refreshPlayer, refreshCandidate, true);
         }
     }
 
     private static void flushAsync(ServerPlayer player, Entry entry) {
-        if (!isDatabaseEnabled() || entry.loadInFlight) {
+        if (!isDatabaseEnabled() || !entry.loaded || entry.loadInFlight || entry.saveInFlight) {
             return;
         }
         entry.saveInFlight = true;
@@ -765,16 +815,23 @@ public final class BackpackManager {
         long updatedAt = Math.max(1L, entry.updatedAt);
         MysqlPlayerDataStore.saveBatchAsync(player.getUUID(), Map.of(PART, toJson(entry.state, updatedAt)), updatedAt)
                 .whenComplete((success, throwable) -> {
-                    entry.saveInFlight = false;
-                    if (throwable != null || !Boolean.TRUE.equals(success)) {
-                        entry.dirty = true;
-                        if (throwable != null) {
-                            SRE.LOGGER.warn("Failed to save backpack part for {}", player.getUUID(), throwable);
-                        } else {
-                            SRE.LOGGER.warn("Failed to save backpack part for {}; retaining local changes for retry",
-                                    player.getUUID());
+                    MinecraftServer server = player.getServer();
+                    if (server == null) { entry.saveInFlight = false; return; }
+                    server.execute(() -> {
+                        entry.saveInFlight = false;
+                        if (ENTRIES.get(player.getUUID()) != entry) return;
+                        if (throwable != null || !Boolean.TRUE.equals(success)) {
+                            entry.dirty = true;
+                            if (throwable != null) {
+                                SRE.LOGGER.warn("Failed to save backpack part for {}", player.getUUID(), throwable);
+                            } else {
+                                reloadFromDatabase(player, entry);
+                            }
+                        } else if (!entry.online) {
+                            if (entry.dirty) flushAsync(player, entry);
+                            else ENTRIES.remove(player.getUUID(), entry);
                         }
-                    }
+                    });
                 });
     }
 
@@ -851,5 +908,6 @@ public final class BackpackManager {
         private volatile long lastFlushAt;
         private volatile long lastLoadAttemptAt;
         private long lastMigrationAttemptAt;
+        private long lastExternalRefreshAt;
     }
 }

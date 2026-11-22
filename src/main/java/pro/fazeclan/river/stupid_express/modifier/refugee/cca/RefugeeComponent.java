@@ -16,6 +16,7 @@
 package pro.fazeclan.river.stupid_express.modifier.refugee.cca;
 
 import io.wifi.starrailexpress.SRE;
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.*;
@@ -37,6 +38,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -49,6 +51,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.component.DeathPenaltyComponent;
 import org.agmas.noellesroles.component.DefibrillatorComponent;
@@ -56,6 +59,9 @@ import org.agmas.noellesroles.content.item.GroselleJourneyManager;
 import org.agmas.noellesroles.game.roles.innocence.fool.TarotAssemblyManager;
 import org.agmas.noellesroles.game.roles.killer.warlock.WarlockDomainManager;
 import org.agmas.noellesroles.role_data.neutral.MonokumaRoleData;
+import org.agmas.noellesroles.game.moment.MomentManager;
+import org.agmas.noellesroles.game.moment.MomentType;
+import org.agmas.noellesroles.role_data.neutral.AmonRoleData;
 import org.agmas.noellesroles.api.time.TimeRewind;
 import org.agmas.noellesroles.api.time.TimeRewindAreaResult;
 import org.agmas.noellesroles.api.time.TimeRewindAreaSnapshot;
@@ -90,6 +96,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
     public HashMap<UUID, PlayerStatsBeforeRefugee> players_stats = new HashMap<>();
     /** Full snapshots replacing the old partial loose-end rewind. */
     private final HashMap<UUID, TimeRewindSnapshot> playerTimeRewindSnapshots = new HashMap<>();
+    /** 阿蒙专用兜底节点：完整回溯失败时也不能丢失服务端职业数据。 */
+    private final HashMap<UUID, CompoundTag> suspendedAmons = new HashMap<>();
     private TimeRewindAreaSnapshot areaTimeRewindSnapshot;
     private final Level level;
 
@@ -104,6 +112,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         this.isPendingRestore = false;
         this.players_stats.clear();
         this.playerTimeRewindSnapshots.clear();
+        this.suspendedAmons.clear();
         this.areaTimeRewindSnapshot = null;
     }
 
@@ -152,6 +161,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 continue;
             }
             if (!data.isRevive && currentTime >= data.revivalTime) {
+                if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksRevival(player)) continue;
                 reviveLooseEnd(data);
                 data.isRevive = true;
             }
@@ -223,6 +233,11 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         if (player == null) {
             return; // Player is offline
         }
+        // 布袋鬼判死是终局死亡：亡命徒的群体复活也不能把标记目标拉回来。
+        if (org.agmas.noellesroles.game.roles.killer.ma_chen_xu.SackGhostItems.isFinalDeath(player)) {
+            data.isDead = true;
+            return;
+        }
 
         var i = GameUtils.roomToPlayer.get(data.uuid);
         if (i == null) {
@@ -236,10 +251,14 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         WorldModifierComponent.KEY.get(player.serverLevel()).removeModifier(data.uuid, SEModifiers.REFUGEE);
 
         final var areasWorldComponent = AreasWorldComponent.KEY.get(serverLevel);
-        final var roomPosition = areasWorldComponent.getRoomPosition(i);
-        // Teleport to death location
-        player.teleportTo(serverLevel, roomPosition.x, roomPosition.y, roomPosition.z, player.getYRot(),
-                player.getXRot());
+        // 出生点房间统一解析：训练场假人是它的初始点位；旧存档没有登记坐标时仍回退房间锚点。
+        Vec3 roomPosition = GameUtils.getPlayerRoomSpawnPos(player);
+        if (roomPosition == null) roomPosition = data.spawnPos;
+        if (roomPosition == null) roomPosition = areasWorldComponent.getRoomPosition(i);
+        if (roomPosition != null) {
+            player.teleportTo(serverLevel, roomPosition.x, roomPosition.y, roomPosition.z, player.getYRot(),
+                    player.getXRot());
+        }
         SREArmorPlayerComponent armorCCA = SREArmorPlayerComponent.KEY.get(player);
         int size = serverLevel.getPlayers(GameUtils::isPlayerAliveAndSurvival).size();
         armorCCA.addArmor((Math.clamp(size / 6, 1, 3)));
@@ -259,7 +278,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         List<Entity> bodiesToRemove = new ArrayList<>();
         for (var body : bodies) {
             if (body instanceof PlayerBodyEntity bodyEntity) {
-                if (bodyEntity.getPlayerUuid().equals(data.uuid)) {
+                if (data.uuid != null && data.uuid.equals(bodyEntity.getPlayerUuid())) {
                     bodiesToRemove.add(body);
                     break;
                 }
@@ -307,7 +326,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         serverLevel.players().forEach(p -> {
             ServerPlayNetworking.send(p, new TriggerStatusBarPayload("loose_end"));
             p.playNotifySound(SoundEvents.WITHER_DEATH, SoundSource.PLAYERS, 1.0f, 1.0f);
-            p.addEffect(new MobEffectInstance(MobEffects.WEAVING, 150 * 20, 0, false, false));
+            p.addEffect(new MobEffectInstance(ModEffects.PURGATORY, 150 * 20, 0, false, false));
             p.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 40, 0, false, false));
             p.playNotifySound(SoundEvents.WITHER_SPAWN, SoundSource.PLAYERS, 1.0f, 1.0f);
 
@@ -315,6 +334,10 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                     true);
         });
         isAnyRevivals = true;
+        // 亡命徒时刻插队：暂停其它时刻并让位（其它时刻进度冻结，音乐切换到亡命徒音乐）
+        MomentManager.yieldToDesperado(serverLevel);
+        // 回放记录：难民修饰符触发亡命徒时刻
+        ReplayEventLog.record("replay.event.moment.refugee", ReplayEventLog.player(player));
         var gameWorldComponent = SREGameWorldComponent.KEY.get(this.level);
         // 给所有鹈鹕玩家施加技能禁用效果，持续时间与亡命徒时刻一致（3000 ticks = 150秒）
         for (var p : serverLevel.players()) {
@@ -330,9 +353,13 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
+        // 先关闭专属轮盘并返还背包，回溯节点不能保存已清理黑室或临时库存。
+        org.agmas.noellesroles.game.roles.neutral.roulette_devil.RouletteDevilSessions
+                .cancelAllForRefugee(serverLevel.getServer());
         List<ServerPlayer> players = serverLevel.getServer().getPlayerList().getPlayers();
         players_stats.clear();
         playerTimeRewindSnapshots.clear();
+        suspendedAmons.clear();
         for (var player : players) {
             boolean isAlive = GameUtils.isPlayerAliveAndSurvival(player);
             if (isAlive) {
@@ -347,6 +374,12 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                     srePlayerShopComponent.sync();
                 }
                 players_stats.put(player.getUUID(), PlayerStatsBeforeRefugee.SaveFromPlayer(player, true));
+                AmonRoleData amon = RoleData.getNullable(AmonRoleData.class, player);
+                if (amon != null) {
+                    CompoundTag state = new CompoundTag();
+                    amon.writeToRewindNbt(state, player.registryAccess());
+                    suspendedAmons.put(player.getUUID(), state);
+                }
                 try {
                     playerTimeRewindSnapshots.put(player.getUUID(), TimeRewind.capture(player));
                 } catch (RuntimeException exception) {
@@ -361,6 +394,17 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         } catch (RuntimeException exception) {
             areaTimeRewindSnapshot = null;
             StupidExpress.LOGGER.error("Failed to capture loose-end game-area rewind", exception);
+        }
+        // 所有人（含宿主）的节点保存完毕后才旁观，不能将旁观模式写进恢复节点。
+        for (var player : players) {
+            if (suspendedAmons.containsKey(player.getUUID())) {
+                AmonRoleData amon = RoleData.getNullable(AmonRoleData.class, player);
+                if (amon != null)
+                    amon.suspendForRefugee();
+            }
+            // 与阿蒙一致：所有存活节点保存后才旁观，不走真正死亡和轮盘败局结算。
+            org.agmas.noellesroles.game.roles.neutral.roulette_devil.RouletteDevilRole
+                    .suspendForRefugee(player);
         }
         SREGameWorldComponent.KEY.get(level).sync();
     }
@@ -381,13 +425,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             }
         }
         WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(this.level);
-        var pendingSmoothRestores = new java.util.concurrent.atomic.AtomicInteger();
-        var schedulingFinished = new AtomicBoolean(false);
-        Runnable finishWhenReady = () -> {
-            if (schedulingFinished.get() && pendingSmoothRestores.get() == 0) {
-                finishLooseEndRestore(serverLevel, capturedArea, bodies);
-            }
-        };
+        // 当前使用同步 TimeRewind.restore，无异步回调需要等待。
         // 给予 2 tick 的deathPenalty
         for (var player : players) {
             {
@@ -421,7 +459,6 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
 
                 if (snapshot != null) {
                     PlayerStatsBeforeRefugee.invokeBeforeLoad(player);
-                    pendingSmoothRestores.incrementAndGet();
                     TimeRewindResult result = TimeRewind.restore(player, snapshot);
                     finishLooseEndPlayer(player, r, data, wasAlive, true, result,
                             gameWorldComponent, worldModifierComponent, bodies);
@@ -434,8 +471,7 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             }
         }
         SREGameWorldComponent.getInstance(serverLevel).refreshPsychoCount(true);
-        schedulingFinished.set(true);
-        finishWhenReady.run();
+        finishLooseEndRestore(serverLevel, capturedArea, bodies);
     }
 
     private void finishLooseEndPlayer(ServerPlayer player, io.wifi.starrailexpress.api.SRERole role,
@@ -500,6 +536,16 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
                 StupidExpress.LOGGER.error("Failed to restore loose-end game-area rewind", exception);
             }
         }
+        // 所有宿主及区域都已复原，再恢复阿蒙的附身/伪装/终幕表现。
+        for (var entry : suspendedAmons.entrySet()) {
+            ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(entry.getKey());
+            if (player == null || !SREGameWorldComponent.KEY.get(player.level()).isRole(player, ModRoles.AMON))
+                continue;
+            AmonRoleData amon = RoleData.getNullable(AmonRoleData.class, player);
+            if (amon != null)
+                amon.resumeAfterRefugee(entry.getValue());
+        }
+        suspendedAmons.clear();
         SREGameWorldComponent.KEY.get(level).sync();
         bodies.clear();
         ModEventsRegister.reJudgeSpectatorsPenalty(level);
@@ -581,14 +627,16 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             ServerPlayNetworking.send(p, new RemoveStatusBarPayload("loose_end"));
             p.playNotifySound(SoundEvents.ENDER_DRAGON_DEATH, SoundSource.PLAYERS, 1.0f, 1.0f);
             p.addEffect(new MobEffectInstance(ModEffects.BLACK_MONITOR, 40, 0, false, false));
-            if (p.hasEffect(MobEffects.WEAVING)) {
-                p.removeEffect(MobEffects.WEAVING);
+            if (p.hasEffect(ModEffects.PURGATORY)) {
+                p.removeEffect(ModEffects.PURGATORY);
             }
             p.displayClientMessage(Component.translatable("gui.stupid_express.refugee.all_death"), true);
             StopSound(p, StupidExpress.SOUND_REGUGEE.getLocation(), SoundSource.AMBIENT);
         });
 
         LoadPlayersStats();
+        // 亡命徒时刻结束（时间回溯已完成）：恢复被暂停的旧时刻与音乐
+        MomentManager.resumeFromDesperado(sp.serverLevel());
         players_stats.clear(); // 清空玩家位置信息，避免浪费资源
         playerTimeRewindSnapshots.clear();
         areaTimeRewindSnapshot = null;
@@ -608,7 +656,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
     public void addPendingRevival(UUID uuid, double x, double y, double z) {
         // 2 minutes = 120 seconds = 2400 ticks
         long revivalTime = level.getGameTime() + 2400;
-        pendingRevivals.add(new RefugeeData(uuid, revivalTime, false));
+        // 记录死亡时登记的出生点房间（训练场假人即初始点位），复活时不能丢弃。
+        pendingRevivals.add(new RefugeeData(uuid, revivalTime, false, new Vec3(x, y, z)));
         this.sync();
     }
 
@@ -650,10 +699,14 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             ListTag list = tag.getList("pending_revivals", Tag.TAG_COMPOUND);
             for (int i = 0; i < list.size(); i++) {
                 CompoundTag item = list.getCompound(i);
+                Vec3 spawnPos = item.contains("spawn_x")
+                        ? new Vec3(item.getDouble("spawn_x"), item.getDouble("spawn_y"), item.getDouble("spawn_z"))
+                        : null;
                 pendingRevivals.add(new RefugeeData(
                         item.getUUID("uuid"),
                         item.getLong("revival_time"),
-                        item.getBoolean("is_revive")));
+                        item.getBoolean("is_revive"),
+                        spawnPos));
             }
         }
         isAnyRevivals = tag.getBoolean("isAnyRevivals");
@@ -666,6 +719,11 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
             item.putUUID("uuid", data.uuid);
             item.putLong("revival_time", data.revivalTime);
             item.putBoolean("is_revive", data.isRevive);
+            if (data.spawnPos != null) {
+                item.putDouble("spawn_x", data.spawnPos.x);
+                item.putDouble("spawn_y", data.spawnPos.y);
+                item.putDouble("spawn_z", data.spawnPos.z);
+            }
 
             list.add(item);
         }
@@ -676,6 +734,8 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
     public static class RefugeeData {
         final UUID uuid;
         long revivalTime;
+        /** 死亡时登记的出生点房间（训练场假人即初始点位）；旧数据可能为空。 */
+        Vec3 spawnPos;
 
         public boolean isRevive() {
             return isRevive;
@@ -697,19 +757,20 @@ public class RefugeeComponent implements AutoSyncedComponent, ServerTickingCompo
         boolean isRevive, isDead = false;
 
         RefugeeData(UUID uuid, long revivalTime, boolean isRevive) {
+            this(uuid, revivalTime, isRevive, null);
+        }
+
+        RefugeeData(UUID uuid, long revivalTime, boolean isRevive, Vec3 spawnPos) {
             this.uuid = uuid;
             this.revivalTime = revivalTime;
             this.isRevive = isRevive;
-
+            this.spawnPos = spawnPos;
         }
     }
 
     public void reset() {
-        this.players_stats.clear();
+        this.clear();
         this.isAnyRevivals = false;
-        this.pendingRevivals.clear();
-        this.isPendingRestore = false;
-        this.pendingWho = null;
         this.sync();
     }
 

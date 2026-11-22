@@ -40,6 +40,7 @@ public class XiaoNaoHandler {
     public static void registerEvent() {
         TeamKillViolationHandler.registerEvent();
         OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason) -> {
+            if (io.wifi.starrailexpress.training.TrainingRules.suppressFriendlyPenalty(victim)) return;
             if (killer == null)
                 return;
             if (victim.getUUID().equals(killer.getUUID()))
@@ -48,6 +49,14 @@ public class XiaoNaoHandler {
             final SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
             if (GameUtils.isPlayerAliveAndSurvival(killer)) {
                 if (isInnocent) {
+                    // 复制了好人能力的克隆仍是杀手：双方任一为实际杀手，都不算好人误杀。
+                    // 注意用「真实阵营」判定：隐藏身份为杀手阵营的职业（魔术师）真实仍是平民，
+                    // 不能在这里被一刀切豁免，必须继续走到下方 canBeXiaonao / canXiaonao，
+                    // 由职业自己决定小脑收不收得到（魔术师：可以被小脑，但不能小脑别人）。
+                    if (gameWorldComponent.isActualKillerTeam(killer.getUUID())
+                            || gameWorldComponent.isActualKillerTeam(victim.getUUID())) {
+                        return;
+                    }
                     if (gameWorldComponent.isRole(victim, TMMRoles.DISCOVERY_CIVILIAN)) {
                         // 跳过游客惩罚
                         return;
@@ -111,8 +120,8 @@ public class XiaoNaoHandler {
                         }
                     }
                 } else {
-                    var victimRole = gameWorldComponent.getRole(victim);
-                    var killerRole = gameWorldComponent.getRole(victim);
+                    var victimRole = gameWorldComponent.getAllegianceRole(victim);
+                    var killerRole = gameWorldComponent.getAllegianceRole(killer);
                     if (victimRole == null || killerRole == null)
                         return;
                     if (victimRole.isKiller() && !victimRole.isNeutrals() && killerRole.isKiller()

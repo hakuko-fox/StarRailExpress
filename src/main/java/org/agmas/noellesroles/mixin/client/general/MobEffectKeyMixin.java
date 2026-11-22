@@ -44,6 +44,11 @@ public abstract class MobEffectKeyMixin {
         final LocalPlayer player = instance.player;
         if (player == null)
             return false;
+        // 伪人复用技能键申请短暂手控；必须越过自身持续刷新的技能禁用效果。
+        if (this.same(NoellesrolesClient.abilityBind)
+                && org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.isReplaced(player)) {
+            return false;
+        }
         final var options = instance.options;
         if (MirrorReunionSceneManager.INSTANCE.blocksPlayerControl()) {
             if (this.same(options.keyJump) || this.same(options.keyLeft) || this.same(options.keyRight)
@@ -69,6 +74,11 @@ public abstract class MobEffectKeyMixin {
         if (player.hasEffect(ModEffects.MOVE_BANED) || player.hasEffect(ModEffects.GHOST_CURSE)) {
             if (this.same(options.keyJump) || this.same(options.keyLeft) || this.same(options.keyRight)
                     || this.same(options.keyUp) || this.same(options.keyShift) || this.same(options.keyDown))
+                return true;
+        }
+        if (player.hasEffect(ModEffects.MOVEMENT_KEY_BLOCK)) {
+            if (this.same(options.keyLeft) || this.same(options.keyRight)
+                    || this.same(options.keyUp) || this.same(options.keyDown))
                 return true;
         }
 

@@ -31,6 +31,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.event.OnPlayerDeathWithBody;
 import org.agmas.noellesroles.game.roles.innocence.nurse.NurseRole;
+import org.agmas.noellesroles.game.roles.innocence.central_control.CentralControlRole;
 import org.agmas.noellesroles.game.roles.killer.boom_maniac.BoomManiacRole;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
@@ -122,6 +123,7 @@ import org.agmas.noellesroles.role_data.neutral.PhantomMusicianRoleData;
 import org.agmas.noellesroles.role_data.killer.ImitatorRoleData;
 import org.agmas.noellesroles.role_data.killer.NiaoshoushouRoleData;
 import org.agmas.noellesroles.role_data.special.SuperLooseEndRoleData;
+import org.agmas.noellesroles.game.roles.innocence.magician.MagicianDisguiseHelper;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.role.touhou.THLostForestRoles;
@@ -199,6 +201,12 @@ public class ModRolesInitialEventRegister {
                     // 随机分配一个杀手身份给魔术师（原版杀手、毒师和清道夫除外）
                     if (magicianComponent != null) {
                         magicianComponent.startDisguiseRandomRole();
+                        // 被动——伪装大师：开局获得伪装职业的初始物品与初始药水效果（无敌效果除外）。
+                        // 只对魔术师生效，共用同一份 RoleData 的辉夜不受影响。
+                        if (RoleUtils.compareRole(role, ModRoles.MAGICIAN)) {
+                            MagicianDisguiseHelper.grantDisguiseKit(player,
+                                    MagicianDisguiseHelper.resolveDisguisedRole(player));
+                        }
                     }
                 }
                 // 检查是否有指挥官，如果有则加入指挥官频道
@@ -301,6 +309,8 @@ public class ModRolesInitialEventRegister {
             }
             if (role.identifier().equals(ModRoles.GUEST_GHOST.identifier())) {
                 SREPlayerShopComponent.KEY.get(player).setBalance(100);
+                SREPlayerShopComponent.KEY.get(player).sync();
+                if (player instanceof ServerPlayer sp) org.agmas.noellesroles.game.roles.killer.ma_chen_xu.SackGhostItems.giveRelic(sp);
             }
 
             if (role.equals(ModRoles.BROADCASTER)) {
@@ -420,15 +430,7 @@ public class ModRolesInitialEventRegister {
             // 画家角色初始化（init 由 RoleData 在职业赋予时自动调用）
             // 葬仪角色初始化（数据由 RoleData 在职业赋予时自动初始化）
             // 幻音师角色初始化（init 由 RoleData 在职业赋予时自动调用）
-            if (role.equals(ModRoles.GODFATHER)) {
-                if (player instanceof ServerPlayer sp) {
-                    for (var p : sp.serverLevel().players()) {
-                        if (p != null) {
-                            p.playNotifySound(NRSounds.MAFIA, SoundSource.MASTER, 1.0F, 1.0F);
-                        }
-                    }
-                }
-            }
+            // 教父入场音效统一由 NRGameStateEvents 在 OnGameTrueStarted 后播放，避免与开局播报重复。
             // 如果不拦截就同步
         });
 
@@ -572,6 +574,35 @@ public class ModRolesInitialEventRegister {
                         .recordReplay()
                         .announceToSelf(false)
                         .build());
+
+        // 雪傀儡【推出雪球】：把正在推的雪球猛地推出去。
+        // 冷却 30 秒，由默认技能 HUD（showOnHud）在客户端显示冷却；
+        // handler 返回 false（没有雪球可推）时不消耗冷却，见 RoleSkill 的 used 判定。
+        RoleSkill.register(ModRoles.SNOW_GOLEM,
+                RoleSkill.skill(SRE.id("snow_golem_push_snowball"),
+                        "skill.noellesroles.snow_golem.push_snowball",
+                        context -> org.agmas.noellesroles.game.roles.neutral.snow_golem.SnowGolemRole
+                                .launchSnowball(context.player()))
+                        .cooldownSeconds(30)
+                        .showOnHud(true)
+                        .announceToSelf(false)
+                        .build());
+
+        // 金属怪：两个非 shifted 技能，按 V 键在「钢卷形态」与「致命强化」之间切换。
+        // 一技能可 toggle（钢卷形态中再按一次变回人形并进入 30 秒冷却）；二技能开局 120 秒冷却。
+        RoleSkill.register(ModRoles.METAL_MONSTER,
+                RoleSkill.skill(SRE.id("metal_monster_roll"),
+                        "skill.noellesroles.metal_monster.roll",
+                        context -> org.agmas.noellesroles.game.roles.neutral.metal_monster.MetalMonsterRole
+                                .toggleRoll(context, context.skillReady()))
+                        .cooldownSeconds(30).toggleable(true)
+                        .showOnHud(true).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("metal_monster_lethal"),
+                        "skill.noellesroles.metal_monster.lethal",
+                        context -> org.agmas.noellesroles.game.roles.neutral.metal_monster.MetalMonsterRole
+                                .activateLethal(context.player()))
+                        .cooldownSeconds(120).initialCooldownSeconds(120)
+                        .showOnHud(true).announceToSelf(false).build());
 
         RoleSkill.register(ModRoles.LIN_FAMILY,
                 RoleSkill.skill(SRE.id("lin_family_generosity"),
@@ -926,6 +957,32 @@ public class ModRolesInitialEventRegister {
                     return true; // 进入冷却
                 }).cooldownSeconds(120)
                         .showOnHud(true).build());
+
+        // ==================== 中控员技能注册 ====================
+        // 多技能：按技能切换键（V/Y）循环选择，按技能键（G）释放当前选中的技能。
+        // 每个技能的冷却 / 次数都由统一技能系统按 skillId 单独记录，因此这里各写各的冷却。
+        // - 一技能 动态模块：冷却 20 秒，不花钱
+        // - 二技能 红外线扫描仪：花 150 金币，冷却 90 秒
+        // - 三技能 激光模块：花 200 金币，一局仅 1 次（charges(1)）
+        // 注意：RoleSkill.register 是整体覆盖，所以三个技能必须在同一次调用里注册完。
+        // 中控员有自己的 HUD（CentralControlHud），所以这里一律 showOnHud(false)，
+        // 不占用统一技能 HUD 的位置。
+        RoleSkill.register(ModRoles.CENTRAL_CONTROL,
+                RoleSkill.skill(SRE.id("central_control_dynamic_module"),
+                        "skill.noellesroles.central_control.dynamic_module",
+                        context -> CentralControlRole.installDynamicModule(context.player()))
+                        .cooldownSeconds(CentralControlRole.DYNAMIC_MODULE_COOLDOWN_SECONDS)
+                        .announceToSelf(false).showOnHud(false).build(),
+                RoleSkill.skill(SRE.id("central_control_infrared_scanner"),
+                        "skill.noellesroles.central_control.infrared_scanner",
+                        context -> CentralControlRole.installInfraredScanner(context.player()))
+                        .cooldownSeconds(CentralControlRole.INFRARED_SCANNER_COOLDOWN_SECONDS)
+                        .announceToSelf(false).showOnHud(false).build(),
+                RoleSkill.skill(SRE.id("central_control_laser_module"),
+                        "skill.noellesroles.central_control.laser_module",
+                        context -> CentralControlRole.installLaserModule(context.player()))
+                        .charges(1)
+                        .announceToSelf(false).showOnHud(false).build());
 
         // 幻音师技能注册：花费100金币传送到30格外随机一人的身边
         RoleSkill.register(ModRoles.PHANTOM_MUSICIAN, context -> {
@@ -1456,30 +1513,16 @@ public class ModRolesInitialEventRegister {
                             return true;
                         }).shifted(true).build());
 
-        // 布袋鬼鬼术注册：4 个鬼术作为可选槽位（V 切换、G 释放、Sneak+G 开里世界大招）。
-        // 冷却/门控由 MaChenXuRoleData 自有逻辑负责（cooldownTicks=0 让引擎不拦截），
-        // announceToSelf(false) 由组件自定义提示。槽位顺序须与 MaChenXuRoleData.ART_ORDER 一致。
+        // 两个固定技能：普通技能键抽取诡物，潜行技能键展开里世界，物品右键自行施法。
         RoleSkill.register(ModRoles.MA_CHEN_XU,
-                RoleSkill.skill(SRE.id("ma_chen_xu_veil"), "hud.noellesroles.ma_chen_xu.skill.veil",
-                        context -> {
-                            var d = RoleData.getNullable(MaChenXuRoleData.class, context.player());
-                            return d != null && d.onGhostArt("veil");
-                        }).announceToSelf(false).build(),
-                RoleSkill.skill(SRE.id("ma_chen_xu_effigy"), "hud.noellesroles.ma_chen_xu.skill.effigy",
-                        context -> {
-                            var d = RoleData.getNullable(MaChenXuRoleData.class, context.player());
-                            return d != null && d.onGhostArt("effigy");
-                        }).announceToSelf(false).build(),
-                RoleSkill.skill(SRE.id("ma_chen_xu_wail"), "hud.noellesroles.ma_chen_xu.skill.wail",
-                        context -> {
-                            var d = RoleData.getNullable(MaChenXuRoleData.class, context.player());
-                            return d != null && d.onGhostArt("wail");
-                        }).announceToSelf(false).build(),
-                RoleSkill.skill(SRE.id("ma_chen_xu_seize"), "hud.noellesroles.ma_chen_xu.skill.seize",
-                        context -> {
-                            var d = RoleData.getNullable(MaChenXuRoleData.class, context.player());
-                            return d != null && d.onGhostArt("seize");
-                        }).announceToSelf(false).build());
+                RoleSkill.skill(SRE.id("sack_ghost_draw"), "skill.noellesroles.sack.draw", context -> {
+                    var data = RoleData.getNullable(MaChenXuRoleData.class, context.player());
+                    return data != null && data.drawArt();
+                }).announceToSelf(false).build(),
+                RoleSkill.skill(SRE.id("sack_ghost_realm"), "skill.noellesroles.sack.realm", context -> {
+                    var data = RoleData.getNullable(MaChenXuRoleData.class, context.player());
+                    return data != null && (data.otherworldActive ? data.drawArt() : data.usePrayerRain());
+                }).shifted(true).announceToSelf(false).build());
 
         RoleSkill.register(ModRoles.WRAITH_ASSASSIN,
                 RoleSkill.skill(SRE.id("wraith_assault"), "skill.noellesroles.wraith_assassin.assault",
@@ -1828,6 +1871,25 @@ public class ModRolesInitialEventRegister {
         StarGathererRoleData.registerEvents();
         // 星之权杖不绑定职业：待降落的星星由全局 tick 推进，任何持有者释放都能正常落下
         org.agmas.noellesroles.content.item.StarScepterItem.registerTick();
+
+        // 黑白熊技能：吃竹子（仅真黑白熊可用，小黑白熊不能触发）。
+        // 5 秒内体型×2、周围 6 格存活玩家缓慢 I、黑白熊无法移动；冷却 60 秒。
+        RoleSkill.register(ModRoles.MONOKUMA,
+                RoleSkill.skill(SRE.id("monokuma_eat_bamboo"),
+                        "skill.noellesroles.monokuma.eat_bamboo",
+                        context -> {
+                            ServerPlayer player = context.player();
+                            if (player.isSpectator())
+                                return false;
+                            var data = RoleData.getNullable(
+                                    org.agmas.noellesroles.role_data.neutral.MonokumaRoleData.class,
+                                    player);
+                            return data != null && data.startEatBamboo(player);
+                        })
+                        .cooldownSeconds(org.agmas.noellesroles.role_data.neutral.MonokumaRoleData.EAT_BAMBOO_COOLDOWN_SECONDS)
+                        .showOnHud(true)
+                        .announceToSelf(true)
+                        .build());
     }
 
 }

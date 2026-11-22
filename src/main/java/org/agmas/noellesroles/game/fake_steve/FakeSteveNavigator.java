@@ -12,36 +12,110 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package org.agmas.noellesroles.game.fake_steve;
 
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.content.block.SmallDoorBlock;
+import io.wifi.starrailexpress.content.block_entity.SmallDoorBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BubbleColumnBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.tags.FluidTags;
+import org.agmas.noellesroles.content.entity.LockEntityManager;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
+import java.util.function.Predicate;
 
-/** Bounded, player-sized A* used by possessed bodies. */
+/**
+ * 玩家尺寸的三维导航：楼梯、落差、门、梯子和有方向的水电梯共用一张图。
+ *
+ * <h2>与地图配置的关系</h2>
+ * 搜索是否可行必须服从 {@link FakeSteveNavRules}（禁跳 / 禁游 / 最大落差），否则会产出
+ * 「地图不允许、身体做不到或会被环境判死」的路线：
+ * <ul>
+ * <li><b>禁跳</b>：抬升上限从 {@link #MAX_JUMP_RISE} 降到 {@link FakeStevePathPolicy#STEP_HEIGHT}，
+ * 楼梯与半砖仍可走（原版自动抬脚不依赖跳跃输入）；</li>
+ * <li><b>禁游</b>：水面直接不可站，A* 只能找陆路；找不到就返回「未到达」交给上层退避；</li>
+ * <li><b>落差</b>：向下扩展的深度取 {@link FakeSteveNavRules#maxFallDistance()}，
+ * 而不是写死的三格。</li>
+ * </ul>
+ *
+ * <h2>与原版 {@code PathFinder} 的裁剪参数对应</h2>
+ * 原版寻路的开销几乎全部由四个参数决定，这里逐个对齐（详见 {@code docs/fake-steve-pathfinding.md}）：
+ * <ul>
+ * <li><b>最大距离 {@code l}</b> → {@link SearchWorld#prepare} 里的 {@code maxPathDistance}，
+ * 累计<b>几何路径距离</b>超过它就剪掉；</li>
+ * <li><b>查找边距 {@code n}</b> → 搜索半径 {@code l + n}，超出半径的节点连方块都不读；</li>
+ * <li><b>到达范围 {@code r}</b> → {@link #arrival}，目标格不可站时接受曼哈顿 ≤ 1 的邻格，
+ * 避免「目标永远不可达」导致每 30 tick 空转重算；</li>
+ * <li><b>最大访问节点数 {@code c = l × v}</b> → {@link #budgetFor}，预算随目标距离缩放，
+ * 近处巡逻不再固定烧掉满额预算。</li>
+ * </ul>
+ *
+ * <h2>性能约定</h2>
+ * 本类的每个方法都会被 A* 反复调用，因此<b>方块状态与碰撞形状一律走 {@link SearchWorld} 的缓存</b>，
+ * 只有 {@code SearchWorld} 内部允许直接访问 {@code ServerLevel}。静态工具方法（
+ * {@code standable} / {@code standingY} 等）保留给「一次性」调用方与测试，不参与搜索热路径。
+ */
 final class FakeSteveNavigator {
-    private static final int MAX_VISITED = 1024;
-    private static final Direction[] HORIZONTAL = {
+    /** 单次搜索的节点预算上限。原版是「最大距离 × 最大访问节点比率」，这里给硬上界兜底。 */
+    private static final int MAX_VISITED = 2048;
+    /**
+     * 每格水平距离折算的节点预算。
+     *
+     * <p>
+     * 原版 {@code c = l × v}：搜索范围越大，允许展开的节点越多。伪人的巡逻目标通常只有十几格，
+     * 用固定 2048 会让短距离搜索也保留一份满额预算的开放集——这是纯浪费。
+     */
+    private static final int VISITED_PER_BLOCK = 48;
+    /** 预算下限：再近的目标也要留出绕开一堵墙的余地。 */
+    private static final int MIN_VISITED = 256;
+    private static final double HALF_WIDTH = 0.305D;
+    private static final double HEIGHT = 1.8D;
+    /** 搜索半径的硬上限（切比雪夫），防止异常目标把整片区块读进来。 */
+    private static final double HARD_RADIUS = 96.0D;
+    /** 垂直搜索半径的硬上限。 */
+    private static final double HARD_VERTICAL_RADIUS = 32.0D;
+    /** 查找边距 {@code n}：在「最大距离」之外额外放宽的格数。 */
+    private static final double SEARCH_MARGIN = 16.0D;
+    /** 最大路径距离相对直线距离的倍数：允许绕远 60%，再多就不值得找了。 */
+    private static final double DETOUR_FACTOR = 1.6D;
+    /** 最大路径距离的附加余量，保证「贴脸目标」也有足够余量绕过一格厚的墙。 */
+    private static final double DETOUR_SLACK = 8.0D;
+    /** 需要伪人自己动手开的门，每跨一格加收的代价。 */
+    static final double DOOR_OPEN_COST = 1.5D;
+    /**
+     * 同一水平坐标上尝试落脚的高度顺序：同层 → 上一层 → 下一层 → 更深两层。
+     *
+     * <p>
+     * 顺序固定，因此「上层够得着就优先跳上去」这种副作用不会发生；也保证运行时按同一条规则
+     * 就能走到规划出来的那个节点。原版同样「同一水平坐标只选最低的可达位置」。
+     */
+    private static final int[] VERTICAL_OFFSETS = {0, 1, -1, -2, -3};
+    /** 危险邻居（火/岩浆/伤害方块）的额外代价，对齐原版 {@code FIRE_IN_NEIGHBOR} 的 8。 */
+    static final double DAMAGING_NEIGHBOR_COST = 8.0D;
+    /** 水岸（相邻格是水）的额外代价，对齐原版 {@code WATER_BORDER} 的 8。 */
+    static final double WATER_BORDER_COST = 8.0D;
+    /** 跳跃可以到达的最大抬升（格）：玩家跳跃上限约 1.25 格。 */
+    static final double MAX_JUMP_RISE = 1.25D;
+    /** 旧网格适配器共用的水平邻接顺序，保留路线判定的确定性。 */
+    static final Direction[] HORIZONTAL = {
             Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST
     };
 
@@ -52,89 +126,143 @@ final class FakeSteveNavigator {
         return find(level, mover, goal, false);
     }
 
+    /**
+     * 从身体当前位置寻路到 {@code goal}。
+     *
+     * @param explicitTarget 追击/潜行/同化这类「明确目标」会放宽节点预算
+     * @return 路点队列（第一个是下一个要走到的格子）；无路可走时返回空队列
+     */
     static ArrayDeque<BlockPos> find(ServerLevel level, LivingEntity mover, BlockPos goal,
-                                     boolean explicitTarget) {
-        BlockPos start = mover.blockPosition();
-        Set<BlockPos> occupied = occupiedByPlayers(level, mover);
-        PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingDouble(Node::score));
-        Map<BlockPos, BlockPos> cameFrom = new HashMap<>();
-        Map<BlockPos, Integer> cost = new HashMap<>();
-        Set<BlockPos> closed = new HashSet<>();
-        BlockPos normalizedStart = normalize(level, start);
-        BlockPos normalizedGoal = normalize(level, goal);
-        if (FakeStevePathPolicy.shouldPreferDirectRoute(explicitTarget,
-                hasDirectWalkCorridor(level, normalizedStart, normalizedGoal, occupied))) {
-            ArrayDeque<BlockPos> direct = new ArrayDeque<>();
-            direct.add(normalizedGoal.immutable());
-            return direct;
-        }
-        boolean jumpsAllowed = SREGameWorldComponent.KEY.get(level).isJumpAvailable();
-        int visitBudget = explicitTarget ? MAX_VISITED * 2 : MAX_VISITED;
-        BlockPos best = normalizedStart;
-        int bestDistance = distance(normalizedStart, goal);
-        cost.put(normalizedStart, 0);
-        open.add(new Node(normalizedStart, bestDistance));
+            boolean explicitTarget) {
+        return search(level, mover, goal, explicitTarget).path();
+    }
 
-        while (!open.isEmpty() && closed.size() < visitBudget) {
-            BlockPos current = open.remove().pos();
-            if (!closed.add(current)) {
-                continue;
-            }
-            int currentDistance = distance(current, goal);
-            if (currentDistance < bestDistance) {
-                best = current;
-                bestDistance = currentDistance;
-            }
-            if (currentDistance <= 1) {
-                best = current;
-                break;
-            }
-            for (BlockPos next : neighbours(level, current, occupied, jumpsAllowed)) {
-                if (closed.contains(next)) {
-                    continue;
-                }
-                int tentative = cost.get(current) + 1 + Math.abs(next.getY() - current.getY())
-                        + FakeStevePathPolicy.edgePenalty(dropBeside(level, next))
-                        + FakeStevePathPolicy.swimPenalty(openWater(level, next));
-                if (tentative >= cost.getOrDefault(next, Integer.MAX_VALUE)) {
-                    continue;
-                }
-                cameFrom.put(next, current);
-                cost.put(next, tentative);
-                open.add(new Node(next, tentative + distance(next, goal)));
-            }
-        }
+    /**
+     * 与 {@link #find} 相同，但额外返回「是否真的到达目标」与展开节点数。
+     *
+     * <p>
+     * {@code reached == false} 时返回的 path 只是「离目标最近的一段」，调用方必须重新寻路，
+     * 不能把它当成已经到达——否则身体会停在半路却以为自己到点了。
+     */
+    static Result search(ServerLevel level, LivingEntity mover, BlockPos goal,
+            boolean explicitTarget) {
+        return search(new SearchWorld(level, mover), goal, explicitTarget);
+    }
 
-        ArrayDeque<BlockPos> path = new ArrayDeque<>();
-        BlockPos cursor = best;
-        while (!cursor.equals(normalizedStart) && cameFrom.containsKey(cursor)) {
-            path.addFirst(cursor);
-            cursor = cameFrom.get(cursor);
-        }
-        return path;
+    /**
+     * 复用同一个 {@link SearchWorld} 再搜一次。
+     *
+     * <p>
+     * 巡逻时会对多个候选目标连续寻路，候选之间方块大量重叠。共用一份缓存可以把
+     * 「每个候选都重新读一遍方块」降成「整轮只读一遍」，这是伪人 AI 上最划算的一处优化。
+     */
+    static Result search(SearchWorld world, BlockPos goal, boolean explicitTarget) {
+        return search(world, world.origin(), goal, explicitTarget);
+    }
+
+    /**
+     * 指定起点再搜一次。
+     *
+     * <p>
+     * 生产调用永远从 {@link SearchWorld#origin()} 出发；网格单元测试没有「身体位置」，
+     * 需要显式给起点，否则只能为了测试造一个假玩家。
+     */
+    static Result search(SearchWorld world, BlockPos start, BlockPos goal, boolean explicitTarget) {
+        BlockPos from = world.normalize(start);
+        BlockPos destination = world.normalize(goal);
+        world.prepare(from, destination, explicitTarget);
+        var result = FakeStevePathSearch.find(from, arrival(world, destination),
+                pos -> heuristic(pos, destination), world::neighbours,
+                world.budget(), world.maxPathDistance());
+        return new Result(simplify(world, result.path()), result.complete(), result.visited());
+    }
+
+    /**
+     * 一次搜索的结果。
+     *
+     * @param path    路点（已做共线合并，不含起点）
+     * @param reached 是否真的到达了目标；false 时 path 是「离目标最近的一段」
+     * @param visited 本次展开的节点数，用于调参和发现「预算被打满」这类配置问题
+     */
+    record Result(ArrayDeque<BlockPos> path, boolean reached, int visited) {
     }
 
     static boolean reaches(ArrayDeque<BlockPos> path, BlockPos goal) {
         BlockPos last = path.peekLast();
-        return last != null && distance(last, goal) <= 1;
+        return last != null && last.equals(goal);
     }
 
     /**
-     * True when the column can carry a body. A carpet or trapdoor is not support
-     * on its own, so an unbacked one can never be mistaken for a floor.
+     * 到达判定，对应原版的「到达范围 {@code r}」。
+     *
+     * <p>
+     * 原版只在<b>曼哈顿距离 ≤ r</b> 时才算到达；{@code r} 对玩家是 1。之前这里用
+     * {@code destination::equals}，只要目标格本身不可站（任务方块在半空、被玩家占住、
+     * 被门挡住），A* 就永远「未到达」，上层每 30 tick 重新搜一遍，白白烧掉整份预算。
+     *
+     * <p>
+     * 所以：目标可站时仍要求精确相等（路线必须真的走到那一格）；目标不可站时放宽到
+     * 曼哈顿 ≤ 1，让身体走到它旁边就算到位——这与真人「目标够不着就站到最近处」一致。
      */
-    static boolean isStepBlock(BlockState state) {
-        return state.getBlock() instanceof StairBlock
-                || state.getBlock() instanceof SlabBlock;
+    private static Predicate<BlockPos> arrival(SearchWorld world, BlockPos destination) {
+        if (world.standable(destination)) {
+            return destination::equals;
+        }
+        return pos -> pos.distManhattan(destination) <= 1;
+    }
+
+    /**
+     * 欧几里得启发式（可采纳）。
+     *
+     * <p>
+     * 旧实现用 {@code max(dx, dz, |dy|/3)}，在「需要绕远」的迷宫里严重低估，
+     * 于是把大量等价节点都压到同一个 f 值上，开放集迅速膨胀——这正是一次巡逻要跑
+     * 4 次全量 A* 时最贵的部分。这里改用真正的三维欧氏距离：仍然可采纳，
+     * 但在开阔区域能把 f 值拉开，明显减少同分节点。
+     *
+     * <p>
+     * 原版会再乘 1.5 换取速度（并因此放弃最优性）。这里<b>不</b>乘：伪人的路线会被运行时
+     * 的「贴墙切角 / 门 / 电梯」逐段校验，宁可多展开几个节点也要拿到一条真的能走完的路。
+     */
+    private static double heuristic(BlockPos a, BlockPos b) {
+        double dx = a.getX() - b.getX();
+        double dy = a.getY() - b.getY();
+        double dz = a.getZ() - b.getZ();
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    static BlockPos normalize(ServerLevel level, BlockPos pos) {
+        return new SearchWorld(level, null).normalize(pos);
+    }
+
+    /**
+     * 目标不可站时退到最近的可站邻格，让运行时的「到达」判定与 A* 的到达范围一致。
+     *
+     * <p>
+     * {@link #arrival} 允许 A* 在目标不可站时停在曼哈顿 ≤ 1 的邻格。若运行时仍拿原始
+     * 目标坐标当终点，身体走完路线也永远「没到」，于是每 30 tick 重算一次、每次烧掉整份预算。
+     * 这里把终点换成一个真的能站的格子，两边就对齐了。
+     */
+    static BlockPos approach(ServerLevel level, BlockPos goal) {
+        SearchWorld world = new SearchWorld(level, null);
+        BlockPos destination = world.normalize(goal);
+        if (world.standable(destination)) return destination;
+        BlockPos best = destination;
+        double bestDistance = Double.MAX_VALUE;
+        for (Direction direction : HORIZONTAL) {
+            BlockPos side = destination.relative(direction);
+            if (!world.standable(side)) continue;
+            double distance = side.distSqr(goal);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = side;
+            }
+        }
+        return best.immutable();
     }
 
     static boolean safeStand(ServerLevel level, BlockPos pos) {
-        for (int dy : new int[] { 0, 1, -1 }) {
-            if (standable(level, pos.offset(0, dy, 0))) {
-                return true;
-            }
-        }
-        return false;
+        return standable(level, normalize(level, pos));
     }
 
     /** Shared idle destination selection for Fake Steve and Halic's decoy. */
@@ -166,142 +294,24 @@ final class FakeSteveNavigator {
         return null;
     }
 
-    /**
-     * Guard against walking into empty space. Only a real drop (no floor within
-     * three blocks below the next tile) is refused; a one-block step down is
-     * normal walking and must never freeze the body.
-     */
-    static boolean stepSafe(ServerLevel level, Vec3 from, Vec3 horizontal) {
-        Vec3 ahead = from.add(horizontal);
-        BlockPos feet = BlockPos.containing(ahead);
-        if (!level.getBlockState(feet).getFluidState().isEmpty()) {
-            return true;
-        }
-        if (!level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()) {
-            return true;
-        }
-        for (int dy = 0; dy <= 3; dy++) {
-            BlockPos below = feet.below(dy);
-            if (!level.getBlockState(below).getCollisionShape(level, below).isEmpty()) {
-                return true;
-            }
-        }
-        return false;
+    static boolean isStepBlock(BlockState state) {
+        return state.getBlock() instanceof StairBlock || state.getBlock() instanceof SlabBlock;
     }
 
-    /**
-     * 正前方是否有实体障碍（墙、关着的门、别人放的方块、栅栏）。
-     *
-     * <p>
-     * 用途只有一个：轨迹巡逻时让身体别顶着方块空转（把前进力度放轻）。它<b>不是</b>路径可行性
-     * 判断——{@link FakeSteveAi#driveTrail} 走的路线是玩家生前亲自走出来的，视为始终可走。
-     *
-     * <p>
-     * 注意 {@link #stepSafe} 是「防坠落」判定而不是「防撞墙」判定：前方是实心方块时它反而返回
-     * true（踩上去不会掉下去），所以撞墙必须靠这一层单独判断。
-     *
-     * <p>
-     * 台阶、半砖、可以打开的门都不算墙——原版能直接走上去或推开门。
-     */
-    static boolean wallAhead(ServerLevel level, Vec3 from, Vec3 horizontal) {
-        BlockPos ahead = BlockPos.containing(from.add(horizontal));
-        BlockState state = level.getBlockState(ahead);
-        VoxelShape shape = state.getCollisionShape(level, ahead);
-        if (shape.isEmpty()) {
-            return false;
+    static double standingY(ServerLevel level, BlockPos feet) {
+        var state = level.getBlockState(feet);
+        var shape = state.getCollisionShape(level, feet);
+        if (!shape.isEmpty() && !FakeSteveDoorAccess.isOpenablePassage(state)) {
+            double height = shape.max(Direction.Axis.Y);
+            if (height <= 0.6D || isStepBlock(state)) return feet.getY() + height;
         }
-        if (isStepBlock(state)
-                || state.getBlock() instanceof SlabBlock
-                || FakeSteveDoorAccess.isOpenablePassage(state)) {
-            return false;
-        }
-        // 低于 0.6 格的矮碰撞体原版可以直接踩上去，不算墙。
-        return shape.max(Direction.Axis.Y) >= 0.6D;
+        return feet.getY();
     }
 
-    /** Nodes hugging an open drop are discouraged so routes keep to the deck. */
-    private static boolean dropBeside(ServerLevel level, BlockPos pos) {
-        for (Direction direction : HORIZONTAL) {
-            BlockPos side = pos.relative(direction);
-            if (!level.getBlockState(side).getFluidState().is(FluidTags.WATER)
-                    && !hasFloor(level, side) && !hasFloor(level, side.below())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasFloor(ServerLevel level, BlockPos pos) {
-        return !level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
-    }
-
-    private static List<BlockPos> neighbours(ServerLevel level, BlockPos current,
-                                             Set<BlockPos> occupied, boolean jumpsAllowed) {
-        List<BlockPos> result = new ArrayList<>(12);
-        boolean swimming = level.getBlockState(current).getFluidState().is(FluidTags.WATER)
-                || level.getBlockState(current.above()).getFluidState().is(FluidTags.WATER);
-        for (Direction direction : HORIZONTAL) {
-            addStandableNeighbour(level, current, current.relative(direction), occupied,
-                    jumpsAllowed, swimming, result);
-        }
-        // Both cardinals clear means the diagonal is not cutting a wall.
-        Direction[] diagonals = {
-                Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST
-        };
-        for (int i = 0; i < 4; i++) {
-            Direction first = diagonals[i];
-            Direction second = diagonals[(i + 1) % 4];
-            BlockPos sideA = current.relative(first);
-            BlockPos sideB = current.relative(second);
-            if (!standable(level, sideA) || !standable(level, sideB)) {
-                continue;
-            }
-            addStandableNeighbour(level, current, current.relative(first).relative(second),
-                    occupied, jumpsAllowed, swimming, result);
-        }
-        if (swimming) {
-            for (int dy : new int[] { 1, -1 }) {
-                BlockPos vertical = current.offset(0, dy, 0);
-                if (!occupied.contains(vertical) && standable(level, vertical)) {
-                    result.add(vertical.immutable());
-                }
-            }
-        }
-        return result;
-    }
-
-    private static boolean isWaterAt(ServerLevel level, BlockPos pos) {
-        return level.getBlockState(pos).getFluidState().is(FluidTags.WATER);
-    }
-
-    private static boolean openWater(ServerLevel level, BlockPos pos) {
-        return (isWaterAt(level, pos) || isWaterAt(level, pos.above()))
-                && level.getBlockState(pos.below()).getCollisionShape(level, pos.below()).isEmpty();
-    }
-
-    private static void addStandableNeighbour(ServerLevel level, BlockPos current,
-            BlockPos horizontal, Set<BlockPos> occupied, boolean jumpsAllowed,
-            boolean swimming, List<BlockPos> result) {
-        for (int dy : new int[] { 0, 1, -1 }) {
-            BlockPos candidate = horizontal.offset(0, dy, 0);
-            if (dy > 0 && !jumpsAllowed && !swimming) {
-                boolean destinationIsStep = isStepBlock(level.getBlockState(candidate));
-                double rise = standingSurfaceY(level, candidate) - standingSurfaceY(level, current);
-                if (!FakeStevePathPolicy.canAscendWithoutJump(rise, destinationIsStep)) {
-                    continue;
-                }
-            }
-            if (!occupied.contains(candidate) && standable(level, candidate)) {
-                result.add(candidate.immutable());
-                return;
-            }
-        }
-    }
-
-    /** World-space support height for deciding whether an upward node needs jump input. */
-    private static double standingSurfaceY(ServerLevel level, BlockPos feet) {
+    /** 旧网格适配器的站立表面高度，包含脚下半砖/楼梯及下层碰撞面。 */
+    static double standingSurfaceY(ServerLevel level, BlockPos feet) {
         BlockState feetState = level.getBlockState(feet);
-        var feetShape = feetState.getCollisionShape(level, feet);
+        VoxelShape feetShape = feetState.getCollisionShape(level, feet);
         if (!feetShape.isEmpty()) {
             double height = feetShape.max(Direction.Axis.Y);
             if (FakeStevePathPolicy.feetCanOccupy(false, height, isStepBlock(feetState),
@@ -310,95 +320,615 @@ final class FakeSteveNavigator {
             }
         }
         BlockPos below = feet.below();
-        var belowShape = level.getBlockState(below).getCollisionShape(level, below);
+        VoxelShape belowShape = level.getBlockState(below).getCollisionShape(level, below);
         return belowShape.isEmpty() ? feet.getY() : below.getY() + belowShape.max(Direction.Axis.Y);
     }
 
-    private static Set<BlockPos> occupiedByPlayers(ServerLevel level, LivingEntity mover) {
-        Set<BlockPos> occupied = new HashSet<>();
-        for (ServerPlayer player : level.players()) {
-            if (player == mover || !player.isAlive() || player.isSpectator()) {
-                continue;
-            }
-            occupied.add(player.blockPosition().immutable());
-        }
-        return occupied;
+    static Vec3 point(ServerLevel level, BlockPos feet) {
+        return new Vec3(feet.getX() + 0.5D, standingY(level, feet), feet.getZ() + 0.5D);
     }
 
-    private static BlockPos normalize(ServerLevel level, BlockPos pos) {
-        for (int dy : new int[] { 0, 1, -1 }) {
-            BlockPos candidate = pos.offset(0, dy, 0);
-            if (standable(level, candidate)) {
-                return candidate.immutable();
-            }
-        }
-        return pos.immutable();
+    static boolean standable(ServerLevel level, BlockPos feet) {
+        return new SearchWorld(level, null).standable(feet);
+    }
+
+    static boolean swimmingAllowed(ServerLevel level) {
+        return FakeSteveNavRules.of(level).canSwim();
+    }
+
+    static boolean water(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).getFluidState().is(FluidTags.WATER);
+    }
+
+    static boolean climbable(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).is(BlockTags.CLIMBABLE);
+    }
+
+    static int lift(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.is(Blocks.BUBBLE_COLUMN)) state = level.getBlockState(pos.above());
+        return state.is(Blocks.BUBBLE_COLUMN)
+                ? (state.getValue(BubbleColumnBlock.DRAG_DOWN)
+                        ? FakeSteveTraversalPolicy.LIFT_DOWN : FakeSteveTraversalPolicy.LIFT_UP)
+                : FakeSteveTraversalPolicy.WATER;
+    }
+
+    /** 逐段检查整个身体扫过的空间；门只在确实能打开时允许规划穿过。 */
+    static boolean corridor(ServerLevel level, Vec3 from, Vec3 to) {
+        return new SearchWorld(level, null).corridor(from, to);
+    }
+
+    static boolean stepSafe(ServerLevel level, Vec3 from, Vec3 horizontal) {
+        SearchWorld world = new SearchWorld(level, null);
+        Vec3 ahead = from.add(horizontal);
+        BlockPos feet = BlockPos.containing(ahead);
+        return world.standable(feet) && world.corridor(from, point(level, world.normalize(feet)));
     }
 
     /**
-     * 身体双脚正好站在 {@code feet} 这一格是否可行。
+     * 共线合并：三点在同一条直线上时删掉中间那个，只保留拐点、门与台阶。
      *
-     * <p>包内可见：{@link FakeSteveTrailRecorder} 用它把玩家的实时位置投影成"真正能站的路点"。
+     * <p>
+     * 目的不是「省内存」，而是省掉<b>运行时的朝向修正</b>：路点越密，身体每格都要重新
+     * 对齐 yaw，走起来就左右抖。合并后一条走廊通常只剩一个终点。
+     *
+     * <p>
+     * 用叉积判断<b>方向</b>而不是比较两段位移是否相等——合并过程中前一个保留点可能已经很远，
+     * 「步长相同」永远不成立，那样整条直线都简化不掉。
      */
-    static boolean standable(ServerLevel level, BlockPos feet) {
-        BlockState feetState = level.getBlockState(feet);
-        BlockState headState = level.getBlockState(feet.above());
-        var feetShape = feetState.getCollisionShape(level, feet);
-        boolean feetShapeEmpty = feetShape.isEmpty();
-        double feetCollisionHeight = feetShapeEmpty ? 0.0D : feetShape.max(Direction.Axis.Y);
-        boolean feetFree = FakeStevePathPolicy.feetCanOccupy(
-                        feetShapeEmpty, feetCollisionHeight, isStepBlock(feetState),
-                        feetState.getBlock() instanceof SlabBlock,
-                        FakeSteveDoorAccess.isOpenablePassage(feetState));
-        boolean headFree = FakeStevePathPolicy.headCanOccupy(
-                headState.getCollisionShape(level, feet.above()).isEmpty(),
-                isStepBlock(headState), headState.getBlock() instanceof SlabBlock,
-                FakeSteveDoorAccess.isOpenablePassage(headState));
-        boolean swimming = feetState.getFluidState().is(FluidTags.WATER)
-                || headState.getFluidState().is(FluidTags.WATER);
-        boolean groundBelow = !level.getBlockState(feet.below())
-                .getCollisionShape(level, feet.below()).isEmpty();
-        // A slab or stair is a floor by itself; a carpet never is.
-        boolean selfSupporting = !feetShapeEmpty && feetCollisionHeight >= 0.4D;
-        return feetFree && headFree && (swimming || groundBelow || selfSupporting);
+    private static ArrayDeque<BlockPos> simplify(SearchWorld world, List<BlockPos> nodes) {
+        ArrayDeque<BlockPos> result = new ArrayDeque<>(nodes.size());
+        if (nodes.size() <= 2) {
+            result.addAll(nodes);
+            return result;
+        }
+        List<BlockPos> kept = new ArrayList<>(nodes.size());
+        kept.add(nodes.get(0));
+        for (int i = 1; i < nodes.size() - 1; i++) {
+            BlockPos previous = kept.get(kept.size() - 1);
+            BlockPos current = nodes.get(i);
+            BlockPos next = nodes.get(i + 1);
+            if (collinear(previous, current, next) && !world.preserveNode(current)) continue;
+            kept.add(current);
+        }
+        kept.add(nodes.get(nodes.size() - 1));
+        for (BlockPos pos : kept) {
+            result.addLast(pos.immutable());
+        }
+        return result;
     }
 
-    private static boolean hasDirectWalkCorridor(ServerLevel level, BlockPos start,
-                                                  BlockPos goal, Set<BlockPos> occupied) {
-        if (start.getY() != goal.getY()) {
+    private static boolean collinear(BlockPos a, BlockPos b, BlockPos c) {
+        int abx = b.getX() - a.getX();
+        int aby = b.getY() - a.getY();
+        int abz = b.getZ() - a.getZ();
+        int bcx = c.getX() - b.getX();
+        int bcy = c.getY() - b.getY();
+        int bcz = c.getZ() - b.getZ();
+        int crossX = aby * bcz - abz * bcy;
+        int crossY = abz * bcx - abx * bcz;
+        int crossZ = abx * bcy - aby * bcx;
+        if (crossX != 0 || crossY != 0 || crossZ != 0) return false;
+        // 点积 > 0 排除「原路折返」（夹角 180°，叉积同样为零）。
+        return abx * bcx + aby * bcy + abz * bcz > 0;
+    }
+
+    /**
+     * 一次搜索的世界视图，等价于原版的 {@code NodeEvaluator} + 方块缓存。
+     *
+     * <p>
+     * A* 会把同一个格子当成不同节点的邻居反复询问（一个格子最多被 8 个方向 × 5 个高度
+     * 命中 40 次），所以这里对「方块状态 / 碰撞形状 / 站立高度 / 危险判定」全部做记忆化，
+     * 生命周期等于一次搜索。搜索结束后随实例被 GC，不会跨 tick 残留。
+     */
+    static final class SearchWorld {
+        private final ServerLevel level;
+        private final LivingEntity mover;
+        private final BlockPos origin;
+        private final FakeSteveNavRules rules;
+        /** 其他玩家的位置快照：每次搜索取一次，避免在邻居循环里反复遍历玩家列表。 */
+        private final List<Vec3> crowd;
+
+        /** 非空时表示这是一次「网格图」搜索（单元测试专用），方块来源全部走它。 */
+        private final FakeSteveNavWorld grid;
+        private final Map<BlockPos, Boolean> standableCache = new HashMap<>();
+        private final Map<BlockPos, Double> heightCache = new HashMap<>();
+        private final Map<BlockPos, Boolean> waterCache = new HashMap<>();
+        private final Map<BlockPos, Boolean> climbableCache = new HashMap<>();
+        private final Map<BlockPos, Boolean> dangerousCache = new HashMap<>();
+        /** 危险邻居 / 水岸的代价缓存：每个节点只扫一次 24 邻域。 */
+        private final Map<BlockPos, Double> malusCache = new HashMap<>();
+        private final Map<BlockPos, Boolean> stepCache = new HashMap<>();
+        private final Map<BlockPos, Boolean> passageCache = new HashMap<>();
+        /**
+         * 碰撞形状缓存。
+         *
+         * <p>
+         * {@code clear()} 与 {@code hasSupportWithin()} 每次都要读一片方块的碰撞形状，
+         * 而 {@code corridor()} 又对每条边调用一次——这是搜索里最贵的一环。碰撞形状在一次搜索内
+         * 不会变，缓存下来能把重复读取从「每条边几十次」压到「每个方块一次」。
+         */
+        private final Map<BlockPos, VoxelShape> shapeCache = new HashMap<>();
+
+        /** 本次搜索的起点（搜索半径以它为基准）；为 {@code null} 时不做半径裁剪。 */
+        private BlockPos center;
+        /** 搜索半径（切比雪夫，水平与垂直共用），由 {@link #prepare} 按目标距离算出。 */
+        private double radius = HARD_RADIUS;
+        /** 本次搜索允许的累计几何路径距离（原版的最大距离 {@code l}）。 */
+        private double maxPathDistance;
+        /** 本次搜索允许展开的节点数（原版的最大访问节点数 {@code c}）。 */
+        private int budget = MAX_VISITED;
+        /** 向下扩展的深度，随地图允许的最大落差收缩。 */
+        private int[] verticalOffsets = VERTICAL_OFFSETS;
+
+        SearchWorld(ServerLevel level, LivingEntity mover) {
+            this.level = level;
+            this.mover = mover;
+            this.origin = mover != null ? mover.blockPosition() : null;
+            this.rules = FakeSteveNavRules.of(level, mover instanceof ServerPlayer serverPlayer ? serverPlayer : null);
+            this.grid = null;
+            this.crowd = mover == null ? List.of()
+                    : level.players().stream()
+                            .filter(p -> p != mover && p.isAlive() && !p.isSpectator())
+                            .map(ServerPlayer::position).toList();
+        }
+
+        /** 只用于测试的构造器：把方块来源换成网格图，其余逻辑与生产完全一致。 */
+        SearchWorld(FakeSteveNavWorld grid, FakeSteveNavRules rules) {
+            this.level = null;
+            this.mover = null;
+            this.origin = null;
+            this.rules = rules;
+            this.grid = grid;
+            this.crowd = List.of();
+        }
+
+        /** 本次搜索的起点格（搜索半径与起终点归一化都以它为基准）。 */
+        BlockPos origin() {
+            return origin;
+        }
+
+        FakeSteveNavRules rules() {
+            return rules;
+        }
+
+        /**
+         * 按「起点 → 目标」的距离设置本次搜索的三个裁剪参数，对应原版
+         * {@code PathFinder#findPath} 的 {@code l} / {@code n} / {@code c}。
+         *
+         * <p>
+         * 一次性算好而不是每个节点现算：{@code inRange} 会被每个邻居调用（一次搜索上万次），
+         * 里面不能有任何除整数比较以外的工作。
+         */
+        void prepare(BlockPos start, BlockPos goal, boolean explicitTarget) {
+            this.center = start;
+            double distance = Math.sqrt(start.distSqr(goal));
+            this.maxPathDistance = distance * DETOUR_FACTOR + DETOUR_SLACK;
+            this.radius = Math.min(HARD_RADIUS, distance + SEARCH_MARGIN);
+            this.budget = budgetFor(distance, explicitTarget);
+            this.verticalOffsets = verticalOffsets(rules);
+        }
+
+        /** 原版 {@code c = l × v}：预算随搜索范围缩放，近处目标不再吃掉满额预算。 */
+        private static int budgetFor(double distance, boolean explicitTarget) {
+            int cap = explicitTarget ? MAX_VISITED * 2 : MAX_VISITED;
+            int scaled = (int) Math.round(distance * VISITED_PER_BLOCK) + MIN_VISITED;
+            return Math.max(MIN_VISITED, Math.min(cap, scaled));
+        }
+
+        /**
+         * 向下扩展的深度：同层、上一层，然后按地图允许的落差向下。
+         *
+         * <p>
+         * 写死 {@code -3} 有两个问题：落差被限制成 0 的地图上白跑两轮 {@code standable}；
+         * 而 {@code fallToDeathHeight} 允许更大落差时又探不到底。这里按规则裁剪。
+         */
+        private static int[] verticalOffsets(FakeSteveNavRules rules) {
+            int depth = (int) Math.max(1.0D, Math.min(3.0D, Math.floor(rules.maxFallDistance())));
+            int[] offsets = new int[2 + depth];
+            offsets[0] = 0;
+            offsets[1] = 1;
+            for (int i = 0; i < depth; i++) {
+                offsets[2 + i] = -(i + 1);
+            }
+            return offsets;
+        }
+
+        double maxPathDistance() {
+            return maxPathDistance;
+        }
+
+        int budget() {
+            return budget;
+        }
+
+        /** 搜索半径：超出这个范围的节点没有意义，提前剪掉能省下大量方块读取。 */
+        boolean inRange(BlockPos pos) {
+            if (center == null) return true;
+            double dy = Math.min(radius, HARD_VERTICAL_RADIUS);
+            return Math.abs(pos.getX() - center.getX()) <= radius
+                    && Math.abs(pos.getZ() - center.getZ()) <= radius
+                    && Math.abs(pos.getY() - center.getY()) <= dy;
+        }
+
+        /**
+         * 把任意位置吸附到「真正能站的那一格」。
+         *
+         * <p>
+         * 先沿竖直方向找（原版起点算法的第一、二步）；都不行时退到<b>判定箱的 4 个水平角落</b>
+         * （原版起点算法的第三步）。加这一步是因为 AI 提交的坐标常常正好落在墙角里：
+         * 中心格是墙，但斜角那格完全能站，旧实现会直接放弃整次寻路。
+         */
+        BlockPos normalize(BlockPos pos) {
+            for (int dy : new int[] {0, 1, -1, -2}) {
+                BlockPos candidate = pos.offset(0, dy, 0);
+                if (standable(candidate)) return candidate.immutable();
+            }
+            for (int dx : new int[] {-1, 1}) {
+                for (int dz : new int[] {-1, 1}) {
+                    BlockPos candidate = pos.offset(dx, 0, dz);
+                    if (standable(candidate)) return candidate.immutable();
+                }
+            }
+            return pos.immutable();
+        }
+
+        double standingY(BlockPos feet) {
+            Double cached = heightCache.get(feet);
+            if (cached != null) return cached;
+            double height = grid != null ? grid.standY(feet) : FakeSteveNavigator.standingY(level, feet);
+            heightCache.put(feet, height);
+            return height;
+        }
+
+        Vec3 point(BlockPos feet) {
+            return new Vec3(feet.getX() + 0.5D, standingY(feet), feet.getZ() + 0.5D);
+        }
+
+        boolean water(BlockPos pos) {
+            return waterCache.computeIfAbsent(pos.immutable(), p ->
+                    grid != null ? grid.isWater(p)
+                            : level.getBlockState(p).getFluidState().is(FluidTags.WATER));
+        }
+
+        boolean climbable(BlockPos pos) {
+            return climbableCache.computeIfAbsent(pos.immutable(), p ->
+                    grid == null && level.getBlockState(p).is(BlockTags.CLIMBABLE));
+        }
+
+        boolean stepBlock(BlockPos pos) {
+            return stepCache.computeIfAbsent(pos.immutable(), p ->
+                    grid != null ? grid.stepBlock(p) : isStepBlock(level.getBlockState(p)));
+        }
+
+        boolean dangerous(BlockPos pos) {
+            return dangerousCache.computeIfAbsent(pos.immutable(), p -> {
+                if (grid != null) return grid.isDangerous(p);
+                BlockState state = level.getBlockState(p);
+                // 气泡柱下方的岩浆块也是伤害面，AI 不应以站上去为电梯入口。
+                return state.getFluidState().is(FluidTags.LAVA) || state.is(Blocks.FIRE)
+                        || state.is(Blocks.SOUL_FIRE) || state.is(Blocks.CACTUS)
+                        || state.is(Blocks.SWEET_BERRY_BUSH) || state.is(Blocks.WITHER_ROSE)
+                        || state.is(Blocks.CAMPFIRE) || state.is(Blocks.SOUL_CAMPFIRE);
+            });
+        }
+
+        /** 碰撞形状（带缓存）：搜索里唯一允许读 {@code ServerLevel} 的入口之一。 */
+        private VoxelShape shape(BlockPos pos) {
+            if (grid != null) return Shapes.block();
+            return shapeCache.computeIfAbsent(pos.immutable(),
+                    p -> level.getBlockState(p).getCollisionShape(level, p));
+        }
+
+        /**
+         * 周围 24 格的「危险邻居」代价，对应原版 {@code FIRE_IN_NEIGHBOR} /
+         * {@code DAMAGING_IN_NEIGHBOR} / {@code WATER_BORDER}。
+         *
+         * <p>
+         * 原版对每个节点的 24 邻域（不含自身、上方、下方）扫一遍，遇到火/岩浆、伤害方块、
+         * 水就给出 8 的额外代价。这里只做「有危险邻居就加固定代价」的近似——本模组不需要
+         * 区分具体是哪种危险，重点是让 A* 愿意从岩浆块旁边绕开，而不是擦着走过去。
+         *
+         * <p>
+         * 结果按节点缓存，避免同一次搜索里反复扫同一片邻域。
+         */
+        double neighbourMalus(BlockPos feet) {
+            Double cached = malusCache.get(feet);
+            if (cached != null) return cached;
+            double malus = 0.0D;
+            for (int dx = -1; dx <= 1 && malus == 0.0D; dx++) {
+                for (int dy = -1; dy <= 1 && malus == 0.0D; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        // 原版排除「正上 / 正下」，只扫同一层的斜向与侧向。
+                        if (dx == 0 && dz == 0) continue;
+                        BlockPos side = feet.offset(dx, dy, dz);
+                        if (dangerous(side)) {
+                            malus = DAMAGING_NEIGHBOR_COST;
+                            break;
+                        }
+                        if (water(side)) malus = WATER_BORDER_COST;
+                    }
+                }
+            }
+            malusCache.put(feet.immutable(), malus);
+            return malus;
+        }
+
+        /** 路径简化时必须保留的节点：门（要停下来开）与台阶（要抬脚）。 */
+        boolean preserveNode(BlockPos feet) {
+            if (grid != null) return grid.preserveNode(feet);
+            return passage(feet) || stepBlock(feet);
+        }
+
+        boolean standable(BlockPos feet) {
+            Boolean cached = standableCache.get(feet);
+            if (cached != null) return cached;
+            boolean result = grid != null ? grid.standable(feet) && swimmable(feet) : evaluate(feet);
+            standableCache.put(feet.immutable(), result);
+            return result;
+        }
+
+
+        /** 禁游地图：水面既不能作为路线，也不能作为落点（生产与网格两条路径共用）。 */
+        private boolean swimmable(BlockPos feet) {
+            if (rules.canSwim()) return true;
+            return !water(feet) && !water(feet.above());
+        }
+        private boolean evaluate(BlockPos feet) {
+            if (!level.hasChunkAt(feet) || level.isOutsideBuildHeight(feet)
+                    || level.isOutsideBuildHeight(feet.above())) return false;
+            if (dangerous(feet) || dangerous(feet.below())) return false;
+            double y = standingY(feet);
+            // 禁游地图：水面既不能作为路线，也不能作为落点。
+            boolean water = water(feet) || water(feet.above());
+            if (water && !rules.canSwim()) return false;
+            boolean climbing = climbable(feet);
+            double standingHeight = standingY(feet);
+            boolean supported = supportedBy(feet)
+                    || standingHeight > feet.getY() && (stepBlock(feet) || standingHeight - feet.getY() >= 0.4D);
+            return (water || climbing || supported)
+                    && clear(box(feet.getX() + 0.5D, standingHeight, feet.getZ() + 0.5D));
+        }
+
+        /**
+         * 这一格下方是否有能踩住的地板，对应原版 {@code NodeEvaluator#getBlockPathType} 里
+         * 「向下找到第一个可站立方块」的那一步。
+         *
+         * <p>
+         * 关键在于<b>穿透薄覆盖物</b>：压力板（未按下 1/16 格、按下 0.5/16 格）、地毯、铁轨、
+         * 雪层都不是墙。旧实现只看 {@code feet.below()} 一格的碰撞高度是否 ≥ 0.45，
+         * 于是「石地板 + 压力板」的地面被判成没有支撑——伪人会认为铺了压力板的整条走廊不能走。
+         *
+         * <p>
+         * 现在最多向下看两层，跳过高度 ≤ {@link FakeStevePathPolicy#THIN_COVER_HEIGHT} 的覆盖物。
+         */
+        private boolean supportedBy(BlockPos feet) {
+            if (grid != null) return true;
+            for (int dy = 1; dy <= 2; dy++) {
+                BlockPos below = feet.below(dy);
+                VoxelShape shape = shape(below);
+                if (shape.isEmpty()) continue;
+                double top = shape.max(Direction.Axis.Y);
+                if (top >= FakeStevePathPolicy.SOLID_FLOOR_HEIGHT) return true;
+                if (!FakeStevePathPolicy.walkableCover(top, stepBlock(below))) return false;
+            }
             return false;
         }
-        double dx = goal.getX() - start.getX();
-        double dz = goal.getZ() - start.getZ();
-        double length = Math.sqrt(dx * dx + dz * dz);
-        if (length < 1.0D) {
+
+        /** 门格是否还需要伪人自己动手打开（已开的门不加代价）。 */
+        private boolean needsOpening(BlockPos feet) {
+            if (grid != null) return false;
+            return !FakeSteveDoorAccess.isPassableNow(level, feet, level.getBlockState(feet));
+        }
+
+        /**
+         * 门格：不能「站」（会掉下去或卡在门里），但可以「通过」。
+         *
+         * <p>
+         * 原版把门当成 {@code DOOR_OPEN}/{@code DOOR_CLOSED} 节点：<b>可以走进门格并穿过</b>，
+         * 但不会把门格当成停留点。旧实现只做了 {@code passage(pos) → continue}（让门板不挡路），
+         * 没有把门格本身当成可走节点——于是列车门这种「两格厚、中间就是门槛」的门，
+         * 路线会被切成「站到门外 → 站到门内」，中间那格永远过不去。
+         */
+        private boolean doorStep(BlockPos feet) {
+            if (grid != null) return false;
+            return passage(feet) && !standable(feet);
+        }
+
+        /**
+         * 一步是否可以走：类型可通过、抬升不超过跳跃能力、落差不超过地图允许的最大落差。
+         *
+         * <p>
+         * 三类地图约束都在这里落地，因为它们全都是「这一步能不能走」的问题。
+         * 禁跳时抬升上限降到 0.6 格，但楼梯/半砖仍放行——这与禁跳地图里真人的可行走范围一致。
+         */
+        boolean canStep(BlockPos from, BlockPos to, double rise, boolean wet, boolean climbing) {
+            if (rise > MAX_JUMP_RISE) return false;
+            if (rise < -rules.maxFallDistance()) return false;
+            if (rise > FakeStevePathPolicy.STEP_HEIGHT && !rules.canJump() && !wet && !climbing) {
+                // 禁跳：只保留「原版不需要跳跃输入就能上去」的高度。
+                return FakeStevePathPolicy.canAscendWithoutJump(rise, stepBlock(to))
+                        || FakeStevePathPolicy.canAscendWithoutJump(rise, stepBlock(to.below()));
+            }
             return true;
         }
-        double perpendicularX = -dz / length;
-        double perpendicularZ = dx / length;
-        int samples = Math.max(1, (int) Math.ceil(length * 2.0D));
-        for (int sample = 1; sample <= samples; sample++) {
-            double progress = (double) sample / samples;
-            double centerX = start.getX() + 0.5D + dx * progress;
-            double centerZ = start.getZ() + 0.5D + dz * progress;
-            for (double side : new double[] { -0.28D, 0.0D, 0.28D }) {
-                BlockPos position = BlockPos.containing(
-                        centerX + perpendicularX * side, start.getY(),
-                        centerZ + perpendicularZ * side);
-                if (!standable(level, position)
-                        || occupied.contains(position) && distance(position, goal) > 1) {
+
+        /**
+         * 斜向切角：对应原版「对角中间的两个位置的方块高度不能高于当前节点和对角节点」。
+         *
+         * <p>
+         * 旧实现要求两个直角列在<b>目标那一层</b>都真的能站，这比原版严格得多——贴墙斜走时
+         * 直角列往往只是「这一层站不了但上一层/下一层能走」，于是整片沿墙的斜向移动被封死，
+         * 身体只能一格一格地拐直角，看起来像在蹭墙。
+         *
+         * <p>
+         * 现在的判定是「这一列在不超过两端节点高度的位置上有可通行面」，既拦住穿墙斜切，
+         * 又放行贴墙斜走。
+         */
+        private boolean cornerPassable(BlockPos column, double limitY) {
+            if (grid != null) return grid.canCutCorner(column, limitY);
+            double ceiling = limitY + FakeStevePathPolicy.STEP_HEIGHT;
+            for (int dy = 0; dy >= -1; dy--) {
+                BlockPos feet = column.offset(0, dy, 0);
+                if (standable(feet) && standingY(feet) <= ceiling) return true;
+            }
+            return false;
+        }
+
+        List<FakeStevePathSearch.Edge<BlockPos>> neighbours(BlockPos current) {
+            List<FakeStevePathSearch.Edge<BlockPos>> result = new ArrayList<>(12);
+            Vec3 from = point(current);
+            boolean wet = water(current);
+            boolean climbing = climbable(current);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dz == 0) continue;
+                    for (int dy : verticalOffsets) {
+                        BlockPos next = current.offset(dx, dy, dz);
+                        if (!inRange(next)) continue;
+                        // 门格可以「通过」但不能「停留」：原版同样是 DOOR_OPEN/DOOR_CLOSED 节点。
+                        boolean throughDoor = doorStep(next);
+                        if (!throughDoor && !standable(next)) continue;
+                        Vec3 target = point(next);
+                        double rise = target.y - from.y;
+                        if (!canStep(current, next, rise, wet, climbing)) continue;
+                        if (dx != 0 && dz != 0) {
+                            // 斜向：两个直角列都要能在「不超过两端高度」的位置通过。
+                            double limitY = Math.max(current.getY(), next.getY());
+                            if (!cornerPassable(current.offset(dx, 0, 0), limitY)
+                                    || !cornerPassable(current.offset(0, 0, dz), limitY)) continue;
+                        }
+                        // 相邻两格之间没有「夹在中间」的方块：两端的全身体积判定
+                        // （standable → clear）已经把墙挡在外面。旧实现在这里再跑一次
+                        // corridor 扫掠，每条边要采样 6 次、每次读十几个方块形状，
+                        // 是整条搜索里最贵的一环，且对相邻移动完全冗余。
+                        // corridor 仍然保留给运行时（FakeSteveNavigation）与跨格校验。
+                        double length = dx != 0 && dz != 0 ? Math.sqrt(2.0D) : 1.0D;
+                        // 需要自己动手开的门加一点代价，让 A* 优先选已经开着的门。
+                        double doorCost = throughDoor && needsOpening(next) ? DOOR_OPEN_COST : 0.0D;
+                        result.add(new FakeStevePathSearch.Edge<>(next.immutable(),
+                                length + Math.abs(rise) * 0.35D
+                                        + (water(next) ? 0.4D : 0.0D) + crowdCost(target)
+                                        + neighbourMalus(next) + doorCost,
+                                length + Math.abs(rise)));
+                        break;
+                    }
+                }
+            }
+            // 禁游地图里湿节点根本不会被展开（standable 已经拒绝），这里再挡一次，
+            // 避免「禁游却按跳跃上浮」这种寻路认可、输入按不下去的分歧。
+            if ((wet || climbing) && (rules.canSwim() || climbing)) {
+                // 网格模式没有气泡柱：竖直移动只由 FakeSteveTraversalPolicy 的纯规则决定。
+                int column = grid != null ? FakeSteveTraversalPolicy.WATER : lift(level, current);
+                for (int dy : new int[] {1, -1}) {
+                    BlockPos next = current.offset(0, dy, 0);
+                    if (!FakeSteveTraversalPolicy.allowsVertical(column, dy) || !standable(next)) {
+                        continue;
+                    }
+                    // 不能在水外悬空上升；上层必须仍是水或梯子。
+                    if (dy > 0 && !water(next) && !climbable(next)) continue;
+                    if (clear(box(from.x, point(next).y, from.z))) {
+                        result.add(new FakeStevePathSearch.Edge<>(next.immutable(),
+                                column == 0 ? 1.3D : 1.0D, 1.0D));
+                    }
+                }
+            }
+            return result;
+        }
+
+        private double crowdCost(Vec3 target) {
+            double cost = 0;
+            for (Vec3 player : crowd) {
+                if (Math.abs(player.y - target.y) < 1.8D && player.distanceToSqr(target) < 1.2D) {
+                    cost += 5.0D;
+                }
+            }
+            return cost;
+        }
+
+        boolean corridor(Vec3 from, Vec3 to) {
+            // 网格图没有真实碰撞体，可达性已经由 standable/canStep 表达，这里直接放行。
+            if (grid != null) return true;
+            double dy = to.y - from.y;
+            double length = from.distanceTo(to);
+            if (length > 8.0D || Math.abs(dy) > 3.1D) return false;
+            int samples = Math.max(1, (int) Math.ceil(length * 4.0D));
+            double travelY = Math.max(from.y, to.y);
+            for (int i = 0; i <= samples; i++) {
+                double t = (double) i / samples;
+                double x = from.x + (to.x - from.x) * t;
+                double z = from.z + (to.z - from.z) * t;
+                if (!clear(box(x, travelY, z))) return false;
+                BlockPos support = BlockPos.containing(x, travelY, z);
+                if (!water(support) && !climbable(support) && !hasSupportWithin(support, 3)) {
                     return false;
                 }
             }
+            return true;
         }
-        return true;
-    }
 
-    private static int distance(BlockPos a, BlockPos b) {
-        return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY())
-                + Math.abs(a.getZ() - b.getZ());
-    }
+        private boolean hasSupportWithin(BlockPos pos, int depth) {
+            for (int dy = 0; dy <= depth; dy++) {
+                BlockPos below = pos.below(dy);
+                if (!shape(below).isEmpty() || water(below) || climbable(below)) return true;
+            }
+            return false;
+        }
 
-    private record Node(BlockPos pos, double score) {
+        private AABB box(double x, double y, double z) {
+            return new AABB(x - HALF_WIDTH, y + 0.001D, z - HALF_WIDTH,
+                    x + HALF_WIDTH, y + HEIGHT - 0.001D, z + HALF_WIDTH);
+        }
+
+        private boolean clear(AABB box) {
+            var volume = Shapes.create(box);
+            for (BlockPos pos : BlockPos.betweenClosed((int) Math.floor(box.minX),
+                    (int) Math.floor(box.minY) - 1, (int) Math.floor(box.minZ),
+                    (int) Math.floor(box.maxX), (int) Math.floor(box.maxY),
+                    (int) Math.floor(box.maxZ))) {
+                if (!level.hasChunkAt(pos)) return false;
+                if (passage(pos)) continue;
+                VoxelShape shape = shape(pos);
+                if (!shape.isEmpty() && Shapes.joinIsNotEmpty(volume,
+                        shape.move(pos.getX(), pos.getY(), pos.getZ()), BooleanOp.AND)) return false;
+            }
+            return true;
+        }
+
+        /**
+         * 这一格是否「可以走过去」的门。
+         *
+         * <p>
+         * 两种情形都算通路，但理由不同：
+         * <ul>
+         * <li><b>关着但能开</b>：伪人走到门口会按下去（{@code FakeSteveAi#openDoorsOnApproach}），
+         * 所以 A* 可以把它当成通路规划；锁死/卡死/炸变形/铁门例外。</li>
+         * <li><b>已经打开</b>：门板被动画推开了，真人能直接过。旧实现这里无条件
+         * {@code return false}（理由是「打开的门仍有实体门板」），结果伪人自己把门打开之后
+         * 反而认为门不通——列车门尤其明显，因为它是双格门 + 侧滑动画。</li>
+         * </ul>
+         */
+        boolean passage(BlockPos pos) {
+            return passageCache.computeIfAbsent(pos.immutable(), p -> {
+                BlockState state = level.getBlockState(p);
+                if (!FakeSteveDoorAccess.isOpenablePassage(state)) return false;
+                // 已经打开（含动画中、连锁门、上下半门）：直接当通路，不再看门板形状。
+                if (FakeSteveDoorAccess.isPassableNow(level, p, state)) return true;
+                if (state.is(Blocks.IRON_DOOR) || state.is(Blocks.IRON_TRAPDOOR)) return false;
+                if (state.getBlock() instanceof SmallDoorBlock door) {
+                    BlockPos lower = door.getLowerHalfPos(state, p);
+                    if (!(level.getBlockEntity(lower) instanceof SmallDoorBlockEntity entity)
+                            || entity.isJammed() || entity.isBlasted()) return false;
+                    BlockPos anchor = lower.above();
+                    if (LockEntityManager.getInstance().getLockEntity(anchor) != null) return false;
+                    for (Direction direction : Direction.Plane.HORIZONTAL) {
+                        if (LockEntityManager.getInstance().getLockEntity(anchor.relative(direction)) != null) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            });
+        }
     }
 }

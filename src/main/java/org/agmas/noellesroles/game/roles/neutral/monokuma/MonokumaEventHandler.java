@@ -32,6 +32,7 @@ import org.agmas.harpymodloader.component.WorldModifierComponent;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role_data.neutral.MonokumaRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
@@ -78,6 +79,11 @@ public class MonokumaEventHandler {
         // return true;
         // });
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {
+            // 特制左轮的 50% 命中只针对黑白自己开枪的场景。
+            // 「误杀平民而亡」等惩罚性死亡会把受罚者本人作为 killer 传进来，
+            // 若不做排除，手里拿着左轮的黑白会有 50% 概率免疫这次惩罚（等同于不因误杀而亡）。
+            if (GameConstants.DeathReasons.SHOT_INNOCENT.equals(deathReason))
+                return true;
             if (!(killer instanceof ServerPlayer sp))
                 return true;
             if (killer.getMainHandItem().is(TMMItems.REVOLVER)) {
@@ -110,6 +116,11 @@ public class MonokumaEventHandler {
                 return true;
             if (deathReason.equals(GameConstants.DeathReasons.IGNITED))
                 return true;
+            // 「误杀平民而亡」是惩罚性死亡：既不能被黑白抵消，也不能被当成一次攻击去触发变身。
+            // 否则拥有黑白修饰符的警长/义警误杀平民后不但不会死，还会当场变成黑白。
+            // 与起义军的同款豁免一致（TraitorAndModifiers 的 AllowPlayerDeathWithKiller 处理）。
+            if (GameConstants.DeathReasons.SHOT_INNOCENT.equals(deathReason))
+                return true;
             if (!(player instanceof ServerPlayer sp))
                 return true;
             WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(sp.level());
@@ -136,6 +147,9 @@ public class MonokumaEventHandler {
                                 c.onHitTriggered();
                             }
                             worldModifierComponent.removeModifier(sp, SEModifiers.BLACK_WHITE);
+                            // 回放记录：黑白修饰符被触发（与被命中的攻击同一条死亡链上）
+                            ReplayEventLog.record("replay.event.modifier.black_white",
+                                    ReplayEventLog.player(sp));
 
                         } catch (Exception e) {
                             org.agmas.noellesroles.Noellesroles.LOGGER.error("黑白狂暴触发失败", e);
@@ -146,6 +160,9 @@ public class MonokumaEventHandler {
             } else if (comp == null) {
                 return true;
             } else if (comp.phase == 3) {
+                // 只有真黑白熊（本体）才无敌；试炼中被杀转化来的小黑白熊可以被杀死。
+                if (!comp.isPrime)
+                    return true;
                 var gameCCA = SREGameWorldComponent.KEY.get(player.level());
                 if (!gameCCA.isRole(player, ModRoles.MONOKUMA))
                     return true;

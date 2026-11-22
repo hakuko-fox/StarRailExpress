@@ -19,6 +19,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -105,7 +106,7 @@ public final class MobRiotRules {
     }
 
     public static boolean isKillerOrKillerNeutral(SRERole role) {
-        return role != null && !role.isInnocent() && (role.canUseKiller() || role.isNeutralForKiller());
+        return RoleTeam.isKillerTeamReal(role);
     }
 
     public static boolean canSleepEscape(SRERole role) {
@@ -145,12 +146,8 @@ public final class MobRiotRules {
     }
 
     public static boolean isInOwnRoom(ServerPlayer player) {
-        Integer room = GameUtils.roomToPlayer.get(player.getUUID());
-        if (room == null) {
-            return player.isSleeping();
-        }
-        AreasWorldComponent areas = AreasWorldComponent.KEY.get(player.level());
-        Vec3 spawn = GameUtils.getSpawnPos(areas, room);
+        // 训练场假人的「自己房间」就是它的初始点位。
+        Vec3 spawn = GameUtils.getPlayerRoomSpawnPos(player);
         if (spawn == null) {
             return player.isSleeping();
         }

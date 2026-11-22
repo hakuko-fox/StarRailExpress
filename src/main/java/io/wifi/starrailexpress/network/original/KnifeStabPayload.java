@@ -22,9 +22,11 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.KillerKnifeDurability;
-import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
+import io.wifi.starrailexpress.event.ItemGameplayEvents;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemCooldowns;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -41,6 +43,7 @@ import net.minecraft.world.entity.animal.Fox;
 import net.minecraft.world.item.ItemStack;
 
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.game.roles.special.variant_loose_end.VariantLooseEndRole;
 import org.agmas.noellesroles.content.item.ThrowingKnife;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
@@ -61,7 +64,12 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
     public static class Receiver implements ServerPlayNetworking.PlayPayloadHandler<KnifeStabPayload> {
         @Override
         public void receive(@NotNull KnifeStabPayload payload, ServerPlayNetworking.@NotNull Context context) {
-            ServerPlayer player = context.player();
+            stab(context.player(), payload.target());
+        }
+
+        /** 网络玩家与训练假人共享的服务端刀击入口。 */
+        public static void stab(ServerPlayer player, int targetId) {
+            if (!io.wifi.starrailexpress.event.ItemGameplayEvents.ALLOW_KNIFE_ATTACK.invoker().allow(player, targetId)) return;
             if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
                 return;
             }
@@ -79,7 +87,8 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (role != null && !role.onUseKnife(player)) {
                 return;
             }
-            Entity targetEntity = player.serverLevel().getEntity(payload.target());
+            Entity targetEntity = player.serverLevel().getEntity(targetId);
+            if (targetEntity != null && !io.wifi.starrailexpress.training.TrainingRules.canInteract(player, targetEntity)) return;
             if (org.agmas.noellesroles.game.command_block.CommandBlockCracks.isCrack(targetEntity)) {
                 ItemStack stack = player.getMainHandItem();
                 if (stack.getItem() instanceof io.wifi.starrailexpress.content.item.KnifeItem
@@ -87,7 +96,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
                         && player.distanceTo(targetEntity) <= 4.0D
                         && !io.wifi.starrailexpress.game.KillerKnifeDurability.isDepleted(stack)
                         && org.agmas.noellesroles.game.command_block.CommandBlockCracks.tryShatterWithWeapon(player, targetEntity)) {
-                    player.getCooldowns().addCooldown(stack.getItem(), getKnifeCooldown(player));
+                    applyKnifeCooldown(player.getCooldowns(), stack.getItem(), getKnifeCooldown(player), player, targetId);
                     player.swing(InteractionHand.MAIN_HAND);
                 }
                 return;
@@ -123,7 +132,7 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
 
                 // 对傀儡本体造成致命伤害（20点以上确保击杀）
                 org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.consumeKanaKnife(player);
-                bodyEntity.playerHurt(player, GameConstants.DeathReasons.PUPPETEER_KNIFE);
+                bodyEntity.playerHurt(player);
                 org.agmas.noellesroles.game.roles.vtuber.VtuberRoleRuntime.finishKanaKnifeAttack(player);
 
                 if (halicDurabilityKnife && KillerKnifeDurability.consumeOne(knife, player)) {
@@ -137,10 +146,8 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
 
                 if (!player.isCreative()
                         && !SREGameWorldComponent.KEY.get(player.level()).isRole(player, TMMRoles.LOOSE_END)
-                        && !SREGameWorldComponent.KEY.get(player.level()).isRole(player,
-                                SpecialGameModeRoles.SUPER_LOOSE_END)) {
-                    player.getCooldowns().addCooldown(TMMItems.KNIFE,
-                            getKnifeCooldown(player));
+                        && !VariantLooseEndRole.isVariant(player)) {
+                    applyKnifeCooldown(player.getCooldowns(), TMMItems.KNIFE, getKnifeCooldown(player), player, targetId);
                 }
                 return;
             }
@@ -216,13 +223,18 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             var cooldowns = player.getCooldowns();
             if (!player.isCreative()
                     && !SREGameWorldComponent.KEY.get(player.level()).isRole(player, TMMRoles.LOOSE_END)
-                    && !SREGameWorldComponent.KEY.get(player.level()).isRole(player,
-                            SpecialGameModeRoles.SUPER_LOOSE_END)) {
-                cooldowns.addCooldown(TMMItems.KNIFE, getKnifeCooldown(player));
+                    && !VariantLooseEndRole.isVariant(player)) {
+                applyKnifeCooldown(cooldowns, TMMItems.KNIFE, getKnifeCooldown(player), player, targetId);
             }
         }
 
-        private int getKnifeCooldown(ServerPlayer player) {
+        /** 保留原 INVOKE 前的通知时点，冷却对象、物品与时长在监听器之前完成求值。 */
+        private static void applyKnifeCooldown(ItemCooldowns cooldowns, Item item, int ticks,
+                ServerPlayer player, int targetId) {
+            ItemGameplayEvents.BEFORE_KNIFE_COOLDOWN.invoker().beforeCooldown(player, targetId);
+            cooldowns.addCooldown(item, ticks);
+        }
+        private static int getKnifeCooldown(ServerPlayer player) {
             float modifier = 1f;
             if (RoleUtils.isPlayerTheJob(player, THMiscRoles.HOUJUU_NUE)) {
                 modifier = 0.1667f;

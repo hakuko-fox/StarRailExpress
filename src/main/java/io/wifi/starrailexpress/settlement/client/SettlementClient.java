@@ -55,6 +55,14 @@ public final class SettlementClient {
     static final List<ActorState> actors = new ArrayList<>();
     static final Map<UUID, ActorState> byId = new LinkedHashMap<>();
     private static SettlementPhysics physics = new SettlementPhysics();
+    private static List<SettlementPresentation.Cue> cues = List.of();
+    private static SettlementPresentation.Bounds castBounds;
+    private static Vec3 smoothLook;
+    private static double smoothFov = 46, smoothRoll;
+    private static int layoutWidth, layoutHeight, layoutEvent = -2;
+    private static boolean layoutHero;
+    private static SettlementPresentation.Layout cachedLayout;
+    private static List<net.minecraft.util.FormattedCharSequence> captionLines = List.of();
     private static boolean registered;
 
     private SettlementClient() { }
@@ -79,6 +87,7 @@ public final class SettlementClient {
         });
         WorldRenderEvents.AFTER_ENTITIES.register(SettlementStageRenderer::render);
         SettlementPostEffect.register();
+        SettlementHeroRenderer.register();
     }
 
     private static void receive(SettlementPayload payload) {
@@ -188,6 +197,9 @@ public final class SettlementClient {
             var slot = SettlementChoreography.winner(winner, winners.size());
             addActor(actor, slot.x(), slot.y(), slot.z(), winner++);
         }
+        castBounds = null;
+        for (var actor : actors) castBounds = castBounds == null ? bounds(actor) : castBounds.union(bounds(actor));
+        cues = SettlementPresentation.cues(value);
         for (var actor : value.actors()) if (!actor.winner()) {
             var slot = SettlementChoreography.drop(loser, losers);
             addActor(actor, slot.x(), 0, slot.z(), loser++);
@@ -223,16 +235,16 @@ public final class SettlementClient {
         // 皮肤专属音效：本体只问「这个 tick 有没有专属音效」，
         // 具体播放什么由已注册的皮肤实现决定。
         SettlementSkin skin = SettlementSkins.byId(snapshot.mvpSkin());
-        if (skin != null) {
+        if (skin != null && playTick >= SettlementPresentation.POSTER_TICKS) {
             try {
-                skin.cueSound(playTick);
+                skin.cueSound(playTick-SettlementPresentation.POSTER_TICKS);
             } catch (RuntimeException error) {
                 SRE.LOGGER.warn("结算皮肤音效回调失败: {}", snapshot.mvpSkin(), error);
             }
         }
         int losers = physics.bodies.size() - (int)actors.stream().filter(a -> a.fact.winner()).count();
         for (ActorState actor : actors) {
-            if (!actor.fact.winner() && playTick >= SettlementChoreography.dropTick(actor.order, losers) && !actor.body.active) {
+            if (!actor.fact.winner() && playTick-SettlementPresentation.POSTER_TICKS >= SettlementChoreography.dropTick(actor.order, losers) && !actor.body.active) {
                 var drop = SettlementChoreography.drop(actor.order, losers);
                 actor.body.release(drop.x(), drop.y(), drop.z());
             }
@@ -301,10 +313,10 @@ public final class SettlementClient {
     }
 
     private static void showEvent(SettlementSnapshot.Event event) {
-        eventText = parse(event.textJson());
+        eventText = SettlementCaption.readable(parse(event.textJson()));
         ActorState source = byId.get(event.source()), target = byId.get(event.target());
-        if (source != null) source.actionAt = playTick;
-        if (target != null) target.actionAt = playTick;
+        if (source != null) { source.actionAt = playTick; source.actionEvent = event; }
+        if (target != null) { target.actionAt = playTick; target.actionEvent = event; }
         // 回放只驱动动作/职业，不改写舞台已冻结的死亡事实；尸堆始终保留在后台。
         // 两个字段分别属于 source/target 的事件时职业，不将 targetRole 误当作 source 的新职业。
         if (source != null && event.sourceRole() != null && !event.sourceRole().isBlank()) source.role = event.sourceRole();
@@ -353,64 +365,95 @@ public final class SettlementClient {
         oldCamera = null; oldPosition = smoothPosition = null; oldCameraType = null;
         title = eventText = Component.empty(); actors.clear(); byId.clear();
         physics = new SettlementPhysics(); lastCameraFrame = 0;
+        castBounds = null; cues = List.of(); smoothLook = null; smoothFov = 46; smoothRoll = 0;
+        cachedLayout = null; captionLines = List.of(); layoutEvent = -2;
+        SettlementStageRenderer.clearLabels();
+        SettlementOverlay.clear();
+        SettlementHeroRenderer.close();
         SettlementAudio.clear(); SettlementPostEffect.close();
         // 皮肤布景由各自实现自行清理；本体不持有具体皮肤的静态状态。
     }
 
-    /** 每帧平滑一次，交由独立高优先级 Camera.setup 注入调用。 */
+    static SettlementPresentation.Frame presentation(float partial) {
+        return SettlementPresentation.frame(snapshot, cues, playTick + partial);
+    }
+
+    /** 同一份正文换行结果同时决定字幕高度和镜头安全区，只在文本/窗口变化时重排。 */
+    static SettlementPresentation.Layout layout(float partial) {
+        var mc = Minecraft.getInstance(); var window = mc.getWindow();
+        int w = window.getGuiScaledWidth(), h = window.getGuiScaledHeight();
+        boolean hero = playTick + partial < SettlementPresentation.POSTER_TICKS;
+        if (cachedLayout == null || layoutWidth != w || layoutHeight != h || layoutEvent != eventIndex || layoutHero != hero) {
+            var probe = SettlementPresentation.layout(w,h,hero,eventIndex >= 0,1);
+            captionLines = mc.font.split(eventText, Math.max(1,(int)((probe.caption().w()-24*probe.ui())/probe.ui())));
+            cachedLayout = SettlementPresentation.layout(w,h,hero,eventIndex >= 0,captionLines.size());
+            layoutWidth=w; layoutHeight=h; layoutEvent=eventIndex; layoutHero=hero;
+        }
+        return cachedLayout;
+    }
+
+    static List<net.minecraft.util.FormattedCharSequence> captionLines() { return captionLines; }
+
+    private static SettlementPresentation.Bounds bounds(ActorState actor) {
+        // 包含举臂、正常手持道具与皇冠的完整范围，不只拟合身体宽度。
+        return new SettlementPresentation.Bounds(actor.x-.82,0,actor.z-.65,actor.x+.82,2.5,actor.z+.65);
+    }
+
+    private static SettlementPresentation.Bounds bounds(ActorState actor, double time) {
+        return actor.fact.winner() ? SettlementPresentation.winnerBounds(actor.x,actor.z,actor.order,time) : bounds(actor);
+    }
+
+    public static double cameraFov(float partialTick) { return smoothFov; }
+    public static float cameraRoll(float partialTick) { return (float)smoothRoll; }
+
+    /** 所有镜头参数在同一帧一起积分，世界投影和 UI 共用分镜时钟。 */
     public static void applyCamera(Camera camera, float partialTick) {
         if (!active) return;
         if (snapshot == null) {
             if (oldPosition != null) { camera.setPosition(oldPosition); camera.setRotation(oldYaw, oldPitch); }
             return;
         }
-        double t = playTick + (isPlaying() ? partialTick : 0);
-        double focus = smooth((t - 210) / 55) * (1 - smooth((t - 300) / 20));
-        ActorState mvp = byId.get(snapshot.mvp());
-        double targetX = mvp == null ? 0 : mvp.x;
-        double targetY = 1.45, targetZ = mvp == null ? -.35 : mvp.z;
-        if (t >= SettlementSnapshot.INTRO_TICKS && eventIndex >= 0) {
-            var event = snapshot.events().get(eventIndex);
-            ActorState source = byId.get(event.source()), target = byId.get(event.target());
-            ActorState selected = source != null ? source : target;
-            if (selected != null) {
-                targetX = selected.body.active ? selected.body.nodes[1].x : selected.x;
-                targetY = selected.body.active ? selected.body.nodes[1].y + .7 : selected.y + 1.4;
-                targetZ = selected.body.active ? selected.body.nodes[1].z : selected.z;
-                focus = selected.body.active ? .12 : .3;
+        float partial = isPlaying() ? partialTick : 0;
+        var frame = presentation(partial);
+        var all = castBounds == null ? new SettlementPresentation.Bounds(-1,0,-1,1,2.5,1) : castBounds;
+        if(frame.time()<SettlementPresentation.ENTRANCE_END) {
+            SettlementPresentation.Bounds entering = null;
+            for (var actor : actors) if (actor.fact.winner()) {
+                var animated = bounds(actor, frame.time());
+                entering = entering == null ? animated : entering.union(animated);
             }
+            if (entering != null) all = entering;
         }
-        double wideDistance = 9;
-        // 事件回放时把注视点抬高一点，让角色落在画面中上部，底部留给字幕。
-        boolean replaying = t >= SettlementSnapshot.INTRO_TICKS && eventIndex >= 0;
-        double lift = replaying ? .55 : 0;
-        // 皮肤可要求额外抬高机位（例如给高空盘旋的背景生物留构图）。
-        // 本体不知道那是龙还是别的什么，只把抬升量加进来。
-        SettlementSkin cameraSkin = SettlementSkins.byId(snapshot.mvpSkin());
-        if (cameraSkin != null) {
-            try {
-                lift += cameraSkin.cameraLift(t);
-            } catch (RuntimeException error) {
-                SRE.LOGGER.warn("结算皮肤镜头回调失败: {}", snapshot.mvpSkin(), error);
-            }
+        if (SettlementPresentation.stageTime(frame.time()) >= 150 && actors.size() > actors.stream().filter(a -> a.fact.winner()).count())
+            all = all.union(new SettlementPresentation.Bounds(-1.5,0,4.5,1.5,3.6,7.5));
+        ActorState primary = byId.get(frame.primary()), secondary = byId.get(frame.secondary());
+        var subject = primary == null ? all : bounds(primary,frame.time());
+        if (secondary != null) subject = subject.union(bounds(secondary,frame.time()));
+        var shot = SettlementPresentation.camera(all.blend(subject,frame.detail()),layout(partial),frame);
+        double lift = 0;
+        SettlementSkin skin = SettlementSkins.byId(snapshot.mvpSkin());
+        if (skin != null) {
+            try { lift = skin.cameraLift(SettlementPresentation.stageTime(frame.time())); }
+            catch (RuntimeException error) { SRE.LOGGER.warn("结算皮肤镜头回调失败: {}",snapshot.mvpSkin(),error); }
         }
-        Vec3 desired = new Vec3(snapshot.x() + .5 + targetX * focus,
-                snapshot.y() + 1 + Mth.lerp(focus, 5.0, targetY + 1.1) + lift,
-                snapshot.z() + .5 - Mth.lerp(focus, wideDistance, 4.8));
-        Vec3 look = new Vec3(snapshot.x() + .5 + targetX * focus,
-                snapshot.y() + 1 + targetY + lift, snapshot.z() + .5 + targetZ);
+        Vec3 origin = new Vec3(snapshot.x()+.5,snapshot.y()+1+lift,snapshot.z()+.5);
+        double jolt=frame.impact()*Math.sin(frame.time()*2.4)*.028;
+        Vec3 desired = origin.add(shot.eye().x+jolt,shot.eye().y+jolt*.35,shot.eye().z);
+        Vec3 look = origin.add(shot.look().x,shot.look().y,shot.look().z);
         long now = System.nanoTime();
-        double dt = lastCameraFrame == 0 ? 1 : Math.min(.1, (now - lastCameraFrame) / 1e9);
-        lastCameraFrame = now;
-        double alpha = 1 - Math.exp(-dt * 5);
-        smoothPosition = smoothPosition == null ? desired : smoothPosition.lerp(desired, alpha);
-        Vec3 delta = look.subtract(smoothPosition);
-        float yaw = (float) Math.toDegrees(Math.atan2(-delta.x, delta.z));
-        float pitch = (float) -Math.toDegrees(Math.atan2(delta.y, Math.sqrt(delta.x * delta.x + delta.z * delta.z)));
-        if (dt == 1) { smoothYaw = yaw; smoothPitch = pitch; }
-        else { smoothYaw += Mth.wrapDegrees(yaw - smoothYaw) * (float) alpha;
-            smoothPitch += (pitch - smoothPitch) * (float) alpha; }
-        camera.setPosition(smoothPosition); camera.setRotation(smoothYaw, smoothPitch);
+        boolean first = lastCameraFrame == 0;
+        double dt = first ? 1 : Math.min(.1,(now-lastCameraFrame)/1e9);
+        lastCameraFrame=now;
+        double damping=frame.time()<SettlementPresentation.ENTRANCE_END+8?14:9;
+        double alpha=first?1:1-Math.exp(-dt*damping);
+        smoothPosition = smoothPosition == null ? desired : smoothPosition.lerp(desired,alpha);
+        smoothLook = smoothLook == null ? look : smoothLook.lerp(look,alpha);
+        smoothFov += (shot.fov()-smoothFov)*alpha;
+        smoothRoll += (shot.roll()-smoothRoll)*alpha;
+        Vec3 delta=smoothLook.subtract(smoothPosition);
+        smoothYaw=(float)Math.toDegrees(Math.atan2(-delta.x,delta.z));
+        smoothPitch=(float)-Math.toDegrees(Math.atan2(delta.y,Math.hypot(delta.x,delta.z)));
+        camera.setPosition(smoothPosition); camera.setRotation(smoothYaw,smoothPitch);
     }
 
     /** 同帧重申最终姿态，不再次积分平滑时钟。 */
@@ -425,20 +468,51 @@ public final class SettlementClient {
         double t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t);
     }
 
+    /** 只生成展示用副本，不购买、不发物品，也不修改职业的初始物品模板。 */
+    private static net.minecraft.world.item.ItemStack chooseHeldItem(SettlementSnapshot.Actor actor) {
+        var id = net.minecraft.resources.ResourceLocation.tryParse(actor.role());
+        var role = id == null ? null : io.wifi.starrailexpress.api.TMMRoles.ROLES.get(id);
+        List<net.minecraft.world.item.ItemStack> candidates = new ArrayList<>();
+        if (role != null) {
+            for (var stack : role.getDefaultItems()) {
+                if (!stack.isEmpty()) candidates.add(stack);
+            }
+        }
+        if (candidates.isEmpty()) {
+            var entries = role == null ? List.<io.wifi.starrailexpress.util.ShopEntry>of()
+                    : io.wifi.starrailexpress.game.ShopContent.getShopEntries(role);
+            for (var entry : entries) {
+                if (!entry.stack().isEmpty()) candidates.add(entry.stack());
+            }
+            if (candidates.isEmpty()) {
+                for (var entry : io.wifi.starrailexpress.game.ShopContent.getDefaultKnifeEntries()) {
+                    if (!entry.stack().isEmpty()) candidates.add(entry.stack());
+                }
+            }
+        }
+        if (candidates.isEmpty()) return net.minecraft.world.item.ItemStack.EMPTY;
+        var stack = candidates.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(candidates.size())).copy();
+        stack.setCount(1);
+        return stack;
+    }
+
     static final class ActorState {
         final SettlementSnapshot.Actor fact;
         final double x, y, z;
         final int order;
         final SettlementPhysics.Body body;
+        final net.minecraft.world.item.ItemStack heldItem;
         String role;
         String initialRole;
         boolean dead;
         float blackness;
         int actionAt = -1000;
+        SettlementSnapshot.Event actionEvent;
         ActorState(SettlementSnapshot.Actor fact, double x, double y, double z, int order) {
             this.fact = fact; this.x = x; this.y = y; this.z = z; this.order = order;
             initialRole = role = fact.role(); dead = fact.dead();
             body = new SettlementPhysics.Body(x, 1, z, order);
+            heldItem = chooseHeldItem(fact);
         }
     }
 }

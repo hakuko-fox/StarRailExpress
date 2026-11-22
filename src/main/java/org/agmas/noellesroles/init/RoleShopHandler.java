@@ -32,6 +32,7 @@ import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.TMMSounds;
+import io.wifi.starrailexpress.util.ItemComponentUtils;
 import io.wifi.starrailexpress.util.SREItemUtils;
 import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.ChatFormatting;
@@ -60,11 +61,12 @@ import net.minecraft.world.item.component.*;
 import net.minecraft.world.item.enchantment.Enchantments;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
+import org.agmas.noellesroles.content.item.TimeStopClock;
 import org.agmas.noellesroles.content.item.ToxinShopEntry;
 import org.agmas.noellesroles.role_data.innocence.SingerRoleData;
+import org.agmas.noellesroles.role_data.innocence.FirefighterRoleData;
 import org.agmas.noellesroles.role_data.killer.ExecutionerRoleData;
 import org.agmas.noellesroles.role_data.killer.MaChenXuRoleData;
-import org.agmas.noellesroles.role_data.innocence.MagicianRoleData;
 import org.agmas.noellesroles.role_data.innocence.DiscMasterRoleData;
 import org.agmas.noellesroles.role_data.innocence.PhotographerRoleData;
 import org.agmas.noellesroles.role_data.killer.StalkerRoleData;
@@ -76,6 +78,7 @@ import org.agmas.noellesroles.role_data.killer.WraithAssassinRoleData;
 import org.agmas.noellesroles.role_data.neutral.CandleBearerRoleData;
 import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role_data.neutral.PhantomMusicianRoleData;
+import org.agmas.noellesroles.role_data.neutral.ReasonerRoleData;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.TraitorAndModifiers;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
@@ -108,6 +111,17 @@ public class RoleShopHandler {
         return MCItemsUtils.hasItem(player, ModItems.DREAM_AXE)
                 || MCItemsUtils.hasItem(player, ModItems.DREAM_DIAMOND_SWORD)
                 || MCItemsUtils.hasItem(player, ModItems.DREAM_MACE);
+    }
+
+    /** 大侦探商店：快捷栏（前 9 格）是否已持有推理之书。 */
+    private static boolean hasDeductionBookInHotbar(Player player) {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = player.getInventory().items.get(i);
+            if (!stack.isEmpty() && stack.is(ModItems.DEDUCTION_BOOK)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static ItemStack createNetCopFirework(FireworkExplosion.Shape shape) {
@@ -347,7 +361,6 @@ public class RoleShopHandler {
         ArrayList<ShopEntry> VETERAN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> PATROLLER_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> NIAN_SHOU_SHOP = new ArrayList<>();
-        ArrayList<ShopEntry> MAGICIAN_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> BANDIT_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> CLOCKMAKER_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> WRITER_SHOP = new ArrayList<>();
@@ -359,6 +372,7 @@ public class RoleShopHandler {
         ArrayList<ShopEntry> SEA_KING_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> CANDLE_BEARER_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> SUPER_LOOSE_END_SHOP = new ArrayList<>();
+        ArrayList<ShopEntry> GHOST_LOOSE_END_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> PILOT_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> SHADOW_FALCON_SHOP = new ArrayList<>();
         ArrayList<ShopEntry> GANGSTERS_SHOP = new ArrayList<>();
@@ -708,75 +722,6 @@ public class RoleShopHandler {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
                     return RoleUtils.insertStackInFreeSlot(player, attendantLantern.copy());
-                }
-            });
-        }
-
-        // 魔术师商店
-        {
-            // 假刀 - 50金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_KNIFE.getDefaultInstance(),
-                    50,
-                    ShopEntry.Type.WEAPON));
-
-            // 假撬棍 - 35金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_CROWBAR.getDefaultInstance(),
-                    35,
-                    ShopEntry.Type.WEAPON));
-
-            // 假开锁器 - 80金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_LOCKPICK.getDefaultInstance(),
-                    80,
-                    ShopEntry.Type.WEAPON));
-
-            // 鞭炮 - 30金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    TMMItems.FIRECRACKER.getDefaultInstance(),
-                    30,
-                    ShopEntry.Type.WEAPON));
-
-            // 假裹尸袋 - 100金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_BODY_BAG.getDefaultInstance(),
-                    100,
-                    ShopEntry.Type.WEAPON));
-
-            // 便签 - 100金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    TMMItems.NOTE.getDefaultInstance(),
-                    100,
-                    ShopEntry.Type.WEAPON));
-
-            // 假枪 - 175金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_REVOLVER.getDefaultInstance(),
-                    175,
-                    ShopEntry.Type.WEAPON));
-
-            // 假手雷 - 200金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_GRENADE.getDefaultInstance(),
-                    200,
-                    ShopEntry.Type.WEAPON));
-
-            // 假疯狂模式 - 325金币
-            MAGICIAN_SHOP.add(new ShopEntry(
-                    ModItems.FAKE_PSYCHO_MODE.getDefaultInstance(),
-                    325,
-                    ShopEntry.Type.WEAPON) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    // 获得假球棒并启动假疯狂模式
-                    var magicianComponent = RoleData.getNullable(MagicianRoleData.class, player);
-                    if (magicianComponent != null) {
-                        if (!magicianComponent.startFakePsycho()) {
-                            return false;
-                        }
-                    }
-                    return true;
                 }
             });
         }
@@ -1134,41 +1079,55 @@ public class RoleShopHandler {
                     ShopEntry.Type.TOOL));
         }
 
-        // 消防员商店
+        // 消防员商店：与独裁者「独裁之书」一致，用职业数据记录本局购买状态
         {
-            // 消防斧 - 150金币
+            // 消防斧 - 150金币（一局仅能购买一次）
             FIREFIGHTER_SHOP.add(new ShopEntry(
                     ModItems.FIRE_AXE.getDefaultInstance(),
                     150,
                     ShopEntry.Type.TOOL) {
                 @Override
+                public boolean canBuy(Player player) {
+                    FirefighterRoleData data = RoleData.getNullable(FirefighterRoleData.class, player);
+                    return data != null && !data.axePurchased && super.canBuy(player);
+                }
+
+                @Override
                 public boolean onBuy(Player player) {
-                    if (SREItemUtils.countItem(player, Items.CHAIN_COMMAND_BLOCK) > 0) {
+                    FirefighterRoleData data = RoleData.getNullable(FirefighterRoleData.class, player);
+                    if (data == null || data.axePurchased) {
                         return false;
                     }
-                    if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
-                        player.getInventory().setItem(14, Items.CHAIN_COMMAND_BLOCK.getDefaultInstance());
-                        return true;
+                    if (!super.onBuy(player)) {
+                        return false;
                     }
-                    return false;
+                    data.axePurchased = true;
+                    return true;
                 }
             });
 
-            // 灭火器 - 150金币
+            // 灭火器 - 150金币（一局仅能购买一次）
             FIREFIGHTER_SHOP.add(new ShopEntry(
                     ModItems.EXTINGUISHER.getDefaultInstance(),
                     150,
                     ShopEntry.Type.TOOL) {
                 @Override
+                public boolean canBuy(Player player) {
+                    FirefighterRoleData data = RoleData.getNullable(FirefighterRoleData.class, player);
+                    return data != null && !data.extinguisherPurchased && super.canBuy(player);
+                }
+
+                @Override
                 public boolean onBuy(Player player) {
-                    if (SREItemUtils.countItem(player, Items.REPEATING_COMMAND_BLOCK) > 0) {
+                    FirefighterRoleData data = RoleData.getNullable(FirefighterRoleData.class, player);
+                    if (data == null || data.extinguisherPurchased) {
                         return false;
                     }
-                    if (RoleUtils.insertStackInFreeSlot(player, this.stack().copy())) {
-                        player.getInventory().setItem(15, Items.REPEATING_COMMAND_BLOCK.getDefaultInstance());
-                        return true;
+                    if (!super.onBuy(player)) {
+                        return false;
                     }
-                    return false;
+                    data.extinguisherPurchased = true;
+                    return true;
                 }
             });
         }
@@ -1327,7 +1286,75 @@ public class RoleShopHandler {
             // 绳索（拉人）
             SUPER_LOOSE_END_SHOP.add(new ShopEntry(
                     ModItems.ROPE.getDefaultInstance(),
-                    150,
+                    125,
+                    ShopEntry.Type.TOOL));
+            // 鞘翅
+            SUPER_LOOSE_END_SHOP.add(new ShopEntry(
+                    Items.ELYTRA.getDefaultInstance(),
+                    100,
+                    ShopEntry.Type.TOOL));
+            // 烟花火箭
+            SUPER_LOOSE_END_SHOP.add(new ShopEntry(
+                    new ItemStack(Items.FIREWORK_ROCKET, 1),
+                    80,
+                    ShopEntry.Type.TOOL));
+            // 潜水头盔
+            SUPER_LOOSE_END_SHOP.add(new ShopEntry(
+                    ModItems.DIVING_HELMET.getDefaultInstance(),
+                    50,
+                    ShopEntry.Type.TOOL));
+            // 潜水靴
+            SUPER_LOOSE_END_SHOP.add(new ShopEntry(
+                    ModItems.DIVING_BOOTS.getDefaultInstance(),
+                    125,
+                    ShopEntry.Type.TOOL));
+        }
+
+        // 幽灵亡命徒商店
+        {
+            // 飞刀
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    ModItems.THROWING_KNIFE.getDefaultInstance(),
+                    200,
+                    ShopEntry.Type.TOOL));
+            // 绳索（拉人）
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    ModItems.ROPE.getDefaultInstance(),
+                    125,
+                    ShopEntry.Type.TOOL));
+            // 鞘翅
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    Items.ELYTRA.getDefaultInstance(),
+                    100,
+                    ShopEntry.Type.TOOL));
+            // 烟花火箭
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    new ItemStack(Items.FIREWORK_ROCKET, 1),
+                    80,
+                    ShopEntry.Type.TOOL));
+            // 潜水头盔
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    ModItems.DIVING_HELMET.getDefaultInstance(),
+                    50,
+                    ShopEntry.Type.TOOL));
+            // 潜水靴
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    ModItems.DIVING_BOOTS.getDefaultInstance(),
+                    125,
+                    ShopEntry.Type.TOOL));
+            // 单次时停钟（时停 3 秒）
+            ItemStack singleUseTimeStopClock = ModItems.TIME_STOP_CLOCK.getDefaultInstance();
+            ItemComponentUtils.setCustomDataTagIntValue(
+                    singleUseTimeStopClock, TimeStopClock.TAG_STOP_TIME, 3 * 20);
+            singleUseTimeStopClock.setDamageValue(TimeStopClock.MAX_DURABILITY - 1);
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    singleUseTimeStopClock,
+                    350,
+                    ShopEntry.Type.TOOL));
+            // 防御药剂
+            GHOST_LOOSE_END_SHOP.add(new ShopEntry(
+                    TMMItems.DEFENSE_VIAL.getDefaultInstance(),
+                    300,
                     ShopEntry.Type.TOOL));
         }
 
@@ -1823,13 +1850,14 @@ public class RoleShopHandler {
 
         // ==================== 推理师商店 ====================
         {
-            // 罗盘 - 100金币（游戏时间>=2分钟且没有罗盘时才能购买）
+            // 罗盘 - 100金币（本局严格经过2分钟且没有罗盘时才能购买）
             REASONER_SHOP.add(new ShopEntry(ModItems.REASONER_COMPASS.getDefaultInstance(), 100, ShopEntry.Type.TOOL) {
                 @Override
                 public boolean onBuy(@NotNull Player player) {
-                    var timeComp = io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(player.level());
-                    int elapsed = timeComp.getResetTime() - timeComp.getTime();
-                    if (elapsed < 2 * 60 * 20) {
+                    // 不能用 resetTime - time 反推已过时间：击杀加时会让剩余倒计时回涨，
+                    // 导致「已过时间」倒退/停滞。统一使用与技能冷却同源的严格经过 tick。
+                    long elapsed = ReasonerRoleData.elapsedTicks(player.level());
+                    if (elapsed < ReasonerRoleData.GIVE_COMPASS_TICKS) {
                         player.displayClientMessage(
                                 Component.translatable("message.noellesroles.reasoner.shop.time_not_ready")
                                         .withStyle(ChatFormatting.YELLOW),
@@ -2103,66 +2131,9 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.SPELLBREAKER.getIdentifier(), SHOP);
         }
 
-        // 布袋鬼商店（诡舍·缚灵）
-        {
-            // 设计要求：无法购买刀、枪、狂暴模式，只能购买强化领域的道具
-            var MA_CHEN_XU_SHOP = new ArrayList<ShopEntry>();
-
-            // 诡舍·浊雨 - 100金币
-            // 效果：30秒小雨，恐惧范围外好人每5秒掉3SAN，可与大招叠加
-            ItemStack turbidRainItem = Items.BARRIER.getDefaultInstance();
-            turbidRainItem.set(DataComponents.ITEM_NAME,
-                    Component.translatable("item.noellesroles.ma_chen_xu.turbid_rain")
-                            .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.BOLD));
-            var turbidRainLore = new ArrayList<Component>();
-            turbidRainLore.add(Component.translatable("item.noellesroles.ma_chen_xu.turbid_rain.lore1")
-                    .setStyle(Style.EMPTY.withItalic(false))
-                    .withStyle(ChatFormatting.GRAY));
-            turbidRainLore.add(Component.translatable("item.noellesroles.ma_chen_xu.turbid_rain.lore2")
-                    .setStyle(Style.EMPTY.withItalic(false))
-                    .withStyle(ChatFormatting.GRAY));
-            turbidRainItem.set(DataComponents.LORE, new ItemLore(turbidRainLore));
-
-            MA_CHEN_XU_SHOP.add(new ShopEntry(turbidRainItem, 180, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    var component = RoleData.getNullable(MaChenXuRoleData.class, player);
-                    if (component != null) {
-                        return component.useTurbidRain();
-                    }
-                    return false;
-                }
-            });
-
-            // 诡舍·镇魂铃 - 150金币
-            // 效果：20格AoE，好人获得10秒耳鸣效果
-            ItemStack soulBellItem = Items.BELL.getDefaultInstance();
-            soulBellItem.set(DataComponents.ITEM_NAME,
-                    Component.translatable("item.noellesroles.ma_chen_xu.soul_bell")
-                            .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.BOLD));
-            var soulBellLore = new ArrayList<Component>();
-            soulBellLore.add(Component.translatable("item.noellesroles.ma_chen_xu.soul_bell.lore1")
-                    .setStyle(Style.EMPTY.withItalic(false))
-                    .withStyle(ChatFormatting.GRAY));
-            soulBellLore.add(Component.translatable("item.noellesroles.ma_chen_xu.soul_bell.lore2")
-                    .setStyle(Style.EMPTY.withItalic(false))
-                    .withStyle(ChatFormatting.GRAY));
-            soulBellItem.set(DataComponents.LORE, new ItemLore(soulBellLore));
-
-            MA_CHEN_XU_SHOP.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75, ShopEntry.Type.TOOL));
-            MA_CHEN_XU_SHOP.add(new ShopEntry(soulBellItem, 105, ShopEntry.Type.TOOL) {
-                @Override
-                public boolean onBuy(@NotNull Player player) {
-                    var component = RoleData.getNullable(MaChenXuRoleData.class, player);
-                    if (component != null) {
-                        return component.useSoulBell();
-                    }
-                    return false;
-                }
-            });
-
-            ShopContent.customEntries.put(ModRoles.MA_CHEN_XU.getIdentifier(), MA_CHEN_XU_SHOP);
-        }
+        // 布袋鬼的战斗能力统一来自诡物与领域，商店仅保留原有通用工具。
+        ShopContent.customEntries.put(ModRoles.MA_CHEN_XU_ID,
+                new ArrayList<>(List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75, ShopEntry.Type.TOOL))));
 
         // FURANDORU的商店
         {
@@ -2213,6 +2184,27 @@ public class RoleShopHandler {
             var SHOP = new ArrayList<ShopEntry>();
             SHOP.add(new ShopEntry(ModItems.SIGNATURE_PAPER.getDefaultInstance(), 100, ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(ModRoles.SUPERSTAR.getIdentifier(), SHOP);
+        }
+        // 大侦探的商店：推理之书 50 金币，快捷栏已有则不可购买
+        {
+            var SHOP = new ArrayList<ShopEntry>();
+            SHOP.add(new ShopEntry(ModItems.DEDUCTION_BOOK.getDefaultInstance(), 50, ShopEntry.Type.TOOL) {
+                @Override
+                public boolean canDisplay(@NotNull Player player) {
+                    return !hasDeductionBookInHotbar(player);
+                }
+
+                @Override
+                public boolean canBuy(@NotNull Player player) {
+                    if (hasDeductionBookInHotbar(player)) {
+                        setFailedMessage(Component.translatable(
+                                "message.noellesroles.great_detective.already_owned"));
+                        return false;
+                    }
+                    return super.canBuy(player);
+                }
+            });
+            ShopContent.customEntries.put(ModRoles.GREAT_DETECTIVE.getIdentifier(), SHOP);
         }
         // 大妖精的商店
         {
@@ -2368,7 +2360,16 @@ public class RoleShopHandler {
                     SREConfig.instance().lockpickPrice + 20,
                     ShopEntry.Type.TOOL));
             ShopContent.customEntries.put(SERoles.NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
-            ShopContent.customEntries.put(SERoles.ARSONIST.getIdentifier(), NECROMANCER_SHOP);
+            var ARSONIST_SHOP = new ArrayList<>(NECROMANCER_SHOP);
+            ARSONIST_SHOP.add(new ShopEntry(
+                    pro.fazeclan.river.stupid_express.constants.SEItems.LARGE_OIL_CAN.getDefaultInstance(),
+                    pro.fazeclan.river.stupid_express.role.arsonist.ArsonistRules.OIL_CAN_PRICE, ShopEntry.Type.TOOL));
+            ARSONIST_SHOP.add(new ShopEntry(
+                    pro.fazeclan.river.stupid_express.constants.SEItems.FIRE_GUN.getDefaultInstance(),
+                    pro.fazeclan.river.stupid_express.role.arsonist.ArsonistRules.FIRE_GUN_PRICE, ShopEntry.Type.WEAPON));
+            ARSONIST_SHOP.add(new ShopEntry(TMMItems.CROWBAR.getDefaultInstance(),
+                    SREConfig.instance().crowbarPrice, ShopEntry.Type.TOOL));
+            ShopContent.customEntries.put(SERoles.ARSONIST.getIdentifier(), ARSONIST_SHOP);
             ShopContent.customEntries.put(BounsRoles.CAT_NECROMANCER.getIdentifier(), NECROMANCER_SHOP);
 
             {
@@ -2853,13 +2854,27 @@ public class RoleShopHandler {
                     ModRoles.PHOTOGRAPHER_ID, entries);
         }
 
-        // 牛逼
+        // 牛逼（记者）：便签 / 巨大便签 / 摄像头盔 / 记者终端
         {
             ShopContent.customEntries.put(
                     ModRoles.AWESOME_BINGLUS_ID,
                     List.of(
                             new ShopEntry(TMMItems.NOTE.getDefaultInstance(), 10, ShopEntry.Type.TOOL),
-                            new ShopEntry(ModItems.GIANT_NOTE.getDefaultInstance(), 75, ShopEntry.Type.TOOL)));
+                            new ShopEntry(ModItems.GIANT_NOTE.getDefaultInstance(), 50, ShopEntry.Type.TOOL),
+                            new ShopEntry(ModItems.CAMERA_HELMET.getDefaultInstance(), 100, ShopEntry.Type.TOOL),
+                            new ShopEntry(ModItems.REPORTER_TERMINAL.getDefaultInstance(), 150,
+                                    ShopEntry.Type.TOOL) {
+                                @Override
+                                public boolean canBuy(@NotNull Player player) {
+                                    // 已持有记者终端时不允许重复购买
+                                    if (SREItemUtils.hasItem(player, ModItems.REPORTER_TERMINAL)) {
+                                        setFailedMessage(Component.translatable(
+                                                "message.noellesroles.reporter_terminal.already_owned"));
+                                        return false;
+                                    }
+                                    return super.canBuy(player);
+                                }
+                            }));
         }
 
         // 阴谋家商店
@@ -3176,11 +3191,8 @@ public class RoleShopHandler {
                     ModRoles.NIAN_SHOU_ID, NIAN_SHOU_SHOP);
         }
 
-        // 魔术师商店
-        {
-            ShopContent.customEntries.put(
-                    ModRoles.MAGICIAN_ID, MAGICIAN_SHOP);
-        }
+        // 魔术师没有固定商店：商店跟随开局伪装的杀手职业（价格 +20%），
+        // 见 MagicianRole / MagicianShop。
 
         // 强盗商店
         {
@@ -3371,10 +3383,12 @@ public class RoleShopHandler {
                     ModRoles.CANDLE_BEARER_ID, CANDLE_BEARER_SHOP);
         }
 
-        // 超级亡命徒商店
+        // 特殊亡命徒商店
         {
             ShopContent.customEntries.put(
                     SpecialGameModeRoles.SUPER_LOOSE_END.identifier(), SUPER_LOOSE_END_SHOP);
+            ShopContent.customEntries.put(
+                    SpecialGameModeRoles.GHOST_LOOSE_END.identifier(), GHOST_LOOSE_END_SHOP);
         }
 
         // 飞行员商店
@@ -3428,107 +3442,9 @@ public class RoleShopHandler {
             ShopContent.customEntries.put(ModRoles.DIVER_ID, diverShop);
         }
 
-        // 诡客的商店
-        {
-            List<ShopEntry> shop = new ArrayList<>();
-            // 净雨符
-            {
-                ItemStack it = Items.POTION.getDefaultInstance();
-                it.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.guest_ghost.stop_raining"));
-                var rainLore = new ArrayList<Component>();
-                rainLore.add(Component.translatable("item.noellesroles.guest_ghost.stop_raining.tooltip1")
-                        .setStyle(Style.EMPTY.withItalic(false))
-                        .withStyle(ChatFormatting.GRAY));
-                it.set(DataComponents.LORE, new ItemLore(rainLore));
-                shop.add(new ShopEntry(it, 200,
-                        ShopEntry.Type.TOOL) {
-                    @Override
-                    public boolean onBuy(Player player) {
-                        if (player.getCooldowns().isOnCooldown(Items.BARRIER)) {
-                            return false;
-                        }
-                        player.getCooldowns().addCooldown(Items.BARRIER, 60 * 20);
-                        if (player instanceof ServerPlayer sp) {
-                            final SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(sp.level());
-                            List<ServerPlayer> players = sp.serverLevel().players();
-                            for (var p : players) {
-                                if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
-                                    p.removeEffect(ModEffects.INFINITE_STAMINA);
-                                    if (gameWorldComponent.isRole(p, ModRoles.MA_CHEN_XU)) {
-                                        var mapc = RoleData.getNullable(MaChenXuRoleData.class, p);
-                                        if (mapc != null && mapc.otherworldActive) {
-                                            mapc.otherworldDuration = 1;
-                                        }
-                                    } else {
-                                        SRERole role = gameWorldComponent.getRole(p);
-                                        if (role != null) {
-                                            if (role.getMoodType().equals(SRERole.MoodType.REAL)) {
-                                                SREPlayerMoodComponent.KEY.get(p).addMood(0.2f);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        // 回放记录：诡客购买净雨符关闭里世界
-                        SRE.REPLAY_MANAGER.recordCustomEvent(
-                                Component.translatable("replay.event.trickster.close_shadow",
-                                        GameReplayUtils.getReplayPlayerDisplayText(player, true)));
-                        return true;
-                    }
-                });
-            }
-            // 桃木钉
-            {
-                ItemStack it = ModItems.TAOMUDING.getDefaultInstance();
-                it.set(DataComponents.ITEM_NAME, Component.translatable("item.noellesroles.guest_ghost.taomuding"));
-                var rainLore = new ArrayList<Component>();
-                rainLore.add(Component.translatable("item.noellesroles.guest_ghost.taomuding.tooltip1")
-                        .setStyle(Style.EMPTY.withItalic(false))
-                        .withStyle(ChatFormatting.GRAY));
-                it.set(DataComponents.LORE, new ItemLore(rainLore));
-                shop.add(new ShopEntry(it, 150,
-                        ShopEntry.Type.TOOL) {
-                    @Override
-                    public boolean onBuy(Player player) {
-                        if (player.getCooldowns().isOnCooldown(ModItems.TAOMUDING)) {
-                            return false;
-                        }
-                        player.getCooldowns().addCooldown(ModItems.TAOMUDING, 60 * 20);
-                        if (player instanceof ServerPlayer sp) {
-                            final SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(sp.level());
-                            List<ServerPlayer> players = sp.serverLevel().players();
-                            for (var p : players) {
-                                if (GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p)) {
-                                    if (gameWorldComponent.isRole(p, ModRoles.MA_CHEN_XU)) {
-                                        var mapc = RoleData.getNullable(MaChenXuRoleData.class, p);
-                                        if (mapc != null) {
-                                            // 增加所有鬼术冷却30秒
-                                            mapc.veilCooldown += 20 * 30;
-                                            mapc.effigyCooldown += 20 * 30;
-                                            mapc.wailCooldown += 20 * 30;
-                                            mapc.seizeCooldown += 20 * 30;
-                                            mapc.ultimateCooldown += 20 * 30;
-                                            // 移除护盾
-                                            mapc.permanentShield = false;
-                                            p.displayClientMessage(
-                                                    Component.translatable(
-                                                            "message.noellesroles.ma_chen_xu.into_cooldown_by_guest")
-                                                            .withStyle(ChatFormatting.RED),
-                                                    true);
-                                            p.playNotifySound(TMMSounds.ITEM_PSYCHO_ARMOUR, SoundSource.MASTER, 1f, 1f);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return true;
-                    }
-                });
-            }
-
-            ShopContent.customEntries.put(ModRoles.GUEST_GHOST_ID, shop);
-        }
+        // 诡客反制由可传承法器承载，不再通过购买按钮全图生效。
+        ShopContent.customEntries.put(ModRoles.GUEST_GHOST_ID,
+                new ArrayList<>(List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 75, ShopEntry.Type.TOOL))));
 
         // 观察者商店 (Watcher)
         {

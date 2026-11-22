@@ -43,6 +43,7 @@
 > | `AreasSettings.meetingX/Y/Z`、`meetingChairScanRadius` | `meetingPosition: {x,y,z}`、`meetingChairScanBox: {minX..maxZ}` |
 >
 > 注：**RoleData / ShopEntry / 商店 / 背包扩展 / TimeRewind / ui_style 等章节经核对基本正确**，可以放心参考；职业相关的最新最全流程请优先看 [`角色开发指南.md`](角色开发指南.md) 与 [`AI创建新职业攻略.md`](AI创建新职业攻略.md)。
+> 时间回溯的原版 NBT 捕获/恢复生命周期与区域掉落物过滤，见 [`time_rewind_api.md`](time_rewind_api.md)「原版状态生命周期与物品过滤」；注册入口为 `TimeRewindEvents`，用于保全不可回溯复制的实物和排除临时领域增益。
 
 ## 目录 / Table of Contents
 
@@ -799,6 +800,11 @@ public interface RoleComponent extends AutoSyncedComponent {
   Store end-timestamps instead of decrementing countdowns each tick.
 - 如需倒计时，在客户端本地模拟计算，服务端约 10 秒同步一次。  
   For countdowns, simulate locally on client; sync from server roughly every 10 seconds.
+- 需要对全员同步的组件，请用 `io.wifi.starrailexpress.cca.DefaultStateSyncGate` 做「默认态门控」：
+  CCA 在实体开始被追踪 / 玩家登录时会对**每个**组件无脑 `syncWith`，`shouldSyncWith` 恒为 `true`
+  会发出「玩家数 × 观察者数」个负载为默认值的空包。门控后默认态只发给本人与「拿到过非默认数据」的观察者，
+  状态回落默认时仍会给他们补发一次复位包，功能不变。
+  For components synced to everyone, use `DefaultStateSyncGate` to skip default-state packets.
 
 ---
 
@@ -836,6 +842,11 @@ SREAbilityPlayerComponent comp = SREAbilityPlayerComponent.KEY.get(player);
 ## 技能系统 / Skill System
 
 ### RoleSkill — 技能注册
+
+统一技能定义新增开局冷却：`RoleSkill.skill(...).initialCooldownSeconds(80).cooldownSeconds(65).build()`。
+也可使用 `.initialCooldownTicks(ticks)`；`Definition.initialCooldownTicks()` 默认 0，旧构造器和旧技能行为不变。
+职业初始化器在组件与职业初始化完成后应用初始冷却，`OnGameTrueStarted` 再从完整时长计时；普通施法只使用 `cooldownTicks()`，不会重复套用开局冷却。
+
 
 **包 / Package:** `io.wifi.starrailexpress.api`（不是 `org.agmas.noellesroles`）
 
@@ -1714,6 +1725,13 @@ OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason
 
 ### 技能与交互事件
 
+- `ItemGameplayEvents.ALLOW_GUN_FIRE`：`boolean allow(ServerPlayer, int targetId)`，普通枪与狙击开火前的硬否决，早于耗弹、音效和冷却；狙击装弹/镜片操作不触发。
+- `ItemGameplayEvents.ALLOW_KNIFE_ATTACK`：同签名，普通刺杀入口在命中和冷却前硬否决；返回 false 不产生攻击副作用。
+- `GameUtilityEvents.ALLOW_REVIVE`：`boolean allow(ServerPlayer, @Nullable Vec3 destination)`，两个核心复活实现都在清状态/传送前查询；回房间复活 destination 为 null。首个 false 短路，默认放行。独立职业的自建复活流程需要在其扣次数前自行查询/校验，不能只依赖游戏模式切换。
+- `ItemGameplayEvents.BEFORE_ROLE_DROP`：`InteractionResult beforeDrop(Player, ItemStack)`，在 `RoleMethodDispatcher.callOnDropItem` 查询职业及后续白名单之前双端调用；首个非 `PASS` 原样返回，全部 `PASS` 继续原职业判定。监听器若拒绝客户端预测掉落，需在服务端同步对应菜单纠正物品栏。
+- `ClientGameplayEvents.DISGUISE_STATE_COPIED`：`void copied(Player, Entity dummy)`，伪装临时实体完成位置、朝向与动画状态复制后通知，保持不 tick 临时实体；适合追加模型专用动画状态。监听器仅在客户端初始化时注册一次。
+
+
 #### `OnRoleSkillUse` — 角色技能使用
 
 **类型:** 可拦截（BEFORE 和 AFTER 均可）。
@@ -1834,6 +1852,19 @@ Provides placeholder replacement similar to command blocks:
 ---
 
 ### 渲染与客户端事件
+
+#### `ClientGameplayEvents.ANONYMOUS_APPEARANCE` — 追加匿名外观限制
+
+**类型：** 客户端查询型；任一监听器返回 `true` 即要求匿名显示，默认 `false`。
+
+核心兼容入口 `SREClient.getLooseEndPenalty()` 返回「原有难民惩罚 **或** 该事件结果」，统一供玩家皮肤、尸体贴图及帽子屏蔽使用。监听器不能解除原有惩罚；`viewer` 是当前观察者，可能为空。
+
+```java
+ClientGameplayEvents.ANONYMOUS_APPEARANCE.register(
+        viewer -> ArsonistClient.hasMomentDeathPenalty());
+```
+
+在客户端初始化时静态注册一次，职业或活动判断留在扩展侧。回调中不要再次调用 `getLooseEndPenalty()`，以免递归。不要通过 Mixin 注入项目自有类来替代此入口。
 
 #### `RenderClientLightLevel` — 客户端光照等级渲染
 

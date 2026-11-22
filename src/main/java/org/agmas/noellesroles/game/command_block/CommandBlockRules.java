@@ -65,6 +65,22 @@ public final class CommandBlockRules {
     }
 
     /**
+     * 命令方块事件局里<b>绝不允许出现</b>的职业（事件与它们的玩法互斥）。
+     *
+     * <p>名单不再写死在这里：职业在自己的定义里调用
+     * {@link SRERole#setCannotAppearInCommandBlockEvent(boolean)} 声明自己是
+     * 「无法在命令方块事件中出现的职业」，这里只统一读取该标记。
+     *
+     * <p>
+     * 与 {@link #isExcluded(SRERole)} 的区别：{@code isExcluded} 描述的是「抽象改写池的候选资格」
+     * （杀手/绑定职业/池内职业等），这里是「事件局点名禁用的职业」。
+     * 抽取结果里一旦出现这些职业，{@code CommandBlockRolePoolMixin} 会把它替换成平民职业。
+     */
+    public static boolean isEventBanned(SRERole role) {
+        return role != null && role.isCannotAppearInCommandBlockEvent();
+    }
+
+    /**
      * 异常改写池。Dream 复用现有杀手（铁斧 / 制酒 / 商店），不另写一套。
      *
      * <p>遵从职业启用管理（enableroles）：被地图、名单或配置 ban 掉的职业不会进池，
@@ -73,7 +89,7 @@ public final class CommandBlockRules {
     public static List<SRERole> pool() {
         List<SRERole> all = List.of(ModRoles.STONE_MAN, ModRoles.HIM, ModRoles.ERROR_404, ModRoles.DREAM,
                 ModRoles.ENTITY_303, ModRoles.ENTITY_NULL, ModRoles.FARLANDS, ModRoles.WHITE_EYES,
-                ModRoles.STRINGER, ModRoles.PAPER_DOLL, ModRoles.FOG_GUEST, ModRoles.PENDULUM,
+                ModRoles.STRINGER, ModRoles.FOG_GUEST, ModRoles.PAPER_DOLL, ModRoles.MUSTARD, ModRoles.PENDULUM,
                 ModRoles.CANDLE_SHADE, ModRoles.DREADLORD);
         return all.stream().filter(role -> !SREDisableManager.isRoleDisabled(role)).toList();
     }

@@ -5,14 +5,14 @@
 1. **职业注册时序**：在 `ModRoles.init()` 完成后、职业刷新配置加载**之前**调用
    `PumpkinSpiritRole.register()`，已经接入 `Noellesroles.onInitialize()`；幂等且不另注册同 ID。
    构造器设置普通池、独立中立、默认单局 1 人、默认启用权重 10000、禁止其他职业随机得到。
-   自然候选额外检查 `settings.halloweenEventEnabled` 和实际 `SREGameModes.MURDER`；管理员指定不走候选校验。
+   自然候选检查 `settings.halloweenEventEnabled` 和谋杀模式及其派生模式（包括轮抽、志愿），不再只认 `SREGameModes.MURDER`；沿用候选启用、地图和单局最多1人的限制。管理员指定不走候选校验。
 2. `HalloweenRuntime.register()` 固定一次调用 `PumpkinSpiritHandler.register()`，放在
    `HalloweenCombat.register()` **之前**，确保南瓜精攻击替换先于活动武器回调拦截。
    所有事件和统一 RoleSkill 在这里一次注册；职业自身通过 `RoleData.serverTick()` 推进，不需要 Runtime.tick。
 3. 客户端入口固定一次调用
    `org.agmas.noellesroles.game.halloween.pumpkin.client.PumpkinSpiritClient.register()`。
 4. 真实任务完成后一次调用 `PumpkinSpiritHandler.onTaskCompleted(ServerPlayer)`。
-   此回调给8格内其他存活南瓜精 +1–2 南瓜。自己的任务收入由 `PumpkinTaskIncomeMixin` 在默认收入计算后、账本记录前替换为60金币，不叠加普通中立任务金币。
+   此回调给8格内其他存活南瓜精 +1 南瓜。自己的任务收入由 `PumpkinTaskIncomeMixin` 在默认收入计算后、账本记录前替换为60金币，不叠加普通中立任务金币。
 5. 有效敲门奖励成功、CD 已消耗后调用 `PumpkinSpiritHandler.onDoorKnocked(ServerPlayer)`。
 6. 正常糖果效果确认成功后、`stack.shrink(1)` 前，传**真实被消费栈**调用
    `PumpkinSpiritHandler.onCandyConsumed(ServerPlayer, ItemStack)`。
@@ -46,7 +46,7 @@
 
 ## 机制与不变量
 
-- 胜利阈值固定为该局 `SREGameWorldComponent.getPlayerCount() * 4`；只看累计获得量，消费/丢弃不扣进度。
+- 胜利阈值固定为该局 `SREGameWorldComponent.getPlayerCount() * 5`；只看累计获得量，消费/丢弃不扣进度。
   每跨过一个 10 给一袋糖果，单次跨多档全给。独立胜利走标准 `RoleUtils.customWinnerWin`，
   `CustomWinnerRole` 自动参加现有胜利检查，不需要再改 CustomWinnerClass。
 - 已领取南瓜栈带全局 `CustomData` 已结算位；位会随原版分栈、合栈、转移复制。
@@ -74,7 +74,7 @@
   到期、真实死亡、断线、重生、换职业/维度、地图重置/结束均恢复。
   重施只延长租约，不把临时头保存成“原装备”；支持 15 秒与 20 秒。
   本方案保证正常退出流程，不声称支持 JVM 崩溃后的服务端内存租约恢复。
-- 真实死亡只监听 `FINAL_EVENT`，附近其他玩家最终死亡 +3；不使用尝试死亡事件发奖励。
+- 真实死亡只监听 `FINAL_EVENT`，附近其他玩家最终死亡 +2；不使用尝试死亡事件发奖励。
   杀手击杀南瓜精的基础金币和职业额外击杀金币在确切结算点跳过，不事后回滚余额。
   平民（实际 RoleTeam.CIVILIAN，非中立/警长）击杀时收到提示、20 秒南瓜头、缓慢 I 20 秒。
 - 本仓库实际亡命徒是 `TMMRoles.LOOSE_END`，并不存在 `ModRoles.DESPERADO`；兼容额外 id 路径 desperado。

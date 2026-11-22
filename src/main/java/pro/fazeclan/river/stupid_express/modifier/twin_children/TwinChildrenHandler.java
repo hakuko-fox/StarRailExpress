@@ -60,6 +60,14 @@ public final class TwinChildrenHandler {
     public static final float VISUAL_STANDING_HEIGHT = TwinChildrenHitbox.VISUAL_STANDING_HEIGHT;
     public static final float STACKED_UNSCALED_HEIGHT = TwinChildrenHitbox.STACKED_UNSCALED_HEIGHT;
 
+    /**
+     * 普通玩家站立时的眼高（未缩放），即 {@code Player.STANDING_DIMENSIONS.eyeHeight()} = 1.62。
+     *
+     * <p>写成常量而不是去读那个静态字段，是为了避免本类在极早期加载时触发 {@code Player}
+     * 的静态初始化。
+     */
+    public static final float NORMAL_EYE_HEIGHT = 1.62F;
+
     private static final float HEIGHT_REFRESH_EPSILON = 0.05F;
 
     /**
@@ -162,6 +170,19 @@ public final class TwinChildrenHandler {
     /** Either half of a stacked pair (lower twin or the rider on top of it). */
     public static boolean stackedTwin(Player player) {
         return isStackedLower(player) || isStackedUpper(player);
+    }
+
+    /**
+     * 「头顶（眼睛）是否入水」这类判定对下方双生之子应当使用的眼睛 Y 坐标。
+     * <p>下方双生之子被半身缩放后眼高只剩 {@code 1.62 * 0.5 = 0.81}，比正常玩家低一半；但叠起来
+     * 整体仍是 1.8 高（下方 0..1.3 + 上方 1.3..1.8），头顶就是普通玩家的头顶，所以必须按普通玩家
+     * 站立眼高 {@link #NORMAL_EYE_HEIGHT} 来算。判定入口见 {@code SREGameWorldComponent#isHeadUnderWater}。
+     */
+    public static double stackedHeadCheckEyeY(Player player) {
+        if (player != null && isStackedLower(player)) {
+            return player.getY() + NORMAL_EYE_HEIGHT;
+        }
+        return player == null ? 0.0D : player.getEyeY();
     }
 
     public static boolean shouldStayRiding(Player player) {
@@ -505,28 +526,29 @@ public final class TwinChildrenHandler {
     }
 
     /**
-     * 是否属于杀手阵营（杀手 / 杀手方中立）。
+     * 是否属于杀手团队（杀手阵营 + 杀手方中立），<b>按真实阵营</b>判定。
      *
      * <p>
-     * 判据与「阵营」标准定义 {@link RoleTeam#KILLER}、{@link RoleTeam#NEUTRAL_KILLER} 一致
-     * （{@code !isInnocent() && (canUseKiller() || isNeutralForKiller())}），
+     * 统一走权威阵营枚举 {@link RoleTeam#isKillerTeamReal(SRERole)}（不看隐藏身份，
+     * 例如隐藏为杀手团队的魔术师真实仍是平民），
      * 这样随机分配层的 {@code setCannotAppliedToTeam} 与本类的兜底判定不会出现分歧。
      */
     static boolean isKillerFaction(@Nullable SRERole role) {
-        return RoleTeam.KILLER.matches(role) || RoleTeam.NEUTRAL_KILLER.matches(role);
+        return RoleTeam.isKillerTeamReal(role);
     }
 
+    /**
+     * 阵营归类，<b>按真实阵营</b>：杀手团队 → KILLER，好人阵营本体（乘客 / 警长）→ INNOCENT，
+     * 其余（含好人方中立、杀手方中立之外的各中立细分）→ INDEPENDENT_NEUTRAL。
+     */
     static Faction factionOf(SRERole role) {
         if (role == null) {
             return Faction.INDEPENDENT_NEUTRAL;
         }
-        if (role.isNeutrals() && !role.isNeutralForKiller()) {
-            return Faction.INDEPENDENT_NEUTRAL;
-        }
-        if (role.isNeutralForKiller() || SREGameWorldComponent.isKillerTeamRoleStatic(role)) {
+        if (RoleTeam.isKillerTeamReal(role)) {
             return Faction.KILLER;
         }
-        if (role.isInnocent()) {
+        if (RoleTeam.isInnocentCamp(role)) {
             return Faction.INNOCENT;
         }
         return Faction.INDEPENDENT_NEUTRAL;

@@ -1,80 +1,58 @@
 package org.agmas.noellesroles.game.command_block;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import org.agmas.noellesroles.game.command_block.item.GazeRays;
-import org.agmas.noellesroles.init.ModItems;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.role_data.killer.FogGuestRoleData;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.NormalRole;
 import io.wifi.starrailexpress.api.RoleSkill;
-import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.util.ShopEntry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.Noellesroles;
+import org.agmas.noellesroles.init.ModEntities;
+import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.role.ModRoles;
 
-/** 雾客：藏进雾里就出不了手。有人近距离看着你会把雾撕开。 */
+/** 雾客：制造遮挡视线的雾区，并在雾内隐身。 */
 public class FogGuestRole extends NormalRole {
-    public static final ResourceLocation DEATH_BLADE = org.agmas.noellesroles.Noellesroles.id("fog_blade");
-    public static final int HIDE_TICKS = 6 * 20;
-    public static final double SHATTER_RANGE = 8.0D;
-
-    public FogGuestRole(ResourceLocation id, int color, boolean innocent, boolean killer, SRERole.MoodType mood,
-            int sprint, boolean seeTime) {
-        super(id, color, innocent, killer, mood, sprint, seeTime);
+    public FogGuestRole() {
+        super(Noellesroles.id("fog_guest"), 0xA9BBC1, false, true, MoodType.FAKE, Integer.MAX_VALUE, true);
     }
 
     public static void registerSkill() {
-        RoleSkill.register(ModRoles.FOG_GUEST, RoleSkill.skill(
-                SRE.id("fog_guest_hide"),
-                "skill.noellesroles.fog_guest.hide",
-                context -> hide(context.player()))
-                .cooldownSeconds(22).announceToSelf().showOnHud(true).build());
-    }
-
-    public static boolean hide(ServerPlayer player) {
-        FogGuestRoleData data = RoleData.getNullable(FogGuestRoleData.class, player);
-        if (data == null || !GameUtils.isPlayerAliveAndSurvival(player)) {
-            return false;
-        }
-        return data.hide(player.level().getGameTime());
-    }
-
-    public static boolean rejectsHarm(ServerPlayer attacker) {
-        FogGuestRoleData data = attacker == null ? null : RoleData.getNullable(FogGuestRoleData.class, attacker);
-        return data != null && data.isHidden();
-    }
-
-    @Override
-    public List<ShopEntry> getShopEntries() {
-        List<ShopEntry> shop = new ArrayList<>();
-        shop.add(new ShopEntry(ModItems.FOG_BELL.getDefaultInstance(), 70, ShopEntry.Type.WEAPON));
-        shop.add(new ShopEntry(ModItems.FOG_BLADE.getDefaultInstance(), 95, ShopEntry.Type.WEAPON));
-        shop.add(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 80, ShopEntry.Type.TOOL));
-        return shop;
+        RoleSkill.register(ModRoles.FOG_GUEST,
+                RoleSkill.skill(SRE.id("fog_guest_rise"), "skill.noellesroles.fog_guest.rise", context -> {
+                    ServerPlayer player = context.player();
+                    if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
+                    FogGuestZoneEntity zone = new FogGuestZoneEntity(ModEntities.FOG_GUEST_ZONE, player.level());
+                    zone.start(player);
+                    return player.level().addFreshEntity(zone);
+                }).cooldownSeconds(80).announceToSelf().showOnHud(true).build(),
+                RoleSkill.skill(SRE.id("fog_guest_hide"), "skill.noellesroles.fog_guest.hide", context -> {
+                    ServerPlayer player = context.player();
+                    if (!GameUtils.isPlayerAliveAndSurvival(player)) return false;
+                    if (!FogGuestZoneEntity.isInside(player)) {
+                        player.displayClientMessage(Component.translatable("message.noellesroles.fog_guest.outside"), true);
+                        return false;
+                    }
+                    player.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 5 * 20, 0, false, false, true));
+                    return true;
+                }).shifted(true).cooldownSeconds(10).announceToSelf().showOnHud(true).build());
     }
 
     @Override
     public List<ItemStack> getDefaultItems() {
-        return List.of();
+        return List.of(ModItems.FOG_BLADE.getDefaultInstance());
     }
 
-    public static boolean inFog(ServerPlayer player) {
-        return player != null && (player.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS)
-                || player.hasEffect(net.minecraft.world.effect.MobEffects.DARKNESS));
-    }
-
-    public static boolean watched(ServerPlayer watcher, ServerPlayer target) {
-        return watcher != null && target != null
-                && watcher.distanceToSqr(target) <= SHATTER_RANGE * SHATTER_RANGE
-                && watcher.hasLineOfSight(target)
-                && GazeRays.lookingAt(watcher, target, 0.55D);
+    @Override
+    public List<ShopEntry> getShopEntries() {
+        return List.of(new ShopEntry(TMMItems.LOCKPICK.getDefaultInstance(), 130, ShopEntry.Type.TOOL),
+                new ShopEntry(ModItems.FOG_BELL.getDefaultInstance(), 230, ShopEntry.Type.TOOL));
     }
 }

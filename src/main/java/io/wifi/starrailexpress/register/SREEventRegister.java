@@ -33,6 +33,7 @@ import io.wifi.starrailexpress.content.vote.VoteManager;
 import io.wifi.starrailexpress.event.*;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.PlayerMountainHandler;
+import io.wifi.starrailexpress.game.SecurityCameraChunkTickets;
 import io.wifi.starrailexpress.game.data.ServerMapConfig;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.modes.funny.SRERoleRotationGameMode;
@@ -66,6 +67,10 @@ public class SREEventRegister {
         PlayerMountainHandler.register();
         io.wifi.starrailexpress.game.modes.funny.mob.MobRiotRules.registerEvents();
         registerRoleEventEnableHandlers();
+
+        // 远距离监控摄像头：开局按游玩区域强加载其视野区块，结束时立即撤销票据（release 可重复调用）。
+        OnGameStarted.EVENT.register(SecurityCameraChunkTickets::onGameStarted);
+        OnGameEnd.EVENT.register((level, game) -> SecurityCameraChunkTickets.release(level));
 
         // 游戏开始：通知客户端（驱动 OnGameStartedClient 事件），并向本局玩家播放默认开场镜头
         net.exmo.sre.planecrash.PlaneCrashManager.register();
@@ -212,8 +217,10 @@ public class SREEventRegister {
             // 只带各通道的哈希，客户端本地缓存命中就什么都不用发，未命中才回来请求完整内容
             io.wifi.starrailexpress.synccontent.ContentSyncServer.handshakeTo(handler.player);
             SceneAssetServer.sendCurrentManifest(handler.player);
-            // 同步当前路径点给新加入的玩家
+            // 同步当前路径点给新加入的玩家；可见性也要补发，否则客户端静态默认值
+            // 会与服务端 SavedData 不一致（表现为"该显示时不显示 / 不该显示时乱显示"）。
             io.wifi.starrailexpress.util.WaypointSync.syncTo(handler.player);
+            io.wifi.starrailexpress.util.WaypointSync.syncVisibilityTo(handler.player);
             // 商店价格同步握手（仅哈希；客户端本地命中则无需服务端再发完整内容）
             io.wifi.starrailexpress.shop.ShopPriceSyncServer.syncTo(handler.player);
         });
@@ -260,6 +267,9 @@ public class SREEventRegister {
     }
 
     private static void sendDefaultIntroIfParticipant(ServerPlayer player) {
+        if (!io.wifi.starrailexpress.event.GameplayExtensionEvents.ALLOW_DEFAULT_INTRO.invoker().allow(player)) {
+            return;
+        }
         // 回响托运站由模式自己发一条开局运镜（追捕方 → 逃脱方 → 设施 → 回到本人），
         // 这里跳过默认的「远处俯视玩家」镜头，避免两条轨道互相抢占导演。
         if (SREGameWorldComponent.KEY.get(player.serverLevel()).getGameMode()

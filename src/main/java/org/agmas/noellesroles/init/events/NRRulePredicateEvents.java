@@ -202,6 +202,7 @@ public class NRRulePredicateEvents {
     private static void registerDropRules() {
         DropRules.canDropItem.addAll(List.of(
                 "noellesroles:small_dried_fish",
+                "noellesroles:portable_identity_scanner",
                 "exposure:stacked_photographs",
                 "exposure:album",
                 "exposure:photograph",
@@ -222,6 +223,7 @@ public class NRRulePredicateEvents {
                 "noellesroles:signed_paper",
                 "noellesroles:mercenary_contract",
                 "noellesroles:diving_helmet",
+                "noellesroles:camera_helmet",
                 "noellesroles:night_vision_glasses",
                 "noellesroles:life_and_death_shape",
                 "noellesroles:noell_paperclip",

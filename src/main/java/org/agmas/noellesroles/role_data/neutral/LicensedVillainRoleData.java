@@ -21,20 +21,24 @@ import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.index.TMMSounds;
+import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import org.agmas.noellesroles.game.moment.MomentManager;
+import org.agmas.noellesroles.game.moment.MomentType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import java.util.OptionalInt;
 
@@ -103,6 +107,11 @@ public class LicensedVillainRoleData extends SimpleRoleData {
             return;
         }
         if (!gameWorld.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+            // 黑警时刻结束（游戏结束或黑警死亡）：统一管理器出栈并停播/回退时刻音乐。
+            if (momentTriggered) {
+                MomentManager.end((ServerLevel) player.level(), MomentType.LICENSED_VILLAIN);
+                momentTriggered = false;
+            }
             return;
         }
 
@@ -110,10 +119,12 @@ public class LicensedVillainRoleData extends SimpleRoleData {
         if (momentTriggered) {
             if (areAllTargetsCleared(player.level(), gameWorld, targetPhase)) {
                 if (player.level() instanceof ServerLevel serverLevel) {
+                    MomentManager.end(serverLevel, MomentType.LICENSED_VILLAIN);
                     RoleUtils.customWinnerWin(serverLevel, GameUtils.WinStatus.CUSTOM,
                             BounsRoles.LICENSED_VILLAIN.identifier().getPath(),
                             OptionalInt.of(LICENSED_VILLAIN_COLOR));
                 }
+                momentTriggered = false;
             }
             return;
         }
@@ -125,7 +136,14 @@ public class LicensedVillainRoleData extends SimpleRoleData {
         int alive = countAlivePlayers(gameWorld);
         // 存活人数不足开局人数的 40% 时触发（整数乘法比较，等价于 alive < playerCount * 0.4）
         if (alive > 0 && alive * 100 < playerCount * MOMENT_ALIVE_PERCENT) {
-            if (momentTriggeredGuard)
+            // 统一时刻判定：一局仅触发一次（原有的静态守卫继续作为兼容兜底）。
+            if (momentTriggeredGuard || !MomentManager.canTrigger((ServerLevel) player.level(),
+                    MomentType.LICENSED_VILLAIN))
+                return;
+            // 亡命徒时刻（由难民修饰符触发）期间不触发黑警时刻：
+            // 此时存活人数常被压到阈值以下，且整局状态会在时刻结束时被时间回溯还原。
+            // 必须在置 momentTriggeredGuard 之前返回，否则本局黑警时刻会永久失效。
+            if (RefugeeComponent.KEY.get(player.level()).isAnyRevivals)
                 return;
             momentTriggeredGuard = true;
             triggerLicensedVillainMoment(gameWorld);
@@ -135,6 +153,12 @@ public class LicensedVillainRoleData extends SimpleRoleData {
     /** 黑警时刻触发：广播、发放德林加、播放音效、决定目标阵营并同步给所有黑警。 */
     private void triggerLicensedVillainMoment(SREGameWorldComponent gameWorld) {
         ServerLevel level = (ServerLevel) player.level();
+        // 统一时刻入口：一局仅第一次真正触发；之后保持已有状态，不重复开场。
+        if (!MomentManager.trigger(level, MomentType.LICENSED_VILLAIN))
+            return;
+
+        // 回放记录：黑警时刻触发
+        ReplayEventLog.record("replay.event.moment.licensed_villain", ReplayEventLog.player(player));
 
         // 以触发时在场（存活）玩家为基准统计三大阵营数量
         int killerCount = 0;
@@ -145,7 +169,7 @@ public class LicensedVillainRoleData extends SimpleRoleData {
                 continue;
             if (gameWorld.isRole(p, BounsRoles.LICENSED_VILLAIN))
                 continue;
-            SRERole role = gameWorld.getRole(p);
+            SRERole role = gameWorld.getAllegianceRole(p);
             if (role == null)
                 continue;
             if (role.isKillerTeam()) {
@@ -188,13 +212,6 @@ public class LicensedVillainRoleData extends SimpleRoleData {
             }
         }
 
-        // 全场播放与远征队修饰符触发时一致的音效（master 类型）
-        for (Player p : level.players()) {
-            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p))
-                continue;
-            p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_PSYCHO_ARMOUR,
-                    SoundSource.MASTER, 2.0F, 0.8F);
-        }
     }
 
     /** 统计当前存活玩家数。 */

@@ -52,6 +52,8 @@ public final class PlayerStatsManager {
     private static final long DATABASE_LOAD_RETRY_MS = 15_000L;
     private static final long DATABASE_FLUSH_TIMEOUT_MS = 4_000L;
     private static final Map<UUID, Entry> STATS = new ConcurrentHashMap<>();
+    /** 训练只写内存沙箱，不读取/覆盖正式统计，也不推送数据库。 */
+    private static final io.wifi.starrailexpress.training.TrainingStatsSandbox TRAINING_STATS = new io.wifi.starrailexpress.training.TrainingStatsSandbox();
 
     private PlayerStatsManager() {
     }
@@ -61,7 +63,7 @@ public final class PlayerStatsManager {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onPlayerDisconnect(handler.getPlayer()));
         ServerTickEvents.END_SERVER_TICK.register(PlayerStatsManager::tick);
         ServerLifecycleEvents.SERVER_STOPPING.register(PlayerStatsManager::flushAllLocalBlocking);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> STATS.clear());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> { STATS.clear(); TRAINING_STATS.clear(); });
     }
 
     /**
@@ -155,6 +157,8 @@ public final class PlayerStatsManager {
     }
 
     public static PlayerStats get(UUID playerUuid) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isIsolated())
+            return TRAINING_STATS.get(playerUuid);
         return STATS.computeIfAbsent(playerUuid, PlayerStatsManager::newEntry).stats;
     }
 
@@ -177,6 +181,17 @@ public final class PlayerStatsManager {
         if (isOnlineEntry(entry)) {
             saveDatabaseAsync(null, entry, true);
         }
+    }
+
+    /** 断线/停服时提交最终快照，不等待 JDBC；即使已有保存正在执行也不能漏掉最后一次变更。 */
+    public static void submitFinalDatabaseSnapshot(UUID playerUuid) {
+        Entry entry = STATS.get(playerUuid);
+        if (entry == null || !isDatabaseEnabled() || !entry.databaseLoaded) {
+            return;
+        }
+        long updatedAt = Math.max(1L, entry.updatedAt);
+        MysqlPlayerDataStore.saveBatchAsync(playerUuid,
+                Map.of(DATABASE_KEY, PlayerStatsSerializer.toJson(entry.stats, updatedAt)), updatedAt);
     }
 
     public static boolean flushDatabaseBlocking(UUID playerUuid) {
@@ -212,6 +227,7 @@ public final class PlayerStatsManager {
     }
 
     private static void onPlayerJoin(ServerPlayer player) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(player.level())) return;
         Entry entry = STATS.computeIfAbsent(player.getUUID(), PlayerStatsManager::newEntry);
         entry.online = true;
         loadLocal(entry);
@@ -220,14 +236,15 @@ public final class PlayerStatsManager {
     }
 
     private static void onPlayerDisconnect(ServerPlayer player) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(player.level())) return;
         Entry entry = STATS.get(player.getUUID());
         if (entry == null) {
             return;
         }
         // 周期同步间隔内断线时，若只写本地文件会让数据库权威副本落后一局数据。
-        // 断线仅发生一次，因此在移除内存条目前用受限阻塞写入收口；失败仍保留原子本地备份。
-        if (entry.databaseDirty) {
-            flushDatabaseBlocking(player.getUUID());
+        // 在移除内存条目前捕获最终快照；数据库慢/离线时不阻塞 Netty 或关服线程。
+        if (entry.databaseDirty || entry.databaseSaveInFlight) {
+            submitFinalDatabaseSnapshot(player.getUUID());
         }
         entry.online = false;
         entry.forceDatabaseFlushPending = false;
@@ -236,6 +253,7 @@ public final class PlayerStatsManager {
     }
 
     private static void tick(MinecraftServer server) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingServer(server)) return;
         if (!SREConfig.instance().isStatsEnabled) {
             return;
         }

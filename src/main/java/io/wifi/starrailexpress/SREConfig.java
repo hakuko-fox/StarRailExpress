@@ -100,6 +100,12 @@ public class SREConfig implements ConfigData {
     public String loadServerLanguageId = "";
     // 服务端：为上面的语言从Mojang官方下载原版(vanilla)翻译文件(assets/minecraft/lang/<id>.json)，缓存到游戏根目录sre_lang_cache
     public boolean downloadVanillaLanguageFile = false;
+
+    /** 服务端控制宝可梦玩法、世界生成及客户端功能；保留存档、同步和退出清理。 */
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public volatile boolean pokmen = false;
+
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -228,6 +234,10 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "map")
     @Tooltip
     public int mapRandomCount = -1;
+
+    // 仅开局：在原出生点水平半径 6 格内安全分散；关闭后完全沿用原传送行为。
+    @ConfigEntry.Category(value = "map")
+    public boolean enableStartSpawnScatter = true;
 
     @ConfigEntry.Category(value = "map")
     public boolean allowRandomChooseMapNotInMapConfig = false;

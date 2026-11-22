@@ -29,6 +29,7 @@ import org.agmas.noellesroles.role.touhou.THLostForestRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import io.wifi.starrailexpress.api.InstinctType;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
@@ -288,6 +289,11 @@ public class InstinctManager {
         }
         if (self_role == null || target_role == null)
             return TrueFalseAndCustomResult.pass();
+        // 默认杀手本能按实际阵营识别克隆队友，不把复制的平民职业画成敌人。
+        if (SREClient.gameComponent.getAllegianceRole(target_player)
+                != SREClient.gameComponent.getRole(target_player)) {
+            target_role = SREClient.gameComponent.getAllegianceRole(target_player);
+        }
         // 布袋鬼：里世界期间无杀手直觉
         if (SREClient.gameComponent.isRole(self, ModRoles.MA_CHEN_XU)) {
             MaChenXuRoleData macComp = RoleData.getNullable(MaChenXuRoleData.class, self);
@@ -298,7 +304,7 @@ public class InstinctManager {
         // 强盗直觉：只能透视半径10格内的玩家，透视杀手队友无距离限制
         if (SREClient.gameComponent.isRole(self, ModRoles.BANDIT)) {
             // 检查目标是否是杀手队友
-            if (target_role != null && SREClient.gameComponent.isKillerTeamRole(target_role)) {
+            if (SREClient.gameComponent.isKillerTeam(target_player)) {
                 // 杀手队友无距离限制
                 // 迷失杀手不能看太远的
                 if (RoleUtils.compareRole(target_role, ModRoles.LOST_KILLER)
@@ -386,7 +392,7 @@ public class InstinctManager {
             return TrueFalseAndCustomResult.custom(Color.WHITE.getRGB());
         if (target_role.canUseKiller()) {
             return TrueFalseAndCustomResult.custom(Color.RED.getRGB());
-        } else if (target_role.isNeutralForKiller()) {
+        } else if (RoleTeam.isKillerTeam(target_role)) {
             return TrueFalseAndCustomResult.custom(Color.ORANGE.getRGB());
         } else {
             if (SREClient.gameComponent.isRole(self, ModRoles.MA_CHEN_XU)) {

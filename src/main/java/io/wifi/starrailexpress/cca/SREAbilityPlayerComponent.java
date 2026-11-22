@@ -213,6 +213,13 @@ public class SREAbilityPlayerComponent
         return this.cooldown > 0;
     }
 
+    /** 是否存在统一或任一独立技能冷却，供外部刷新时避免空闲同步。 */
+    public boolean hasAnyCooldown() {
+        if (this.cooldown > 0) return true;
+        for (SkillState state : skillStates.values()) if (state.cooldown > 0) return true;
+        return false;
+    }
+
     public int getSelectedSkill() {
         return selectedSkill;
     }
@@ -413,6 +420,7 @@ public class SREAbilityPlayerComponent
 
     @Override
     public void serverTick() {
+        if (!io.wifi.starrailexpress.event.GameplayExtensionEvents.ALLOW_ABILITY_TICK.invoker().allow(player)) return;
         boolean unifiedStateChanged = false;
         boolean shouldSync = false;
         if (this.cooldown > 0) {
@@ -467,6 +475,7 @@ public class SREAbilityPlayerComponent
 
     @Override
     public void clientTick() {
+        if (!io.wifi.starrailexpress.event.GameplayExtensionEvents.ALLOW_ABILITY_TICK.invoker().allow(player)) return;
         if (this.cooldown > 1)
             this.cooldown--;
         if (this.duration > 1) {

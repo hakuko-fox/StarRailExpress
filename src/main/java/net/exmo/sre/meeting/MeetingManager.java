@@ -35,6 +35,7 @@ import io.wifi.starrailexpress.content.vote.VoteSession.VoteResultOption;
 import io.wifi.starrailexpress.event.AllowPlayerDeath;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.event.MeetingEndEvent;
+import io.wifi.starrailexpress.event.MeetingParticipantEvent;
 import io.wifi.starrailexpress.event.MeetingStartEvent;
 import io.wifi.starrailexpress.event.MeetingVoteEndEvent;
 import io.wifi.starrailexpress.event.MeetingVoteOutEvent;
@@ -55,6 +56,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
@@ -65,6 +67,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.Blocks;
@@ -196,12 +199,37 @@ public final class MeetingManager {
                     MeetingManager.getCooldownUntilTick(), MeetingManager.getBellCooldownUntilTick(),
                     MeetingManager.getReportedBodies());
         });
+        // 会议期间掉线：游戏内离线即死亡，玩家不会再回到会议，所以这里只做两件事 ——
+        // 把他从会议名单里摘掉，并立刻收回会议施加的限制。后者必须在此刻做：那些效果都是
+        // -1（无限）时长，会跟着玩家存档写盘，等散会时再清就已经找不到这个人了，重连后
+        // 会永久卡在「不能移动 / 不能用技能」的会议状态里。
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             UUID uuid = handler.player.getUUID();
-            participants.remove(uuid);
+            boolean wasParticipant = participants.remove(uuid) != null;
             participantEffects.remove(uuid);
             manualSpeakers.remove(uuid);
+            skipVoters.remove(uuid);
+            // 只摘「无限时长」的会议残留：玩家可能正被其它系统（陷阱、技能）施加同名的有限时长
+            // 效果，那些不能碰。
+            if (hasStaleMeetingRestriction(handler.player)) {
+                clearMeetingRestrictions(handler.player);
+            }
+            ServerLevel serverLevel = level;
+            if (wasParticipant && isActive() && serverLevel != null) {
+                // 名单变了，留在会议里的玩家需要看到最新的参会者与跳过票数
+                broadcastState(serverLevel);
+                broadcastSkipState(serverLevel);
+            }
             refreshVoiceMuted();
+        });
+        // 重连兜底：服务器崩溃 / 旧存档会让玩家带着会议的无限时长限制重新上线，
+        // 而参会名单是开会那一刻定死的、掉线时已被摘除，所以重连进来的人一定不是参会者 ——
+        // 此时他身上若还挂着会议的限制，就只能是残留，直接清掉。
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayer player = handler.getPlayer();
+            if (!participants.containsKey(player.getUUID()) && hasStaleMeetingRestriction(player)) {
+                clearMeetingRestrictions(player);
+            }
         });
 
         // 会议期间否决一切非投票死亡（forceKill 除外）
@@ -265,6 +293,10 @@ public final class MeetingManager {
             return false;
         }
         if (!GameUtils.isPlayerAliveAndSurvival(reporter)) {
+            return false;
+        }
+        // 待复活尸体（如无我/无妄搭档仍存活时）不能被报告发起会议
+        if (org.agmas.noellesroles.utils.AnatmanAsatyaCorpseGuard.denyInteraction(body, reporter)) {
             return false;
         }
         // 伪装尸体（咸鱼晒咸鱼、亡语杀手假扮尸体）不代表真实死亡，不可用于召开会议
@@ -342,6 +374,7 @@ public final class MeetingManager {
      */
     public static boolean startMeeting(ServerLevel serverLevel, ServerPlayer reporter, @Nullable String victim,
             boolean emergency) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(serverLevel)) return false;
         // 亡命徒期间（难民触发）：无论如何都无法启用/发起会议
         if (RefugeeComponent.KEY.get(serverLevel).isAnyRevivals
                 || !SREGameWorldComponent.getInstance(serverLevel).isSkillAvailable) {
@@ -420,6 +453,8 @@ public final class MeetingManager {
 
         List<ServerPlayer> alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
                 .filter(GameUtils::isPlayerAliveAndSurvival)
+                // 进行中专属场景（如轮盘赌局）可以把自己的人留在场景里：不传送、不就座、不参会。
+                .filter(MeetingParticipantEvent.ALLOW_PARTICIPANT.invoker()::allowParticipant)
                 .toList();
         List<BlockPos> chairs = scanChairs(serverLevel, settings);
 
@@ -503,15 +538,7 @@ public final class MeetingManager {
             if (participant == null) {
                 continue;
             }
-            participant.stopRiding();
-            participant.removeEffect(ModEffects.MOVE_BANED);
-            participant.removeEffect(ModEffects.USED_BANED);
-            participant.removeEffect(ModEffects.NO_INSTINCT);
-            participant.removeEffect(ModEffects.SHOP_BANNED);
-            participant.removeEffect(ModEffects.SKILL_BANED);
-            participant.removeEffect(ModEffects.SKILL_FREEZED);
-            participant.removeEffect(ModEffects.CCA_FREEZED);
-            participant.removeEffect(MobEffects.NIGHT_VISION);
+            clearMeetingRestrictions(participant);
             if (participantEffects.containsKey(participant.getUUID())) {
                 final var effects = participantEffects.get(participant.getUUID());
                 if (effects != null && !effects.isEmpty()) {
@@ -554,6 +581,44 @@ public final class MeetingManager {
         level = null;
     }
 
+    /**
+     * 收回会议施加在玩家身上的限制效果。
+     * <p>
+     * 这些效果都由 {@link #startMeeting} 以 {@code -1}（无限）时长施加，会随玩家存档写盘。
+     * 参会者中途离线时 {@code participants} 里已经没有他，{@link #endMeeting} 遍历不到，
+     * 必须在断开当下就地摘掉，否则重连后会永久处于「不能移动 / 不能用技能」的状态。
+     */
+    private static void clearMeetingRestrictions(ServerPlayer player) {
+        player.stopRiding();
+        player.removeEffect(ModEffects.MOVE_BANED);
+        player.removeEffect(ModEffects.USED_BANED);
+        player.removeEffect(ModEffects.NO_INSTINCT);
+        player.removeEffect(ModEffects.SHOP_BANNED);
+        player.removeEffect(ModEffects.SKILL_BANED);
+        player.removeEffect(ModEffects.SKILL_FREEZED);
+        player.removeEffect(ModEffects.CCA_FREEZED);
+        player.removeEffect(MobEffects.NIGHT_VISION);
+    }
+
+    /**
+     * 玩家身上是否残留会议的限制。以「无限时长」为判据：只有会议用 {@code -1} 施加这批效果，
+     * 其它系统施加的同名效果都是有限时长，不能误删。
+     */
+    private static boolean hasStaleMeetingRestriction(ServerPlayer player) {
+        return isInfinite(player, ModEffects.MOVE_BANED)
+                || isInfinite(player, ModEffects.USED_BANED)
+                || isInfinite(player, ModEffects.NO_INSTINCT)
+                || isInfinite(player, ModEffects.SHOP_BANNED)
+                || isInfinite(player, ModEffects.SKILL_BANED)
+                || isInfinite(player, ModEffects.SKILL_FREEZED)
+                || isInfinite(player, ModEffects.CCA_FREEZED);
+    }
+
+    private static boolean isInfinite(ServerPlayer player, Holder<MobEffect> effect) {
+        MobEffectInstance instance = player.getEffect(effect);
+        return instance != null && instance.isInfiniteDuration();
+    }
+
     // ==================== 跳过会议 ====================
 
     /**
@@ -580,9 +645,7 @@ public final class MeetingManager {
         ServerLevel serverLevel = level;
         broadcastSkipState(serverLevel);
         // 超过二分之一的存活玩家投了跳过 → 跳过会议（有投票则直接进入投票阶段）
-        long alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
-                .filter(GameUtils::isPlayerAliveAndSurvival)
-                .count();
+        long alive = participantPopulation(serverLevel);
         if (alive > 0 && skipVoters.size() > alive / 2) {
             skipMeeting(serverLevel);
         }
@@ -612,13 +675,15 @@ public final class MeetingManager {
 
     /** 向全体玩家同步跳过计票状态。 */
     private static void broadcastSkipState(ServerLevel serverLevel) {
-        long alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
-                .filter(GameUtils::isPlayerAliveAndSurvival)
-                .count();
+        long alive = participantPopulation(serverLevel);
         MeetingSkipStateS2CPayload payload = new MeetingSkipStateS2CPayload(skipVoters.size(), (int) alive);
         for (ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
             ServerPlayNetworking.send(player, payload);
         }
+    }
+    /** 参会人数：跳过的阈值与计票分母都只算本场实际参与者，被专属场景排除的人不参与。 */
+    private static long participantPopulation(ServerLevel serverLevel) {
+        return participants.size();
     }
 
     // ==================== 发言 ====================
@@ -835,8 +900,10 @@ public final class MeetingManager {
         final AreasSettings areasSettings = areaCCA.areasSettings;
         final int voteTime = Math.max(VOTE_DURATION_MIN_SECONDS * 20, areasSettings.meetingVoteTimeSeconds * 20);
         phaseEndTick = serverLevel.getGameTime() + voteTime;
-        List<ServerPlayer> alive = new ArrayList<>(serverLevel.getServer().getPlayerList().getPlayers()).stream()
+        List<ServerPlayer> alive = serverLevel.getServer().getPlayerList().getPlayers().stream()
                 .filter(GameUtils::isPlayerAliveAndSurvival)
+                // 被专属场景（如轮盘赌局）留在场景里的玩家既不在参会名单，也不该成为投票选项。
+                .filter(p -> participants.containsKey(p.getUUID()))
                 .toList();
         if (alive.size() <= 1) {
             endMeeting(false);

@@ -37,8 +37,11 @@ import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
@@ -80,6 +83,14 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     public final TreeMap<Long, Integer> timedArmor = new TreeMap<>(); // 到期时间 -> 层数
     /** 限时护盾中「可被酒保透视」的层数：到期时间 -> 层数 */
     public final TreeMap<Long, Integer> bartenderVisibleTimedArmor = new TreeMap<>();
+    /**
+     * 仅服务端：已经收到过「可被酒保透视」护盾数据的观察者。
+     * <p>
+     * 护盾被消耗干净时 {@link #hasBartenderVisibleArmor()} 会变回 false，
+     * 若此时直接按「没有可透视护盾」拒绝同步，观察者客户端就会一直保留旧护盾。
+     * 因此这里记录这些观察者，让它们至少再收到一次空数据。
+     */
+    private final Set<UUID> bartenderSyncedViewers = new HashSet<>();
 
     /**
      * 环境保护，仅服务端记录
@@ -288,10 +299,14 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     }
 
     public int getAllArmorCount() {
+        Integer override = io.wifi.starrailexpress.event.GameplayExtensionEvents.ARMOR_COUNT_OVERRIDE.invoker().get(player);
+        if (override != null) return override;
         return this.armor + timedArmor.values().stream().mapToInt(Integer::intValue).sum();
     }
 
     public boolean triggerAndRemoveArmor(int amount) {
+        Boolean override = io.wifi.starrailexpress.event.GameplayExtensionEvents.ARMOR_CONSUME_OVERRIDE.invoker().consume(player, amount);
+        if (override != null) return override;
         // 先移除限时护盾
         while (amount > 0 && !timedArmor.isEmpty()) {
             Map.Entry<Long, Integer> first = timedArmor.firstEntry();
@@ -317,6 +332,7 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
         }
         this.armor = 0;
         this.bartenderVisibleArmor = 0;
+        sync();
         return false;
     }
 
@@ -327,14 +343,19 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
         this.timedArmor.clear();
         this.bartenderVisibleTimedArmor.clear();
         this.sync();
+        // sync() 已经向「拿到过可透视护盾」的观察者补发了空数据，这里再清掉记录
+        this.bartenderSyncedViewers.clear();
     }
 
     @Override
     public boolean shouldSyncWith(ServerPlayer target) {
+        if (io.wifi.starrailexpress.event.GameplayExtensionEvents.ALLOW_ARMOR_SYNC.invoker().allow(player, target)) return true;
         if (target == this.player)
             return true;
-        // 酒保透视：只有存在可透视护盾时才同步，避免泄露不可见的护盾
-        if (!hasBartenderVisibleArmor())
+        // 酒保透视：只有存在可透视护盾时才同步，避免泄露不可见的护盾；
+        // 但护盾刚被消耗干净的那一次仍要补发一次（空数据）同步，
+        // 否则酒保客户端会一直显示已经被打掉的护盾。
+        if (!hasBartenderVisibleArmor() && !this.bartenderSyncedViewers.contains(target.getUUID()))
             return false;
         if (gameWorldComponent == null) {
             gameWorldComponent = SREGameWorldComponent.KEY.get(this.player.level());
@@ -452,8 +473,17 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
     @Override
     public void writeToSyncNbtWithPlayer(@NotNull CompoundTag tag, HolderLookup.Provider registryLookup,
             ServerPlayer recipient) {
+        boolean onlyBartenderVisible = recipient != null && recipient != this.player;
+        if (onlyBartenderVisible) {
+            // 记录「已经拿到过可透视护盾数据」的观察者：护盾被打光时还要再发一次空数据，
+            // 否则酒保客户端会一直保留已经被消耗掉的护盾（见 shouldSyncWith）。
+            if (hasBartenderVisibleArmor())
+                this.bartenderSyncedViewers.add(recipient.getUUID());
+            else
+                this.bartenderSyncedViewers.remove(recipient.getUUID());
+        }
         // 非本人（酒保）只能收到「可被酒保透视」的那部分护盾
-        writeArmorNbt(tag, recipient != null && recipient != this.player);
+        writeArmorNbt(tag, onlyBartenderVisible);
     }
 
     /**
@@ -524,6 +554,8 @@ public class SREArmorPlayerComponent implements RoleComponent, ServerTickingComp
         this.timedArmor.clear();
         this.bartenderVisibleTimedArmor.clear();
         this.sync();
+        // sync() 已经向「拿到过可透视护盾」的观察者补发了空数据，这里再清掉记录
+        this.bartenderSyncedViewers.clear();
     }
 
     @Override

@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.CustomWinnerRoleInterface;
 import io.wifi.starrailexpress.api.GameMode;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -68,6 +69,7 @@ import org.agmas.noellesroles.CustomWinnerClass;
 import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role.ModRoles;
+import io.wifi.starrailexpress.event.GameplayExtensionEvents;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -156,14 +158,13 @@ public class SREMurderGameMode extends GameMode {
         gameWorldComponent.syncRolesNow();
         // 同步职业
 
+        // 玩家阵营权重统一由 PlayerRoleWeightManager 在 OnGameEnd 按结算时的实际职业记账。
         for (ServerPlayer player : players) {
             var role = gameWorldComponent.getRole(player);
-            var roleType = PlayerRoleWeightManager.getRoleType(role);
-            PlayerRoleWeightManager.addWeight(player, roleType, 1);
-            // PlayerRoleWeightManager.
-            ServerPlayNetworking.send(player,
-                    new AnnounceWelcomePayload(role.getIdentifier().toString(), (int) killCount,
-                            (int) (players.size() - killCount)));
+            var welcomePayload = new AnnounceWelcomePayload(role.getIdentifier().toString(), (int) killCount,
+                    (int) (players.size() - killCount));
+            ServerPlayNetworking.send(player, GameplayExtensionEvents.WELCOME_PAYLOAD.invoker()
+                    .apply(serverWorld, gameWorldComponent, players, welcomePayload));
             ModdedRoleAssigned.EVENT.invoker().assignModdedRole(player, role);
         }
         // 分配修饰符（修饰符放在职业分配后）
@@ -420,13 +421,15 @@ public class SREMurderGameMode extends GameMode {
         if (!modifier.isTeamApplicable(role)) {
             return false;
         }
-        if (modifier.killerOnly && (role == null || !role.canUseKiller())) {
+        // killerOnly 只给真实杀手阵营（RoleTeam.KILLER），不含杀手方中立；
+        // 其余阵营判断也走真实阵营（RoleTeam），隐藏身份不参与修饰符适用性判定。
+        if (modifier.killerOnly && !RoleTeam.isKiller(role)) {
             return false;
         }
-        if (modifier.civilianOnly && !gameWorldComponent.isInnocent(player)) {
+        if (modifier.civilianOnly && !RoleTeam.isInnocentCamp(role)) {
             return false;
         }
-        if (modifier.notVigilante && gameWorldComponent.isVigilanteTeam(player)) {
+        if (modifier.notVigilante && RoleTeam.isSheriff(role)) {
             return false;
         }
         return true;
@@ -435,6 +438,31 @@ public class SREMurderGameMode extends GameMode {
     private static int getAssignedModifierCount(Map<UUID, HashSet<SREModifier>> modifierAssignments, UUID playerUuid) {
         Set<SREModifier> playerModifiers = modifierAssignments.get(playerUuid);
         return playerModifiers == null ? 0 : playerModifiers.size();
+    }
+
+    /**
+     * 警长池抽不满时用于补位的保底职业。优先用谋杀模式的警卫，
+     * 若它被职业启用管理禁用则退回基础义警；两者都禁用时返回 null（不强行分配被禁用的职业）。
+     */
+    private static SRERole vigilanteFallback() {
+        if (ModRoles.SHERIFF != null && !SREDisableManager.isRoleDisabled(ModRoles.SHERIFF)) {
+            return ModRoles.SHERIFF;
+        }
+        return SREDisableManager.isRoleDisabled(TMMRoles.VIGILANTE) ? null : TMMRoles.VIGILANTE;
+    }
+
+    /**
+     * 统计一组职业实际占用的阵营槽位数。
+     * occupiedRoleCount 小于等于 0 的职业不占槽位；大于 1 的职业按实际占位数计。
+     */
+    private static int getOccupiedSlotCount(Collection<SRERole> roles) {
+        int slots = 0;
+        for (SRERole role : roles) {
+            if (role != null) {
+                slots += Math.max(0, role.getOccupiedRoleCount());
+            }
+        }
+        return slots;
     }
 
     public static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount, int playerSize,
@@ -454,6 +482,12 @@ public class SREMurderGameMode extends GameMode {
 
     private static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount,
             int playerSize, int forcedRoleSize, List<SRERole> forcedRoles, Map<Integer, Integer> cardRequests) {
+        // 警长池是限量池（每个职业默认只有 1 个名额），必须让警卫可重复抽取才能填满警长名额。
+        // 必须在建池前设置：RoleAssignmentPool 会把 ROLE_MAX 快照进自己的 countMap，
+        // 建池之后再改全局 ROLE_MAX 对本次分配无效；InitModRolesMax 每局也会把它重设回 1。
+        if (vigilanteCount > 0) {
+            Harpymodloader.setRoleMaximum(ModRoles.SHERIFF_ID, 100);
+        }
         HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
         boolean enableCivilianInPool = config.enableCivilianInPool;
         RoleAssignmentPool killerPool = RoleAssignmentPool.create("Killer",
@@ -542,14 +576,12 @@ public class SREMurderGameMode extends GameMode {
         // 第二步：创建角色池并分配角色
         // 杀手池
         if (playerSize - forcedRoleSize <= 0)
-            return List.of();
+            return GameplayExtensionEvents.ROLE_POOL_RESULT.invoker().apply(List.of());
         List<SRERole> assignedKillers = new ArrayList<>();
         reserveCardRoles(assignedKillers, killerPool, killerCount, cardRequests.getOrDefault(4, 0), 4);
         assignedKillers.addAll(killerPool.selectRoles(killerCount - assignedKillers.size()));
 
-        // 警卫池 - 使用无限重复模式，因为警卫职业数量有限
-        Harpymodloader.setRoleMaximum(ModRoles.SHERIFF_ID, 100);
-
+        // 警卫的重复上限已在 6 参数重载建池前设置；此处再改 ROLE_MAX 对本局池无效。
         List<SRERole> assignedVigilantes = vigilantePool.selectRoles(vigilanteCount);
 
         List<SRERole> assignedNatures = new ArrayList<>();
@@ -580,6 +612,18 @@ public class SREMurderGameMode extends GameMode {
         }
         if (zeroNeutrals > 0) {
             assignedNatures.addAll(neutralsPool.selectRoles((int) zeroNeutrals));
+        }
+
+        // 保底：警长职业被禁用 / 数量上限耗尽时 selectRoles 会静默少抽，
+        // 缺额随后会被算进 civilianCount 变成平民，使警长阵营少于目标。
+        // 按“占用槽位数”而不是“角色实例数”补满：独裁者等职业一人占 2 位，
+        // 若按实例数补会把本来已经占满的 2 位误判为缺 1 位，多补一个警卫。
+        SRERole fallbackVigilante = vigilanteFallback();
+        int fallbackSlots = fallbackVigilante == null ? 0 : Math.max(1, fallbackVigilante.getOccupiedRoleCount());
+        int assignedVigilanteSlots = getOccupiedSlotCount(assignedVigilantes);
+        while (fallbackVigilante != null && fallbackSlots > 0 && assignedVigilanteSlots < vigilanteCount) {
+            assignedVigilantes.add(fallbackVigilante);
+            assignedVigilanteSlots += fallbackSlots;
         }
 
         // ===== 领袖特判 =====
@@ -642,9 +686,21 @@ public class SREMurderGameMode extends GameMode {
             resultRoleInstances = RoleAssignmentManager.expandWithCompanionRoles(newRoleInstantList);
         }
         int needCivilian = (playerSize - forcedRoleSize) - resultRoleInstances.size();
-        for (int i = 0; i < needCivilian; i++)
-            resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
-        return resultRoleInstances;
+        if (needCivilian > 0) {
+            // 绑定职业展开时，若 companion 的 occupiedRoleCount > 1，会按槽位数释放多个实例、
+            // 却只加入 1 个 companion（如 MA_CHEN_XU -> GUEST_GHOST 释放 2 加 1），
+            // 在这里留下名额缺口。按其它阵营的补位惯例，应从平民池补真正的平民阵营职业，
+            // 而不是直接回退成裸的“平民”。
+            List<SRERole> extraCivilians = civilianPool.selectRoles(needCivilian);
+            for (SRERole role : extraCivilians) {
+                resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), role));
+            }
+            // 平民池确实被抽空时才退回裸平民，避免玩家没有职业。
+            for (int i = extraCivilians.size(); i < needCivilian; i++) {
+                resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
+            }
+        }
+        return GameplayExtensionEvents.ROLE_POOL_RESULT.invoker().apply(resultRoleInstances);
     }
 
     private static void reserveCardRoles(List<SRERole> selected, RoleAssignmentPool pool, int limit,
@@ -669,6 +725,8 @@ public class SREMurderGameMode extends GameMode {
         Map<UUID, SRERole> forcedRolesMap = new HashMap<>(Harpymodloader.FORCED_MODDED_ROLE);
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
+        // 本局警长阵营的目标总数（强制分配的警长也算在内），用于收尾校验。
+        final int targetVigilantes = vigilanteCount;
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
 
         List<SRERole> forcedRoles = new ArrayList<>();
@@ -681,11 +739,15 @@ public class SREMurderGameMode extends GameMode {
                     forcedRoles.add(role);
                     roleAssignments.put(player, role);
 
-                    // 根据角色类型减少对应的数量需求
-                    switch (PlayerRoleWeightManager.getRoleType(role)) {
-                        case 4 -> killerCount--;
-                        case 5 -> vigilanteCount--;
-                        case 2, 3 -> neutralsCount--;
+                    // 根据角色类型减少对应的数量需求。强制职业本身也可能占用多个名额，
+                    // 必须按 occupiedRoleCount 扣减，否则会再抽一个同阵营职业把多占的位补回来。
+                    int forcedSlots = Math.max(1, role.getOccupiedRoleCount());
+                    if (role.canUseKiller()) {
+                        killerCount -= forcedSlots;
+                    } else if (role.isVigilanteTeam()) {
+                        vigilanteCount -= forcedSlots;
+                    } else if (!role.isInnocent()) {
+                        neutralsCount -= forcedSlots;
                     }
                 }
             }
@@ -793,6 +855,48 @@ public class SREMurderGameMode extends GameMode {
             roleAssignments.put(up, TMMRoles.CIVILIAN);
             ProgressionDataManager.onRoleAssigned((ServerPlayer) up, TMMRoles.CIVILIAN);
         }
+
+        // 最终兜底：对立职业移除、关联角色替换、池耗尽等都可能把已抽到的警长换回平民。
+        // 按本局目标的“占用槽位数”校验：独裁者/摘星者一人占 2 位，6 位目标配上两个这类职业
+        // 只需要 4 名警长玩家，不能按玩家数再补到 6 人。
+        List<SRERole> assignedVigilanteRoles = roleAssignments.values().stream()
+                .filter(role -> role != null && role.isVigilanteTeam())
+                .toList();
+        int vigilanteSlots = getOccupiedSlotCount(assignedVigilanteRoles);
+        SRERole fallbackVigilante = vigilanteFallback();
+        int fallbackSlots = fallbackVigilante == null ? 0 : Math.max(1, fallbackVigilante.getOccupiedRoleCount());
+        if (vigilanteSlots < targetVigilantes && fallbackVigilante != null && fallbackSlots > 0) {
+            List<Player> candidates = new ArrayList<>();
+            for (Map.Entry<Player, SRERole> entry : roleAssignments.entrySet()) {
+                SRERole role = entry.getValue();
+                if (role == null || !role.isInnocent() || role.isVigilanteTeam()) {
+                    continue;
+                }
+                if (forcedRolesMap.containsKey(entry.getKey().getUUID())) {
+                    continue;
+                }
+                if (role == TMMRoles.CIVILIAN) {
+                    candidates.add(0, entry.getKey());
+                } else {
+                    candidates.add(entry.getKey());
+                }
+            }
+            int filledPlayers = 0;
+            int filledSlots = 0;
+            for (Player player : candidates) {
+                if (vigilanteSlots >= targetVigilantes) {
+                    break;
+                }
+                roleAssignments.put(player, fallbackVigilante);
+                vigilanteSlots += fallbackSlots;
+                filledSlots += fallbackSlots;
+                filledPlayers++;
+            }
+            Harpymodloader.LOGGER.warn(
+                    "[RoleAssignment] Vigilante slots below target: expected {}, got {}, filled {} player(s) / {} slot(s) with {}",
+                    targetVigilantes, getOccupiedSlotCount(assignedVigilanteRoles), filledPlayers, filledSlots,
+                    fallbackVigilante.identifier());
+        }
         return roleAssignments;
     }
 
@@ -810,8 +914,12 @@ public class SREMurderGameMode extends GameMode {
         boolean civilianAlive = false;
         boolean killerAlive = false;
         boolean anyAlive = false;
-        if (!shouldPausePassiveMoneyGiven(serverWorld)) {
-            for (ServerPlayer player : serverWorld.players()) {
+        // 时停（tickRateManager 冻结）期间暂停被动收入，但存活扫描必须无条件执行。
+        // 旧写法把整段扫描包在时停门控里，冻结期间三个标志恒为 false，
+        // 会被下方判定误读成「场上无人存活」，直接把对局判成 NO_PLAYER（无人获胜）并结束。
+        boolean pausePassiveIncome = shouldPausePassiveMoneyGiven(serverWorld);
+        for (ServerPlayer player : serverWorld.players()) {
+            if (!pausePassiveIncome) {
                 // passive money
                 if (gameWorldComponent.canAutoAddMoney(player)) {
                     Integer balanceToAdd = GameConstants.getPassiveMoneyTicker().apply(serverWorld.getGameTime());
@@ -838,18 +946,24 @@ public class SREMurderGameMode extends GameMode {
                             VIGILANTE_PASSIVE_MONEY_AMOUNT);
                     SREPlayerShopComponent.KEY.get(player).addToBalance(VIGILANTE_PASSIVE_MONEY_AMOUNT);
                 }
-
-                // check if some civilians are still alive
-                if (gameWorldComponent.canIncreaseSurvivingInnocents(player) && !GameUtils.isPlayerEliminated(player)) {
-                    civilianAlive = true;
-                }
-                if (gameWorldComponent.canIncreaseSurvivingKillers(player) && !GameUtils.isPlayerEliminated(player)) {
-                    killerAlive = true;
-                }
-                if (GameUtils.isPlayerAliveAndSurvival(player)) {
-                    anyAlive = true;
-                }
             }
+
+            // check if some civilians are still alive
+            if (gameWorldComponent.canIncreaseSurvivingInnocents(player) && !GameUtils.isPlayerEliminated(player)) {
+                civilianAlive = true;
+            }
+            if (gameWorldComponent.canIncreaseSurvivingKillers(player) && !GameUtils.isPlayerEliminated(player)) {
+                killerAlive = true;
+            }
+            if (GameUtils.isPlayerAliveAndSurvival(player)) {
+                anyAlive = true;
+            }
+        }
+
+        // 保险：时停/会议期间死亡与时间推进都被冻结，扫描为空只可能是瞬时异常状态，
+        // 不应据此结束对局；解冻后的下一个 tick 会重新正常判定。
+        if (pausePassiveIncome && !anyAlive) {
+            return;
         }
 
         // check killer win condition (killed all civilians)
@@ -928,24 +1042,25 @@ public class SREMurderGameMode extends GameMode {
     public GameUtils.WinStatus allowGameEnd(ServerLevel serverWorld, GameUtils.WinStatus winStatus,
             boolean isLooseEndsMode, SREGameWorldComponent gameWorldComponent) {
         if (org.agmas.noellesroles.game.command_block.CommandBlockDirector.holdsTheRound(serverWorld)) {
-            return org.agmas.noellesroles.game.command_block.CommandBlockWinPriority.check(serverWorld,
+            return GameplayExtensionEvents.GAME_END_RESULT.invoker().apply(serverWorld, winStatus,
+                    org.agmas.noellesroles.game.command_block.CommandBlockWinPriority.check(serverWorld,
                     () -> AllowGameEnd.EVENT_START.invoker().allowGameEnd(serverWorld, winStatus, isLooseEndsMode),
                     () -> CustomWinnerClass.checkWinnerBuiltin(serverWorld, winStatus, isLooseEndsMode),
-                    () -> AllowGameEnd.EVENT_END.invoker().allowGameEnd(serverWorld, winStatus, isLooseEndsMode));
+                    () -> AllowGameEnd.EVENT_END.invoker().allowGameEnd(serverWorld, winStatus, isLooseEndsMode)));
         }
         var c = AllowGameEnd.EVENT_START.invoker().allowGameEnd(serverWorld,
                 winStatus, false);
         if (c != null && !c.equals(WinStatus.NOT_MODIFY)) {
-            return c;
+            return GameplayExtensionEvents.GAME_END_RESULT.invoker().apply(serverWorld, winStatus, c);
         }
 
         var b = CustomWinnerClass.checkWinnerBuiltin(serverWorld, winStatus, isLooseEndsMode);
         if (b != null && !b.equals(WinStatus.NOT_MODIFY)) {
-            return b;
+            return GameplayExtensionEvents.GAME_END_RESULT.invoker().apply(serverWorld, winStatus, b);
         }
 
-        return AllowGameEnd.EVENT_END.invoker().allowGameEnd(serverWorld,
-                winStatus, false);
+        return GameplayExtensionEvents.GAME_END_RESULT.invoker().apply(serverWorld, winStatus,
+                AllowGameEnd.EVENT_END.invoker().allowGameEnd(serverWorld, winStatus, false));
     }
 
     @Override
@@ -983,6 +1098,8 @@ public class SREMurderGameMode extends GameMode {
     public static boolean isPlayerTheWinner(ServerLevel world, ServerPlayer player, SRERole playerRole,
             SREGameRoundEndComponent roundEnd,
             SREGameWorldComponent gameComponent) {
+        // 胜负跟随玩家的实际阵营，复制来的职业只决定能力。
+        playerRole = gameComponent.getAllegianceRole(player);
         if (playerRole == null)
             return false;
         if (playerRole.identifier().equals(TMMRoles.DISCOVERY_CIVILIAN.identifier())) {

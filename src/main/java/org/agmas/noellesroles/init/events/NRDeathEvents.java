@@ -17,6 +17,7 @@ package org.agmas.noellesroles.init.events;
 
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.LooseEndRole;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
@@ -34,7 +35,6 @@ import io.wifi.starrailexpress.content.block_entity.EntityInteractionBlockEntity
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.game.forensic.ForensicCategory;
-import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.index.tag.TMMItemTags;
@@ -80,6 +80,7 @@ import org.agmas.noellesroles.role_data.neutral.MorticianBodyMakerRoleData;
 import org.agmas.noellesroles.role_data.neutral.RavenRoleData;
 import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
+import org.agmas.noellesroles.game.roles.special.variant_loose_end.VariantLooseEndRole;
 import org.agmas.noellesroles.role_data.neutral.ThiefRoleData;
 import org.agmas.noellesroles.role_data.innocence.AvengerRoleData;
 import org.agmas.noellesroles.role_data.innocence.BoxerRoleData;
@@ -101,7 +102,9 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.role.touhou.THMiscRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
+import org.agmas.noellesroles.utils.AnatmanAsatyaCorpseGuard;
 import org.agmas.noellesroles.utils.MCItemsUtils;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.constants.SEModifiers;
 import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
@@ -330,7 +333,7 @@ public class NRDeathEvents {
             if (!(p instanceof ServerPlayer sp))
                 continue;
             SRERole role = gameWorld.getRole(p);
-            if (role != null && (role.canUseKiller() || role.isNeutralForKiller())) {
+            if (RoleTeam.isKillerTeam(role)) {
                 int r = victim.getRandom().nextInt(100);
                 ItemStack horse;
                 if (r < 40)
@@ -829,6 +832,8 @@ public class NRDeathEvents {
                 // （时间回溯 / 有复活进行中时那次复核还会被跳过）。
                 GameUtils.pendingReJudgeSpectatorsPenalty();
             }
+            // 组合里又倒下一人：若搭档也不在了，解除待复活尸体的标记
+            AnatmanAsatyaCorpseGuard.refresh(serverVictim.serverLevel());
         });
 
         // 无我死亡时，无妄叠加一层护盾（最多5层）
@@ -842,6 +847,8 @@ public class NRDeathEvents {
                 // 同上：无我倒下后立刻重判旁观者的死亡惩罚（两人全死 → 解除永久惩罚）。
                 GameUtils.pendingReJudgeSpectatorsPenalty();
             }
+            // 组合里又倒下一人：若搭档也不在了，解除待复活尸体的标记
+            AnatmanAsatyaCorpseGuard.refresh(serverVictim.serverLevel());
         });
 
         OnPlayerDeath.EVENT.register((victim, deathReason) -> {
@@ -1264,8 +1271,7 @@ public class NRDeathEvents {
                 var targetRole = gameWorldComponent.getRole(player);
                 if (targetRole == null)
                     continue;
-                if (!targetRole.canUseKiller() && !targetRole.isNeutralForKiller()
-                        && !gameWorldComponent.isRole(player, ModRoles.MAGICIAN))
+                if (!RoleTeam.isKillerTeam(targetRole))
                     continue;
                 if (player instanceof ServerPlayer sp) {
                     org.agmas.noellesroles.commands.BroadcastCommand.BroadcastMessage(sp, deathMessage);
@@ -1317,8 +1323,7 @@ public class NRDeathEvents {
                     || deathReason.getPath().equals("ignited"))) {
                 return true;
             }
-            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END)
-                    || gameWorld.isRole(killer, SpecialGameModeRoles.SUPER_LOOSE_END)) {
+            if (gameWorld.isRole(killer, TMMRoles.LOOSE_END) || VariantLooseEndRole.isVariant(killer)) {
                 return true;
             }
             if (killer == null || gameWorld.isInnocent(killer))
@@ -1388,6 +1393,8 @@ public class NRDeathEvents {
                         && gameWorldComponent.isInnocent(killer)) {
                     SREPlayerPsychoComponent component = SREPlayerPsychoComponent.KEY.get(victim);
                     if (component.getPsychoTicks() <= 0) {
+                        // 回放记录：先记录再切换狂暴状态，解析玩家显示文本失败时回退为纯名字，避免事件丢失。
+                        ReplayEventLog.recordPlayers("replay.event.jester.berserk", killer, victim);
                         component.startPsycho();
                         component.psychoTicks = GameConstants.getInTicks(0, 45);
                         component.armour = 0;

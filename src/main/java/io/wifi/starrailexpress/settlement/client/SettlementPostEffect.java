@@ -22,7 +22,7 @@ public final class SettlementPostEffect {
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
             @Override public ResourceLocation getFabricId() { return SRE.id("settlement_filter"); }
             @Override public void onResourceManagerReload(ResourceManager manager) {
-                Runnable reload = () -> { close(); failed = false; SettlementStageRenderer.invalidate(); };
+                Runnable reload = () -> { close(); failed = false; SettlementStageRenderer.invalidate(); SettlementHeroRenderer.close(); SettlementOverlay.clear(); };
                 if (RenderSystem.isOnRenderThread()) reload.run(); else RenderSystem.recordRenderCall(reload::run);
             }
         });
@@ -46,7 +46,7 @@ public final class SettlementPostEffect {
             int w = mc.getMainRenderTarget().width, h = mc.getMainRenderTarget().height;
             if (w != width || h != height) { chain.resize(w, h); width = w; height = h; }
             chain.setUniform("SettlementTime", (SettlementClient.tick() + partialTick) / 20f);
-            chain.setUniform("SettlementBlur", (float) (1 - SettlementClient.smooth((SettlementClient.tick() + partialTick) / 45)) * 3.5f);
+            chain.setUniform("SettlementBlur", (float) (1 - SettlementClient.smooth((SettlementClient.tick() + partialTick) / 45)) * 1.8f);
             chain.process(partialTick);
         } catch (Exception error) {
             close(); failed = true;

@@ -194,9 +194,7 @@ public class RoleNameRenderer {
                         nametag = nametag.copy().append(modifierText);
                     }
                 }
-                if (component.canUseKillerFeatures(target)) {
-                    targetRoleType = TrainRole.KILLER;
-                } else if (component.isNeutralForKiller(target)) {
+                if (component.isKillerTeam(target)) {
                     targetRoleType = TrainRole.KILLER;
                 } else {
                     targetRoleType = TrainRole.BYSTANDER;
@@ -236,9 +234,7 @@ public class RoleNameRenderer {
                 ctx.pose().translate(0, 20 + headerExtraLines * (font.lineHeight + 2), 0);
                 {
                     TrainRole selfRoleType = TrainRole.BYSTANDER;
-                    if (component.canUseKillerFeatures(self))
-                        selfRoleType = TrainRole.KILLER;
-                    if (component.isNeutralForKiller(self))
+                    if (component.isKillerTeam(self))
                         selfRoleType = TrainRole.KILLER;
                     if (targetRole != null) {
                         boolean allowRenderRole = true;

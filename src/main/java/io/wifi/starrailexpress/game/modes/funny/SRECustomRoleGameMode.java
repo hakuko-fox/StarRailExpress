@@ -224,7 +224,6 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
                 var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(selectedPlayer);
                 ccca.setSelected(false);
                 ccca.setTeamAndSync(selectedRoleType);
-                PlayerRoleWeightManager.addWeight(selectedPlayer, selectedRoleType, 1);
 
                 roleSelector.removeFirst();
             }
@@ -234,7 +233,6 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
             var ccca = CustomRoleGameModeTeamsPlayerComponent.KEY.get(up);
             ccca.setSelected(false);
             ccca.setTeamAndSync(1);
-            PlayerRoleWeightManager.addWeight(up, 1, 1);
         }
 
         crgmwc.sync();

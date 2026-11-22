@@ -109,7 +109,7 @@ public class ServerPlayerEntityMixin {
     public void tmm$disableSetSpawnpoint(ServerPlayer instance, ResourceKey<Level> dimension, @Nullable BlockPos pos,
             float angle, boolean forced, boolean sendMessage, Operation<Void> original) {
         if (SRE.isLobby) {
-            original.call(dimension, pos, angle, forced, sendMessage); // 传递正确的参数
+            original.call(instance, dimension, pos, angle, forced, sendMessage);
         }
     }
 
@@ -143,7 +143,7 @@ public class ServerPlayerEntityMixin {
                 GameUtils.killPlayer(playerTarget, true, self, GameConstants.DeathReasons.BAT);
             }
             if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
-                puppeteerBodyEntity.playerHurt(self, GameConstants.DeathReasons.BAT);
+                puppeteerBodyEntity.playerHurt(self);
             }
             CrosshairaddonsCompat.onAttack(target);
             self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT, SoundSource.PLAYERS, 3f, 1f);
@@ -161,7 +161,7 @@ public class ServerPlayerEntityMixin {
                 original = htit.onServerAttack(self, playerTarget, mainhandItem);
             }
             if (target instanceof PuppeteerBodyEntity puppeteerBodyEntity) {
-                puppeteerBodyEntity.playerHurt(self, SkinUtils.getItemTypeResourceLocation(mainhandItem));
+                puppeteerBodyEntity.playerHurt(self);
             }
             // self.level().playSound(null, self.blockPosition(), TMMSounds.ITEM_BAT_HIT,
             // SoundSource.PLAYERS, 3f, 1f);

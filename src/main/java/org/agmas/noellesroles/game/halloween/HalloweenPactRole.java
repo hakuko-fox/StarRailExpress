@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** 魂契复活后的玩家亡灵：独立职业、空手近战，胜利阵营在复活时锁定。 */
+/** 魂契复活后的玩家亡灵：独立职业、无法攻击，胜利阵营在复活时锁定。 */
 public final class HalloweenPactRole extends NormalRole implements CustomWinnerRoleInterface {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("noellesroles", "halloween_pact");
     private static SRERole instance;
@@ -40,11 +40,15 @@ public final class HalloweenPactRole extends NormalRole implements CustomWinnerR
         setCanUseInstinctAndNightVision(false);
         setCanAutoAddMoney(false);
         setRoleData(Data::new);
+        // 魂契亡灵仅在启用了万圣节配置的地图中生成（与南瓜精一致，通过 setCanSpawnInMap 把关）。
+        setCanSpawnInMap((map, settings) -> settings != null && settings.halloweenEventEnabled);
     }
 
     /** 双端初始化阶段调用；不写入中央职业清单。 */
     public static void register() {
-        if (instance == null) instance = TMMRoles.registerRole(new HalloweenPactRole());
+        if (instance == null) instance = TMMRoles.registerRole(new HalloweenPactRole())
+                .setSpecialNeutral(true)
+                .setAddedVersion("4.5");
     }
 
     public static SRERole role() { return instance; }
@@ -115,7 +119,6 @@ public final class HalloweenPactRole extends NormalRole implements CustomWinnerR
         ResourceLocation followedRole;
         boolean killerWin;
         boolean innocentWin;
-        long meleeReadyAt;
 
         public Data(RoleDataContext context) { super(context); }
 

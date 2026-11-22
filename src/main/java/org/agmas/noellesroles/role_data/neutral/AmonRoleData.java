@@ -18,6 +18,7 @@ package org.agmas.noellesroles.role_data.neutral;
 import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
+import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.cca.PlayerBodyEntityComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
@@ -35,6 +36,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -55,6 +57,8 @@ import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
+import org.agmas.noellesroles.game.moment.MomentManager;
+import org.agmas.noellesroles.game.moment.MomentType;
 import org.agmas.noellesroles.packet.AmonFinaleS2CPacket;
 import org.agmas.noellesroles.packet.AmonSkinS2CPacket;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
@@ -62,6 +66,7 @@ import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
 import pro.fazeclan.river.stupid_express.constants.SEItems;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 import java.util.*;
 
 public class AmonRoleData extends SimpleRoleData {
@@ -119,6 +124,8 @@ public class AmonRoleData extends SimpleRoleData {
     public int finaleTicks;
     /** 备用能力（续命/逃脱）剩余次数 = 回归的寄宿体数。 */
     public int reserveLives;
+    /** 难民亡命徒时刻临时离场；不写入回溯节点。 */
+    private boolean refugeeSuspended;
 
     // ===== 客户端镜像（仅用于 HUD 显示）=====
     public int clientSeeds;
@@ -144,6 +151,7 @@ public class AmonRoleData extends SimpleRoleData {
 
     @Override
     public void init() {
+        refugeeSuspended = false;
         seeds.clear();
         maturedHosts.clear();
         disguiseTarget = null;
@@ -168,6 +176,7 @@ public class AmonRoleData extends SimpleRoleData {
 
     @Override
     public void clear() {
+        refugeeSuspended = false;
         clearDisguise();
         // 若附身进行中被重置，清掉隐身/无敌表现。
         if (possessTarget != null && player instanceof ServerPlayer amon) {
@@ -179,6 +188,7 @@ public class AmonRoleData extends SimpleRoleData {
                 amon.getAttribute(Attributes.SCALE).setBaseValue(1.0D);
             }
             broadcastFinale(level, false);
+            MomentManager.end(level, MomentType.AMON);
         }
         seeds.clear();
         maturedHosts.clear();
@@ -226,6 +236,8 @@ public class AmonRoleData extends SimpleRoleData {
         }
         if (!game.isRunning())
             return;
+        if (refugeeSuspended)
+            return;
         boolean alive = GameUtils.isPlayerAliveAndSurvival(amon);
 
         // 终幕阶段：驱动倒计时、发光与胜利判定（结束不再潜伏新虫）。
@@ -239,8 +251,8 @@ public class AmonRoleData extends SimpleRoleData {
 
         // 安全网：若游戏本应结束（平民或杀手胜利）但 handleGameEnd 未能触发终幕，
         // 由服务端 tick 兜底启动，确保持有成熟宿主的阿蒙不会因时序问题错过终幕。
-        if (!maturedHosts.isEmpty() && isGameEnding(amon, game)) {
-            startFinale();
+        // 亡命徒时刻期间 startFinale() 会拒绝启动；临时离场由 refugeeSuspended 暂停。
+        if (!maturedHosts.isEmpty() && isGameEnding(amon, game) && startFinale()) {
             return;
         }
 
@@ -685,8 +697,10 @@ public class AmonRoleData extends SimpleRoleData {
             } else if (pendingStatus != GameUtils.WinStatus.NONE && comp.maturedHosts.size() >= 1) {
                 // 仅在常规游戏「本应结束」时（杀手/乘客/超时等结算）才进入终幕；
                 // 若 pendingStatus 为 NONE（场上平民与杀手都还活着），不可提前触发阿蒙时刻。
-                comp.startFinale();
-                block = true;
+                // 亡命徒（难民修饰符变来的）期间 startFinale() 会拒绝启动，此时不阻断结算。
+                if (comp.startFinale()) {
+                    block = true;
+                }
             }
         }
         return block ? GameUtils.WinStatus.NONE : GameUtils.WinStatus.NOT_MODIFY;
@@ -713,10 +727,39 @@ public class AmonRoleData extends SimpleRoleData {
         return !innocentAlive || !killerAlive;
     }
 
-    /** 开启终幕：寄宿体回归为备用能力、窃取全场物品、发光、全服播报。 */
-    private void startFinale() {
-        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level))
-            return;
+    /**
+     * 开启终幕（阿蒙时刻）：寄宿体回归为备用能力、窃取全场物品、发光、全服播报。
+     *
+     * <p>
+     * <b>亡命徒时刻期间不允许触发</b>：难民修饰符复活成亡命徒后，{@code RefugeeComponent.isAnyRevivals}
+     * 为 true 的整段时间里，全服处于亡命徒专属流程（技能禁用、时间冻结/回拨、结算由亡命徒接管）。
+     * 此时若启动阿蒙时刻，会和亡命徒的「最后的挣扎」表现与胜负判定互相打架，故直接跳过本次触发；
+     * 亡命徒流程结束后（{@code isAnyRevivals} 归位 false）下一个 tick / 下一次结算会重新尝试。
+     * 另外由 {@link MomentManager#trigger} 保证一局只触发一次：终幕结束后即便条件再次满足，
+     * 也不会重新开场。
+     *
+     * @return true 表示已进入终幕；false 表示未开启（条件不满足、处于亡命徒时刻或本局已触发过）。
+     */
+    public boolean forceStartMoment() {
+        if (!(player instanceof ServerPlayer amon))
+            return false;
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(amon.level());
+        if (game.getGameStatus() != SREGameWorldComponent.GameStatus.ACTIVE
+                || !game.isRole(amon, ModRoles.AMON) || !amon.isAlive()
+                || !GameUtils.isPlayerAliveAndSurvival(amon) || refugeeSuspended || finalePhase)
+            return false;
+        return startFinale();
+    }
+
+    private boolean startFinale() {
+        if (!(player instanceof ServerPlayer amon) || !(amon.level() instanceof ServerLevel level) || finalePhase)
+            return false;
+        // 亡命徒（难民修饰符变来的）期间禁止触发阿蒙时刻。
+        if (isDesperadoMoment(level))
+            return false;
+        // 统一时刻入口：一局仅触发一次；已触发过则保持终幕结束后的状态，不重新开场。
+        if (!MomentManager.trigger(level, MomentType.AMON))
+            return false;
         finalePhase = true;
         finaleTicks = FINALE_TICKS;
         reserveLives = maturedHosts.size();
@@ -736,7 +779,29 @@ public class AmonRoleData extends SimpleRoleData {
         applyGlow(amon);
         stealItems(amon, level);
         broadcastFinale(level, true);
+        // 回放记录：阿蒙时刻触发
+        ReplayEventLog.record("replay.event.moment.amon", ReplayEventLog.player(amon));
         sync();
+        return true;
+    }
+
+    /**
+     * 当前是否处于「亡命徒时刻」（难民修饰符复活成亡命徒后的整段时间）。
+     *
+     * <p>
+     * 除了 {@link RefugeeComponent#isAnyRevivals}，还兜底检查场上是否存在存活的亡命徒
+     * （{@code TMMRoles.LOOSE_END}）——若 {@code isAnyRevivals} 因时序问题已被复位但亡命徒仍在场上，
+     * 同样不应让阿蒙时刻插进来。
+     */
+    private static boolean isDesperadoMoment(ServerLevel level) {
+        if (RefugeeComponent.KEY.get(level).isAnyRevivals)
+            return true;
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(level);
+        for (ServerPlayer p : level.players()) {
+            if (game.isRole(p, TMMRoles.LOOSE_END) && GameUtils.isPlayerAliveAndSurvival(p))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -796,6 +861,7 @@ public class AmonRoleData extends SimpleRoleData {
             return;
         finalePhase = false;
         broadcastFinale(level, false);
+        MomentManager.end(level, MomentType.AMON);
         RoleUtils.customWinnerWin(level, GameUtils.WinStatus.CUSTOM,
                 ModRoles.AMON_ID.getPath(), OptionalInt.of(ModRoles.AMON.color()));
     }
@@ -814,6 +880,7 @@ public class AmonRoleData extends SimpleRoleData {
                 amon.getAttribute(Attributes.SCALE).setBaseValue(1.0D);
             }
             broadcastFinale(level, false);
+            MomentManager.end(level, MomentType.AMON);
         }
         sync();
     }
@@ -901,6 +968,79 @@ public class AmonRoleData extends SimpleRoleData {
                 || s.getItem() instanceof HoneyBottleItem
                 || s.is(FOOD_DRINK_TAG)
                 || s.is(SEItems.DRINKS);
+    }
+
+    /** 保存节点后临时旁观，不走死亡链，也不消耗宿主或备用生命。 */
+    public void suspendForRefugee() {
+        if (!(player instanceof ServerPlayer amon) || refugeeSuspended)
+            return;
+        refugeeSuspended = true;
+        if (possessTarget != null)
+            clearPossessionEffects(amon);
+        clearDisguise();
+        if (finalePhase)
+            broadcastFinale(amon.serverLevel(), false);
+        amon.setCamera(amon);
+        amon.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+        io.wifi.starrailexpress.compat.TrainVoicePlugin.resetPlayer(amon.getUUID());
+        sync();
+    }
+
+    /** 全体玩家恢复后再恢复外观，避免先于宿主复活而误取消附身。 */
+    public void resumeAfterRefugee(CompoundTag state) {
+        readFromRewindNbt(state, player.registryAccess());
+        refugeeSuspended = false;
+        if (player instanceof ServerPlayer amon) {
+            if (possessTarget != null) {
+                refreshPossessionEffects(amon);
+                // 完整节点已包含缩形属性；兼容旧版局部恢复时也恢复缩形。
+                if (!Double.isNaN(prePossessionScale) && amon.getAttribute(Attributes.SCALE) != null)
+                    amon.getAttribute(Attributes.SCALE).setBaseValue(prePossessionScale * 0.45D);
+            }
+            setDisguise(disguiseTarget);
+            if (finalePhase)
+                broadcastFinale(amon.serverLevel(), true);
+        }
+        sync();
+    }
+
+    /** 回溯必须保存服务端权威数据，不能仅保存供 HUD 使用的虫子计数。 */
+    @Override
+    public void writeToRewindNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        writeToSyncNbt(tag, provider);
+        CompoundTag incubation = new CompoundTag();
+        seeds.forEach((uuid, ticks) -> incubation.putInt(uuid.toString(), ticks));
+        tag.put("Incubation", incubation);
+        if (disguiseTarget != null)
+            tag.putUUID("Disguise", disguiseTarget);
+        tag.putInt("PossessTicks", possessTicks);
+        if (homePos != null) {
+            tag.putDouble("HomeX", homePos.x);
+            tag.putDouble("HomeY", homePos.y);
+            tag.putDouble("HomeZ", homePos.z);
+        }
+        tag.putFloat("HomeYRot", homeYRot);
+        tag.putDouble("PrePossessionScale", prePossessionScale);
+    }
+
+    /** 恢复虫子进度、宿主、附身、伪装及终幕资源，不触发夺舍或重新窃取物品。 */
+    @Override
+    public void readFromRewindNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        readFromSyncNbt(tag, provider);
+        seeds.clear();
+        CompoundTag incubation = tag.getCompound("Incubation");
+        for (String uuid : incubation.getAllKeys())
+            seeds.put(UUID.fromString(uuid), incubation.getInt(uuid));
+        maturedHosts.clear();
+        maturedHosts.addAll(clientMaturedHosts);
+        disguiseTarget = tag.hasUUID("Disguise") ? tag.getUUID("Disguise") : null;
+        possessTarget = clientPossessTarget;
+        possessTicks = tag.getInt("PossessTicks");
+        homePos = tag.contains("HomeX")
+                ? new Vec3(tag.getDouble("HomeX"), tag.getDouble("HomeY"), tag.getDouble("HomeZ")) : null;
+        homeYRot = tag.getFloat("HomeYRot");
+        prePossessionScale = tag.contains("PrePossessionScale")
+                ? tag.getDouble("PrePossessionScale") : Double.NaN;
     }
 
     @Override

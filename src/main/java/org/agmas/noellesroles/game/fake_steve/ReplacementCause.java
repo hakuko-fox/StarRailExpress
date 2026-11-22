@@ -20,5 +20,7 @@ public enum ReplacementCause {
     VIRUS_REVIVAL,
     COMMAND,
     TEAMKILL,
+    DEATH_REVIVE,
+    INFECTION,
     ASSIMILATION
 }

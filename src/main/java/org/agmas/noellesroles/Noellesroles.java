@@ -30,6 +30,7 @@ import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.api.time.TimeRewind;
 import org.agmas.noellesroles.client.blood.BloodMain;
+import org.agmas.noellesroles.client.scene.SceneServerEvents;
 import org.agmas.noellesroles.commands.ModColorArgument;
 import org.agmas.noellesroles.commands.PresetCommand;
 import org.agmas.noellesroles.config.NoellesRolesConfig;
@@ -209,6 +210,8 @@ public class Noellesroles implements ModInitializer {
         // 世界系统与事件处理器注册
         NREventRegister.registerWorldSystemsAndEvents();
         org.agmas.noellesroles.game.halloween.HalloweenRuntime.register();
+        // 统一时刻管理器：起止标记、进度记录、音乐与亡命徒插队
+        org.agmas.noellesroles.game.moment.MomentManager.register();
 
         // 咖啡师「抱兔兔上头顶」的乘骑状态机
         org.agmas.noellesroles.role.anime.chino.ChinoHeadRideManager.register();
@@ -234,7 +237,7 @@ public class Noellesroles implements ModInitializer {
         ModBlocks.initialize();
         SREFumoBlocks.initialize();
         org.agmas.noellesroles.init.ModSceneBlocks.initialize();
-        org.agmas.noellesroles.scene.SceneServerEvents.register();
+        SceneServerEvents.register();
 
         // 注册血液粒子工厂
         Registry.register(BuiltInRegistries.PARTICLE_TYPE, Noellesroles.id("deathblood"),

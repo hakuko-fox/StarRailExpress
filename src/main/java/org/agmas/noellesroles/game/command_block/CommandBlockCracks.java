@@ -26,6 +26,7 @@ import io.wifi.starrailexpress.util.Scheduler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.ChatFormatting;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -176,6 +177,9 @@ public final class CommandBlockCracks {
             level.sendParticles(ParticleTypes.CRIT, at.x, at.y + 0.8D, at.z, 16, 0.3D, 0.5D, 0.3D, 0.05D);
             level.playSound(null, at.x, at.y, at.z, SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.7F, 0.7F);
             CommandBlockDirector.addDestruction(level);
+            // 回放记录：命令方块事件中摧毁裂隙
+            ReplayEventLog.record("replay.event.command_block.crack_destroyed",
+                    ReplayEventLog.player(shooter));
         }
         shooter.displayClientMessage(Component.translatable("message.noellesroles.command_block.crack_hit"), true);
         return true;
@@ -242,31 +246,30 @@ public final class CommandBlockCracks {
                 occupied.add(entity.position());
             }
         }
-        // 「坐下」任务的座椅周围不刷裂缝，别挡住玩家做坐下任务
+        // 座椅与锻炼点不作为裂缝来源，不额外扩大对邻近任务点的避让范围。
         int chairType = SREPlayerTaskComponent.Task.CHAIR.ordinal();
+        int exerciseType = SREPlayerTaskComponent.Task.EXERCISE.ordinal();
         List<BlockPos> points = new ArrayList<>();
         for (BlockPos point : GameUtils.taskBlocks.keySet()) {
             Integer type = GameUtils.taskBlocks.get(point);
-            if (type != null && type == chairType) {
+            if (type != null && (type == chairType || type == exerciseType)) {
                 continue;
             }
             points.add(point);
         }
         Collections.shuffle(points, new java.util.Random(level.random.nextLong()));
-        List<Vec3> found = new ArrayList<>();
-        for (BlockPos point : points) {
-            collectSpots(level, point, occupied, found);
-            if (found.size() >= 6) {
-                break;
-            }
-        }
-        if (found.isEmpty()) {
-            return null;
-        }
-        return found.get(level.random.nextInt(found.size()));
+        List<Vec3> livingPlayers = level.players().stream()
+                .filter(GameUtils::isPlayerAliveAndSurvival).map(Player::position).toList();
+        if (livingPlayers.isEmpty()) return null;
+        return CommandBlockCrackSpawnRules.choose(points, point -> {
+            List<Vec3> found = new ArrayList<>();
+            collectSpots(level, point, occupied, livingPlayers, found);
+            return found.isEmpty() ? null : found.get(level.random.nextInt(found.size()));
+        });
     }
 
-    private static void collectSpots(ServerLevel level, BlockPos point, List<Vec3> occupied, List<Vec3> found) {
+    private static void collectSpots(ServerLevel level, BlockPos point, List<Vec3> occupied,
+            List<Vec3> livingPlayers, List<Vec3> found) {
         int[] radii = { 2, 3 };
         int[][] dirs = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
         List<int[]> offsets = new ArrayList<>();
@@ -278,7 +281,9 @@ public final class CommandBlockCracks {
         Collections.shuffle(offsets, new java.util.Random(point.asLong() ^ level.getGameTime()));
         for (int[] offset : offsets) {
             Vec3 spot = standAt(level, point.offset(offset[0], 0, offset[1]));
-            if (spot == null || tooClose(spot, occupied)) {
+            if (spot == null || tooClose(spot, occupied)
+                    || livingPlayers.stream().noneMatch(player ->
+                            CommandBlockCrackSpawnRules.withinPlayerRange(player.distanceToSqr(spot)))) {
                 continue;
             }
             found.add(spot);

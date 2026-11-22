@@ -20,7 +20,6 @@ import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.api.replay.GameReplayUtils;
-import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.compat.TrainVoicePlugin;
@@ -30,6 +29,7 @@ import io.wifi.starrailexpress.game.GameUtils;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -287,6 +287,10 @@ public class TraitorAndModifiers {
         // 起义军修饰符排除巫毒师职业与藤原妹红
         REBEL.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.VOODOO, THLostForestRoles.MOKOU));
 
+        // 鬼祟与魔术师互斥：魔术师自带假身份（杀手方按伪装身份看待），
+        // 再叠一层「靠近即不可被透视」会让伪装语义混乱。互斥关系不写进职业介绍。
+        SNEAKY.cannotBeAppliedTo = new HashSet<>(List.of(ModRoles.MAGICIAN));
+
         // 侏儒与体型类/双子修饰符互斥（与 TINY/TALL 共用同一套互斥机制）
         DWARF.addTwoWayOpposingModifier(SEModifiers.TINY, SEModifiers.TALL, SEModifiers.TWIN_CHILDREN);
         // 狂躁症与任务大师/工作狂互斥（取代 registerModifierEvents 里逐条 removeModifier 的手写逻辑）
@@ -414,7 +418,8 @@ public class TraitorAndModifiers {
                 return; // 这些死亡原因不触发回光返照
             }
             WorldModifierComponent modifiers = WorldModifierComponent.KEY.get(player.level());
-            if (modifiers.isModifier(player.getUUID(), LAST_GASP) && !LAST_GASP_TRIGGERED.contains(player.getUUID())) {
+            if (modifiers.isModifier(player.getUUID(), LAST_GASP) && !LAST_GASP_TRIGGERED.contains(player.getUUID())
+                    && !org.agmas.noellesroles.game.roles.killer.ma_chen_xu.SackGhostItems.isFinalDeath(player)) {
                 LAST_GASP_TRIGGERED.add(player.getUUID());
                 sp.setGameMode(GameType.ADVENTURE);
                 TrainVoicePlugin.resetPlayer(sp.getUUID());
@@ -505,9 +510,8 @@ public class TraitorAndModifiers {
                     double triggerY = player.getY();
                     double triggerZ = player.getZ();
 
-                    // 传送回房间
-                    Vec3 pos = GameUtils.getSpawnPos(AreasWorldComponent.KEY.get(player.level()),
-                            GameUtils.roomToPlayer.get(player.getUUID()));
+                    // 传送回房间（训练场假人回自己的初始点位）
+                    Vec3 pos = GameUtils.getPlayerRoomSpawnPos(player);
                     if (pos != null) {
                         player.teleportTo(pos.x(), pos.y() + 1, pos.z());
                     }
@@ -518,6 +522,8 @@ public class TraitorAndModifiers {
 
                     // 移除起义军修饰符
                     modifiers.removeModifier(player.getUUID(), REBEL);
+                    // 回放记录：起义军修饰符被触发
+                    ReplayEventLog.record("replay.event.modifier.rebel", ReplayEventLog.player(player));
 
                     // 向所有玩家发送广播消息
                     for (ServerPlayer targetPlayer : serverLevel.getServer().getPlayerList().getPlayers()) {

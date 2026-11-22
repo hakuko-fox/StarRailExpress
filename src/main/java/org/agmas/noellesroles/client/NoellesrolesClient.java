@@ -98,6 +98,7 @@ import org.agmas.noellesroles.client.blood.particle.BloodParticle;
 import org.agmas.noellesroles.client.commands.SREClientCommand;
 import org.agmas.noellesroles.client.event.MutableComponentResult;
 import org.agmas.noellesroles.client.event.OnMessageBelowMoneyRenderer;
+import org.agmas.noellesroles.client.gunfx.*;
 import org.agmas.noellesroles.client.hud.CommonClientHudRenderer;
 
 import org.agmas.noellesroles.client.renderer.BreakingBridgeBlockEntityRenderer;
@@ -241,6 +242,12 @@ public class NoellesrolesClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        // 思索扩展：必须在 PondererLib 场景注册之前完成，供职业教程使用自定义步骤
+        io.wifi.starrailexpress.client.ponder.PonderSreRegistration.register();
+        org.agmas.noellesroles.client.roulette.RouletteClient.register();
+        org.agmas.noellesroles.client.RouletteDevilClient.register();
+        org.agmas.noellesroles.client.decree.DecreeClient.register();
+        org.agmas.noellesroles.client.events.ClientRoleEventHandlers.register();
         org.agmas.noellesroles.game.command_block.SteveMiner.clientTaskBlock =
                 pos -> taskBlocks.containsKey(pos) || TaskBlockOverlayRenderer.RoomDoorPositions.contains(pos);
         org.agmas.noellesroles.game.modes.echo.client.EchoInputClient.initialize();
@@ -253,7 +260,13 @@ public class NoellesrolesClient implements ClientModInitializer {
         DynamiclightsEntry.registerClientEvents();
         // 注册各职业的背包界面扩展（旧版 ScreenMixin 的替代：SRERole 钩子，客户端注册）
         RoleScreenRegister.register();
+        CloneDoctorClient.register();
+        IdentityScannerClient.register();
+        SackGhostClient.register();
+        SackGhostRealmFx.register();
         NoellesrolesClientAmbientSounds.register();
+        // 统一时刻音乐播放器（统一管理各时刻的循环 BGM 与优先级）
+        org.agmas.noellesroles.client.MomentMusicClient.register();
         // Dream（Dream）：颤抖视角漂移 + 虚拟血量条（准星指向受伤玩家时显示）
         org.agmas.noellesroles.game.roles.killer.dream.client.DreamClientHandler.register();
         org.agmas.noellesroles.client.hud.VirtualHealthHud.register();
@@ -262,6 +275,25 @@ public class NoellesrolesClient implements ClientModInitializer {
         // 区域地图物品：客户端扫描 playArea 生成地图纹理 + 手持时 HUD 小地图
         org.agmas.noellesroles.client.map.AreaMapManager.register();
         org.agmas.noellesroles.client.map.AreaMapHud.register();
+        // 中控员：激光模块的客户端粒子形状（服务端只发一个自定义形状包）
+        org.agmas.noellesroles.client.fx.CentralControlLaserClientFx.register();
+        // 中控员：红外线扫描仪让监控画面变亮（覆盖环境亮度，不改 io/wifi 的渲染代码）
+        io.wifi.starrailexpress.event.RenderClientLightLevel.EVENT.register((instance, other, partialTick) -> {
+            if (!io.wifi.starrailexpress.client.SecurityCameraClientState.isInSecurityMode()) {
+                return -1.0F;
+            }
+            var minecraft = Minecraft.getInstance();
+            if (minecraft.level == null) {
+                return -1.0F;
+            }
+            var cameraPos = io.wifi.starrailexpress.client.SecurityCameraClientState.getCurrentCameraPos();
+            if (cameraPos == null
+                    || !org.agmas.noellesroles.game.roles.innocence.central_control.CentralControlRole
+                            .hasNightVision(minecraft.level, cameraPos)) {
+                return -1.0F;
+            }
+            return org.agmas.noellesroles.game.roles.innocence.central_control.CentralControlRole.INFRARED_GAMMA;
+        });
         // 阿蒙终幕「阿蒙时刻」：全屏稍偏灰滤镜。
         org.agmas.noellesroles.client.event.CommonHudRenderCallback.EVENT.register((g, dt) -> {
             if (org.agmas.noellesroles.client.ClientAmonState.finaleActive) {
@@ -315,6 +347,8 @@ public class NoellesrolesClient implements ClientModInitializer {
         org.agmas.noellesroles.client.ReaperScytheClientFx.register();
         org.agmas.noellesroles.client.HamoonClientFx.register();
         org.agmas.noellesroles.client.RoadRollerClient.register();
+        // 金属怪：钢卷输入上报、滚动角与第三人称
+        org.agmas.noellesroles.client.SteelCoilClientHandler.register();
         org.agmas.noellesroles.client.CommandBlockProgressClient.register();
         org.agmas.noellesroles.client.hud.roles.PaperDollHud.register();
         org.agmas.noellesroles.client.CommandBlockAmbientSound.register();
@@ -454,6 +488,13 @@ public class NoellesrolesClient implements ClientModInitializer {
                         trashCan.getWhitelist(), trashCan.isBlacklistEnabled(), trashCan.getBlacklist()));
             }
         };
+        EntityRendererRegistry.register(ModEntities.THREAD_BALL,
+                net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MINUTE_NEEDLE,
+                net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        FogGuestClient.register();
+        EntityRendererRegistry.register(ModEntities.FOG_GUEST_ZONE,
+                org.agmas.noellesroles.client.renderer.FogGuestZoneRenderer::new);
         EntityRendererRegistry.register(ModEntities.WHEELCHAIR, WheelchairEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.COMMAND_BLOCK_CRACK,
                 org.agmas.noellesroles.client.renderer.CommandBlockCrackRenderer::new);
@@ -473,12 +514,18 @@ public class NoellesrolesClient implements ClientModInitializer {
                 net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_STONE,
                 org.agmas.noellesroles.client.render.RollingStoneRenderer::new);
+        EntityRendererRegistry.register(ModEntities.STEEL_COIL,
+                org.agmas.noellesroles.client.render.SteelCoilRenderer::new);
         EntityRendererRegistry.register(ModEntities.ROLLING_LOG,
                 org.agmas.noellesroles.client.render.RollingLogRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SNOWBALL_ROLL,
+                org.agmas.noellesroles.client.render.SnowballRollRenderer::new);
         EntityRendererRegistry.register(ModEntities.PIGEON,
                 org.agmas.noellesroles.client.render.PigeonRenderer::new);
         EntityRendererRegistry.register(ModEntities.MECHANICAL_BIRD,
                 org.agmas.noellesroles.client.render.MechanicalBirdRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LARGE_OIL_CAN,
+                context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.5F, false));
         EntityRendererRegistry.register(ModEntities.MOVING_PLATFORM,
                 org.agmas.noellesroles.client.render.MovingPlatformRenderer::new);
         EntityRendererRegistry.register(ModEntities.HURRICANE,
@@ -565,9 +612,9 @@ public class NoellesrolesClient implements ClientModInitializer {
             TaskBlockOverlayRenderer.render(renderContext);
             TwoDimensionalTaskArrowRenderer.render(renderContext);
             PointerGuidanceRenderer.render(renderContext);
-            org.agmas.noellesroles.gunfx.GunTracerRenderer.render(renderContext);
-            org.agmas.noellesroles.gunfx.StalkerDashTrailRenderer.render(renderContext);
-            org.agmas.noellesroles.gunfx.StalkerPierceFxRenderer.render(renderContext);
+            GunTracerRenderer.render(renderContext);
+            StalkerDashTrailRenderer.render(renderContext);
+            StalkerPierceFxRenderer.render(renderContext);
             DreadlordClientFx.renderSouls(renderContext);
             DreadlordClientFx.renderFloats(renderContext);
             // 确定性地绘制所有透视线条（相机矩阵仍有效、地形已完成）
@@ -620,14 +667,14 @@ public class NoellesrolesClient implements ClientModInitializer {
         });
         // 枪械射击轨迹
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.gunfx.GunTracerS2CPacket.ID, (payload, context) -> context.client()
-                        .execute(() -> org.agmas.noellesroles.gunfx.GunTracerRenderer.onPacket(payload)));
+                GunTracerS2CPacket.ID, (payload, context) -> context.client()
+                        .execute(() -> GunTracerRenderer.onPacket(payload)));
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.gunfx.StalkerDashTrailS2CPacket.ID, (payload, context) -> context.client()
-                        .execute(() -> org.agmas.noellesroles.gunfx.StalkerDashTrailRenderer.onPacket(payload)));
+                StalkerDashTrailS2CPacket.ID, (payload, context) -> context.client()
+                        .execute(() -> StalkerDashTrailRenderer.onPacket(payload)));
         ClientPlayNetworking.registerGlobalReceiver(
-                org.agmas.noellesroles.gunfx.StalkerPierceFxS2CPacket.ID, (payload, context) -> context.client()
-                        .execute(() -> org.agmas.noellesroles.gunfx.StalkerPierceFxRenderer.onPacket(payload)));
+                StalkerPierceFxS2CPacket.ID, (payload, context) -> context.client()
+                        .execute(() -> StalkerPierceFxRenderer.onPacket(payload)));
 
         // 建筑师墙数据S2C包
         ClientPlayNetworking.registerGlobalReceiver(org.agmas.noellesroles.packet.BuilderWallS2CPacket.ID,
@@ -794,7 +841,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                 if (client.player != null) {
                     // if (!isPlayerInAdventureMode(client.player))
                     // return;
-                    showBroadcastMessage(payload.content());
+                    showBroadcastMessage(payload.content(), payload.durationTicks());
                 }
             });
         });
@@ -1342,14 +1389,21 @@ public class NoellesrolesClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new org.agmas.noellesroles.packet.NiaoshoushouMissileControlC2SPacket(
                         missile.getId(), client.player.getYRot(), client.player.getXRot(), steering));
             }
-            if (client.getCameraEntity() instanceof org.agmas.noellesroles.content.entity.MechanicalBirdEntity bird) {
+            // 大油罐复用机械鸟的成熟操控链路：相机绑定到油罐后，按本地按键发送控制包。
+            // 视角朝向由 Camera mixin 接管为玩家本地鼠标，不会被服务端回传强制调整。
+            var remoteCamera = client.getCameraEntity();
+            if (remoteCamera instanceof org.agmas.noellesroles.content.entity.MechanicalBirdEntity
+                    || remoteCamera instanceof pro.fazeclan.river.stupid_express.role.arsonist.LargeOilCanEntity) {
+                var bird = remoteCamera;
                 if (bird.isRemoved()
                         || client.level.getEntity(bird.getId()) != bird
                         || client.player.distanceToSqr(bird) > 128.0D * 128.0D) {
                     client.setCameraEntity(client.player);
                     return;
                 }
-                org.agmas.noellesroles.client.sound.MechanicalBirdFlySound.ensurePlaying(bird);
+                if (bird instanceof org.agmas.noellesroles.content.entity.MechanicalBirdEntity mechanicalBird) {
+                    org.agmas.noellesroles.client.sound.MechanicalBirdFlySound.ensurePlaying(mechanicalBird);
+                }
                 int bits = 0;
                 if (client.options.keyUp.isDown()) {
                     bits |= org.agmas.noellesroles.packet.MechanicalBirdControlC2SPacket.BIT_FORWARD;
@@ -1436,6 +1490,15 @@ public class NoellesrolesClient implements ClientModInitializer {
             if (nextAbilityBind.consumeClick()) {
                 ClientAbilityHandler.selectNextSkill(client);
             }
+            if (abilityPressed && org.agmas.noellesroles.client.hud.roles.CentralControlHud
+                    .isMonitorHandlingAbilityKey(client)) {
+                // 监控页面里技能键被激光模块接管：上报摄像头位置 + 画面当前朝向，射线检测交给服务端
+                var viewCamera = client.gameRenderer.getMainCamera();
+                ClientPlayNetworking.send(new org.agmas.noellesroles.packet.CentralControlLaserC2SPacket(
+                        io.wifi.starrailexpress.client.SecurityCameraClientState.getCurrentCameraPos(),
+                        viewCamera.getYRot(), viewCamera.getXRot()));
+                abilityPressed = false;
+            }
             ClientAbilityHandler.tickContinuousInput(client);
             if (client.player.isCreative()) {
                 if (foolPrayerBind.consumeClick()) {
@@ -1508,43 +1571,6 @@ public class NoellesrolesClient implements ClientModInitializer {
 
         });
 
-        // 注册里世界场景管理器tick
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || client.level == null)
-                return;
-            if (SREClient.gameComponent == null)
-                return;
-
-            boolean otherworldActive = OtherworldShader.isAnyOtherworldActive();
-
-            if (otherworldActive && !OtherworldSceneManager.INSTANCE.isActive()) {
-                OtherworldSceneManager.INSTANCE.activate();
-            } else if (!otherworldActive && OtherworldSceneManager.INSTANCE.isActive()) {
-                OtherworldSceneManager.INSTANCE.deactivate();
-            }
-
-            OtherworldSceneManager.INSTANCE.tick();
-
-            // 鬼缚效果红色粒子渲染
-            for (var p : client.level.players()) {
-                if (p.hasEffect(ModEffects.GHOST_CURSE)) {
-                    double px = p.getX() + (Math.random() - 0.5) * 0.8;
-                    double py = p.getY() + Math.random() * 1.8;
-                    double pz = p.getZ() + (Math.random() - 0.5) * 0.8;
-                    client.level.addParticle(
-                            net.minecraft.core.particles.ParticleTypes.CRIMSON_SPORE,
-                            px, py, pz, 0, 0.02, 0);
-                    if (Math.random() < 0.4) {
-                        double px2 = p.getX() + (Math.random() - 0.5) * 1.0;
-                        double py2 = p.getY() + 0.5 + Math.random() * 1.0;
-                        double pz2 = p.getZ() + (Math.random() - 0.5) * 1.0;
-                        client.level.addParticle(
-                                net.minecraft.core.particles.ParticleTypes.DUST_PLUME,
-                                px2, py2, pz2, 0, -0.01, 0);
-                    }
-                }
-            }
-        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.level == null || SREClient.gameComponent == null) {
@@ -1889,13 +1915,24 @@ public class NoellesrolesClient implements ClientModInitializer {
     }
 
     public static void showBroadcastMessage(Component message) {
+        showBroadcastMessage(message, 0);
+    }
+
+    /**
+     * 顶部广播消息入队。
+     *
+     * @param durationTicks 显示时长（tick）。&lt;= 0 时用客户端配置的
+     *                      {@code broadcasterMessageDuration}；&gt; 0 时以传入时长为准，
+     *                      并且不会短于客户端配置（避免服务端给的时长把玩家自己的偏好压掉）。
+     */
+    public static void showBroadcastMessage(Component message, int durationTicks) {
         var client = Minecraft.getInstance();
-        if (client == null)
+        if (client == null || client.level == null)
             return;
         long timer = client.level.getGameTime();
-        currentBroadcastMessage
-                .add(new BroadcastMessageInfo(message, timer + GameConstants.getInTicks(0,
-                        SREClientConfig.HANDLER.instance().broadcasterMessageDuration)));
+        int configured = GameConstants.getInTicks(0, SREClientConfig.HANDLER.instance().broadcasterMessageDuration);
+        int duration = durationTicks > 0 ? Math.max(durationTicks, configured) : configured;
+        currentBroadcastMessage.add(new BroadcastMessageInfo(message, timer + duration));
     }
 
     private static final Item[] ANGLER_DESC_ITEMS = {

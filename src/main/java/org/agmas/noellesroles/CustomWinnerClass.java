@@ -69,7 +69,7 @@ public class CustomWinnerClass {
         for (var player : serverLevel.players()) {
             if (GameUtils.isPlayerAliveAndSurvival(player)) {
                 alivePlayerCount++;
-                SRERole role = gameComponent.getRole(player);
+                SRERole role = gameComponent.getAllegianceRole(player);
                 if (role != null) {
                     if (role instanceof CustomWinnerRoleInterface cwr) {
                         WinStatus resultWinStatus = cwr.checkWin(player, winStatus);
@@ -85,16 +85,16 @@ public class CustomWinnerClass {
                         }
                     }
                 }
-                if (gameComponent.isRole(player, ModRoles.THIEF)) {
+                if (role == ModRoles.THIEF) {
                     hasThiefAlive = true;
                 }
-                if (gameComponent.isRole(player, THRedHouseRoles.FURANDORU)) {
+                if (role == THRedHouseRoles.FURANDORU) {
                     hasFurandoru = true;
                 }
-                if (gameComponent.isRole(player, ModRoles.PELICAN)) {
+                if (role == ModRoles.PELICAN) {
                     hasPelicanAlive = true;
                 }
-                if (gameComponent.isRole(player, ModRoles.MONOKUMA)) {
+                if (role == ModRoles.MONOKUMA) {
                     hasMonokumaAlive = true;
                 }
             }
@@ -215,6 +215,17 @@ public class CustomWinnerClass {
             }
         }
 
+        // 纵火犯时刻锁局（参考鹈鹕）：与鹈鹕同在 checkWinnerBuiltin 这一层，
+        // 放在布谷鸟之后以保留「布谷鸟优先于纵火犯」，同时早于后续会把普通结算
+        // 改写成独立胜利、甚至直接 customWinnerWin -> stopGame 绕过事件链的分支。
+        if (pro.fazeclan.river.stupid_express.role.arsonist.ArsonistWinChecker
+                .isSettlementLocked(serverLevel)
+                && pro.fazeclan.river.stupid_express.role.arsonist.ArsonistWinChecker
+                        .isOrdinaryEnding(winStatus)) {
+            if (!prioritize) return WinStatus.NONE;
+            deferred = WinStatus.NONE;
+        }
+
         // 自定义角色独立胜利判定 (来自 CustomRoleLoader)
         WinStatus customRoleWin = io.wifi.starrailexpress.customrole.CustomRoleLoader
                 .checkCustomRoleWins(serverLevel, winStatus);
@@ -225,9 +236,19 @@ public class CustomWinnerClass {
             deferred = CommandBlockWinPriority.defer(deferred, customRoleWin);
         }
 
-        // 无我与无妄联合独立胜利：乘客/时间/杀手胜利结算时两人均存活，优先级高于年兽
+        // 无我与无妄联合独立胜利：存活到最后（乘客/时间/杀手胜利结算），
+        // 且场上存活人数不能大于基于开局玩家数的三分之一（人数含无我与无妄自己），优先级高于年兽
         if (winStatus.equals(WinStatus.PASSENGERS) || winStatus.equals(WinStatus.KILLERS)
                 || winStatus.equals(WinStatus.TIME)) {
+            int startingPlayerCount = gameComponent.getStartingPlayerCount();
+            if (startingPlayerCount <= 0) {
+                startingPlayerCount = GameUtils.getStartingPlayerCount(serverLevel);
+            }
+            if (startingPlayerCount <= 0) {
+                startingPlayerCount = serverLevel.players().size();
+            }
+            // 三分之一向下取整；异常开局人数下至少允许一人，避免胜利条件永远无法达成
+            int maxAlivePlayers = Math.max(1, startingPlayerCount / 3);
             boolean hasAnatmanAlive = false;
             boolean hasAsatyaAlive = false;
             for (var player : serverLevel.players()) {
@@ -240,7 +261,7 @@ public class CustomWinnerClass {
                     }
                 }
             }
-            if (hasAnatmanAlive && hasAsatyaAlive) {
+            if (alivePlayerCount <= maxAlivePlayers && hasAnatmanAlive && hasAsatyaAlive) {
                 RoleUtils.customWinnerWin(serverLevel, AnatmanRoleData.JOINT_WINNER_ID, ModRoles.ANATMAN.color());
                 return WinStatus.CUSTOM;
             }

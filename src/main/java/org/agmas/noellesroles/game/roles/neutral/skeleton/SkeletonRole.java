@@ -13,6 +13,7 @@ import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
 import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.disguise.EntityDisguise;
 import io.wifi.starrailexpress.event.AllowPlayerPunching;
+import io.wifi.starrailexpress.event.OnPlayerDeath;
 import io.wifi.starrailexpress.game.GameConstants;
 import io.wifi.starrailexpress.game.GameUtils;
 import io.wifi.starrailexpress.util.TrueFalseResult;
@@ -20,6 +21,7 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -107,7 +109,7 @@ public class SkeletonRole extends ExtraEffectRole implements CustomWinnerRoleInt
     public void onRemove(ServerPlayer player) {
         super.onRemove(player);
         // 职业被移除（换职业等）时解除伪装；局末清理由核心统一负责
-        EntityDisguise.clear(player);
+        clearSkeletonDisguise(player);
     }
 
     /** 未伪装时补上骷髅外观（已伪装成其它东西时不抢，交给调用方按需处理）。 */
@@ -121,9 +123,31 @@ public class SkeletonRole extends ExtraEffectRole implements CustomWinnerRoleInt
     }
 
     /**
+     * 仅当玩家当前挂的正是「原版骷髅」伪装时才清除，避免误删别的职业/形态施加的伪装。
+     * 死亡、转职、旁观等失效场景都走这里。
+     */
+    public static void clearSkeletonDisguise(ServerPlayer player) {
+        if (player != null && EntityDisguise.get(player).type() == EntityType.SKELETON) {
+            EntityDisguise.clear(player);
+        }
+    }
+
+    /** 骷髅伪装是否已失效：死亡 / 旁观 / 不再是骷髅职业。 */
+    public static boolean isDisguiseInvalid(ServerPlayer player) {
+        return player == null || player.isSpectator() || !GameUtils.isPlayerAliveAndSurvival(player)
+                || !isSkeleton(player);
+    }
+
+    /**
      * 注册战斗相关事件（由 {@code NRCombatEvents.registerWeaponHandlers()} 调用）。
      */
     public static void registerEvents() {
+        // 死亡瞬间立即解除骷髅伪装（旁观后 RoleData.serverTick 不再补挂，也不会主动清）
+        OnPlayerDeath.EVENT.register((player, reason) -> {
+            if (player instanceof ServerPlayer sp) {
+                clearSkeletonDisguise(sp);
+            }
+        });
         // 放行骷髅的空手近战攻击
         AllowPlayerPunching.EVENT.register(player -> {
             if (player.hasEffect(ModEffects.SAFE_TIME)) {
@@ -214,6 +238,9 @@ public class SkeletonRole extends ExtraEffectRole implements CustomWinnerRoleInt
                     true);
             return stack;
         }
+        if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksRevival(user, revived)
+                || org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.isRestrictedAt(body.level(), body.position(),
+                        org.agmas.noellesroles.game.roles.innocence.decree.Decree.REVIVAL)) return stack;
         // 葬仪伪造的尸体不能复活
         if (PlayerBodyEntityComponent.KEY.get(body).isFakeBody) {
             user.displayClientMessage(
@@ -224,10 +251,6 @@ public class SkeletonRole extends ExtraEffectRole implements CustomWinnerRoleInt
         }
         // 主人即将被复活的尸体无法被骸骨之书复活
         if (PlayerBodyEntityComponent.KEY.get(body).nonInteractable) {
-            user.displayClientMessage(
-                    Component.translatable("message.noellesroles.corpse.pending_revive")
-                            .withStyle(ChatFormatting.RED),
-                    true);
             return stack;
         }
         // 目标并不是死亡状态
@@ -250,6 +273,9 @@ public class SkeletonRole extends ExtraEffectRole implements CustomWinnerRoleInt
         GameUtils.revivePlayer(revived, body.getX(), body.getY(), body.getZ());
         RoleUtils.changeRole(revived, ModRoles.SKELETON);
         SRE.REPLAY_MANAGER.recordPlayerRevival(revived.getUUID(), ModRoles.SKELETON);
+        // 回放记录：xxx 使用骸骨之书复活了 xxx
+        ReplayEventLog.record("replay.event.bone_book.revive",
+                ReplayEventLog.player(user), ReplayEventLog.player(revived));
         
         revived.updateFluidOnEyes();
         revived.updateInWaterStateAndDoFluidPushing();

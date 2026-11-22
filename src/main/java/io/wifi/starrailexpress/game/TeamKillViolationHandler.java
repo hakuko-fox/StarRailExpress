@@ -66,6 +66,7 @@ public class TeamKillViolationHandler {
         SREConfig config = SREConfig.instance();
         if (victim == null || killer == null)
             return;
+        if (io.wifi.starrailexpress.training.TrainingRules.suppressFriendlyPenalty(victim)) return;
         final WorldModifierComponent worldModifierComponent = WorldModifierComponent.KEY.get(victim.level());
         if (worldModifierComponent.isModifier(victim, SEModifiers.LOVERS)
                 || worldModifierComponent.isModifier(killer, SEModifiers.LOVERS)) {
@@ -86,8 +87,13 @@ public class TeamKillViolationHandler {
             return;
         // 排除中立职业：击杀者或受害者任意一方为中立则不计入
         SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(victim.level());
-        SRERole killerRole = gameWorldComponent.getRole(killer);
-        SRERole victimRole = gameWorldComponent.getRole(victim);
+        SRERole killerRole = gameWorldComponent.getAllegianceRole(killer);
+        SRERole victimRole = gameWorldComponent.getAllegianceRole(victim);
+        // 用「真实阵营」判定：隐藏身份为杀手阵营的职业（魔术师）真实仍是平民，照常计入误杀违规。
+        if (isInnocent && (gameWorldComponent.isActualKillerTeam(killer.getUUID())
+                || gameWorldComponent.isActualKillerTeam(victim.getUUID()))) {
+            return;
+        }
 
         if (killerRole == null || killerRole.isNeutrals()) {
             return;
