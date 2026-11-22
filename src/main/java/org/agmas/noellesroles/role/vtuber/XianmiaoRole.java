@@ -31,6 +31,18 @@ public class XianmiaoRole extends NormalRole {
         return !VtuberRoleRuntime.isWeaponBlocked(player);
     }
 
+    public static void registerSkills() {
+        io.wifi.starrailexpress.api.RoleSkill.register(org.agmas.noellesroles.role.ModRoles.XIANMIAO,
+                io.wifi.starrailexpress.api.RoleSkill.skill(io.wifi.starrailexpress.SRE.id("xianmiao_vanish"),
+                        "skill.noellesroles.xianmiao.vanish", context -> {
+                            ServerPlayer player = context.player();
+                            if (!VtuberRoleSupport.deduct(player, 75)) return false;
+                            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.INVISIBILITY, 7 * 20, 0, false, false, true));
+                            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(org.agmas.noellesroles.init.ModEffects.VOICE_SILENCE, 7 * 20, 0, false, false, true));
+                            return true;
+                        }).cooldownSeconds(90).showOnHud(true).build());
+    }
+
     public static void giveInitialItems(Player player) {
         RoleUtils.insertStackInFreeSlot(player, ModItems.FAKE_REVOLVER.getDefaultInstance());
 
@@ -43,7 +55,10 @@ public class XianmiaoRole extends NormalRole {
         var game = SREGameWorldComponent.KEY.get(player.level());
         long now = player.level().getGameTime();
         VtuberRoleSupport.tickUncontrolledAlliance(player, game, now);
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 
+    @Override public void onFinishQuest(Player player, String quest) {
+        super.onFinishQuest(player, quest);
+        VtuberTraits.catTaskBonus(player);
+    }
 }

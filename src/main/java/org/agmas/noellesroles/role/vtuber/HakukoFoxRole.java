@@ -45,13 +45,13 @@ public class HakukoFoxRole extends NormalRole {
                     if (player.isSpectator() || RoleData.getNullable(HakukoFoxRoleData.class, player) == null) return false;
                     return RoleData.getNullable(HakukoFoxRoleData.class, player)
                     .toggleBeastForm(player, context);
-                }).cooldownSeconds(20).toggleable(true).manualCooldown().showOnHud(true).build(),
+                }).cooldownSeconds(15).toggleable(true).manualCooldown().showOnHud(true).build(),
                 RoleSkill.skill(SRE.id("hakukofox_freeze"), "skill.noellesroles.hakukofox.freeze", context -> {
                     ServerPlayer player = context.player();
                     if (player.isSpectator() || RoleData.getNullable(HakukoFoxRoleData.class, player) == null) return false;
                     return RoleData.getNullable(HakukoFoxRoleData.class, player)
                     .useFreezeSkill(player, context);
-                }).shifted(true).cooldownSeconds(60).showOnHud(true).build());
+                }).shifted(true).charges(1).showOnHud(true).build());
     }
 
     @Override
@@ -78,6 +78,5 @@ public class HakukoFoxRole extends NormalRole {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
         var game = SREGameWorldComponent.KEY.get(player.level());
         long now = player.level().getGameTime();
-        if (!HakukoFoxRoleData.isCultivating(player)) player.removeEffect(MobEffects.BLINDNESS);
     }
 }

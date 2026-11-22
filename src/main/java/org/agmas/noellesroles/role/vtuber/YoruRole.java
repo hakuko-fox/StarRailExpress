@@ -32,13 +32,16 @@ public class YoruRole extends NormalRole {
         RoleSkill.Definition pairSkill = RoleSkill.skill(SRE.id("luna_yoru_pair"),
                 "skill.noellesroles.luna_yoru.pair", context ->
                 LunaRole.usePairSkill(context.player()))
-                .charges(1).showOnHud(true).build();
+                .cooldownSeconds(120).showOnHud(true).build();
         RoleSkill.register(ModRoles.YORU, pairSkill);
     }
 
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-        player.removeEffect(MobEffects.BLINDNESS);
+    }
+    @Override public void onFinishQuest(Player player, String quest) {
+        super.onFinishQuest(player, quest);
+        VtuberTraits.catTaskBonus(player);
     }
 }

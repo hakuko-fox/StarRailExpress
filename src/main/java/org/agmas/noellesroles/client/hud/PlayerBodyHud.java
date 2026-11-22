@@ -202,6 +202,8 @@ public class PlayerBodyHud {
                         deathText = it.getDescription();
                     }
                 }
+                boolean foxHidden = targetBody.hasEffect(org.agmas.noellesroles.init.ModEffects.FOX_BODY_HIDDEN);
+                if (foxHidden) deathText = Component.translatable("message.noellesroles.vtuber.fox_hidden");
                 String victimName = bodyDeathReasonComponent.getOwnerName();
                 MutableComponent nameMessage = Component.empty();
                 if (victimName != null && !victimName.isBlank()) {
@@ -252,7 +254,7 @@ public class PlayerBodyHud {
                         && !bodyDeathReasonComponent.vultured) {
                     MutableComponent roleInfo = Component.translatable("hud.coroner.role_info")
                             .withColor(CommonColors.RED)
-                            .append(RoleUtils.getRoleName(bodyDeathReasonComponent.playerRole).copy()
+                            .append((foxHidden ? Component.translatable("message.noellesroles.vtuber.fox_hidden") : RoleUtils.getRoleName(bodyDeathReasonComponent.playerRole)).copy()
                                     .withColor(foundRole.color()));
 
                     if (vultured) {

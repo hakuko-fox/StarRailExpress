@@ -14,16 +14,16 @@ class MaolunMathSessionTest {
         return session.answer(session.id(), session.sequence(), (session.question().getCorrectIndex() + 1) % 4, 10);
     }
 
-    @Test void requiresFiveConsecutiveServerValidatedAnswers() {
+    @Test void requiresEightConsecutiveServerValidatedAnswers() {
         var session = new MaolunMathSession(1200);
-        for (int i = 0; i < 4; i++) assertEquals(NEXT_QUESTION, correct(session));
+        for (int i = 0; i < 7; i++) assertEquals(NEXT_QUESTION, correct(session));
         assertEquals(SUCCESS, correct(session));
         assertEquals(IGNORED, correct(session));
     }
 
     @Test void aMistakeResetsTheStreakAndTheSecondMistakeFails() {
         var session = new MaolunMathSession(1200);
-        for (int i = 0; i < 4; i++) correct(session);
+        for (int i = 0; i < 7; i++) correct(session);
         assertEquals(NEXT_QUESTION, wrong(session));
         assertEquals(0, session.consecutiveCorrect());
         assertEquals(1, session.remainingMistakes());
@@ -32,10 +32,10 @@ class MaolunMathSessionTest {
         assertEquals(IGNORED, correct(session));
     }
 
-    @Test void aPlayerCanRecoverFromOneMistakeWithFiveNewCorrectAnswers() {
+    @Test void aPlayerCanRecoverFromOneMistakeWithEightNewCorrectAnswers() {
         var session = new MaolunMathSession(1200);
         wrong(session);
-        for (int i = 0; i < 4; i++) assertEquals(NEXT_QUESTION, correct(session));
+        for (int i = 0; i < 7; i++) assertEquals(NEXT_QUESTION, correct(session));
         assertEquals(SUCCESS, correct(session));
     }
 

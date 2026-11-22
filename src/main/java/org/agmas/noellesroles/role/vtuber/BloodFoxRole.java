@@ -53,6 +53,7 @@ public class BloodFoxRole extends NormalRole {
         if (!context.skillReady()) {
             return false;
         }
+        if (SREPlayerMoodComponent.KEY.get(player).getMood() <= 0.0F) return false;
         component.setDisguise(VtuberRoleData.BLOOD_FOX);
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, Integer.MAX_VALUE, 1,
                 false, false, true));
@@ -63,17 +64,12 @@ public class BloodFoxRole extends NormalRole {
         if (!game.isRole(player, ModRoles.BLOOD_FOX)) {
             return;
         }
-        long lastConsume = RoleData.getNullable(VtuberRoleData.class, player).bloodFoxLastConsume;
-
-        if (player.level().getGameTime() - lastConsume >= 20L * 90L && player.tickCount % 20 == 0) {
-            SREPlayerMoodComponent.KEY.get(player).addMood(-0.0033F);
-        }
         VtuberRoleData component = RoleData.getNullable(VtuberRoleData.class, player);
         if (component.getDisguise() != VtuberRoleData.BLOOD_FOX) {
             return;
         }
         SREPlayerMoodComponent mood = SREPlayerMoodComponent.KEY.get(player);
-        if (mood.getMood() < 0.5F) {
+        if (mood.getMood() <= 0.0F) {
             VtuberRoleSupport.leaveAnimalForm(player);
             player.displayClientMessage(Component.translatable(
                     "message.noellesroles.blood_fox.low_san_exit"), true);
@@ -81,7 +77,7 @@ public class BloodFoxRole extends NormalRole {
         }
         if (player.tickCount % 20 == 0) {
             mood.addMood(-0.005F);
-            if (mood.getMood() < 0.5F) {
+            if (mood.getMood() <= 0.0F) {
                 VtuberRoleSupport.leaveAnimalForm(player);
                 player.displayClientMessage(Component.translatable(
                         "message.noellesroles.blood_fox.low_san_exit"), true);
@@ -112,7 +108,6 @@ public class BloodFoxRole extends NormalRole {
         var game = SREGameWorldComponent.KEY.get(player.level());
         long now = player.level().getGameTime();
         tickBloodFox(player, game);
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 
 }

@@ -14,6 +14,7 @@ public class YoujinRole extends NormalRole {
     public YoujinRole(ResourceLocation id, int color, boolean innocent, boolean killer,
             MoodType mood, int sprint, boolean seeTime) {
         super(id, color, innocent, killer, mood, sprint, seeTime);
+        setCanIgnoreBlackout(true);
     }
 
     @Override

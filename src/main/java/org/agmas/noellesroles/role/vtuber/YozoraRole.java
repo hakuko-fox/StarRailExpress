@@ -53,7 +53,7 @@ public class YozoraRole extends NormalRole {
         RoleSkill.register(ModRoles.YOZORA,
                 RoleSkill.skill(SRE.id("yozora_cat_sixth_sense"), "skill.noellesroles.yozora.cat_sixth_sense", context -> {
                     return YozoraRole.toggleYozoraCat(context);
-                }).cooldownSeconds(10).toggleable(true).manualCooldown().showOnHud(true).build());
+                }).toggleable(true).manualCooldown().showOnHud(true).build());
     }
 
     public static void giveInitialItems(Player player) {
@@ -93,7 +93,8 @@ public class YozoraRole extends NormalRole {
         VtuberRoleData component = RoleData.getNullable(VtuberRoleData.class, player);
         if (component == null) return false;
         if (component.getDisguise() == VtuberRoleData.YOZORA_CAT) {
-            VtuberRoleSupport.leaveAnimalForm(player);
+            component.setDisguise(VtuberRoleData.NONE);
+            player.removeEffect(MobEffects.MOVEMENT_SPEED);
             return true;
         }
         if (!context.skillReady()) {
@@ -112,7 +113,10 @@ public class YozoraRole extends NormalRole {
         var game = SREGameWorldComponent.KEY.get(player.level());
         long now = player.level().getGameTime();
         VtuberRoleSupport.tickPasserby(player, game);
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 
+    @Override public void onFinishQuest(Player player, String quest) {
+        super.onFinishQuest(player, quest);
+        VtuberTraits.catTaskBonus(player);
+    }
 }

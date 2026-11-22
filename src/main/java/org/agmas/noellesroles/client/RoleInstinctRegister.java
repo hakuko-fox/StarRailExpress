@@ -875,6 +875,10 @@ public class RoleInstinctRegister {
 
     // ---------- 被看高亮（TARGET） ----------
     private static void registerTargetHighlights() {
+        RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(ModRoles.XIANMIAO_ID,
+                (client, self, target, hasInstinct) -> target instanceof Player player
+                        && player.hasEffect(MobEffects.INVISIBILITY)
+                        ? TrueFalseAndCustomResult.disallow() : TrueFalseAndCustomResult.pass());
 
         RoleInstinctEvents.TARGET_HIGHLIGHT_EVENT.register(ModRoles.SEPTEMBER_ONE_ID,
                 (client, viewer, target, hasInstinct) -> {
@@ -882,8 +886,7 @@ public class RoleInstinctRegister {
                         return TrueFalseAndCustomResult.pass();
                     }
                     SRERole viewerRole = SREClient.gameComponent.getRole(viewer);
-                    if (viewerRole != null && viewerRole.isKillerTeam()
-                            && targetPlayer.hasEffect(ModEffects.NINE_ONE_TASK_CONCEALMENT)) {
+                    if (viewerRole != null && viewerRole.isKillerTeam()) {
                         return TrueFalseAndCustomResult.disallow();
                     }
                     return TrueFalseAndCustomResult.pass();

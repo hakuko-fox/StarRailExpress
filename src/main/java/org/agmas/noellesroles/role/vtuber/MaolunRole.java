@@ -226,7 +226,10 @@ public class MaolunRole extends CustomWinnerRole {
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)
                     || RoleData.getNullable(VtuberRoleData.class, player) == null) return;
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 
+    @Override public void onFinishQuest(Player player, String quest) {
+        super.onFinishQuest(player, quest);
+        VtuberTraits.catTaskBonus(player);
+    }
 }

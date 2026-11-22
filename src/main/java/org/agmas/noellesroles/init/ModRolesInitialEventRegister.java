@@ -1745,6 +1745,9 @@ public class ModRolesInitialEventRegister {
         org.agmas.noellesroles.role.vtuber.YoujinRole.registerSkills();
         org.agmas.noellesroles.role.vtuber.YuzuFenglingRole.registerSkills();
         org.agmas.noellesroles.role.vtuber.BaiyuRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.AyersRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.KanaRole.registerSkills();
+        org.agmas.noellesroles.role.vtuber.XianmiaoRole.registerSkills();
         OnVendingMachinesBuyItems.EVENT.register((player, entry) ->
                 org.agmas.noellesroles.role.vtuber.VtuberRoleSupport.canBuy(player, entry));
         RoleSkill.register(ModRoles.SILVER_WING, RoleSkill.skill(

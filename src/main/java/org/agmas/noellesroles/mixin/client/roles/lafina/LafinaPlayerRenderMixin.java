@@ -25,7 +25,7 @@ public abstract class LafinaPlayerRenderMixin {
                 && SREClient.gameComponent.isRole(player, ModRoles.LAFINA);
         if (noellesroles$lafinaPosePushed) {
             poseStack.pushPose();
-            poseStack.scale(1.5F, 1.5F, 1.5F);
+            poseStack.scale(1.25F, 1.25F, 1.25F);
         }
     }
 

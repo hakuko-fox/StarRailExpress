@@ -139,9 +139,7 @@ public class HalicRole extends NormalRole {
 
         int count = 0;
         for (ServerPlayer target : targets) {
-            target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 140, 0, false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.USED_BANED, 140, 0, false, false, true));
-            target.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, 140, 0, false, false, true));
+            target.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 80, 0, false, false, true));
             count++;
         }
 

@@ -24,6 +24,14 @@ public class VtuberRoleData extends SimpleRoleData {
     // Server-only state belongs to the current role and is never broadcast.
     public long weaponBlockedUntil;
     public long nextAllianceRoll;
+    public long nextTremble;
+    public long nextMoveReverse;
+    public long nextMouseReverse;
+    public long sleepDeadline;
+    public boolean ziyuanRolled;
+    public boolean ziyuanWillDie;
+    public long ziyuanDeathAt;
+    public boolean ayersEvil;
     public long yuzuSleepDeadline;
     public boolean yuzuSleepWeaponBlocked;
     public int passerbyTicks;
@@ -107,8 +115,7 @@ public class VtuberRoleData extends SimpleRoleData {
                         .map(p -> RoleData.getNullable(VtuberRoleData.class, p))
                         .anyMatch(d -> d != null && d != this && d.kanaAffected.contains(uuid));
                 if (target != null && !otherOwner) {
-                    target.removeEffect(ModEffects.VOICE_HELIUM);
-                    target.removeEffect(ModEffects.HEAVY_METAL_VOICE);
+                    for (var voice : org.agmas.noellesroles.role.vtuber.KanaRole.VOICES) target.removeEffect(voice);
                 }
             }
             if (disguise != NONE) player.removeEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED);
@@ -123,8 +130,16 @@ public class VtuberRoleData extends SimpleRoleData {
 
     private void resetServerState() {
         long now = player.level().getGameTime();
-        nextAllianceRoll = now + 20L * 20L;
-        yuzuSleepDeadline = now + 20L * 90L;
+        nextAllianceRoll = now;
+        nextTremble = now + 15 * 20L;
+        nextMoveReverse = now + 50 * 20L;
+        nextMouseReverse = now + 60 * 20L;
+        ziyuanRolled = false;
+        ziyuanWillDie = false;
+        ziyuanDeathAt = 0;
+        sleepDeadline = now + 60 * 20L;
+        ayersEvil = false;
+        yuzuSleepDeadline = now + 20L * 100L;
         bloodFoxLastConsume = now;
         ayersNextSwitch = 0;
         ayersFastMode = null;
@@ -140,6 +155,7 @@ public class VtuberRoleData extends SimpleRoleData {
 
     @Override
     public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        tag.putBoolean("AyersEvil", ayersEvil);
         tag.putInt("Disguise", disguise);
         tag.putLong("MenuCooldownUntil", menuCooldownUntil);
         tag.putString("MarkedTargetName", markedTargetName);
@@ -150,6 +166,7 @@ public class VtuberRoleData extends SimpleRoleData {
 
     @Override
     public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        ayersEvil = tag.getBoolean("AyersEvil");
         disguise = tag.getInt("Disguise");
         menuCooldownUntil = tag.getLong("MenuCooldownUntil");
         markedTargetName = tag.getString("MarkedTargetName");

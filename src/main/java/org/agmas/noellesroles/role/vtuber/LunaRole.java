@@ -36,7 +36,7 @@ public class LunaRole extends NormalRole {
         RoleSkill.Definition pairSkill = RoleSkill.skill(SRE.id("luna_yoru_pair"),
                 "skill.noellesroles.luna_yoru.pair", context ->
                 LunaRole.usePairSkill(context.player()))
-                .charges(1).showOnHud(true).build();
+                .cooldownSeconds(120).showOnHud(true).build();
         RoleSkill.register(ModRoles.LUNA, pairSkill);
     }
 
@@ -56,7 +56,7 @@ public class LunaRole extends NormalRole {
             caster.displayClientMessage(Component.translatable("message.noellesroles.luna_yoru.missing_room"), true);
             return false;
         }
-        if (!VtuberRoleSupport.deduct(caster, 200)) {
+        if (!VtuberRoleSupport.deduct(caster, 100)) {
             return false;
         }
         if (!returnToRooms) {
@@ -73,6 +73,5 @@ public class LunaRole extends NormalRole {
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 }

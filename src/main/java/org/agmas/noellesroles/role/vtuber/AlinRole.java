@@ -36,9 +36,9 @@ public class AlinRole extends NormalRole {
     public List<ShopEntry> getShopEntries() {
 
         var ALIN_SHOP = new ArrayList<ShopEntry>();
-        ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_WRENCH.getDefaultInstance(), 130,
+        ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_WRENCH.getDefaultInstance(), 75,
                 ShopEntry.Type.TOOL));
-        ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_SCREWDRIVER.getDefaultInstance(), 130,
+        ALIN_SHOP.add(new ShopEntry(ModItems.ALIN_SCREWDRIVER.getDefaultInstance(), 75,
                 ShopEntry.Type.TOOL));
         return ALIN_SHOP;
     }

@@ -32,18 +32,21 @@ public class MochenRole extends NormalRole {
         RoleSkill.register(ModRoles.MOCHEN,
                 RoleSkill.skill(SRE.id("mochen_time_reversal"), "skill.noellesroles.mochen.time_reversal", context -> {
                     boolean rewound = VtuberRoleRuntime
-                    .useRewind(context.player(), 3);
+                    .useRewind(context.player(), 60, 100, false, 5, 10 * 20);
                     if (!rewound) {
                         context.setSkillCooldown(5 * 20);
                     }
                     return rewound;
                 })
-                .cooldownSeconds(120).showOnHud(true).build());
+                .charges(1).showOnHud(true).build());
     }
 
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-        player.removeEffect(MobEffects.BLINDNESS);
+    }
+    @Override public void onFinishQuest(Player player, String quest) {
+        super.onFinishQuest(player, quest);
+        VtuberTraits.catTaskBonus(player);
     }
 }

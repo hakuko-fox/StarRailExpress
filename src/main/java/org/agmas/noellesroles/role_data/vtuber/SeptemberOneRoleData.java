@@ -17,10 +17,9 @@ public final class SeptemberOneRoleData extends SimpleRoleData {
     public void clear() {
         if (player instanceof ServerPlayer) {
             player.removeEffect(ModEffects.NINE_ONE_TASK_CONCEALMENT);
-            if (attacked) {
-                player.removeEffect(ModEffects.VOICE_SILENCE);
-                player.removeEffect(ModEffects.CHAT_BAN);
-            }
+            player.removeEffect(ModEffects.VOICE_SILENCE);
+            player.removeEffect(ModEffects.CHAT_BAN);
+            player.removeEffect(ModEffects.DEAFNESS);
         }
     }
     @Override public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {}

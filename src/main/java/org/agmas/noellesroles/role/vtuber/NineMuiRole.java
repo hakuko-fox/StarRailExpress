@@ -23,6 +23,6 @@ public class NineMuiRole extends NormalRole {
                     if (player.isSpectator() || RoleData.getNullable(NineMuiRoleData.class, player) == null) return false;
                     return RoleData.getNullable(NineMuiRoleData.class, player)
                     .useBlessingSkill(player, context);
-                }).cooldownSeconds(90).showOnHud(true).build());
+                }).cooldownSeconds(5).showOnHud(true).build());
     }
 }

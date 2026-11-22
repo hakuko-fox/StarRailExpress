@@ -530,10 +530,8 @@ public class PuppeteerBodyEntity extends LivingEntity {
     }
 
     private static void punishHalicDecoyAttacker(ServerPlayer attacker) {
-        final int duration = 20 * 3;
-        attacker.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, duration, 0, false, false, true));
-        attacker.addEffect(new MobEffectInstance(ModEffects.USED_BANED, duration, 0, false, false, true));
-        attacker.addEffect(new MobEffectInstance(ModEffects.INVENTORY_BANED, duration, 0, false, false, true));
+        org.agmas.noellesroles.role.vtuber.VtuberWeaponCooldowns.hitDecoy(attacker);
+        attacker.addEffect(new MobEffectInstance(ModEffects.HALIC_DECOY_SLOW, 3 * 20, 0, false, false, true));
     }
 
     private void greetNearbyPlayers(ServerLevel level) {

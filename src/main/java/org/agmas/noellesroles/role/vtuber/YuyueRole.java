@@ -52,7 +52,6 @@ public class YuyueRole extends NormalRole {
     @Override
     public void serverTick(ServerPlayer player) {
         if (!GameUtils.isPlayerAliveAndSurvival(player)) return;
-        player.removeEffect(MobEffects.BLINDNESS);
     }
 
     public static InteractionResult attachNote(ItemStack stack, Player player, LivingEntity target,

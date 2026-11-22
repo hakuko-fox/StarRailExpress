@@ -42,4 +42,12 @@ public class VoicechatALSpeakerBaseMixin {
         AL11.alListener3f(AL11.AL_POSITION, (float) listener.x, (float) listener.y, (float) listener.z);
         SoundManager.checkAlError();
     }
+    @Inject(method = "getVolume", at = @At("RETURN"), cancellable = true, remap = false)
+    private void noellesroles$elderlyHearing(float volume, Vec3 position, float distance,
+            org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Float> cir) {
+        var client = net.minecraft.client.Minecraft.getInstance();
+        if (client.player != null && io.wifi.starrailexpress.client.SREClient.gameComponent != null
+                && io.wifi.starrailexpress.client.SREClient.gameComponent.isRole(client.player,
+                        org.agmas.noellesroles.role.ModRoles.ZIYUAN)) cir.setReturnValue(cir.getReturnValue() * 0.2F);
+    }
 }

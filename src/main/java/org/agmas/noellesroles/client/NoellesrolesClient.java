@@ -1456,8 +1456,7 @@ public class NoellesrolesClient implements ClientModInitializer {
                     && SREClient.gameComponent.isRunning()) {
                 if (SREClient.gameComponent.isRole(client.player, ModRoles.MAOLUN)) {
                     client.setScreen(new VtuberPlayerSelectScreen(2, false));
-                } else if (SREClient.gameComponent.isRole(client.player, ModRoles.KANA)) {
-                    client.setScreen(new VtuberPlayerSelectScreen(1, false));
+
                 }
             }
 

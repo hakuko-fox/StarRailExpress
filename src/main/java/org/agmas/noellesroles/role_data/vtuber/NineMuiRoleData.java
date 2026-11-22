@@ -1,157 +1,61 @@
 package org.agmas.noellesroles.role_data.vtuber;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.RoleSkill.RoleSkillContext;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
-import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREAbilityPlayerComponent;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
+import org.agmas.noellesroles.game.roles.vtuber.VtuberV21Rules;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.utils.MoneyUtils;
 
-/**
- * 玖璃（9mui）— 平民陣營
- *
- * 主動技1（G）：行動敏捷。冷卻90秒，消耗100金幣，獲得速度II 7秒。
- * 被動技（回歸石化）：每一分鐘有33%機會進入石化狀態10秒。石化時無法說話、無法移動，同時無敵。
- * 標籤：香港Vtuber
- */
+/** 玖璃：企鹅充能每秒1%，石化每秒消耗4%，切换后冷却5秒。 */
 public class NineMuiRoleData extends SimpleRoleData {
-
-    private static final long PETRIFY_SCAN_INTERVAL_TICKS = 60 * 20; // 每一分鐘
-    private static final int PETRIFY_DURATION_TICKS = 10 * 20;
-
-    private long nextPetrifyScan = 0;
-    private long petrifyEndTime = 0;
-
-    public NineMuiRoleData(RoleDataContext context) {
-        super(context);
-    }
-
-    @Override
-    public boolean shouldSyncWith(ServerPlayer p) {
-        return p == this.player;
-    }
-
-    @Override
-    public void clear() {
-        if (player instanceof ServerPlayer sp) {
-            clearPetrifiedState(sp);
-        }
-
-    }
-
-    public boolean isPetrified() {
-        return petrifyEndTime > 0;
-    }
-
-    /** 主動技1：行動敏捷 — 消耗100金幣，獲得速度II 7秒 */
-    public boolean useBlessingSkill(ServerPlayer sp, RoleSkillContext ctx) {
-        if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
-            return false;
-        }
-        int cost = 100;
-        int balance = MoneyUtils.getBalance(sp);
-        if (balance < cost) {
-            sp.displayClientMessage(
-                    Component.translatable("message.noellesroles.9muimui.not_enough_money", cost),
-                    true);
-            return false;
-        }
-        MoneyUtils.addToBalance(sp, -cost);
-        sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 7 * 20, 1, false, false, true));
-        sp.displayClientMessage(
-                Component.translatable("skill.noellesroles.9muimui.blessing_on"), true);
-        sp.level().playSound(null, sp.getX(), sp.getY(), sp.getZ(),
-                SoundEvents.WITHER_SPAWN, SoundSource.PLAYERS, 0.3F, 1.4F);
+    private int energy = VtuberV21Rules.MAX_STONE_ENERGY;
+    private boolean petrified;
+    public NineMuiRoleData(RoleDataContext context) { super(context); }
+    public boolean isPetrified() { return petrified; }
+    public boolean useBlessingSkill(ServerPlayer player, RoleSkillContext context) {
+        if (!GameUtils.isPlayerAliveAndSurvival(player) || (!petrified && energy == 0)) return false;
+        setPetrified(player, !petrified);
         return true;
     }
-
-    /** 被動：石化 — 立即進入石化狀態（方便測試/供外部呼叫） */
-    public void startPetrified(ServerPlayer sp) {
-        if (isPetrified()) {
-            return;
+    private void setPetrified(ServerPlayer player, boolean value) {
+        petrified = value;
+        if (!value) {
+            player.removeEffect(ModEffects.MOVE_BANED);
+            player.removeEffect(ModEffects.INVINCIBLE);
         }
-        long now = sp.serverLevel().getGameTime();
-        petrifyEndTime = now + PETRIFY_DURATION_TICKS;
-        sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.VOICE_SILENCE, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.CHAT_BAN, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, PETRIFY_DURATION_TICKS, 0, false, false, true));
-        sp.displayClientMessage(
-                Component.translatable("skill.noellesroles.9muimui.petrified_on"), true);
         sync();
     }
-
-    private void clearPetrifiedState(ServerPlayer sp) {
-        if (sp.hasEffect(ModEffects.MOVE_BANED)) {
-            sp.removeEffect(ModEffects.MOVE_BANED);
-        }
-        if (sp.hasEffect(ModEffects.VOICE_SILENCE)) {
-            sp.removeEffect(ModEffects.VOICE_SILENCE);
-        }
-        if (sp.hasEffect(ModEffects.CHAT_BAN)) {
-            sp.removeEffect(ModEffects.CHAT_BAN);
-        }
-        if (sp.hasEffect(ModEffects.INVINCIBLE)) {
-            sp.removeEffect(ModEffects.INVINCIBLE);
-        }
-        petrifyEndTime = 0;
-        sync();
+    @Override public void clear() {
+        if (player instanceof ServerPlayer sp && petrified) setPetrified(sp, false);
     }
-
-    @Override
-    public void serverTick() {
-        if (!(player instanceof ServerPlayer sp)) {
-            return;
+    @Override public void serverTick() {
+        if (!(player instanceof ServerPlayer sp) || !GameUtils.isPlayerAliveAndSurvival(sp)) return;
+        energy = VtuberV21Rules.stoneEnergy(energy, petrified, 1);
+        if (petrified && energy == 0) {
+            setPetrified(sp, false);
+            SREAbilityPlayerComponent.KEY.get(sp).setSkillCooldown(SRE.id("9muimui_blessing"), 5 * 20);
         }
-        SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(sp.level());
-        // 僅在遊戲進行中且玩家確實為玖璃時才觸發被動，避免在大廳等場合誤石化
-        if (!gameWorldComponent.isRunning() || !gameWorldComponent.isRole(sp, ModRoles.NINE_MUI)) {
-            return;
+        if (petrified) {
+            sp.addEffect(new MobEffectInstance(ModEffects.MOVE_BANED, 5, 0, false, false, false));
+            sp.addEffect(new MobEffectInstance(ModEffects.INVINCIBLE, 5, 0, false, false, false));
         }
-        if (!GameUtils.isPlayerAliveAndSurvival(sp)) {
-            return;
-        }
-        long now = sp.serverLevel().getGameTime();
-
-        if (isPetrified()) {
-            if (now >= petrifyEndTime) {
-                clearPetrifiedState(sp);
-            }
-            return;
-        }
-
-        if (nextPetrifyScan == 0) {
-            nextPetrifyScan = now + PETRIFY_SCAN_INTERVAL_TICKS;
-            return;
-        }
-        if (now >= nextPetrifyScan) {
-            nextPetrifyScan = now + PETRIFY_SCAN_INTERVAL_TICKS;
-            if (sp.getRandom().nextFloat() < 0.33F) {
-                startPetrified(sp);
-            }
+        if (sp.tickCount % 20 == 0) {
+            sp.displayClientMessage(Component.translatable("hud.noellesroles.9muimui.energy", energy / 20), true);
+            sync();
         }
     }
-
-    @Override
-    public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        tag.putLong("nextPetrifyScan", nextPetrifyScan);
-        tag.putLong("petrifyEndTime", petrifyEndTime);
+    @Override public void writeToSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        tag.putInt("Energy", energy); tag.putBoolean("Petrified", petrified);
     }
-
-    @Override
-    public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
-        nextPetrifyScan = tag.getLong("nextPetrifyScan");
-        petrifyEndTime = tag.getLong("petrifyEndTime");
+    @Override public void readFromSyncNbt(CompoundTag tag, HolderLookup.Provider provider) {
+        energy = tag.getInt("Energy"); petrified = tag.getBoolean("Petrified");
     }
-
 }

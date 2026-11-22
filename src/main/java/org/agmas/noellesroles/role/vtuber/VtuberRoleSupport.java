@@ -78,14 +78,20 @@ public final class VtuberRoleSupport {
         boolean member = game.isRole(player, ModRoles.XIAOYE)
                 || game.isRole(player, ModRoles.XIANMIAO)
                 || game.isRole(player, ModRoles.YUZU_FENGLING);
-        if (!member || now < RoleData.getNullable(VtuberRoleData.class, player).nextAllianceRoll) {
-            return;
+        if (!member) return;
+        var data = RoleData.getNullable(VtuberRoleData.class, player);
+        if (data == null) return;
+        if (now >= data.nextTremble) {
+            data.nextTremble = now + 15 * 20L;
+            player.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.TREMBLE, 2 * 20, 0, false, false, true));
         }
-        RoleData.getNullable(VtuberRoleData.class, player).nextAllianceRoll = now + 20L * 20L;
-        if (player.getRandom().nextBoolean()) {
-            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20 * 10, 4, false, false, true));
-            RoleData.getNullable(VtuberRoleData.class, player).weaponBlockedUntil = now + 20L * 20L;
-            player.displayClientMessage(Component.translatable("message.noellesroles.uncontrolled_alliance.triggered"), true);
+        if (now >= data.nextMoveReverse) {
+            data.nextMoveReverse = now + 50 * 20L;
+            player.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.MOVE_UPSIDE_DOWN, 3 * 20, 0, false, false, true));
+        }
+        if (now >= data.nextMouseReverse) {
+            data.nextMouseReverse = now + 60 * 20L;
+            player.addEffect(new MobEffectInstance(org.agmas.noellesroles.init.ModEffects.MOUSE_UPSIDE_DOWN, 5 * 20, 0, false, false, true));
         }
     }
 
@@ -110,8 +116,8 @@ public final class VtuberRoleSupport {
         var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
         if (role instanceof HoshizoraRole) return HoshizoraRole.canBuy(entry);
         if (role instanceof HalicRole || role instanceof SeptemberOneRole || role instanceof ShenwuBingfengRole
-                || role instanceof MaolunRole || role instanceof KanaRole) {
-            return entry.type() != ShopEntry.Type.WEAPON;
+                || role instanceof MaolunRole) {
+            return entry.type() != ShopEntry.Type.WEAPON && !isWeapon(entry.stack().getItem());
         }
         return true;
     }
