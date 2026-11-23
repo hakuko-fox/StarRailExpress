@@ -26,6 +26,38 @@ function checkJson(directory) {
   }
 }
 checkJson('src/main/resources');
+
+const ponderAssets = 'src/main/resources/assets/starrailexpress';
+const ponderIndex = json(`${ponderAssets}/ponderer/content/role_tutorials.json`);
+const locales = ['zh_tw', 'zh_cn', 'en_us'];
+for (const id of Object.values(roles)) {
+  const resource = `ponderer/scenes/role_tutorial_${id}.json`;
+  const sceneId = `starrailexpress:role_tutorial.${id}`;
+  assert.equal(ponderIndex.scenes.filter(entry => entry === `starrailexpress:${resource}`).length, 1,
+    `${id}: expected exactly one Ponder scene index entry`);
+  const scene = json(`${ponderAssets}/${resource}`);
+  assert.equal(scene.id, sceneId, `${id}: Ponder scene ID must match the role path`);
+  assert.ok(scene.items.length && scene.scenes.length, `${id}: empty Ponder scene`);
+  assert.equal(new Set(scene.scenes.map(chapter => chapter.id)).size, scene.scenes.length,
+    `${id}: duplicate Ponder chapter ID`);
+  for (const locale of locales) assert.ok(scene.title[locale]?.trim(), `${id}: missing ${locale} title`);
+  for (const chapter of scene.scenes) {
+    const label = `${id}/${chapter.id}`;
+    const stage = chapter.steps[0];
+    assert.equal(stage?.type, 'show_structure', `${label}: missing opening structure`);
+    assert.ok(scene.structures.includes(stage.structure), `${label}: undeclared structure`);
+    const [namespace, structure] = stage.structure.split(':');
+    assert.ok(fs.existsSync(path.join(root, 'src/main/resources/assets', namespace, 'ponder', `${structure}.nbt`)),
+      `${label}: missing structure NBT`);
+    const texts = chapter.steps.filter(step => step.type === 'text');
+    assert.ok(texts.length, `${label}: missing tutorial text`);
+    for (const locale of locales) {
+      assert.ok(chapter.title[locale]?.trim(), `${label}: missing ${locale} chapter title`);
+      for (const step of texts) assert.ok(step.text[locale]?.trim(), `${label}: missing ${locale} text`);
+    }
+  }
+}
+
 const sourcePaths = ['role/vtuber', 'role_data/vtuber'].flatMap(directory =>
   fs.readdirSync(path.join(root, java, directory)).filter(name => name.endsWith('.java'))
     .map(name => `${java}/${directory}/${name}`));
@@ -34,7 +66,7 @@ const sources = sourcePaths.map(read).join('\n');
 const keys = new Set([...sources.matchAll(/Component\.translatable\("([\w.]+)"/g)].map(match => match[1]));
 for (const match of sources.matchAll(/RoleSkill\.skill\([^,]+,\s*"([\w.]+)"/g)) keys.add(match[1]);
 
-for (const locale of ['zh_tw', 'zh_cn', 'en_us']) {
+for (const locale of locales) {
   const intro = json(`src/main/resources/assets/role_modifier_intro/lang/${locale}.json`);
   const merged = {};
   for (const namespace of fs.readdirSync(path.join(root, 'src/main/resources/assets'))) {
@@ -63,5 +95,5 @@ for (const match of declarations) {
   assert.ok(registrations.length <= 1, `${name}: duplicate skill registration`);
   if (registrations.length) assert.ok(events.includes(`${owner}.registerSkills();`), `${name}: skills not wired`);
 }
-console.log(`PASS: 28 v2.1 source documents, three-locale introductions/runtime keys, skill wiring, ${parsed} resource JSON files.`);
+console.log(`PASS: 28 v2.1 source documents and Ponder scenes, three-locale text/runtime keys, skill wiring, ${parsed} resource JSON files.`);
 console.log('This checks authoring/resources; Minecraft multiplayer behavior still requires in-game verification.');

@@ -1,0 +1,156 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.amimi",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Ami · Civilian",
+    "zh_cn": "阿米・平民",
+    "zh_tw": "阿米・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "walk_away",
+      "title": {
+        "en_us": "Walk Away",
+        "zh_cn": "背向而行",
+        "zh_tw": "背向而行"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "target",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              5.5,
+              1,
+              1.5
+            ],
+            "duration": 38
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Spend 50 coins (60 s cooldown) to force every other player to move away from you for 5 s.",
+            "zh_cn": "消耗 50 金币，冷却 60 秒。所有其他玩家强制背向你移动 5 秒。",
+            "zh_tw": "消耗 50 金幣，冷卻 60 秒。所有其他玩家強制背向你移動 5 秒。"
+          },
+          "duration": 210,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 220
+        }
+      ]
+    },
+    {
+      "id": "fox",
+      "title": {
+        "en_us": "Fox",
+        "zh_cn": "狐",
+        "zh_tw": "狐"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Others cannot identify the role or cause of death from your body or the bodies of players you kill.",
+            "zh_cn": "其他人无法从你或被你杀死的玩家的屍体看出角色与死因。",
+            "zh_tw": "其他人無法從你或被你殺死的玩家的屍體看出角色與死因。"
+          },
+          "duration": 156,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 166
+        }
+      ]
+    }
+  ]
+}

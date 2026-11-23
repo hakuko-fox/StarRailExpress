@@ -1,0 +1,128 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.ziyuan",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Kanzaki Ziyuan · Civilian",
+    "zh_cn": "紫苑・平民",
+    "zh_tw": "紫苑・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "elder",
+      "title": {
+        "en_us": "Elder",
+        "zh_cn": "老人",
+        "zh_tw": "老人"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "actor",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              1.5,
+              1,
+              1.5
+            ],
+            "duration": 65
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "This role has a 1% spawn chance. Movement speed and incoming player voice volume are 20% of normal, and outgoing voice range is 180%. At round start there is an 80% chance of dying after three minutes.",
+            "zh_cn": "角色出现机率为 1%。移动速度和接收到的其他玩家语音音量为原本的 20%，语音传播距离为 180%。开局有 80% 机率於三分钟後死亡。",
+            "zh_tw": "角色出現機率為 1%。移動速度和接收到的其他玩家語音音量為原本的 20%，語音傳播距離為 180%。開局有 80% 機率於三分鐘後死亡。"
+          },
+          "duration": 408,
+          "point": [
+            1.5,
+            2.7,
+            1.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 418
+        }
+      ]
+    },
+    {
+      "id": "lucky_cat",
+      "title": {
+        "en_us": "Lucky Cat",
+        "zh_cn": "招财猫",
+        "zh_tw": "招財貓"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Other players cannot hear your footsteps or see your sprint particles, and tasks pay 50% more.",
+            "zh_cn": "其他玩家听不到你的脚步、看不到疾跑粒子。任务收入增加 50%。",
+            "zh_tw": "其他玩家聽不到你的腳步、看不到疾跑粒子。任務收入增加 50%。"
+          },
+          "duration": 186,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 196
+        }
+      ]
+    }
+  ]
+}

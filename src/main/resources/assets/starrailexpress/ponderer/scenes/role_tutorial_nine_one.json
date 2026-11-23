@@ -1,0 +1,168 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.nine_one",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "September One · Neutral",
+    "zh_cn": "九月一・中立",
+    "zh_tw": "九月一・中立"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "tasks",
+      "title": {
+        "en_us": "Task Victory",
+        "zh_cn": "任务胜利",
+        "zh_tw": "任務勝利"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Complete tasks equal to 70% of the player count, rounded up, to win independently.",
+            "zh_cn": "完成相当於游玩人数 70% 的任务即可独立获胜，数量向上取整。",
+            "zh_tw": "完成相當於遊玩人數 70% 的任務即可獨立獲勝，數量向上取整。"
+          },
+          "duration": 186,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 196
+        }
+      ]
+    },
+    {
+      "id": "guard",
+      "title": {
+        "en_us": "Frontal Guard",
+        "zh_cn": "腹肌之力",
+        "zh_tw": "腹肌之力"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Block one lethal frontal hit per round, blacking out and slowing the attacker for 6 s. Afterward tasks refresh every 40 s and each must be completed within 40 s.",
+            "zh_cn": "每局挡一次正面致命攻击，让攻击者黑屏、缓速 6 秒。之後任务每 40 秒刷新，每次要在 40 秒内完成。",
+            "zh_tw": "每局擋一次正面致命攻擊，讓攻擊者黑屏、緩速 6 秒。之後任務每 40 秒刷新，每次要在 40 秒內完成。"
+          },
+          "duration": 312,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 322
+        }
+      ]
+    },
+    {
+      "id": "isolation",
+      "title": {
+        "en_us": "Pacifist and Loner",
+        "zh_cn": "和平使者与我行我素",
+        "zh_tw": "和平使者與我行我素"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "You cannot buy, pick up, or use weapons. Killer instinct cannot see you. You cannot hear voice chat or communicate by voice or text.",
+            "zh_cn": "不能买、捡起或使用武器。杀手直觉看不到你；你听不到语音，也不能语音或文字聊天。",
+            "zh_tw": "不能買、撿起或使用武器。殺手直覺看不到你；你聽不到語音，也不能語音或文字聊天。"
+          },
+          "duration": 234,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 244
+        }
+      ]
+    }
+  ]
+}

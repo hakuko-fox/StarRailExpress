@@ -1,0 +1,152 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.baiyu",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Baiyu · Sheriff",
+    "zh_cn": "白御・警长",
+    "zh_tw": "白御・警長"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "read_body",
+      "title": {
+        "en_us": "Read a Body",
+        "zh_cn": "记录二三事",
+        "zh_tw": "記錄二三事"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:revolver"
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              4.5,
+              1.4,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Start with a revolver. Press G on a body to highlight it and read the name, role, and cause of death (30 s cooldown). If the victim or killer has Fox, the results are scrambled.",
+            "zh_cn": "开局拿手枪。对屍体按 G，可高亮屍体并查看姓名、角色和死因，冷却 30 秒。死者或凶手带有「狐」时，结果显示乱码。",
+            "zh_tw": "開局拿手槍。對屍體按 G，可高亮屍體並查看姓名、角色和死因，冷卻 30 秒。死者或兇手帶有「狐」時，結果顯示亂碼。"
+          },
+          "duration": 342,
+          "point": [
+            4.5,
+            1.4,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 352
+        }
+      ]
+    },
+    {
+      "id": "wolf",
+      "title": {
+        "en_us": "Wolf",
+        "zh_cn": "狼",
+        "zh_tw": "狼"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:revolver"
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Your voice has chorus and echo effects.",
+            "zh_cn": "你的语音带有合唱与回响效果。",
+            "zh_tw": "你的語音帶有合唱與迴響效果。"
+          },
+          "duration": 110,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 120
+        }
+      ]
+    }
+  ]
+}

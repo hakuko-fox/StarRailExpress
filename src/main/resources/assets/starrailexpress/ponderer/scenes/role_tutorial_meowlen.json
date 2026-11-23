@@ -1,0 +1,228 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.meowlen",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Meowlen · Neutral",
+    "zh_cn": "貓倫・中立",
+    "zh_tw": "貓倫・中立"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "select_players",
+      "title": {
+        "en_us": "Choose Quiz Targets",
+        "zh_cn": "选择测验对象",
+        "zh_tw": "選擇測驗對象"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "second",
+            "pos": [
+              5.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill",
+            "key": "E"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_screen",
+          "parameters": {
+            "title": {
+              "en_us": "Choose Quiz Targets",
+              "zh_cn": "选择测验对象",
+              "zh_tw": "選擇測驗對象"
+            },
+            "hint": {
+              "en_us": "Select two different players and confirm.",
+              "zh_cn": "选两名不同的玩家并确认。",
+              "zh_tw": "選兩名不同的玩家並確認。"
+            },
+            "players": [
+              "Steve",
+              "Alex"
+            ],
+            "columns": 2
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Press E, select two different other players, and confirm (70 s cooldown). Be the only surviving player to win independently.",
+            "zh_cn": "按 E 开启选单，选两名不同的其他玩家并确认，冷却 70 秒。你要成为唯一存活玩家才能独立获胜。",
+            "zh_tw": "按 E 開啟選單，選兩名不同的其他玩家並確認，冷卻 70 秒。你要成為唯一存活玩家才能獨立獲勝。"
+          },
+          "duration": 288,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 298
+        }
+      ]
+    },
+    {
+      "id": "quiz_rules",
+      "title": {
+        "en_us": "Passing and Failing the Quiz",
+        "zh_cn": "测验通过与失败",
+        "zh_tw": "測驗通過與失敗"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Targets cannot move and must answer 8 questions correctly in a row within 60 s. One wrong answer resets the streak. Two wrong answers or a timeout count as a failure. Two failures kill the target, and a pass does not erase past failures.",
+            "zh_cn": "目标不能移动，须在 60 秒内连续答对 8 题。答错一次重设连对进度；答错两次或逾时算失败。累计两次失败即死亡，通过也不会清除失败。",
+            "zh_tw": "目標不能移動，須在 60 秒內連續答對 8 題。答錯一次重設連對進度；答錯兩次或逾時算失敗。累計兩次失敗即死亡，通過也不會清除失敗。"
+          },
+          "duration": 396,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 406
+        }
+      ]
+    },
+    {
+      "id": "passives",
+      "title": {
+        "en_us": "Pacifist and Lucky Cat",
+        "zh_cn": "和平使者与招财猫",
+        "zh_tw": "和平使者與招財貓"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "You cannot buy, pick up, or use weapons. Your footsteps and sprint particles are hidden, and tasks pay 50% more.",
+            "zh_cn": "不能买、捡起或使用武器。脚步与疾跑粒子隐藏，任务收入增加 50%。",
+            "zh_tw": "不能買、撿起或使用武器。腳步與疾跑粒子隱藏，任務收入增加 50%。"
+          },
+          "duration": 198,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 208
+        }
+      ]
+    }
+  ]
+}

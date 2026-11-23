@@ -1,0 +1,214 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.luna",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Luna · Civilian",
+    "zh_cn": "Luna・平民",
+    "zh_tw": "Luna・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "summon_far",
+      "title": {
+        "en_us": "Summon Distant Yoru",
+        "zh_cn": "召唤远处的 Yoru",
+        "zh_tw": "召喚遠處的 Yoru"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              5.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "target",
+            "color": -12068959
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_teleport",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              3.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Yoru always spawns with you. If Yoru is more than 3 blocks away, spend 100 coins to teleport them to your side. Cooldown: 120 s.",
+            "zh_cn": "Yoru 必定与你一同出现。当 Yoru 距你超过 3 格，花 100 金币可把对方传送到你身旁。冷却 120 秒。",
+            "zh_tw": "Yoru 必定與你一同出現。當 Yoru 距你超過 3 格，花 100 金幣可把對方傳送到你身旁。冷卻 120 秒。"
+          },
+          "duration": 348,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 358
+        }
+      ]
+    },
+    {
+      "id": "return_home",
+      "title": {
+        "en_us": "Return to Spawn",
+        "zh_cn": "返回出生点",
+        "zh_tw": "返回出生點"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              3.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "target",
+            "color": -12068959
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_teleport",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              1.5,
+              1,
+              5.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_teleport",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              5.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "If Yoru is within 3 blocks, the same skill returns you both to your respective spawn points. Your linked partner is highlighted, and if either partner dies, so does the other.",
+            "zh_cn": "Yoru 在 3 格内时，同一技能会把你们分别送回各自的出生点。共生夥伴会高亮；任一方死亡，另一方也会死亡。",
+            "zh_tw": "Yoru 在 3 格內時，同一技能會把你們分別送回各自的出生點。共生夥伴會高亮；任一方死亡，另一方也會死亡。"
+          },
+          "duration": 324,
+          "point": [
+            1.5,
+            2.8,
+            5.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 334
+        }
+      ]
+    }
+  ]
+}

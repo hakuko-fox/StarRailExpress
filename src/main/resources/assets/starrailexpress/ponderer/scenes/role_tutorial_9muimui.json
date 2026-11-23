@@ -1,0 +1,95 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.9muimui",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Zhimeng Jiuli · Civilian",
+    "zh_cn": "玖璃・平民",
+    "zh_tw": "織夢玖璃・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "petrify",
+      "title": {
+        "en_us": "Petrification",
+        "zh_cn": "变身石化",
+        "zh_tw": "變身石化"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 45
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Penguin form gains 1% energy per second. Petrified form is immobile and invulnerable, consumes 4% energy per second, and reverts at zero. Each switch has a 5 s cooldown. Sanity does not affect you.",
+            "zh_cn": "企鹅每秒充能 1%。石化时不能移动、无敌，每秒耗能 4%，归零後自动恢复企鹅。每次切换後冷却 5 秒；你无视理智值。",
+            "zh_tw": "企鵝每秒充能 1%。石化時不能移動、無敵，每秒耗能 4%，歸零後自動恢復企鵝。每次切換後冷卻 5 秒；你無視理智值。"
+          },
+          "duration": 348,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 358
+        }
+      ]
+    }
+  ]
+}

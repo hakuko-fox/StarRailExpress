@@ -2669,6 +2669,8 @@ def event_scene(rid, facts, intros, names, goals):
 
 
 def main():
+    # VTuber v2.1 scenes are authored from their role specs, like the existing hand-authored scenes.
+    hand_authored = EXISTING | set(load_json(os.path.join(ROOT, "docs", "vtuber", "v2.1", "roles.json")).values())
     intros = {loc: load_json(os.path.join(ASSETS, "role_modifier_intro", "lang", loc + ".json"))
                for loc in LOCALES}
     name_data = {loc: load_json(os.path.join(ASSETS, "role_name_goals", "lang", loc + ".json"))
@@ -2693,7 +2695,7 @@ def main():
         if not rid.startswith("info.screen.roleid.") or rid.endswith(".simple"):
             continue
         role_id = rid[len("info.screen.roleid."):]
-        if role_id in OTHER_MODE or role_id in PLACEHOLDER or role_id in EXISTING:
+        if role_id in OTHER_MODE or role_id in PLACEHOLDER or role_id in hand_authored:
             continue
         facts = facts_all.get(role_id, {})
         if role_id in EVENTS:

@@ -1,0 +1,130 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.yuyue",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Yuyue · Civilian",
+    "zh_cn": "羽月・平民",
+    "zh_tw": "羽月・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "sticky_note",
+      "title": {
+        "en_us": "Sticky Notes",
+        "zh_cn": "便利贴留言",
+        "zh_tw": "便利貼留言"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "noellesroles:yuyue_note"
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill",
+            "key": "E"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Buy a sticky note for 25 coins. Press E to write a message, then place the note in the scene or on a player's back for others to read.",
+            "zh_cn": "用 25 金币购买便利贴。按 E 写留言後，可贴在场景或玩家背上，其他玩家可以阅读。",
+            "zh_tw": "用 25 金幣購買便利貼。按 E 寫留言後，可貼在場景或玩家背上，其他玩家可以閱讀。"
+          },
+          "duration": 252,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 262
+        }
+      ]
+    },
+    {
+      "id": "fox",
+      "title": {
+        "en_us": "Fox",
+        "zh_cn": "狐",
+        "zh_tw": "狐"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Others cannot identify the role or cause of death from your body or the bodies of players you kill.",
+            "zh_cn": "其他人无法从你或被你杀死的玩家的屍体看出角色与死因。",
+            "zh_tw": "其他人無法從你或被你殺死的玩家的屍體看出角色與死因。"
+          },
+          "duration": 156,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 166
+        }
+      ]
+    }
+  ]
+}

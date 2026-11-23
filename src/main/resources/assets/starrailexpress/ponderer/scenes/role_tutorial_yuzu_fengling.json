@@ -1,0 +1,219 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.yuzu_fengling",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Yuzu Fengling · Killer",
+    "zh_cn": "柚封凌・杀手",
+    "zh_tw": "柚封凌・殺手"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common",
+    "starrailexpress:role_tutorial_room"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "dash",
+      "title": {
+        "en_us": "Agility",
+        "zh_cn": "行动敏捷",
+        "zh_tw": "行動敏捷"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "actor",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              1.5,
+              1,
+              1.5
+            ],
+            "duration": 15
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Start with a knife. Spend 100 coins (90 s cooldown) to gain Speed II for 7 s.",
+            "zh_cn": "开局拿小刀。消耗 100 金币，冷却 90 秒，获得速度 II 持续 7 秒。",
+            "zh_tw": "開局拿小刀。消耗 100 金幣，冷卻 90 秒，獲得速度 II 持續 7 秒。"
+          },
+          "duration": 234,
+          "point": [
+            1.5,
+            2.7,
+            1.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 244
+        }
+      ]
+    },
+    {
+      "id": "sleep",
+      "title": {
+        "en_us": "Long Sleep",
+        "zh_cn": "超长睡眠",
+        "zh_tw": "超長睡眠"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_room"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "actor",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              5.5,
+              1,
+              4.5
+            ],
+            "duration": 35
+          }
+        },
+        {
+          "type": "starrailexpress:role_pose",
+          "parameters": {
+            "linkId": "actor",
+            "pose": "sleeping"
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Going 100 s without lying in bed at the start slows you and disables weapons. Lying down removes the restriction and sets the next timer to 90 s. Weapon cooldowns are 30% shorter.",
+            "zh_cn": "开局 100 秒没躺床会缓速并不能用武器。躺床解除限制，之後改为 90 秒计时。武器冷却缩短 30%。",
+            "zh_tw": "開局 100 秒沒躺床會緩速並不能用武器。躺床解除限制，之後改為 90 秒計時。武器冷卻縮短 30%。"
+          },
+          "duration": 306,
+          "point": [
+            5.5,
+            2.1,
+            4.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 316
+        }
+      ]
+    },
+    {
+      "id": "linked_glitches",
+      "title": {
+        "en_us": "Linked Glitches",
+        "zh_cn": "失控联萌",
+        "zh_tw": "失控聯萌"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Shake for 2 s every 15 s, reverse movement for 3 s every 50 s, and invert the mouse for 5 s every 60 s. The linked roles are Yuzu Fengling, Xianmiao, and Xiaoye.",
+            "zh_cn": "每 15 秒颤抖 2 秒、每 50 秒移动颠倒 3 秒、每 60 秒滑鼠反转 5 秒。成员为柚封凌、仙喵和小夜。",
+            "zh_tw": "每 15 秒顫抖 2 秒、每 50 秒移動顛倒 3 秒、每 60 秒滑鼠反轉 5 秒。成員為柚封凌、仙喵和小夜。"
+          },
+          "duration": 336,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 346
+        }
+      ]
+    }
+  ]
+}

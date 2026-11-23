@@ -1,0 +1,161 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.hkc_alan",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Alan · Civilian",
+    "zh_cn": "修車麟阿麟・平民",
+    "zh_tw": "修車麟 阿麟・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "repair",
+      "title": {
+        "en_us": "Repair Doors",
+        "zh_cn": "修理门",
+        "zh_tw": "修理門"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "noellesroles:alin_wrench"
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            1,
+            6
+          ]
+        },
+        {
+          "type": "show_controls",
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "direction": "down",
+          "action": "right",
+          "item": "noellesroles:alin_wrench",
+          "duration": 30
+        },
+        {
+          "type": "idle",
+          "duration": 36
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "The repair wrench costs 75 coins and forcibly repairs a broken door. Each wrench works once, and each door can be forcibly repaired once per round.",
+            "zh_cn": "修车扳手售价 75 金币，可强行修理损坏的门。每把限用一次，每道门每局只能强行修理一次。",
+            "zh_tw": "修車扳手售價 75 金幣，可強行修理損壞的門。每把限用一次，每道門每局只能強行修理一次。"
+          },
+          "duration": 264,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 274
+        }
+      ]
+    },
+    {
+      "id": "break",
+      "title": {
+        "en_us": "Break Doors",
+        "zh_cn": "破坏门",
+        "zh_tw": "破壞門"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "noellesroles:alin_screwdriver"
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            1,
+            6
+          ]
+        },
+        {
+          "type": "show_controls",
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "direction": "down",
+          "action": "right",
+          "item": "noellesroles:alin_screwdriver",
+          "duration": 30
+        },
+        {
+          "type": "idle",
+          "duration": 36
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "The mechanic's screwdriver costs 75 coins and forcibly breaks a door. Each tool works once, and each door can be forcibly broken once per round.",
+            "zh_cn": "修车螺丝起子售价 75 金币，可强行破坏门。每把限用一次，每道门每局只能强行破坏一次。",
+            "zh_tw": "修車螺絲起子售價 75 金幣，可強行破壞門。每把限用一次，每道門每局只能強行破壞一次。"
+          },
+          "duration": 258,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 268
+        }
+      ]
+    }
+  ]
+}

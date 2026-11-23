@@ -1,0 +1,101 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.kana",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Kana Izayoi · Civilian",
+    "zh_cn": "十七夜佳奈・平民",
+    "zh_tw": "十七夜佳奈・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "voice_changer",
+      "title": {
+        "en_us": "Voice Changer",
+        "zh_cn": "变声器",
+        "zh_tw": "變聲器"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            4,
+            1,
+            3
+          ]
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Spend 30 coins (10 s cooldown). The nearest player who has never been affected gets one voice effect: heavy metal, stutter, buzz, helmet, underwater, reverb, or helium.",
+            "zh_cn": "消耗 30 金币，冷却 10 秒。最近且从未受影响的玩家会获得一种语音效果：重金属、口吃、蜂鸣、头盔、水下、混响或氦气。",
+            "zh_tw": "消耗 30 金幣，冷卻 10 秒。最近且從未受影響的玩家會獲得一種語音效果：重金屬、口吃、蜂鳴、頭盔、水下、混響或氦氣。"
+          },
+          "duration": 360,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 370
+        }
+      ]
+    }
+  ]
+}

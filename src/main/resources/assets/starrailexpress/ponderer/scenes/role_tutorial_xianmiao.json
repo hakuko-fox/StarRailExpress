@@ -1,0 +1,147 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.xianmiao",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Xianmiao · Civilian",
+    "zh_cn": "仙喵・平民",
+    "zh_tw": "仙喵・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "invisibility",
+      "title": {
+        "en_us": "Low Profile",
+        "zh_cn": "极低存在感",
+        "zh_tw": "極低存在感"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.75,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 28,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "actor",
+            "visible": false
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 55
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "actor",
+            "visible": true
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Spend 75 coins (90 s cooldown) to go invisible and silence your voice for 7 s. Killer instinct cannot see you.",
+            "zh_cn": "消耗 75 金币，冷却 90 秒。隐形并沉默语音 7 秒，杀手直觉也看不到你。",
+            "zh_tw": "消耗 75 金幣，冷卻 90 秒。隱形並沉默語音 7 秒，殺手直覺也看不到你。"
+          },
+          "duration": 234,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 244
+        }
+      ]
+    },
+    {
+      "id": "passives",
+      "title": {
+        "en_us": "Fake Gun and Passives",
+        "zh_cn": "假枪与被动",
+        "zh_tw": "假槍與被動"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "noellesroles:fake_revolver"
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Start with a fake gun that cannot attack. Your footsteps and sprint particles are hidden and tasks pay 50% more. Shake, reversed movement, and mouse inversion recur every 15, 50, and 60 s and last 2, 3, and 5 s.",
+            "zh_cn": "开局拿到不能攻击的假枪。脚步与疾跑粒子隐藏，任务收入增加 50%。颤抖、移动颠倒、滑鼠反转分别每 15、50、60 秒触发，持续 2、3、5 秒。",
+            "zh_tw": "開局拿到不能攻擊的假槍。腳步與疾跑粒子隱藏，任務收入增加 50%。顫抖、移動顛倒、滑鼠反轉分別每 15、50、60 秒觸發，持續 2、3、5 秒。"
+          },
+          "duration": 438,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 448
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "formatVersion": 1,
+  "id": "starrailexpress:role_tutorial.yushang",
+  "items": [
+    "trainmurdermystery:note"
+  ],
+  "title": {
+    "en_us": "Yushang · Civilian",
+    "zh_cn": "語殤・平民",
+    "zh_tw": "語殤・平民"
+  },
+  "structures": [
+    "starrailexpress:role_tutorial_common",
+    "starrailexpress:role_tutorial_room"
+  ],
+  "tags": [],
+  "customTags": {},
+  "scenes": [
+    {
+      "id": "personal_space",
+      "title": {
+        "en_us": "Personal Space",
+        "zh_cn": "社恐",
+        "zh_tw": "社恐"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_common"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "target",
+            "pos": [
+              5.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "target",
+            "from": [
+              5.5,
+              1,
+              1.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 38
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "Other players within 2 blocks cannot turn or speak. The restriction ends once nobody else is in range.",
+            "zh_cn": "其他玩家进入你 2 格内时，不能转向也不能说话。范围内没有其他玩家後，限制解除。",
+            "zh_tw": "其他玩家進入你 2 格內時，不能轉向也不能說話。範圍內沒有其他玩家後，限制解除。"
+          },
+          "duration": 240,
+          "point": [
+            2.5,
+            2.75,
+            3.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 250
+        }
+      ]
+    },
+    {
+      "id": "sleep",
+      "title": {
+        "en_us": "Need for Sleep",
+        "zh_cn": "需要睡眠",
+        "zh_tw": "需要睡眠"
+      },
+      "steps": [
+        {
+          "type": "show_structure",
+          "structure": "starrailexpress:role_tutorial_room"
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "actor",
+            "pos": [
+              2.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "actor",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              5.5,
+              1,
+              4.5
+            ],
+            "duration": 35
+          }
+        },
+        {
+          "type": "starrailexpress:role_pose",
+          "parameters": {
+            "linkId": "actor",
+            "pose": "sleeping"
+          }
+        },
+        {
+          "type": "text",
+          "text": {
+            "en_us": "After 60 s without lying in bed, lose an extra 1% sanity per second. Lying down lifts the penalty, resets the 60 s timer, and restores 2% sanity per second. You can see through disguised skins.",
+            "zh_cn": "60 秒没有躺床後，每秒额外流失 1% 理智。躺床会解除限制、重设 60 秒计时，每秒回复 2% 理智。你也能看穿伪装皮肤。",
+            "zh_tw": "60 秒沒有躺床後，每秒額外流失 1% 理智。躺床會解除限制、重設 60 秒計時，每秒回復 2% 理智。你也能看穿偽裝皮膚。"
+          },
+          "duration": 372,
+          "point": [
+            5.5,
+            2.1,
+            4.5
+          ],
+          "color": "white",
+          "placeNearTarget": true,
+          "attachKeyFrame": true
+        },
+        {
+          "type": "idle",
+          "duration": 382
+        }
+      ]
+    }
+  ]
+}
