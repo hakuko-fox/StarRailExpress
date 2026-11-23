@@ -81,10 +81,12 @@ public final class PonderRoles {
         }
         String value = raw.trim();
         if (value.indexOf(':') >= 0) {
-            SRERole role = byId(value);
-            if (role != null) {
-                return role;
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id == null) {
+                return null;
             }
+            SRERole role = byId(id);
+            return role == null ? byPath(id.getPath()) : role;
         }
         return byPath(value);
     }

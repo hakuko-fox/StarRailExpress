@@ -5602,6 +5602,8 @@
   "screen.roleintroduce.ponder.button": "俺寻思",
   "screen.roleintroduce.ponder.tip": "查看该职业的动态教程",
   "screen.roleintroduce.ponder.no_tutorial": "该职业暂时没有动态教程",
+  "screen.roleintroduce.ponder.world_required": "请先进入世界，再打开职业思索。",
+  "screen.roleintroduce.ponder.open_failed": "无法打开这个职业思索。",
   "screen.roleintroduce.flag.command_block_exclusive": "与命令方块事件互斥的职业",
   "message.magician.revolver_only": "你只能使用左轮手枪致人死亡，其它手段无法击杀玩家",
   "command.noellesroles.magician.not_magician": "只有魔术师可以更改自己的伪装身份",

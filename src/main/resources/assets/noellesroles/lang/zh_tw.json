@@ -5588,6 +5588,8 @@
   "screen.roleintroduce.ponder.button": "俺尋思",
   "screen.roleintroduce.ponder.tip": "查看該職業的動態教程",
   "screen.roleintroduce.ponder.no_tutorial": "該職業暫時沒有動態教程",
+  "screen.roleintroduce.ponder.world_required": "請先進入世界，再開啟職業思索。",
+  "screen.roleintroduce.ponder.open_failed": "無法開啟這個職業思索。",
   "screen.roleintroduce.flag.command_block_exclusive": "與命令方塊事件互斥的職業",
   "message.magician.revolver_only": "你只能使用左輪手槍致人死亡，其它手段無法擊殺玩家",
   "command.noellesroles.magician.not_magician": "只有魔術師可以更改自己的偽裝身份",

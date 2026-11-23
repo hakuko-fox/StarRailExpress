@@ -5521,6 +5521,8 @@
   "screen.roleintroduce.ponder.button": "Ponder",
   "screen.roleintroduce.ponder.tip": "Watch this role's interactive tutorial",
   "screen.roleintroduce.ponder.no_tutorial": "This role has no dynamic tutorial yet",
+  "screen.roleintroduce.ponder.world_required": "Enter a world before opening a role tutorial.",
+  "screen.roleintroduce.ponder.open_failed": "This role tutorial could not be opened.",
   "screen.roleintroduce.flag.command_block_exclusive": "Mutually exclusive with the Command Block event",
   "message.magician.revolver_only": "Only a revolver can kill for you; other means will not kill players",
   "command.noellesroles.magician.not_magician": "Only the Magician can change their own disguise",

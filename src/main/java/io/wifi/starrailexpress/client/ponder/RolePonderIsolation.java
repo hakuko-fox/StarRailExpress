@@ -109,7 +109,7 @@ public final class RolePonderIsolation {
             Minecraft.getInstance().setScreen(ui);
             return true;
         } catch (Throwable error) {
-            LOGGER.warn("打开职业思索场景 {} 失败：{}", scene.id, error.toString());
+            LOGGER.warn("打开职业思索场景 {} 失败", scene.id, error);
             return false;
         }
     }

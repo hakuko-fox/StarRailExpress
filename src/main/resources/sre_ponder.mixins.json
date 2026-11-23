@@ -6,7 +6,8 @@
   "client": [
     "PonderEditorModuleMixin",
     "DynamicPonderPluginRoleMixin",
-    "SceneItemBindingsRoleMixin"
+    "SceneItemBindingsRoleMixin",
+    "RolePonderIconMixin"
   ],
   "injectors": {
     "defaultRequire": 0

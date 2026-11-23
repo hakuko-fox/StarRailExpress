@@ -280,6 +280,7 @@ public class RoleIntroduceScreen extends Screen {
     private int activeTabIndex = 0;
     private final List<DetailTab> tabs = new ArrayList<>();
     private long ponderHintUntil = 0L;
+    private Component ponderFailureHint;
 
     private enum FocusArea {
         SEARCH, CATEGORY_BAR, LEFT_LIST, MODE_BUTTONS, RIGHT_TABS
@@ -1958,8 +1959,8 @@ public class RoleIntroduceScreen extends Screen {
         super.renderBackground(g, mouseX, mouseY, partialTick);
         renderLeftPanel(g, mouseX, mouseY);
         renderRightPanel(g, mouseX, mouseY);
-        if (System.currentTimeMillis() < ponderHintUntil) {
-            g.renderTooltip(font, Component.translatable("screen.roleintroduce.ponder.no_tutorial"), mouseX, mouseY);
+        if (ponderFailureHint != null && System.currentTimeMillis() < ponderHintUntil) {
+            g.renderTooltip(font, ponderFailureHint, mouseX, mouseY);
         } else if (isPonderButtonVisible()
                 && isInRect(mouseX, mouseY, getPonderButtonX(), getPonderButtonY(), PONDER_BTN_W, PONDER_BTN_H)) {
             g.renderTooltip(font, Component.translatable("screen.roleintroduce.ponder.tip"), mouseX, mouseY);
@@ -2573,7 +2574,13 @@ public class RoleIntroduceScreen extends Screen {
                     && isInRect((int) mx, (int) my, getPonderButtonX(), getPonderButtonY(),
                             PONDER_BTN_W, PONDER_BTN_H)) {
                 this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f));
-                if (!RolePonderTutorial.open(role)) {
+                ponderFailureHint = switch (RolePonderTutorial.open(role)) {
+                    case OPENED -> null;
+                    case WORLD_REQUIRED -> Component.translatable("screen.roleintroduce.ponder.world_required");
+                    case SCENE_MISSING -> Component.translatable("screen.roleintroduce.ponder.no_tutorial");
+                    case OPEN_FAILED -> Component.translatable("screen.roleintroduce.ponder.open_failed");
+                };
+                if (ponderFailureHint != null) {
                     ponderHintUntil = System.currentTimeMillis() + 2500L;
                 }
                 setFocusArea(FocusArea.RIGHT_TABS);
