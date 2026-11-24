@@ -10,7 +10,8 @@
     "zh_tw": "白狐・殺手"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_corridor",
+    "starrailexpress:role_tutorial_carriage"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "hakuko",
             "pos": [
               2.5,
               1,
@@ -40,15 +41,57 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "attacker",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:revolver"
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            2.5,
+            3.1,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "Wait out the opening skill lock before switching to snow fox form.",
+            "zh_cn": "开局封印结束後，才能切换成雪狐。",
+            "zh_tw": "開局封印結束後，才能切換成雪狐。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
           "type": "starrailexpress:role_key",
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -57,27 +100,114 @@
           "duration": 34
         },
         {
-          "type": "starrailexpress:role_hold",
+          "type": "starrailexpress:role_hide",
           "parameters": {
-            "linkId": "actor",
-            "item": "minecraft:air"
+            "linkId": "hakuko",
+            "visible": false
+          }
+        },
+        {
+          "type": "create_entity",
+          "entity": "minecraft:fox",
+          "pos": [
+            2.5,
+            1,
+            3.5
+          ],
+          "linkId": "snow_fox",
+          "nbt": "{Type:\"snow\",NoAI:1b}"
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "attacker",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 18
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:enchanted_hit",
+          "pos": [
+            2.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 12,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.4,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 30,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "clear_entities",
+          "fullScene": true
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "hakuko",
+            "visible": true
           }
         },
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "hakuko",
             "from": [
               2.5,
               1,
               3.5
             ],
             "to": [
-              1.5,
+              3.5,
               1,
-              1.5
+              5.5
             ],
-            "duration": 20
+            "duration": 45
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
           }
         },
         {
@@ -87,11 +217,11 @@
             "zh_cn": "开局拿小刀，技能封印 60 秒。变身後速度 II、无敌且不能攻击；再按 G 解除後缓速 1 秒，开始 15 秒冷却。",
             "zh_tw": "開局拿小刀，技能封印 60 秒。變身後速度 II、無敵且不能攻擊；再按 G 解除後緩速 1 秒，開始 15 秒冷卻。"
           },
-          "duration": 348,
+          "duration": 267,
           "point": [
-            1.5,
-            2.7,
-            1.5
+            3.5,
+            2.65,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -99,7 +229,7 @@
         },
         {
           "type": "idle",
-          "duration": 358
+          "duration": 277
         }
       ]
     },
@@ -113,29 +243,73 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "hakuko",
             "pos": [
               2.5,
               1,
               3.5
-            ],
-            "heldItem": "trainmurdermystery:knife"
+            ]
           }
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "passenger_a",
             "pos": [
-              4.5,
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "passenger_b",
+            "pos": [
+              5.5,
               1,
               3.5
             ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "passenger_a",
+            "from": [
+              1.5,
+              1,
+              1.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 18
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "passenger_b",
+            "from": [
+              5.5,
+              1,
+              3.5
+            ],
+            "to": [
+              4.5,
+              1,
+              3.5
+            ],
+            "duration": 18
           }
         },
         {
@@ -143,11 +317,11 @@
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill",
             "key": "Shift+G"
           }
@@ -157,16 +331,65 @@
           "duration": 34
         },
         {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "passenger_a",
+            "color": -8271617
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "passenger_b",
+            "color": -8271617
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 100
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "passenger_a",
+            "color": 0
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "passenger_b",
+            "color": 0
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "passenger_b",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 18
+          }
+        },
+        {
           "type": "text",
           "text": {
             "en_us": "Spend 50 coins once per round to stop other players from moving for 5 s. Others cannot identify the role or cause of death from your body or the bodies of players you kill.",
             "zh_cn": "消耗 50 金币，每局一次。其他玩家不能移动 5 秒。其他人无法从你或被你杀死的玩家的屍体看出角色与死因。",
             "zh_tw": "消耗 50 金幣，每局一次。其他玩家不能移動 5 秒。其他人無法從你或被你殺死的玩家的屍體看出角色與死因。"
           },
-          "duration": 318,
+          "duration": 244,
           "point": [
             2.5,
-            2.75,
+            3,
             3.5
           ],
           "color": "white",
@@ -175,7 +398,7 @@
         },
         {
           "type": "idle",
-          "duration": 328
+          "duration": 254
         }
       ]
     }

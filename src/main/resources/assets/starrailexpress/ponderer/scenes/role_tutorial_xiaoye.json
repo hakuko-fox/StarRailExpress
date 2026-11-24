@@ -10,7 +10,8 @@
     "zh_tw": "小夜・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_corridor"
   ],
   "tags": [],
   "customTags": {},
@@ -25,14 +26,25 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "xiaoye",
             "pos": [
-              2.5,
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "listener_a",
+            "pos": [
+              3.5,
               1,
               3.5
             ]
@@ -41,12 +53,96 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "listener_b",
             "pos": [
               5.5,
               1,
               1.5
             ]
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            1.5,
+            2.7,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "idle",
+          "duration": 14
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            3.5,
+            2.7,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            5.5,
+            2.7,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "listener_a",
+            "color": -11280464
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "listener_b",
+            "color": -11280464
           }
         },
         {
@@ -56,11 +152,11 @@
             "zh_cn": "你的语音会传给全场玩家，不受距离限制。",
             "zh_tw": "你的語音會傳給全場玩家，不受距離限制。"
           },
-          "duration": 114,
+          "duration": 118,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            5.5,
+            2.65,
+            1.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -68,7 +164,7 @@
         },
         {
           "type": "idle",
-          "duration": 124
+          "duration": 128
         }
       ]
     },
@@ -82,17 +178,151 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "xiaoye",
             "pos": [
               2.5,
               1,
               3.5
             ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "xiaoye",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              2.7,
+              1,
+              3.5
+            ],
+            "duration": 6
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "xiaoye",
+            "from": [
+              2.7,
+              1,
+              3.5
+            ],
+            "to": [
+              2.5,
+              1,
+              3.5
+            ],
+            "duration": 6
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            2.5,
+            2.9,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "15 seconds: the player briefly shakes.",
+            "zh_cn": "15 秒：角色短暂颤抖。",
+            "zh_tw": "15 秒：角色短暫顫抖。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "xiaoye",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 15
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "xiaoye",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              2.5,
+              1,
+              3.5
+            ],
+            "duration": 15
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            3.5,
+            3,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 104,
+          "color": "white",
+          "text": {
+            "en_us": "50 seconds: movement reverses. 60 seconds: mouse input inverts.",
+            "zh_cn": "50 秒：移动方向颠倒。60 秒：滑鼠方向反转。",
+            "zh_tw": "50 秒：移動方向顛倒。60 秒：滑鼠方向反轉。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 112
+        },
+        {
+          "type": "starrailexpress:role_mood",
+          "parameters": {
+            "before": 1,
+            "after": 0.75
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "xiaoye",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              5.5,
+              1,
+              3.5
+            ],
+            "duration": 20
           }
         },
         {
@@ -102,10 +332,10 @@
             "zh_cn": "每 15 秒颤抖 2 秒、每 50 秒移动颠倒 3 秒、每 60 秒滑鼠反转 5 秒。理智流失速度为 50%，体力为 120%。",
             "zh_tw": "每 15 秒顫抖 2 秒、每 50 秒移動顛倒 3 秒、每 60 秒滑鼠反轉 5 秒。理智流失速度為 50%，體力為 120%。"
           },
-          "duration": 384,
+          "duration": 295,
           "point": [
-            2.5,
-            2.75,
+            5.5,
+            2.9,
             3.5
           ],
           "color": "white",
@@ -114,7 +344,7 @@
         },
         {
           "type": "idle",
-          "duration": 394
+          "duration": 305
         }
       ]
     }

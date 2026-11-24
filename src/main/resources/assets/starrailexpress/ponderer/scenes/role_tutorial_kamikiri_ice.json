@@ -10,7 +10,8 @@
     "zh_tw": "神霧冰封・中立"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_room"
   ],
   "tags": [],
   "customTags": {},
@@ -25,14 +26,14 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "ice",
             "pos": [
-              2.5,
+              3.5,
               1,
               3.5
             ]
@@ -41,22 +42,285 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "civilian",
+            "pos": [
+              1.5,
+              1,
+              1.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "sheriff",
             "pos": [
               4.5,
               1,
               3.5
-            ]
+            ],
+            "heldItem": "trainmurdermystery:revolver"
           }
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "second",
+            "linkId": "killer",
             "pos": [
               5.5,
               1,
               1.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "civilian",
+            "color": -11280464
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "sheriff",
+            "color": -8271617
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "killer",
+            "color": -42920
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:enchanted_hit",
+          "pos": [
+            3.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 12,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "ice",
+            "visible": false
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 26
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "ice",
+            "visible": true
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            1.5,
+            3,
+            1.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 77,
+          "color": "white",
+          "text": {
+            "en_us": "The first lethal hit is from a civilian. Blocking it grants invisibility.",
+            "zh_cn": "第一击来自平民。挡住後隐形。",
+            "zh_tw": "第一擊來自平民。擋住後隱形。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 85
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:enchanted_hit",
+          "pos": [
+            3.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 12,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "ice",
+            "visible": false
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 26
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "ice",
+            "visible": true
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            4.5,
+            3,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "A lethal sheriff hit can be blocked once as well.",
+            "zh_cn": "警长的致命攻击也可抵挡一次。",
+            "zh_tw": "警長的致命攻擊也可抵擋一次。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:enchanted_hit",
+          "pos": [
+            3.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 12,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "ice",
+            "visible": false
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 26
+        },
+        {
+          "type": "starrailexpress:role_hide",
+          "parameters": {
+            "linkId": "ice",
+            "visible": true
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            5.5,
+            3,
+            1.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 82,
+          "color": "white",
+          "text": {
+            "en_us": "Block a killer hit to complete the three-faction requirement.",
+            "zh_cn": "再挡一次杀手的攻击，三方条件才算集齐。",
+            "zh_tw": "再擋一次殺手的攻擊，三方條件才算集齊。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 90
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:damage_indicator",
+          "pos": [
+            3.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 5,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "ice",
+            "pos": [
+              3.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_panel",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Another faction is still alive: independent victory",
+                "zh_tw": "仍有其他陣營存活：獨立勝利",
+                "zh_cn": "仍有其他阵营存活：独立胜利"
+              }
             ]
           }
         },
@@ -67,10 +331,10 @@
             "zh_cn": "分别挡住平民、警长、杀手各一次致命攻击，受击後隐身 10 秒。三方都挡过後，再受致命攻击可独立获胜，前提是场上并非只剩你和杀手。",
             "zh_tw": "分別擋住平民、警長、殺手各一次致命攻擊，受擊後隱身 10 秒。三方都擋過後，再受致命攻擊可獨立獲勝，前提是場上並非只剩你和殺手。"
           },
-          "duration": 384,
+          "duration": 295,
           "point": [
-            2.5,
-            2.75,
+            3.5,
+            2.85,
             3.5
           ],
           "color": "white",
@@ -79,7 +343,7 @@
         },
         {
           "type": "idle",
-          "duration": 394
+          "duration": 305
         }
       ]
     },
@@ -93,12 +357,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "ice",
             "pos": [
               2.5,
               1,
@@ -108,16 +372,86 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "observer",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "show_controls",
+          "action": "right",
+          "item": "noellesroles:fake_revolver",
+          "point": [
+            2.5,
+            1.6,
+            3.5
+          ],
+          "direction": "down",
+          "duration": 30
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_hold",
+          "parameters": {
+            "linkId": "ice",
+            "item": "noellesroles:fake_knife"
+          }
+        },
+        {
+          "type": "show_controls",
+          "action": "right",
+          "item": "noellesroles:fake_knife",
+          "point": [
+            2.5,
+            1.6,
+            3.5
+          ],
+          "direction": "down",
+          "duration": 30
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_ambience",
+          "parameters": {
+            "color": 6506920,
+            "alpha": 0.25,
+            "mode": "fog"
+          }
+        },
+        {
+          "type": "starrailexpress:role_effects",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Fairy filter: unaffected by blackouts",
+                "zh_tw": "仙境濾鏡：不受停電影響",
+                "zh_cn": "仙境滤镜：不受停电影响"
+              }
+            ]
+          }
+        },
+        {
           "type": "text",
           "text": {
             "en_us": "Your starting fake gun and knife cannot attack. You cannot buy, pick up, or use weapons. You have the fairy filter and ignore blackouts.",
             "zh_cn": "开局假枪、假刀不能攻击。不能买、捡起或使用武器。你有仙境滤镜并无视停电。",
             "zh_tw": "開局假槍、假刀不能攻擊。不能買、撿起或使用武器。你有仙境濾鏡並無視停電。"
           },
-          "duration": 216,
+          "duration": 166,
           "point": [
             2.5,
-            2.75,
+            3,
             3.5
           ],
           "color": "white",
@@ -126,7 +460,7 @@
         },
         {
           "type": "idle",
-          "duration": 226
+          "duration": 176
         }
       ]
     }

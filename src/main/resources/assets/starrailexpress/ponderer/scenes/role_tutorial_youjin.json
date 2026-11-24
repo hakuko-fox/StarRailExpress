@@ -30,18 +30,18 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "youjin",
             "pos": [
               2.5,
               1,
-              3.5
+              2.5
             ]
           }
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "guest",
             "pos": [
               5.5,
               1,
@@ -54,11 +54,11 @@
           "parameters": {
             "point": [
               2.5,
-              2.75,
-              3.5
+              2.4,
+              2.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -67,20 +67,124 @@
           "duration": 34
         },
         {
+          "type": "indicate_success",
+          "blockPos": [
+            2,
+            1,
+            1
+          ]
+        },
+        {
+          "type": "text",
+          "point": [
+            2.5,
+            2.4,
+            1.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "Mark the platter first. Nobody is stunned yet.",
+            "zh_cn": "先标记餐盘，这时还没有玩家晕眩。",
+            "zh_tw": "先標記餐盤，這時還沒有玩家暈眩。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "target",
+            "linkId": "guest",
             "from": [
               5.5,
               1,
               1.5
             ],
             "to": [
-              4.5,
+              2.5,
+              1,
+              2.5
+            ],
+            "duration": 30
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "youjin",
+            "from": [
+              2.5,
+              1,
+              2.5
+            ],
+            "to": [
+              2.5,
               1,
               3.5
             ],
-            "duration": 36
+            "duration": 18
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "guest",
+            "from": [
+              2.5,
+              1,
+              2.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 18
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "guest",
+            "color": -15266
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:effect",
+          "pos": [
+            3.5,
+            2,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 12,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_currency",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Youjin +20 coins",
+                "zh_tw": "幽燼 +20 金幣",
+                "zh_cn": "幽烬 +20 金币"
+              }
+            ]
           }
         },
         {
@@ -90,10 +194,10 @@
             "zh_cn": "花 10 金币对食物盘或饮料盘使用，冷却 10 秒。下一位取走并吃喝该餐点的玩家眩晕 5 秒，你获得 20 金币。你有仙境滤镜并无视停电。",
             "zh_tw": "花 10 金幣對食物盤或飲料盤使用，冷卻 10 秒。下一位取走並吃喝該餐點的玩家眩暈 5 秒，你獲得 20 金幣。你有仙境濾鏡並無視停電。"
           },
-          "duration": 414,
+          "duration": 318,
           "point": [
-            2.5,
-            2.75,
+            3.5,
+            2.65,
             3.5
           ],
           "color": "white",
@@ -102,7 +206,7 @@
         },
         {
           "type": "idle",
-          "duration": 424
+          "duration": 328
         }
       ]
     }

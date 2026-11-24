@@ -10,7 +10,8 @@
     "zh_tw": "仙喵・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_corridor",
+    "starrailexpress:role_tutorial_room"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "xianmiao",
             "pos": [
               2.5,
               1,
@@ -39,15 +40,33 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "watcher",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "xianmiao",
+            "color": -42920
+          }
+        },
+        {
           "type": "starrailexpress:role_key",
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -58,18 +77,72 @@
         {
           "type": "starrailexpress:role_hide",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "xianmiao",
             "visible": false
           }
         },
         {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "watcher",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              5.5,
+              1,
+              3.5
+            ],
+            "duration": 30
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            5.5,
+            3,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "Killer instinct cannot see Xianmiao while invisible.",
+            "zh_cn": "隐形时，杀手直觉也看不到仙喵。",
+            "zh_tw": "隱形時，殺手直覺也看不到仙喵。"
+          }
+        },
+        {
           "type": "idle",
-          "duration": 55
+          "duration": 84
+        },
+        {
+          "type": "starrailexpress:role_teleport",
+          "parameters": {
+            "linkId": "xianmiao",
+            "pos": [
+              3.5,
+              1,
+              5.5
+            ]
+          }
         },
         {
           "type": "starrailexpress:role_hide",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "xianmiao",
             "visible": true
           }
         },
@@ -80,11 +153,11 @@
             "zh_cn": "消耗 75 金币，冷却 90 秒。隐形并沉默语音 7 秒，杀手直觉也看不到你。",
             "zh_tw": "消耗 75 金幣，冷卻 90 秒。隱形並沉默語音 7 秒，殺手直覺也看不到你。"
           },
-          "duration": 234,
+          "duration": 180,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            2.8,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -92,7 +165,7 @@
         },
         {
           "type": "idle",
-          "duration": 244
+          "duration": 190
         }
       ]
     },
@@ -106,12 +179,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "xianmiao",
             "pos": [
               2.5,
               1,
@@ -121,17 +194,109 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "observer",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "show_controls",
+          "action": "right",
+          "item": "noellesroles:fake_revolver",
+          "point": [
+            2.5,
+            1.6,
+            3.5
+          ],
+          "direction": "down",
+          "duration": 30
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "text",
+          "point": [
+            4.5,
+            3,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "The gun is a prop. The target takes no hit.",
+            "zh_cn": "手上是假枪，目标不会被击中。",
+            "zh_tw": "手上是假槍，目標不會被擊中。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "starrailexpress:role_hold",
+          "parameters": {
+            "linkId": "xianmiao",
+            "item": "minecraft:air"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "xianmiao",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 16
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "starrailexpress:role_currency",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Task coins ×1.5",
+                "zh_tw": "任務金幣 ×1.5",
+                "zh_cn": "任务金币 ×1.5"
+              }
+            ]
+          }
+        },
+        {
           "type": "text",
           "text": {
             "en_us": "Start with a fake gun that cannot attack. Your footsteps and sprint particles are hidden and tasks pay 50% more. Shake, reversed movement, and mouse inversion recur every 15, 50, and 60 s and last 2, 3, and 5 s.",
             "zh_cn": "开局拿到不能攻击的假枪。脚步与疾跑粒子隐藏，任务收入增加 50%。颤抖、移动颠倒、滑鼠反转分别每 15、50、60 秒触发，持续 2、3、5 秒。",
             "zh_tw": "開局拿到不能攻擊的假槍。腳步與疾跑粒子隱藏，任務收入增加 50%。顫抖、移動顛倒、滑鼠反轉分別每 15、50、60 秒觸發，持續 2、3、5 秒。"
           },
-          "duration": 438,
+          "duration": 336,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            2.65,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -139,7 +304,7 @@
         },
         {
           "type": "idle",
-          "duration": 448
+          "duration": 346
         }
       ]
     }

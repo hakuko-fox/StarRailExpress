@@ -10,7 +10,8 @@
     "zh_tw": "Luna・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_room"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "luna",
             "pos": [
               2.5,
               1,
@@ -41,7 +42,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "yoru",
             "pos": [
               5.5,
               1,
@@ -52,20 +53,41 @@
         {
           "type": "starrailexpress:role_outline",
           "parameters": {
-            "linkId": "target",
-            "color": -12068959
+            "linkId": "yoru",
+            "color": -11280464
           }
+        },
+        {
+          "type": "text",
+          "point": [
+            5.5,
+            3,
+            1.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "Your linked partner is more than three blocks away.",
+            "zh_cn": "共生夥伴在三格外。",
+            "zh_tw": "共生夥伴在三格外。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
         },
         {
           "type": "starrailexpress:role_key",
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -74,9 +96,31 @@
           "duration": 34
         },
         {
+          "type": "spawn_particles",
+          "particle": "minecraft:portal",
+          "pos": [
+            5.5,
+            1.6,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 18,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
           "type": "starrailexpress:role_teleport",
           "parameters": {
-            "linkId": "target",
+            "linkId": "yoru",
             "pos": [
               3.5,
               1,
@@ -85,16 +129,38 @@
           }
         },
         {
+          "type": "spawn_particles",
+          "particle": "minecraft:portal",
+          "pos": [
+            3.5,
+            1.6,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 18,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
           "type": "text",
           "text": {
             "en_us": "Yoru always spawns with you. If Yoru is more than 3 blocks away, spend 100 coins to teleport them to your side. Cooldown: 120 s.",
             "zh_cn": "Yoru 必定与你一同出现。当 Yoru 距你超过 3 格，花 100 金币可把对方传送到你身旁。冷却 120 秒。",
             "zh_tw": "Yoru 必定與你一同出現。當 Yoru 距你超過 3 格，花 100 金幣可把對方傳送到你身旁。冷卻 120 秒。"
           },
-          "duration": 348,
+          "duration": 267,
           "point": [
-            2.5,
-            2.75,
+            3.5,
+            2.9,
             3.5
           ],
           "color": "white",
@@ -103,7 +169,7 @@
         },
         {
           "type": "idle",
-          "duration": 358
+          "duration": 277
         }
       ]
     },
@@ -117,12 +183,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "luna",
             "pos": [
               2.5,
               1,
@@ -133,7 +199,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "yoru",
             "pos": [
               3.5,
               1,
@@ -144,8 +210,8 @@
         {
           "type": "starrailexpress:role_outline",
           "parameters": {
-            "linkId": "target",
-            "color": -12068959
+            "linkId": "yoru",
+            "color": -11280464
           }
         },
         {
@@ -153,11 +219,11 @@
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -166,9 +232,31 @@
           "duration": 34
         },
         {
+          "type": "spawn_particles",
+          "particle": "minecraft:portal",
+          "pos": [
+            2.5,
+            1.6,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 18,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
           "type": "starrailexpress:role_teleport",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "luna",
             "pos": [
               1.5,
               1,
@@ -179,11 +267,102 @@
         {
           "type": "starrailexpress:role_teleport",
           "parameters": {
-            "linkId": "target",
+            "linkId": "yoru",
             "pos": [
               5.5,
               1,
               1.5
+            ]
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:portal",
+          "pos": [
+            1.5,
+            1.6,
+            5.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 18,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:portal",
+          "pos": [
+            5.5,
+            1.6,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 18,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "text",
+          "point": [
+            5.5,
+            3,
+            1.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "Each partner returns to their own spawn point.",
+            "zh_cn": "两人各自回到自己的出生点。",
+            "zh_tw": "兩人各自回到自己的出生點。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "yoru",
+            "pos": [
+              5.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 10
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "luna",
+            "pos": [
+              1.5,
+              1,
+              5.5
             ]
           }
         },
@@ -194,10 +373,10 @@
             "zh_cn": "Yoru 在 3 格内时，同一技能会把你们分别送回各自的出生点。共生夥伴会高亮；任一方死亡，另一方也会死亡。",
             "zh_tw": "Yoru 在 3 格內時，同一技能會把你們分別送回各自的出生點。共生夥伴會高亮；任一方死亡，另一方也會死亡。"
           },
-          "duration": 324,
+          "duration": 249,
           "point": [
             1.5,
-            2.8,
+            2.9,
             5.5
           ],
           "color": "white",
@@ -206,7 +385,7 @@
         },
         {
           "type": "idle",
-          "duration": 334
+          "duration": 259
         }
       ]
     }

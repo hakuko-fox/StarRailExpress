@@ -10,8 +10,9 @@
     "zh_tw": "柚封凌・殺手"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common",
-    "starrailexpress:role_tutorial_room"
+    "starrailexpress:role_tutorial_corridor",
+    "starrailexpress:role_tutorial_room",
+    "starrailexpress:role_tutorial_carriage"
   ],
   "tags": [],
   "customTags": {},
@@ -26,18 +27,35 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "yuzu",
             "pos": [
+              2.5,
+              1,
+              2.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "yuzu",
+            "from": [
+              2.5,
+              1,
+              2.5
+            ],
+            "to": [
               2.5,
               1,
               3.5
             ],
-            "heldItem": "trainmurdermystery:knife"
+            "duration": 28
           }
         },
         {
@@ -45,11 +63,11 @@
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -60,18 +78,27 @@
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "yuzu",
             "from": [
               2.5,
               1,
               3.5
             ],
             "to": [
-              1.5,
+              4.5,
               1,
-              1.5
+              7.5
             ],
-            "duration": 15
+            "duration": 20
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
           }
         },
         {
@@ -81,11 +108,11 @@
             "zh_cn": "开局拿小刀。消耗 100 金币，冷却 90 秒，获得速度 II 持续 7 秒。",
             "zh_tw": "開局拿小刀。消耗 100 金幣，冷卻 90 秒，獲得速度 II 持續 7 秒。"
           },
-          "duration": 234,
+          "duration": 180,
           "point": [
-            1.5,
-            2.7,
-            1.5
+            4.5,
+            2.65,
+            7.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -93,7 +120,7 @@
         },
         {
           "type": "idle",
-          "duration": 244
+          "duration": 190
         }
       ]
     },
@@ -112,7 +139,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "yuzu",
             "pos": [
               2.5,
               1,
@@ -124,26 +151,121 @@
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "yuzu",
             "from": [
               2.5,
               1,
               3.5
             ],
             "to": [
-              5.5,
+              4.5,
+              1,
+              3.5
+            ],
+            "duration": 23
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_hold",
+          "parameters": {
+            "linkId": "yuzu",
+            "item": "minecraft:air"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "yuzu",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              4.5,
               1,
               4.5
             ],
-            "duration": 35
+            "duration": 42
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            4.5,
+            2.95,
+            4.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 104,
+          "color": "white",
+          "text": {
+            "en_us": "The first timer is 100 seconds. Expiry slows you and locks weapons.",
+            "zh_cn": "第一次倒数是 100 秒，逾时会缓速并封锁武器。",
+            "zh_tw": "第一次倒數是 100 秒，逾時會緩速並封鎖武器。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 112
+        },
+        {
+          "type": "starrailexpress:role_teleport",
+          "parameters": {
+            "linkId": "yuzu",
+            "pos": [
+              5.5,
+              1.56,
+              4.5
+            ]
           }
         },
         {
           "type": "starrailexpress:role_pose",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "yuzu",
             "pose": "sleeping"
           }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            5.5,
+            3.26,
+            4.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 86,
+          "color": "white",
+          "text": {
+            "en_us": "Lying down clears the penalties and sets the next timer to 90 seconds.",
+            "zh_cn": "躺床後解除限制，下一次倒数是 90 秒。",
+            "zh_tw": "躺床後解除限制，下一次倒數是 90 秒。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 94
         },
         {
           "type": "text",
@@ -152,10 +274,10 @@
             "zh_cn": "开局 100 秒没躺床会缓速并不能用武器。躺床解除限制，之後改为 90 秒计时。武器冷却缩短 30%。",
             "zh_tw": "開局 100 秒沒躺床會緩速並不能用武器。躺床解除限制，之後改為 90 秒計時。武器冷卻縮短 30%。"
           },
-          "duration": 306,
+          "duration": 235,
           "point": [
             5.5,
-            2.1,
+            2.81,
             4.5
           ],
           "color": "white",
@@ -164,7 +286,7 @@
         },
         {
           "type": "idle",
-          "duration": 316
+          "duration": 245
         }
       ]
     },
@@ -178,18 +300,130 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "yuzu",
+            "pos": [
+              3.5,
+              1,
+              5.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "xiaoye",
             "pos": [
               2.5,
               1,
               3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "xianmiao",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "yuzu",
+            "from": [
+              3.5,
+              1,
+              5.5
             ],
-            "heldItem": "trainmurdermystery:knife"
+            "to": [
+              3.7,
+              1,
+              5.5
+            ],
+            "duration": 5
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "yuzu",
+            "from": [
+              3.7,
+              1,
+              5.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 5
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "yuzu",
+            "from": [
+              3.5,
+              1,
+              5.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 16
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "yuzu",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 14,
+            "yaw": 0
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "15 s: shake for 2 s",
+                "zh_tw": "15 秒：顫抖 2 秒",
+                "zh_cn": "15 秒：颤抖 2 秒"
+              },
+              {
+                "en_us": "50 s: reverse movement for 3 s",
+                "zh_tw": "50 秒：反向移動 3 秒",
+                "zh_cn": "50 秒：反向移动 3 秒"
+              },
+              {
+                "en_us": "60 s: invert mouse for 5 s",
+                "zh_tw": "60 秒：滑鼠反轉 5 秒",
+                "zh_cn": "60 秒：滑鼠反转 5 秒"
+              }
+            ]
           }
         },
         {
@@ -199,11 +433,11 @@
             "zh_cn": "每 15 秒颤抖 2 秒、每 50 秒移动颠倒 3 秒、每 60 秒滑鼠反转 5 秒。成员为柚封凌、仙喵和小夜。",
             "zh_tw": "每 15 秒顫抖 2 秒、每 50 秒移動顛倒 3 秒、每 60 秒滑鼠反轉 5 秒。成員為柚封凌、仙喵和小夜。"
           },
-          "duration": 336,
+          "duration": 258,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            3,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -211,7 +445,7 @@
         },
         {
           "type": "idle",
-          "duration": 346
+          "duration": 268
         }
       ]
     }

@@ -10,7 +10,8 @@
     "zh_tw": "鴻御陌塵・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_corridor"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "mochen",
             "pos": [
               2.5,
               1,
@@ -41,7 +42,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "survivor",
             "pos": [
               5.5,
               1,
@@ -50,9 +51,20 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "dead",
+            "pos": [
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "target",
+            "linkId": "survivor",
             "from": [
               5.5,
               1,
@@ -63,19 +75,34 @@
               1,
               3.5
             ],
-            "duration": 30
+            "duration": 28
           }
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "dead",
+            "pos": [
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 20
         },
         {
           "type": "starrailexpress:role_key",
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -86,11 +113,70 @@
         {
           "type": "starrailexpress:role_teleport",
           "parameters": {
-            "linkId": "target",
+            "linkId": "survivor",
             "pos": [
               5.5,
               1,
               1.5
+            ]
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:portal",
+          "pos": [
+            5.5,
+            1.6,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 18,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "survivor",
+            "color": -8271617
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            1.5,
+            1.6,
+            1.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 86,
+          "color": "white",
+          "text": {
+            "en_us": "The survivor returns to an earlier position. The eliminated player stays dead.",
+            "zh_cn": "存活者回到先前位置，已死的玩家留在原地。",
+            "zh_tw": "存活者回到先前位置，已死的玩家留在原地。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 94
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
             ]
           }
         },
@@ -101,11 +187,11 @@
             "zh_cn": "消耗 100 金币，每局一次。回溯 60 秒，死者不复活。施放当下 5 格内的其他玩家回溯後不能移动 10 秒。",
             "zh_tw": "消耗 100 金幣，每局一次。回溯 60 秒，死者不復活。施放當下 5 格內的其他玩家回溯後不能移動 10 秒。"
           },
-          "duration": 336,
+          "duration": 258,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            2.9,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -113,7 +199,7 @@
         },
         {
           "type": "idle",
-          "duration": 346
+          "duration": 268
         }
       ]
     },
@@ -127,16 +213,70 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "role",
             "pos": [
-              2.5,
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "role",
+            "from": [
+              1.5,
+              1,
+              1.5
+            ],
+            "to": [
+              3.5,
               1,
               3.5
+            ],
+            "duration": 24
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "role",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 16
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "starrailexpress:role_currency",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Task coins ×1.5",
+                "zh_tw": "任務金幣 ×1.5",
+                "zh_cn": "任务金币 ×1.5"
+              }
             ]
           }
         },
@@ -147,11 +287,11 @@
             "zh_cn": "其他玩家听不到你的脚步、看不到疾跑粒子。任务收入增加 50%。",
             "zh_tw": "其他玩家聽不到你的腳步、看不到疾跑粒子。任務收入增加 50%。"
           },
-          "duration": 186,
+          "duration": 143,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            2.65,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -159,7 +299,7 @@
         },
         {
           "type": "idle",
-          "duration": 196
+          "duration": 153
         }
       ]
     }

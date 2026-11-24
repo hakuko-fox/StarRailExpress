@@ -10,7 +10,9 @@
     "zh_tw": "九月一・中立"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_corridor",
+    "starrailexpress:role_tutorial_room"
   ],
   "tags": [],
   "customTags": {},
@@ -25,16 +27,162 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "nine",
             "pos": [
+              1.5,
+              1,
+              1.5
+            ],
+            "heldItem": "trainmurdermystery:note"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "nine",
+            "from": [
+              1.5,
+              1,
+              1.5
+            ],
+            "to": [
               2.5,
               1,
               3.5
+            ],
+            "duration": 23
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            2,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "starrailexpress:role_panel",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Example: 5 players → 4 tasks required",
+                "zh_tw": "例：5 位玩家 → 需要 4 項任務",
+                "zh_cn": "例：5 位玩家 → 需要 4 项任务"
+              }
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            2.5,
+            3,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 95,
+          "color": "white",
+          "text": {
+            "en_us": "5 × 70% = 3.5, rounded up to 4.",
+            "zh_cn": "5 × 70% = 3.5，向上取整成 4。",
+            "zh_tw": "5 × 70% = 3.5，向上取整成 4。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 103
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "nine",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 14
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "nine",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              4.5,
+              1,
+              3.5
+            ],
+            "duration": 15
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            4,
+            0,
+            3
+          ]
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "nine",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 18
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "starrailexpress:role_panel",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "4/4: independent victory",
+                "zh_tw": "4／4：獨立勝利",
+                "zh_cn": "4／4：独立胜利"
+              }
             ]
           }
         },
@@ -45,11 +193,11 @@
             "zh_cn": "完成相当於游玩人数 70% 的任务即可独立获胜，数量向上取整。",
             "zh_tw": "完成相當於遊玩人數 70% 的任務即可獨立獲勝，數量向上取整。"
           },
-          "duration": 186,
+          "duration": 143,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            2.65,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -57,7 +205,7 @@
         },
         {
           "type": "idle",
-          "duration": 196
+          "duration": 153
         }
       ]
     },
@@ -71,27 +219,128 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "nine",
             "pos": [
-              2.5,
+              4.5,
               1,
               3.5
-            ]
+            ],
+            "yaw": 90
           }
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "attacker",
             "pos": [
+              2.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "attacker",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 18
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:enchanted_hit",
+          "pos": [
+            4.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 12,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "attacker",
+            "color": -2716161
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "attacker",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              2.5,
+              1,
+              3.5
+            ],
+            "duration": 43
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "attacker",
+            "color": 0
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "nine",
+            "from": [
               4.5,
               1,
               3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 26
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Guard spent: the 40-second task cycle starts",
+                "zh_tw": "防禦次數用完，開始 40 秒任務循環",
+                "zh_cn": "防御次数用完，开始 40 秒任务循环"
+              }
             ]
           }
         },
@@ -102,11 +351,11 @@
             "zh_cn": "每局挡一次正面致命攻击，让攻击者黑屏、缓速 6 秒。之後任务每 40 秒刷新，每次要在 40 秒内完成。",
             "zh_tw": "每局擋一次正面致命攻擊，讓攻擊者黑屏、緩速 6 秒。之後任務每 40 秒刷新，每次要在 40 秒內完成。"
           },
-          "duration": 312,
+          "duration": 240,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            3,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -114,7 +363,7 @@
         },
         {
           "type": "idle",
-          "duration": 322
+          "duration": 250
         }
       ]
     },
@@ -128,16 +377,123 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "nine",
             "pos": [
               2.5,
               1,
               3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "other",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "create_item_entity",
+          "item": "trainmurdermystery:knife",
+          "pos": [
+            3.5,
+            1.15,
+            3.5
+          ],
+          "motion": [
+            0,
+            0,
+            0
+          ],
+          "count": 1
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "nine",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 22
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 24
+        },
+        {
+          "type": "text",
+          "point": [
+            3.5,
+            2.95,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "September One walks past the weapon without picking it up.",
+            "zh_cn": "九月一走过武器，仍不能拾取或使用。",
+            "zh_tw": "九月一走過武器，仍不能拾取或使用。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "clear_item_entities",
+          "fullScene": true
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            4.5,
+            2.7,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_effects",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Voice and text chat disabled; incoming voice is inaudible",
+                "zh_tw": "語音與文字聊天封鎖，且無法聽到語音",
+                "zh_cn": "语音与文字聊天封锁，且无法听到语音"
+              }
             ]
           }
         },
@@ -148,10 +504,10 @@
             "zh_cn": "不能买、捡起或使用武器。杀手直觉看不到你；你听不到语音，也不能语音或文字聊天。",
             "zh_tw": "不能買、撿起或使用武器。殺手直覺看不到你；你聽不到語音，也不能語音或文字聊天。"
           },
-          "duration": 234,
+          "duration": 180,
           "point": [
             2.5,
-            2.75,
+            3,
             3.5
           ],
           "color": "white",
@@ -160,7 +516,7 @@
         },
         {
           "type": "idle",
-          "duration": 244
+          "duration": 190
         }
       ]
     }

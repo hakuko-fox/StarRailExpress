@@ -10,7 +10,8 @@
     "zh_tw": "艾爾斯・殺手"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_room",
+    "starrailexpress:role_tutorial_corridor"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "ayers",
             "pos": [
               2.5,
               1,
@@ -40,15 +41,54 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "other",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_effects",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Polite disguise: weapons disabled",
+                "zh_tw": "偽裝斯文：不能使用武器",
+                "zh_cn": "伪装斯文：不能使用武器"
+              }
+            ]
+          }
+        },
+        {
+          "type": "show_controls",
+          "action": "right",
+          "item": "trainmurdermystery:knife",
+          "point": [
+            2.5,
+            1.6,
+            3.5
+          ],
+          "direction": "down",
+          "duration": 30
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
           "type": "starrailexpress:role_key",
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -57,16 +97,97 @@
           "duration": 34
         },
         {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "ayers",
+            "color": -42920
+          }
+        },
+        {
+          "type": "starrailexpress:role_effects",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Evil form: weapons do not enter cooldown",
+                "zh_tw": "真實邪惡：武器不進入冷卻",
+                "zh_cn": "真实邪恶：武器不进入冷却"
+              }
+            ]
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            4.5,
+            2.7,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "idle",
+          "duration": 28
+        },
+        {
+          "type": "starrailexpress:role_key",
+          "parameters": {
+            "point": [
+              2.5,
+              2.4,
+              3.5
+            ],
+            "direction": "down",
+            "duration": 30,
+            "text": "ponder.starrailexpress.ponder.press_skill"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 34
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "ayers",
+            "color": 0
+          }
+        },
+        {
+          "type": "starrailexpress:role_effects",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Return to polite disguise",
+                "zh_tw": "返回偽裝斯文型態",
+                "zh_cn": "返回伪装斯文型态"
+              }
+            ]
+          }
+        },
+        {
           "type": "text",
           "text": {
             "en_us": "Start with a knife, but in the polite disguise you cannot use weapons or see killer instinct. Press G to switch (10 s cooldown). In evil form you have blind sight and weapons do not enter cooldown.",
             "zh_cn": "开局带小刀，但在伪装斯文型态下不能使用武器，也没有杀手透视。按 G 切换，冷却 10 秒。邪恶型态有盲视，武器不进入冷却。",
             "zh_tw": "開局帶小刀，但在偽裝斯文型態下不能使用武器，也沒有殺手透視。按 G 切換，冷卻 10 秒。邪惡型態有盲視，武器不進入冷卻。"
           },
-          "duration": 366,
+          "duration": 281,
           "point": [
-            2.5,
-            2.75,
+            4.5,
+            3,
             3.5
           ],
           "color": "white",
@@ -75,7 +196,7 @@
         },
         {
           "type": "idle",
-          "duration": 376
+          "duration": 291
         }
       ]
     },
@@ -89,29 +210,128 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "ayers",
             "pos": [
               2.5,
               1,
               3.5
-            ],
-            "heldItem": "trainmurdermystery:knife"
+            ]
           }
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "moving",
             "pos": [
               5.5,
               1,
               1.5
             ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "quiet",
+            "pos": [
+              3.5,
+              1,
+              5.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_ambience",
+          "parameters": {
+            "color": 329481,
+            "alpha": 0.55,
+            "mode": "fog"
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "moving",
+            "from": [
+              5.5,
+              1,
+              1.5
+            ],
+            "to": [
+              4.5,
+              1,
+              3.5
+            ],
+            "duration": 26
+          }
+        },
+        {
+          "type": "play_sound",
+          "sound": "minecraft:block.wood.step",
+          "soundVolume": 0.65,
+          "pitch": 1,
+          "source": "players"
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            4.5,
+            2.4,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 5,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "moving",
+            "color": -722689
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            4.5,
+            3.05,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "Only areas reached by sound gradually become visible.",
+            "zh_cn": "有声音经过的位置才逐渐显现。",
+            "zh_tw": "有聲音經過的位置才逐漸顯現。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "starrailexpress:role_mood",
+          "parameters": {
+            "before": 0.82,
+            "after": 0.72
           }
         },
         {
@@ -121,11 +341,11 @@
             "zh_cn": "盲视使世界预设全黑，有声音传播的位置才逐渐显现。理智流失速度为 50%，体力为 120%。",
             "zh_tw": "盲視使世界預設全黑，有聲音傳播的位置才逐漸顯現。理智流失速度為 50%，體力為 120%。"
           },
-          "duration": 270,
+          "duration": 207,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            3,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -133,7 +353,7 @@
         },
         {
           "type": "idle",
-          "duration": 280
+          "duration": 217
         }
       ]
     }

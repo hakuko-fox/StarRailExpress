@@ -10,7 +10,8 @@
     "zh_tw": "菈菲娜・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_common",
+    "starrailexpress:role_tutorial_corridor"
   ],
   "tags": [],
   "customTags": {},
@@ -30,7 +31,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "lavanaii",
             "pos": [
               2.5,
               1,
@@ -39,45 +40,102 @@
           }
         },
         {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "comparison",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
           "type": "starrailexpress:role_scale",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "lavanaii",
             "scale": 1.25
           }
         },
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "lavanaii",
             "from": [
               2.5,
               1,
               3.5
             ],
             "to": [
-              1.5,
+              3.5,
               1,
-              1.5
+              3.5
             ],
-            "duration": 45
+            "duration": 38
           }
         },
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "comparison",
             "from": [
-              1.5,
+              4.5,
               1,
-              1.5
+              3.5
             ],
             "to": [
-              1.5,
+              5.5,
+              1,
+              3.5
+            ],
+            "duration": 25
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            3.5,
+            3.5,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 78,
+          "color": "white",
+          "text": {
+            "en_us": "The larger model walks more slowly and sprints at double speed.",
+            "zh_cn": "外观变大，走路较慢。冲刺时速度加倍。",
+            "zh_tw": "外觀變大，走路較慢。衝刺時速度加倍。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 86
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "lavanaii",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
               1,
               5.5
             ],
-            "duration": 19
+            "duration": 16
           }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            1,
+            6
+          ]
         },
         {
           "type": "text",
@@ -86,10 +144,10 @@
             "zh_cn": "外观为 1.25 倍，碰撞体积不变，仍能穿门。步行速度为 75%，疾跑速度为 200%。",
             "zh_tw": "外觀為 1.25 倍，碰撞體積不變，仍能穿門。步行速度為 75%，疾跑速度為 200%。"
           },
-          "duration": 264,
+          "duration": 203,
           "point": [
-            1.5,
-            2.8,
+            3.5,
+            3,
             5.5
           ],
           "color": "white",
@@ -98,7 +156,7 @@
         },
         {
           "type": "idle",
-          "duration": 274
+          "duration": 213
         }
       ]
     },
@@ -112,12 +170,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "knife_case",
             "pos": [
               2.5,
               1,
@@ -128,9 +186,132 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "gun_case",
+            "pos": [
+              3.5,
+              1,
+              5.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "attacker",
             "pos": [
               4.5,
+              1,
+              3.5
+            ],
+            "heldItem": "trainmurdermystery:knife"
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:damage_indicator",
+          "pos": [
+            2.5,
+            1.8,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 5,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_hold",
+          "parameters": {
+            "linkId": "attacker",
+            "item": "trainmurdermystery:revolver"
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:damage_indicator",
+          "pos": [
+            3.5,
+            1.8,
+            5.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 5,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "text",
+          "point": [
+            4.5,
+            3,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 91,
+          "color": "white",
+          "text": {
+            "en_us": "The lethal hits have different timers. Neither target drops immediately.",
+            "zh_cn": "两次致命伤的倒数不同，受伤当下都不会倒地。",
+            "zh_tw": "兩次致命傷的倒數不同，受傷當下都不會倒地。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 99
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 30
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "gun_case",
+            "pos": [
+              3.5,
+              1,
+              5.5
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 24
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "knife_case",
+            "pos": [
+              2.5,
               1,
               3.5
             ]
@@ -143,11 +324,11 @@
             "zh_cn": "承受致死的刀伤後 15 秒才死亡；承受致死的枪伤後 10 秒才死亡。",
             "zh_tw": "承受致死的刀傷後 15 秒才死亡；承受致死的槍傷後 10 秒才死亡。"
           },
-          "duration": 204,
+          "duration": 157,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            1.7,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -155,7 +336,7 @@
         },
         {
           "type": "idle",
-          "duration": 214
+          "duration": 167
         }
       ]
     }

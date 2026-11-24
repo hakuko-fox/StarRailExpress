@@ -10,7 +10,8 @@
     "zh_tw": "紫苑・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_room"
   ],
   "tags": [],
   "customTags": {},
@@ -25,14 +26,25 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "ziyuan",
             "pos": [
-              2.5,
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "passenger",
+            "pos": [
+              4.5,
               1,
               3.5
             ]
@@ -41,19 +53,152 @@
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "ziyuan",
             "from": [
-              2.5,
-              1,
-              3.5
-            ],
-            "to": [
               1.5,
               1,
               1.5
             ],
-            "duration": 65
+            "to": [
+              2.5,
+              1,
+              3.5
+            ],
+            "duration": 56
           }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "passenger",
+            "from": [
+              4.5,
+              1,
+              3.5
+            ],
+            "to": [
+              5.5,
+              1,
+              1.5
+            ],
+            "duration": 13
+          }
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            5.5,
+            2.7,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "idle",
+          "duration": 16
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            2.5,
+            2.7,
+            3.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "spawn_particles",
+          "particle": "minecraft:note",
+          "pos": [
+            5.5,
+            2.7,
+            1.5
+          ],
+          "distribution": "sphere",
+          "spread": [
+            0.4,
+            0.3,
+            0.4
+          ],
+          "count": 6,
+          "duration": 16,
+          "motion": [
+            0,
+            0.02,
+            0
+          ]
+        },
+        {
+          "type": "starrailexpress:role_effects",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Speed 20% · incoming volume 20% · outgoing range 180%",
+                "zh_tw": "移速 20%・收音 20%・傳播距離 180%",
+                "zh_cn": "移速 20%?收音 20%?传播距离 180%"
+              }
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            2.5,
+            2.92,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 76,
+          "color": "white",
+          "text": {
+            "en_us": "The three-minute death is rolled once at the start of the round.",
+            "zh_cn": "三分钟後是否死亡，开局就已掷定。",
+            "zh_tw": "三分鐘後是否死亡，開局就已擲定。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 84
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 24
         },
         {
           "type": "text",
@@ -62,11 +207,11 @@
             "zh_cn": "角色出现机率为 1%。移动速度和接收到的其他玩家语音音量为原本的 20%，语音传播距离为 180%。开局有 80% 机率於三分钟後死亡。",
             "zh_tw": "角色出現機率為 1%。移動速度和接收到的其他玩家語音音量為原本的 20%，語音傳播距離為 180%。開局有 80% 機率於三分鐘後死亡。"
           },
-          "duration": 408,
+          "duration": 313,
           "point": [
-            1.5,
-            2.7,
-            1.5
+            3.5,
+            2.85,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -74,7 +219,7 @@
         },
         {
           "type": "idle",
-          "duration": 418
+          "duration": 323
         }
       ]
     },
@@ -88,16 +233,70 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "role",
             "pos": [
-              2.5,
+              5.5,
               1,
               3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "role",
+            "from": [
+              5.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 24
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "role",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 16
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "starrailexpress:role_currency",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Task coins ×1.5",
+                "zh_tw": "任務金幣 ×1.5",
+                "zh_cn": "任务金币 ×1.5"
+              }
             ]
           }
         },
@@ -108,11 +307,11 @@
             "zh_cn": "其他玩家听不到你的脚步、看不到疾跑粒子。任务收入增加 50%。",
             "zh_tw": "其他玩家聽不到你的腳步、看不到疾跑粒子。任務收入增加 50%。"
           },
-          "duration": 186,
+          "duration": 143,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            2.65,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -120,7 +319,7 @@
         },
         {
           "type": "idle",
-          "duration": 196
+          "duration": 153
         }
       ]
     }

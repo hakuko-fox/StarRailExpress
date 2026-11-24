@@ -10,7 +10,8 @@
     "zh_tw": "阿米・平民"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_carriage",
+    "starrailexpress:role_tutorial_graveyard"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_carriage"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "amimi",
             "pos": [
               2.5,
               1,
@@ -41,11 +42,33 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "left",
             "pos": [
-              4.5,
+              1.5,
+              1,
+              1.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "right",
+            "pos": [
+              3.5,
               1,
               3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "behind",
+            "pos": [
+              3.5,
+              1,
+              5.5
             ]
           }
         },
@@ -54,11 +77,11 @@
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill"
           }
         },
@@ -69,18 +92,64 @@
         {
           "type": "starrailexpress:role_walk",
           "parameters": {
-            "linkId": "target",
+            "linkId": "left",
             "from": [
-              4.5,
+              1.5,
+              1,
+              1.5
+            ],
+            "to": [
+              1.5,
+              1,
+              0.5
+            ],
+            "duration": 18,
+            "yaw": 180
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "right",
+            "from": [
+              3.5,
               1,
               3.5
             ],
             "to": [
               5.5,
               1,
-              1.5
+              3.5
             ],
-            "duration": 38
+            "duration": 18,
+            "yaw": -90
+          }
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "behind",
+            "from": [
+              3.5,
+              1,
+              5.5
+            ],
+            "to": [
+              4.5,
+              1,
+              5.5
+            ],
+            "duration": 18,
+            "yaw": -90
+          }
+        },
+        {
+          "type": "starrailexpress:role_timer",
+          "parameters": {
+            "progress": [
+              1,
+              0
+            ]
           }
         },
         {
@@ -90,10 +159,10 @@
             "zh_cn": "消耗 50 金币，冷却 60 秒。所有其他玩家强制背向你移动 5 秒。",
             "zh_tw": "消耗 50 金幣，冷卻 60 秒。所有其他玩家強制背向你移動 5 秒。"
           },
-          "duration": 210,
+          "duration": 161,
           "point": [
             2.5,
-            2.75,
+            3,
             3.5
           ],
           "color": "white",
@@ -102,7 +171,7 @@
         },
         {
           "type": "idle",
-          "duration": 220
+          "duration": 171
         }
       ]
     },
@@ -116,16 +185,55 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_graveyard"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "subject",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_player",
+          "parameters": {
+            "linkId": "observer",
             "pos": [
               2.5,
               1,
               3.5
+            ],
+            "heldItem": "trainmurdermystery:note"
+          }
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "subject",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 18
+        },
+        {
+          "type": "starrailexpress:role_render",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Fox hides role and cause of death",
+                "zh_tw": "狐的效果隱藏身分和死因",
+                "zh_cn": "狐的效果隐藏身分和死因"
+              }
             ]
           }
         },
@@ -136,10 +244,10 @@
             "zh_cn": "其他人无法从你或被你杀死的玩家的屍体看出角色与死因。",
             "zh_tw": "其他人無法從你或被你殺死的玩家的屍體看出角色與死因。"
           },
-          "duration": 156,
+          "duration": 120,
           "point": [
-            2.5,
-            2.75,
+            4.5,
+            1.55,
             3.5
           ],
           "color": "white",
@@ -148,7 +256,7 @@
         },
         {
           "type": "idle",
-          "duration": 166
+          "duration": 130
         }
       ]
     }

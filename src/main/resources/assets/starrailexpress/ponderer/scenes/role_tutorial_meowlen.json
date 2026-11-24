@@ -10,7 +10,8 @@
     "zh_tw": "貓倫・中立"
   },
   "structures": [
-    "starrailexpress:role_tutorial_common"
+    "starrailexpress:role_tutorial_room",
+    "starrailexpress:role_tutorial_corridor"
   ],
   "tags": [],
   "customTags": {},
@@ -25,12 +26,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "meowlen",
             "pos": [
               2.5,
               1,
@@ -41,7 +42,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "steve",
             "pos": [
               4.5,
               1,
@@ -52,7 +53,7 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "second",
+            "linkId": "alex",
             "pos": [
               5.5,
               1,
@@ -65,11 +66,11 @@
           "parameters": {
             "point": [
               2.5,
-              2.75,
+              2.4,
               3.5
             ],
             "direction": "down",
-            "duration": 28,
+            "duration": 30,
             "text": "ponder.starrailexpress.ponder.press_skill",
             "key": "E"
           }
@@ -81,21 +82,35 @@
         {
           "type": "starrailexpress:role_screen",
           "parameters": {
-            "title": {
-              "en_us": "Choose Quiz Targets",
-              "zh_cn": "选择测验对象",
-              "zh_tw": "選擇測驗對象"
-            },
-            "hint": {
-              "en_us": "Select two different players and confirm.",
-              "zh_cn": "选两名不同的玩家并确认。",
-              "zh_tw": "選兩名不同的玩家並確認。"
-            },
             "players": [
               "Steve",
               "Alex"
             ],
-            "columns": 2
+            "columns": 2,
+            "title": {
+              "en_us": "Choose Quiz Targets",
+              "zh_tw": "選擇測驗對象",
+              "zh_cn": "选择测验对象"
+            },
+            "hint": {
+              "en_us": "Choose two different players and confirm.",
+              "zh_tw": "選兩名不同的玩家並確認。",
+              "zh_cn": "选两名不同的玩家并确认。"
+            }
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "steve",
+            "color": -2716161
+          }
+        },
+        {
+          "type": "starrailexpress:role_outline",
+          "parameters": {
+            "linkId": "alex",
+            "color": -2716161
           }
         },
         {
@@ -105,10 +120,10 @@
             "zh_cn": "按 E 开启选单，选两名不同的其他玩家并确认，冷却 70 秒。你要成为唯一存活玩家才能独立获胜。",
             "zh_tw": "按 E 開啟選單，選兩名不同的其他玩家並確認，冷卻 70 秒。你要成為唯一存活玩家才能獨立獲勝。"
           },
-          "duration": 288,
+          "duration": 221,
           "point": [
             2.5,
-            2.75,
+            3,
             3.5
           ],
           "color": "white",
@@ -117,7 +132,7 @@
         },
         {
           "type": "idle",
-          "duration": 298
+          "duration": 231
         }
       ]
     },
@@ -131,12 +146,12 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_room"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "meowlen",
             "pos": [
               2.5,
               1,
@@ -147,7 +162,107 @@
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "target",
+            "linkId": "quiz_target",
+            "pos": [
+              4.5,
+              1,
+              3.5
+            ]
+          }
+        },
+        {
+          "type": "starrailexpress:role_pose",
+          "parameters": {
+            "linkId": "quiz_target",
+            "pose": "standing"
+          }
+        },
+        {
+          "type": "starrailexpress:role_panel",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "7/8 correct → wrong answer → 0/8",
+                "zh_tw": "連對 7／8 → 答錯 → 0／8",
+                "zh_cn": "连对 7／8 → 答错 → 0／8"
+              }
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            4.5,
+            3.05,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 82,
+          "color": "white",
+          "text": {
+            "en_us": "One wrong answer resets the streak, but the quiz continues.",
+            "zh_cn": "答错一次只重设连对进度，测验还没结束。",
+            "zh_tw": "答錯一次只重設連對進度，測驗還沒結束。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 90
+        },
+        {
+          "type": "starrailexpress:role_panel",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Second wrong answer or timeout → attempt failed",
+                "zh_tw": "第二次答錯或逾時 → 本次失敗",
+                "zh_cn": "第二次答错或逾时 → 本次失败"
+              }
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "point": [
+            2.5,
+            3.05,
+            3.5
+          ],
+          "placeNearTarget": true,
+          "attachKeyFrame": true,
+          "duration": 86,
+          "color": "white",
+          "text": {
+            "en_us": "The first failed quiz is recorded, but the target survives.",
+            "zh_cn": "第一次测验失败会留下纪录，但目标仍存活。",
+            "zh_tw": "第一次測驗失敗會留下紀錄，但目標仍存活。"
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 94
+        },
+        {
+          "type": "starrailexpress:role_panel",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Second failed quiz for the same player → death",
+                "zh_tw": "同一玩家第二次測驗失敗 → 死亡",
+                "zh_cn": "同一玩家第二次测验失败 → 死亡"
+              }
+            ]
+          }
+        },
+        {
+          "type": "idle",
+          "duration": 22
+        },
+        {
+          "type": "starrailexpress:role_death",
+          "parameters": {
+            "linkId": "quiz_target",
             "pos": [
               4.5,
               1,
@@ -162,10 +277,10 @@
             "zh_cn": "目标不能移动，须在 60 秒内连续答对 8 题。答错一次重设连对进度；答错两次或逾时算失败。累计两次失败即死亡，通过也不会清除失败。",
             "zh_tw": "目標不能移動，須在 60 秒內連續答對 8 題。答錯一次重設連對進度；答錯兩次或逾時算失敗。累計兩次失敗即死亡，通過也不會清除失敗。"
           },
-          "duration": 396,
+          "duration": 304,
           "point": [
-            2.5,
-            2.75,
+            4.5,
+            1.65,
             3.5
           ],
           "color": "white",
@@ -174,7 +289,7 @@
         },
         {
           "type": "idle",
-          "duration": 406
+          "duration": 314
         }
       ]
     },
@@ -188,16 +303,89 @@
       "steps": [
         {
           "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common"
+          "structure": "starrailexpress:role_tutorial_corridor"
         },
         {
           "type": "starrailexpress:role_player",
           "parameters": {
-            "linkId": "actor",
+            "linkId": "meowlen",
             "pos": [
               2.5,
               1,
               3.5
+            ]
+          }
+        },
+        {
+          "type": "create_item_entity",
+          "item": "trainmurdermystery:knife",
+          "pos": [
+            3.5,
+            1.15,
+            3.5
+          ],
+          "motion": [
+            0,
+            0,
+            0
+          ],
+          "count": 1
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "meowlen",
+            "from": [
+              2.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              3.5
+            ],
+            "duration": 18
+          }
+        },
+        {
+          "type": "clear_item_entities",
+          "fullScene": true
+        },
+        {
+          "type": "starrailexpress:role_walk",
+          "parameters": {
+            "linkId": "meowlen",
+            "from": [
+              3.5,
+              1,
+              3.5
+            ],
+            "to": [
+              3.5,
+              1,
+              5.5
+            ],
+            "duration": 14
+          }
+        },
+        {
+          "type": "indicate_success",
+          "blockPos": [
+            3,
+            0,
+            5
+          ]
+        },
+        {
+          "type": "starrailexpress:role_currency",
+          "parameters": {
+            "lines": [
+              {
+                "en_us": "Weapon left behind; task coins ×1.5",
+                "zh_tw": "未撿起武器；任務金幣 ×1.5",
+                "zh_cn": "未捡起武器；任务金币 ×1.5"
+              }
             ]
           }
         },
@@ -208,11 +396,11 @@
             "zh_cn": "不能买、捡起或使用武器。脚步与疾跑粒子隐藏，任务收入增加 50%。",
             "zh_tw": "不能買、撿起或使用武器。腳步與疾跑粒子隱藏，任務收入增加 50%。"
           },
-          "duration": 198,
+          "duration": 152,
           "point": [
-            2.5,
-            2.75,
-            3.5
+            3.5,
+            3,
+            5.5
           ],
           "color": "white",
           "placeNearTarget": true,
@@ -220,7 +408,7 @@
         },
         {
           "type": "idle",
-          "duration": 208
+          "duration": 162
         }
       ]
     }
