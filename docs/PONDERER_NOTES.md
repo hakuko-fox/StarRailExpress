@@ -235,8 +235,17 @@ python tools/verify_ponder_structures.py
 ```bat
 python -c "import json,glob; [json.load(open(f,encoding='utf-8-sig')) for f in glob.glob('src/main/resources/assets/starrailexpress/ponderer/**/*.json', recursive=True)]"
 python -c "import gzip,glob; [print(f, b'minecraft:' in gzip.decompress(open(f,'rb').read())) for f in glob.glob('src/main/resources/assets/starrailexpress/ponder/*.nbt')]"
+python tools/extract_ponder_role_facts.py
+python tools/gen_ponder_scenes.py
+python tools/audit_ponder_authoring.py
+python tools/verify_ponder_scenes.py
+python -m py_compile tools/gen_ponder_scenes.py tools/extract_ponder_role_facts.py tools/audit_ponder_authoring.py
 gradlew compileJava --offline
 ```
+
+生成/自检结果应满足：`scenes written: 269`、`content entries: 272`、
+`audited scenes: 269` / `violations: 0`、`scenes checked: 272` / `errors: 0`
+（只剩酒保 / 小丑两条既有自定义文案 warning）。
 
 人工检查：
 - 每个 `text` 对象都有 `en_us`、`zh_cn`、`zh_tw`。
@@ -246,6 +255,21 @@ gradlew compileJava --offline
 - 涉及尸体时使用 `trainmurdermystery:player_body`。
 - 场景没有原版方块搭房；门、铁门、房间门都用本模组门。
 - 启动客户端后检查 `run/logs/latest.log`，必须出现 `loaded N scenes`（N 大于 0），且没有 `scene ... unavailable` 报错。
+- 初始物品必须从代码抽取，不许用 `trainmurdermystery:note` 兜底。抽取覆盖四处：
+  `RoleInitialItems.INITIAL_ITEMS_MAP`、职业实现类的 `getDefaultItems()`（含匿名类）、
+  `ModRolesInitialEventRegister` 的直接发放、`RoleData` 初始化（如垂钓者的钓竿）。
+  全部重跑后 `ponder_role_facts.json` 应为 `withInitialItems: 75`。
+- 便签自检：生成结果里只剩 `awesome_binglus` 可以出现 `trainmurdermystery:note`
+  （代码里真实开局发 4 张便签）。其余职业的 `items` 字段与步骤都不该有便签；
+  确实没有初始物品的职业用 `starrailexpress:role_ponder_<职业 id>` 虚拟组件占位。
+- 跨幕重复：同一句介绍只能出现在一幕。保留顺序是
+  `form` / `domain` > `skill` > `shop` / `items` > `panel` / `details`；
+  重复幕若被去重后没有正文就整段删除。`audit_ponder_authoring.py` 会检查重复正文。
+- 技能键只放在真正讲技能、按键、施放或切换键的地方。右键 / 左键 / 按住 / 蹲下是道具
+  或鼠标操作，用 `show_controls` 表达，不能叠 `role_key`；审计脚本会报
+  `role_key without skill introduction`。
+- 垂钓者场景只有 `faction` / `items` / `details` 三幕，`items` 幕用
+  `noellesroles:angler_rod` 演示收竿与潜行右键乘坐，没有便签、没有 `role_key`。
 
 ## 12. 现有示例
 
@@ -1063,4 +1087,17 @@ indicate_success [2,0,4] + idle 80 + rotate_camera_y
 > 剩余验证：静态自检与生成已全部通过，但还没有在客户端逐场景实机播放；
 > 需要在兄弟目录齐备的环境里编译，并确认日志出现 `loaded N scenes` 且无
 > `scene ... unavailable`，尤其要看新增的电报 / 广播 / 击退覆盖层是否正常显示。
+
+## 27. 隔离物品绑定后「俺寻思」按钮打不开（2026-11-24）
+
+- 现象：把职业思索注册到虚拟组件 `starrailexpress:role_ponder_<职业>` 之后，职业介绍页点击
+  「俺寻思」没有任何反应，只弹出提示。
+- 根因：`RolePonderIsolation.open()` 仍用 `PonderUI.of(虚拟组件)` 去 Ponder 注册表查找分段；
+  隔离后这个虚拟组件未必能在索引里查到，查不到就直接返回 false。
+- 修复：查不到（或查找抛异常）时不再返回 false，改用 Ponderer 公开的编译 API
+  `RuntimeAccess.engineFor(scene).compile(new CompileRequest(SceneSnapshot.of(scene), i))`
+  把该职业的所有分段直接编译成 `PonderScene` 后打开；退出界面时关闭各分段的播放会话。
+  这是一条兜底路径，虚拟组件能正常查到时仍走原来的官方 UI。
+- 验证：点击任意职业的「俺寻思」能进入该职业的 Ponder 界面并保留分段切换；
+  日志里若出现「改用直接编译打开」说明走了兜底，不应再出现「未能打开职业思索场景」。
 

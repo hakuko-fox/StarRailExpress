@@ -2,7 +2,8 @@
   "formatVersion": 1,
   "id": "starrailexpress:role_tutorial.noisemaker",
   "items": [
-    "noellesroles:radio"
+    "noellesroles:radio",
+    "minecraft:candle"
   ],
   "title": {
     "en_us": "Noisemaker",
@@ -161,20 +162,6 @@
             "spacing": 0.7,
             "max": 4
           }
-        },
-        {
-          "type": "starrailexpress:role_key",
-          "parameters": {
-            "point": [
-              3.0,
-              2.9,
-              3.0
-            ],
-            "direction": "down",
-            "duration": 60,
-            "keyBind": "ability"
-          },
-          "attachKeyFrame": true
         },
         {
           "type": "create_item_entity",

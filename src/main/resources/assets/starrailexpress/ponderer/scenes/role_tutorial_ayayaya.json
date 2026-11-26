@@ -2,9 +2,7 @@
   "formatVersion": 1,
   "id": "starrailexpress:role_tutorial.ayayaya",
   "items": [
-    "trainmurdermystery:note",
-    "trainmurdermystery:bat",
-    "trainmurdermystery:knife"
+    "starrailexpress:role_ponder_ayayaya"
   ],
   "title": {
     "en_us": "Bunbunmaru News",
@@ -136,20 +134,6 @@
             "linkId": "ayayaya_skill_target_0",
             "outline": -15062470
           }
-        },
-        {
-          "type": "starrailexpress:role_key",
-          "parameters": {
-            "point": [
-              3.0,
-              2.9,
-              3.0
-            ],
-            "direction": "down",
-            "duration": 60,
-            "keyBind": "ability"
-          },
-          "attachKeyFrame": true
         },
         {
           "type": "create_item_entity",

@@ -2,9 +2,7 @@
   "formatVersion": 1,
   "id": "starrailexpress:role_tutorial.shikieiki",
   "items": [
-    "trainmurdermystery:note",
-    "trainmurdermystery:bat",
-    "trainmurdermystery:knife"
+    "trainmurdermystery:derringer"
   ],
   "title": {
     "en_us": "Shikieiki",
@@ -124,6 +122,20 @@
           }
         },
         {
+          "type": "starrailexpress:role_items",
+          "attachKeyFrame": true,
+          "parameters": {
+            "role": "shikieiki",
+            "origin": [
+              1.6,
+              1.55,
+              1.6
+            ],
+            "spacing": 0.7,
+            "max": 4
+          }
+        },
+        {
           "type": "create_item_entity",
           "pos": [
             2.2,
@@ -186,50 +198,6 @@
         {
           "type": "idle",
           "duration": 200
-        },
-        {
-          "type": "rotate_camera_y",
-          "degrees": 12.0,
-          "duration": 50,
-          "attachKeyFrame": true
-        }
-      ]
-    },
-    {
-      "id": "screen",
-      "title": {
-        "en_us": "Shikieiki",
-        "zh_cn": "阎魔姬",
-        "zh_tw": "閻魔姬"
-      },
-      "steps": [
-        {
-          "type": "show_structure",
-          "structure": "starrailexpress:role_tutorial_common",
-          "scale": 1.0,
-          "attachKeyFrame": true
-        },
-        {
-          "type": "starrailexpress:role_player",
-          "attachKeyFrame": true,
-          "parameters": {
-            "pos": [
-              3.0,
-              1.0,
-              3.0
-            ],
-            "yaw": 180.0,
-            "linkId": "shikieiki_main"
-          }
-        },
-        {
-          "type": "starrailexpress:role_screen",
-          "attachKeyFrame": true,
-          "parameters": {
-            "title": "ponder.starrailexpress.screen.select_player",
-            "hint": "ponder.starrailexpress.screen.pick_hint",
-            "columns": 6
-          }
         },
         {
           "type": "rotate_camera_y",

@@ -1368,6 +1368,7 @@ public class ModRoles {
                     Integer.MAX_VALUE, true))
             .setRoleData(org.agmas.noellesroles.role_data.neutral.MetalMonsterRoleData::new)
             .setNeutrals(true)
+            .setSpecialMapRole(MapSpecialFeatures.BIGMAP)
             .setDefaultMax(1)
             .setDefaultEnableChance(1000)
             .setCanBeRandomedByOtherRoles(false)
