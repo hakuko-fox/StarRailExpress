@@ -24,6 +24,7 @@ import io.wifi.starrailexpress.client.data.ClientRoleRosterCache;
 import io.wifi.starrailexpress.roster.RoleRosterManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.level.ServerLevel;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.client.utils.RoleDisabledUtilsForClient;
@@ -47,6 +48,18 @@ public class SREDisableManager {
         return areas.areasSettings.disabledModifiers;
     }
 
+    public static boolean isRoleDisabled(SRERole role, ServerLevel level) {
+        return role == null
+                || areaDisabledRoles(AreasWorldComponent.KEY.get(level)).contains(role.identifier().toString())
+                || (config.disabled != null && config.disabled.contains(role.identifier().toString()))
+                || !RoleRosterManager.isRoleEnabled(role);
+    }
+
+    public static boolean isModifierDisabled(SREModifier modifier, ServerLevel level) {
+        return areaDisabledModifiers(AreasWorldComponent.KEY.get(level)).contains(modifier.identifier().toString())
+                || (config.disabledModifiers != null && config.disabledModifiers.contains(modifier.identifier().toString()))
+                || !RoleRosterManager.isModifierEnabled(modifier);
+    }
     public static boolean isRoleDisabled(SRERole role) {
         if (role == null)
             return true;

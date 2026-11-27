@@ -219,6 +219,11 @@ public class SREMurderGameMode extends GameMode {
         }
     }
 
+    public static boolean isModifierRotationEligible(SREModifier modifier, ServerLevel level) {
+        int maximum = Harpymodloader.MODIFIER_MAX.getOrDefault(modifier.identifier(), 1);
+        return maximum != 0 && maximum != -1 && !SREDisableManager.isModifierDisabled(modifier, level);
+    }
+
     public static void assignModifiers(int desiredModifierCount, ServerLevel serverWorld,
             SREGameWorldComponent gameWorldComponent,
             List<ServerPlayer> players) {
@@ -264,6 +269,9 @@ public class SREMurderGameMode extends GameMode {
         }
         ArrayList<ServerPlayer> shuffledPlayers = new ArrayList<>(players);
         for (var mod : allModifiers) {
+            if (modifierRotation.isEnabled() && !isModifierRotationEligible(mod, serverWorld)) {
+                continue;
+            }
             Collections.shuffle(shuffledPlayers);
             Collections.shuffle(shuffledPlayers);
 
@@ -286,7 +294,7 @@ public class SREMurderGameMode extends GameMode {
                     }
                 }
             }
-            if (SREDisableManager.isModifierDisabled(mod)) {
+            if (SREDisableManager.isModifierDisabled(mod, serverWorld)) {
                 continue;
             }
 
@@ -356,6 +364,7 @@ public class SREMurderGameMode extends GameMode {
         if (modifierRotation.isEnabled()) {
             Set<SREModifier> assignedThisRound = tempModifierAssignments.values().stream()
                     .flatMap(Collection::stream)
+                    .filter(modifier -> isModifierRotationEligible(modifier, serverWorld))
                     .collect(Collectors.toSet());
             for (SREModifier modifier : assignedThisRound)
                 modifierRotation.markPlayed(modifier.identifier().toString());

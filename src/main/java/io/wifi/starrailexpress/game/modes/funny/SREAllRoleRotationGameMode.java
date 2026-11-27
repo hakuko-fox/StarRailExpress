@@ -15,8 +15,10 @@
 
 package io.wifi.starrailexpress.game.modes.funny;
 
+import io.wifi.starrailexpress.api.EggRoleInterface;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.MurderTimeEventComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -41,12 +43,12 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.events.OnGamePlayerRolesConfirm;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentManager;
-import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
-import io.wifi.starrailexpress.api.AreasSettingUtils.MapSpecialFeatures;
+import org.agmas.harpymodloader.modded_murder.ModdedWeights;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * 全職業輪跑模式（sre:all_role_rotation）。
@@ -148,16 +150,29 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
+        boolean eggAssigned = false;
+        List<ServerPlayer> companionPlayers = new ArrayList<>(players);
+        companionPlayers.removeIf(player -> forcedRoles.containsKey(player.getUUID()));
+        Collections.shuffle(companionPlayers, new Random(random.nextLong()));
         for (Map.Entry<UUID, SRERole> entry : forcedRoles.entrySet()) {
             Player player = serverWorld.getPlayerByUUID(entry.getKey());
             SRERole role = entry.getValue();
-            if (player instanceof ServerPlayer serverPlayer && players.contains(serverPlayer) && role != null
-                    && (baseEligible(role) || io.wifi.starrailexpress.backpack.BackpackManager
-                            .reservedRoleChoice(serverPlayer.getUUID()) != null)) {
-                roleAssignments.put(serverPlayer, role);
-                forcedPlayers.add(serverPlayer);
-                int occupied = Math.max(1, role.getOccupiedRoleCount());
-                switch (role.getRoleType()) {
+            if (!(player instanceof ServerPlayer serverPlayer) || !players.contains(serverPlayer)
+                    || role == null || !isRotationEligible(role, serverWorld, companionPlayers.size() + 1)) {
+                continue;
+            }
+            Set<SRERole> group = companionGroup(role);
+            boolean hasEgg = group.stream().anyMatch(EggRoleInterface.class::isInstance);
+            if (hasEgg && eggAssigned) {
+                continue;
+            }
+            eggAssigned |= hasEgg;
+            for (SRERole member : group) {
+                ServerPlayer recipient = member == role ? serverPlayer : companionPlayers.removeLast();
+                roleAssignments.put(recipient, member);
+                forcedPlayers.add(recipient);
+                int occupied = Math.max(1, member.getOccupiedRoleCount());
+                switch (member.getRoleType()) {
                     case 4 -> killerCount -= occupied;
                     case 5 -> vigilanteCount -= occupied;
                     case 2, 3 -> neutralsCount -= occupied;
@@ -183,27 +198,34 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
             };
             selected.add(role.identifier().toString());
         }
-        List<SRERole> killers = pickForFaction(eligibleKillers(), killerCount, state, random, selectedKillers);
-        List<SRERole> vigilantes = pickForFaction(eligibleVigilantes(), vigilanteCount, state, random,
+        int availableSlots = players.size() - forcedPlayers.size();
+        Predicate<SRERole> eligible =
+                role -> isRotationEligible(role, serverWorld, availableSlots);
+        var killerFilter = eligible.and(SREAllRoleRotationGameMode::isKillerEligible);
+        var vigilanteFilter = eligible.and(SREAllRoleRotationGameMode::isVigilanteEligible);
+        var neutralFilter = eligible.and(SREAllRoleRotationGameMode::isNeutralEligible);
+        var civilianFilter = eligible.and(SREAllRoleRotationGameMode::isCivilianEligible);
+        List<SRERole> killers = pickForFaction(filterRoles(killerFilter), killerCount, state, random, selectedKillers);
+        List<SRERole> vigilantes = pickForFaction(filterRoles(vigilanteFilter), vigilanteCount, state, random,
                 selectedVigilantes);
-        List<SRERole> neutrals = pickForFaction(eligibleNeutrals(), neutralsCount, state, random, selectedNeutrals);
+        List<SRERole> neutrals = pickForFaction(filterRoles(neutralFilter), neutralsCount, state, random, selectedNeutrals);
 
         // 處理 setOccupiedRoleCount(0) 的職業：不佔用原本名額，額外補充同陣營職業
         long zeroKillers = killers.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
         long zeroVigilantes = vigilantes.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
         long zeroNeutrals = neutrals.stream().filter(r -> r.getOccupiedRoleCount() <= 0).count();
         if (zeroKillers > 0)
-            killers.addAll(pickForFaction(eligibleKillers(), (int) zeroKillers, state, random, selectedKillers));
+            killers.addAll(pickForFaction(filterRoles(killerFilter), (int) zeroKillers, state, random, selectedKillers));
         if (zeroVigilantes > 0)
-            vigilantes.addAll(pickForFaction(eligibleVigilantes(), (int) zeroVigilantes, state, random,
+            vigilantes.addAll(pickForFaction(filterRoles(vigilanteFilter), (int) zeroVigilantes, state, random,
                     selectedVigilantes));
         if (zeroNeutrals > 0)
-            neutrals.addAll(pickForFaction(eligibleNeutrals(), (int) zeroNeutrals, state, random, selectedNeutrals));
+            neutrals.addAll(pickForFaction(filterRoles(neutralFilter), (int) zeroNeutrals, state, random, selectedNeutrals));
 
         int assignedSpecial = killers.size() + vigilantes.size() + neutrals.size();
         int civilianCount = players.size() - assignedSpecial - forcedPlayers.size();
 
-        List<SRERole> civilians = pickForFaction(eligibleCivilians(),
+        List<SRERole> civilians = pickForFaction(filterRoles(civilianFilter),
                 Math.max(0, civilianCount), state, random, selectedCivilians);
 
         // 第三步：合併為 RoleInstance，並處理對立 / 伴生職業（沿用 Murder 邏輯）
@@ -217,13 +239,8 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         for (SRERole r : civilians)
             instances.add(new RoleInstance(UUID.randomUUID(), r));
 
-        instances = RoleAssignmentManager.removeOpposingJobs(instances,
-                RoleAssignmentPool.create("Killer", SREAllRoleRotationGameMode::isKillerEligible),
-                RoleAssignmentPool.create("Neutrals", SREAllRoleRotationGameMode::isNeutralEligible),
-                RoleAssignmentPool.create("Vigilante", SREAllRoleRotationGameMode::isVigilanteEligible),
-                RoleAssignmentPool.create("Civilian", SREAllRoleRotationGameMode::isCivilianEligible),
-                true, 10);
-        instances = RoleAssignmentManager.expandWithCompanionRoles(instances);
+        instances = fitCompanionGroups(instances, availableSlots, eligible, state, random, eggAssigned,
+                roleAssignments.values());
 
         int needCivilian = (players.size() - forcedPlayers.size()) - instances.size();
         for (int i = 0; i < needCivilian; i++)
@@ -239,8 +256,10 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         // 建立加權表
         LinkedHashMap<RoleInstance, Float> hashMap = new LinkedHashMap<>();
         for (RoleInstance ri : instances) {
-            hashMap.put(ri,
-                    HarpyModLoaderConfig.HANDLER.instance().roleWeights.getOrDefault(ri.role().getIdentifier(), 1f));
+            float weight = HarpyModLoaderConfig.HANDLER.instance().roleWeights
+                    .getOrDefault(ri.role().getIdentifier(), 1f);
+            // Every accepted seat must reach a player, including reserved companion seats.
+            hashMap.put(ri, weight > 0 ? weight : 1f);
         }
 
         List<ServerPlayer> unassignedPlayers = new ArrayList<>();
@@ -281,8 +300,8 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
     }
 
     /**
-     * 依佇列順序從某陣營挑選 need 個職業：從未玩過優先 → 最久未玩優先；
-     * 若合格職業少於需求，則從「最久未玩」開始重複挑選。
+     * 依佇列順序從某陣營挑選 need 個職業：出場次數最少優先，次數相同時最久未玩優先。
+     * 合格職業用完後，再從佇列前端開始挑選。
      */
     private List<SRERole> pickForFaction(List<SRERole> eligible, int need, AllRoleRotationSavedData state,
             RandomSource random, Set<String> selectedThisRound) {
@@ -290,34 +309,20 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         if (need <= 0 || eligible.isEmpty())
             return result;
 
-        List<SRERole> unplayed = new ArrayList<>();
-        List<SRERole> played = new ArrayList<>();
-        for (SRERole r : eligible) {
-            AllRoleRotationSavedData.RoleTrack t = state.getTrackOrNull(r.getIdentifier().toString());
-            if (t == null || t.playedCount == 0)
-                unplayed.add(r);
-            else
-                played.add(r);
-        }
-        Collections.shuffle(unplayed, new Random(random.nextLong()));
-        // 先洗牌再以 lastPlayedRow 穩定排序，使「同回合內」順序隨機但整體仍由舊到新
-        Collections.shuffle(played, new Random(random.nextLong()));
-        played.sort(Comparator.comparingLong(r -> {
-            AllRoleRotationSavedData.RoleTrack t = state.getTrackOrNull(r.getIdentifier().toString());
-            return t == null ? 0L : t.lastPlayedRound;
-        }));
-
-        List<SRERole> sequence = new ArrayList<>(unplayed);
-        sequence.addAll(played);
-
+        List<SRERole> sequence = new ArrayList<>(eligible);
+        Collections.shuffle(sequence, new Random(random.nextLong()));
+        sequence.sort(Comparator.comparingInt((SRERole role) -> playedCount(state, role))
+                .thenComparingLong(role -> {
+                    var track = state.getTrackOrNull(role.identifier().toString());
+                    return track == null ? 0L : track.lastPlayedRound;
+                }));
         while (result.size() < need && !sequence.isEmpty()) {
             List<SRERole> available = sequence.stream()
                     .filter(role -> !selectedThisRound.contains(role.getIdentifier().toString()))
                     .toList();
             if (available.isEmpty()) {
                 selectedThisRound.clear();
-                available = new ArrayList<>(sequence);
-                Collections.shuffle(available, new Random(random.nextLong()));
+                available = sequence;
             }
             SRERole selected = available.get(0);
             selectedThisRound.add(selected.getIdentifier().toString());
@@ -330,21 +335,154 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
 
     // ===== 各陣營合格職業過濾（與 Murder / LightningDraft 池一致，並排除當前地圖禁用職業）=====
 
-    private static boolean baseEligible(SRERole role) {
+    private static boolean isRotationEligible(SRERole role, ServerLevel level, int availableSlots) {
+        if (!role.occupationedRoles.isEmpty()
+                || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 1) <= 0
+                || (HarpyModLoaderConfig.HANDLER.instance().useCustomRoleWeights
+                        && ModdedWeights.getRoleWeight(role) <= 0
+                        && !Harpymodloader.MAP_FORCED_ROLES.contains(role.identifier()))) {
+            return false;
+        }
+        Set<SRERole> group = companionGroup(role);
+        return group.size() <= availableSlots
+                && group.stream().filter(EggRoleInterface.class::isInstance).count() <= 1
+                && group.stream().allMatch(member -> canPlay(member, level)
+                        && (!(member instanceof EggRoleInterface)
+                                || Harpymodloader.ROLE_MAX.getOrDefault(member.identifier(), 0) > 0));
+    }
+
+    private static boolean canPlay(SRERole role, ServerLevel level) {
+        AreasWorldComponent areas = AreasWorldComponent.KEY.get(level);
+        String mapName = Objects.requireNonNullElse(areas.mapName, "unknown");
         return !Harpymodloader.VANNILA_ROLES.contains(role)
                 && !role.isOtherModeRole()
+                && !role.hasRoundEvent()
                 && role != TMMRoles.DISCOVERY_CIVILIAN
                 && role != TMMRoles.LOOSE_END
-                && !SREDisableManager.isRoleDisabled(role)
-                // InitModRolesMax sets this to zero when the current map does
-                // not support a map-specific role.
-                && (role.getSpecialMapRole() == MapSpecialFeatures.ALL
-                        || Harpymodloader.ROLE_MAX.getOrDefault(role.identifier(), 0) > 0);
+                && !SREDisableManager.isRoleDisabled(role, level)
+                && role.canSpawnInMap(mapName, areas.areasSettings)
+                && (role.spawnInfo.map.isEmpty() || role.spawnInfo.map.contains(mapName));
+    }
+
+    private static Set<SRERole> companionGroup(SRERole role) {
+        Set<SRERole> group = new LinkedHashSet<>();
+        Deque<SRERole> pending = new ArrayDeque<>();
+        pending.add(role);
+        while (!pending.isEmpty()) {
+            SRERole member = pending.removeFirst();
+            if (group.add(member)) {
+                for (SRERole companion : RoleAssignmentManager.getCompanionRoles(member)) {
+                    if (companion != null) {
+                        pending.add(companion);
+                    }
+                }
+            }
+        }
+        return group;
+    }
+
+    private static int playedCount(AllRoleRotationSavedData state, SRERole role) {
+        var track = state.getTrackOrNull(role.identifier().toString());
+        return track == null ? 0 : track.playedCount;
+    }
+
+    public static Set<SRERole> eligibleRotationRoles(ServerLevel level, int slots) {
+        Set<SRERole> roles = new LinkedHashSet<>();
+        for (SRERole role : TMMRoles.ROLES.values()) {
+            if (isRotationEligible(role, level, slots)
+                    && (isKillerEligible(role) || isNeutralEligible(role)
+                            || isVigilanteEligible(role) || isCivilianEligible(role))) {
+                roles.addAll(companionGroup(role));
+            }
+        }
+        return roles;
+    }
+
+    private List<RoleInstance> fitCompanionGroups(List<RoleInstance> candidates, int slots,
+            Predicate<SRERole> eligible, AllRoleRotationSavedData state, RandomSource random, boolean eggAssigned,
+            Collection<SRERole> forcedRoles) {
+        List<RoleInstance> assignments = new ArrayList<>();
+        List<RoleInstance> remainingPicks = new ArrayList<>();
+        Set<SRERole> activeRoles = new HashSet<>(forcedRoles);
+        activeRoles.remove(null);
+        Map<RoleInstance, Set<SRERole>> groups = new LinkedHashMap<>();
+        Set<String> selected = new HashSet<>();
+        for (RoleInstance candidate : candidates) {
+            groups.put(candidate, companionGroup(candidate.role()));
+            selected.add(candidate.role().identifier().toString());
+        }
+        RoleInstance eggPick = eggAssigned ? null : candidates.stream()
+                .filter(candidate -> groups.get(candidate).stream().anyMatch(EggRoleInterface.class::isInstance))
+                .filter(candidate -> isCompatible(groups.get(candidate), activeRoles))
+                .min(Comparator.comparingInt(candidate -> groups.get(candidate).stream()
+                        .filter(EggRoleInterface.class::isInstance)
+                        .mapToInt(role -> playedCount(state, role))
+                        .min().orElseThrow()))
+                .orElse(null);
+        // Reserve the egg pick first so another group cannot take its seats.
+        if (eggPick != null) {
+            addGroup(assignments, groups.get(eggPick));
+            activeRoles.addAll(groups.get(eggPick));
+        }
+        for (var entry : groups.entrySet()) {
+            RoleInstance candidate = entry.getKey();
+            if (candidate.equals(eggPick)) {
+                continue;
+            }
+            Set<SRERole> group = entry.getValue();
+            if (group.size() > 1 && canFitRegularGroup(group, activeRoles, slots - assignments.size())) {
+                addGroup(assignments, group);
+                activeRoles.addAll(group);
+            } else {
+                remainingPicks.add(candidate);
+            }
+        }
+
+        for (RoleInstance pick : remainingPicks) {
+            int seatsLeft = slots - assignments.size();
+            if (seatsLeft == 0) {
+                break;
+            }
+            Set<SRERole> group = groups.get(pick);
+            if (group.size() != 1 || !canFitRegularGroup(group, activeRoles, seatsLeft)) {
+                int faction = pick.role().getRoleType();
+                List<SRERole> replacements = filterRoles(eligible.and(role -> role.getRoleType() == faction
+                        && canFitRegularGroup(companionGroup(role), activeRoles, seatsLeft)));
+                List<SRERole> reroll = pickForFaction(replacements, 1, state, random, selected);
+                if (reroll.isEmpty()) {
+                    continue;
+                }
+                group = companionGroup(reroll.getFirst());
+            }
+            addGroup(assignments, group);
+            activeRoles.addAll(group);
+        }
+        return assignments;
+    }
+
+    private static boolean canFitRegularGroup(Set<SRERole> group, Set<SRERole> activeRoles, int seatsLeft) {
+        return group.size() <= seatsLeft && group.stream().noneMatch(EggRoleInterface.class::isInstance)
+                && isCompatible(group, activeRoles);
+    }
+
+    private static boolean isCompatible(Set<SRERole> group, Set<SRERole> activeRoles) {
+        for (SRERole role : group) {
+            if (role.opposingRoles.stream().anyMatch(activeRoles::contains)
+                    || activeRoles.stream().anyMatch(active -> active.opposingRoles.contains(role))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void addGroup(List<RoleInstance> assignments, Set<SRERole> group) {
+        for (SRERole member : group) {
+            assignments.add(new RoleInstance(UUID.randomUUID(), member));
+        }
     }
 
     private static boolean isKillerEligible(SRERole role) {
-        return baseEligible(role)
-                && role.canUseKiller()
+        return role.canUseKiller()
                 && !role.isNeutrals()
                 && !role.isNeutralForKiller()
                 && !role.isInnocent()
@@ -352,42 +490,24 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
     }
 
     private static boolean isVigilanteEligible(SRERole role) {
-        return baseEligible(role) && role.isVigilanteTeam();
+        return role.isVigilanteTeam();
     }
 
     private static boolean isNeutralEligible(SRERole role) {
-        return baseEligible(role)
-                && ((!role.canUseKiller() && !role.isInnocent()) || role.isNeutrals())
+        return ((!role.canUseKiller() && !role.isInnocent()) || role.isNeutrals())
                 && role != TMMRoles.CIVILIAN;
     }
 
     private static boolean isCivilianEligible(SRERole role) {
         boolean enableCivilianInPool = HarpyModLoaderConfig.HANDLER.instance().enableCivilianInPool;
-        return baseEligible(role)
-                && !role.isVigilanteTeam()
+        return !role.isVigilanteTeam()
                 && !role.canUseKiller()
                 && !role.isNeutrals()
                 && role.isInnocent()
                 && (enableCivilianInPool || role != TMMRoles.CIVILIAN);
     }
 
-    private List<SRERole> eligibleKillers() {
-        return filterRoles(SREAllRoleRotationGameMode::isKillerEligible);
-    }
-
-    private List<SRERole> eligibleVigilantes() {
-        return filterRoles(SREAllRoleRotationGameMode::isVigilanteEligible);
-    }
-
-    private List<SRERole> eligibleNeutrals() {
-        return filterRoles(SREAllRoleRotationGameMode::isNeutralEligible);
-    }
-
-    private List<SRERole> eligibleCivilians() {
-        return filterRoles(SREAllRoleRotationGameMode::isCivilianEligible);
-    }
-
-    private static List<SRERole> filterRoles(java.util.function.Predicate<SRERole> predicate) {
+    private static List<SRERole> filterRoles(Predicate<SRERole> predicate) {
         List<SRERole> out = new ArrayList<>();
         for (SRERole role : TMMRoles.ROLES.values()) {
             if (predicate.test(role))

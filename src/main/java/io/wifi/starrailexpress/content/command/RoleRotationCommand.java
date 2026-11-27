@@ -18,20 +18,16 @@ package io.wifi.starrailexpress.content.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.api.SRERole;
-import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.data.AllRoleRotationSavedData;
+import io.wifi.starrailexpress.game.modes.funny.SREAllRoleRotationGameMode;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-
-import org.agmas.harpymodloader.Harpymodloader;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 全職業輪跑模式管理指令：
@@ -53,13 +49,11 @@ public class RoleRotationCommand {
         AllRoleRotationSavedData state = AllRoleRotationSavedData.get(ctx.getSource().getServer());
         long round = state.getCurrentRound();
 
-        List<SRERole> eligible = new ArrayList<>();
+        var level = ctx.getSource().getLevel();
+        var eligible = SREAllRoleRotationGameMode.eligibleRotationRoles(level, level.players().size());
         List<SRERole> unplayed = new ArrayList<>();
         int playedDistinct = 0;
-        for (SRERole role : TMMRoles.ROLES.values()) {
-            if (!isGloballyEligible(role))
-                continue;
-            eligible.add(role);
+        for (SRERole role : eligible) {
             AllRoleRotationSavedData.RoleTrack t = state.getTrackOrNull(role.getIdentifier().toString());
             if (t == null || t.playedCount == 0)
                 unplayed.add(role);
@@ -93,14 +87,5 @@ public class RoleRotationCommand {
                 () -> Component.translatable("commands.sre.role_rotation.reset").withStyle(ChatFormatting.GREEN),
                 true);
         return 1;
-    }
-
-    /** 全域合格判斷（不考慮當前地圖禁用，僅用於進度統計）。 */
-    private static boolean isGloballyEligible(SRERole role) {
-        return !Harpymodloader.VANNILA_ROLES.contains(role)
-                && !role.isOtherModeRole()
-                && role != TMMRoles.DISCOVERY_CIVILIAN
-                && role != TMMRoles.LOOSE_END
-                && role != TMMRoles.CIVILIAN;
     }
 }

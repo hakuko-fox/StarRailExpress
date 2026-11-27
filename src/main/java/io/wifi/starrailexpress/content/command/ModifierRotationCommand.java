@@ -18,6 +18,7 @@ package io.wifi.starrailexpress.content.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import io.wifi.starrailexpress.game.data.ModifierRotationSavedData;
+import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -47,6 +48,8 @@ public final class ModifierRotationCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         ModifierRotationSavedData state = ModifierRotationSavedData.get(context.getSource().getServer());
         List<SREModifier> modifiers = new ArrayList<>(HMLModifiers.MODIFIERS);
+        modifiers.removeIf(modifier -> !SREMurderGameMode.isModifierRotationEligible(modifier,
+                context.getSource().getLevel()));
         modifiers.sort(Comparator.comparing(modifier -> modifier.identifier().toString()));
 
         int appeared = 0;
