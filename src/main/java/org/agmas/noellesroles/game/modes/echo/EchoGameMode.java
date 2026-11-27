@@ -21,9 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** 独立模式承载；当前只在开发开关开启后允许测试生命周期。 */
+/** 独立正式模式承载；缺失会话或真实异常仍安全中止。 */
 public final class EchoGameMode extends GameMode {
-    public EchoGameMode() { super(EchoBootstrap.ID, 12, 6); }
+    public EchoGameMode() { super(EchoBootstrap.ID, org.agmas.noellesroles.game.modes.echo.rules.EchoRosterPolicy.MAX_PLAYERS,
+            org.agmas.noellesroles.game.modes.echo.rules.EchoRosterPolicy.MIN_PLAYERS); }
     private final java.util.Set<UUID> finalizing=new java.util.HashSet<>();
     public void finishElimination(ServerPlayer victim,@Nullable ServerPlayer killer,ResourceLocation reason) {
         if(!finalizing.add(victim.getUUID())) return;
@@ -39,6 +40,9 @@ public final class EchoGameMode extends GameMode {
     @Override public boolean canAllPeopleSeeTime() { return true; }
     @Override public boolean autoTriggerGameTrueStarted() { return false; }
     @Override public boolean shouldRecordPlayerStats() { return false; }
+    @Override public boolean shouldStopWhenNoPlayers() { return false; }
+    // 独立地图由 EchoMatch 的区域检查和三心伤害链处理，不套用列车环境秒杀。
+    @Override public boolean enableEnvironmentDetection() { return false; }
 
     @Override public void initializeGame(ServerLevel level, SREGameWorldComponent component, List<ServerPlayer> players) {
         EchoSessions.initialize(level, players);
@@ -62,19 +66,26 @@ public final class EchoGameMode extends GameMode {
     }
 
     @Override public void stopGame(ServerLevel level) {
-        var match = EchoSessions.get(level);
-        if (match != null) {
-            if (match.result() == null) match.settle(EchoResultSnapshot.Outcome.VOID, "EXTERNAL_STOP", false);
-            EchoResultAdapter.apply(level, match.result());
-        } else {
-            EchoResultAdapter.apply(level, new EchoResultSnapshot(UUID.randomUUID(), "unknown",
-                    EchoResultSnapshot.Outcome.VOID, "MISSING_SESSION", 0, true, List.of()));
+        try {
+            var match = EchoSessions.get(level);
+            if (match != null) {
+                if (match.result() == null) match.settle(EchoResultSnapshot.Outcome.VOID, "EXTERNAL_STOP", false);
+                EchoResultAdapter.apply(level, match.result());
+            } else {
+                EchoResultAdapter.apply(level, new EchoResultSnapshot(UUID.randomUUID(), "unknown",
+                        EchoResultSnapshot.Outcome.VOID, "MISSING_SESSION", 0, false, List.of()));
+            }
+        } finally {
+            org.agmas.noellesroles.game.modes.echo.runtime.EchoRouteAdmission.discard(level);
+            EchoSessions.releaseChunks(level);
         }
     }
 
     @Override public void finalizeGame(ServerLevel level, SREGameWorldComponent component) {
-        var match = EchoSessions.get(level);
-        if (match != null) match.finalizeMatch();
+        try {
+            var match = EchoSessions.get(level);
+            if (match != null) match.finalizeMatch();
+        } finally { EchoSessions.releaseChunks(level); }
     }
 
     @Override public void recordWinStats(ServerLevel level, SREGameRoundEndComponent round, SREGameWorldComponent component) {

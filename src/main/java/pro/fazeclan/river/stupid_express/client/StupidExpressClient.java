@@ -20,7 +20,6 @@ import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import dev.doctor4t.ratatouille.util.TextUtils;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.TMMRoles;
-import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.client.SREClient;
 import io.wifi.starrailexpress.client.StatusInit;
 import io.wifi.starrailexpress.client.StatusInit.StatusBar;
@@ -38,14 +37,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import io.wifi.starrailexpress.event.client.LimitedInventoryScreenEvents;
 import net.minecraft.network.chat.Style;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.client.event.RoleHudRenderCallback;
 import org.agmas.noellesroles.init.ModEffects;
-import org.agmas.noellesroles.role_data.neutral.LeaderRoleData;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import pro.fazeclan.river.stupid_express.StupidExpress;
@@ -90,20 +86,8 @@ public class StupidExpressClient {
 
     public static void init() {
 
-        // p.playNotifySound(StupidExpress.SOUND_REGUGEE, SoundSource.AMBIENT, 0.5f,
-        // 1.0f);
-        AmbienceUtil.registerBackgroundAmbience(
-                new BackgroundAmbience(StupidExpress.SOUND_REGUGEE,
-                        player -> {
-                            if (SREClient.gameComponent == null)
-                                return false;
-                            var refugeeC = RefugeeComponent.KEY.get(player.level());
-                            if (refugeeC.isAnyRevivals) {
-                                return true;
-                            }
-                            return false;
-                        },
-                        1));
+        // 亡命徒时刻（难民）音乐改由统一时刻管理器（MomentManager + MomentMusicClient）播放，
+        // 见 MomentType.DESPERADO，此处不再单独注册环境音。
 
         ItemTooltipCallback.EVENT.register((itemStack, tooltipContext, tooltipFlag, list) -> {
             if (itemStack.is(SEItems.JERRY_CAN))
@@ -147,7 +131,7 @@ public class StupidExpressClient {
                         isSplitPerson = false;
                 } else
                     isSplitPerson = false;
-                boolean weavingActive = player.hasEffect(MobEffects.WEAVING);
+                boolean weavingActive = player.hasEffect(ModEffects.PURGATORY);
                 if (weavingActive) {
                     isUsedRefugee = true;
                     BlockPos playerPos = player.blockPosition();
@@ -202,43 +186,9 @@ public class StupidExpressClient {
             return AllowOtherCameraType.ReturnCameraType.NO_CHANGE;
         });
 
-        // 注册纵火犯HUD
-        RoleHudRenderCallback.EVENT.register(SERoles.ARSONIST.identifier(), (context, tickCounter) -> {
-            Minecraft client = Minecraft.getInstance();
-            if (client.player == null)
-                return;
-            if (SREClient.gameComponent == null)
-                return;
-            if (!SREClient.isRole(SERoles.ARSONIST))
-                return;
-            if (!SREClient.isPlayerAliveAndInSurvival())
-                return;
-
-            ArsonistRoleData ownComp = ArsonistRoleData.of(client.player);
-            int dousedCount = ownComp != null ? ownComp.dousedCount : 0;
-
-            // 计算存活玩家数（排除观察者和创造模式）
-            long alivePlayers = client.player.level().players().stream()
-                    .filter(p -> !p.isSpectator() && !p.isCreative() && p.getHealth() > 0)
-                    .count();
-            int requiredCount = (int) Math.ceil(alivePlayers * 0.3);
-            // 领袖追随者纵火犯：点燃所需 -2 人（下限 1），与 LighterItem 服务端判定保持一致
-            if (isLocalLeaderFollower()) {
-                requiredCount = Math.max(1, requiredCount - 2);
-            }
-
-            var font = client.font;
-            int xBase = context.guiWidth() - 10;
-            int yBase = context.guiHeight() - font.lineHeight - 10;
-            if (dousedCount >= requiredCount) {
-                Component readyText = Component.translatable("hud.stupid_express.arsonist.ignition_ready");
-                context.drawString(font, readyText, xBase - font.width(readyText), yBase, 0xfc9526);
-            } else {
-                Component douseText = Component.translatable("hud.stupid_express.arsonist.douse_progress",
-                        dousedCount, requiredCount);
-                context.drawString(font, douseText, xBase - font.width(douseText), yBase, 0xfc9526);
-            }
-        });
+        ArsonistFlameClientEffects.register();
+        ExtinguisherSprayClientEffects.register();
+        ArsonistClient.register();
     }
 
     static {
@@ -265,8 +215,7 @@ public class StupidExpressClient {
         });
         // 难民时旁观看时全员皮肤改为默认的皮肤
         OnGettingPlayerSkin.EVENT.register((player, originalSkin) -> {
-            if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)
-                    || RoleUtils.isPlayerTheJob(player, SpecialGameModeRoles.SUPER_LOOSE_END)) {
+            if (RoleUtils.isPlayerTheJob(player, TMMRoles.LOOSE_END)) {
                 return OnGettingPlayerSkin.PlayerSkinResult
                         .playerSkin(SRE.id("textures/entity/custom_psycho/th_sariel.png"), Model.SLIM);
             }
@@ -331,22 +280,6 @@ public class StupidExpressClient {
         LimitedInventoryScreenEvents.INIT.register(SplitPersonalityInventoryScreenExtension.INSTANCE::onInit);
         LimitedInventoryScreenEvents.RENDER_TAIL
                 .register(SplitPersonalityInventoryScreenExtension.INSTANCE::onRenderTail);
-    }
-
-    /** 本地玩家是否为领袖追随者（纵火犯 HUD 同步：追随者点燃所需 -2 人） */
-    private static boolean isLocalLeaderFollower() {
-        Minecraft client = Minecraft.getInstance();
-        LocalPlayer self = client.player;
-        if (self == null || client.level == null) {
-            return false;
-        }
-        for (Player p : client.level.players()) {
-            LeaderRoleData data = RoleData.getNullable(LeaderRoleData.class, p);
-            if (data != null && data.followers.contains(self.getUUID())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static void applyWeavingPollution(Level level, BlockPos playerPos, int xzRadius,

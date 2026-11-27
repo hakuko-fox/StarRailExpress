@@ -279,9 +279,15 @@ public class GameConstants {
         public static ResourceLocation HEART_ATTACK = Noellesroles.id("heart_attack");
         public static ResourceLocation CONSPIRACY_BACKFIRE = Noellesroles.id("conspiracy_backfire");
         public static ResourceLocation BOMB_DEATH = Noellesroles.id("bomb_death");
-        public static ResourceLocation PUPPETEER_KNIFE = Noellesroles.id("knife_puppeteer");
-        public static ResourceLocation PUPPETEER_GUN = Noellesroles.id("gun_puppeteer");
-        public static ResourceLocation RAVEN_BODY_DEATH = Noellesroles.id("raven_body_death");
+        /**
+         * 玩家傀儡（傀儡师 / 渡鸦 / 愚者 / 克隆博士替身 / 错误404 等）本体被击杀时的统一死因。
+         *
+         * <p>本体死亡只表达"本体被打死了"这一件事，不区分凶器：旧的
+         * {@code knife_puppeteer} / {@code gun_puppeteer} / {@code raven_body_death}
+         * 等分散死因已全部废弃。所有傀儡本体致死路径都必须落到这一个常量上，
+         * 否则尸体上会显示"未知"死因。
+         */
+        public static final ResourceLocation PUPPETEER_BODY_DEATH = Noellesroles.id("puppeteer_body_death");
         public static ResourceLocation RECORDER_MISTAKE = Noellesroles.id("recorder_mistake");
         public static ResourceLocation GAMBLE_SELF_KILL = Noellesroles.id("gamble_self_kill");
         public static ResourceLocation WAYFARER_ERROR = Noellesroles.id("wayfarer_error");
@@ -369,7 +375,19 @@ public class GameConstants {
         public static ResourceLocation PAPER_CUT = Noellesroles.id("paper_cut");
         public static ResourceLocation FOG_BLADE = Noellesroles.id("fog_blade");
         public static ResourceLocation STONE_SPEAR = Noellesroles.id("stone_spear");
+        /** 摘星者「星之光环」/「星之引力」召唤的星星砸中致死 */
+        public static ResourceLocation STAR = Noellesroles.id("star");
+        /** 雪傀儡：靠近炉灶或身上着火，把虚拟生命耗尽而「融化」 */
+        public static ResourceLocation MELT = Noellesroles.id("melt");
+        /** 雪傀儡推出的雪球把玩家的虚拟生命撞空 */
+        public static ResourceLocation SNOWBALL_CRUSH = Noellesroles.id("snowball_crush");
 
+        // 钟摆（Pendulum）：分针命中处决死因
+        public static ResourceLocation MINUTE_NEEDLE = Noellesroles.id("minute_needle");
+        // 轮盘恶魔（Roulette Devil）：对决落败死因
+        public static ResourceLocation ROULETTE_DEVIL_DUEL = Noellesroles.id("roulette_devil_duel");
+        // 马辰虚（布袋鬼）寄生噬魂死因
+        public static ResourceLocation GHOST_PARASITE = Noellesroles.id("ghost_parasite");
         private static ResourceLocation itemId(Item item) {
             return BuiltInRegistries.ITEM.getKey(item);
         }

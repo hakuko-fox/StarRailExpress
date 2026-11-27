@@ -15,9 +15,10 @@
 
 package io.wifi.starrailexpress.client.gui.screen;
 
+import io.wifi.starrailexpress.client.ui.SRETheme;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
-import io.wifi.starrailexpress.SREClientConfig;
 import io.wifi.starrailexpress.client.gui.anim.GuiAnim;
+import io.wifi.starrailexpress.client.gui.SREPanelStyle;
 import io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.UpdateNameTagSelectedPayload;
@@ -25,9 +26,7 @@ import io.wifi.starrailexpress.network.UpdateSkinSelectedPayload;
 import io.wifi.starrailexpress.util.ItemSkinManager;
 import net.exmo.sre.nametag.NameTagInventoryComponent;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -59,8 +58,8 @@ import java.util.List;
  * 遵循 docs/ui_style.md 风格约定：
  * <ul>
  * <li>深棕红渐变背景 + 棕褐色描边 + 金色点缀；</li>
- * <li>分类标签栏带平滑滑动的金色选中指示条；</li>
- * <li>切换分类时内容区淡入过渡，打开界面时面板滑入；</li>
+ * <li>左侧纵向滚动分类，中间展示皮肤，右侧搜索、人物预览与筛选；</li>
+ * <li>切换分类时保留滚动位置、搜索词与筛选状态；</li>
  * <li>"帽子"页使用 {@link HatSkinGridPanel} 卡片网格；</li>
  * <li>"名片"页使用 {@link NameTagList} 列表选择；</li>
  * <li>所有动画基于真实帧间隔驱动（{@link GuiAnim}）。</li>
@@ -84,26 +83,46 @@ public class SkinManagementScreen extends Screen {
             return "hat".equals(id);
         }
 
+        /** 背部 / 手部饰品走帽子同款网格，皮肤类型由页签 id 决定。 */
+        boolean isAccessoryTab() {
+            return "backpack".equals(id) || "hand_accessory".equals(id);
+        }
+
+        /** 音乐盒同样只是一组可装配的皮肤，复用卡片网格。 */
+        boolean isMusicBoxTab() {
+            return ItemSkinManager.SkinTypes.MUSIC_BOX.equals(id);
+        }
+
+        /** 随从：一组可装配的皮肤，没有图标物品，复用卡片网格。 */
+        boolean isPetTab() {
+            return ItemSkinManager.SkinTypes.PET.equals(id);
+        }
+
+        boolean isMvpAnimationTab() {
+            return ItemSkinManager.SkinTypes.MVP_ANIMATION.equals(id);
+        }
+
+        boolean isGridTab() {
+            return isHatTab() || isAccessoryTab() || isMusicBoxTab() || isPetTab() || isMvpAnimationTab();
+        }
+
         boolean isNameTagTab() {
             return "name_tag".equals(id);
         }
     }
 
     // ─── 主题色（遵循 ui_style.md 复古列车配色） ──────────────────────────
-    private static final int ACCENT = 0xFFD4AF37;        // GOLD 强调色
-    private static final int ACCENT_SOFT = 0xFFC9A84C;   // 棕金色
-    private static final int BG_TOP = 0xD81A1008;        // 深棕红（面板上）
-    private static final int BG_BOTTOM = 0xD820140A;     // 棕黑（面板下）
-    private static final int SCREEN_BG_TOP = 0xF018120A;  // 全屏背景上
-    private static final int SCREEN_BG_BOTTOM = 0xF0061018; // 全屏背景下
-    private static final int PANEL_BORDER = 0xFF8B6914;  // 棕褐色描边
-    private static final int DECOR_LINE = 0x33FFE8C0;    // 顶部装饰线
-    private static final int TEXT_MAIN = 0xFFFFF4DC;     // 主文字 浅奶油色
-    private static final int TEXT_TITLE = 0xFFF5E8C8;    // 标题文字 浅米色
-    private static final int TEXT_DIM = 0xFF9E8B6E;      // 次要文字 土褐色
+    private static final int ACCENT = SRETheme.GOLD;        // GOLD 强调色
+    private static final int BG_TOP = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0xD8);        // 深棕红（面板上）
+    private static final int BG_BOTTOM = SRETheme.withAlpha(SRETheme.SURFACE_BOTTOM, 0xD8);     // 棕黑（面板下）
+    private static final int SCREEN_BG_TOP = SRETheme.withAlpha(SRETheme.SCREEN_TOP, 0xF0);  // 全屏背景上
+    private static final int SCREEN_BG_BOTTOM = SRETheme.withAlpha(SRETheme.SCREEN_BOTTOM, 0xF0); // 全屏背景下
+    private static final int PANEL_BORDER = SRETheme.BORDER;  // 棕褐色描边
+    private static final int DECOR_LINE = SRETheme.withAlpha(SRETheme.BRASS_BRIGHT, 0x33);    // 顶部装饰线
+    private static final int TEXT_TITLE = SRETheme.TITLE;    // 标题文字 浅米色
+    private static final int TEXT_DIM = SRETheme.MUTED;      // 次要文字 土褐色
     private static final int NAME_TAG_COLOR = 0xFFF5DFA8; // 称号色
 
-    private static final int MIN_CATEGORY_WIDTH = 52;
     private static final int MODEL_SCALE_DIVISOR = 3;
 
     private final SREPlayerSkinsComponent skinsComponent;
@@ -112,28 +131,30 @@ public class SkinManagementScreen extends Screen {
     private HatSkinGridPanel hatGrid;
     private NameTagList nameTagList;
     private EditBox searchBox;
-    private ToggleCheckbox hideAllHatsCheck;
-    private ToggleCheckbox showOwnHatCheck;
     private Button backButton;
     private Button refreshButton;
 
     public Screen parentScreen = null;
 
     private final List<CategoryTabData> categories = new ArrayList<>();
-    private final List<CategoryButton> categoryButtons = new ArrayList<>();
+    private CategoryList categoryList;
     private int selectedCategory = 0;
-    private int categoryPage = 0;
-    private int categoryPageSize = 6;
+    private boolean rebuildRequested;
     private String searchFilter = "";
+    /** 「仅显示 3D 皮肤」筛选：切页签时保留，跨面板共享 */
+    private boolean only3dFilter = false;
+    private ToggleCheckbox only3dCheck;
+    private ItemSkinManager.QualityColor qualityFilter;
 
     // ─── 动画状态 ───────────────────────────────────────────────────────────
     private long openTimeMs = -1L;
     private float contentAlpha = 1f;
-    private float indicatorX = 0f;
-    private float indicatorWidth = 0f;
-    private boolean indicatorInitialized = false;
 
     // 布局缓存
+    private int panelX;
+    private int categoryPanelWidth;
+    private int filterTop;
+    private int searchHeight;
     private int contentX;
     private int leftPanelWidth;
     private int listTop;
@@ -158,153 +179,226 @@ public class SkinManagementScreen extends Screen {
     protected void init() {
         super.init();
         this.clearWidgets();
-        categoryButtons.clear();
+        double categoryScroll = categoryList == null ? 0 : categoryList.getScrollAmount();
+        skinList = null;
+        hatGrid = null;
+        nameTagList = null;
         if (openTimeMs < 0) {
             openTimeMs = System.currentTimeMillis();
             contentAlpha = 0f;
         }
 
         boolean isCompact = this.height < 420 || this.width < 560;
-        int titleHeight = isCompact ? 24 : 32;
-        int titleMarginT = isCompact ? 6 : 10;
-        int categoryHeight = isCompact ? 20 : 24;
-        int categoryMarginT = isCompact ? 5 : 8;
-        int gapBelowCategory = isCompact ? 5 : 8;
-        this.listTop = titleMarginT + titleHeight + categoryMarginT + categoryHeight + gapBelowCategory;
-        int bottomPadding = isCompact ? 30 : 48;
-        this.listHeight = this.height - listTop - bottomPadding;
+        this.searchHeight = isCompact ? 18 : 22;
+        this.listTop = isCompact ? 34 : 44;
+        this.listHeight = this.height - listTop - (isCompact ? 36 : 44);
 
-        int totalContentWidth = Math.min(this.width - 20, 820);
-        this.contentX = (this.width - totalContentWidth) / 2;
-        this.leftPanelWidth = (int) (totalContentWidth * 0.58);
-        this.rightPanelWidth = totalContentWidth - leftPanelWidth - 10;
-        this.rightPanelX = contentX + leftPanelWidth + 10;
+        int totalContentWidth = Math.min(this.width - 20, 1040);
+        this.panelX = (this.width - totalContentWidth) / 2;
+        this.categoryPanelWidth = Mth.clamp((int) (totalContentWidth * 0.16f), 66, 144);
+        this.rightPanelWidth = Mth.clamp((int) (totalContentWidth * 0.26f), 108, 240);
+        this.contentX = panelX + categoryPanelWidth + 6;
+        this.leftPanelWidth = totalContentWidth - categoryPanelWidth - rightPanelWidth - 12;
+        this.rightPanelX = contentX + leftPanelWidth + 6;
+        this.filterTop = listTop + listHeight - (searchHeight * 2 + 20);
 
         rebuildCategories();
         if (categories.isEmpty()) {
             selectedCategory = 0;
-            categoryPage = 0;
         } else {
             selectedCategory = Mth.clamp(selectedCategory, 0, categories.size() - 1);
         }
 
-        initCategoryArea(categoryHeight, categoryMarginT, titleMarginT + titleHeight);
-        initSearchBox(categoryHeight, titleMarginT + titleHeight);
-        initHatConfigCheckboxes(titleMarginT, titleMarginT + titleHeight);
+        categoryList = new CategoryList(panelX + 2, listTop + 3,
+                categoryPanelWidth - 4, listHeight - 6, isCompact ? 28 : 32);
+        categoryList.setScrollAmount(categoryScroll);
+        addRenderableWidget(categoryList);
+        initSearchBox();
         initContentArea();
         initButtonArea(isCompact);
     }
-
     private void rebuildCategories() {
         categories.clear();
         if (player != null && TMMItems.SkinableItem != null) {
             for (Item item : TMMItems.SkinableItem) {
                 String itemTypeName = BuiltInRegistries.ITEM.getKey(item).toString();
+                // 该类型还没有任何皮肤时（例如刚接入、皮肤资源尚未添加的弓/弩）不显示空页签
+                String skinType = ItemSkinManager.getItemSkinType(item);
+                if (skinType != null && ItemSkinManager.getSkins(skinType).isEmpty()) {
+                    continue;
+                }
                 categories.add(new CategoryTabData(itemTypeName,
                         Component.literal(getItemShortName(item)), item));
             }
         }
         categories.add(new CategoryTabData("hat",
                 Component.translatable("screen.sre.skins.hat_title"), Items.LEATHER_HELMET));
+        addAccessoryTab("backpack", "screen.sre.skins.backpack", Items.LEATHER_CHESTPLATE);
+        addAccessoryTab("hand_accessory", "screen.sre.skins.hand_accessory", Items.LEATHER);
+        // 音乐盒标签（曲目由内容模组注册，没有音乐盒皮肤时不显示）
+        if (ItemSkinManager.getSkins().containsKey(ItemSkinManager.SkinTypes.MUSIC_BOX)) {
+            categories.add(new CategoryTabData(ItemSkinManager.SkinTypes.MUSIC_BOX,
+                    Component.translatable("screen.sre.skins.music_box_title"), Items.JUKEBOX));
+        }
+        // 随从标签（随从由内容模组注册，没有随从皮肤时不显示）
+        if (ItemSkinManager.getSkins().containsKey(ItemSkinManager.SkinTypes.PET)) {
+            categories.add(new CategoryTabData(ItemSkinManager.SkinTypes.PET,
+                    Component.translatable("screen.sre.skins.pet_title"), Items.LEAD));
+        }
+        categories.add(new CategoryTabData(ItemSkinManager.SkinTypes.MVP_ANIMATION,
+                Component.translatable("screen.sre.skins.mvp_animation_title"), Items.DRAGON_HEAD));
         // 名片（称号）标签
         categories.add(new CategoryTabData("name_tag",
                 Component.translatable("screen.sre.skins.name_tag_title"), Items.NAME_TAG));
     }
 
-    private void initCategoryArea(int categoryHeight, int categoryMarginT, int categoryY) {
-        if (categories.isEmpty()) {
+    /** 分类单独滚动，不改变当前类别，也不影响中间的皮肤列表。 */
+    private class CategoryList extends ObjectSelectionList<CategoryList.CategoryEntry> {
+        CategoryList(int x, int y, int width, int height, int rowHeight) {
+            super(Minecraft.getInstance(), width, height, y, rowHeight);
+            setX(x);
+            for (int i = 0; i < categories.size(); i++) {
+                addEntry(new CategoryEntry(i, rowHeight - 4));
+            }
+        }
+
+        void revealCategory(int index) {
+            if (index >= 0 && index < children().size()) {
+                ensureVisible(children().get(index));
+            }
+        }
+
+        @Override
+        public int getRowWidth() {
+            return width - 10;
+        }
+
+        @Override
+        protected int getScrollbarPosition() {
+            return getX() + width - 5;
+        }
+
+        @Override
+        protected void renderListBackground(GuiGraphics graphics) {}
+
+        @Override
+        protected void renderHeader(GuiGraphics graphics, int x, int y) {}
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.enableScissor(getX(), getY(), getX() + width, getY() + height);
+            super.renderWidget(graphics, mouseX, mouseY, partialTick);
+            graphics.disableScissor();
+        }
+
+        @Override
+        protected void renderSelection(GuiGraphics graphics, int top, int width, int height, int outer, int inner) {}
+
+        class CategoryEntry extends ObjectSelectionList.Entry<CategoryEntry> {
+            private final int index;
+            private final CategoryButton button;
+
+            CategoryEntry(int index, int height) {
+                this.index = index;
+                CategoryTabData tab = categories.get(index);
+                button = new CategoryButton(0, 0, getRowWidth(), height,
+                        tab.label, tab.iconItem, b -> selectCategory(index), index == selectedCategory);
+                button.setTooltip(Tooltip.create(tab.label));
+            }
+
+            @Override
+            public void render(GuiGraphics graphics, int index, int y, int x, int entryWidth,
+                    int entryHeight, int mouseX, int mouseY, boolean hovered, float partialTick) {
+                button.setX(x);
+                button.setY(y);
+                button.setWidth(entryWidth);
+                button.render(graphics, mouseX, mouseY, partialTick);
+            }
+
+            @Override
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+                if (button != 0) return false;
+                // 事件由列表的裁剪区域命中，避免部分可见行按按钮完整高度误判。
+                selectCategory(index);
+                return true;
+            }
+
+            @Override
+            public Component getNarration() {
+                return categories.get(index).label;
+            }
+        }
+    }
+
+    private void addAccessoryTab(String skinType, String labelKey, Item fallbackIcon) {
+        if (!ItemSkinManager.getSkins().containsKey(skinType)) {
             return;
         }
-        int arrowWidth = 18;
-        int arrowSpacing = 4;
-        int categorySpacing = 4;
-
-        int tabsAreaWidth = leftPanelWidth - arrowWidth * 2 - arrowSpacing * 2;
-        categoryPageSize = Math.max(1, (tabsAreaWidth + categorySpacing) / (MIN_CATEGORY_WIDTH + categorySpacing));
-        int maxPage = Math.max(0, (categories.size() - 1) / categoryPageSize);
-        categoryPage = Mth.clamp(categoryPage, 0, maxPage);
-
-        int pageStart = categoryPage * categoryPageSize;
-        int pageEndExcl = Math.min(categories.size(), pageStart + categoryPageSize);
-        int tabsThisPage = Math.max(1, pageEndExcl - pageStart);
-        int categoryWidth = Math.max(MIN_CATEGORY_WIDTH,
-                (tabsAreaWidth - (tabsThisPage - 1) * categorySpacing) / tabsThisPage);
-        int tabsStartX = contentX + arrowWidth + arrowSpacing;
-
-        Button prevPage = Button.builder(Component.literal("<"), b -> {
-            if (categoryPage > 0) {
-                categoryPage--;
-                int newStart = categoryPage * categoryPageSize;
-                int newEnd = Math.min(categories.size(), newStart + categoryPageSize) - 1;
-                selectedCategory = Mth.clamp(selectedCategory, newStart, newEnd);
-                onCategoryChanged(false);
+        Item icon = fallbackIcon;
+        for (String name : ItemSkinManager.getSkins(skinType).keySet()) {
+            if ("default".equals(name)) {
+                continue;
             }
-        }).pos(contentX, categoryY).size(arrowWidth, categoryHeight).build();
-        prevPage.active = categoryPage > 0;
-        addRenderableWidget(prevPage);
-
-        int finalMaxPage = maxPage;
-        Button nextPage = Button.builder(Component.literal(">"), b -> {
-            if (categoryPage < finalMaxPage) {
-                categoryPage++;
-                selectedCategory = categoryPage * categoryPageSize;
-                onCategoryChanged(false);
+            var located = BuiltInRegistries.ITEM.getOptional(
+                    ResourceLocation.fromNamespaceAndPath("sre_cosmetics", name));
+            if (located.isPresent()) {
+                icon = located.get();
+                break;
             }
-        }).pos(contentX + leftPanelWidth - arrowWidth, categoryY).size(arrowWidth, categoryHeight).build();
-        nextPage.active = categoryPage < maxPage;
-        addRenderableWidget(nextPage);
-
-        for (int i = pageStart; i < pageEndExcl; i++) {
-            CategoryTabData tab = categories.get(i);
-            int finalI = i;
-            CategoryButton button = new CategoryButton(
-                    tabsStartX + (i - pageStart) * (categoryWidth + categorySpacing),
-                    categoryY, categoryWidth, categoryHeight,
-                    tab.label, tab.iconItem,
-                    b -> selectCategory(finalI),
-                    i == selectedCategory);
-            categoryButtons.add(button);
-            addRenderableWidget(button);
         }
+        categories.add(new CategoryTabData(skinType, Component.translatable(labelKey), icon));
     }
 
-    private void initSearchBox(int categoryHeight, int categoryY) {
-        searchBox = new EditBox(font, rightPanelX, categoryY, rightPanelWidth, categoryHeight,
+    /** 右栏顶部搜索，人物预览下方纵向排列筛选，窄屏也不挤占皮肤区。 */
+    private void initSearchBox() {
+        Component filterLabel = Component.translatable("screen.sre.skins.only_3d");
+        int searchX = rightPanelX + 6;
+        int controlWidth = rightPanelWidth - 12;
+        int filterY = filterTop + 8;
+        searchBox = new EditBox(font, searchX, listTop + 8, controlWidth, searchHeight,
                 Component.translatable("screen.sre.skins.search"));
         searchBox.setMaxLength(50);
+        searchBox.setBordered(true);
+        searchBox.setValue(searchFilter);
         searchBox.setResponder(text -> {
-            searchFilter = text.toLowerCase();
-            refreshSkinPanels();
+            String next = text.toLowerCase(java.util.Locale.ROOT);
+            if (next.equals(searchFilter)) {
+                return;
+            }
+            searchFilter = next;
+            applySearchFilter();
         });
-        searchBox.setHint(Component.translatable("screen.sre.skins.search_hint").withStyle(ChatFormatting.DARK_GRAY));
+        searchBox.setHint(SREPanelStyle.hint(Component.translatable("screen.sre.skins.search_hint")));
         addRenderableWidget(searchBox);
+
+        only3dCheck = new ToggleCheckbox(searchX, filterY,
+                controlWidth, searchHeight, filterLabel, only3dFilter, v -> {
+                    only3dFilter = v;
+                    applySearchFilter();
+                });
+        addRenderableWidget(only3dCheck);
+        Button qualityButton = Button.builder(qualityFilterLabel(), b -> {
+            ItemSkinManager.QualityColor[] qualities = ItemSkinManager.QualityColor.values();
+            qualityFilter = qualityFilter == null ? qualities[0]
+                    : qualityFilter.ordinal() + 1 < qualities.length ? qualities[qualityFilter.ordinal() + 1] : null;
+            b.setMessage(qualityFilterLabel());
+            applySearchFilter();
+        }).pos(searchX, filterY + searchHeight + 4)
+                .size(controlWidth, searchHeight).build();
+        qualityButton.setTooltip(Tooltip.create(Component.translatable("screen.sre.skins.quality.tip")));
+        boolean skinTab = !categories.isEmpty() && !categories.get(selectedCategory).isNameTagTab();
+        only3dCheck.active = skinTab;
+        qualityButton.active = skinTab;
+        addRenderableWidget(qualityButton);
     }
 
-    private void initHatConfigCheckboxes(int titleY, int totalTitleH) {
-        SREClientConfig config = SREClientConfig.instance();
-        int checkH = 14;
-        int checkW = 100;
-        int gap = 4;
-        int checkY = titleY + (totalTitleH - checkH) / 2;
-        int startX = width - 10 - checkW * 2 - gap;
-
-        hideAllHatsCheck = new ToggleCheckbox(startX, checkY, checkW, checkH,
-                Component.translatable("screen.sre.skins.hide_all_hats"),
-                config.hideAllHats,
-                v -> {
-                    config.hideAllHats = v;
-                    config.reload();
-                });
-        addRenderableWidget(hideAllHatsCheck);
-
-        showOwnHatCheck = new ToggleCheckbox(startX + checkW + gap, checkY, checkW, checkH,
-                Component.translatable("screen.sre.skins.show_own_hat_only"),
-                config.showOwnHatOnly,
-                v -> {
-                    config.showOwnHatOnly = v;
-                    config.reload();
-                });
-        addRenderableWidget(showOwnHatCheck);
+    private Component qualityFilterLabel() {
+        Component qualityName = Component.translatable("screen.sre.skins.quality."
+                + (qualityFilter == null ? "all" : qualityFilter.name().toLowerCase(java.util.Locale.ROOT)));
+        if (qualityFilter != null) {
+            qualityName = qualityName.copy().withColor(qualityFilter.getColor());
+        }
+        return Component.translatable("screen.sre.skins.quality", qualityName);
     }
 
     private void selectCategory(int index) {
@@ -312,7 +406,7 @@ public class SkinManagementScreen extends Screen {
             return;
         }
         selectedCategory = index;
-        categoryPage = index / categoryPageSize;
+        if (categoryList != null) categoryList.revealCategory(index);
         onCategoryChanged(true);
     }
 
@@ -332,9 +426,10 @@ public class SkinManagementScreen extends Screen {
             return;
         }
         CategoryTabData selectedTab = categories.get(selectedCategory);
-        if (selectedTab.isHatTab()) {
+        if (selectedTab.isGridTab()) {
             hatGrid = new HatSkinGridPanel(contentX, listTop, leftPanelWidth, listHeight,
-                    skinsComponent, this::equipHat, searchFilter);
+                    skinsComponent, selectedTab.id, this::equipGridSkin, searchFilter, only3dFilter);
+            if (qualityFilter != null) hatGrid.rebuild(searchFilter, only3dFilter, qualityFilter);
             addRenderableWidget(hatGrid);
             return;
         }
@@ -353,17 +448,27 @@ public class SkinManagementScreen extends Screen {
                 contentX, leftPanelWidth, listHeight, listTop, itemStack, skinsComponent,
                 skinName -> ClientPlayNetworking.send(
                         new UpdateSkinSelectedPayload(ItemSkinManager.getItemTypeName(itemStack), skinName)),
-                searchFilter);
+                searchFilter, only3dFilter);
+        if (qualityFilter != null) skinList.rebuild(searchFilter, only3dFilter, qualityFilter);
         addRenderableWidget(skinList);
-
-        addRenderableWidget(new ItemInfoPanel(rightPanelX, listTop - 25, rightPanelWidth, 20, itemStack));
     }
 
-    /** 装备帽子：发送到服务端并做本地乐观更新（预览即时生效） */
-    private void equipHat(String skinName) {
-        ClientPlayNetworking.send(new UpdateSkinSelectedPayload("hat", skinName));
-        if (player != null) {
+    /** 装备帽子 / 饰品 / 随从：发送到服务端；帽子与随从沿用本地乐观更新。 */
+    private void equipGridSkin(String skinName) {
+        CategoryTabData tab = categories.get(selectedCategory);
+        ClientPlayNetworking.send(new UpdateSkinSelectedPayload(tab.id, skinName));
+        // 选中「随机」时不能做本地乐观更新：RANDOM_SKIN 不是真实皮肤 ID，
+        // 写进缓存会让渲染端拿着无效 ID 去找模型/贴图。服务端收到后会立刻
+        // rollRandomSkin 抽一次并同步回来，等那一次同步即可。
+        if (ItemSkinManager.isRandomSkin(skinName)) {
+            return;
+        }
+        if (player != null && tab.isHatTab()) {
             ClientHatEquipmentCache.setLocalOptimistic(player.getUUID(), skinName);
+        }
+        if (player != null && tab.isPetTab()) {
+            // 自己的随从立刻换上，不必等 5 秒一轮的服务端扫描
+            io.wifi.starrailexpress.client.pet.ClientPetCache.applyLocalOptimistic(player.getUUID(), skinName);
         }
     }
 
@@ -440,11 +545,14 @@ public class SkinManagementScreen extends Screen {
         renderAnimatedBackground(graphics, dt);
         renderPanelBackgrounds(graphics, openProgress);
         renderTitle(graphics, openProgress);
-        renderTabIndicator(graphics, dt, openProgress);
     }
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (rebuildRequested) {
+            rebuildRequested = false;
+            init();
+        }
         // 先调用 super.render 绘制组件（内部自动调用 renderBackground）
         super.render(graphics, mouseX, mouseY, partialTick);
 
@@ -468,24 +576,20 @@ public class SkinManagementScreen extends Screen {
             float y = height / 2f + (float) Math.sin(time * 0.0008 + i * 1.7) * (height * 0.45f);
             float twinkle = 0.5f + 0.5f * (float) Math.sin(time * 0.0012 + i * 2.3);
             int alpha = (int) (15 + 45 * twinkle);
-            graphics.fill((int) x, (int) y, (int) x + 2, (int) y + 2, GuiAnim.withAlpha(0xD4AF37, alpha));
+            graphics.fill((int) x, (int) y, (int) x + 2, (int) y + 2, GuiAnim.withAlpha(SRETheme.GOLD, alpha));
         }
         // 顶部金色氛围光
         graphics.fillGradient(0, 0, width, 60, 0x252A1A08, 0x002A1A08);
     }
 
-    /** 左面板 + 右面板的盒子背景 */
+    /** 三栏共用同一外框，右栏在人物预览与筛选之间增加分隔线。 */
     private void renderPanelBackgrounds(GuiGraphics graphics, float openProgress) {
-        float slide = (1f - openProgress) * -12f;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, slide, 0);
-
-        // 左面板
-        drawPanelBox(graphics, contentX, listTop, leftPanelWidth, listHeight, openProgress);
-        // 右面板
-        drawPanelBox(graphics, rightPanelX, listTop, rightPanelWidth, listHeight, openProgress);
-
-        graphics.pose().popPose();
+        int panelWidth = rightPanelX + rightPanelWidth - panelX;
+        drawPanelBox(graphics, panelX, listTop, panelWidth, listHeight, openProgress);
+        int border = GuiAnim.withAlpha(PANEL_BORDER, GuiAnim.alphaOf(openProgress));
+        graphics.fill(contentX - 3, listTop + 1, contentX - 2, listTop + listHeight - 1, border);
+        graphics.fill(rightPanelX - 3, listTop + 1, rightPanelX - 2, listTop + listHeight - 1, border);
+        graphics.fill(rightPanelX, filterTop, rightPanelX + rightPanelWidth - 1, filterTop + 1, border);
     }
 
     /** 单一面板盒子：渐变背景 + 棕褐色描边 + 顶部装饰线 */
@@ -501,12 +605,13 @@ public class SkinManagementScreen extends Screen {
         g.fill(x + w - 1, y, x + w, y + h, borderColor);
         // 顶部装饰线
         int decorAlpha = Math.min(0x33, GuiAnim.alphaOf(alpha));
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, decorAlpha | 0x00FFE8C0);
+        g.fill(x + 1, y + 1, x + w - 1, y + 2, decorAlpha | SRETheme.withAlpha(SRETheme.BRASS_BRIGHT, 0x00));
     }
 
     private void renderTitle(GuiGraphics graphics, float openProgress) {
-        int titleY = this.height < 420 ? 6 : 10;
-        int titleHeight = this.height < 420 ? 18 : 24;
+        boolean isCompact = this.height < 420 || this.width < 560;
+        int titleY = isCompact ? 6 : 10;
+        int titleHeight = isCompact ? 18 : 24;
         float slide = (1f - openProgress) * -18f;
 
         graphics.pose().pushPose();
@@ -527,7 +632,7 @@ public class SkinManagementScreen extends Screen {
         graphics.fill(titleX + titleW - 1, titleY, titleX + titleW, titleY + titleHeight, borderColor);
         // 顶部装饰线
         int decorAlpha = Math.min(0x33, GuiAnim.alphaOf(openProgress));
-        graphics.fill(titleX + 1, titleY + 1, titleX + titleW - 1, titleY + 2, decorAlpha | 0x00FFE8C0);
+        graphics.fill(titleX + 1, titleY + 1, titleX + titleW - 1, titleY + 2, decorAlpha | SRETheme.withAlpha(SRETheme.BRASS_BRIGHT, 0x00));
 
         graphics.drawCenteredString(font, this.title,
                 width / 2, titleY + (titleHeight - 8) / 2,
@@ -542,34 +647,6 @@ public class SkinManagementScreen extends Screen {
         graphics.pose().popPose();
     }
 
-    /** 分类标签栏下的滑动选中指示条 */
-    private void renderTabIndicator(GuiGraphics graphics, float dt, float openProgress) {
-        CategoryButton selected = null;
-        for (CategoryButton button : categoryButtons) {
-            if (button.selected) {
-                selected = button;
-                break;
-            }
-        }
-        if (selected == null) {
-            indicatorInitialized = false;
-            return;
-        }
-        if (!indicatorInitialized) {
-            indicatorX = selected.getX();
-            indicatorWidth = selected.getWidth();
-            indicatorInitialized = true;
-        }
-        indicatorX = GuiAnim.approach(indicatorX, selected.getX(), 18f, dt);
-        indicatorWidth = GuiAnim.approach(indicatorWidth, selected.getWidth(), 18f, dt);
-
-        int y = selected.getY() + selected.getHeight() + 1;
-        int x0 = Math.round(indicatorX);
-        int x1 = Math.round(indicatorX + indicatorWidth);
-        int alpha = GuiAnim.alphaOf(openProgress);
-        graphics.fill(x0, y, x1, y + 2, GuiAnim.withAlpha(ACCENT, alpha));
-        graphics.fill(x0, y - 1, x1, y, GuiAnim.withAlpha(ACCENT_SOFT, alpha / 2));
-    }
 
     // ─── 右侧预览面板 ───────────────────────────────────────────────────────
 
@@ -577,52 +654,53 @@ public class SkinManagementScreen extends Screen {
         if (player == null) {
             return;
         }
-        float slide = (1f - openProgress) * 24f;
         graphics.pose().pushPose();
-        graphics.pose().translate(slide, 0, 0);
 
         boolean isNameTagTab = !categories.isEmpty() && selectedCategory < categories.size()
                 && categories.get(selectedCategory).isNameTagTab();
 
-        // 称号标签（预览面板内显示当前称号）
+
+        int labelY = listTop + searchHeight + 14;
+        Component previewLabel = Component.translatable("screen.sre.skins.preview");
         if (isNameTagTab) {
-            int nameTagY = listTop + 34;
-            graphics.drawCenteredString(font, Component.translatable("screen.sre.skins.title_selector"),
-                    rightPanelX + rightPanelWidth / 2, nameTagY - 20, TEXT_DIM);
             String current = getCurrentNameTag();
-            Component displayText = current.isEmpty()
-                    ? Component.translatable("screen.sre.skins.no_title")
+            previewLabel = current.isEmpty() ? Component.translatable("screen.sre.skins.no_title")
                     : getNameTagDisplayText(current);
-            graphics.drawCenteredString(font, displayText,
-                    rightPanelX + rightPanelWidth / 2, nameTagY - 4, NAME_TAG_COLOR);
-        } else {
-            // 非名片页：在预览上方显示当前装备的皮肤名
-            int labelY = listTop + 30;
-            graphics.drawCenteredString(font, Component.translatable("screen.sre.skins.preview"),
-                    rightPanelX + rightPanelWidth / 2, labelY, TEXT_DIM);
         }
+        graphics.drawCenteredString(font,
+                net.minecraft.locale.Language.getInstance().getVisualOrder(
+                        font.substrByWidth(previewLabel, rightPanelWidth - 12)),
+                rightPanelX + rightPanelWidth / 2, labelY,
+                isNameTagTab ? NAME_TAG_COLOR : TEXT_DIM);
 
-
-        // 玩家预览
-        int nameTagY = listTop + 34;
         int previewX1 = rightPanelX + 6;
-        int previewY1 = nameTagY + 8;
+        int previewY1 = labelY + 12;
         int previewX2 = rightPanelX + rightPanelWidth - 6;
-        int previewY2 = listTop + listHeight - 12;
+        int previewY2 = filterTop - 4;
         int previewSize = Math.min(previewX2 - previewX1, previewY2 - previewY1);
-        int modelScale = previewSize / MODEL_SCALE_DIVISOR;
+        if (previewSize <= 0) {
+            graphics.pose().popPose();
+            return;
+        }
+        int modelScale = Math.max(1, previewSize / MODEL_SCALE_DIVISOR);
 
         ItemStack previewStack = getPreviewStackForCurrentTab();
         ItemStack originalMainhand = player.getMainHandItem().copy();
-        if (!previewStack.isEmpty()) {
-            player.setItemSlot(EquipmentSlot.MAINHAND, previewStack);
+        try {
+            if (!previewStack.isEmpty()) {
+                player.setItemSlot(EquipmentSlot.MAINHAND, previewStack);
+            }
+            graphics.pose().pushPose();
+            try {
+                graphics.pose().translate(0, 0, 400F);
+                InventoryScreen.renderEntityInInventoryFollowsMouse(graphics,
+                        previewX1, previewY1, previewX2, previewY2, modelScale, 0.0625F, mouseX, mouseY, player);
+            } finally {
+                graphics.pose().popPose();
+            }
+        } finally {
+            player.setItemSlot(EquipmentSlot.MAINHAND, originalMainhand);
         }
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 400F);
-        InventoryScreen.renderEntityInInventoryFollowsMouse(graphics,
-                previewX1, previewY1, previewX2, previewY2, modelScale, 0.0625F, mouseX, mouseY, player);
-        graphics.pose().popPose();
-        player.setItemSlot(EquipmentSlot.MAINHAND, originalMainhand);
 
         graphics.pose().popPose();
     }
@@ -632,8 +710,11 @@ public class SkinManagementScreen extends Screen {
             return ItemStack.EMPTY;
         }
         CategoryTabData selectedTab = categories.get(selectedCategory);
-        if (selectedTab.isHatTab() || selectedTab.isNameTagTab()) {
+        if (selectedTab.isMusicBoxTab() || selectedTab.isPetTab() || selectedTab.isMvpAnimationTab()) {
+            // 非手持外观，预览里不摆道具。
             return ItemStack.EMPTY;
+        }
+        if (selectedTab.isGridTab() || selectedTab.isNameTagTab()) {
         }
         ItemStack preview = new ItemStack(selectedTab.iconItem);
         preview.set(io.wifi.starrailexpress.index.SREDataComponentTypes.SKIN,
@@ -670,6 +751,13 @@ public class SkinManagementScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (searchBox != null && searchBox.isFocused()) {
+            if (keyCode == 256) {
+                searchBox.setFocused(false);
+                return true;
+            }
+            return searchBox.keyPressed(keyCode, scanCode, modifiers);
+        }
         if (super.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
         }
@@ -693,15 +781,40 @@ public class SkinManagementScreen extends Screen {
     }
 
     @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (searchBox != null && searchBox.isFocused()) {
+            return searchBox.charTyped(codePoint, modifiers);
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    /**
+     * 只重筛当前列表，不重建搜索框，避免输入时焦点被清掉。
+     * <p>
+     * 搜索词与「仅显示 3D 皮肤」由同一入口下发，保证两者可以叠加：
+     * 先按 3D 筛，再按匹配度排序。
+     */
+    private void applySearchFilter() {
+        if (skinList != null) {
+            skinList.rebuild(searchFilter, only3dFilter, qualityFilter);
+            return;
+        }
+        if (hatGrid != null) {
+            hatGrid.rebuild(searchFilter, only3dFilter, qualityFilter);
+            return;
+        }
+        if (nameTagList != null) {
+            nameTagList.rebuild(searchFilter);
+        }
+    }
+
+    @Override
     public void onClose() {
         this.minecraft.setScreen(parentScreen);
     }
 
     public void refreshSkinPanels() {
-        skinList = null;
-        hatGrid = null;
-        nameTagList = null;
-        this.init();
+        rebuildRequested = true;
     }
 
     private static String getItemShortName(Item item) {
@@ -723,13 +836,13 @@ public class SkinManagementScreen extends Screen {
         private float selectAnim = 0f;
 
         // 复古主题分类按钮色
-        private static final int TAB_BG = 0x991A1008;
+        private static final int TAB_BG = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x99);
         private static final int TAB_BG_HOVER = 0x992A1A08;
         private static final int TAB_BG_SELECT = 0x99302010;
-        private static final int TAB_BORDER = 0x558B6914;
-        private static final int TAB_BORDER_ACTIVE = 0xFFD4AF37;
-        private static final int TAB_TEXT = 0xFFC8B898;
-        private static final int TAB_TEXT_ACTIVE = 0xFFFFF4DC;
+        private static final int TAB_BORDER = SRETheme.withAlpha(SRETheme.BORDER, 0x55);
+        private static final int TAB_BORDER_ACTIVE = SRETheme.GOLD;
+        private static final int TAB_TEXT = SRETheme.BODY;
+        private static final int TAB_TEXT_ACTIVE = SRETheme.TEXT;
 
         CategoryButton(int x, int y, int width, int height, Component label, Item item,
                 OnPress onPress, boolean selected) {
@@ -762,17 +875,16 @@ public class SkinManagementScreen extends Screen {
                     Math.max(hoverAnim, selectAnim));
 
             int iconSize = 16;
-            int iconTextGap = 3;
-            int textWidth = font.width(label);
-            boolean showText = iconSize + iconTextGap + textWidth + 4 <= width;
-            int contentW = showText ? iconSize + iconTextGap + textWidth : iconSize;
+            int startX = getX() + 4;
+            int textX = startX + iconSize + 4;
             int iconY = getY() + (height - iconSize) / 2;
             int textY = getY() + (height - 8) / 2;
-            int startX = getX() + (width - contentW) / 2;
-
             graphics.renderFakeItem(item, startX, iconY);
-            if (showText) {
-                graphics.drawString(font, label, startX + iconSize + iconTextGap, textY, textColor);
+            graphics.drawString(font, net.minecraft.locale.Language.getInstance().getVisualOrder(
+                            font.substrByWidth(label, Math.max(0, width - 28))),
+                    textX, textY, textColor, false);
+            if (selected) {
+                graphics.fill(getX(), getY() + 2, getX() + 2, getY() + height - 2, ACCENT);
             }
         }
     }
@@ -810,12 +922,12 @@ public class SkinManagementScreen extends Screen {
         private final java.util.function.Consumer<Boolean> onToggle;
         private float hoverAnim = 0f;
 
-        private static final int BG_OFF = 0x991A1008;
+        private static final int BG_OFF = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x99);
         private static final int BG_ON = 0x992A2010;
         private static final int BG_HOVER = 0x992A1A08;
-        private static final int BORDER = 0x558B6914;
-        private static final int BORDER_ACTIVE = 0xFFD4AF37;
-        private static final int CHECK_ON = 0xFFD4AF37;
+        private static final int BORDER = SRETheme.withAlpha(SRETheme.BORDER, 0x55);
+        private static final int BORDER_ACTIVE = SRETheme.GOLD;
+        private static final int CHECK_ON = SRETheme.GOLD;
 
         ToggleCheckbox(int x, int y, int width, int height, Component label, boolean initial,
                 java.util.function.Consumer<Boolean> onToggle) {
@@ -832,7 +944,7 @@ public class SkinManagementScreen extends Screen {
 
             int bg = GuiAnim.blend(toggled ? BG_ON : BG_OFF, BG_HOVER, hoverAnim);
             int border = GuiAnim.blend(BORDER,
-                    toggled ? BORDER_ACTIVE : GuiAnim.blend(0x558B6914, 0xFFC9A84C, hoverAnim),
+                    toggled ? BORDER_ACTIVE : GuiAnim.blend(SRETheme.withAlpha(SRETheme.BORDER, 0x55), SRETheme.GOLD_DIM, hoverAnim),
                     Math.max(toggled ? 1f : 0f, hoverAnim * 0.5f));
 
             // 背景
@@ -848,19 +960,19 @@ public class SkinManagementScreen extends Screen {
             int boxX = getX() + 3;
             int boxY = getY() + (height - boxSize) / 2;
             g.fill(boxX, boxY, boxX + boxSize, boxY + boxSize, toggled ? CHECK_ON : 0x553A3020);
-            g.fill(boxX, boxY, boxX + boxSize, boxY + 1, 0x558B6914);
-            g.fill(boxX + boxSize - 1, boxY, boxX + boxSize, boxY + boxSize, 0x558B6914);
-            g.fill(boxX, boxY, boxX + 1, boxY + boxSize, 0x558B6914);
-            g.fill(boxX, boxY + boxSize - 1, boxX + boxSize, boxY + boxSize, 0x558B6914);
+            g.fill(boxX, boxY, boxX + boxSize, boxY + 1, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
+            g.fill(boxX + boxSize - 1, boxY, boxX + boxSize, boxY + boxSize, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
+            g.fill(boxX, boxY, boxX + 1, boxY + boxSize, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
+            g.fill(boxX, boxY + boxSize - 1, boxX + boxSize, boxY + boxSize, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
 
             // 勾号
             if (toggled) {
                 var font = Minecraft.getInstance().font;
-                g.drawString(font, "\u2713", boxX + 1, boxY - 1, 0xFF1A1008, false);
+                g.drawString(font, "\u2713", boxX + 1, boxY - 1, SRETheme.SURFACE_TOP_SOFT, false);
             }
 
             // 标签
-            int textColor = GuiAnim.blend(0xFF9E8B6E, 0xFFFFF4DC, Math.max(toggled ? 0.6f : 0f, hoverAnim));
+            int textColor = GuiAnim.blend(SRETheme.MUTED, SRETheme.TEXT, Math.max(toggled ? 0.6f : 0f, hoverAnim));
             var font = Minecraft.getInstance().font;
             String clipped = font.plainSubstrByWidth(label.getString(), width - boxSize - 8);
             g.drawString(font, clipped, boxX + boxSize + 5, getY() + (height - 8) / 2, textColor, false);
@@ -868,7 +980,7 @@ public class SkinManagementScreen extends Screen {
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (button == 0 && isMouseOver(mouseX, mouseY)) {
+            if (active && visible && button == 0 && isMouseOver(mouseX, mouseY)) {
                 toggled = !toggled;
                 Minecraft.getInstance().getSoundManager().play(
                         net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
@@ -885,31 +997,6 @@ public class SkinManagementScreen extends Screen {
         }
     }
 
-    // ─── ItemInfoPanel ───────────────────────────────────────────────────────
-
-    private static class ItemInfoPanel extends AbstractWidget {
-        private final ItemStack item;
-
-        ItemInfoPanel(int x, int y, int width, int height, ItemStack item) {
-            super(x, y, width, height, item.getDisplayName());
-            this.item = item;
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            graphics.fillGradient(getX(), getY(), getX() + width, getY() + height,
-                    0x991A1008, 0x9920140A);
-            graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0x558B6914);
-            graphics.renderFakeItem(item, getX() + 5, getY() + (height - 16) / 2);
-            graphics.drawString(Minecraft.getInstance().font, getMessage(),
-                    getX() + 25, getY() + (height - 8) / 2, 0xFFFFF4DC, false);
-        }
-
-        @Override
-        protected void updateWidgetNarration(NarrationElementOutput output) {
-            output.add(NarratedElementType.TITLE, getMessage());
-        }
-    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // 名片列表（称号选择）
@@ -923,14 +1010,14 @@ public class SkinManagementScreen extends Screen {
         private boolean draggingScrollbar = false;
 
         // 复古主题色
-        private static final int BG_COLOR = 0x801A1008;
-        private static final int BORDER_COLOR = 0x558B6914;
-        private static final int ENTRY_BG = 0x991A1008;
+        private static final int BG_COLOR = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x80);
+        private static final int BORDER_COLOR = SRETheme.withAlpha(SRETheme.BORDER, 0x55);
+        private static final int ENTRY_BG = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x99);
         private static final int ENTRY_BG_HOVER = 0x992A1A08;
         private static final int ENTRY_BG_SELECTED = 0xB0302010;
-        private static final int TEXT_COLOR = 0xFFC8B898;
-        private static final int TEXT_SELECTED = 0xFFF5E8C8;
-        private static final int SELECTED_MARKER = 0xFFD4AF37;
+        private static final int TEXT_COLOR = SRETheme.BODY;
+        private static final int TEXT_SELECTED = SRETheme.TITLE;
+        private static final int SELECTED_MARKER = SRETheme.GOLD;
 
         public NameTagList(SkinManagementScreen parentScreen, Minecraft mc,
                 int x, int width, int height, int y, String searchFilter) {
@@ -947,6 +1034,7 @@ public class SkinManagementScreen extends Screen {
         public void rebuild(String filter) {
             clearEntries();
             List<String> tags = parentScreen.getNameTags();
+            setScrollAmount(0);
             String current = parentScreen.getCurrentNameTag();
             String f = filter != null ? filter.toLowerCase() : "";
             for (String tag : tags) {
@@ -1038,7 +1126,7 @@ public class SkinManagementScreen extends Screen {
             int y0 = top;
             int y1 = top + h;
             g.fillGradient(getX() + 2, y0, getX() + getRowWidth(), y1,
-                    0x401A1008, 0x4020140A);
+                    SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x40), SRETheme.withAlpha(SRETheme.SURFACE_BOTTOM, 0x40));
             // 左侧金色标记
             g.fill(getX() + 2, y0 + 2, getX() + 5, y1 - 2, SELECTED_MARKER);
         }
@@ -1063,7 +1151,7 @@ public class SkinManagementScreen extends Screen {
                 if ("__empty__".equals(tagId)) {
                     g.drawCenteredString(Minecraft.getInstance().font,
                             Component.translatable("screen.sre.skins.no_title"),
-                            x + entryWidth / 2, y + entryHeight / 2 - 4, 0xFF9E8B6E);
+                            x + entryWidth / 2, y + entryHeight / 2 - 4, SRETheme.MUTED);
                     return;
                 }
 
@@ -1073,8 +1161,8 @@ public class SkinManagementScreen extends Screen {
                 g.fill(x + 2, y + 2, x + entryWidth - 4, y + entryHeight - 2, bg);
 
                 // 边框
-                int border = GuiAnim.blend(0x308B6914, 0xFFD4AF37, hoverAnim);
-                if (isCurrent) border = GuiAnim.blend(border, 0xFFD4AF37, 0.6f);
+                int border = GuiAnim.blend(SRETheme.withAlpha(SRETheme.BORDER, 0x30), SRETheme.GOLD, hoverAnim);
+                if (isCurrent) border = GuiAnim.blend(border, SRETheme.GOLD, 0.6f);
                 g.fill(x + 2, y + 2, x + entryWidth - 4, y + 3, border);
                 g.fill(x + 2, y + entryHeight - 3, x + entryWidth - 4, y + entryHeight - 2, border);
                 g.fill(x + 2, y + 2, x + 3, y + entryHeight - 2, border);
@@ -1088,7 +1176,7 @@ public class SkinManagementScreen extends Screen {
                 // 文字
                 Component display = parentScreen.getNameTagDisplayText(tagId);
                 int textColor = isCurrent ? TEXT_SELECTED
-                        : (int) GuiAnim.blend(0xFF9E8B6E, 0xFFFFF4DC, hoverAnim);
+                        : (int) GuiAnim.blend(SRETheme.MUTED, SRETheme.TEXT, hoverAnim);
                 var font = Minecraft.getInstance().font;
                 g.drawString(font, font.plainSubstrByWidth(display.getString(), entryWidth - 30),
                         x + (isCurrent ? 14 : 6), y + (entryHeight - 8) / 2, textColor, false);

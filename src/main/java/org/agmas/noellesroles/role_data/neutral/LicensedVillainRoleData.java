@@ -21,27 +21,31 @@ import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.game.GameUtils;
-import io.wifi.starrailexpress.index.TMMSounds;
+import org.agmas.noellesroles.init.NRSounds;
 import org.agmas.noellesroles.packet.BroadcastMessageS2CPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import org.agmas.noellesroles.game.moment.MomentManager;
+import org.agmas.noellesroles.game.moment.MomentType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
+import pro.fazeclan.river.stupid_express.modifier.refugee.cca.RefugeeComponent;
 
 import java.util.OptionalInt;
 
 /**
  * 黑警（Licensed villain）职业数据。
  * <p>
- * 核心机制：当场上存活玩家数量低于开局人数的 25% 时触发「黑警时刻」。
+ * 核心机制：当场上存活玩家数量低于开局人数的 40% 时触发「黑警时刻」。
  * 黑警时刻触发后，以触发时在场玩家为基准比较三大阵营（杀手阵营含杀手方中立 /
  * 平民阵营含警长阵营 / 中立阵营不含杀手方中立）的存活数量，取最多者作为黑警的击杀目标阵营；
  * 若出现平票，按「杀手 > 中立 > 平民」的优先级选择。
@@ -64,6 +68,15 @@ public class LicensedVillainRoleData extends SimpleRoleData {
     /** 全局触发守卫，确保黑警时刻只触发一次。 */
     private static boolean momentTriggeredGuard = false;
 
+    /**
+     * 黑警时刻触发阈值（百分比）：存活人数不足开局人数的该比例时触发。
+     * <p>
+     * 用整数百分比而非 {@code 0.4} 之类的浮点字面量做比较：0.4 在二进制下是无限循环小数，
+     * {@code playerCount * 0.4} 在 10/15/20 人等开局人数下会产生 6.000000000000001 之类的
+     * 浮点误差，再套 {@code Math.ceil} 会使阈值整体偏移 1 人。
+     */
+    public static final int MOMENT_ALIVE_PERCENT = 40;
+
     /** 本实例（黑警）已知黑警时刻已触发。会同步给客户端用于透视。 */
     public boolean momentTriggered = false;
     /** 当前目标阵营阶段。会同步给客户端用于透视。 */
@@ -71,6 +84,17 @@ public class LicensedVillainRoleData extends SimpleRoleData {
 
     public LicensedVillainRoleData(RoleDataContext context) {
         super(context);
+    }
+
+    /**
+     * 复位黑警时刻的全局触发守卫，必须在每局游戏初始化时调用。
+     * <p>
+     * {@link #momentTriggeredGuard} 是静态字段：触发后置 {@code true} 且原先没有任何地方清零，
+     * 导致同一服务器进程内第一局触发过黑警时刻后，之后所有对局都无法再进入黑警时刻。
+     * 现在由 {@code GameInitializeEvent} 监听（见 {@code BounsRoles#registerEvents}）在每局开局前复位。
+     */
+    public static void resetMomentTriggered() {
+        momentTriggeredGuard = false;
     }
 
     // ---- 服务端的黑警时刻触发与状态 ----
@@ -83,6 +107,11 @@ public class LicensedVillainRoleData extends SimpleRoleData {
             return;
         }
         if (!gameWorld.isRunning() || !GameUtils.isPlayerAliveAndSurvival(player)) {
+            // 黑警时刻结束（游戏结束或黑警死亡）：统一管理器出栈并停播/回退时刻音乐。
+            if (momentTriggered) {
+                MomentManager.end((ServerLevel) player.level(), MomentType.LICENSED_VILLAIN);
+                momentTriggered = false;
+            }
             return;
         }
 
@@ -90,10 +119,12 @@ public class LicensedVillainRoleData extends SimpleRoleData {
         if (momentTriggered) {
             if (areAllTargetsCleared(player.level(), gameWorld, targetPhase)) {
                 if (player.level() instanceof ServerLevel serverLevel) {
+                    MomentManager.end(serverLevel, MomentType.LICENSED_VILLAIN);
                     RoleUtils.customWinnerWin(serverLevel, GameUtils.WinStatus.CUSTOM,
                             BounsRoles.LICENSED_VILLAIN.identifier().getPath(),
                             OptionalInt.of(LICENSED_VILLAIN_COLOR));
                 }
+                momentTriggered = false;
             }
             return;
         }
@@ -103,9 +134,16 @@ public class LicensedVillainRoleData extends SimpleRoleData {
             return;
 
         int alive = countAlivePlayers(gameWorld);
-        // 存活人数不足开局人数的 25% 时触发
-        if (alive > 0 && alive < Math.ceil(playerCount * 0.25)) {
-            if (momentTriggeredGuard)
+        // 存活人数不足开局人数的 40% 时触发（整数乘法比较，等价于 alive < playerCount * 0.4）
+        if (alive > 0 && alive * 100 < playerCount * MOMENT_ALIVE_PERCENT) {
+            // 统一时刻判定：一局仅触发一次（原有的静态守卫继续作为兼容兜底）。
+            if (momentTriggeredGuard || !MomentManager.canTrigger((ServerLevel) player.level(),
+                    MomentType.LICENSED_VILLAIN))
+                return;
+            // 亡命徒时刻（由难民修饰符触发）期间不触发黑警时刻：
+            // 此时存活人数常被压到阈值以下，且整局状态会在时刻结束时被时间回溯还原。
+            // 必须在置 momentTriggeredGuard 之前返回，否则本局黑警时刻会永久失效。
+            if (RefugeeComponent.KEY.get(player.level()).isAnyRevivals)
                 return;
             momentTriggeredGuard = true;
             triggerLicensedVillainMoment(gameWorld);
@@ -115,6 +153,12 @@ public class LicensedVillainRoleData extends SimpleRoleData {
     /** 黑警时刻触发：广播、发放德林加、播放音效、决定目标阵营并同步给所有黑警。 */
     private void triggerLicensedVillainMoment(SREGameWorldComponent gameWorld) {
         ServerLevel level = (ServerLevel) player.level();
+        // 统一时刻入口：一局仅第一次真正触发；之后保持已有状态，不重复开场。
+        if (!MomentManager.trigger(level, MomentType.LICENSED_VILLAIN))
+            return;
+
+        // 回放记录：黑警时刻触发
+        ReplayEventLog.record("replay.event.moment.licensed_villain", ReplayEventLog.player(player));
 
         // 以触发时在场（存活）玩家为基准统计三大阵营数量
         int killerCount = 0;
@@ -125,7 +169,7 @@ public class LicensedVillainRoleData extends SimpleRoleData {
                 continue;
             if (gameWorld.isRole(p, BounsRoles.LICENSED_VILLAIN))
                 continue;
-            SRERole role = gameWorld.getRole(p);
+            SRERole role = gameWorld.getAllegianceRole(p);
             if (role == null)
                 continue;
             if (role.isKillerTeam()) {
@@ -168,13 +212,6 @@ public class LicensedVillainRoleData extends SimpleRoleData {
             }
         }
 
-        // 全场播放与远征队修饰符触发时一致的音效（master 类型）
-        for (Player p : level.players()) {
-            if (!GameUtils.isPlayerAliveAndSurvivalIgnoreShitSplit(p))
-                continue;
-            p.level().playSound(null, p.blockPosition(), TMMSounds.ITEM_PSYCHO_ARMOUR,
-                    SoundSource.MASTER, 2.0F, 0.8F);
-        }
     }
 
     /** 统计当前存活玩家数。 */

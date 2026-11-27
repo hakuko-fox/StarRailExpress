@@ -29,6 +29,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
+import org.agmas.noellesroles.client.gunfx.GunTracers;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.init.ModItems;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +50,8 @@ public record ZeroOneFiveShootPayload(int target) implements CustomPacketPayload
         @Override
         public void receive(@NotNull ZeroOneFiveShootPayload payload, ServerPlayNetworking.@NotNull Context context) {
             ServerPlayer player = context.player();
+            if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksGun(player)) return;
+            if (!org.agmas.noellesroles.game.roles.killer.ma_chen_xu.SackGhostActions.allowAttack(player)) return;
             ItemStack mainHandStack = player.getMainHandItem();
 
             if (player.isSpectator()) {
@@ -82,7 +85,7 @@ public record ZeroOneFiveShootPayload(int target) implements CustomPacketPayload
                     TMMSounds.ITEM_REVOLVER_SHOOT, SoundSource.PLAYERS, 5f,
                     0.7f + player.getRandom().nextFloat() * .1f - .05f);
 
-            org.agmas.noellesroles.gunfx.GunTracers.broadcast(player,
+            GunTracers.broadcast(player,
                     payload.target() >= 0 ? player.serverLevel().getEntity(payload.target()) : null, 30.0D);
 
             for (ServerPlayer tracking : PlayerLookup.tracking(player)) {

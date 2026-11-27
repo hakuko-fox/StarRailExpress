@@ -88,7 +88,10 @@ public enum ForensicCategory {
                 || reason.equals(GameConstants.DeathReasons.STALACTITE_IMPALE)
                 || reason.equals(GameConstants.DeathReasons.FLAMETHROWER_BURNED)
                 || reason.equals(GameConstants.DeathReasons.BOULDER_CRUSH)
-                || reason.equals(GameConstants.DeathReasons.INCINERATOR_PUSHED)) {
+                || reason.equals(GameConstants.DeathReasons.INCINERATOR_PUSHED)
+                // 玩家傀儡本体死亡：不是被凶器直接命中玩家本体，归入"环境/事故"一类，
+                // 避免在凶器大类里暴露傀儡师/渡鸦的真实死亡方式
+                || reason.equals(GameConstants.DeathReasons.PUPPETEER_BODY_DEATH)) {
             return ENVIRONMENT;
         }
 
@@ -115,6 +118,9 @@ public enum ForensicCategory {
         if (p.contains("grenade") || p.contains("explos") || p.contains("c4")
                 || p.contains("bomb") || p.contains("tnt")) {
             return EXPLOSIVE;
+        }
+        if (p.contains("star")) {
+            return BLUNT;
         }
         if (p.contains("fell") || p.contains("fire") || p.contains("burn") || p.contains("crush")
                 || p.contains("suffocat") || p.contains("incinerat") || p.contains("impale")

@@ -18,6 +18,7 @@ package org.agmas.noellesroles.content.item;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.cca.SREPlayerNoteComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.util.ShopEntry;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -58,6 +59,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
                         } else {
                             var note = createNoteEntity(world);
                             if (note == null) return InteractionResult.PASS;
+                            note.setSkin(io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player, itemStack));
 
                             playerShopComponent.addToBalance(-50);
 
@@ -66,7 +68,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
                             note.setPos(livingEntity.getX(), livingEntity.getY() + 1, livingEntity.getZ());
                             note.setDirection(Direction.EAST);
                             note.setLines(component.text);
-                                serverPlayer.displayClientMessage(Component.translatable("message.note.put_back", livingEntity.getName()).withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
+                                serverPlayer.displayClientMessage(Component.translatable("message.note.put_back", ShopEntry.Currency.MONEY.amountText(50), livingEntity.getName()).withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
 
                             world.addFreshEntity(note);
                             if (!serverPlayer.isCreative()) {
@@ -80,7 +82,7 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
                         }
                     }
                 } else {
-                    serverPlayer.displayClientMessage(Component.translatable("message.note.not_enough_money",50).withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
+                    serverPlayer.displayClientMessage(Component.translatable("message.note.not_enough_money", ShopEntry.Currency.MONEY.amountText(50)).withColor(Mth.hsvToRgb(0.0F, 1.0F, 0.6F)), true);
                 }
             }
         }
@@ -113,6 +115,8 @@ public class GiantNoteItem extends io.wifi.starrailexpress.content.item.NoteItem
         Direction side = context.getClickedFace();
         note.setDirection(side);
         note.setLines(component.text);
+        note.setSkin(io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player,
+                player.getItemInHand(context.getHand())));
         Vec3 hitPos = context.getClickLocation().add(context.getClickLocation().subtract(player.getEyePosition()).normalize().scale(-.01f)).subtract(0, note.getBbHeight() / 2f, 0);
         note.setPos(hitPos.x(), hitPos.y(), hitPos.z());
         world.addFreshEntity(note);

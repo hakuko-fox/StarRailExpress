@@ -25,6 +25,8 @@ import org.agmas.noellesroles.game.modes.echo.inventory.EchoResourceLedger.Locat
 import org.agmas.noellesroles.game.modes.echo.map.EchoMapConfig;
 import org.agmas.noellesroles.game.modes.echo.runtime.EchoMatch;
 import org.agmas.noellesroles.game.modes.echo.state.*;
+import org.agmas.noellesroles.game.modes.echo.content.EchoMachineInteractions;
+import org.agmas.noellesroles.game.modes.echo.content.EchoMachineTasks;
 
 import java.util.*;
 
@@ -49,11 +51,19 @@ public final class EchoObjectiveService {
     private final Map<BlockPos,Target> targets=new HashMap<>();
     private final Map<String,Target> handles=new HashMap<>();
     private final Map<String,EchoBeaconState> beacons=new LinkedHashMap<>();
+    private final Map<UUID,ServerPlayer> taskRecipients=new HashMap<>();
     private final Map<String,Long> nodeReady=new HashMap<>(),crateReady=new HashMap<>();
     private final Map<String,Long> submissionHighlights=new HashMap<>();
     private final Map<UUID,Resource> resources=new HashMap<>();
     private final Map<UUID,Long> dwell=new HashMap<>();
+    /** 采集故障声纹的传播半径（格）。 */
+    private static final double FAULT_RANGE=48.0D;
     private final Random random=new Random();
+    /** 正在等修机判定的玩家 → 判定 + 目标。同一玩家同时只允许一轮。 */
+    private final Map<UUID,PendingRepair> repairs=new java.util.HashMap<>();
+    /** 一轮修机判定：权威状态机 + 目标（晶簇或黑晶点）。 */
+    private record PendingRepair(org.agmas.noellesroles.game.modes.echo.repair.EchoRepairCheck check,
+                                 String checkId, Target target) { }
     private EchoKeySchedule keys;
     private final org.agmas.noellesroles.game.modes.echo.contract.EchoBlackCrystalState black;
     private boolean started,closed;
@@ -93,16 +103,24 @@ public final class EchoObjectiveService {
         for(var d:drops.all()) if(d.kind()==EchoDropService.Kind.BLACK_CRYSTAL && !drops.missing(d) && match.matchTick()<d.expiresAt() && canPickupBlack(player,d.instanceId())) result.put("drop:"+d.dropId(),d.pos());
         return result;
     }
+    /** 只有每台机器的配置主点，不携带库存、契约分配或个人进度。 */
+    public HashMap<BlockPos,Integer> taskPoints() {
+        var points=new HashMap<BlockPos,Integer>();
+        for(var pos:targets.keySet()) points.put(EchoMachineInteractions.root(level,pos),EchoMachineTasks.TYPE);
+        points.put(BlockPos.containing(EchoGateService.vec(map.brokerExit().pos())),EchoMachineTasks.TYPE);
+        points.put(BlockPos.containing(EchoGateService.vec(map.evacuation().controlPos())),EchoMachineTasks.TYPE);
+        return points;
+    }
     public boolean allActive() { return beacons.values().stream().allMatch(EchoBeaconState::active); }
     /** 目标卡只修改既有目标状态；坐标仅用于查找已配置的交互点。 */
     public boolean cardEffect(ServerPlayer player,org.agmas.noellesroles.game.modes.echo.cards.EchoCardDefinition card,Vec3 point) {
         if(match.phase()!=EchoPhase.OPERATIONS) throw new IllegalStateException("WRONG_PHASE");
         if(!Double.isFinite(point.x) || !Double.isFinite(point.y) || !Double.isFinite(point.z)) throw new IllegalStateException("NO_TARGET");
-        Target target=targets.get(BlockPos.containing(point));
+        Target target=targets.get(EchoMachineInteractions.root(level,BlockPos.containing(point)));
         Kind kind=card.target()==org.agmas.noellesroles.game.modes.echo.cards.EchoCardDefinition.Target.BEACON?Kind.BEACON:Kind.CORE;
         if(target==null || target.kind()!=kind) throw new IllegalStateException("NO_TARGET");
         double range=card.params().getOrDefault("range",3D);
-        if(player.getEyePosition().distanceToSqr(target.pos().add(0,0.5,0))>range*range) throw new IllegalStateException("OUT_OF_RANGE");
+        if(player.getEyePosition().distanceToSqr(EchoMachineInteractions.aim(level,target.pos(),player.getEyePosition()))>range*range) throw new IllegalStateException("OUT_OF_RANGE");
         if(!reachable(player,target.pos(),range)) throw new IllegalStateException("NO_LOS");
         long now=match.matchTick();
         if(kind==Kind.CORE) {
@@ -117,15 +135,27 @@ public final class EchoObjectiveService {
         }
         var beacon=beacons.get(target.id());
         return switch(card.shortId()) {
-            case "stabilizer" -> beacon.stabilize();
-            case "purifier" -> beacon.purify(now);
-            case "purge_stabilizer" -> {
-                if(beacon.active() || now>=beacon.lockedUntil() && beacon.stable()) yield false;
-                beacon.purify(now); beacon.stabilize(); yield true;
-            }
-            case "overload_pulse" -> beacon.pause(now,rules.beacon().pulsePauseTicks());
+            // 加速卡：立即按百分比推进充能，不改变投料与已启动事实。
+            case "beacon_boost","overdrive_beacon" -> beacon.boost(now,(int)card.params().getOrDefault("boostPermille",0D).doubleValue());
+            // 迟滞卡：截流者让充能停住一段时间，已积累进度不受影响。
+            case "stall_pulse","stall_surge" -> beacon.stall(now,(int)card.params().getOrDefault("stallTicks",0D).doubleValue());
             default -> false;
         };
+    }
+    /** 卡牌直接迟滞后由卡服务回调，只补经济与播报，不重复改信标状态。 */
+    public void cardStalled(ServerPlayer player,EchoBeaconState beacon) {
+        long now=match.matchTick();
+        beacons.entrySet().stream().filter(e -> e.getValue()==beacon).map(Map.Entry::getKey).findFirst().ifPresent(id -> {
+            reward(player,PackQuality.BLACK_MARKET,"stall:"+id);
+            match.economy().award(player,org.agmas.noellesroles.game.modes.echo.economy.EchoEconomy.Source.STALL,id);
+            announce("echo.goal.stalled",id); submissionHighlights.put(id,now+200);
+        });
+    }
+    /** 按交互点解析信标；未配置的点返回空，卡牌不会因此改状态。 */
+    public Optional<EchoBeaconState> beaconAt(Vec3 point) {
+        Target target=targets.get(EchoMachineInteractions.root(level,BlockPos.containing(point)));
+        if(target==null || target.kind()!=Kind.BEACON) return Optional.empty();
+        return Optional.ofNullable(beacons.get(target.id()));
     }
     public void startOperations() {
         if(started) return;
@@ -156,7 +186,19 @@ public final class EchoObjectiveService {
     }
     public void grantReward(ServerPlayer player,PackQuality quality,String fact) { reward(player,quality,fact); }
     public void useBlock(ServerPlayer player,BlockPos pos) {
-        Target target=targets.get(pos);
+        // 横板优先：放下/拆除都不进入机器点位流程，未命中则原样落到机器交互。
+        var state = level.getBlockState(pos);
+        if (state.getBlock() instanceof org.agmas.noellesroles.game.modes.echo.content.EchoPalletBlock) {
+            if (org.agmas.noellesroles.game.modes.echo.content.EchoPalletBlock.breakPallet(level, pos, player)) {
+                cancelActor(player);
+                return;
+            }
+            if (org.agmas.noellesroles.game.modes.echo.content.EchoPalletBlock.lower(level, pos, player)) {
+                cancelActor(player);
+                return;
+            }
+        }
+        Target target=targets.get(EchoMachineInteractions.root(level,pos));
         if(target==null) { cancelActor(player); return; }
         request(player,target);
     }
@@ -172,7 +214,7 @@ public final class EchoObjectiveService {
         if(!eligible(player,target)) { cancelActor(player); refuse(player,target); return; }
         double range=range(player,target);
         if(!reachable(player,target.pos(),range)) {
-            cancelActor(player); data(player).projectInteractionError(player.getEyePosition().distanceToSqr(target.pos().add(0,0.5,0))>range*range?"OUT_OF_RANGE":"NO_LOS",match.matchTick()+40); return;
+            cancelActor(player); data(player).projectInteractionError(player.getEyePosition().distanceToSqr(EchoMachineInteractions.aim(level,target.pos(),player.getEyePosition()))>range*range?"OUT_OF_RANGE":"NO_LOS",match.matchTick()+40); return;
         }
         data(player).projectInteractionError("",0);
         int duration=switch(target.kind()) {
@@ -183,7 +225,7 @@ public final class EchoObjectiveService {
             case BLACK_DROPOFF -> match.skillPendingActive(player.getUUID(),org.agmas.noellesroles.game.modes.echo.state.EchoSkill.DARK_CACHE)
                     ?instant(player.getUUID(),org.agmas.noellesroles.game.modes.echo.state.EchoSkill.DARK_CACHE)
                     :rules.logistics().blackDeliverTicks();
-            case BEACON -> carrier(player)?rules.logistics().submitTicks():match.cards().pollutionTicks(player.getUUID());
+            case BEACON -> carrier(player)?rules.logistics().submitTicks():stallTicks(player);
             case ALTAR -> rules.logistics().altarTicks();
             case RESCUE -> rules.combat().rescueTicks();
             case CRATE -> crate(target.id()).quality().equals("COMMON")?rules.logistics().crateSearchTicks():rules.logistics().blackMarketSearchTicks();
@@ -221,6 +263,13 @@ public final class EchoObjectiveService {
     private int instant(UUID owner,org.agmas.noellesroles.game.modes.echo.state.EchoSkill skill) {
         match.consumeSkillPending(owner,skill); return 1;
     }
+    /** 迟滞引导时长：破坏者专长按倍率缩短；「迟滞脉冲」窗口内下一次更快。 */
+    private int stallTicks(ServerPlayer player) {
+        int base = data(player).stallTicks(rules.beacon().stallTicks());
+        if (match.skillPendingActive(player.getUUID(),org.agmas.noellesroles.game.modes.echo.state.EchoSkill.STALL_BURST))
+            return instant(player.getUUID(),org.agmas.noellesroles.game.modes.echo.state.EchoSkill.STALL_BURST);
+        return base;
+    }
     private void refuse(ServerPlayer player,Target target) {
         var d=data(player); String reason;
         if(!d.life().standing()) reason="DOWNED";
@@ -255,7 +304,7 @@ public final class EchoObjectiveService {
             case BLACK_DROPOFF -> match.contracts().dropoff(player.getUUID(),target.id()) && blackCount(player)>0;
             case CRYSTAL -> match.phase()==EchoPhase.OPERATIONS && carrier(player) && data.freeCargoSlot()>=0 && now>=nodeReady.get(target.id());
             case BEACON -> match.phase()==EchoPhase.OPERATIONS && (carrier(player)?!data.cargo().isEmpty()&&beacons.get(target.id()).canSubmit()
-                    : match.faction(player.getUUID())==EchoFaction.INTERCEPTOR&&beacons.get(target.id()).canPollute(now));
+                    : match.faction(player.getUUID())==EchoFaction.INTERCEPTOR&&beacons.get(target.id()).canStall(now));
             case ALTAR -> match.phase()==EchoPhase.OPERATIONS && keys!=null && keys.at(target.id()).filter(id -> match.bags().canPickup(player,id)).isPresent();
             case CORE -> match.phase()==EchoPhase.OPERATIONS && data.key()!=null && !data.inventory().locked(data.key()) && !gates.state().coreOpen(now);
             case CRATE -> match.phase()==EchoPhase.OPERATIONS && now>=crateReady.get(target.id());
@@ -263,13 +312,11 @@ public final class EchoObjectiveService {
     }
     private double range(Target target) { return target.kind()==Kind.DROP?2:target.kind()==Kind.RESCUE?rules.combat().rescueRange():3; }
     public static boolean reachable(ServerPlayer player,Vec3 point,double range) {
-        Vec3 aim=point.add(0,0.5,0);
-        if(player.getEyePosition().distanceToSqr(aim)>range*range) return false;
-        var hit=player.level().clip(new ClipContext(player.getEyePosition(),aim,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));
-        return hit.getType()==HitResult.Type.MISS || hit.getBlockPos().equals(BlockPos.containing(point));
+        return EchoMachineInteractions.reachable(player.level(),player,point,range);
     }
     public void tickOperations() {
         long now=match.matchTick();
+        tickRepairs(now);
         for(var action:actions.advance(now,action -> {
             ServerPlayer player=level.getServer().getPlayerList().getPlayer(action.player());
             Target target=resolve(action.target());
@@ -285,12 +332,20 @@ public final class EchoObjectiveService {
             keys.due(now).ifPresent(altar -> { if(spawnKey(altar)) announce("echo.goal.key_supply",altar); });
             for(var beacon:beacons.entrySet()) {
                 Target target=handles.get("BEACON:"+beacon.getKey());
+                // 护送人数只算真正站在信标范围内的站立托运者；reachable 是「目标点可达」，
+                // 与「玩家站得近」无关，不能用来判断护送，否则隔着半张图也算护送。
                 int escorts=(int)match.onlinePlayers().stream().filter(p -> match.standing(p)&&carrier(p)
-                        && p.position().distanceToSqr(target.pos())<=rules.beacon().escortRange()*rules.beacon().escortRange() && reachable(p,target.pos(),rules.beacon().escortRange()+1)
+                        && p.position().distanceToSqr(target.pos())<=rules.beacon().escortRange()*rules.beacon().escortRange()
                         && EchoGateService.box(map.coreArea()).contains(p.position())==EchoGateService.box(map.coreArea()).contains(target.pos())).count();
                 if(beacon.getValue().tick(now,escorts)) {
                     announce("echo.goal.beacon_active",beacon.getKey()); burst(target.pos());
                 }
+                // 占位圈：每 20 tick 刷新一次，提示需要站立的范围；被迟滞时由客户端改色。
+                if(now%20==0 && !beacon.getValue().active())
+                    io.wifi.starrailexpress.util.ParticleFx.sendCustom(level,
+                            org.agmas.noellesroles.game.modes.echo.anim.EchoHuntFxIds.BEACON_RING,
+                            target.pos(),20,(float)rules.beacon().escortRange(),
+                            beacon.getValue().stalled(now)?1F:0F);
             }
         }
         for(var drop:drops.all()) if(now>=drop.expiresAt()) recycle(drop);
@@ -303,18 +358,7 @@ public final class EchoObjectiveService {
         long now=match.matchTick(); EchoRoleData data=data(player);
         switch(target.kind()) {
             case RESCUE -> match.combat().rescue(player,UUID.fromString(target.id()));
-            case CRYSTAL -> {
-                UUID id=UUID.randomUUID(); ledger.register(match.id(),id,Location.cargo(player.getUUID(),data.cargo().size()));
-                resources.put(id,new Resource(EchoDropService.Kind.CRYSTAL,now+rules.signals().cargoIntervalTicks())); data.addCargo(id);
-                nodeReady.put(target.id(),now+rules.logistics().nodeRecoveryTicks());
-                if(!match.cards().consumeSilence(player.getUUID())) { burst(target.pos()); nearby(target.pos(),SoundEvents.AMETHYST_BLOCK_BREAK,24); }
-                if(random.nextDouble()<rules.logistics().bonusPackChance()) reward(player,PackQuality.COMMON,"collect:"+id);
-            }
-            case BLACK_NODE -> {
-                UUID id=UUID.randomUUID(); ledger.register(match.id(),id,Location.cargo(player.getUUID(),data.cargo().size()));
-                black.collect(player.getUUID(),target.id(),id,now); resources.put(id,new Resource(EchoDropService.Kind.BLACK_CRYSTAL,Long.MAX_VALUE));
-                data.addCargo(id); data.projectBlackCargo(blackCount(player)); nearby(target.pos(),SoundEvents.AMETHYST_BLOCK_CHIME,24);
-            }
+            case CRYSTAL, BLACK_NODE -> startRepair(player,target);
             case BLACK_DROPOFF -> {
                 UUID id=data.cargo().stream().filter(black::black).findFirst().orElseThrow();
                 removeCargo(player,id,Location.consumed()); black.consume(id); resources.remove(id); data.projectBlackCargo(blackCount(player));
@@ -323,19 +367,22 @@ public final class EchoObjectiveService {
             case BEACON -> {
                 EchoBeaconState beacon=beacons.get(target.id());
                 if(carrier(player)) {
+                    // 已启动或已满料一律拒绝：不能因为投影慢一帧就把多余晶体塞进去。
+                    if(beacon.active() || !beacon.canSubmit()) throw new IllegalStateException("BEACON_FULL");
                     UUID crystal=data.cargo().getFirst(); removeCargo(player,crystal,Location.consumed());
                     if(!beacon.submit()) throw new IllegalStateException("信标提交计划失效");
                     resources.remove(crystal); match.recordDelivery(player.getUUID());
                     reward(player,PackQuality.RARE,"submit:"+player.getUUID()+":"+target.id());
+                    match.economy().award(player,org.agmas.noellesroles.game.modes.echo.economy.EchoEconomy.Source.SUBMIT,target.id());
                     announce("echo.goal.submitted",target.id());
                     if(!match.cards().consumeSilence(player.getUUID())) {
                         burst(target.pos());
                         submissionHighlights.put(target.id(),now+200);
                         EchoAudio.submission(match,target.pos());
                     }
-                } else if(beacon.pollute(now,match.cards().strongPollution(player.getUUID()))) {
-                    match.cards().consumePollution(player.getUUID());
-                    reward(player,PackQuality.BLACK_MARKET,"pollute:"+target.id()); announce("echo.goal.polluted",target.id()); burst(target.pos()); nearby(target.pos(),SoundEvents.RESPAWN_ANCHOR_CHARGE,24);
+                } else if(beacon.stall(now,rules.beacon().stallTicks())) {
+                    reward(player,PackQuality.BLACK_MARKET,"stall:"+target.id());
+                    match.economy().award(player,org.agmas.noellesroles.game.modes.echo.economy.EchoEconomy.Source.STALL,target.id()); announce("echo.goal.stalled",target.id()); burst(target.pos()); nearby(target.pos(),SoundEvents.RESPAWN_ANCHOR_CHARGE,24);
                 }
             }
             case ALTAR -> keys.at(target.id()).flatMap(id -> drops.all().stream().filter(d -> d.instanceId().equals(id)).findFirst()).ifPresent(drop -> pickup(player,drop));
@@ -358,6 +405,104 @@ public final class EchoObjectiveService {
         }
     }
     private EchoMapConfig.Crate crate(String id) { return map.supplyCrates().stream().filter(c -> c.id().equals(id)).findFirst().orElseThrow(); }
+    /**
+     * 采集改为修机小游戏：先下发一轮圆环判定，命中才真正产出货物。
+     *
+     * <p>服务端不信任客户端上报的位置（见 {@link org.agmas.noellesroles.game.modes.echo.repair.EchoRepairCheck}）；
+     * 取消、超时或失手都不消耗点位，也不进入节点恢复，玩家可以立刻重试。
+     */
+    private void startRepair(ServerPlayer player,Target target) {
+        if(repairs.containsKey(player.getUUID())) return;
+        var clazz=match.classState(player.getUUID());
+        int zoneBonus=clazz==null?0:clazz.zoneBonus();
+        double accidentScale=clazz==null?1D:clazz.accidentScale();
+        long now=match.matchTick();
+        var check=org.agmas.noellesroles.game.modes.echo.repair.EchoRepairCheck.begin(random,now,zoneBonus,accidentScale);
+        String checkId=UUID.randomUUID().toString();
+        repairs.put(player.getUUID(),new PendingRepair(check,checkId,target));
+        var view=check.view();
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new org.agmas.noellesroles.game.modes.echo.repair.EchoRepairPayload(match.id(),
+                        UUID.fromString(checkId),target.id(),view.speed(),view.zoneStart(),view.zoneWidth(),
+                        view.accident(),view.startedAt(),view.timeoutTicks()));
+        data(player).projectAction(null);
+        actions.cancel(player.getUUID());
+        player.playNotifySound(SoundEvents.AMETHYST_BLOCK_CHIME,SoundSource.PLAYERS,0.5F,1.2F);
+    }
+
+    /**
+     * 结算一次修机判定。
+     *
+     * @param position 客户端上报的指针位置；{@code -1} 表示主动放弃
+     */
+    public void submitRepair(ServerPlayer player,String checkId,int position) {
+        var pending=repairs.get(player.getUUID());
+        if(pending==null || !pending.checkId().equals(checkId)) return;
+        repairs.remove(player.getUUID());
+        long now=match.matchTick();
+        if(position<0) { data(player).projectInteractionError("CANCELLED",now+40); return; }
+        var result=pending.check().submit(now,position);
+        if(result==org.agmas.noellesroles.game.modes.echo.repair.EchoRepairCheck.Result.HIT) {
+            finishRepair(player,pending.target());
+            return;
+        }
+        data(player).projectInteractionError(result.name(),now+40);
+        player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(),SoundSource.PLAYERS,0.6F,0.7F);
+        // 采集故障会泄露位置：附近追捕者收到一次红色圆圈声纹（只给方向，不给坐标）。
+        faultPulse(player);
+    }
+
+    /**
+     * 采集故障声纹：向 {@link #FAULT_RANGE} 内的站立追捕者各发一次方向信号。
+     *
+     * <p>只发方向扇区，不带坐标与 UUID；客户端渲染成红色圆圈。
+     */
+    private void faultPulse(ServerPlayer source) {
+        for(ServerPlayer hunter:match.onlinePlayers()) {
+            if(hunter==source || match.faction(hunter.getUUID())!=EchoFaction.INTERCEPTOR) continue;
+            if(!match.standing(hunter)) continue;
+            if(hunter.distanceToSqr(source)>FAULT_RANGE*FAULT_RANGE) continue;
+            match.cards().signals().pulse(hunter,source,"fault_pulse");
+        }
+    }
+
+    /** 判定命中后真正产出货物；与旧的采集完成逻辑一致。 */
+    private void finishRepair(ServerPlayer player,Target target) {
+        long now=match.matchTick();
+        EchoRoleData data=data(player);
+        if(target.kind()==Kind.BLACK_NODE) {
+            UUID id=UUID.randomUUID(); ledger.register(match.id(),id,Location.cargo(player.getUUID(),data.cargo().size()));
+            black.collect(player.getUUID(),target.id(),id,now);
+            resources.put(id,new Resource(EchoDropService.Kind.BLACK_CRYSTAL,Long.MAX_VALUE));
+            data.addCargo(id); data.projectBlackCargo(blackCount(player));
+            nearby(target.pos(),SoundEvents.AMETHYST_BLOCK_CHIME,24);
+            return;
+        }
+        UUID id=UUID.randomUUID(); ledger.register(match.id(),id,Location.cargo(player.getUUID(),data.cargo().size()));
+        resources.put(id,new Resource(EchoDropService.Kind.CRYSTAL,now+rules.signals().cargoIntervalTicks()));
+        data.addCargo(id);
+        nodeReady.put(target.id(),now+rules.logistics().nodeRecoveryTicks());
+        if(!match.cards().consumeSilence(player.getUUID())) {
+            burst(target.pos()); nearby(target.pos(),SoundEvents.AMETHYST_BLOCK_BREAK,24);
+        }
+        if(random.nextDouble()<rules.logistics().bonusPackChance()) reward(player,PackQuality.COMMON,"collect:"+id);
+        match.economy().award(player,org.agmas.noellesroles.game.modes.echo.economy.EchoEconomy.Source.REPAIR,null);
+    }
+
+    /** 断线、倒地、离开模式或换局时清掉未完成的判定。 */
+    public void cancelRepair(UUID owner) { repairs.remove(owner); }
+
+    /** 每 tick 清掉超时判定，避免玩家挂着界面。 */
+    private void tickRepairs(long now) {
+        if(repairs.isEmpty()) return;
+        repairs.entrySet().removeIf(entry -> {
+            if(!entry.getValue().check().expired(now)) return false;
+            var player=level.getServer().getPlayerList().getPlayer(entry.getKey());
+            if(player!=null) data(player).projectInteractionError("EXPIRED",now+40);
+            return true;
+        });
+    }
+
     private void removeCargo(ServerPlayer player,UUID instance,Location destination) { removeCargo(player.getUUID(),instance,destination); }
     private void removeCargo(UUID owner,UUID instance,Location destination) {
         List<UUID> cargo=match.cargo(owner).items(); int index=cargo.indexOf(instance);
@@ -483,18 +628,135 @@ public final class EchoObjectiveService {
             }).orElse(null));
         }
     }
+    private record HintTarget(Target target, EchoMachineView.Type type, Vec3 pos, String id) { }
+
+    /** 只在近距且无遮挡时投影一台机器；优先准星目标，不广播整张地图或私人状态。 */
+    private EchoMachineView machineHint(ServerPlayer player) {
+        if (!match.present(player) || player.isSpectator() || !data(player).life().potentiallyEscapable()) return null;
+        var candidates = new ArrayList<HintTarget>();
+        for (var target : handles.values()) {
+            var type = switch (target.kind()) {
+                case CRYSTAL -> EchoMachineView.Type.CRYSTAL;
+                case BEACON -> map.beacons().stream().anyMatch(b -> b.id().equals(target.id()) && b.region().equals("core"))
+                        ? EchoMachineView.Type.CORE_BEACON : EchoMachineView.Type.BEACON;
+                case ALTAR -> EchoMachineView.Type.ALTAR;
+                case CORE -> EchoMachineView.Type.CORE_CONSOLE;
+                case FREE_EXIT -> EchoMachineView.Type.FREE_EXIT;
+                case CRATE -> crate(target.id()).quality().equals("BLACK_MARKET") ? EchoMachineView.Type.BLACK_MARKET : EchoMachineView.Type.SUPPLY;
+                case BLACK_NODE -> EchoMachineView.Type.BLACK_NODE;
+                case BLACK_DROPOFF -> EchoMachineView.Type.BLACK_DROPOFF;
+                default -> null;
+            };
+            if (type != null) candidates.add(new HintTarget(target, type, target.pos(), target.id()));
+        }
+        candidates.add(new HintTarget(null, EchoMachineView.Type.BROKER_EXIT, EchoGateService.vec(map.brokerExit().pos()), map.brokerExit().id()));
+        candidates.add(new HintTarget(null, EchoMachineView.Type.EVACUATION_CONSOLE, EchoGateService.vec(map.evacuation().controlPos()), "evacuation"));
+        Vec3 eye = player.getEyePosition(), look = player.getLookAngle();
+        var hit = level.clip(new ClipContext(eye, eye.add(look.scale(4.5)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        HintTarget selected = null;
+        double best = Double.MAX_VALUE;
+        for (var candidate : candidates) {
+            BlockPos pos = BlockPos.containing(candidate.pos());
+            if (!level.hasChunkAt(pos) || level.getBlockState(pos).isAir()) continue;
+            Vec3 center = EchoMachineInteractions.aim(level,candidate.pos(),eye), delta = center.subtract(eye);
+            if (delta.lengthSqr() > 4.5 * 4.5 || look.dot(delta.normalize()) < 0.25) continue;
+            var visible = level.clip(new ClipContext(eye, center, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+            if (visible.getType() != HitResult.Type.MISS && !EchoMachineInteractions.root(level,visible.getBlockPos()).equals(pos)) continue;
+            double score = delta.lengthSqr() - (hit.getType() == HitResult.Type.BLOCK && EchoMachineInteractions.root(level,hit.getBlockPos()).equals(pos) ? 100 : 0);
+            if (score < best) { best = score; selected = candidate; }
+        }
+        if (selected == null) return null;
+        var status = machineStatus(player, selected);
+        int amount = 0, required = 0, progress = 0, remaining = 0;
+        var t = selected.target(); long now = match.matchTick();
+        if (t != null) {
+            if (t.kind() == Kind.BEACON) {
+                var b = beacons.get(t.id()); amount = b.delivered(); required = b.requiredCrystals(); progress = b.progressPermille();
+                long until = b.stalledUntil();
+                remaining = hintRemaining(until, now);
+            } else if (t.kind() == Kind.CRYSTAL) remaining = hintRemaining(nodeReady.get(t.id()), now);
+            else if (t.kind() == Kind.CRATE && crateReady.get(t.id()) != Long.MAX_VALUE) remaining = hintRemaining(crateReady.get(t.id()), now);
+            else if (t.kind() == Kind.CORE) remaining = hintRemaining(gates.state().coreOpenUntil(), now);
+        } else if (selected.type() == EchoMachineView.Type.EVACUATION_CONSOLE)
+            remaining = hintRemaining(gates.state().evacuationClosedUntil(), now);
+        BlockPos pos = BlockPos.containing(selected.pos());
+        return new EchoMachineView(pos.getX(), pos.getY(), pos.getZ(), selected.type(), selected.id(), status, amount, required, progress, remaining);
+    }
+    private static int hintRemaining(long deadline, long now) { return (int) Math.max(0, Math.min(720000, deadline - now)); }
+
+    /** 只读当前事实；不调用 request/refuse，查看机器绝不会创建动作或改变错误状态。 */
+    private EchoMachineView.Status machineStatus(ServerPlayer player, HintTarget hint) {
+        var d = data(player); long now = match.matchTick();
+        if (io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(level).isTimeFrozen()) return EchoMachineView.Status.PAUSED;
+        if (!d.life().standing()) return EchoMachineView.Status.DOWNED;
+        if (d.controlled()) return EchoMachineView.Status.CONTROLLED;
+        if (match.bags().busy(player.getUUID()) || match.trades().busy(player.getUUID())) return EchoMachineView.Status.BUSY;
+        if (!match.phase().acceptsActions()) return EchoMachineView.Status.WRONG_PHASE;
+        if (hint.type() == EchoMachineView.Type.EVACUATION_CONSOLE) {
+            if (match.phase() != EchoPhase.EVACUATION) return EchoMachineView.Status.EVAC_WAIT;
+            if (match.faction(player.getUUID()) == EchoFaction.INTERCEPTOR)
+                return gates.state().overloadUsed() ? EchoMachineView.Status.OVERLOAD_USED : EchoMachineView.Status.OVERLOAD_READY;
+            if (!carrier(player)) return EchoMachineView.Status.WRONG_FACTION;
+            return gates.state().evacuationOpen(now) ? EchoMachineView.Status.EVAC_OPEN : EchoMachineView.Status.STALLED;
+        }
+        if (hint.type() == EchoMachineView.Type.BROKER_EXIT) {
+            var contract = match.contracts().state(player.getUUID());
+            if (contract == null) return EchoMachineView.Status.WRONG_FACTION;
+            if (!contract.mayRetire()) return EchoMachineView.Status.CONTRACT_REQUIRED;
+            return match.contracts().retireReady(player.getUUID()) ? EchoMachineView.Status.RETIRE_READY : EchoMachineView.Status.RETIRE_WAIT;
+        }
+        var target = hint.target();
+        if (!reachable(player, target.pos(), range(player, target))) return EchoMachineView.Status.OUT_OF_RANGE;
+        if (!player.getMainHandItem().isEmpty()) return EchoMachineView.Status.EMPTY_HAND;
+        if (target.kind() != Kind.FREE_EXIT && target.kind() != Kind.BLACK_DROPOFF && match.phase() != EchoPhase.OPERATIONS)
+            return EchoMachineView.Status.WRONG_PHASE;
+        return switch (target.kind()) {
+            case CRYSTAL -> !carrier(player) ? EchoMachineView.Status.WRONG_FACTION : d.freeCargoSlot() < 0 ? EchoMachineView.Status.CARGO_FULL
+                    : now < nodeReady.get(target.id()) ? EchoMachineView.Status.COOLDOWN : EchoMachineView.Status.READY;
+            case BLACK_NODE -> !match.contracts().smuggler(player.getUUID()) ? EchoMachineView.Status.CONTRACT_REQUIRED
+                    : d.freeCargoSlot() < 0 || blackCount(player) >= 2 ? EchoMachineView.Status.CARGO_FULL
+                    : black.available(target.id(), now) ? EchoMachineView.Status.READY : EchoMachineView.Status.COOLDOWN;
+            case BLACK_DROPOFF -> !match.contracts().smuggler(player.getUUID()) ? EchoMachineView.Status.CONTRACT_REQUIRED
+                    : !match.contracts().dropoff(player.getUUID(), target.id()) ? EchoMachineView.Status.WRONG_DROPOFF
+                    : blackCount(player) == 0 ? EchoMachineView.Status.NO_RESOURCE : EchoMachineView.Status.READY;
+            case BEACON -> {
+                var b = beacons.get(target.id());
+                if (b.active()) yield EchoMachineView.Status.ACTIVE;
+                if (carrier(player)) yield !b.canSubmit() ? now < b.stalledUntil() ? EchoMachineView.Status.STALLED : EchoMachineView.Status.CHARGING
+                        : d.cargo().isEmpty() ? EchoMachineView.Status.NO_RESOURCE : EchoMachineView.Status.READY;
+                if (match.faction(player.getUUID()) != EchoFaction.INTERCEPTOR) yield EchoMachineView.Status.WRONG_FACTION;
+                yield b.canSubmit() ? EchoMachineView.Status.NO_RESOURCE : b.canStall(now) ? EchoMachineView.Status.READY : EchoMachineView.Status.COOLDOWN;
+            }
+            case ALTAR -> d.key() != null ? EchoMachineView.Status.KEY_LIMIT : d.inventory().emptySlot() < 0 ? EchoMachineView.Status.FULL
+                    : keys != null && keys.at(target.id()).isPresent() ? EchoMachineView.Status.READY : EchoMachineView.Status.EMPTY;
+            case CORE -> gates.state().coreOpen(now) ? EchoMachineView.Status.CORE_OPEN : d.key() == null ? EchoMachineView.Status.NO_RESOURCE
+                    : d.inventory().locked(d.key()) ? EchoMachineView.Status.KEY_LOCKED : EchoMachineView.Status.READY;
+            case CRATE -> crateReady.get(target.id()) == Long.MAX_VALUE ? EchoMachineView.Status.EMPTY
+                    : now < crateReady.get(target.id()) ? EchoMachineView.Status.COOLDOWN : EchoMachineView.Status.READY;
+            case FREE_EXIT -> EchoGateService.box(map.coreArea()).contains(player.position()) ? EchoMachineView.Status.READY : EchoMachineView.Status.WRONG_PHASE;
+            default -> EchoMachineView.Status.WRONG_PHASE;
+        };
+    }
     public void publish(boolean finished) {
         var timer=io.wifi.starrailexpress.cca.SREGameTimeComponent.KEY.get(level);
         var state=gates.state();
         var entries=beacons.entrySet().stream().map(e -> {
             var b=e.getValue();
             var p=handles.get("BEACON:"+e.getKey()).pos();
-            return new EchoPublicState.Beacon(e.getKey(),b.delivered(),b.requiredCrystals(),b.progressPermille(),b.active(),b.stable(),b.lockedUntil(),b.pausedUntil(),new EchoPublicState.Point(p.x,p.y,p.z),submissionHighlights.getOrDefault(e.getKey(),0L));
+            return new EchoPublicState.Beacon(e.getKey(),b.delivered(),b.requiredCrystals(),b.progressPermille(),b.active(),b.stalledUntil(),new EchoPublicState.Point(p.x,p.y,p.z),submissionHighlights.getOrDefault(e.getKey(),0L));
         }).toList();
         var view=new EchoPublicState(finished?EchoPhase.FINISHED:match.phase(),match.matchTick(),Math.max(0,timer.getTime()),timer.isTimeFrozen(),Math.toIntExact(match.escapedCount()),match.escapeQuota(),
                 state.coreOpen(match.matchTick()),state.coreOpenUntil(),state.evacuationOpen(match.matchTick()),state.evacuationClosedUntil(),state.overloadUsed(),entries);
         var packet=new EchoPublicPayload(match.id(),level.dimension().location(),view);
         for(var player:level.players()) net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,packet);
+        for (var player : match.onlinePlayers()) if (match.present(player))
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                    new EchoMachinePayload(match.id(), level.dimension().location(), finished ? null : machineHint(player)));
+        // 首次/重连与低频刷新走已有任务点协议，绕过旧地图扫描缓存；结束时显式清空。
+        for(var player:level.players()) if(finished || taskRecipients.put(player.getUUID(),player)!=player || level.getGameTime()%100==0)
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                    new org.agmas.noellesroles.packet.ScanAllTaskPointsPayload(finished?new HashMap<>():taskPoints()));
+        if(finished) taskRecipients.clear();
     }
     private void announce(String key,String detail) {
         Component message=Component.translatable(key,detail);

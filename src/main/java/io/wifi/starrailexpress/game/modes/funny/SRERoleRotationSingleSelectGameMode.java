@@ -226,7 +226,7 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
 
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
-        PlayerRoleWeightManager.ForcePlayerTeam.clear();
+        io.wifi.starrailexpress.backpack.FactionCardForcing.settleRound(world);
     }
 
     private void completeRoleSelection(ServerLevel world, SREGameWorldComponent gameComp,
@@ -250,8 +250,6 @@ public class SRERoleRotationSingleSelectGameMode extends SREMurderGameMode {
         List<ServerPlayer> alive = world.getPlayers(GameUtils::isPlayerAliveAndSurvivalIgnoreShitSplit);
         for (ServerPlayer p : alive) {
             var role = gameComp.getRole(p);
-            var roleType = PlayerRoleWeightManager.getRoleType(role);
-            PlayerRoleWeightManager.addWeight(p, roleType, 1);
             p.removeEffect(ModEffects.SKILL_BANED);
             p.removeEffect(ModEffects.SAFE_TIME);
             p.removeEffect(ModEffects.MOVE_BANED);

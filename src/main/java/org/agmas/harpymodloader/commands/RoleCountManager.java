@@ -110,33 +110,64 @@ public class RoleCountManager {
 
     // 获取实际使用的杀手数量（考虑强制设置或自动计算）
     public static int getKillerCount(int playerCount) {
+        Integer override = io.wifi.starrailexpress.event.GameplayExtensionEvents.KILLER_COUNT_OVERRIDE.invoker().get(playerCount);
+        if (override != null) return override;
         if (forcedKillerCount >= 0) {
             return Math.min(forcedKillerCount, playerCount); // 确保不超过玩家总数
         } else {
-            return playerCount / 6;
+            return autoKillerCount(playerCount);
         }
     }
 
     // 获取实际使用的侦探数量（考虑强制设置或自动计算）
+    // 注意：这里刻意不跟随 getKillerCount 的 KILLER_COUNT_OVERRIDE。
+    // 命令方块事件局会占满杀手名额（killer=0），但警长仍按人数正常分配（警长不会被标为异常）。
+    // 两侧数量是否真的落地由 SREMurderGameMode 的角色池补位与收尾校验负责。
     public static int getVigilanteCount(int playerCount) {
         if (forcedVigilanteCount >= 0) {
             return Math.min(forcedVigilanteCount, playerCount); // 确保不超过玩家总数
         } else {
-            return playerCount / 6;
+            return autoVigilanteCount(playerCount);
 
         }
     }
 
     public static int getNeutralCount(int playerCount) {
-        HarpyModLoaderConfig config = HarpyModLoaderConfig.HANDLER.instance();
-        int minPlayer = config.neutralMinPlayerCount;
-
         if (forcedNeutralCount >= 0) {
             return Math.min(forcedNeutralCount, playerCount);
-        } else {
-            if (playerCount <= minPlayer)
-                return 0;
-            return Math.max(1, playerCount / 6);
         }
+        return autoNeutralCount(playerCount);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 自动公式（唯一实现）
+    //
+    // 设置页要显示「强制值是多少 / 自动会是多少」，所以把公式单独暴露出来：
+    // 上面三个 get*Count 与设置页的快照包的都走这里，公式只有一份。
+    // ══════════════════════════════════════════════════════════════════
+
+    /** 自动公式下的杀手数量：{@code 玩家数 / 6}。 */
+    public static int autoKillerCount(int playerCount) {
+        return playerCount / 6;
+    }
+
+    /**
+     * 自动公式下的义警（侦探）数量：{@code 玩家数 / 6}。
+     *
+     * <p>
+     * 与杀手同式但<b>刻意不共用</b>一个方法：命令方块事件局会把杀手压到 0（见
+     * {@link #getKillerCount}），而义警仍按人数正常分配，两者口径不同。
+     */
+    public static int autoVigilanteCount(int playerCount) {
+        return playerCount / 6;
+    }
+
+    /** 自动公式下的中立数量：玩家数不到阈值就是 0，否则至少 1。 */
+    public static int autoNeutralCount(int playerCount) {
+        int minPlayer = HarpyModLoaderConfig.HANDLER.instance().neutralMinPlayerCount;
+        if (playerCount <= minPlayer) {
+            return 0;
+        }
+        return Math.max(1, playerCount / 6);
     }
 }

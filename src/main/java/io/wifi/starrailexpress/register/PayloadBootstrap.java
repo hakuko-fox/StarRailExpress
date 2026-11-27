@@ -42,8 +42,16 @@ public final class PayloadBootstrap {
         registered = true;
         ConfigEvents.registerPayloadTypes();
         SREPayloadRegister.registerPayloadTypes();
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.training.TrainingActionPayload.ID,
+                io.wifi.starrailexpress.training.TrainingActionPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.training.TrainingStatePayload.ID,
+                io.wifi.starrailexpress.training.TrainingStatePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.ID,
                 io.wifi.starrailexpress.network.EntityDisguiseSyncPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(io.wifi.starrailexpress.settlement.SettlementPayload.ID,
+                io.wifi.starrailexpress.settlement.SettlementPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(io.wifi.starrailexpress.settlement.SettlementRequest.ID,
+                io.wifi.starrailexpress.settlement.SettlementRequest.CODEC);
         ModPackets.registerPackets();
         RicePacketTypeRegister.registerPayloadTypes();
         DrawingBoardServerNetwork.registerPayloadTypes();

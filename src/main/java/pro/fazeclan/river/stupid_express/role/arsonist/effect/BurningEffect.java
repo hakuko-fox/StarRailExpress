@@ -68,6 +68,8 @@ public class BurningEffect extends MobEffect {
 
         if (entity instanceof ServerPlayer victim) {
             MobEffectInstance instance = victim.getEffect(SEEffects.BURNING);
+            ArsonistRoleData owner = ArsonistRoleData.find(victim.level());
+            if (owner != null && instance != null) owner.tickTimedBurn(victim, instance.getDuration());
             // duration 在本 tick 的 applyEffectTick 之后才递减，==1 即为最后一 tick
             if (instance != null && instance.getDuration() <= 1) {
                 scheduleBurnDeath(victim);
@@ -78,7 +80,7 @@ public class BurningEffect extends MobEffect {
 
     /**
      * 把烧死延迟到本 tick 结束后再执行：此刻仍在遍历目标的效果列表，直接 killPlayer
-     * 会在死亡时清空效果列表，造成对效果列表的并发修改。改用 server.execute 推迟即可避开。
+     * 会在死亡时清空效果列表，造成对效果列表的并发修改。使用 tell 明确排队，不能用会内联执行的 execute。
      */
     private void scheduleBurnDeath(ServerPlayer victim) {
         if (victim.getServer() == null) {
@@ -89,8 +91,8 @@ public class BurningEffect extends MobEffect {
         if (arsonist != null) {
             arsonist.setBurningKiller(victim.getUUID(), null);
         }
-        victim.getServer().execute(() -> {
-            if (!victim.isAlive()) {
+        victim.getServer().tell(new net.minecraft.server.TickTask(victim.getServer().getTickCount(), () -> {
+            if (!GameUtils.isPlayerAliveAndSurvival(victim) || victim.hasEffect(SEEffects.EXTINGUISH_IMMUNITY)) {
                 return;
             }
             ServerPlayer killer = killerId != null && victim.getServer() != null
@@ -98,7 +100,12 @@ public class BurningEffect extends MobEffect {
                     : null;
             victim.setRemainingFireTicks(0);
             victim.removeEffect(SEEffects.BURNING);
-            GameUtils.killPlayer(victim, true, killer, GameConstants.DeathReasons.IGNITED, true);
-        });
+            if (killer == null || !GameUtils.isPlayerAliveAndSurvival(killer)
+                    || ArsonistRoleData.of(killer) != arsonist) {
+                return;
+            }
+            // 烧死不生成尸体，不再附身或复活。
+            arsonist.killBurnedPlayer(victim);
+        }));
     }
 }

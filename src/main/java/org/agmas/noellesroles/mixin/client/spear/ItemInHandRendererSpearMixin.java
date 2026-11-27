@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.util.Mth;
@@ -18,9 +17,12 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.agmas.noellesroles.spear.SpearAnim;
-import org.agmas.noellesroles.spear.SpearConfig;
-import org.agmas.noellesroles.spear.SpearUser;
+import net.minecraft.world.entity.player.Player;
+import org.agmas.noellesroles.content.entity.BambooSpearEntity;
+import org.agmas.noellesroles.content.item.BambooSpearItem;
+import org.agmas.noellesroles.content.item.spear.SpearAnim;
+import org.agmas.noellesroles.content.item.spear.SpearConfig;
+import org.agmas.noellesroles.content.item.spear.SpearUser;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -41,9 +43,15 @@ public class ItemInHandRendererSpearMixin {
             "Lnet/minecraft/client/renderer/ItemInHandRenderer;applyItemArmAttackTransform(" +
                     "Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/world/entity/HumanoidArm;F)V"))
     private void spear$renderFirstPersonStab(ItemInHandRenderer instance, PoseStack poseStack, HumanoidArm arm,
-            float swingProgress, Operation<Void> original, @Local(argsOnly = true) ItemStack stack) {
-        if (SpearConfig.isSpear(stack)) {
-            SpearAnim.applyFirstPersonStab(poseStack, swingProgress);
+            float swingProgress, Operation<Void> original, @Local(argsOnly = true) ItemStack stack,
+            @Local(argsOnly = true) AbstractClientPlayer player, @Local(argsOnly = true) InteractionHand hand,
+            @Local(argsOnly = true, ordinal = 0) float partialTicks) {
+        if (SpearConfig.isSpear(stack) || stack.getItem() instanceof BambooSpearItem) {
+            BambooSpearEntity bamboo = stack.getItem() instanceof BambooSpearItem
+                    ? BambooSpearEntity.getClientActiveSpear(player) : null;
+            float progress = bamboo != null && bamboo.getAttackHand() == hand
+                    ? bamboo.getStabProgress(partialTicks) : swingProgress;
+            SpearAnim.applyFirstPersonStab(poseStack, progress);
             return;
         }
         original.call(instance, poseStack, arm, swingProgress);
@@ -54,7 +62,7 @@ public class ItemInHandRendererSpearMixin {
             "Lcom/mojang/blaze3d/vertex/PoseStack;translate(FFF)V", ordinal = 12))
     private void spear$suppressFirstPersonSwing(PoseStack poseStack, float x, float y, float z,
             Operation<Void> original, @Local(argsOnly = true) ItemStack stack) {
-        if (!SpearConfig.isSpear(stack)) {
+        if (!SpearConfig.isSpear(stack) && !(stack.getItem() instanceof BambooSpearItem)) {
             original.call(poseStack, x, y, z);
         }
     }
@@ -130,22 +138,45 @@ public class ItemInHandRendererSpearMixin {
     }
 
     /** 第三人称（其他玩家 / 自己身上的物品）：直刺与举矛姿态。 */
-    @Inject(method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"))
+    @Inject(method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     private void spear$renderThirdPerson(LivingEntity entity, ItemStack stack, ItemDisplayContext context,
             boolean leftHanded, PoseStack poseStack, MultiBufferSource buffer, int light, CallbackInfo ci) {
-        if (!SpearConfig.isSpear(stack)) {
+        if (!SpearConfig.isSpear(stack) && !(stack.getItem() instanceof BambooSpearItem)) {
             return;
+        }
+        // 攻击实体已经绘制整根竹枪，双视角都不能在手里再画出第二根。
+        if (stack.getItem() instanceof BambooSpearItem && entity instanceof Player player) {
+            boolean inHand = context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+                    || context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+                    || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
+                    || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+            if (inHand) {
+                boolean right = context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+                        || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+                InteractionHand renderedHand = right == (entity.getMainArm() == HumanoidArm.RIGHT)
+                        ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+                BambooSpearEntity active = BambooSpearEntity.getClientActiveSpear(player);
+                if (active != null && active.getAttackHand() == renderedHand) {
+                    ci.cancel();
+                    return;
+                }
+            }
         }
         if (context != ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
                 && context != ItemDisplayContext.THIRD_PERSON_LEFT_HAND) {
             return;
         }
         float partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
-        float attackAnim = entity.getAttackAnim(partialTicks);
+        InteractionHand hand = (context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND) ==
+                (entity.getMainArm() == HumanoidArm.RIGHT) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+        BambooSpearEntity bamboo = entity instanceof Player player ? BambooSpearEntity.getClientActiveSpear(player) : null;
+        float attackAnim = bamboo != null && bamboo.getAttackHand() == hand
+                ? bamboo.getStabProgress(partialTicks)
+                : entity.swingingArm == hand ? entity.getAttackAnim(partialTicks) : 0.0F;
         if (attackAnim > 0.0F) {
             SpearAnim.applyThirdPersonStab(poseStack, attackAnim, SpearConfig.kinetic().forwardMovement());
         }
-        if (entity.isUsingItem() && entity.getUseItem().equals(stack)) {
+        if (SpearConfig.isSpear(stack) && entity.isUsingItem() && entity.getUseItem().equals(stack)) {
             float used = stack.getItem().getUseDuration(stack, entity)
                     - (entity.getUseItemRemainingTicks() - partialTicks + 1.0F);
             SpearAnim.HoldUpAnimation anim = SpearAnim.HoldUpAnimation.play(SpearConfig.kinetic(), used);

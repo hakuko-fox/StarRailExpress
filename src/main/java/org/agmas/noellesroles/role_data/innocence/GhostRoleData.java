@@ -15,6 +15,7 @@
 
 package org.agmas.noellesroles.role_data.innocence;
 
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.api.data.RoleDataContext;
 import io.wifi.starrailexpress.api.impl.SimpleRoleData;
 import io.wifi.starrailexpress.SRE;
@@ -28,12 +29,17 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import org.agmas.noellesroles.utils.ReplayEventLog;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Items;
 import org.agmas.noellesroles.commands.BroadcastCommand;
+import org.agmas.noellesroles.game.moment.MomentManager;
+import org.agmas.noellesroles.game.moment.MomentType;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
@@ -57,10 +63,21 @@ public class GhostRoleData extends SimpleRoleData {
 
     @Override
     public void init() {
+        // 每局重新判定「最后立会」，避免复用 RoleData 实例时残留上一局的标记。
+        lastStandNotified = false;
     }
 
     @Override
     public void clear() {
+        endFuranMoment();
+        lastStandNotified = false;
+    }
+
+    /** 恶魔之妹时刻结束：从统一时刻管理器出栈并停播其音乐。 */
+    private void endFuranMoment() {
+        if (lastStandNotified && player.level() instanceof ServerLevel level) {
+            MomentManager.end(level, MomentType.FURANDORU);
+        }
     }
 
     public GhostRoleData(RoleDataContext context) {
@@ -85,9 +102,11 @@ public class GhostRoleData extends SimpleRoleData {
         SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
 
         if (!gameWorld.isRunning()) {
+            endFuranMoment();
             return;
         }
         if (!GameUtils.isPlayerAliveAndSurvival(player)) {
+            endFuranMoment();
             return;
         }
 
@@ -216,7 +235,7 @@ public class GhostRoleData extends SimpleRoleData {
             if (!GameUtils.isPlayerAliveAndSurvival(p)) {
                 continue;
             }
-            var role = gameWorld.getRole(p.getUUID());
+            var role = gameWorld.getAllegianceRole(p);
             if (role == null) {
                 continue;
             }
@@ -248,11 +267,53 @@ public class GhostRoleData extends SimpleRoleData {
 
             lastStandNotified = true;
             sync();
-            // 回放记录：小透明加速时间
-            SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.event.ghost.accelerate_time",
-                            GameReplayUtils.getReplayPlayerDisplayText(player, true)));
+            // 回放记录：小透明加速时间（若芙兰朵露也加速过，由其分支补一条「共同加速」）
+            recordAccelerateTime(false);
         }
+    }
+
+    /**
+     * 记录「加速时间」的回放事件：区分小透明、芙兰朵露、以及两者共同加速。
+     * 两人都触发过时，由后触发的一方补一条共同加速事件，不会重复记录两条共同加速。
+     */
+    private void recordAccelerateTime(boolean furanBranch) {
+        SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
+        Player ghostPlayer = null;
+        Player furanPlayer = null;
+        for (var p : player.level().players()) {
+            if (!GameUtils.isPlayerAliveAndSurvival(p))
+                continue;
+            GhostRoleData data = RoleData.getNullable(GhostRoleData.class, p);
+            if (data == null || !data.lastStandNotified)
+                continue;
+            if (game.isRole(p, ModRoles.GHOST))
+                ghostPlayer = p;
+            if (game.isRole(p, THRedHouseRoles.FURANDORU))
+                furanPlayer = p;
+        }
+        if (furanBranch && ghostPlayer != null && furanPlayer != null) {
+            ReplayEventLog.record("replay.event.ghost.accelerate_time.both",
+                    ReplayEventLog.player(ghostPlayer), ReplayEventLog.player(furanPlayer));
+        } else if (furanBranch) {
+            ReplayEventLog.record("replay.event.ghost.accelerate_time.furandoru",
+                    ReplayEventLog.player(player));
+        } else {
+            ReplayEventLog.record("replay.event.ghost.accelerate_time.ghost",
+                    ReplayEventLog.player(player));
+        }
+    }
+
+    /** 管理员强制开启恶魔之妹时刻，跳过剩余时间与阵营人数条件。 */
+    public boolean forceStartMoment() {
+        if (!(player instanceof ServerPlayer serverPlayer) || lastStandNotified
+                || !MomentManager.canTrigger(serverPlayer.serverLevel(), MomentType.FURANDORU))
+            return false;
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(player.level());
+        if (gameWorld.getGameStatus() != SREGameWorldComponent.GameStatus.ACTIVE
+                || !gameWorld.isRole(player, THRedHouseRoles.FURANDORU) || !serverPlayer.isAlive()
+                || !GameUtils.isPlayerAliveAndSurvival(player))
+            return false;
+        return startFuranLastStand(gameWorld, true);
     }
 
     /**
@@ -261,23 +322,27 @@ public class GhostRoleData extends SimpleRoleData {
      * 并广播提示
      */
     public void checkFuranLastStand(SREGameWorldComponent gameWorld) {
+        startFuranLastStand(gameWorld, false);
+    }
+
+    private boolean startFuranLastStand(SREGameWorldComponent gameWorld, boolean forced) {
         if (!(player instanceof ServerPlayer serverPlayer)) {
-            return;
+            return false;
         }
         if (!gameWorld.isSkillAvailable)
-            return;
+            return false;
         if (player.isSpectator())
-            return;
+            return false;
         if (player.isCreative())
-            return;
+            return false;
         if (player.hasEffect(ModEffects.SAFE_TIME))
-            return;
+            return false;
         if (player.hasEffect(ModEffects.SKILL_BANED))
-            return;
+            return false;
 
         SREGameTimeComponent gameTime = SREGameTimeComponent.KEY.get(player.level());
         if (gameTime == null) {
-            return;
+            return false;
         }
 
         // 统计存活的双方阵营玩家
@@ -287,7 +352,7 @@ public class GhostRoleData extends SimpleRoleData {
             if (!GameUtils.isPlayerAliveAndSurvival(p)) {
                 continue;
             }
-            var role = gameWorld.getRole(p.getUUID());
+            var role = gameWorld.getAllegianceRole(p);
             if (role == null) {
                 continue;
             }
@@ -300,40 +365,45 @@ public class GhostRoleData extends SimpleRoleData {
             }
         }
 
-        // 芙兰朵露时刻激活条件：时间已快进到阈值内，或场上只剩单一阵营+芙兰朵露
+        // 恶魔之妹时刻激活条件：时间已快进到阈值内，或场上只剩单一阵营+芙兰朵露
         boolean momentActive = gameTime.getTime() <= FURAN_LAST_STAND_TIME
                 || (aliveCivilianCount <= 0 || aliveKillerCount <= 0) && aliveCivilianCount + aliveKillerCount > 0;
-        if (!momentActive) {
-            return;
+        // 已经触发过之后，场上环境是否仍满足条件不再影响时刻：继续保持状态与效果。
+        if (!forced && !lastStandNotified && !momentActive) {
+            return false;
         }
 
         if (!lastStandNotified) {
-            // 一次性结算：快进时间 + 全局广播 + 发放风弹 + 回放记录
-            if (gameTime.getTime() > FURAN_LAST_STAND_TIME) {
-                gameTime.setTime(FURAN_LAST_STAND_TIME);
-            }
-
-            // 发送全局广播
-            var broadcastMessage = Component
-                    .translatable("message.noellesroles.furandoru.last_stand")
-                    .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
-            serverPlayer.server.getPlayerList().getPlayers().forEach((p) -> {
-                BroadcastCommand.BroadcastMessage(p, broadcastMessage);
-                int count = MoneyUtils.getBalance(p);
-                var stack = Items.WIND_CHARGE.getDefaultInstance();
-                stack.setCount(Math.max(1, Math.min(16, count / 75)));
-                MCItemsUtils.insertStackInFreeSlot(p, stack);
-            });
-
+            // 统一时刻入口：一局仅第一次真正触发；之后只维持效果，不重复开场演出。
+            boolean first = MomentManager.trigger(serverPlayer.serverLevel(), MomentType.FURANDORU);
             lastStandNotified = true;
+            if (first) {
+                // 一次性结算：快进时间 + 全局广播 + 发放风弹 + 回放记录
+                if (gameTime.getTime() > FURAN_LAST_STAND_TIME) {
+                    gameTime.setTime(FURAN_LAST_STAND_TIME);
+                }
+
+                // 发送全局广播
+                var broadcastMessage = Component
+                        .translatable("message.noellesroles.furandoru.last_stand")
+                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+                serverPlayer.server.getPlayerList().getPlayers().forEach((p) -> {
+                    BroadcastCommand.BroadcastMessage(p, broadcastMessage);
+                    int count = MoneyUtils.getBalance(p);
+                    var stack = Items.WIND_CHARGE.getDefaultInstance();
+                    stack.setCount(Math.max(1, Math.min(16, count / 75)));
+                    MCItemsUtils.insertStackInFreeSlot(p, stack);
+                });
+
+                // 回放记录：芙兰朵露加速时间（若小透明也已加速，则记为「共同加速」）
+                recordAccelerateTime(true);
+                // 回放记录：恶魔之妹时刻触发
+                ReplayEventLog.record("replay.event.moment.furandoru", ReplayEventLog.player(player));
+            }
             sync();
-            // 回放记录：芙兰朵露加速时间
-            SRE.REPLAY_MANAGER.recordCustomEvent(
-                    Component.translatable("replay.event.ghost.accelerate_time",
-                            GameReplayUtils.getReplayPlayerDisplayText(player, true)));
         }
 
-        // 芙兰朵露时刻激活期间持续保证发光：
+        // 恶魔之妹时刻激活期间持续保证发光（不论条件是否仍满足）：
         // 难民/亡命徒期间时刻可能提前触发过一次（一次性发光 121 秒，随后自然过期，
         // 或被亡命徒的时间回溯快照恢复覆盖），而 lastStandNotified 已置位导致发光不再补发，
         // 再次正式进入时刻时 BGM 照响但发光丢失。这里在时刻激活的每 tick 检查，
@@ -349,6 +419,7 @@ public class GhostRoleData extends SimpleRoleData {
                     false // showIcon（显示图标）
             ));
         }
+        return true;
     }
 
 }

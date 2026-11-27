@@ -17,6 +17,7 @@ package io.wifi.starrailexpress.game;
 
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.RoleSkill;
+import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.network.SkillCastAnnouncePayload;
@@ -106,7 +107,7 @@ public final class SkillCastAnnounce {
         if (role.isHideRoleInfoWhenSeen()) {
             return false;
         }
-        if (!role.isNeutralForInnocent() && (role.isNeutrals() || role.isNeutralForKiller())) {
+        if (!RoleTeam.isNeutralForInnocent(role) && RoleTeam.isNeutral(role)) {
             return false;
         }
         if (role.isKillerTeam()) {
@@ -121,9 +122,9 @@ public final class SkillCastAnnounce {
         return isCivilianFaction(role);
     }
 
-    /** 平民阵营：乘客侧（含警长），不含杀手与中立。 */
+    /** 平民阵营：乘客侧（含警长），不含杀手与中立；按判定层口径（含隐藏身份为好人团队）。 */
     private static boolean isCivilianFaction(SRERole role) {
-        return role.isInnocent() && !role.isNeutrals() && !role.isKiller();
+        return RoleTeam.isInnocentCampJudged(role);
     }
 
     private static boolean hasEntries(List<String> list) {

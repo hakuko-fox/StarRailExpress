@@ -15,6 +15,7 @@
 
 package io.wifi.starrailexpress.client.gui.screen;
 
+import io.wifi.starrailexpress.client.ui.SRETheme;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.content.item.SkinableItem;
 import io.wifi.starrailexpress.index.SREDataComponentTypes;
@@ -57,21 +58,28 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
     private final Consumer<String> onSkinSelected;
 
     // 复古列车主题色
-    private static final int BACKGROUND_COLOR = 0x801A1008;
-    private static final int BORDER_COLOR = 0x558B6914;
-    private static final int ENTRY_BG = 0x991A1008;
+    private static final int BACKGROUND_COLOR = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x80);
+    private static final int BORDER_COLOR = SRETheme.withAlpha(SRETheme.BORDER, 0x55);
+    private static final int ENTRY_BG = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x99);
     private static final int ENTRY_BG_HOVER = 0x992A1A08;
     private static final int ENTRY_BG_SELECTED = 0xB0202010;
-    private static final int ENTRY_BORDER = 0x408B6914;
-    private static final int ENTRY_BORDER_HOVER = 0xFFD4AF37;
-    private static final int TEXT_COLOR = 0xFFC8B898;
-    private static final int TEXT_SELECTED = 0xFFFFF4DC;
-    private static final int TEXT_SECONDARY_COLOR = 0xFF9E8B6E;
+    private static final int ENTRY_BORDER = SRETheme.withAlpha(SRETheme.BORDER, 0x40);
+    private static final int ENTRY_BORDER_HOVER = SRETheme.GOLD;
+    private static final int TEXT_COLOR = SRETheme.BODY;
+    private static final int TEXT_SELECTED = SRETheme.TEXT;
+    private static final int TEXT_SECONDARY_COLOR = SRETheme.MUTED;
     private static final int TEXT_LOCKED = 0xFF5A5340;
 
     private boolean draggingScrollbar = false;
-    private final String searchFilter;
+    private String searchFilter;
 
+    /** 是否只显示 3D（Geo）皮肤；由父界面的筛选按钮下发 */
+    private boolean only3d = false;
+    private ItemSkinManager.QualityColor qualityFilter;
+    /** 当前列表项的皮肤类型（列表页签 = 物品 id 的 path） */
+    private String skinTypeName = "";
+    /** 当前搜索词（已归一化），供排序与过滤共用 */
+    private String searchQuery = "";
     /** Suffix appended when a string is truncated. */
     private static final String ELLIPSIS = "...";
 
@@ -79,6 +87,17 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             int x, int width, int height, int y, ItemStack itemType,
             SREPlayerSkinsComponent skinsComponent, Consumer<String> onSkinSelected,
             String searchFilter) {
+        this(parentScreen, mc, x, width, height, y, itemType, skinsComponent, onSkinSelected,
+                searchFilter, false);
+    }
+
+    /**
+     * @param only3d 是否只显示 3D（Geo）皮肤
+     */
+    public SkinSelectionList(SkinManagementScreen parentScreen, Minecraft mc,
+            int x, int width, int height, int y, ItemStack itemType,
+            SREPlayerSkinsComponent skinsComponent, Consumer<String> onSkinSelected,
+            String searchFilter, boolean only3d) {
         super(mc, width, height, y, ENTRY_HEIGHT);
         this.setX(x);
 
@@ -87,14 +106,79 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
         this.itemTypeName = getItemTypeName(itemType);
         this.skinsComponent = skinsComponent;
         this.onSkinSelected = onSkinSelected;
-        this.searchFilter = searchFilter != null ? searchFilter.toLowerCase() : "";
-
+        this.searchFilter = searchFilter != null ? searchFilter.toLowerCase(java.util.Locale.ROOT) : "";
+        this.skinTypeName = skinTypeOf(itemType);
         collectAvailableSkins();
+        rebuild(this.searchFilter, only3d);
+    }
 
+    /**
+     * 物品 → 皮肤类型名（用于 3D 判定）。
+     * <p>
+     * 优先用 {@link ItemSkinManager#getItemSkinType(Item)}（弓/弩这类原版物品
+     * 已显式登记），否则退回物品 id 的 path —— 与翻译键用的是同一个键，
+     * 保证「名字键」和「3D 判定键」不会错位。
+     */
+    private static String skinTypeOf(ItemStack stack) {
+        Item item = stack.getItem();
+        String registered = ItemSkinManager.getItemSkinType(item);
+        if (registered != null) {
+            return registered;
+        }
+        var rl = BuiltInRegistries.ITEM.getKey(item);
+        return rl == null ? "" : rl.getPath();
+    }
+
+    /** 兼容旧调用：保留当前 3D 筛选状态。 */
+    public void rebuild(String filter) {
+        rebuild(filter, only3d);
+    }
+
+    /**
+     * 按关键词重筛已收集的皮肤，不重建控件，搜索框可以保持焦点。
+     * <p>
+     * 关键词会同时比对「本地化中文名 / 全拼 / 拼音首字母 / 皮肤 ID」，
+     * 并<b>按匹配度排序</b>（原来是只按 ID 子串过滤，所以搜中文或拼音
+     * 要么命中不到、要么把对应皮肤排到很后面）。
+     */
+    public void rebuild(String filter, boolean only3d) {
+        rebuild(filter, only3d, qualityFilter);
+    }
+
+    /** 搜索、3D 与品质条件可同时生效；null 表示全部品质。 */
+    public void rebuild(String filter, boolean only3d, ItemSkinManager.QualityColor quality) {
+        String nextQuery = ItemSkinSearch.normalize(filter);
+        boolean changed = !nextQuery.equals(searchQuery) || this.only3d != only3d || qualityFilter != quality;
+        this.qualityFilter = quality;
+        this.searchFilter = filter != null ? filter.toLowerCase(java.util.Locale.ROOT) : "";
+        this.searchQuery = nextQuery;
+        this.only3d = only3d;
+        clearEntries();
         for (String skinName : availableSkins) {
+            // 「仅显示 3D 皮肤」筛选：刀 / 弓 / 手铐 / 左轮 / 手雷 / 信件都是列表页签，
+            // 必须在这里同样过滤，否则勾选按钮对它们完全没反应
+            if (only3d && !is3dSkin(skinName)) {
+                continue;
+            }
+            ItemSkinManager.Skin skin = ItemSkinManager.getSkinFromName(skinTypeName, skinName);
+            if (quality != null && (skin == null || skin.getColor() != quality.getColor())) {
+                continue;
+            }
+            // 搜索过滤：匹配分 0 表示不命中（输入为空时不过滤）
+            if (!searchQuery.isEmpty() && scoreOf(skinName) <= ItemSkinSearch.SCORE_NONE) {
+                continue;
+            }
             this.addEntry(new SkinEntry(skinName));
         }
         children().sort((o1, o2) -> {
+            // 有搜索词时先按匹配度排：搜什么先出什么
+            if (!searchQuery.isEmpty()) {
+                int s1 = scoreOf(o1.skinName);
+                int s2 = scoreOf(o2.skinName);
+                if (s1 != s2) {
+                    return Integer.compare(s2, s1);
+                }
+            }
             if (o1.isUnlocked != o2.isUnlocked) {
                 return o1.isUnlocked ? -1 : 1;
             }
@@ -108,15 +192,58 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             }
             return 0;
         });
+        // 「未装备」固定第一位，「随机」固定第二位（不参与排序与搜索过滤）
         this.children().addFirst(new SkinEntry("default"));
-
-        // 搜索过滤
-        if (!this.searchFilter.isEmpty()) {
-            this.children().removeIf(e -> {
-                if ("default".equals(e.skinName)) return false;
-                return !e.skinName.toLowerCase().contains(this.searchFilter);
-            });
+        this.children().add(1, new SkinEntry(ItemSkinManager.RANDOM_SKIN));
+        if (changed) {
+            draggingScrollbar = false;
+            setScrollAmount(0);
         }
+    }
+    /**
+     * 该皮肤是否走了 3D（Geo）模型。
+     * <p>
+     * 判定来源见 {@link io.wifi.starrailexpress.util.ItemSkin3dRegistry}：
+     * 内容模组显式登记优先，{@code assets/*}{@code /geo/**.geo.json} 资源探测兜底。
+     */
+    private boolean is3dSkin(String skinName) {
+        return io.wifi.starrailexpress.util.ItemSkin3dRegistry.is3d(skinTypeName, skinName);
+    }
+
+    /**
+     * 皮肤名的匹配分：中文名 / 全拼 / 首字母 / ID 综合打分。
+     * <p>
+     * 走的是和网格板（{@code HatSkinGridPanel}）同一套 {@link ItemSkinSearch}，
+     * 保证两种列表页的搜索行为一致。
+     */
+    private int scoreOf(String skinName) {
+        if (searchQuery.isEmpty()) {
+            return ItemSkinSearch.SCORE_EXACT;
+        }
+        return ItemSkinSearch.score(searchQuery,
+                Component.translatableWithFallback(nameKeyOf(skinName), formatSkinName(skinName)),
+                skinName);
+    }
+
+    /** 皮肤名对应的本地化键（与 {@code SkinEntry.render} 里用的完全一致）。 */
+    private String nameKeyOf(String skinName) {
+        var rl = ResourceLocation.tryParse(itemTypeName);
+        String itemTypeKey = (rl != null) ? rl.getPath() : itemTypeName;
+        return "screen.sre.skins." + itemTypeKey + "." + skinName.toLowerCase(java.util.Locale.ROOT) + ".name";
+    }
+
+    /** {@code xinglan_revolver} → {@code Xinglan Revolver}（缺翻译时的兜底显示名）。 */
+    private static String formatSkinName(String skinName) {
+        String[] parts = skinName.split("[_\\-]");
+        StringBuilder result = new StringBuilder();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                result.append(Character.toUpperCase(part.charAt(0)))
+                        .append(part.substring(1).toLowerCase())
+                        .append(' ');
+            }
+        }
+        return result.toString().trim();
     }
 
     private String getItemTypeName(ItemStack itemStack) {
@@ -130,8 +257,10 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
         for (var entry : unlockedSkins.entrySet()) {
             availableSkins.add(entry.getKey());
         }
-        if (itemType.getItem() instanceof SkinableItem it) {
-            var allSkins = ItemSkinManager.getSkins(it.getItemSkinType());
+        // 支持不能继承 SkinableItem 的原版物品（弓、弩）
+        String skinType = ItemSkinManager.getItemSkinType(itemType.getItem());
+        if (skinType != null) {
+            var allSkins = ItemSkinManager.getSkins(skinType);
             if (allSkins != null) {
                 for (String skinName : allSkins.keySet()) {
                     if (!availableSkins.contains(skinName)) {
@@ -240,11 +369,8 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
     }
 
     public void refresh() {
-        this.clearEntries();
         collectAvailableSkins();
-        for (String skinName : availableSkins) {
-            this.addEntry(new SkinEntry(skinName));
-        }
+        rebuild(this.searchFilter);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -264,13 +390,21 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
         public SkinEntry(String skinName) {
             this.skinName = skinName;
             int sskinColor = java.awt.Color.WHITE.getRGB();
-            if (itemType.getItem() instanceof SkinableItem it) {
-                var skin = ItemSkinManager.Skin.fromString(it.getItemSkinType(), skinName);
-                if (skin != null)
-                    sskinColor = skin.getColor();
+            if (ItemSkinManager.isRandomSkin(skinName)) {
+                // 「随机」用金色区别于「未装备」
+                sskinColor = SRETheme.GOLD;
+            } else {
+                // 支持不能继承 SkinableItem 的原版物品（弓、弩）
+                String skinType = ItemSkinManager.getItemSkinType(itemType.getItem());
+                if (skinType != null) {
+                    var skin = ItemSkinManager.Skin.fromString(skinType, skinName);
+                    if (skin != null)
+                        sskinColor = skin.getColor();
+                }
             }
             this.skinColor = sskinColor;
-            this.isUnlocked = skinName.equals("default")
+            // 「随机」恒可选：未拥有任何皮肤时开局会回退到未装备
+            this.isUnlocked = skinName.equals("default") || ItemSkinManager.isRandomSkin(skinName)
                     || skinsComponent.isSkinUnlockedForItemType(itemTypeName, skinName);
             updateCurrentSkin();
         }
@@ -305,7 +439,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             g.fill(x + 2, y + 2, x + width - 6, y + height - 2, backgroundColor);
 
             int borderColor = !isUnlocked ? 0x40302010
-                    : (isCurrent ? 0xFFD4AF37 : ENTRY_BORDER);
+                    : (isCurrent ? SRETheme.GOLD : ENTRY_BORDER);
             if (hoverAnimation > 0 && isUnlocked) {
                 borderColor = blendColors(borderColor, ENTRY_BORDER_HOVER, hoverAnimation);
             }
@@ -320,7 +454,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
                 int glowAlpha = (int) (hoverAnimation * 25) << 24;
                 for (int i = 1; i <= 2; i++) {
                     g.fill(x - i + 2, y - i + 2, x + width + i - 6, y + height + i - 2,
-                            glowAlpha | 0xD4AF37);
+                            glowAlpha | SRETheme.GOLD);
                 }
             }
         }
@@ -332,17 +466,25 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
 
             int iconBgColor = skinColor;
             if (isCurrent)
-                iconBgColor = blendColors(iconBgColor, 0xFFD4AF37, 0.25f);
+                iconBgColor = blendColors(iconBgColor, SRETheme.GOLD, 0.25f);
 
             drawRoundedRect(g, iconX, iconY, iconSize, iconSize, 0, iconBgColor);
 
             int textX = iconX + iconSize / 2 - 8;
             int textY = iconY + iconSize / 2 - 8;
             ItemStack skinedItem = itemType.copy();
-            skinedItem.set(SREDataComponentTypes.SKIN, this.skinName);
+            if (!ItemSkinManager.isRandomSkin(this.skinName)) {
+                skinedItem.set(SREDataComponentTypes.SKIN, this.skinName);
+            }
             g.renderFakeItem(skinedItem, textX, textY);
 
-            int borderColor = isCurrent ? 0xFFD4AF37 : 0x80FFFFFF;
+            // 「随机」叠一个问号，避免和「未装备」图标一模一样
+            if (ItemSkinManager.isRandomSkin(this.skinName)) {
+                var font = Minecraft.getInstance().font;
+                g.drawCenteredString(font, Component.literal("?"), textX + 8, textY + 4, SRETheme.TEXT);
+            }
+
+            int borderColor = isCurrent ? SRETheme.GOLD : 0x80FFFFFF;
             drawRoundedRectBorder(g, iconX, iconY, iconSize, iconSize, 0, borderColor);
         }
 
@@ -361,15 +503,22 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             var rl = ResourceLocation.tryParse(itemTypeName);
             String itemTypeKey = (rl != null) ? rl.getPath() : itemTypeName;
 
-            Component displayName = Component.translatableWithFallback(
-                    "screen.sre.skins." + itemTypeKey + "." + skinLowerName + ".name",
-                    formatSkinName(skinLowerName));
-
-            Component description = !isUnlocked
-                    ? Component.translatable("screen.sre.skins.locked")
-                    : Component.translatableWithFallback(
-                            "screen.sre.skins." + itemTypeKey + "." + skinLowerName + ".desc",
-                            formatSkinName(skinLowerName));
+            Component displayName;
+            Component description;
+            if (ItemSkinManager.isRandomSkin(this.skinName)) {
+                displayName = Component.translatableWithFallback("screen.sre.skins.random", "Random");
+                description = Component.translatableWithFallback("screen.sre.skins.random.desc",
+                        "A random owned skin each round");
+            } else {
+                displayName = Component.translatableWithFallback(
+                        "screen.sre.skins." + itemTypeKey + "." + skinLowerName + ".name",
+                        formatSkinName(skinLowerName));
+                description = !isUnlocked
+                        ? Component.translatable("screen.sre.skins.locked")
+                        : Component.translatableWithFallback(
+                                "screen.sre.skins." + itemTypeKey + "." + skinLowerName + ".desc",
+                                formatSkinName(skinLowerName));
+            }
 
             Component idText = Component.literal("ID: " + skinName);
 
@@ -396,7 +545,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
             if (!isUnlocked) {
                 int buttonColor = 0x802A1A08;
                 drawRoundedRect(g, buttonX, buttonY, buttonWidth, buttonHeight, 0, buttonColor);
-                drawRoundedRectBorder(g, buttonX, buttonY, buttonWidth, buttonHeight, 0, 0xFF5A4530);
+                drawRoundedRectBorder(g, buttonX, buttonY, buttonWidth, buttonHeight, 0, SRETheme.CARD_BORDER);
 
                 Component buttonText = Component.translatable("screen.sre.skins.locked_short");
                 int textColor = 0xFF8B7B5A;
@@ -407,7 +556,7 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
                 int lockSize = 10;
                 int lockX = buttonX - lockSize - 5;
                 int lockY = buttonY + (buttonHeight - lockSize) / 2;
-                g.fill(lockX, lockY, lockX + lockSize, lockY + lockSize, 0xFF5A4530);
+                g.fill(lockX, lockY, lockX + lockSize, lockY + lockSize, SRETheme.CARD_BORDER);
                 var lockIcon = Component.literal("\uD83D\uDD12").withStyle(ChatFormatting.GRAY);
                 var font = Minecraft.getInstance().font;
                 g.drawCenteredString(font, lockIcon,
@@ -415,18 +564,18 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
                 return;
             }
 
-            int buttonColor = isCurrent ? 0x802A1A08 : 0x801A1008;
+            int buttonColor = isCurrent ? 0x802A1A08 : SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x80);
             if (hovered && !isCurrent) buttonColor = 0x80302010;
             drawRoundedRect(g, buttonX, buttonY, buttonWidth, buttonHeight, 0, buttonColor);
 
-            int borderColor = isCurrent ? 0xFFD4AF37
-                    : (hovered && !isCurrent ? 0xFFC9A84C : 0xFF5A4530);
+            int borderColor = isCurrent ? SRETheme.GOLD
+                    : (hovered && !isCurrent ? SRETheme.GOLD_DIM : SRETheme.CARD_BORDER);
             drawRoundedRectBorder(g, buttonX, buttonY, buttonWidth, buttonHeight, 0, borderColor);
 
             Component buttonText = isCurrent
                     ? Component.translatable("screen.sre.skins.equipped")
                     : Component.translatable("screen.sre.skins.equip");
-            int textColor = isCurrent ? 0xFFD4AF37 : 0xFFFFF4DC;
+            int textColor = isCurrent ? SRETheme.GOLD : SRETheme.TEXT;
             int textX = buttonX + buttonWidth / 2 - Minecraft.getInstance().font.width(buttonText) / 2;
             int textY = buttonY + (buttonHeight - 8) / 2;
             g.drawString(Minecraft.getInstance().font, buttonText, textX, textY, textColor, false);
@@ -435,25 +584,16 @@ public class SkinSelectionList extends ObjectSelectionList<SkinSelectionList.Ski
                 int checkSize = 10;
                 int checkX = buttonX - checkSize - 5;
                 int checkY = buttonY + (buttonHeight - checkSize) / 2;
-                g.fill(checkX, checkY, checkX + checkSize, checkY + checkSize, 0xFFD4AF37);
+                g.fill(checkX, checkY, checkX + checkSize, checkY + checkSize, SRETheme.GOLD);
                 var bingo = Component.literal("\u2714").withStyle(ChatFormatting.WHITE);
                 var font = Minecraft.getInstance().font;
                 g.drawCenteredString(font, bingo,
-                        checkX + checkSize / 2, checkY + checkSize / 2 - font.lineHeight / 2, 0xFFFFF4DC);
+                        checkX + checkSize / 2, checkY + checkSize / 2 - font.lineHeight / 2, SRETheme.TEXT);
             }
         }
 
         private String formatSkinName(String skinName) {
-            String[] parts = skinName.split("[_\\-]");
-            StringBuilder result = new StringBuilder();
-            for (String part : parts) {
-                if (!part.isEmpty()) {
-                    result.append(Character.toUpperCase(part.charAt(0)))
-                            .append(part.substring(1).toLowerCase())
-                            .append(" ");
-                }
-            }
-            return result.toString().trim();
+            return SkinSelectionList.formatSkinName(skinName);
         }
 
         @Override

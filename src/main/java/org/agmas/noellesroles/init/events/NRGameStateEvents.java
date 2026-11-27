@@ -112,6 +112,10 @@ public class NRGameStateEvents {
 
     private static void registerOnGameStarted() {
         OnGameStarted.EVENT.register((serverLevel) -> {
+            // 新一局：清掉上局的冒险家临时标点并让客户端对账，同时复位全局可见性。
+            // 只依赖 OnGameEnd 不够（崩溃 / 强停 / OP 手动开关都可能留下残留）。
+            io.wifi.starrailexpress.util.WaypointSync.clearAdventurerWaypoints(serverLevel.getServer());
+            io.wifi.starrailexpress.util.WaypointSync.setVisibility(serverLevel.getServer(), false);
             // 物资箱：清空上局遗留的物资与领取记录，间隔重新计时并复位开启状态
             org.agmas.noellesroles.content.block_entity.SupplyCrateBlockEntity.resetAll(serverLevel);
             TarotAssemblyManager.havingMeeting = false;
@@ -188,9 +192,10 @@ public class NRGameStateEvents {
             // 清除"领袖招募教父"带来的家族标记，避免下一局残留
             org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.clearLeaderFamilyMarks();
 
-            // 清除冒险家路径点
-            io.wifi.starrailexpress.game.data.WaypointVisibilityManager.get(world.getServer())
-                    .setWaypointsVisibility(false);
+            // 清除冒险家标点：删掉临时标点数据并全量对账，同时复位全局可见性，
+            // 兑现职业说明的「游戏结束后标点自动消失」。
+            io.wifi.starrailexpress.util.WaypointSync.clearAdventurerWaypoints(world.getServer());
+            io.wifi.starrailexpress.util.WaypointSync.setVisibility(world.getServer(), false);
 
             // 清除鹈鹕状态
             PelicanManager.releaseAllInWorld(world);
@@ -316,7 +321,12 @@ public class NRGameStateEvents {
                     // meeting.sre.start_game_broadcast
                 }
             }
+
             SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(serverLevel);
+            // 职业入场播报的显示时长：让它一直留到安全时间结束。
+            // 这些播报在 OnGameStarted 时发出，而客户端默认只显示 broadcasterMessageDuration（10s），
+            // 安全时间（safeTimeCooldown，默认 30s）还没结束播报就消失了。
+            final int entranceBroadcastTicks = safeTimeBroadcastTicks(serverLevel, gameWorldComponent);
             boolean hasDio = false, hasRecorder = false, hasCandlebearer = false, hasRaven = false, hasBee = false;
             boolean hasNianShou = false, hasArsonist = false, hasCuckoo = false, hasPelican = false,
                     hasGodfather = false, hasLeader = false, hasLicensedVillain = false, hasNatureSpirit = false;
@@ -382,7 +392,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.recorder.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.recorder.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -393,7 +404,8 @@ public class NRGameStateEvents {
 
                         p.playNotifySound(SoundEvents.BEE_LOOP, SoundSource.MASTER, 0.5F, 1.0f);
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.bee.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.bee.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -402,7 +414,7 @@ public class NRGameStateEvents {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.licensed_villain.entry")
-                                .withStyle(ChatFormatting.YELLOW));
+                                .withStyle(ChatFormatting.YELLOW), entranceBroadcastTicks);
                     }
                 });
             }
@@ -411,7 +423,7 @@ public class NRGameStateEvents {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.candlebearer.entry")
-                                .withStyle(ChatFormatting.YELLOW));
+                                .withStyle(ChatFormatting.YELLOW), entranceBroadcastTicks);
                     }
                 });
             }
@@ -419,7 +431,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.raven.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.raven.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -428,7 +441,7 @@ public class NRGameStateEvents {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
                                 .translatable("message.noellesroles.nature_spirit.entry")
-                                .withStyle(ChatFormatting.RED));
+                                .withStyle(ChatFormatting.RED), entranceBroadcastTicks);
                     }
                 });
             }
@@ -436,7 +449,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.arsonist.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.arsonist.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -444,7 +458,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.cuckoo.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.cuckoo.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -453,7 +468,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.daywalker.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.daywalker.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -461,7 +477,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.pelican.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.pelican.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -470,7 +487,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.dictator.entry").withStyle(ChatFormatting.AQUA));
+                                .translatable("message.noellesroles.dictator.entry").withStyle(ChatFormatting.AQUA),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -478,7 +496,8 @@ public class NRGameStateEvents {
                 all_players.forEach((p) -> {
                     if (p != null) {
                         BroadcastCommand.BroadcastMessage(p, Component
-                                .translatable("message.noellesroles.leader.entry").withStyle(ChatFormatting.YELLOW));
+                                .translatable("message.noellesroles.leader.entry").withStyle(ChatFormatting.YELLOW),
+                                entranceBroadcastTicks);
                     }
                 });
             }
@@ -515,7 +534,8 @@ public class NRGameStateEvents {
                 final ChatFormatting finalColor = hintColor;
                 for (var p : all_players) {
                     if (p != null) {
-                        BroadcastCommand.BroadcastMessage(p, Component.literal(cd.entranceHint).withStyle(finalColor));
+                        BroadcastCommand.BroadcastMessage(p, Component.literal(cd.entranceHint).withStyle(finalColor),
+                                entranceBroadcastTicks);
                     }
                 }
             }
@@ -593,6 +613,29 @@ public class NRGameStateEvents {
             }
         }
         return result;
+    }
+
+    /**
+     * 职业入场播报应该显示多久（tick），用于让播报持续到安全时间结束。
+     *
+     * <p>
+     * 取「配置的安全时间（{@code safeTimeCooldown}）」与「玩家身上 {@code SAFE_TIME} 效果剩余时长」的较大值：
+     * 正常开局两者相等；模式自己延长了安全时间（如轮选模式）时取效果时长；模式没有安全时间则返回 0，
+     * 让客户端沿用默认显示时长。
+     */
+    private static int safeTimeBroadcastTicks(ServerLevel serverLevel, SREGameWorldComponent gameWorldComponent) {
+        var gameMode = gameWorldComponent.getGameMode();
+        if (gameMode != null && !gameMode.hasSafeTime()) {
+            return 0;
+        }
+        int ticks = Math.max(0, io.wifi.starrailexpress.SREConfig.instance().safeTimeCooldown * 20);
+        for (ServerPlayer player : serverLevel.players()) {
+            MobEffectInstance safe = player.getEffect(org.agmas.noellesroles.init.ModEffects.SAFE_TIME);
+            if (safe != null) {
+                ticks = Math.max(ticks, safe.getDuration());
+            }
+        }
+        return ticks;
     }
 
     private static void registerServerLifecycle() {

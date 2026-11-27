@@ -34,6 +34,8 @@ import io.wifi.starrailexpress.event.client.LimitedInventoryScreenEvents;
 import io.wifi.starrailexpress.game.ShopContent;
 import io.wifi.starrailexpress.network.original.StoreBuyPayload;
 import io.wifi.starrailexpress.util.ShopEntry;
+import io.wifi.starrailexpress.client.gui.widget.SreButton;
+import io.wifi.starrailexpress.training.client.TrainingClient;
 import io.wifi.utils.client.betterrender.FakeGuiGraphics;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -42,6 +44,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
@@ -81,6 +84,9 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     /** 本次打开背包时创建的职业扩展实例（每次打开新建；resize/reinit 复用同一实例）。 */
     private RoleInventoryScreenExtension roleExtension = null;
+    /** 回声模式直接使用本屏幕，不再通过按钮打开第二份背包。 */
+    private org.agmas.noellesroles.game.modes.echo.client.EchoInventoryPanel echoPanel;
+    private SreButton trainingButton;
 
     public LimitedInventoryScreen(@NotNull LocalPlayer player) {
         super(player.inventoryMenu, player.getInventory(), Component.empty());
@@ -270,6 +276,14 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     @Override
     protected void init() {
+        if (org.agmas.noellesroles.game.modes.echo.client.EchoHotbar.active()) {
+            super.init();
+            clearWidgets();
+            if (echoPanel == null) echoPanel = new org.agmas.noellesroles.game.modes.echo.client.EchoInventoryPanel(this);
+            echoPanel.init();
+            return;
+        }
+        echoPanel = null;
         LimitedInventoryScreenEvents.INIT.invoker().onInit(this);
         var initRole = getCurrentRole();
         if (roleExtension == null && initRole != null) {
@@ -329,6 +343,71 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
             roleExtension.onInventoryScreenInitTail(this);
         }
         LimitedInventoryScreenEvents.INIT_TAIL.invoker().onInit(this);
+        initTrainingEntry();
+    }
+
+    /** 训练入口独立于菜单；优先紧邻背包，避开可见控件、整块背包与真实槽位。 */
+    private void initTrainingEntry() {
+        trainingButton = null;
+        if (!TrainingClient.isTraining() || echoPanel != null) return;
+        trainingButton = new SreButton(Component.translatable("training.sre.ui.inventory_entry"),
+                b -> TrainingClient.openPanel(this));
+        trainingButton.setTooltipText(Component.translatable("training.sre.ui.inventory_hint"));
+        addRenderableWidget(trainingButton);
+        layoutTrainingEntry();
+    }
+
+    private void layoutTrainingEntry() {
+        if (trainingButton == null) return;
+        trainingButton.visible = TrainingClient.isTraining() && echoPanel == null;
+        trainingButton.active = trainingButton.visible;
+        if (!trainingButton.visible) return;
+        int left = isGameActive() ? this.x : panelLeft();
+        int top = isGameActive() ? this.y : panelTop();
+        int right = left + (isGameActive() ? backgroundWidth : scaled(PANEL_W));
+        int bottom = top + (isGameActive() ? backgroundHeight : scaled(PANEL_H));
+        if (trainingEntryFits(trainingButton.getX(), trainingButton.getY(), trainingButton.getWidth(), left, top, right, bottom)) return;
+        int preferredWidth = Math.min(104, Math.max(24, Math.max(left - 8, width - right - 8)));
+        for (int buttonWidth : new int[]{preferredWidth, 24}) {
+            for (int side : new int[]{right + 4, left - buttonWidth - 4}) {
+                for (int buttonY = Math.min(height - 24, bottom - 20); buttonY >= 4; buttonY -= 24) {
+                    if (trainingEntryFits(side, buttonY, buttonWidth, left, top, right, bottom)) {
+                        trainingButton.setX(side); trainingButton.setY(buttonY);
+                        trainingButton.setWidth(buttonWidth); trainingButton.setHeight(20);
+                        return;
+                    }
+                }
+            }
+            for (int buttonY = height - 24; buttonY >= 4; buttonY -= 24) {
+                for (int buttonX = 4; buttonX + buttonWidth <= width - 4; buttonX += 24) {
+                    if (trainingEntryFits(buttonX, buttonY, buttonWidth, left, top, right, bottom)) {
+                        trainingButton.setX(buttonX); trainingButton.setY(buttonY);
+                        trainingButton.setWidth(buttonWidth); trainingButton.setHeight(20);
+                        return;
+                    }
+                }
+            }
+        }
+        // 非标准扩展占满屏幕时不覆盖其按钮；正常最小 GUI 的背包两侧有独立入口空间。
+        trainingButton.visible = false;
+        trainingButton.active = false;
+    }
+
+    private boolean trainingEntryFits(int bx, int by, int bw, int left, int top, int right, int bottom) {
+        if (bx < 4 || by < 4 || bx + bw > width - 4 || by + 20 > height - 4) return false;
+        if (bx < right + 2 && bx + bw > left - 2 && by < bottom + 2 && by + 20 > top - 2) return false;
+        for (var child : children()) {
+            if (child instanceof AbstractWidget widget && widget != trainingButton && widget.visible
+                    && bx < widget.getRight() + 2 && bx + bw > widget.getX() - 2
+                    && by < widget.getBottom() + 2 && by + 20 > widget.getY() - 2) return false;
+        }
+        for (Slot slot : handler.slots) {
+            if (slot.index < 36 || slot.index > 44) continue;
+            int sx = this.x + getSlotRenderX(slot), sy = this.y - getYOffset() + getSlotRenderY(slot);
+            int size = Math.round(18 * getSlotRenderScale(slot));
+            if (bx < sx + size && bx + bw > sx && by < sy + size && by + 20 > sy) return false;
+        }
+        return true;
     }
 
     /** 创建等待面板中的便捷菜单格子按钮与翻页按钮（复用 GameMenuEntries 的同一组动作）。 */
@@ -539,6 +618,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     @Override
     protected void drawBackground(@NotNull GuiGraphics context, float delta, int mouseX, int mouseY) {
+        if (echoPanel != null) { echoPanel.renderBackground(context); return; }
         if (isGameActive()) {
             context.blit(BACKGROUND_TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight);
         } else {
@@ -582,11 +662,12 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     @Override
     protected boolean shouldRenderHotbarSlots() {
-        return true;
+        return echoPanel == null;
     }
 
     @Override
     protected int getSlotRenderX(Slot slot) {
+        if (echoPanel != null) return -10000; // 隐藏槽位也不能通过旧坐标收到点击。
         if (!isGameActive() && slot.index >= 36 && slot.index <= 44) {
             return panelLeft() + scaled(HOTBAR_FIRST_X + (slot.index - 36) * HOTBAR_STEP) - this.x;
         }
@@ -613,12 +694,14 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
     @Override
     public void resize(@NotNull Minecraft minecraft, int width, int height) {
         super.resize(minecraft, width, height);
+        if (echoPanel != null) return;
         refreshShopLayout();
         layoutWaitingMenu();
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (echoPanel != null && echoPanel.keyPressed(keyCode, scanCode)) return true;
         // 搜索框（EditBox）聚焦时，背包键 E 用于输入字母，不应关闭背包
         if (this.getFocused() instanceof EditBox && this.minecraft != null
                 && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
@@ -639,6 +722,18 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
 
     @Override
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        if (echoPanel != null) {
+            super.render(context, mouseX, mouseY, delta);
+            echoPanel.render(context, mouseX, mouseY);
+            return;
+        }
+        if (trainingButton == null && TrainingClient.isTraining()) initTrainingEntry();
+        layoutTrainingEntry();
+        if (trainingButton != null) {
+            Component label = Component.translatable(trainingButton.getWidth() < 44
+                    ? "training.sre.ui.inventory_short" : "training.sre.ui.inventory_entry");
+            if (!trainingButton.getMessage().equals(label)) trainingButton.setMessage(label);
+        }
         LimitedInventoryScreenEvents.RENDER.invoker().onRender(this, context, mouseX, mouseY, delta);
         if (roleExtension != null) {
             roleExtension.onInventoryScreenRender(this, context, mouseX, mouseY, delta);
@@ -658,7 +753,7 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         this.drawMouseoverTooltip(context, mouseX, mouseY);
         StoreRenderer.renderHud(this.font, this.player, context, delta);
 
-        // 金币下方的信息行：开启配置后只在本界面显示（HUD 上不再绘制），位置与 HUD 上一致
+        // 金币下方的信息行：本界面始终绘制完整信息（不看 HUD 的折叠状态），位置与 HUD 上一致
         if (SREClientConfig.instance().showInfoLinesInInventory && this.minecraft != null) {
             if (fakeGraphics == null || fakeGraphics.getDefaultGuiGraphics() != context) {
                 fakeGraphics = new FakeGuiGraphics(context, true);
@@ -667,6 +762,29 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
         }
 
         LimitedInventoryScreenEvents.RENDER_TAIL.invoker().onRender(this, context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    protected void handledScreenTick() {
+        if (echoPanel != null) echoPanel.tick();
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        if (echoPanel != null && echoPanel.mouseScrolled(mouseX, mouseY, vertical)) return true;
+        return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+    }
+
+    @Override
+    protected void onMouseClick(Slot slot, int slotId, int button, net.minecraft.world.inventory.ClickType type) {
+        if (echoPanel != null) return;
+        super.onMouseClick(slot, slotId, button, type);
+    }
+
+    @Override
+    public void onClose() {
+        if (echoPanel != null) echoPanel.close();
+        super.onClose();
     }
 
     private void renderOverlayMessageOnScreen(GuiGraphics context, int mouseX, int mouseY, float delta) {
@@ -817,14 +935,12 @@ public class LimitedInventoryScreen extends LimitedHandledScreen<InventoryMenu> 
                 effectivePrice = DynamicShopComponent.KEY.get(clientPlayer)
                         .effectivePrice(liveEntry.stack(), basePrice);
             }
-            // 价格按条目货币类型显示：默认金币（\uE781 图标）；游戏代币用对应翻译键（带代币图标字形）
+            // 价格按条目货币类型显示：数字 + 该货币的字形（字形码位由 ShopEntry.Currency.iconText() 提供）
             ShopEntry.Currency currency = liveEntry.currency() == null
                     ? ShopEntry.Currency.MONEY
                     : liveEntry.currency();
-            MutableComponent price = currency == ShopEntry.Currency.MONEY
-                    ? Component.literal(effectivePrice + "\uE781")
-                    : Component.translatable(currency.priceTranslationKey(), effectivePrice)
-                            .withColor(currency.color());
+            MutableComponent price = currency.formatAmount(effectivePrice)
+                    .withColor(currency.color());
             int displayX = this.getX() - 4 - this.screen.font.width(price) / 2;
             int displayY = this.getY() - 9;
             List<Component> renders = new ArrayList<>();

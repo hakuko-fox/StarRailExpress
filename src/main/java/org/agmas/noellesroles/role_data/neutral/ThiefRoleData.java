@@ -254,6 +254,11 @@ public class ThiefRoleData extends SimpleRoleData {
         SREPlayerShopComponent thiefShop = SREPlayerShopComponent.KEY.get(player);
         thiefShop.balance += stealAmount;
         thiefShop.sync();
+        // 金币账本：小偷记「偷窃收入」，被偷者记「被小偷偷取」
+        org.agmas.noellesroles.game.economy.MoneyFlow.recordIncome(player,
+                org.agmas.noellesroles.game.economy.MoneyFlow.IncomeType.STEAL, stealAmount);
+        org.agmas.noellesroles.game.economy.MoneyFlow.recordExpense(target,
+                org.agmas.noellesroles.game.economy.MoneyFlow.ExpenseType.STOLEN, stealAmount, null);
 
         // 通知小偷
         serverPlayer.displayClientMessage(
@@ -872,6 +877,13 @@ public class ThiefRoleData extends SimpleRoleData {
             }
         }
 
+        // 记者道具：摄像头盔 / 记者终端
+        if (stack.is(ModItems.CAMERA_HELMET) || stack.is(ModItems.REPORTER_TERMINAL))
+            return true;
+        // 验尸官商店的随身身份扫描仪
+        if (stack.is(ModItems.PORTABLE_IDENTITY_SCANNER))
+            return true;
+
         // 其他物品不可偷取
         return false;
     }
@@ -911,6 +923,9 @@ public class ThiefRoleData extends SimpleRoleData {
 
         // 给予50金币
         SREPlayerShopComponent thiefShop = SREPlayerShopComponent.KEY.get(player);
+        // 金币账本：卖物品得钱属于「其它收入」（不计入偷窃，避免会计误判）
+        org.agmas.noellesroles.game.economy.MoneyFlow.recordIncome(player,
+                org.agmas.noellesroles.game.economy.MoneyFlow.IncomeType.OTHER, 50);
         thiefShop.balance += 50;
         thiefShop.sync();
 
@@ -1100,6 +1115,13 @@ public class ThiefRoleData extends SimpleRoleData {
             return true;
         // 时停钟
         if (stack.is(ModItems.TIME_STOP_CLOCK))
+            return true;
+
+        // 记者道具：摄像头盔 / 记者终端
+        if (stack.is(ModItems.CAMERA_HELMET) || stack.is(ModItems.REPORTER_TERMINAL))
+            return true;
+        // 验尸官商店的随身身份扫描仪
+        if (stack.is(ModItems.PORTABLE_IDENTITY_SCANNER))
             return true;
 
         // 其他物品不可出售

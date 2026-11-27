@@ -20,6 +20,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.api.AreasSettings;
 import io.wifi.starrailexpress.client.SREClient;
 import net.minecraft.client.Camera;
@@ -27,6 +28,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.world.level.material.FogType;
+import org.agmas.noellesroles.game.modes.echo.client.EchoHunterFogClient;
 import net.minecraft.world.effect.MobEffects;
 import org.agmas.noellesroles.client.VerticalLoopingMirrorClient;
 import org.agmas.noellesroles.init.ModEffects;
@@ -37,6 +40,8 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(LevelRenderer.class)
 public abstract class WorldRendererMixin {
+    @Unique private static boolean tmm$echoFogApplied;
+    @Unique private static boolean tmm$nightFogApplied;
 
     @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderSky(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;FLnet/minecraft/client/Camera;ZLjava/lang/Runnable;)V"))
     public void tmm$disableSky(LevelRenderer instance, Matrix4f matrix4f, Matrix4f projectionMatrix, float tickDelta,
@@ -48,11 +53,62 @@ public abstract class WorldRendererMixin {
     @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/FogRenderer;setupFog(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/FogRenderer$FogMode;FZF)V"))
     public void tmm$applyBlizzardFog(Camera camera, FogRenderer.FogMode fogType, float viewDistance, boolean thickFog,
             float tickDelta, Operation<Void> original) {
-        if (SREClient.isInLobby) {
+        if (SRE.isLobby) {
+            tmm$echoFogApplied = false;
+            tmm$nightFogApplied = false;
+            io.wifi.starrailexpress.client.render.ShaderPackFog.beginFrame();
+            original.call(camera, fogType, viewDistance, thickFog, tickDelta);
             return;
         }
+        boolean night = org.agmas.noellesroles.game.night.NightEvent.isActive(Minecraft.getInstance().level);
+        if (tmm$nightFogApplied && !night) {
+            original.call(camera, fogType, viewDistance, thickFog, tickDelta);
+            tmm$nightFogApplied = false;
+        }
+        try {
+            tmm$applyExistingFog(camera, fogType, viewDistance, thickFog, tickDelta, original);
+        } finally {
+            // 在现有地图雾、视野迷雾及液体雾之后统一封顶；F1、夜视、旁观均不能放宽上限。
+            if (night) {
+                tmm$nightFogApplied = true;
+                float end = org.agmas.noellesroles.game.night.NightRoundState.fogEnd(RenderSystem.getShaderFogEnd());
+                float start = org.agmas.noellesroles.game.night.NightRoundState.fogStart(RenderSystem.getShaderFogStart(), end);
+                tmm$doFog(start, end);
+            }
+            io.wifi.starrailexpress.client.render.ShaderPackFog.refreshCapturedFog();
+        }
+    }
+
+    @Unique
+    private void tmm$applyExistingFog(Camera camera, FogRenderer.FogMode fogType, float viewDistance, boolean thickFog,
+                                     float tickDelta, Operation<Void> original) {
         if (VerticalLoopingMirrorClient.applyBottomFog(camera)) {
+            io.wifi.starrailexpress.client.render.ShaderPackFog.capture();
             return;
+        }
+        float echoRadius=EchoHunterFogClient.radius(camera);
+        if(echoRadius>0F) {
+            tmm$echoFogApplied=true;
+            LocalPlayer hunter=Minecraft.getInstance().player;
+            // 底部镜像雾已经优先处理；液体/细雪交还原版及其既有 mixin。
+            if(camera.getFluidInCamera()!=FogType.NONE) {
+                original.call(camera,fogType,viewDistance,thickFog,tickDelta); return;
+            }
+            var vision=hunter.getEffect(ModEffects.VISION_FOG);
+            if(vision!=null) {
+                float end=EchoHunterFogClient.visionEnd(echoRadius,ModEffects.getVisionFogDistance(vision.getAmplifier()));
+                tmm$doFog(Math.max(0F,end-2F),end); return;
+            }
+            if(hunter.hasEffect(MobEffects.BLINDNESS) || hunter.hasEffect(MobEffects.DARKNESS)) {
+                original.call(camera,fogType,viewDistance,thickFog,tickDelta); return;
+            }
+            // 与 VISION_FOG 共用 2 格渐变、球形距离和 RenderSystem 世界雾，不画 HUD 暗角。
+            tmm$doFog(Math.max(0F,echoRadius-2F),echoRadius); return;
+        }
+        if(tmm$echoFogApplied) {
+            // 旁观/退出后的旧路径可能不设置雾，先明确还原再让原有地图/效果雾覆盖。
+            original.call(camera,fogType,viewDistance,thickFog,tickDelta);
+            tmm$echoFogApplied=false;
         }
         if (SREClient.shouldRenderVanillaHud()) {
             if (SREClient.isGameRunning()) {
@@ -123,6 +179,7 @@ public abstract class WorldRendererMixin {
         RenderSystem.setShaderFogStart(fogData.start);
         RenderSystem.setShaderFogEnd(fogData.end);
         RenderSystem.setShaderFogShape(fogData.shape);
+        io.wifi.starrailexpress.client.render.ShaderPackFog.capture();
     }
 
 }

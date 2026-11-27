@@ -33,6 +33,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
+import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.modded_murder.RoleAssignmentPool;
 import org.agmas.noellesroles.role.bouns.BounsRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -47,6 +48,20 @@ import java.util.UUID;
 import static io.wifi.starrailexpress.compat.TrainVoicePlugin.SERVER_API;
 
 public class RevivalSelectionHandler {
+    /** 按实际阵营限制存活杀手数，复制平民的克隆博士仍占用杀手名额。 */
+    private static boolean hasKillerSlot(ServerLevel level, SREGameWorldComponent game) {
+        // 邪恶战争按独立规则分配大量杀手，不适用普通模式的杀手人数上限
+        if (game.gameMode instanceof SREEvilWarGameMode) {
+            return true;
+        }
+        int limit = RoleCountManager.getKillerCount(game.getStartingPlayerCount());
+        long aliveKillers = level.players().stream()
+                .filter(GameUtils::isPlayerAliveAndSurvival)
+                .filter(game::canUseKillerFeatures)
+                .count();
+        return aliveKillers < limit;
+    }
+
     public static void removeVoice(@NotNull UUID player) {
         if (SERVER_API == null) {
             return;
@@ -84,10 +99,6 @@ public class RevivalSelectionHandler {
             }
             // 主人即将被复活的尸体不可交互
             if (PlayerBodyEntityComponent.KEY.get(body).nonInteractable) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.corpse.pending_revive")
-                                .withStyle(ChatFormatting.RED),
-                        true);
                 return InteractionResult.CONSUME;
             }
             if (!gameWorldComponent.isSkillAvailable) {
@@ -109,8 +120,11 @@ public class RevivalSelectionHandler {
             if (!revived.isSpectator()) {
                 return InteractionResult.PASS;
             }
+            if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksRevival(player, revived)
+                    || org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.isRestrictedAt(body.level(), body.position(),
+                            org.agmas.noellesroles.game.roles.innocence.decree.Decree.REVIVAL)) return InteractionResult.FAIL;
             var nc = NecromancerComponent.KEY.get(serverLevel);
-            if (nc.getAvailableRevives() < 1) {
+            if (nc.getAvailableRevives() < 1 || !hasKillerSlot(serverLevel, gameWorldComponent)) {
                 return InteractionResult.PASS;
             }
 
@@ -189,10 +203,6 @@ public class RevivalSelectionHandler {
             }
             // 主人即将被复活的尸体不可交互
             if (PlayerBodyEntityComponent.KEY.get(body).nonInteractable) {
-                player.displayClientMessage(
-                        Component.translatable("message.noellesroles.corpse.pending_revive")
-                                .withStyle(ChatFormatting.RED),
-                        true);
                 return InteractionResult.CONSUME;
             }
             if (!gameWorldComponent.isSkillAvailable) {
@@ -214,8 +224,11 @@ public class RevivalSelectionHandler {
             if (!revived.isSpectator()) {
                 return InteractionResult.PASS;
             }
+            if (org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.blocksRevival(player, revived)
+                    || org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.isRestrictedAt(body.level(), body.position(),
+                            org.agmas.noellesroles.game.roles.innocence.decree.Decree.REVIVAL)) return InteractionResult.FAIL;
             var nc = NecromancerComponent.KEY.get(serverLevel);
-            if (nc.getAvailableRevives() < 1) {
+            if (nc.getAvailableRevives() < 1 || !hasKillerSlot(serverLevel, gameWorldComponent)) {
                 return InteractionResult.PASS;
             }
 

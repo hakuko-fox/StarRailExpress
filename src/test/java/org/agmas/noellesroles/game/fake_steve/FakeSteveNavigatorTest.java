@@ -1,0 +1,551 @@
+package org.agmas.noellesroles.game.fake_steve;
+
+import io.wifi.starrailexpress.api.AreasSettings;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * 当前生产 A* 内核与地图约束的网格单元测试。
+ *
+ * <p>不启动 Minecraft：手写网格提供水平邻接和站立高度，使用生产的
+ * {@link FakeStevePathSearch} 与 {@link FakeStevePathPolicy} 检查路线和移动约束。
+ * 真实方块碰撞评估仍需要 ServerLevel，不在本测试范围内。
+ */
+class FakeSteveNavigatorTest {
+
+    // ---------------------------------------------------------------- 地图约束映射
+
+    @Test
+    void swimRequiresAllFourMapSettings() {
+        AreasSettings areas = new AreasSettings();
+        areas.canSwim = true;
+        areas.canSimpleSwim = true;
+        areas.canUnderWater = true;
+        areas.allowInDeepWater = true;
+        assertTrue(FakeSteveNavRules.of(false, areas, null).canSwim());
+
+        areas.allowInDeepWater = false;
+        assertFalse(FakeSteveNavRules.of(false, areas, null).canSwim(),
+                "深水致死开启时不能把水面当路线");
+        assertTrue(FakeSteveNavRules.of(false, areas, null).swimmingBanned());
+    }
+
+    @Test
+    void missingAreaSettingsFallsBackToNoSwim() {
+        FakeSteveNavRules rules = FakeSteveNavRules.of(true, null, null);
+        assertTrue(rules.canJump());
+        assertFalse(rules.canSwim());
+        assertEquals(FakeSteveNavRules.DEFAULT_MAX_FALL_DISTANCE, rules.maxFallDistance());
+    }
+
+    @Test
+    void fallToDeathHeightIsConvertedWithSafetyMargin() {
+        // 0 表示地图没启用摔落致死，回退到兜底落差。
+        assertEquals(3.0D, FakeSteveNavRules.maxFallDistance(0, null));
+        // 1 格致死：连一格都下不去。
+        assertEquals(0.0D, FakeSteveNavRules.maxFallDistance(1, null));
+        // 2 格致死：允许 1 格。
+        assertEquals(1.0D, FakeSteveNavRules.maxFallDistance(2, null));
+        // 3 格致死：允许 2 格（3 格刚好踩线，必须拒绝）。
+        assertEquals(2.0D, FakeSteveNavRules.maxFallDistance(3, null));
+    }
+
+    @Test
+    void roleOverrideWinsOverMapHeight() {
+        assertEquals(1.0D, FakeSteveNavRules.maxFallDistance(6, 2));
+        assertEquals(3.0D, FakeSteveNavRules.maxFallDistance(6, 0));
+    }
+
+    // ---------------------------------------------------------------- 基本寻路
+
+    @Test
+    void straightCorridorKeepsWalkableWaypointsToGoal() {
+        GridWorld world = new GridWorld();
+        world.corridor(new BlockPos(0, 0, 0), new BlockPos(0, 0, 5));
+
+        PathResult result = search(world, new BlockPos(0, 0, 0), new BlockPos(0, 0, 5),
+                FakeSteveNavRules.PERMISSIVE);
+
+        assertTrue(result.reached());
+        ArrayDeque<BlockPos> path = result.path();
+        assertEquals(5, path.size(), "当前搜索内核保留沿途路点：" + path);
+        assertEquals(new BlockPos(0, 0, 5), path.peekLast(), "必须实际到达目标，而不是停在邻格");
+        assertTrue(path.stream().allMatch(world::standable));
+    }
+
+    @Test
+    void wallIsWalkedAroundInsteadOfThrough() {
+        GridWorld world = new GridWorld();
+        // 5×5 的开阔地面，中间一列 (x = 2) 在 z = 0..2 立墙，只有 z = 3 留缺口。
+        for (int x = 0; x <= 4; x++) {
+            for (int z = 0; z <= 4; z++) {
+                if (x == 2 && z <= 2) {
+                    continue;
+                }
+                world.open(new BlockPos(x, 0, z));
+            }
+        }
+
+        PathResult result = search(world, new BlockPos(0, 0, 0), new BlockPos(4, 0, 0),
+                FakeSteveNavRules.PERMISSIVE);
+
+        assertTrue(result.reached(), "绕墙后应当能到达：" + result.path());
+        // 当前内核保留路点，路线不得穿过墙体 (2,0,0)..(2,0,2)。
+        for (int z = 0; z <= 2; z++) {
+            assertFalse(result.path().contains(new BlockPos(2, 0, z)),
+                    "不能穿过墙体：" + result.path());
+        }
+    }
+
+    @Test
+    void enclosedStartReportsNotReached() {
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+        world.open(new BlockPos(5, 0, 0));
+
+        PathResult result = search(world, new BlockPos(0, 0, 0), new BlockPos(5, 0, 0),
+                FakeSteveNavRules.PERMISSIVE);
+
+        assertFalse(result.reached(), "走不出去时必须返回未到达");
+        assertTrue(result.path().isEmpty(), "一步都没走，路线应为空：" + result.path());
+    }
+
+    @Test
+    void startEqualToGoalIsReachedImmediately() {
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+
+        PathResult result = search(world, new BlockPos(0, 0, 0), new BlockPos(0, 0, 0),
+                FakeSteveNavRules.PERMISSIVE);
+
+        assertTrue(result.reached());
+        assertTrue(result.path().isEmpty());
+    }
+
+    @Test
+    void cornerCuttingIsRejectedWhenBothSidesAreSolid() {
+        GridWorld world = new GridWorld();
+        // 起点 (0,0,0)、终点 (1,0,1) 斜向相邻，但两个直角格 (1,0,0) 与 (0,0,1) 都是实心。
+        // 唯一通路要绕一大圈：z 轴向下 → x 轴向左 → 再绕回来。
+        world.open(new BlockPos(0, 0, 0));
+        world.open(new BlockPos(0, 0, -1));
+        world.open(new BlockPos(0, 0, -2));
+        world.open(new BlockPos(1, 0, -2));
+        world.open(new BlockPos(2, 0, -2));
+        world.open(new BlockPos(2, 0, -1));
+        world.open(new BlockPos(2, 0, 0));
+        world.open(new BlockPos(2, 0, 1));
+        world.open(new BlockPos(1, 0, 1));
+
+        PathResult result = search(world, new BlockPos(0, 0, 0), new BlockPos(1, 0, 1),
+                FakeSteveNavRules.PERMISSIVE);
+
+        assertTrue(result.reached(), "绕远路依然能到达：" + result.path());
+        assertTrue(result.path().size() >= 2, "必须绕行，而不是一步斜穿：" + result.path());
+        assertFalse(result.path().contains(new BlockPos(0, 0, 1)),
+                "不能穿过实心格：" + result.path());
+    }
+
+    // ---------------------------------------------------------------- 地图约束
+
+    @Test
+    void waterIsBlockedWhenSwimmingIsBanned() {
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+        world.water(new BlockPos(1, 0, 0));
+        world.water(new BlockPos(2, 0, 0));
+        world.open(new BlockPos(3, 0, 0));
+
+        PathResult banned = search(world, new BlockPos(0, 0, 0), new BlockPos(3, 0, 0),
+                new FakeSteveNavRules(true, false, 3.0D));
+        assertFalse(banned.reached(), "禁游地图不能跨水：" + banned.path());
+
+        PathResult allowed = search(world, new BlockPos(0, 0, 0), new BlockPos(3, 0, 0),
+                new FakeSteveNavRules(true, true, 3.0D));
+        assertTrue(allowed.reached(), "允许游泳时水面就是可走的捷径：" + allowed.path());
+    }
+
+    @Test
+    void stairsAreWalkableWithoutJumpButFullBlocksAreNot() {
+        FakeSteveNavRules noJump = new FakeSteveNavRules(false, true, 3.0D);
+
+        // 楼梯：抬升 1.0，但带台阶语义（原版自动抬脚），禁跳也应当可走。
+        GridWorld stairs = new GridWorld();
+        stairs.open(new BlockPos(0, 0, 0));
+        stairs.step(new BlockPos(1, 0, 0));
+        stairs.open(new BlockPos(2, 0, 0));
+        assertTrue(search(stairs, new BlockPos(0, 0, 0), new BlockPos(2, 0, 0), noJump).reached(),
+                "禁跳地图里楼梯必须还能走");
+
+        // 整格高台：抬升同样 1.0，但没有台阶语义，禁跳时上不去。
+        GridWorld plateau = new GridWorld();
+        plateau.open(new BlockPos(0, 0, 0));
+        plateau.plateau(new BlockPos(1, 0, 0));
+        plateau.open(new BlockPos(2, 0, 0));
+        assertFalse(search(plateau, new BlockPos(0, 0, 0), new BlockPos(2, 0, 0), noJump).reached(),
+                "禁跳地图里不能跳上一整格高台");
+
+        FakeSteveNavRules jumping = new FakeSteveNavRules(true, true, 3.0D);
+        assertTrue(search(plateau, new BlockPos(0, 0, 0), new BlockPos(2, 0, 0), jumping).reached(),
+                "允许跳跃时一格高台可以上去");
+    }
+
+    @Test
+    void fallLimitFollowsMapDeathHeight() {
+        GridWorld world = new GridWorld();
+        // 从 y = 1 的平台走到 y = 0 的地面：一格落差。
+        world.open(new BlockPos(0, 1, 0));
+        world.open(new BlockPos(1, 0, 0));
+        world.open(new BlockPos(2, 0, 0));
+
+        assertTrue(search(world, new BlockPos(0, 1, 0), new BlockPos(2, 0, 0),
+                new FakeSteveNavRules(true, true, 1.0D)).reached(),
+                "落差上限 1 格时一格下落允许");
+
+        assertFalse(search(world, new BlockPos(0, 1, 0), new BlockPos(2, 0, 0),
+                new FakeSteveNavRules(true, true, 0.0D)).reached(),
+                "落差上限 0 格时一格下落也必须拒绝");
+    }
+
+    // ---------------------------------------------------------------- 搜索内核的规则判定
+
+    /**
+     * {@link FakeSteveNavigator.SearchWorld#canStep} 是三条地图约束的唯一落地处，
+     * 所以直接对它的纯逻辑做断言，而不是再手写一份邻接模拟（那样测的是测试自己）。
+     */
+    @Test
+    void canStepHonoursJumpSwimAndFallRules() {
+        FakeSteveNavRules noJump = new FakeSteveNavRules(false, true, 3.0D);
+        FakeSteveNavRules canJump = new FakeSteveNavRules(true, true, 3.0D);
+
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+        world.plateau(new BlockPos(1, 0, 0));
+
+        FakeSteveNavigator.SearchWorld jumpable = searchWorld(world, canJump);
+        assertTrue(jumpable.canStep(new BlockPos(0, 0, 0), new BlockPos(1, 0, 0), 1.0D, false, false),
+                "允许跳跃时一格抬升可以走");
+
+        FakeSteveNavigator.SearchWorld blocked = searchWorld(world, noJump);
+        assertFalse(blocked.canStep(new BlockPos(0, 0, 0), new BlockPos(1, 0, 0), 1.0D, false, false),
+                "禁跳时整格高台不可走");
+        // 超过跳跃上限：即使允许跳跃也拒绝。
+        assertFalse(jumpable.canStep(new BlockPos(0, 0, 0), new BlockPos(1, 0, 0),
+                FakeSteveNavigator.MAX_JUMP_RISE + 0.01D, false, false),
+                "超过跳跃上限必须拒绝");
+        // 落差上限：0 格时任何下落都拒绝。
+        FakeSteveNavigator.SearchWorld noFall =
+                searchWorld(world, new FakeSteveNavRules(true, true, 0.0D));
+        assertFalse(noFall.canStep(new BlockPos(0, 1, 0), new BlockPos(0, 0, 0), -1.0D, false, false),
+                "落差上限 0 格时一格下落必须拒绝");
+        assertTrue(jumpable.canStep(new BlockPos(0, 1, 0), new BlockPos(0, 0, 0), -1.0D, false, false),
+                "落差上限 3 格时一格下落允许");
+    }
+
+    /** 禁游地图里水面不能作为落脚点：standable 直接为 false。 */
+    @Test
+    void waterIsNotStandableWhenSwimmingIsBanned() {
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+        world.water(new BlockPos(1, 0, 0));
+
+        assertFalse(searchWorld(world, new FakeSteveNavRules(true, false, 3.0D))
+                        .standable(new BlockPos(1, 0, 0)),
+                "禁游时水面不可站");
+        assertTrue(searchWorld(world, new FakeSteveNavRules(true, true, 3.0D))
+                        .standable(new BlockPos(1, 0, 0)),
+                "允许游泳时水面可站");
+    }
+
+    // ---------------------------------------------------------------- 与原版裁剪参数对齐
+
+    /**
+     * 原版 {@code PathFinder} 的「到达范围 r」：目标格不可站时，走到它旁边就算到达。
+     *
+     * <p>
+     * 不加这条时，只要任务方块悬空/被占住，A* 永远返回「未到达」，上层每 30 tick 重搜一次。
+     */
+    @Test
+    void unreachableGoalAcceptsManhattanNeighbour() {
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+        world.open(new BlockPos(1, 0, 0));
+        world.open(new BlockPos(2, 0, 0));
+        // 目标格 (3,0,0) 不开：不可站。
+        BlockPos goal = new BlockPos(3, 0, 0);
+
+        assertFalse(searchWorld(world, FakeSteveNavRules.PERMISSIVE).standable(goal),
+                "前提：目标格必须不可站");
+        var result = FakeSteveNavigator.search(searchWorld(world, FakeSteveNavRules.PERMISSIVE),
+                new BlockPos(0, 0, 0), goal, false);
+        assertTrue(result.reached(), "目标不可站时应接受相邻可站格：" + result.path());
+        assertEquals(new BlockPos(2, 0, 0), result.path().peekLast(),
+                "路线终点应是紧邻目标的那个可站格");
+    }
+
+    /**
+     * 原版「最大距离 l」：累计几何路径距离超过上限就剪掉，不允许绕地球一圈。
+     *
+     * <p>
+     * 直接断言 {@link FakeStevePathSearch} 的剪枝语义（用整数节点做最小复现）。
+     */
+    @Test
+    void maxPathDistancePrunesDetours() {
+        // 直线 0→1→…→20（每步代价 1、长度 1），外加一条「一步跳到终点但几何距离 40」的捷径。
+        java.util.function.Function<Integer, List<FakeStevePathSearch.Edge<Integer>>> edges = node -> {
+            List<FakeStevePathSearch.Edge<Integer>> list = new ArrayList<>();
+            if (node >= 0 && node < 20) list.add(new FakeStevePathSearch.Edge<>(node + 1, 1.0D));
+            if (node == 0) list.add(new FakeStevePathSearch.Edge<>(20, 1.0D, 40.0D));
+            return list;
+        };
+
+        // 不限制距离：那条「代价 1」的捷径更便宜，A* 必然选它。
+        var unlimited = FakeStevePathSearch.find(0, n -> n == 20,
+                n -> Math.abs(20 - n), edges, 512);
+        assertTrue(unlimited.complete());
+        assertEquals(1, unlimited.path().size(), "不限制时应走代价更小的捷径：" + unlimited.path());
+
+        // 限制 25：捷径的几何长度 40 超限被剪；直线累计长度 20 仍在预算内。
+        var pruned = FakeStevePathSearch.find(0, n -> n == 20,
+                n -> Math.abs(20 - n), edges, 512, 25.0D);
+        assertTrue(pruned.complete(), "捷径被剪掉后仍应沿直线到达：" + pruned.path());
+        assertEquals(20, pruned.path().size(), "被剪掉的应是那条 40 格长的捷径：" + pruned.path());
+    }
+
+    /** 节点预算随目标距离缩放：贴脸目标不应该保留满额预算。 */
+    @Test
+    void budgetScalesWithGoalDistance() {
+        GridWorld near = new GridWorld();
+        near.open(new BlockPos(0, 0, 0));
+        near.open(new BlockPos(1, 0, 0));
+        var nearWorld = searchWorld(near, FakeSteveNavRules.PERMISSIVE);
+        var nearResult = FakeSteveNavigator.search(nearWorld, new BlockPos(0, 0, 0),
+                new BlockPos(1, 0, 0), false);
+        assertTrue(nearResult.reached());
+        assertTrue(nearResult.visited() <= 32,
+                "一格外的目标不应展开几十个节点：" + nearResult.visited());
+    }
+
+    /** 危险邻居（岩浆/火）加固定代价，让 A* 愿意绕开而不是擦着走。 */
+    @Test
+    void dangerousNeighbourAddsCost() {
+        GridWorld world = new GridWorld();
+        world.open(new BlockPos(0, 0, 0));
+        world.dangerous(new BlockPos(1, 0, 0));
+        var searchWorld = searchWorld(world, FakeSteveNavRules.PERMISSIVE);
+        assertEquals(FakeSteveNavigator.DAMAGING_NEIGHBOR_COST,
+                searchWorld.neighbourMalus(new BlockPos(0, 0, 0)), 1.0E-9D,
+                "岩浆旁边必须加代价");
+        assertEquals(0.0D, searchWorld.neighbourMalus(new BlockPos(0, 0, 5)), 1.0E-9D,
+                "远离岩浆不应加代价");
+    }
+
+    // ---------------------------------------------------------------- 门与压力板
+
+    /**
+     * 压力板/地毯/铁轨这类薄覆盖物不是墙，必须能踩过去。
+     *
+     * <p>
+     * 原版 {@code PressurePlateBlock} 未按下时碰撞箱只有 1/16 格（0.0625），按下时 0.5/16 格。
+     * 寻路若把它当成「实心地板」，会认为它下面的石地板「没有支撑」，整条铺了压力板的走廊不可走。
+     */
+    @Test
+    void thinCoverIsWalkableAndNotAStep() {
+        assertTrue(FakeStevePathPolicy.walkableCover(1.0D / 16.0D, false),
+                "未按下的压力板（1/16 格）必须能踩过去");
+        assertTrue(FakeStevePathPolicy.walkableCover(0.5D / 16.0D, false),
+                "按下的压力板（0.5/16 格）同样能踩过去");
+        assertTrue(FakeStevePathPolicy.walkableCover(0.0625D, false), "地毯/铁轨同属薄覆盖物");
+        assertFalse(FakeStevePathPolicy.walkableCover(0.5D, false),
+                "半砖不是薄覆盖物：它有真实高度，要按台阶处理");
+        assertFalse(FakeStevePathPolicy.walkableCover(1.0D / 16.0D, true),
+                "带台阶语义的方块即使很薄也不能被当成覆盖物跳过");
+        // 真地板必须仍被认成地板。
+        assertTrue(1.0D >= FakeStevePathPolicy.SOLID_FLOOR_HEIGHT);
+        assertTrue(FakeStevePathPolicy.SOLID_FLOOR_HEIGHT > FakeStevePathPolicy.THIN_COVER_HEIGHT);
+    }
+
+    /**
+     * 上下半门必须归一到同一格：模组门的方块实体只挂在下半格。
+     *
+     * <p>
+     * 这里只断言纯规则（{@link FakeStevePathPolicy}），不构造真实方块状态——
+     * 测试环境没有启动 Minecraft 的方块注册表，{@code Blocks.OAK_DOOR} 会初始化失败。
+     * 真实方块状态下的行为由编译期类型检查与游戏内验证覆盖。
+     */
+    @Test
+    void doorOpeningUsesStateOrEntity() {
+        // 只按方块状态：打开就是打开。
+        assertTrue(FakeStevePathPolicy.isOpenByStateOrEntity(true, false));
+        // 只有实体 open（列车门动画进行中、方块状态尚未同步）：同样必须算打开。
+        assertTrue(FakeStevePathPolicy.isOpenByStateOrEntity(false, true));
+        // 两者都为假才算关闭。
+        assertFalse(FakeStevePathPolicy.isOpenByStateOrEntity(false, false));
+    }
+
+    private static FakeSteveNavigator.SearchWorld searchWorld(GridWorld world, FakeSteveNavRules rules) {
+        return new FakeSteveNavigator.SearchWorld(world, rules);
+    }
+
+    // ---------------------------------------------------------------- 工具
+
+    private static PathResult search(GridWorld world, BlockPos start, BlockPos goal,
+                                     FakeSteveNavRules rules) {
+        var result = FakeStevePathSearch.find(start, goal::equals,
+                pos -> Math.max(Math.max(Math.abs(pos.getX() - goal.getX()), Math.abs(pos.getZ() - goal.getZ())),
+                        Math.abs(pos.getY() - goal.getY()) / 3.0D),
+                pos -> neighbours(world, pos, rules), 512);
+        return new PathResult(new ArrayDeque<>(result.path()), result.complete());
+    }
+
+    /** 与当前导航一样只生成水平邻接，垂直偏移由网格高度及纯移动策略约束。 */
+    private static List<FakeStevePathSearch.Edge<BlockPos>> neighbours(GridWorld world, BlockPos from,
+            FakeSteveNavRules rules) {
+        List<FakeStevePathSearch.Edge<BlockPos>> edges = new ArrayList<>();
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            BlockPos column = from.relative(direction);
+            for (int dy : new int[] {0, 1, -1, -2, -3}) {
+                BlockPos next = column.offset(0, dy, 0);
+                if (!world.standable(next) || world.isWater(next) && !rules.canSwim()) continue;
+                double rise = world.standY(next) - world.standY(from);
+                if (rise > 0 && !FakeStevePathPolicy.canAscendWithoutJump(rise, world.stepBlock(next))
+                        && (!rules.canJump() || rise > 1.25D)) continue;
+                if (-rise > rules.maxFallDistance()) continue;
+                edges.add(new FakeStevePathSearch.Edge<>(next, 1.0D + Math.abs(rise) * 0.55D));
+                break;
+            }
+        }
+        return edges;
+    }
+
+    private record PathResult(ArrayDeque<BlockPos> path, boolean reached) {
+    }
+
+    /**
+     * 手写网格世界：<b>默认全部实心</b>，只有显式 {@code open} / {@code water} / {@code step}
+     * 过的格子才存在。这与真实世界一致——空气不是地面，不挖通道就没有路。
+     */
+    private static final class GridWorld implements FakeSteveNavWorld {
+        private final Set<BlockPos> open = new HashSet<>();
+        private final Set<BlockPos> water = new HashSet<>();
+        private final Set<BlockPos> steps = new HashSet<>();
+        private final Set<BlockPos> dangerous = new HashSet<>();
+        private final Map<BlockPos, Double> heights = new HashMap<>();
+
+        void open(BlockPos pos) {
+            open.add(pos.immutable());
+        }
+
+        /** 伤害方块（岩浆/火）：只影响邻居代价，不影响可站性。 */
+        void dangerous(BlockPos pos) {
+            dangerous.add(pos.immutable());
+        }
+
+        @Override
+        public boolean isDangerous(BlockPos pos) {
+            return dangerous.contains(pos);
+        }
+
+        /** 沿一条轴向直线打通所有格子（含两端）。 */
+        void corridor(BlockPos from, BlockPos to) {
+            int dx = Integer.signum(to.getX() - from.getX());
+            int dy = Integer.signum(to.getY() - from.getY());
+            int dz = Integer.signum(to.getZ() - from.getZ());
+            BlockPos cursor = from;
+            open(cursor);
+            while (!cursor.equals(to)) {
+                cursor = cursor.offset(dx, dy, dz);
+                open(cursor);
+            }
+        }
+
+        void water(BlockPos pos) {
+            water.add(pos.immutable());
+        }
+
+        /** 楼梯/半砖：站立高度抬升 1.0，且带台阶语义。 */
+        void step(BlockPos pos) {
+            steps.add(pos.immutable());
+            heights.put(pos.immutable(), pos.getY() + 1.0D);
+        }
+
+        /**
+         * 整格高台：该格本身可以站（是实心方块的顶面），站立高度比同层高 1.0，
+         * 但没有台阶语义——必须跳跃才能上去。
+         */
+        void plateau(BlockPos pos) {
+            open.add(pos.immutable());
+            heights.put(pos.immutable(), pos.getY() + 1.0D);
+        }
+
+        @Override
+        public FakeStevePathType nodeType(BlockPos feet) {
+            if (water.contains(feet)) {
+                return FakeStevePathType.WATER;
+            }
+            if (open.contains(feet) || steps.contains(feet)) {
+                return FakeStevePathType.WALKABLE;
+            }
+            return FakeStevePathType.BLOCKED;
+        }
+
+        @Override
+        public boolean blockedByBody(BlockPos feet) {
+            return false;
+        }
+
+        @Override
+        public boolean isWater(BlockPos feet) {
+            return water.contains(feet);
+        }
+
+        @Override
+        public double standY(BlockPos feet) {
+            return heights.getOrDefault(feet, (double) feet.getY());
+        }
+
+        @Override
+        public boolean dropBeside(BlockPos feet) {
+            return false;
+        }
+
+        @Override
+        public boolean stepBlock(BlockPos feet) {
+            return steps.contains(feet);
+        }
+
+        @Override
+        public boolean preserveNode(BlockPos feet) {
+            return steps.contains(feet);
+        }
+
+        @Override
+        public boolean canCutCorner(BlockPos column, double limitY) {
+            return nodeType(column).passable();
+        }
+
+        @Override
+        public BlockPos normalize(BlockPos pos) {
+            for (int dy : new int[] { 0, 1, -1 }) {
+                BlockPos candidate = pos.offset(0, dy, 0);
+                if (nodeType(candidate).passable()) {
+                    return candidate.immutable();
+                }
+            }
+            return pos.immutable();
+        }
+    }
+}

@@ -1,0 +1,87 @@
+# 客户端公平性选项锁定与 Sodium / Sodium Extra 兼容
+
+## 失效原因
+
+原先 `SREClient` 仅向 Ratatouille `OptionLocker` 注册规则；`WatheMixinBlocker` 却屏蔽了几乎全部 Ratatouille Mixin，包含 `client.optionlock.SimpleOptionMixin` 与控件锁定钩子。注册表仍能写入，但选项没有拦截，导致自动跳跃、亮度和声音分类可以被修改。
+
+原 Sodium Extra 兼容复制了整张渲染设置页，包含大量私有字段和辅助方法；它主要禁用部分控件，并未持续约束磁盘/运行配置，且未覆盖动画、粒子、天气等页面。版本更新后继续依赖整页覆盖非常脆弱。
+
+## 核心选项规则
+
+规则集中在 `ClientOptionPolicy`，由客户端专用 `LockedOptionInstanceMixin` 在选项构造、`set`、`get` 与按钮生成时执行，不依赖 `SREClient` 是否已初始化，也不依赖 Sodium 是否存在。不重新放开其他 Ratatouille 渲染 Mixin。
+
+| 选项 | 固定值 |
+| --- | --- |
+| 自动跳跃 | 关闭，false |
+| 亮度 gamma | `SRE.isLobby=true` 时 1.0（100%）；false 时恢复原有 0.0（昏暗） |
+| 黑暗效果强度 | 1.0，完整黑暗效果 |
+| 字幕 | 关闭 |
+| 云 | 关闭，沿用原规则 |
+| 实体渲染距离 | 100%，原版 `options.entityDistanceScaling=1.0`，Sodium `quality.entity_distance=100` |
+
+声音分类（含音乐、唱片、主音量）、音频设备全部开放。天气、树叶、粒子、环境光遮蔽（平滑光照）和暗角也开放调整，不再通过 Sodium 运行策略恢复旧强制值。不改变开局/结束的 MASTER 音量淡出及 Simple Voice Chat 的独立混音配置。
+
+锁定值不由配置文件里的旧值决定。设置 API 尝试修改自动跳跃、gamma 或实体渲染距离时仍得到固定值；读取会恢复受限选项的内部 backing value，保存/重载仍遵循同一策略。实体距离即使手改 `options.txt` 也固定为 100%。原版受限按钮保持显示但禁用，不只靠隐藏设置页面。
+
+## Sodium 0.8.13 / Sodium Extra 0.9.3
+
+- Sodium 新配置 API：在 `OptionBuilderImpl.getEnabled` 与 `StatefulOptionBuilderImpl` 的绑定、默认值和控件显示策略中按完整 `ResourceLocation` ID 处理。控件禁用后无法由后续 enabled provider 重新开启；重置默认值和直接调用配置 binding.save 也不能写入受限值。Reese's 复用同一配置对象的路径也受约束。
+- Sodium 固定：亮度随大厅状态为 100／0，云关闭、实体渲染距离 100%。天气、树叶、粒子、暗角、AO 不锁定。
+- Extra 固定开启：总动画及水/岩浆/火/传送门/方块/幽匿感测体动画；天空/太阳/月亮/星星/天气/生物群系与天空颜色；物品展示框、盔甲架、画、活塞、信标光柱、附魔台书本和名称标签显示；光照更新。
+- Extra 粒子效果开放：总粒子、雨溅、方块破坏/挖掘及所有逐类型粒子均可修改；不再清空粒子拒绝表、不再强制 `isParticleEnabled` 返回 true，保存和跨 tick 保留用户选择。
+- Extra 固定关闭：高级/分维度雾修改、失明/黑暗/流体等 gameplay 雾覆盖、限制信标光柱高度、云高度覆盖、Panini 投影和 instantSneak。雾距离恢复原版 0、起点/云雾恢复 100%、形状 VANILLA；移除维度雾覆盖表。受限配置继续在 sanitize 后恢复，不替换分组对象、不每 tick 写盘。
+- Extra 主入口会在 Mixin 配置准备前加载，不能对其 `options()` 方法注入。沿用一次注册的 `START_CLIENT_TICK` 约束 Extra 的受限 public 字段；Sodium 天气、树叶、暗角已不再恢复。通过普通 UI/binding 修改受限项立即受约束；不声称对任意恶意模组提供安全沙箱。
+- 旧的 Extra 雾、实体隐藏与关闭光照更新 Mixin 的取消规则继续保留；新增 Sodium/Extra Mixin 由现有 `SREMixinPlugin` 检查对应模组是否存在，且仅注册在 client 区段。
+
+保留普通用户设置：主音量、音频设备、视距、帧率限制、分辨率、全屏、VSync、GUI 缩放、视角/视角晃动、区块线程、正常遮挡剔除等性能设置，及 Extra 的 FPS/坐标显示、通知等。没有关闭 Sodium 优化，没有新按键、新依赖或模组版本修改。这里修复客户端选项公平性，不扩大到服务器鉴权/反作弊或光影文件白名单。
+
+全屏模式例外：兼容包放开 Chloride 替换后的 `chloride:full_screen`，不再恢复 `fullscreen.mode`，启动内置配置覆盖也保留用户已保存的窗口模式。全屏分辨率沿用原依赖：选择独占全屏 FULLSCREEN 后可调，窗口化/无边框模式下不可调。此修改需要更新兼容包 JAR。
+
+## 设置页入口精简（兼容包）
+
+按用户截图隐藏 BBE（`betterblockentities`）、Chloride、Gnetum、LambDynamicLights、Reese's 自身的全部设置页；Sodium Extra 隐藏动画、细节、显示三页，保留“粒子效果”和“其他”。Sodium 自身及 Iris 光影入口保留。
+
+兼容包在 Sodium `Config.getModOptions()` 返回展示副本，内部完整配置列表仍用于选项收集、覆盖及依赖校验，锁定/运行功能不变。Extra 按页面中稳定选项 ID 识别，不按语言相关显示文本匹配。Chloride 原有 68 项锁定和 preLaunch 内置配置覆盖继续保留。安装本次功能需要同时更新核心和兼容包，版本号未改。
+
+## 当前契约回归修正
+
+- 粒子选项测试改为验证当前已开放的行为：总粒子、雨溅、破坏/挖掘和逐类型粒子 binding 保留原对象，允许用户读写；运行策略保留所有粒子布尔设置及逐类型覆盖表。仍检查动画、雾、光照等受限项及分组引用不变，未恢复旧粒子锁定。
+- 金币/代币资源测试从生产 `Currency.iconText()` 获取码位，并校验当前 `F6A8/F6A9` 契约、默认/独立字体 provider 与贴图映射一致；保留翻译占位符和禁用翻译内私有区字形检查。未修改字体资源或生产代码。
+- 兼容包元数据测试同步当前空 `breaks` 策略，对 `susinstantswap` 不再要求已移除的硬冲突；原模组功能选择和 Mixin 插件注册测试仍保留。取消元数据硬冲突不等于保证两套交换输入可以同时启用。
+- `./gradlew test remapJar --console=plain` 成功：核心 940 项（938 通过、2 项因 Windows 符号链接权限跳过），兼容包 205 项全部通过；合计 **1143 通过、0 失败/错误、2 跳过**。本次未进行游戏内视觉或双交换模组共存验收。
+
+## 历史验证（以下数字对应此前实现，不代表本次重新执行）
+
+- 最终 `./gradlew test remapJar --offline --console=plain` 成功，全量 **697 项 JUnit 通过**，0 失败、错误或跳过。
+- 新增 `ClientOptionPolicyTest` 与 `SodiumOptionPolicyTest`，验证原数值、可调主音量/设备/性能项、受限 ID 名单、绑定读写、复合项拒绝写入、配置修复和分组引用保留。
+- MC 1.21.1 / Fabric 0.19.3 真实隔离客户端，装有 Sodium 0.8.13 / Extra 0.9.3。预置 autoJump=true、gamma=1、字幕开启、粒子最少、分类音量异常及 Extra 关闭动画/粒子/天气/光照更新。启动后测试加载纠正、普通 set、NaN、直接 backing value 改写后的 get、原版受限按钮禁用、全部 SoundSource 分类实际音量、主音量按钮可用、save/load 与保存文本。
+- 调用实际 Sodium 配置注册接口，检查 **181 个受限控件**、固定默认值及绑定 save/load；天气/树叶/暗角及 Extra public 字段在跨 tick 后恢复；FPS 等普通设置仍可用。输出 `SRE_CLIENT_OPTIONS_PASS checks=957` 后正常关闭，Gradle 退出码 0。
+- 另一个真实隔离客户端在运行类路径中排除所有 Sodium/Extra/Reese's JAR，检查模组确实不存在，再验证核心值、控件、保存重载及可调主音量。输出 `SRE_NATIVE_OPTIONS_PASS` 后正常关闭，Gradle 退出码 0，证明核心策略不依赖可选渲染模组。
+
+测试模组、篡改配置与测试游戏目录均仅在会话 scratch，不包含在正式 JAR，不修改 SRE4.3 用户配置或启动器。没有连接真实服务器、进入用户存档或执行真实多人对局；没有宣称已完成光影/听感/所有职业效果的人工联机验收。
+
+## 交付
+
+产物 `build/libs/starrailexpress.jar`，本轮不自动替换实例。停游戏并备份旧 JAR 后再替换客户端 SRE 模组，不能在 mods 中并存两份。规则是客户端强制约束，服务器也应使用正常的兼容客户端版本管理；不把客户端选项锁描述为防止任意改包的服务端安全保证。
+
+## 补充：禁止着色器与动态光源入口
+
+`sodium-extra:prevent_shaders`（“禁止着色器”）固定为 false，不禁止游戏后处理着色器；Sodium binding、默认值和 Extra 运行/保存策略均约束此值。该项单独设置 `controlHiddenWhenDisabled=true`，配合受限项 disabled 隐藏，其他受限控件的展示规则不变。
+
+实际 LambDynamicLights 4.8.11 整合 JAR 的 Sodium 入口位于嵌套 Fabric 模块 `lambdynlights_runtime`，其 `registerOwnModOptions` 使用该 ID。兼容包同时过滤 `lambdynlights` 与 `lambdynlights_runtime`，避免只按外层 Mod ID 匹配而残留入口。不关闭动态光源渲染。
+
+## 大厅亮度与原版雾范围
+
+以 `SRE.isLobby` 为准：大厅亮度为 100%，离开大厅恢复现有锁定的 0%，不是恢复配置文件中被锁定前的任意值。
+原版 OptionInstance 的 get/set 与 Sodium 的绑定 load/save 按当前状态取值，不缓存创建时的亮度，
+因此重复进出大厅或打开过设置页后仍会恢复。其他选项锁不变，不每 tick 保存配置。
+
+大厅在自定义地图／回声／夜间雾处理之前，每次显式调用原版 FogRenderer.setupFog，
+保留原版按视距、环境和状态效果计算的雾范围，并清除旧自定义雾及光影后处理雾的活动标记。
+创造模式“无雾”在大厅也让开；`isLobby=false` 时继续走原有地图、天气、职业和夜间雾逻辑。
+本变更只调整雾的范围选择，不另改雾色、天气或资源包。
+
+验证：执行核心定向 `:test`（ClientOptionPolicyTest、SodiumOptionPolicyTest、LobbyVisualMixinTest、
+NightRoundStateTest、EchoHunterFogClientTest）及 `:remapJar --offline --console=plain` 成功，
+78 项测试通过，0 失败／错误／跳过。检查正式 JAR 包含修改类且不包含新增测试类，`git diff --check` 通过。
+构建有已有的 Cobblemon 酿造映射警告，但未导致失败；未部署或执行游戏内大厅／对局视觉验收。

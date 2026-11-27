@@ -21,6 +21,14 @@ import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui.Tooltip;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
+import net.fabricmc.loader.api.FabricLoader;
+import org.agmas.noellesroles.game.halloween.online.OnlineConfig;
+import org.agmas.noellesroles.game.halloween.online.OnlineConfigMigration;
+
+import java.io.IOException;
+import java.nio.file.Files;
 
 import java.util.ArrayList;
 
@@ -31,14 +39,73 @@ import java.util.ArrayList;
  */
 @Config(name = "starrailexpress")
 public class SREConfig implements ConfigData {
-    // 存储默认配置值 - 在静态初始化块中设置
-    public static ConfigClassHandler<SREConfig> HANDLER = new ConfigClassHandler<>(
-            SREConfig.class);
+    private static boolean halloweenConfigReady = true;
+    // 必须在 AutoConfig 首次 load/save 补全默认字段前检查旧主文件。
+    public static ConfigClassHandler<SREConfig> HANDLER = createHandler();
+
+    private static ConfigClassHandler<SREConfig> createHandler() {
+        var directory = FabricLoader.getInstance().getConfigDir();
+        var main = directory.resolve("starrailexpress.json");
+        try {
+            OnlineConfigMigration.migrate(main, directory.resolve("halloween-online.json"));
+        } catch (IOException ex) {
+            halloweenConfigReady = false;
+            org.slf4j.LoggerFactory.getLogger(SREConfig.class).error(
+                    "[HalloweenOnline] 南瓜币配置迁移失败；保留原文件并禁止本次运行写回主配置，请修复后重启。同步失败关闭。");
+        }
+        // 仅为 SRE 主配置跳过构造时的自动 save，避免丢失未知字段或覆盖迁移失败的原文件。
+        // 不改变通用 ConfigClassHandler；正常的后续手动保存仍沿用原 API。
+        return new ConfigClassHandler<>(SREConfig.class) {
+            @Override
+            public void register() {
+                AutoConfig.register(SREConfig.class, (definition, type) -> new GsonConfigSerializer<>(definition, type) {
+                    private boolean initialSave = true;
+
+                    @Override
+                    public void serialize(SREConfig config) throws SerializationException {
+                        if (!halloweenConfigReady) return;
+                        if (initialSave) {
+                            initialSave = false;
+                            if (Files.exists(main)) return;
+                        }
+                        super.serialize(config);
+                    }
+
+                    @Override
+                    public SREConfig deserialize() throws SerializationException {
+                        try {
+                            SREConfig config = super.deserialize();
+                            if (config == null) throw new IllegalArgumentException();
+                            return config;
+                        } catch (SerializationException | RuntimeException ex) {
+                            halloweenConfigReady = false;
+                            // AutoConfig 会记录异常链；不要传入含密码/旧密钥的原异常。
+                            throw new SerializationException(new IOException("Invalid SRE configuration; contents omitted"));
+                        }
+                    }
+                });
+            }
+        };
+    }
+
+    /** 服务端启动时取六项快照，之后修改配置需重启；迁移失败时不能启用队列。 */
+    public OnlineConfig halloweenOnlineConfig() {
+        if (!halloweenConfigReady) throw new IllegalStateException("Halloween configuration unavailable");
+        return OnlineConfig.fromSettings(mysqlHalloweenSyncEnabled, mysqlHalloweenEarningsTable,
+                mysqlHalloweenCreateTableIfMissing, mysqlHalloweenFlushIntervalSeconds,
+                mysqlHalloweenBatchSize, mysqlHalloweenStatementTimeoutSeconds);
+    }
             
     // 服务端：加载模组本地翻译文件id（输入auto自动检测环境，留空不加载）
     public String loadServerLanguageId = "";
     // 服务端：为上面的语言从Mojang官方下载原版(vanilla)翻译文件(assets/minecraft/lang/<id>.json)，缓存到游戏根目录sre_lang_cache
     public boolean downloadVanillaLanguageFile = false;
+
+    /** 服务端控制宝可梦玩法、世界生成及客户端功能；保留存档、同步和退出清理。 */
+    @ConfigSync(shouldSync = true)
+    @Tooltip
+    public volatile boolean pokmen = false;
+
     // 游戏模式设置
     @ConfigEntry.Category(value = "gamemodes")
     public int defaultStartTimeForMurder = 10;
@@ -97,6 +164,12 @@ public class SREConfig implements ConfigData {
     public boolean enableMirrorReunionEndEgg = false;
     // 时长（tick）。实际结局还会再多 1.5 秒。
     public int mirrorReunionEndEggTime = 5 * 20;
+
+    // 结算舞台专用区域：地板中心。内部 33×31×15 会程序化重建，请勿指向建筑。
+    public boolean enableSettlementStage = true;
+    public int settlementStageX = -100000;
+    public int settlementStageY = 0;
+    public int settlementStageZ = 0;
 
     // 随机地图设置
 
@@ -159,6 +232,10 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "map")
     @Tooltip
     public int mapRandomCount = -1;
+
+    // 仅开局：在原出生点水平半径 6 格内安全分散；关闭后完全沿用原传送行为。
+    @ConfigEntry.Category(value = "map")
+    public boolean enableStartSpawnScatter = true;
 
     @ConfigEntry.Category(value = "map")
     public boolean allowRandomChooseMapNotInMapConfig = false;
@@ -423,6 +500,29 @@ public class SREConfig implements ConfigData {
     @ConfigEntry.Category(value = "sync")
     public int mysqlSyncConnectTimeoutMs = 5000;
 
+    // 南瓜币队列复用上述连接；服务器本地配置，不添加 @ConfigSync。
+    @ConfigEntry.Category(value = "sync")
+    @Tooltip
+    public boolean mysqlHalloweenSyncEnabled = false;
+    @ConfigEntry.Category(value = "sync")
+    @Tooltip
+    public String mysqlHalloweenEarningsTable = "";
+    @ConfigEntry.Category(value = "sync")
+    @Tooltip
+    public boolean mysqlHalloweenCreateTableIfMissing = true;
+    @ConfigEntry.Category(value = "sync")
+    @Tooltip
+    @ConfigEntry.BoundedDiscrete(min = 1, max = 86400)
+    public int mysqlHalloweenFlushIntervalSeconds = 30;
+    @ConfigEntry.Category(value = "sync")
+    @Tooltip
+    @ConfigEntry.BoundedDiscrete(min = 1, max = 128)
+    public int mysqlHalloweenBatchSize = 128;
+    @ConfigEntry.Category(value = "sync")
+    @Tooltip
+    @ConfigEntry.BoundedDiscrete(min = 1, max = 60)
+    public int mysqlHalloweenStatementTimeoutSeconds = 10;
+
     @ConfigEntry.Category(value = "sponsor")
     @Tooltip(count = 2)
     public String sponsorListUrl = "";
@@ -487,6 +587,14 @@ public class SREConfig implements ConfigData {
     public int teamKillViolationMcFunctionPermission = 3;
 
     public boolean enableRoster = true;
+
+    /** 地图投票前是否先开一次「职业池」投票（选中后写入职业轮换名单）。 */
+    @ConfigSync(shouldSync = true)
+    public boolean enableRolePoolVote = true;
+
+    /** 职业池投票每人可选几个池子（默认 4 选 2）；结果取票数最高的这么多个池子合并生效。 */
+    @ConfigSync(shouldSync = true)
+    public int rolePoolVoteSelectCount = 2;
 
     // 技能释放通告 HUD（服务端控制，默认关闭）
     @ConfigEntry.Category(value = "hud")

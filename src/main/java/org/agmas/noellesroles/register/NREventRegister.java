@@ -25,6 +25,12 @@ import org.agmas.noellesroles.init.ModEventsRegister;
 public class NREventRegister {
 
     public static void registerWorldSystemsAndEvents() {
+        io.wifi.starrailexpress.api.RoleSkill.registerInitialCooldownEvents();
+        org.agmas.noellesroles.game.roles.innocence.decree.DecreeService.register();
+        org.agmas.noellesroles.init.events.GameUtilityRoleHooks.register();
+        org.agmas.noellesroles.init.events.ShopRoleEventHandlers.register();
+        org.agmas.noellesroles.init.events.CoreGameplayRoleEvents.register();
+        org.agmas.noellesroles.init.events.KnifeCooldownRoleEvents.register();
         // 注册C4系统
         org.agmas.noellesroles.game.c4.C4Detonation.register();
         org.agmas.noellesroles.game.c4.PliersDefuseManager.register();
@@ -33,6 +39,8 @@ public class NREventRegister {
         // 注册 Mafia 系统
         org.agmas.noellesroles.game.roles.neutral.mafia.MafiaManager.register();
 
+        // 中控员：红外线扫描仪的区域发光（全局 tick，不为每个玩家注册）
+        org.agmas.noellesroles.game.roles.innocence.central_control.CentralControlTicker.register();
         // 注册事件处理器
         ModEventsRegister.registerEvents();
         org.agmas.noellesroles.content.item.SealedArtifactHandler.register();
@@ -43,6 +51,12 @@ public class NREventRegister {
         org.agmas.noellesroles.game.roles.neutral.monokuma.MonokumaEventHandler.register();
         org.agmas.noellesroles.game.roles.neutral.amon.AmonEventHandler.register();
         org.agmas.noellesroles.game.roles.neutral.leader.LeaderEventHandler.register();
+        // 雪傀儡：伪装、融化被动、雪球碰撞与开局 / 局末清场
+        org.agmas.noellesroles.game.roles.neutral.snow_golem.SnowGolemRole.registerEvents();
+        // 金属怪：钢卷运动学、撞击结算、撞门与局末清理
+        org.agmas.noellesroles.game.roles.neutral.metal_monster.MetalMonsterRole.registerEvents();
+        org.agmas.noellesroles.game.roles.killer.clone_doctor.CloneDoctorRole.registerEvents();
+        org.agmas.noellesroles.game.scanner.IdentityScannerService.registerEvents();
 
         // 注册入梦药水效果处理
         org.agmas.noellesroles.content.effects.DreamEffectHandler.register();
@@ -52,6 +66,7 @@ public class NREventRegister {
         org.agmas.noellesroles.game.roles.neutral.priest.PriestEventHandler.register();
         org.agmas.noellesroles.game.fake_steve.FakeSteveDirector.register();
         org.agmas.noellesroles.game.command_block.CommandBlockDirector.register();
+        org.agmas.noellesroles.game.night.NightEvent.register();
         org.agmas.noellesroles.game.MirrorReunionEndEgg.register();
         org.agmas.noellesroles.content.speaker.SpeakerPlayback.register();
     }

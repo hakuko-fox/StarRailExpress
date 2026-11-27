@@ -43,6 +43,7 @@
 > | `AreasSettings.meetingX/Y/Z`、`meetingChairScanRadius` | `meetingPosition: {x,y,z}`、`meetingChairScanBox: {minX..maxZ}` |
 >
 > 注：**RoleData / ShopEntry / 商店 / 背包扩展 / TimeRewind / ui_style 等章节经核对基本正确**，可以放心参考；职业相关的最新最全流程请优先看 [`角色开发指南.md`](角色开发指南.md) 与 [`AI创建新职业攻略.md`](AI创建新职业攻略.md)。
+> 时间回溯的原版 NBT 捕获/恢复生命周期与区域掉落物过滤，见 [`time_rewind_api.md`](time_rewind_api.md)「原版状态生命周期与物品过滤」；注册入口为 `TimeRewindEvents`，用于保全不可回溯复制的实物和排除临时领域增益。
 
 ## 目录 / Table of Contents
 
@@ -799,6 +800,11 @@ public interface RoleComponent extends AutoSyncedComponent {
   Store end-timestamps instead of decrementing countdowns each tick.
 - 如需倒计时，在客户端本地模拟计算，服务端约 10 秒同步一次。  
   For countdowns, simulate locally on client; sync from server roughly every 10 seconds.
+- 需要对全员同步的组件，请用 `io.wifi.starrailexpress.cca.DefaultStateSyncGate` 做「默认态门控」：
+  CCA 在实体开始被追踪 / 玩家登录时会对**每个**组件无脑 `syncWith`，`shouldSyncWith` 恒为 `true`
+  会发出「玩家数 × 观察者数」个负载为默认值的空包。门控后默认态只发给本人与「拿到过非默认数据」的观察者，
+  状态回落默认时仍会给他们补发一次复位包，功能不变。
+  For components synced to everyone, use `DefaultStateSyncGate` to skip default-state packets.
 
 ---
 
@@ -836,6 +842,11 @@ SREAbilityPlayerComponent comp = SREAbilityPlayerComponent.KEY.get(player);
 ## 技能系统 / Skill System
 
 ### RoleSkill — 技能注册
+
+统一技能定义新增开局冷却：`RoleSkill.skill(...).initialCooldownSeconds(80).cooldownSeconds(65).build()`。
+也可使用 `.initialCooldownTicks(ticks)`；`Definition.initialCooldownTicks()` 默认 0，旧构造器和旧技能行为不变。
+职业初始化器在组件与职业初始化完成后应用初始冷却，`OnGameTrueStarted` 再从完整时长计时；普通施法只使用 `cooldownTicks()`，不会重复套用开局冷却。
+
 
 **包 / Package:** `io.wifi.starrailexpress.api`（不是 `org.agmas.noellesroles`）
 
@@ -1527,6 +1538,25 @@ SomeEvent.EVENT.register((param1, param2) -> { /* ... */ });
 
 ### 游戏生命周期事件
 
+#### `AllowGameInitialize` — 破坏性开局初始化前的准入闸门
+
+**类型：** 可否决；默认允许，任一监听器返回 `false` 即拒绝。位置：`io.wifi.starrailexpress.event.AllowGameInitialize`。
+
+```java
+AllowGameInitialize.EVENT.register((serverLevel, gameMode, readyPlayers) -> {
+    // readyPlayers 为只读名单；非本扩展模式直接返回 true。
+    return true;
+});
+```
+
+`GameUtils.startGame` 在重载地图前作一次早期检查；`initializeGame` 在清理组件、切换玩家模式及调用开局事件前再作最终检查，并复用该次锁定名单。监听器须无破坏性副作用，失败时自行说明原因。最终拒绝会清 forced-ready、复位启动标志/fade、同步 INACTIVE 并发送地图出发取消提示，不触发正式开局或胜负统计。其它模式无拒绝监听时保持默认放行。
+
+#### `DeferGameInitialize` — 地图重置后的异步准备闸门
+
+位置：`io.wifi.starrailexpress.event.DeferGameInitialize`。监听签名`(serverLevel, gameMode, readyPlayers) -> boolean`；名单由原开局流程计算并只读传入。任一返回true则仅推迟本tick初始化，仍保持STARTING，下个准备tick再询问；返回false继续AllowGameInitialize最终否决检查。默认false，其它模式不变。
+
+此入口已经过地图重载/复制，尚未清理组件或分配身份，适合每tick推进有界的路线/资源准备。监听器不得同步等待线程或执行无界扫描，必须自行限制任务/总等待期限并在完成、失败、卸载/停止时清理。异步失败应结束等待，再由AllowGameInitialize返回false复用统一取消流程，不能把失败当作就绪。Echo的每局路线许可在最终否决入口一次性消费，不复用重置前证明。
+
 #### `AllowGameEnd` — 是否允许游戏结束
 
 **类型:** 可拦截，首个非 `NOT_MODIFY` 返回值生效。
@@ -1695,6 +1725,13 @@ OnTeammateKilledTeammate.EVENT.register((victim, killer, isInnocent, deathReason
 
 ### 技能与交互事件
 
+- `ItemGameplayEvents.ALLOW_GUN_FIRE`：`boolean allow(ServerPlayer, int targetId)`，普通枪与狙击开火前的硬否决，早于耗弹、音效和冷却；狙击装弹/镜片操作不触发。
+- `ItemGameplayEvents.ALLOW_KNIFE_ATTACK`：同签名，普通刺杀入口在命中和冷却前硬否决；返回 false 不产生攻击副作用。
+- `GameUtilityEvents.ALLOW_REVIVE`：`boolean allow(ServerPlayer, @Nullable Vec3 destination)`，两个核心复活实现都在清状态/传送前查询；回房间复活 destination 为 null。首个 false 短路，默认放行。独立职业的自建复活流程需要在其扣次数前自行查询/校验，不能只依赖游戏模式切换。
+- `ItemGameplayEvents.BEFORE_ROLE_DROP`：`InteractionResult beforeDrop(Player, ItemStack)`，在 `RoleMethodDispatcher.callOnDropItem` 查询职业及后续白名单之前双端调用；首个非 `PASS` 原样返回，全部 `PASS` 继续原职业判定。监听器若拒绝客户端预测掉落，需在服务端同步对应菜单纠正物品栏。
+- `ClientGameplayEvents.DISGUISE_STATE_COPIED`：`void copied(Player, Entity dummy)`，伪装临时实体完成位置、朝向与动画状态复制后通知，保持不 tick 临时实体；适合追加模型专用动画状态。监听器仅在客户端初始化时注册一次。
+
+
 #### `OnRoleSkillUse` — 角色技能使用
 
 **类型:** 可拦截（BEFORE 和 AFTER 均可）。
@@ -1815,6 +1852,19 @@ Provides placeholder replacement similar to command blocks:
 ---
 
 ### 渲染与客户端事件
+
+#### `ClientGameplayEvents.ANONYMOUS_APPEARANCE` — 追加匿名外观限制
+
+**类型：** 客户端查询型；任一监听器返回 `true` 即要求匿名显示，默认 `false`。
+
+核心兼容入口 `SREClient.getLooseEndPenalty()` 返回「原有难民惩罚 **或** 该事件结果」，统一供玩家皮肤、尸体贴图及帽子屏蔽使用。监听器不能解除原有惩罚；`viewer` 是当前观察者，可能为空。
+
+```java
+ClientGameplayEvents.ANONYMOUS_APPEARANCE.register(
+        viewer -> ArsonistClient.hasMomentDeathPenalty());
+```
+
+在客户端初始化时静态注册一次，职业或活动判断留在扩展侧。回调中不要再次调用 `getLooseEndPenalty()`，以免递归。不要通过 Mixin 注入项目自有类来替代此入口。
 
 #### `RenderClientLightLevel` — 客户端光照等级渲染
 
@@ -2509,19 +2559,6 @@ boolean joined = MeetingApi.isParticipant(playerUuid);
 
 > 网络包：`MeetingStateS2CPayload`（状态全量同步）、`MeetingSpeakC2SPayload`（发言开关）。
 > 客户端渲染 / 运镜见 `net.exmo.sre.meeting.client.MeetingClientHandler` 与 `MeetingHud`。
-
----
-
-## 客户端 JAR 密钥认证 / Client JAR Key Authentication
-
-**包 / Package:** `net.exmo.sre.mod_whitelist`（默认**关闭**）
-
-发布者用外部工具 `tools/sign_sre_jar.py`（无 Python 的主机用等效的 `tools/sign_sre_jar.ps1`）
-把随机密钥嵌入最终 jar（`sre_auth_key.txt`），
-服务端与所有客户端运行**同一份签名 jar**。玩家入服时服务端下发一次性 nonce，双方各自计算
-`HMAC-SHA256(密钥, 自身jar摘要|nonce|版本)` 比对 —— jar 被修改 / 未签名 / 版本不符即被断开。
-在 `config/starrailexpress-config.json` 中设置 `"ENABLE_JAR_KEY_AUTH": true` 启用；
-可与既有的 `VERIFY_STARRAILEXPRESS_HASHES` 哈希白名单叠加。
 
 ---
 

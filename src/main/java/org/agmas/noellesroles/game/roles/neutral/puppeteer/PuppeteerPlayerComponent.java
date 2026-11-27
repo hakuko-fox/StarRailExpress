@@ -31,7 +31,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -48,6 +47,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.tick.ClientTickingComponent;
 import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
@@ -457,14 +457,15 @@ public class PuppeteerPlayerComponent implements RoleComponent, ServerTickingCom
     }
 
     /**
-     * 本体死亡处理
-     * 当本体标记被破坏或本体实体死亡时调用
+     * 本体死亡处理：本体实体死亡、本体标记被破坏、或本体消失时都会走这里。
+     *
+     * <p>死因固定在内部，不由调用方传入——玩家傀儡本体致死只有一个死因
+     * {@link GameConstants.DeathReasons#PUPPETEER_BODY_DEATH}，因此不存在传入
+     * {@code generic}（未知）或其它凶器死因的可能。
+     *
+     * @param killer 击杀者，可为 {@code null}（本体标记被破坏等无明确凶手的情况）
      */
-    public void onBodyDeath() {
-        this.onBodyDeath(null, GameConstants.DeathReasons.GENERIC);
-    }
-
-    public void onBodyDeath(Player killer, ResourceLocation deathReason) {
+    public void onBodyDeath(@Nullable Player killer) {
         if (!isControllingPuppet)
             return;
         if (!(player instanceof ServerPlayer serverPlayer))
@@ -479,7 +480,7 @@ public class PuppeteerPlayerComponent implements RoleComponent, ServerTickingCom
         puppetEntityUuid = null;
         puppetSkinUuid = null;
         puppetRole = null;
-        GameUtils.killPlayer(serverPlayer, true, killer, deathReason);
+        GameUtils.killPlayer(serverPlayer, true, killer, GameConstants.DeathReasons.PUPPETEER_BODY_DEATH);
         // 发送消息
         serverPlayer.displayClientMessage(
                 Component.translatable("message.noellesroles.puppeteer.body_died")
@@ -643,7 +644,7 @@ public class PuppeteerPlayerComponent implements RoleComponent, ServerTickingCom
         if (isControllingPuppet) {
             // 检查本体是否存活
             if (!isBodyAlive()) {
-                onBodyDeath();
+                onBodyDeath(null);
                 return;
             }
 

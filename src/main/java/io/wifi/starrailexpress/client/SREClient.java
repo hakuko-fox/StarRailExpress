@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.text2speech.Narrator;
 
-import dev.doctor4t.ratatouille.client.util.OptionLocker;
 import dev.doctor4t.ratatouille.client.util.ambience.AmbienceUtil;
 import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import io.wifi.ConfigCompact.ClientConfigEvents;
@@ -167,9 +166,6 @@ import io.wifi.starrailexpress.util.PoisonComponentUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.exmo.sre.EXSREClient;
 import net.exmo.sre.loading.FrameAnimationRenderer;
-import net.exmo.sre.mod_whitelist.client.ModWhitelistClient;
-import net.exmo.sre.mod_whitelist.client.network.ModWhitelistClientNetworkHandler;
-import net.exmo.sre.mod_whitelist.common.network.ModWhitelistConfigPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -181,9 +177,9 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.CameraType;
-import net.minecraft.client.CloudStatus;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -215,6 +211,8 @@ public class SREClient implements ClientModInitializer {
     public static boolean hasCustomSkinLoaderAndNeedToWarn = false;
     public static HPManager handParticleManager;
     public static Map<Player, Vec3> particleMap;
+    /** 副手单独一份枪口位置，避免副手的枪覆盖主手记录。 */
+    public static Map<Player, Vec3> offhandParticleMap;
     public static Map<UUID, OptionalInt> cachedHighLightMap = new ConcurrentHashMap<>();
     private static boolean previousMyTurn = false;
     private static boolean prevGameRunning;
@@ -227,7 +225,7 @@ public class SREClient implements ClientModInitializer {
     public static int intervalTime = 0;
     public static boolean isInLobby = false;
     public static Player cached_player = null;
-    public static Narrator narrator = Narrator.getNarrator();
+    public static final Narrator narrator = new io.wifi.starrailexpress.client.sound.AsyncNarrator();
     // HUD/API 缓存：在 END_CLIENT_TICK 统一更新，在渲染 mixin 中仅做读取，避免渲染流程重复判断。
     private static boolean cachedPlayerAliveAndInSurvival;
     private static boolean cachedPlayerSpectatingOrCreative;
@@ -311,6 +309,12 @@ public class SREClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ((io.wifi.starrailexpress.client.sound.AsyncNarrator) narrator).initialize();
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING
+                .register(client -> narrator.destroy());
+        io.wifi.starrailexpress.training.client.TrainingClient.register();
+        io.wifi.starrailexpress.client.render.ShaderPackFog.register();
+        io.wifi.starrailexpress.settlement.client.SettlementClient.register();
         LetterNewspaperBuilder.init();
         RhythmMapManager.registerEvents();
         SceneAssetClient.initialize();
@@ -320,6 +324,26 @@ public class SREClient implements ClientModInitializer {
         MorphApiClient.registerClient();
         io.wifi.starrailexpress.client.disguise.EntityDisguiseClient.registerClient();
         io.wifi.starrailexpress.hat.HatEquipmentApi.registerDefaultOwnerResolvers();
+        io.wifi.starrailexpress.client.pet.PetClientDriver.register();
+        // 皮肤页「仅显示 3D 皮肤」的资源探测兜底：附属模组会自己显式登记，
+        // 但主模组 / 其它内容模组自带的 geo 皮肤没人登记，这里扫一遍
+        // assets/*/geo/**.geo.json 把文件名当皮肤 ID 收集起来。
+        // 必须挂在资源重载之后：启动期资源还没就绪，扫描会得到空集。
+        net.fabricmc.fabric.api.resource.ResourceManagerHelper.get(
+                net.minecraft.server.packs.PackType.CLIENT_RESOURCES)
+                .registerReloadListener(new net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener() {
+                    @Override
+                    public net.minecraft.resources.ResourceLocation getFabricId() {
+                        return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                "starrailexpress", "skin_3d_probe");
+                    }
+
+                    @Override
+                    public void onResourceManagerReload(
+                            net.minecraft.server.packs.resources.ResourceManager manager) {
+                        io.wifi.starrailexpress.util.ItemSkin3dRegistry.probeGeoResources(manager);
+                    }
+                });
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
                 .register((handler, client) -> {
                     io.wifi.starrailexpress.client.hat.ClientHatEquipmentCache.clear();
@@ -329,14 +353,20 @@ public class SREClient implements ClientModInitializer {
         io.wifi.starrailexpress.client.mirror.MirrorReflectionManager.init();
         ClientConfigEvents.register();
         initNetworkStatisticsClient();
+        // 列车指令手册：右键在本地打开指令速查界面
+        io.wifi.starrailexpress.content.item.TrainCommandManualItem.openScreenCallback = () -> {
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+            if (client.player == null)
+                return;
+            client.setScreen(new io.wifi.starrailexpress.client.gui.screen.TrainCommandManualScreen());
+        };
         new EXSREClient().onInitializeClient();
-        // Load config
-        ModWhitelistClient.onInitializeClient();
         // ModVersionPacket
         checkCustomSkinLoader();
         // Initialize ScreenParticle
         handParticleManager = new HPManager();
         particleMap = new HashMap<>();
+        offhandParticleMap = new HashMap<>();
         // Custom Baked Models
         ModelLoadingPlugin.register(new GeneralModelLoadingPlugin());
         // 自定义列车物品「模型地址」指向的模型（资源包里没被引用的模型默认不会烘焙）
@@ -516,6 +546,8 @@ public class SREClient implements ClientModInitializer {
         // ───── 场景背景音效系统 ─────
         // 列车内部（看不到天空时，仅 train 类型生效）
         OutsideSoundManager.registerEvents();
+        // 音乐盒：装配后在地图无背景音、非命令方块事件局时循环播放
+        MusicBoxAmbientSound.register();
 
         // Caching components
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
@@ -535,25 +567,16 @@ public class SREClient implements ClientModInitializer {
             moodComponent = null;
             timeComponent = null;
             io.wifi.starrailexpress.anticheat.ClickAntiCheatClient.clear();
+            WaypointHUD.resetForNewGame();
         });
-        // Lock options
-        OptionLocker.overrideOption("gamma", 0d);
-        if (getLockedRenderDistance(SREConfig.isUltraPerfMode()) != null) {
-            OptionLocker.overrideOption("renderDistance",
-                    getLockedRenderDistance(SREConfig.isUltraPerfMode()));
+        // 公平性选项由 LockedOptionInstanceMixin 在构造、读写与按钮层统一锁定。
+        // 不再向已被屏蔽的 Ratatouille OptionLocker 注册无效规则。
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("sodium")) {
+            SodiumOptionsEnforcer.register();
         }
-        OptionLocker.overrideOption("showSubtitles", false);
-        OptionLocker.overrideOption("autoJump", false);
-        OptionLocker.overrideOption("renderClouds", CloudStatus.OFF);
-        OptionLocker.overrideSoundCategoryVolume("music", 0.0);
-        OptionLocker.overrideSoundCategoryVolume("record", 0.1);
-        OptionLocker.overrideSoundCategoryVolume("weather", 1.0);
-        OptionLocker.overrideSoundCategoryVolume("block", 1.0);
-        OptionLocker.overrideSoundCategoryVolume("hostile", 1.0);
-        OptionLocker.overrideSoundCategoryVolume("neutral", 1.0);
-        OptionLocker.overrideSoundCategoryVolume("player", 1.0);
-        OptionLocker.overrideSoundCategoryVolume("ambient", 1.0);
-        OptionLocker.overrideSoundCategoryVolume("voice", 1.0);
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("sodium-extra")) {
+            SodiumExtraOptionsEnforcer.register();
+        }
 
         // 客户端接收器 (在客户端初始化中调用)
         VoteClientReceiver.register();
@@ -784,9 +807,7 @@ public class SREClient implements ClientModInitializer {
             if (!content.isBlank()) {
                 narrator.say(content, shouldInterrupt);
             } else {
-                if (narrator.active()) {
-                    narrator.clear();
-                }
+                narrator.clear();
             }
         });
         ClientPlayNetworking.registerGlobalReceiver(OpenFourthRoomPeekDeckPayload.ID,
@@ -807,7 +828,10 @@ public class SREClient implements ClientModInitializer {
                 }));
         // 连接刚建立（还没登录、没收到服务端任何数据）就清一次：严格意义上的「进服前」，
         // 保证上一台服务器 / 单机残留的自定义内容不会参与这次连接的渲染与判定
-        ClientPlayConnectionEvents.INIT.register((handler, client) -> clearCustomContentCaches());
+        ClientPlayConnectionEvents.INIT.register((handler, client) -> {
+            ClientPlayerDataCache.clear();
+            clearCustomContentCaches();
+        });
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             FourthRoomClientState.clear();
             FourthRoomCameraDirector.clear();
@@ -825,6 +849,7 @@ public class SREClient implements ClientModInitializer {
             net.exmo.sre.subtitle.client.SubtitleHUD.INSTANCE.clear();
             SceneAssetClient.clearRuntime();
             ClientPlayerStatsCache.clear();
+            ClientPlayerDataCache.clear();
             RoleRotationCache.clear();
             io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.clear();
             // 清理自定义内容（职业 / 修饰符 / 列车物品 / 方块）客户端缓存，
@@ -929,6 +954,9 @@ public class SREClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.PlushEquipmentSyncPayload.ID,
                 (payload, context) -> context.client()
                         .execute(() -> io.wifi.starrailexpress.client.plush.ClientPlushEquipmentCache.applySync(payload)));
+        ClientPlayNetworking.registerGlobalReceiver(io.wifi.starrailexpress.network.PetSyncPayload.ID,
+                (payload, context) -> context.client()
+                        .execute(() -> io.wifi.starrailexpress.client.pet.ClientPetCache.applySync(payload)));
         ClientPlayNetworking.registerGlobalReceiver(ShowStatsPayload.ID, (payload, context) -> {
             UUID targetPlayerUuid = payload.targetPlayerUuid();
             context.client().execute(() -> {
@@ -943,6 +971,7 @@ public class SREClient implements ClientModInitializer {
             MapStatusBarClientState.set(MapStatusBarType.NONE, 20, 20);
             io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.clear();
             io.wifi.starrailexpress.client.gui.MobRiotHudRenderer.reset();
+            context.client().execute(WaypointHUD::resetForNewGame);
             OnGameFinishedClient.EVENT.invoker().gameFinished();
         });
         ClientPlayNetworking.registerGlobalReceiver(OnGameStartedPayload.TYPE, (payload, context) -> {
@@ -954,6 +983,7 @@ public class SREClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new io.wifi.starrailexpress.network.MapIntroRequestPayload());
                 io.wifi.starrailexpress.client.gui.OpeningPresentationCoordinator.onGameStarted(payload.mapId());
             });
+            context.client().execute(WaypointHUD::resetForNewGame);
             OnGameStartedClient.EVENT.invoker().gameStarted();
         });
         ClientPlayNetworking.registerGlobalReceiver(SyncRoomToPlayerPayload.ID, (payload, context) -> {
@@ -967,11 +997,6 @@ public class SREClient implements ClientModInitializer {
             GameUtils.roomToPlayer.clear();
             GameUtils.roomToPlayer.putAll(data);
         });
-        ClientPlayNetworking.registerGlobalReceiver(ModWhitelistConfigPayload.ID, (payload, context) -> {
-            ModWhitelistClientNetworkHandler.handleModWhitelistConfigPayload(payload, context);
-            ModWhitelistClientNetworkHandler.sendModWhitelistPayload();
-        });
-        net.exmo.sre.mod_whitelist.client.network.JarAuthClientHandler.register();
         // 紧急会议：客户端摄像机导演 + HUD
         net.exmo.sre.meeting.client.MeetingClientHandler.register();
         net.exmo.sre.meeting.client.MeetingHud.register();
@@ -1196,6 +1221,17 @@ public class SREClient implements ClientModInitializer {
             net.exmo.sre.camera.client.AdvancedCameraDirector.renderOverlay(guiGraphics);
             // 亡命徒登场演出：与运镜同步的血色滤镜
             org.agmas.noellesroles.client.RefugeeDesperadoClientFx.renderOverlay(guiGraphics, deltaTick);
+        });
+        // 路径点在世界空间中的信标光柱：HudRenderCallback 只能画屏幕边缘指示器，
+        // 世界内标记必须接进世界渲染事件，否则"局内看不到标点"。
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
+            if (context.matrixStack() == null) {
+                return;
+            }
+            var buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+            WaypointHUD.renderWorldBeacons(context.matrixStack(), buffers, context.camera().getPosition(),
+                    context.tickCounter().getGameTimeDeltaPartialTick(false));
+            buffers.endBatch(WaypointHUD.BEAM_RENDER_TYPE);
         });
         // Run map rules inside the project's frame lifecycle so text remains visible
         // while a Letter is held.
@@ -1508,14 +1544,18 @@ public class SREClient implements ClientModInitializer {
         return cachedRenderVanillaHud;
     }
 
+    /** 保留旧接口名，统一查询难民惩罚及扩展请求的匿名皮肤、尸体和帽子规则。 */
     public static boolean getLooseEndPenalty() {
-        return cachedLooseEndPenalty;
+        return cachedLooseEndPenalty
+                || io.wifi.starrailexpress.event.client.ClientGameplayEvents.ANONYMOUS_APPEARANCE.invoker()
+                        .hideIdentities(Minecraft.getInstance().player);
     }
 
     public static OptionalInt getCachedInstinctHighlight(Entity target) {
         OptionalInt cached = cachedHighLightMap.get(target.getUUID());
         if (cached != null) {
-            return cached;
+            // 仅动态改色，仍复用缓存的轮廓可见性，避免彩虹色随缓存冻结。
+            return org.agmas.noellesroles.client.CloneDoctorClient.applyOutlineColor(target, cached);
         }
         if (!isInstinctHighlightCandidate(target)) {
             return OptionalInt.empty();
@@ -1560,7 +1600,8 @@ public class SREClient implements ClientModInitializer {
      * @return
      */
     public static OptionalInt getInstinctHighlight(Entity target) {
-        return InstinctManager.getInstinctHighlight(target);
+        return org.agmas.noellesroles.client.CloneDoctorClient.applyOutlineColor(target,
+                InstinctManager.getInstinctHighlight(target));
     }
 
     static Predicate<Player> isHoldSpecialItem = (player) -> {
@@ -1578,8 +1619,13 @@ public class SREClient implements ClientModInitializer {
     public static float bodyHUDScale = 0.6f;
 
     public static boolean isInstinctEnabled() {
-        boolean canUseInstinct = isKiller();
         final var player = Minecraft.getInstance().player;
+        var override = io.wifi.starrailexpress.event.client.ClientGameplayEvents.INSTINCT_OVERRIDE.invoker()
+                .query(player);
+        if (!override.isPass()) {
+            return override.isTrue();
+        }
+        boolean canUseInstinct = isKiller();
         if (SREClient.gameComponent != null) {
             var role = SREClient.gameComponent.getRole(player);
             if (role != null) {

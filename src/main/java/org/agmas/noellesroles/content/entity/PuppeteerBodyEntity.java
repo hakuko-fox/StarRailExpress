@@ -17,22 +17,26 @@ package org.agmas.noellesroles.content.entity;
 
 import com.mojang.authlib.GameProfile;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.game.GameUtils;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import org.agmas.noellesroles.Noellesroles;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.agmas.noellesroles.component.ModComponents;
-import org.agmas.noellesroles.game.roles.neutral.puppeteer.PuppeteerPlayerComponent;
+import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.SackGhostItems;
 import org.agmas.noellesroles.role.ModRoles;
 import org.jspecify.annotations.Nullable;
 
@@ -50,12 +54,25 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     @Override
     public void kill() {
+        if (isSackGhostBody()) {
+            forwardSackGhostHit(damageSources().genericKill());
+            return;
+        }
         this.discard();
     }
 
     /** 所有者 UUID */
     private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(
             PuppeteerBodyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+
+    /** 克隆替身与普通傀儡共用实体类型，但不继承伤害转移和十分钟寿命。 */
+    private static final EntityDataAccessor<Boolean> CLONE_SUBSTITUTE = SynchedEntityData.defineId(
+            PuppeteerBodyEntity.class, EntityDataSerializers.BOOLEAN);
+    /** 布袋鬼本体复用替身的睡姿和渲染，但伤害及生命周期独立处理。 */
+    private static final EntityDataAccessor<Boolean> SACK_GHOST_BODY = SynchedEntityData.defineId(
+            PuppeteerBodyEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Direction> SUBSTITUTE_DIRECTION = SynchedEntityData.defineId(
+            PuppeteerBodyEntity.class, EntityDataSerializers.DIRECTION);
     // 不会被自然刷新
     private boolean persistenceRequired = false;
 
@@ -73,6 +90,11 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     /** 所有者玩家引用（缓存） */
     private Player ownerCache = null;
+    /** 替身固定在制作时的坐标，避免水流等物理影响使其离开记录位置。 */
+    private Vec3 substitutePosition;
+    private boolean forwardingSackGhostHit;
+    private long lastSackGhostHitTick = Long.MIN_VALUE;
+    private net.minecraft.world.entity.Entity lastSackGhostAttacker;
 
     public boolean isPersistenceRequired() {
         return this.persistenceRequired;
@@ -117,6 +139,9 @@ public class PuppeteerBodyEntity extends LivingEntity {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(OWNER_UUID, Optional.empty());
+        builder.define(CLONE_SUBSTITUTE, false);
+        builder.define(SACK_GHOST_BODY, false);
+        builder.define(SUBSTITUTE_DIRECTION, Direction.SOUTH);
     }
 
     /**
@@ -138,6 +163,84 @@ public class PuppeteerBodyEntity extends LivingEntity {
             this.setCustomNameVisible(false);
             this.setPose(owner.getPose());
         }
+    }
+
+    /** 启用独立替身模式；所有者仅用于目标存活判定和皮肤，不是制造者。 */
+    public void configureCloneSubstitute(Direction direction) {
+        this.entityData.set(CLONE_SUBSTITUTE, true);
+        this.entityData.set(SUBSTITUTE_DIRECTION, direction);
+        this.setNoGravity(true);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.substitutePosition = position();
+        // 只设置睡姿，不占用真实床，也不会清掉其他玩家的床占用。
+        this.setPose(Pose.SLEEPING);
+        this.setBoundingBox(this.makeBoundingBox());
+    }
+
+    /** 启用布袋鬼本体；替身标志仅用于复用现有躺卧外观，受击优先走独立分支。 */
+    public void configureSackGhostBody(Direction direction) {
+        this.entityData.set(SACK_GHOST_BODY, true);
+        configureCloneSubstitute(direction);
+    }
+
+    /** 是否为布袋鬼离体后留下的本体。 */
+    public boolean isSackGhostBody() {
+        return this.entityData != null && this.entityData.get(SACK_GHOST_BODY);
+    }
+
+    /** 床损坏后更新固定坐标，不设置真实睡眠位置或修改任何床占用。 */
+    public void moveSackGhostBody(Vec3 position) {
+        if (!isSackGhostBody()) return;
+        this.substitutePosition = position;
+        this.setPos(position);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.setPose(Pose.SLEEPING);
+        this.setBoundingBox(this.makeBoundingBox());
+    }
+
+    /** 是否为克隆博士的独立替身。 */
+    public boolean isCloneSubstitute() {
+        return this.entityData != null && this.entityData.get(CLONE_SUBSTITUTE);
+    }
+
+    @Override
+    public Direction getBedOrientation() {
+        return isCloneSubstitute() ? this.entityData.get(SUBSTITUTE_DIRECTION) : super.getBedOrientation();
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> accessor) {
+        super.onSyncedDataUpdated(accessor);
+        if ((CLONE_SUBSTITUTE.equals(accessor) || SUBSTITUTE_DIRECTION.equals(accessor)) && isCloneSubstitute()) {
+            this.setBoundingBox(this.makeBoundingBox());
+        }
+    }
+
+    @Override
+    protected AABB makeBoundingBox() {
+        if (!isCloneSubstitute()) {
+            return super.makeBoundingBox();
+        }
+        Direction direction = getBedOrientation();
+        double x = getX() - direction.getStepX() * 0.8D;
+        double z = getZ() - direction.getStepZ() * 0.8D;
+        double halfX = direction.getAxis() == Direction.Axis.X ? 1.0D : 0.3D;
+        double halfZ = direction.getAxis() == Direction.Axis.Z ? 1.0D : 0.3D;
+        return new AABB(x - halfX, getY(), z - halfZ, x + halfX, getY() + 0.4D, z + halfZ);
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        // 替身只属于当前对局；区块卸载后不能留下无保护记录的持久假人。
+        return !isCloneSubstitute() && super.shouldBeSaved();
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (isCloneSubstitute() && !level().isClientSide() && isSleeping()) {
+            stopSleeping();
+        }
+        super.remove(reason);
     }
 
     /**
@@ -190,6 +293,28 @@ public class PuppeteerBodyEntity extends LivingEntity {
         super.tick();
         if (level().isClientSide())
             return;
+        if (isCloneSubstitute()) {
+            Player target = getOwner();
+            if (!SREGameWorldComponent.KEY.get(level()).isRunning()
+                    || !(target instanceof ServerPlayer serverTarget) || serverTarget.hasDisconnected()
+                    || target.level() != level() || !target.isAlive()
+                    || !GameUtils.isPlayerAliveAndSurvival(target)) {
+                discard();
+                return;
+            }
+            if (isSackGhostBody() && (SackGhostItems.data(target) == null
+                    || !SackGhostItems.data(target).isActiveMaChenXu())) {
+                discard();
+                return;
+            }
+            if (substitutePosition != null) {
+                this.setPos(substitutePosition);
+            }
+            this.setDeltaMovement(Vec3.ZERO);
+            this.setPose(Pose.SLEEPING);
+            this.setBoundingBox(this.makeBoundingBox());
+            return;
+        }
         if (this.persistenceRequired) {
             return;
         }
@@ -214,37 +339,110 @@ public class PuppeteerBodyEntity extends LivingEntity {
         }
     }
 
-    public boolean playerHurt(Player player, ResourceLocation deathReason) {
+    /**
+     * 玩家（或别的实体）对傀儡本体发起的一次致命攻击。
+     *
+     * <p>没有死因参数：玩家傀儡本体致死一律记为
+     * {@link GameConstants.DeathReasons#PUPPETEER_BODY_DEATH}，
+     * 不按凶器区分（刀 / 枪 / 手雷 / 钝器都一样），避免出现"刀刺本体 / 未知"这类分裂死因。
+     */
+    public boolean playerHurt(Player player) {
         if (level().isClientSide())
             return false;
+        if (org.agmas.noellesroles.game.roles.killer.clone_doctor.CloneDoctorSessionManager.blocksDamage(player))
+            return false;
+        if (isSackGhostBody()) {
+            return forwardSackGhostHit(damageSources().playerAttack(player));
+        }
+        if (isCloneSubstitute()) {
+            discard();
+            return true;
+        }
         Player owner = getOwner();
         if (owner != null) {
-            // 通知傀儡师组件本体死亡
-            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
-            if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
-                PuppeteerPlayerComponent puppeteerComp = ModComponents.PUPPETEER.get(owner);
-                puppeteerComp.onBodyDeath(player, deathReason);
-            } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
-                var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
-                        org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
-                if (ravenData != null) {
-                    ravenData.onBodyDeath(player, deathReason);
-                }
-            } else {
-                owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
-                // ModEffects.pierceDeath = true;
-                // GameUtils.killPlayer(owner, true, player, deathReason);
-                // ModEffects.pierceDeath = false;
-            }
+            notifyBodyDeath(player);
             discard();
         }
         return true;
     }
 
     @Override
+    public boolean skipAttackInteraction(net.minecraft.world.entity.Entity attacker) {
+        if (isSackGhostBody() && attacker instanceof Player player) {
+            playerHurt(player);
+            // 消费这次普通攻击，避免同一挥击再走 hurt 重复消耗护盾。
+            return true;
+        }
+        return super.skipAttackInteraction(attacker);
+    }
+
+    /** 只转发有效受击；正常护盾、替死及最终死亡全部由职业数据决定。 */
+    private boolean forwardSackGhostHit(DamageSource source) {
+        if (level().isClientSide() || isRemoved() || forwardingSackGhostHit
+                || isInvulnerableTo(source) || source.is(DamageTypes.IN_WALL)
+                || source.is(DamageTypes.FREEZE) || source.is(DamageTypes.CACTUS)) return false;
+        if (source.getEntity() instanceof Player attacker
+                && org.agmas.noellesroles.game.roles.killer.clone_doctor.CloneDoctorSessionManager.blocksDamage(attacker)) {
+            return false;
+        }
+        Player owner = getOwner();
+        if (!(owner instanceof ServerPlayer serverOwner) || serverOwner.hasDisconnected()
+                || owner.level() != level() || !owner.isAlive() || !GameUtils.isPlayerAliveAndSurvival(owner)) return false;
+        var data = SackGhostItems.data(owner);
+        if (data == null || !data.isActiveMaChenXu() || !data.combatClockRunning()) return false;
+        long tick = level().getGameTime();
+        if (lastSackGhostHitTick == tick && lastSackGhostAttacker == source.getEntity()) return false;
+        lastSackGhostHitTick = tick;
+        lastSackGhostAttacker = source.getEntity();
+        forwardingSackGhostHit = true;
+        try {
+            data.onBodyHit(this, source);
+            return true;
+        } finally {
+            forwardingSackGhostHit = false;
+        }
+    }
+
+    /**
+     * 统一的本体死亡派发：无论从哪条路径进来（刀 / 枪 / 手雷 / 环境伤害 /
+     * 生命值归零），最终都按"本体死亡"结算。
+     *
+     * <p>死因不在这里传：下发的 {@code onBodyDeath} 内部直接固定为
+     * {@link GameConstants.DeathReasons#PUPPETEER_BODY_DEATH}，
+     * 因此本方法既不可能、也无法把 {@code generic}（未知）带进尸体。
+     */
+    private void notifyBodyDeath(@org.jspecify.annotations.Nullable Player killer) {
+        Player owner = getOwner();
+        if (owner == null)
+            return;
+        SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
+        if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
+            ModComponents.PUPPETEER.get(owner).onBodyDeath(killer);
+        } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
+            var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
+                    org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
+            if (ravenData != null) {
+                ravenData.onBodyDeath(killer);
+            }
+        } else {
+            owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
+        }
+    }
+
+    @Override
     public boolean hurt(DamageSource source, float amount) {
         if (level().isClientSide())
             return false;
+        if (isSackGhostBody()) {
+            return amount > 0 && Float.isFinite(amount) && forwardSackGhostHit(source);
+        }
+        if (isCloneSubstitute()) {
+            if (amount <= 0 || isInvulnerableTo(source) || source.is(DamageTypes.IN_WALL)) {
+                return false;
+            }
+            discard();
+            return true;
+        }
 
         if (source.is(DamageTypes.IN_WALL))
             return false;
@@ -259,34 +457,10 @@ public class PuppeteerBodyEntity extends LivingEntity {
         // 调用父类处理伤害
         boolean result = super.hurt(source, amount);
 
-        // 如果死亡，通知傀儡师
+        // 如果死亡，通知傀儡师：统一按"本体死亡"结算，击杀者从伤害来源推断
         if (this.isDeadOrDying()) {
-            Player owner = getOwner();
-            if (owner != null) {
-                // 通知傀儡师组件本体死亡
-                SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
-                if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
-                    ModComponents.PUPPETEER.get(owner).onBodyDeath();
-                } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
-                    var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
-                            org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
-                    if (ravenData != null) {
-                        ravenData.onBodyDeath(null, Noellesroles.id("raven_body_death"));
-                    }
-                } else {
-                    owner.teleportTo(owner.getX(), owner.getY(), owner.getZ());
-                    // ModEffects.pierceDeath = true;
-                    // Player killer = null;
-                    // if (source.getEntity() instanceof Player k) {
-                    // killer = k;
-                    // }
-                    // GameUtils.killPlayer(owner, true, killer,
-                    // GameConstants.DeathReasons.GENERAL_ATTACK);
-                    // ModEffects.pierceDeath = false;
-                    // discard();
-                }
-                discard();
-            }
+            notifyBodyDeath(source.getEntity() instanceof Player killer ? killer : null);
+            discard();
         }
 
         return result;
@@ -294,22 +468,20 @@ public class PuppeteerBodyEntity extends LivingEntity {
 
     @Override
     public void die(DamageSource damageSource) {
+        if (isSackGhostBody()) {
+            // 外部直接归零生命值时也不得先进入原傀儡死亡或丢弃路径。
+            if (getHealth() <= 0) setHealth(getMaxHealth());
+            forwardSackGhostHit(damageSource);
+            return;
+        }
+        if (isCloneSubstitute()) {
+            discard();
+            return;
+        }
         super.die(damageSource);
 
-        // 确保通知傀儡师
-        Player owner = getOwner();
-        if (owner != null) {
-            SREGameWorldComponent gameWorld = SREGameWorldComponent.KEY.get(level());
-            if (gameWorld.isRole(owner, ModRoles.PUPPETEER)) {
-                ModComponents.PUPPETEER.get(owner).onBodyDeath();
-            } else if (gameWorld.isRole(owner, ModRoles.RAVEN)) {
-                var ravenData = io.wifi.starrailexpress.api.data.RoleData.getNullable(
-                        org.agmas.noellesroles.role_data.neutral.RavenRoleData.class, owner);
-                if (ravenData != null) {
-                    ravenData.onBodyDeath(null, Noellesroles.id("raven_body_death"));
-                }
-            }
-        }
+        // 生命值归零同样走统一的本体死亡结算（此处不再区分角色，避免漏掉渡鸦）
+        notifyBodyDeath(damageSource.getEntity() instanceof Player killer ? killer : null);
     }
 
     @Override

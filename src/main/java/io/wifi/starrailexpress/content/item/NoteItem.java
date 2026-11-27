@@ -33,13 +33,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-public class NoteItem extends Item implements AdventureUsable {
+public class NoteItem extends SkinableItem implements AdventureUsable {
     public NoteItem(Properties settings) {
         super(settings);
     }
 
     @Override
+    public String getItemSkinType() {
+        return io.wifi.starrailexpress.util.ItemSkinManager.SkinTypes.NOTE;
+    }
+
+    @Override
     public InteractionResultHolder<ItemStack> use(@NotNull Level world, Player user, InteractionHand hand) {
+        io.wifi.starrailexpress.event.ItemGameplayEvents.BEFORE_USE.invoker().onUse(this, world, user, hand);
         return super.use(world, user, hand);
     }
 
@@ -80,6 +86,9 @@ public class NoteItem extends Item implements AdventureUsable {
         Direction side = context.getClickedFace();
         note.setDirection(side);
         note.setLines(texts);
+        // 实体沿用玩家手上这张便签的皮肤
+        note.setSkin(io.wifi.starrailexpress.util.ItemSkinManager.getEquippedSkin(player,
+                player.getItemInHand(context.getHand())));
         Vec3 hitPos = context.getClickLocation()
                 .add(context.getClickLocation().subtract(player.getEyePosition()).normalize().scale(-.01f))
                 .subtract(0, note.getBbHeight() / 2f, 0);

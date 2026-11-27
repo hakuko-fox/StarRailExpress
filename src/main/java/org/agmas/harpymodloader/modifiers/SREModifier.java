@@ -39,6 +39,7 @@ public class SREModifier extends SREAbstractInfoClass {
     public int color;
     public HashSet<SRERole> cannotBeAppliedTo = null;
     public HashSet<SRERole> canOnlyBeAppliedTo = null;
+    /** 是否只分配给真实杀手阵营（{@link io.wifi.starrailexpress.api.RoleTeam#KILLER}），不含杀手方中立。 */
     public boolean killerOnly = false;
     public boolean civilianOnly = false;
     public boolean notVigilante = false;
@@ -675,6 +676,7 @@ public class SREModifier extends SREAbstractInfoClass {
             return false;
         }
         for (RoleTeam team : this.cannotBeAppliedToTeams) {
+            // 专属修饰符按「真实阵营」口径：隐藏身份不参与修饰符适用性判定。
             if (team.matches(role)) {
                 return true;
             }
@@ -740,6 +742,7 @@ public class SREModifier extends SREAbstractInfoClass {
             return true;
         }
         for (RoleTeam team : this.canOnlyBeAppliedToTeams) {
+            // 专属修饰符按「真实阵营」口径：隐藏身份不参与修饰符适用性判定。
             if (team.matches(role)) {
                 return true;
             }

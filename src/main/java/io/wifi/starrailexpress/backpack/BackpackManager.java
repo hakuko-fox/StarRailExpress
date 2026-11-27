@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
+import io.wifi.starrailexpress.event.OnGameTrueStarted;
 import io.wifi.starrailexpress.network.PlayerDataPartSyncPayload;
 import io.wifi.starrailexpress.progression.ProgressionDataManager;
 import io.wifi.starrailexpress.progression.ProgressionState;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 场外背包数据管理器（MySQL 分区 {@code data_key="backpack"}）。
@@ -52,6 +54,9 @@ public final class BackpackManager {
     private static final Gson GSON = new GsonBuilder().create();
     private static final long FLUSH_INTERVAL_MS = 5_000L;
     private static final long FLUSH_TIMEOUT_MS = 4_000L;
+    private static final long EXTERNAL_REFRESH_INTERVAL_MS = 15_000L;
+    private static long nextExternalRefreshAt;
+    private static Entry externalRefreshEntry;
     private static final Map<UUID, Entry> ENTRIES = new ConcurrentHashMap<>();
 
     private BackpackManager() {
@@ -62,7 +67,12 @@ public final class BackpackManager {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onDisconnect(handler.getPlayer()));
         ServerTickEvents.END_SERVER_TICK.register(BackpackManager::tick);
         ServerLifecycleEvents.SERVER_STOPPING.register(BackpackManager::flushAllBlocking);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ENTRIES.clear());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            ENTRIES.clear();
+            FactionCardForcing.clearAll();
+        });
+        // 阵营卡统一结算的安全网：正式开局时职业已分完，任何模式漏掉的待生效卡都按实际职业兑现或退款
+        OnGameTrueStarted.EVENT.register(FactionCardForcing::settlePending);
     }
 
     // ====================== 公开服务端 API ======================
@@ -89,32 +99,56 @@ public final class BackpackManager {
         SUCCESS,
         INVALID,
         ALREADY_ACTIVE,
-        ON_COOLDOWN
+        ON_COOLDOWN,
+        /** 自定义卡必须带上目标阵营（命令里漏参数或传了非法阵营）。 */
+        NEEDS_TARGET
     }
 
-    /** 逐字复刻 {@code ProgressionDataManager.activateFactionCard}：卡库写改为背包。 */
+    /** 固定目标阵营卡：目标就是卡自己的阵营。 */
     public static boolean activateCard(ServerPlayer player, FactionCardType type) {
-        return activateCardResult(player, type) == ActivateResult.SUCCESS;
+        return activateCardResult(player, type, type) == ActivateResult.SUCCESS;
     }
 
     public static ActivateResult activateCardResult(ServerPlayer player, FactionCardType type) {
+        return activateCardResult(player, type, type);
+    }
+
+    /**
+     * 统一的「使用一张卡」入口：{@code consumed} 是被扣掉的那张卡，{@code target} 是本局要强制的目标阵营。
+     *
+     * <p>
+     * 固定阵营卡两者相同；自定义卡传 {@code consumed = }{@link FactionCardType#CUSTOM}、
+     * {@code target} 为玩家选中的阵营。目标阵营同时决定硬强制（{@code ForcePlayerTeam}）与选人加成，
+     * 而分不到时退还的始终是 {@code consumed}（见 {@link FactionCardForcing}）。
+     */
+    public static ActivateResult activateCardResult(ServerPlayer player, FactionCardType consumed,
+            FactionCardType target) {
         Entry entry = getEntry(player.getUUID());
-        int current = entry.state.cards.getOrDefault(type, 0);
-        if (type == FactionCardType.NONE || current < 1) {
+        int current = consumed == null ? 0 : entry.state.cards.getOrDefault(consumed, 0);
+        if (consumed == null || consumed == FactionCardType.NONE || current < 1) {
             return ActivateResult.INVALID;
+        }
+        if (target == null || !target.isSelectableTarget()) {
+            return ActivateResult.NEEDS_TARGET;
         }
         if (PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
             return ActivateResult.ALREADY_ACTIVE;
         }
-        if (FactionCardCooldown.isOnCooldown(entry.state, type)) {
+        if (FactionCardCooldown.isOnCooldown(entry.state, consumed)) {
             return ActivateResult.ON_COOLDOWN;
         }
-        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), new ForceTeamInfo(type.getTypeRoleId(), ForceTeamType.CARD));
-        entry.state.cards.put(type, current - 1);
-        entry.state.markUsed(type, System.currentTimeMillis());
+        int roleType = target.getTypeRoleId();
+        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), new ForceTeamInfo(roleType, ForceTeamType.CARD));
+        FactionCardForcing.register(player.getUUID(), consumed, roleType);
+        entry.state.cards.put(consumed, current - 1);
+        entry.state.markUsed(consumed, System.currentTimeMillis());
         markDirty(player, entry);
-        Component message = Component.translatable("message.sre.progression.faction_card_activated",
-                Component.translatable(type.displayName));
+        sendPendingCard(player);
+        Component message = consumed == FactionCardType.CUSTOM
+                ? Component.translatable("message.sre.progression.custom_card_activated",
+                        Component.translatable(target.displayName))
+                : Component.translatable("message.sre.progression.faction_card_activated",
+                        Component.translatable(consumed.displayName));
         player.sendSystemMessage(message);
         player.displayClientMessage(message, true);
         return ActivateResult.SUCCESS;
@@ -122,6 +156,29 @@ public final class BackpackManager {
 
     public static long remainingCooldownMs(ServerPlayer player, FactionCardType type) {
         return FactionCardCooldown.remainingMs(getEntry(player.getUUID()).state, type);
+    }
+
+    // ====================== 待生效卡（客户端镜像） ======================
+
+    /** 背包分区之外的第二个分区：本局待兑现的阵营卡，只给界面显示「本局已生效」用。 */
+    public static final String CARD_PART = "card_force";
+
+    private static final AtomicLong CARD_PART_STAMP = new AtomicLong();
+
+    /** 客户端缓存按 updatedAt 丢弃旧包，所以这里保证时间戳单调递增。 */
+    private static long nextCardPartStamp() {
+        return CARD_PART_STAMP.updateAndGet(previous -> Math.max(previous + 1L, System.currentTimeMillis()));
+    }
+
+    /** 把「本局待兑现的卡」推给客户端；没有待生效卡时推空状态。 */
+    static void sendPendingCard(ServerPlayer player) {
+        FactionCardForcing.Pending pending = FactionCardForcing.pending(player.getUUID());
+        long stamp = nextCardPartStamp();
+        PendingCardState state = pending == null
+                ? PendingCardState.none(stamp)
+                : PendingCardState.of(pending.card(), FactionCardType.fromRoleType(pending.targetRoleType()), stamp);
+        ServerPlayNetworking.send(player,
+                new PlayerDataPartSyncPayload(player.getUUID(), CARD_PART, GSON.toJson(state), stamp));
     }
 
     /** 命令开屏前可调用以保证客户端数据新鲜。 */
@@ -136,7 +193,7 @@ public final class BackpackManager {
 
     public static boolean flushBlocking(UUID playerUuid) {
         Entry entry = ENTRIES.get(playerUuid);
-        if (entry == null || !isDatabaseEnabled()) {
+        if (entry == null || !entry.loaded || entry.loadInFlight || entry.saveInFlight || !isDatabaseEnabled()) {
             return false;
         }
         boolean success = MysqlPlayerDataStore.saveBatchBlocking(
@@ -213,6 +270,7 @@ public final class BackpackManager {
         Entry entry = getEntry(player.getUUID());
         entry.online = true;
         send(player, entry);
+        sendPendingCard(player);
         if (!isDatabaseEnabled()) {
             entry.loaded = true;
             migrateIfNeeded(player);
@@ -222,18 +280,25 @@ public final class BackpackManager {
     }
 
     private static void reloadFromDatabase(ServerPlayer player, Entry entry) {
-        if (!isDatabaseEnabled() || entry.loadInFlight) {
+        reloadFromDatabase(player, entry, false);
+    }
+
+    private static void reloadFromDatabase(ServerPlayer player, Entry entry, boolean externalRefresh) {
+        if (!isDatabaseEnabled() || entry.loadInFlight || entry.saveInFlight) {
             return;
         }
         entry.loadInFlight = true;
+        Map<FactionCardType, Integer> beforeRead = new HashMap<>(entry.state.cards);
         MysqlPlayerDataStore.loadBatchAsync(player.getUUID(), List.of(PART))
                 .whenComplete((records, throwable) -> {
-                    entry.loadInFlight = false;
                     MinecraftServer server = player.getServer();
                     if (server == null) {
+                        entry.loadInFlight = false;
                         return;
                     }
                     server.execute(() -> {
+                        // Keep saves excluded until the payload AND its baseline are installed.
+                        entry.loadInFlight = false;
                         if (ENTRIES.get(player.getUUID()) != entry) {
                             return;
                         }
@@ -243,41 +308,86 @@ public final class BackpackManager {
                         }
                         MysqlPlayerDataStore.SyncRecord record = records.get(PART);
                         if (record != null && record.payload() != null && !record.payload().isBlank()) {
-                            entry.state = fromJson(record.payload());
+                            BackpackState loaded = fromJson(record.payload());
+                            if (externalRefresh) {
+                                // Only the changes made while this clean-cache read was in flight
+                                // are local deltas. Never re-add the old cached balance.
+                                mergeExternalRefresh(entry.state, loaded, beforeRead);
+                            } else {
+                                entry.dirty = false;
+                            }
+                            entry.state = loaded;
                             entry.updatedAt = Math.max(entry.updatedAt, record.updatedAt());
-                            entry.dirty = false;
                         }
                         entry.loaded = true;
+                        if (!entry.online) {
+                            // Disconnect during a refresh must not drop its in-flight local deltas.
+                            if (entry.dirty) flushAsync(player, entry);
+                            else ENTRIES.remove(player.getUUID(), entry);
+                            return;
+                        }
                         send(player, entry);
                         migrateIfNeeded(player);
                     });
                 });
     }
 
+    static void mergeExternalRefresh(BackpackState local, BackpackState loaded,
+            Map<FactionCardType, Integer> beforeRead) {
+        for (FactionCardType type : FactionCardType.values()) {
+            if (type == FactionCardType.NONE) continue;
+            int delta = local.cards.getOrDefault(type, 0) - beforeRead.getOrDefault(type, 0);
+            loaded.cards.put(type, Math.max(0, loaded.cards.getOrDefault(type, 0) + delta));
+            long used = local.lastUsedAt(type);
+            if (used > loaded.lastUsedAt(type)) loaded.markUsed(type, used);
+        }
+        loaded.migrated |= local.migrated;
+    }
+
     private static void onDisconnect(ServerPlayer player) {
         Entry entry = ENTRIES.get(player.getUUID());
         if (entry != null) {
-            // Use async flush to avoid blocking the network thread.
-            // Final data is guaranteed by SERVER_STOPPING → flushAllBlocking.
-            flushAsync(player, entry);
-            ENTRIES.remove(player.getUUID(), entry);
+            entry.online = false;
+            // An in-flight read first merges local deltas, then flushes them.
+            // An in-flight save's completion also retains any newer dirty state.
+            if (!entry.loadInFlight && !entry.saveInFlight) {
+                if (entry.dirty) flushAsync(player, entry);
+                else ENTRIES.remove(player.getUUID(), entry);
+            }
         }
     }
 
     private static void tick(MinecraftServer server) {
         long now = System.currentTimeMillis();
+        ServerPlayer refreshPlayer = null;
+        Entry refreshCandidate = null;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             Entry entry = ENTRIES.get(player.getUUID());
-            if (entry == null || !entry.online || !entry.dirty || entry.saveInFlight
-                    || now - entry.lastFlushAt < FLUSH_INTERVAL_MS) {
-                continue;
+            if (entry == null || !entry.online || entry.saveInFlight || entry.loadInFlight) continue;
+            if (entry.dirty) {
+                if (now - entry.lastFlushAt >= FLUSH_INTERVAL_MS) flushAsync(player, entry);
+            } else if (entry.loaded && isDatabaseEnabled()
+                    && now >= nextExternalRefreshAt
+                    && now - entry.lastExternalRefreshAt >= EXTERNAL_REFRESH_INTERVAL_MS
+                    && (externalRefreshEntry == null || !externalRefreshEntry.loadInFlight)) {
+                // Oldest first: a fixed player-list order must not starve larger servers.
+                if (refreshCandidate == null || entry.lastExternalRefreshAt < refreshCandidate.lastExternalRefreshAt) {
+                    refreshPlayer = player;
+                    refreshCandidate = entry;
+                }
             }
-            flushAsync(player, entry);
+        }
+        if (refreshCandidate != null) {
+            // Single server-wide lane: <=1 SELECT/second, <=1 in flight.
+            nextExternalRefreshAt = now + 1_000L;
+            refreshCandidate.lastExternalRefreshAt = now;
+            externalRefreshEntry = refreshCandidate;
+            reloadFromDatabase(refreshPlayer, refreshCandidate, true);
         }
     }
 
     private static void flushAsync(ServerPlayer player, Entry entry) {
-        if (!isDatabaseEnabled() || entry.loadInFlight) {
+        if (!isDatabaseEnabled() || !entry.loaded || entry.loadInFlight || entry.saveInFlight) {
             return;
         }
         entry.saveInFlight = true;
@@ -286,15 +396,23 @@ public final class BackpackManager {
         long updatedAt = Math.max(1L, entry.updatedAt);
         MysqlPlayerDataStore.saveBatchAsync(player.getUUID(), Map.of(PART, toJson(entry.state, updatedAt)), updatedAt)
                 .whenComplete((success, throwable) -> {
-                    entry.saveInFlight = false;
-                    if (throwable != null || !Boolean.TRUE.equals(success)) {
-                        entry.dirty = true;
-                        if (throwable != null) {
-                            SRE.LOGGER.warn("Failed to save backpack part for {}", player.getUUID(), throwable);
-                        } else {
-                            reloadFromDatabase(player, entry);
+                    MinecraftServer server = player.getServer();
+                    if (server == null) { entry.saveInFlight = false; return; }
+                    server.execute(() -> {
+                        entry.saveInFlight = false;
+                        if (ENTRIES.get(player.getUUID()) != entry) return;
+                        if (throwable != null || !Boolean.TRUE.equals(success)) {
+                            entry.dirty = true;
+                            if (throwable != null) {
+                                SRE.LOGGER.warn("Failed to save backpack part for {}", player.getUUID(), throwable);
+                            } else {
+                                reloadFromDatabase(player, entry);
+                            }
+                        } else if (!entry.online) {
+                            if (entry.dirty) flushAsync(player, entry);
+                            else ENTRIES.remove(player.getUUID(), entry);
                         }
-                    }
+                    });
                 });
     }
 
@@ -348,5 +466,6 @@ public final class BackpackManager {
         private volatile boolean saveInFlight;
         private volatile long updatedAt;
         private volatile long lastFlushAt;
+        private long lastExternalRefreshAt;
     }
 }

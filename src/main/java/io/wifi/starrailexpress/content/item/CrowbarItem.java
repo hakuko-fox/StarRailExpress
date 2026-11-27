@@ -38,13 +38,20 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 
-public class CrowbarItem extends Item implements AdventureUsable, DoorCustomOpenItem {
+public class CrowbarItem extends SkinableItem implements AdventureUsable, DoorCustomOpenItem {
     public CrowbarItem(Properties settings) {
         super(settings);
     }
 
     @Override
+    public String getItemSkinType() {
+        return io.wifi.starrailexpress.util.ItemSkinManager.SkinTypes.CROWBAR;
+    }
+
+    @Override
     public InteractionResult useOn(UseOnContext context) {
+        InteractionResult override = io.wifi.starrailexpress.event.GameplayExtensionEvents.CROWBAR_USE.invoker().use(context);
+        if (override != null) return override;
         Level world = context.getLevel();
         BlockPos lowerPos = context.getClickedPos();
         BlockEntity entity = world.getBlockEntity(lowerPos);

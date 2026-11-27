@@ -15,6 +15,7 @@
 
 package net.exmo.sre.meeting.client;
 
+import io.wifi.starrailexpress.client.ui.SRETheme;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
@@ -50,8 +51,8 @@ import java.util.UUID;
 public final class MeetingReportClientHandler {
 
     // 配色对齐 MeetingHud 的复古车票风格
-    private static final int TEXT = 0xFFFFF4DC;
-    private static final int MUTED = 0xFF9E8B6E;
+    private static final int TEXT = SRETheme.TEXT;
+    private static final int MUTED = SRETheme.MUTED;
 
     /** 会议间冷却结束的世界 gameTime（服务端散会时下发），0 表示无冷却。 */
     private static long bellCooldownUntilTick;
@@ -73,12 +74,12 @@ public final class MeetingReportClientHandler {
                     }
                     reportedBodies = Set.copyOf(payload.reportedBodies());
                 }));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            clear();
-        });
-        ClientPlayConnectionEvents.JOIN.register((a, b, c) -> {
-            clear();
-        });
+        // 这两个事件在客户端网络线程触发，而 clear() 会改摄像机类型（options.setCameraType），
+        // 必须切回主线程执行，否则会和渲染线程抢状态。
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(
+                MeetingReportClientHandler::clear));
+        ClientPlayConnectionEvents.JOIN.register((a, b, client) -> client.execute(
+                MeetingReportClientHandler::clear));
         ClientTickEvents.END_CLIENT_TICK.register(MeetingReportClientHandler::tick);
         OnRenderRoleName.RENDER_END.register(MeetingReportClientHandler::renderBodyHint);
         OnRenderRoleName.RENDER_END.register(MeetingReportClientHandler::renderBellHint);

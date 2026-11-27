@@ -1,5 +1,7 @@
 package org.agmas.noellesroles.game.modes.echo.command;
 
+import org.agmas.noellesroles.game.modes.echo.rules.EchoRosterPolicy;
+import org.agmas.noellesroles.game.modes.echo.map.EchoMapValidator;
 import io.wifi.starrailexpress.cca.AreasWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import net.minecraft.commands.CommandSourceStack;
@@ -97,7 +99,7 @@ public final class EchoMapTools {
     public static int mark(CommandSourceStack source,String kind,String id,int minPlayers) throws IOException {
         var state=edit(source); var p=player(source); EchoMapConfig.Vec point;
         if(kind.endsWith("_spawn") || Set.of("spectator","free_safe","evacuation_safe","drop_anchor").contains(kind)) point=new EchoMapConfig.Vec(p.getX(),p.getY(),p.getZ());
-        else { var pos=ray(p); point=new EchoMapConfig.Vec(pos.getX()+0.5,pos.getY()+0.5,pos.getZ()+0.5); }
+        else { var pos=org.agmas.noellesroles.game.modes.echo.content.EchoMachineInteractions.root(p.serverLevel(),ray(p)); point=new EchoMapConfig.Vec(pos.getX()+0.5,pos.getY()+0.5,pos.getZ()+0.5); }
         state.draft().mark(kind,id,state.template(point),p.getYRot(),p.getXRot(),minPlayers);
         source.sendSuccess(() -> Component.translatable("echo.map.changed",kind,id,state.draft().revision()),false); return 1;
     }
@@ -137,7 +139,7 @@ public final class EchoMapTools {
     public static boolean validateWorld(CommandSourceStack source,EchoMapConfig map) { return validateWorld(source,map,false); }
     /** quiet 用于 random 之类的静默重试：失败只返回值，不刷屏。 */
     public static boolean validateWorld(CommandSourceStack source,EchoMapConfig map,boolean quiet) {
-        for(int count=6;count<=12;count++) {
+        for(int count=EchoRosterPolicy.MIN_PLAYERS;count<=EchoMapValidator.validationPlayerLimit(map);count++) {
             var check=EchoPreflight.check(source.getLevel(),count,false,map);
             if(!check.valid()) {
                 if(!quiet) check.errors().stream().limit(12).forEach(source::sendFailure);

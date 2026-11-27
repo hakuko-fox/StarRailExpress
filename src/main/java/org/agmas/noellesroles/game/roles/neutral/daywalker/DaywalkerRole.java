@@ -20,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.role_data.neutral.DaywalkerRoleData;
-import org.agmas.noellesroles.scene.SceneTaskManager;
+import org.agmas.noellesroles.client.scene.SceneTaskManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,12 +35,16 @@ import java.util.List;
  * <li>无限体力、假心情、可见计分板</li>
  * <li>仅 12 人及以上对局刷新，刷新概率 5000/10000</li>
  * <li>其他玩家只有处于其 20 格范围内时才能透视他（见 RoleInstinctRegister）</li>
- * <li>需要完成「开局人数/3」个任务，且时间耗尽（winstate 为 time）时，代替好人获得独立胜利
+ * <li>需要完成「开局人数/3」个任务（至少 6 个），且时间耗尽（winstate 为 time）时，代替好人获得独立胜利
  * （仅时间耗尽或仅完成任务数都不会获胜）</li>
  * <li>每完成 1 个任务：局内计时器 1 秒所需的现实时间减少 0.075 秒（至多减少 0.6 秒，
  * 即局内 1 秒 = 现实 0.4 秒 / 2.5 倍速），并储存 20 秒「逐日时刻」
  * （至多 120 秒）；释放技能立即消耗所有逐日时刻并使局内时间快进对应数值，之后进入 150 秒冷却</li>
- * <li>距胜利还剩 1 个任务时全场播放一次音效并全程发光，直至游戏结束；死亡时返还所有逐日时刻并恢复正常流速</li>
+ * <li>逐日者存活时世界（昼夜）时间也会加速流逝，加速倍率与局内时间倍率一致</li>
+ * <li>技能最多把局内时间加速到还剩 5 秒：若此时仍未达成目标任务数，逐日者死亡
+ * （死因「到达不了那个地方」，与亡语杀手一致）</li>
+ * <li>每完成 2 个任务记录一次站位，并在 2.5 秒后于该位置播放钟声音效</li>
+ * <li>距胜利还剩 1 个任务时全场播放一次音效并全程发光，直至游戏结束；死亡时返还所有被加速的时间</li>
  * <li>商店可花费 200 金币购买「跳过任务」（图标为书，未刷新任务时无法购买）</li>
  * </ul>
  */
@@ -178,8 +182,8 @@ public class DaywalkerRole extends CustomWinnerRole {
     // ==================== 死亡返还 ====================
 
     /**
-     * 逐日者死亡：返还所有逐日时刻（含已花费与未花费的数值的时间），
-     * 并使快进的时间恢复正常（局内 1 秒 = 现实 1 秒）。
+     * 逐日者死亡：返还所有被加速掉的时间（技能快进掉的、因加速倍率多流逝的，
+     * 以及尚未花费的逐日时刻），并使时间流速恢复正常（局内 1 秒 = 现实 1 秒）。
      */
     @Override
     public void onDeath(Player victim, boolean spawnBody, @Nullable Player killer,
@@ -199,7 +203,7 @@ public class DaywalkerRole extends CustomWinnerRole {
     // ==================== 独立胜利 ====================
 
     /**
-     * 独立胜利判定：仅当时间耗尽（winstate 为 time）且已完成「开局人数/3」个任务时，
+     * 独立胜利判定：仅当时间耗尽（winstate 为 time）且已完成「开局人数/3」个任务（至少 6 个）时，
      * 逐日者代替好人获得独立胜利。
      *
      * <p>仅时间耗尽、或仅完成任务数，都不会获得胜利。</p>

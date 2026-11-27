@@ -53,8 +53,10 @@ public final class MysqlPlayerDataStore {
     private static volatile HikariDataSource dataSource;
     private static volatile String tableName = "sre_player_sync_data";
     private static volatile long fastFailUntil = 0L;
-    private static volatile boolean shutdownFlushMode = false;
+    private static final Set<CompletableFuture<Boolean>> PENDING_WRITES = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, CompletableFuture<Boolean>> BATCH_UPLOADS = new ConcurrentHashMap<>();
     private static final Map<RecordKey, Long> KNOWN_REVISIONS = new ConcurrentHashMap<>();
+    private static final Map<UUID, CompletableFuture<Boolean>> EQUIPPED_UPLOADS = new ConcurrentHashMap<>();
 
     private MysqlPlayerDataStore() {
     }
@@ -70,7 +72,6 @@ public final class MysqlPlayerDataStore {
 
     public static synchronized void initializeFromConfig() {
         shutdownDataSource();
-        shutdownFlushMode = false;
         fastFailUntil = 0L;
         if (!SREConfig.instance().mysqlPlayerSyncEnabled) {
             return;
@@ -118,11 +119,38 @@ public final class MysqlPlayerDataStore {
     }
 
     public static synchronized void shutdown() {
+        // 所有 STOPPING / DISCONNECT 回调先提交快照，再统一等待一次，不按玩家累加超时。
+        awaitPendingWrites(5_000L);
         shutdownDataSource();
     }
 
-    public static void beginShutdownFlushMode() {
-        shutdownFlushMode = true;
+    /** 等待已提交的写入；不得在持有玩家组件锁或数据库工作线程上调用。 */
+    public static boolean awaitPendingWrites(long timeoutMs) {
+        try {
+            CompletableFuture.allOf(PENDING_WRITES.toArray(CompletableFuture[]::new))
+                    .get(Math.max(1L, timeoutMs), TimeUnit.MILLISECONDS);
+            return true;
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            logger.warn("等待 MySQL 停服写入被中断，未确认保存的数据可能尚未写入数据库。");
+        } catch (TimeoutException exception) {
+            logger.warn("MySQL 停服写入等待超时，仍有 {} 项未完成；不再阻塞关服，未确认保存的数据可能尚未写入数据库。",
+                    PENDING_WRITES.size());
+        } catch (ExecutionException exception) {
+            logger.warn("MySQL 停服写入任务异常。", exception.getCause());
+        }
+        return false;
+    }
+
+    private static CompletableFuture<Boolean> trackWrite(CompletableFuture<Boolean> future) {
+        PENDING_WRITES.add(future);
+        future.whenComplete((success, failure) -> {
+            PENDING_WRITES.remove(future);
+            if (failure != null || !Boolean.TRUE.equals(success)) {
+                logger.warn("MySQL 写入未成功，不能将已提交任务视为已保存。");
+            }
+        });
+        return future;
     }
 
     public static boolean isAvailable() {
@@ -174,11 +202,85 @@ public final class MysqlPlayerDataStore {
         if (playerUuid == null || normalizedPayloads.isEmpty() || dataSource == null) {
             return CompletableFuture.completedFuture(false);
         }
-        if (shutdownFlushMode) {
-            return CompletableFuture.completedFuture(saveBatch(playerUuid, normalizedPayloads, updatedAt, force));
+        // 始终异步执行，包括停服阶段；同一玩家串行，避免最后快照被较早写入反超。
+        CompletableFuture<Boolean> next = BATCH_UPLOADS.compute(playerUuid, (uuid, previous) -> {
+            CompletableFuture<?> ready = previous == null ? CompletableFuture.completedFuture(null)
+                    : previous.handle((result, failure) -> null);
+            return ready.thenApplyAsync(ignored -> saveBatch(uuid, normalizedPayloads, updatedAt, force), EXECUTOR);
+        });
+        next.whenComplete((result, failure) -> BATCH_UPLOADS.remove(playerUuid, next));
+        return trackWrite(next);
+    }
+
+    /** 仅替换 skins 分区中的 equipped；不使用本地快照覆盖网站的解锁和经济数据。 */
+    public static CompletableFuture<Boolean> saveEquippedSkinsAsync(UUID playerUuid, String equippedJson,
+            long updatedAt) {
+        if (playerUuid == null || equippedJson == null || dataSource == null) {
+            return CompletableFuture.completedFuture(false);
         }
-        return CompletableFuture.supplyAsync(() -> saveBatch(playerUuid, normalizedPayloads, updatedAt, force),
-                EXECUTOR);
+        CompletableFuture<Boolean> next = EQUIPPED_UPLOADS.compute(playerUuid, (uuid, previous) -> {
+            CompletableFuture<?> ready = previous == null ? CompletableFuture.completedFuture(null)
+                    : previous.handle((result, failure) -> null);
+            return ready.thenApplyAsync(ignored -> saveEquippedSkins(uuid, equippedJson, updatedAt), EXECUTOR);
+        });
+        next.whenComplete((result, failure) -> EQUIPPED_UPLOADS.remove(playerUuid, next));
+        return trackWrite(next);
+    }
+
+    /** 关服前等待已提交的装备上传，即使它已从防抖队列移除。 */
+    public static void awaitEquippedSkinsUploads(long timeoutMs) {
+        try {
+            CompletableFuture.allOf(EQUIPPED_UPLOADS.values().toArray(CompletableFuture[]::new))
+                    .get(Math.max(1000L, timeoutMs), TimeUnit.MILLISECONDS);
+        } catch (Exception exception) {
+            logger.warn("等待装备皮肤上传队列完成失败。", exception);
+        }
+    }
+
+    public static boolean saveEquippedSkinsBlocking(UUID playerUuid, String equippedJson, long updatedAt,
+            long timeoutMs) {
+        try {
+            return saveEquippedSkinsAsync(playerUuid, equippedJson, updatedAt)
+                    .get(Math.max(1000L, timeoutMs), TimeUnit.MILLISECONDS);
+        } catch (Exception exception) {
+            logger.warn("等待玩家 {} 的装备皮肤上传失败。", playerUuid, exception);
+            return false;
+        }
+    }
+
+    private static boolean saveEquippedSkins(UUID playerUuid, String equippedJson, long updatedAt) {
+        HikariDataSource source = dataSource;
+        if (source == null || isFastFailActive()) {
+            return false;
+        }
+        // JSON_SET 在数据库持有行锁时只替换 equipped，网站同时发奖也不会被本地旧快照覆盖。
+        String sql = "INSERT INTO " + tableName
+                + " (player_uuid, data_key, payload_json, updated_at, record_version, created_at, updated_by) "
+                + "VALUES (?, 'skins', JSON_OBJECT('equipped', JSON_EXTRACT(?, '$')), ?, 1, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE "
+                + "payload_json = JSON_SET(payload_json, '$.equipped', JSON_EXTRACT(?, '$')), "
+                + "updated_at = GREATEST(updated_at, VALUES(updated_at)), "
+                + "updated_by = VALUES(updated_by), record_version = record_version + 1";
+        try (Connection connection = source.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setQueryTimeout(getStatementTimeoutSeconds());
+            statement.setString(1, playerUuid.toString());
+            statement.setString(2, equippedJson);
+            statement.setLong(3, updatedAt);
+            statement.setLong(4, updatedAt);
+            statement.setString(5, GAME_SERVER_WRITER);
+            statement.setString(6, equippedJson);
+            statement.executeUpdate();
+            // 此次没有读取完整数据，不能把新版本当作本地完整快照的基线。
+            KNOWN_REVISIONS.remove(new RecordKey(playerUuid, "skins"));
+            TrafficRecorder.sql("INSERT", tableName).text(sql).param(playerUuid.toString())
+                    .param(equippedJson).param(equippedJson).param(GAME_SERVER_WRITER).numbers(2).record();
+            clearFastFail();
+            return true;
+        } catch (SQLException exception) {
+            handleSqlFailure("上传装备皮肤", playerUuid, exception);
+            return false;
+        }
     }
 
     public static boolean saveBatchBlocking(UUID playerUuid, Map<String, String> payloads, long updatedAt,
@@ -322,8 +424,11 @@ public final class MysqlPlayerDataStore {
                     }
                 }
             }
+            // Read while our write locks are still held. A post-commit SELECT can
+            // observe a website grant and incorrectly bless our stale payload.
+            Map<RecordKey, Long> committedRevisions = readWrittenRevisions(connection, playerUuid, payloads.keySet());
             connection.commit();
-            refreshKnownRevisions(connection, playerUuid, payloads.keySet());
+            KNOWN_REVISIONS.putAll(committedRevisions);
             tracked.record();
             clearFastFail();
             return true;
@@ -370,11 +475,12 @@ public final class MysqlPlayerDataStore {
         return revision;
     }
 
-    private static void refreshKnownRevisions(Connection connection, UUID playerUuid, Collection<String> dataKeys)
+    private static Map<RecordKey, Long> readWrittenRevisions(Connection connection, UUID playerUuid, Collection<String> dataKeys)
             throws SQLException {
+        Map<RecordKey, Long> revisions = new LinkedHashMap<>();
         List<String> normalizedKeys = normalizeKeys(dataKeys);
         if (normalizedKeys.isEmpty()) {
-            return;
+            return revisions;
         }
         String placeholders = String.join(",", Collections.nCopies(normalizedKeys.size(), "?"));
         String sql = "SELECT data_key, record_version FROM " + tableName
@@ -394,14 +500,16 @@ public final class MysqlPlayerDataStore {
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     String dataKey = resultSet.getString("data_key");
-                    KNOWN_REVISIONS.put(
-                            new RecordKey(playerUuid, dataKey),
-                            resultSet.getLong("record_version"));
+                    revisions.put(new RecordKey(playerUuid, dataKey), resultSet.getLong("record_version"));
                     tracked.result(dataKey).numbers(1);
                 }
                 tracked.record();
             }
         }
+        if (revisions.size() != normalizedKeys.size()) {
+            throw new SQLException("Missing revision for written player data");
+        }
+        return revisions;
     }
 
     private static void rollbackQuietly(Connection connection, UUID playerUuid) {
@@ -584,11 +692,31 @@ public final class MysqlPlayerDataStore {
     private static synchronized void shutdownDataSource() {
         HikariDataSource source = dataSource;
         dataSource = null;
-        shutdownFlushMode = false;
         fastFailUntil = 0L;
         KNOWN_REVISIONS.clear();
         if (source != null) {
-            source.close();
+            // Hikari.close() 会等待内部任务、驱逐连接；驱动阻塞时不能拖住服务端线程。
+            CompletableFuture<Void> closed = new CompletableFuture<>();
+            Thread closer = new Thread(() -> {
+                try {
+                    source.close();
+                    closed.complete(null);
+                } catch (Exception exception) {
+                    closed.completeExceptionally(exception);
+                }
+            }, "sre-mysql-close");
+            closer.setDaemon(true);
+            closer.start();
+            try {
+                closed.get(3_000L, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                logger.warn("MySQL 连接池关闭等待被中断，后台继续关闭。");
+            } catch (TimeoutException exception) {
+                logger.warn("MySQL 连接池关闭超过 3 秒，后台继续关闭，不再阻塞关服。");
+            } catch (ExecutionException exception) {
+                logger.warn("MySQL 连接池关闭失败。", exception.getCause());
+            }
         }
     }
 

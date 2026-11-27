@@ -16,11 +16,14 @@
 package org.agmas.noellesroles.init;
 
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.api.data.RoleData;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerMoodComponent;
 import io.wifi.starrailexpress.game.data.MapStatusBarType;
 import io.wifi.starrailexpress.event.AllowPlayerDeathWithKiller;
 import io.wifi.starrailexpress.game.GameConstants;
+import io.wifi.starrailexpress.event.ItemGameplayEvents;
+import io.wifi.starrailexpress.event.TargetingEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -53,8 +56,18 @@ import org.agmas.noellesroles.content.effects.TomatoFormMobEffect;
 import org.agmas.noellesroles.game.backworld.BackworldOutlineEffectSync;
 import org.agmas.noellesroles.game.roles.killer.nostalgist.NostalgistBackworldEffectSync;
 import org.agmas.noellesroles.game.roles.killer.wraith_assassin.WraithDimensionEffectSync;
+import org.agmas.noellesroles.content.item.GroselleJourneyManager;
+import org.agmas.noellesroles.game.roles.killer.warlock.WarlockDomainManager;
+import org.agmas.noellesroles.game.roles.killer.pooler.PoolerDomainManager;
+import org.agmas.noellesroles.role_data.innocence.FoolRoleData;
 
 public class ModEffects {
+    /** 雾铃遮眼的来源标记，避免其他来源的失明或黑暗触发雾刃。 */
+    public static final Holder<MobEffect> FOG_BLINDED = register("fog_blinded",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xA9BBC1));
+    /** 律令领域标记，具体禁令由服务端领域状态决定。 */
+    public static final Holder<MobEffect> DECREE_RANGE = register("decree_range",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xEED796));
     /** 禁止商店购买 */
     public static final Holder<MobEffect> SHOP_BANNED = register("shop_banned",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
@@ -67,6 +80,12 @@ public class ModEffects {
     /** 禁止技能使用 */
     public static final Holder<MobEffect> SKILL_BANED = register("skill_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
+    /** 枪械射线跳过持有效果的实体，仍可命中其后方目标。 */
+    public static final Holder<MobEffect> GUN_TARGET_IMMUNITY = register("gun_target_immunity",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x384B89));
+    /** 不可作为职业技能的指定目标；不阻止已建立的小游戏内部结算。 */
+    public static final Holder<MobEffect> SKILL_TARGET_IMMUNITY = register("skill_target_immunity",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x7664AC));
     /** 显示真容，不走皮肤替换逻辑 */
     public static final Holder<MobEffect> TRUE_SKIN = register("true_skin",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
@@ -87,6 +106,10 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF));
     public static final Holder<MobEffect> BLACK_MONITOR = register("black_monitor",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
+    public static final Holder<MobEffect> INSTANT_BLACK_SCREEN = register("instant_black_screen",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x1A1A1A));
+    public static final Holder<MobEffect> PURGATORY = register("purgatory",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x8B0000));
     public static final Holder<MobEffect> GHOST_STATE = register("ghost_state",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xFFFFFF) {
                 @Override
@@ -136,6 +159,8 @@ public class ModEffects {
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
     public static final Holder<MobEffect> USED_BANED = register("used_baned",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
+    public static final Holder<MobEffect> MOVEMENT_KEY_BLOCK = register("movement_key_block",
+            new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFF8C00));
 
     public static final Holder<MobEffect> MOUSE_UPSIDE_DOWN = register("mouse_upside_down",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0xFFFFFF));
@@ -236,11 +261,15 @@ public class ModEffects {
                 }
             });
 
-    /**
-     * 里世界侵蚀效果
-     * - 有害效果，暗紫色
-     * - 用于标记处于里世界影响下的好人玩家，驱动客户端shader和场景变化
-     */
+    /** 里世界归零判死标记：只驱动警告，不锁移动、操作或施加无敌。 */
+    public static final Holder<MobEffect> GHOST_CONDEMNED = register("ghost_condemned",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xB42432));
+
+    /** 净雨护心：只阻止布袋鬼削SAN，不影响其他伤害。 */
+    public static final Holder<MobEffect> GHOST_WARD = register("ghost_ward",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x9AD8BC));
+
+    /** 里世界全图氛围标记，用于客户端着色器与倒计时。 */
     public static final Holder<MobEffect> OTHERWORLD_AURA = register("otherworld_aura",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x4B0082));
 
@@ -263,7 +292,7 @@ public class ModEffects {
      * - 仅作为「客户端渲染标记」：当本地玩家自身也持有该效果时，才会给同样持有该效果的
      * 其他玩家绘制发光轮廓（类似原版发光，但只有里世界内的人能互相看见）。
      * - 由 {@code BackworldOutlineEffectSync} 同步给所有客户端（原版只会把效果同步给持有者本人）。
-     * - 使用方：怀旧者里世界、布袋鬼里世界、归途旅人「旧日渡口 / 末班车」。
+     * - 使用方：怀旧者里世界、归途旅人「旧日渡口 / 末班车」。
      */
     public static final Holder<MobEffect> BACKWORLD_OUTLINE = register("backworld_outline",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x7FE7E0));
@@ -500,6 +529,11 @@ public class ModEffects {
     public static final Holder<MobEffect> VOICE_RANGE_BOOST = register("voice_range_boost",
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0x8FD3FF));
     /**
+     * 大嗓门：扩大语音传播范围（原版幸运的替代效果）
+     */
+    public static final Holder<MobEffect> LOUD_VOICE = register("loud_voice",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFD700));
+    /**
      * 回响语音：让语音出现回音
      */
     public static final Holder<MobEffect> VOICE_ECHO = register("voice_echo",
@@ -651,14 +685,31 @@ public class ModEffects {
     public static final Holder<MobEffect> NO_STAMINA = register("no_stamina",
             new SimpleMobEffect(MobEffectCategory.HARMFUL, 0x6A5ACD));
     /**
-     * 领域标记（本模组三大领域共享）：
+     * 领域标记（本模组各领域共享同一个效果，以等级区分领域）：
      * - 中性效果，幽紫色
-     * - amplifier 0 = 愚者开会领域，1 = 咒术师角斗场领域，2 = 冒险家游记（格罗赛尔游记）领域
+     * - amplifier 0 = 愚者开会（1 级），1 = 咒术师角斗场（2 级），2 = 冒险家游记（3 级），
+     *   3 = 祈月者吞月（4 级），4 = 祈月者水中镜（5 级），5 = 轮盘恶魔轮盘决斗（6 级）
+     * - 规范：一个领域对应一个等级的领域标记药水效果，同等级领域标记药水效果不应当指代多个领域。
+     *   0~5 已全部分配，新增领域只能使用 6 及以上未占用等级，禁止复用已有等级。
      * - 拥有此效果的玩家正处于某个领域中，无法被拉入另一个领域；
-     * 由三大领域在进入时授予对应等级，离场时移除。
+     * 由各领域在进入时授予对应等级，离场时移除。
      */
     public static final Holder<MobEffect> DOMAIN_MARK = register("domain_mark",
             new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0x9B59B6));
+
+    /** 愚者开会领域的标记等级（amplifier 0 / 1 级），也是唯一豁免「领域庇护」的等级。 */
+    public static final int FOOL_MEETING_MARK_LEVEL = 0;
+
+    /**
+     * 领域庇护（摘星者「星之光环」/「庇护强化」授予）：
+     * - 有益效果，淡金色
+     * - 摘星者授予时默认隐藏药水图标与粒子，避免暴露光环范围
+     * - 拥有此效果的玩家无法被拉入除愚者会议（{@link #DOMAIN_MARK} amplifier 0）以外的任何领域。
+     * 各领域在拉人前检查 {@link #hasDomainSanctuary(LivingEntity)}；
+     * 摘星者死亡后由 {@code StarGathererRoleData} 统一清除。
+     */
+    public static final Holder<MobEffect> DOMAIN_SANCTUARY = register("domain_sanctuary",
+            new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xFFE9A8));
 
     /**
      * 视野迷雾
@@ -936,15 +987,16 @@ public class ModEffects {
         return entity != null && entity.hasEffect(MENTAL_DEAFNESS);
     }
 
+    /** 欲望凝视的视线标记；显现期间只做弱化提示，理智扣减由职业按秒结算。 */
+    public static final Holder<MobEffect> ROULETTE_DEVIL_DREAD = register("roulette_devil_dread",
+            new MobEffect(MobEffectCategory.HARMFUL, 0x15101F) {});
+
     public static float getMoodDrainMultiplier(LivingEntity entity) {
         if (hasFullMoodLock(entity) || entity.hasEffect(MOOD_DRAIN_IMMUNITY)) {
             return 0f;
         }
         int amp = getAmplifier(entity, MOOD_DRAIN_REDUCTION);
-        if (amp < 0) {
-            return 1f;
-        }
-        return Mth.clamp(1f - 0.3f * (amp + 1), 0f, 1f);
+        return amp < 0 ? 1f : Mth.clamp(1f - 0.3f * (amp + 1), 0f, 1f);
     }
 
     public static float getMoodRegenPerTick(LivingEntity entity) {
@@ -1098,17 +1150,40 @@ public class ModEffects {
     }
 
     /**
-     * 领域标记：返回玩家所处领域的等级（0=愚者开会，1=咒术师角斗场，2=冒险家游记）；不在任何领域返回 -1。
+     * 领域标记：返回玩家所处领域的 amplifier 等级（0=愚者开会，1=咒术师角斗场，2=冒险家游记，
+     * 3=祈月者吞月，4=祈月者水中镜，5=轮盘恶魔轮盘决斗）；不在任何领域返回 -1。
+     * 规范：一个领域对应一个等级的领域标记药水效果，同等级领域标记药水效果不应当指代多个领域，
+     * 因此本返回值可直接作为领域身份判定，不会有一个等级指向两个领域的情况。
      */
     public static int getDomainMarkLevel(LivingEntity entity) {
         return getAmplifier(entity, DOMAIN_MARK);
     }
+    /**
+     * 该玩家是否带有「领域庇护」（摘星者光环）。
+     * <p>
+     * 带有庇护的玩家无法被拉入除愚者会议（领域标记 amplifier 0）以外的任何领域；
+     * 各领域在挑人时都调用本方法做前置过滤。
+     */
+    public static boolean hasDomainSanctuary(LivingEntity entity) {
+        return entity != null && entity.hasEffect(DOMAIN_SANCTUARY);
+    }
 
     /**
-     * 玩家当前是否处于任意一个三大领域中（即拥有领域标记效果）。
+     * 玩家是否处于领域中。客户端读取同步标记，服务端同时检查实际成员，
+     * 覆盖传送后尚未附加标记及死亡后效果被清除的阶段；不能按全局开会状态豁免旁人。
      */
     public static boolean isInAnyDomain(LivingEntity entity) {
-        return entity.hasEffect(DOMAIN_MARK);
+        if (entity.hasEffect(DOMAIN_MARK)) return true;
+        if (!(entity instanceof ServerPlayer player)) return false;
+        var uuid = player.getUUID();
+        if (WarlockDomainManager.isInDomain(uuid) || PoolerDomainManager.isInDomain(uuid)
+                || GroselleJourneyManager.isBanished(uuid)
+                || org.agmas.noellesroles.game.roles.neutral.roulette_devil.RouletteDevilSessions.inDuel(uuid)) return true;
+        for (ServerPlayer candidate : player.serverLevel().players()) {
+            FoolRoleData fool = RoleData.getNullable(FoolRoleData.class, candidate);
+            if (fool != null && fool.inMeeting && fool.meetingOriginalPositions.containsKey(uuid)) return true;
+        }
+        return false;
     }
 
     /**
@@ -1139,6 +1214,15 @@ public class ModEffects {
     public static boolean pierceDeath = false;
 
     public static void init() {
+        TargetingEvents.ALLOW_GUN_TARGET.register((actor, target) ->
+                !(target instanceof LivingEntity living) || !living.hasEffect(GUN_TARGET_IMMUNITY));
+        TargetingEvents.ALLOW_SKILL_TARGET.register((actor, target) ->
+                !(target instanceof LivingEntity living) || !living.hasEffect(SKILL_TARGET_IMMUNITY));
+        // 客户端传入实体编号的旧枪械协议也不能伪造命中免疫目标。
+        ItemGameplayEvents.ALLOW_GUN_FIRE.register((player, targetId) -> {
+            var target = player.serverLevel().getEntity(targetId);
+            return target == null || TargetingEvents.ALLOW_GUN_TARGET.invoker().allow(player, target);
+        });
         StatusAilmentHandler.register();
         DeathReactionHandler.register();
         // 把说话者侧的语音效果（重金属/回响）同步给所有客户端，
@@ -1161,6 +1245,9 @@ public class ModEffects {
         EffectBroadcastSync.register(INSTINCT_CONCEAL);
         // 重力颠倒要让玩家在「别人眼中」也倒立渲染，所以同样需要广播（隐藏图标与粒子）。
         EffectBroadcastSync.register(GRAVITY_FLIP);
+        EffectBroadcastSync.register(GUN_TARGET_IMMUNITY);
+        EffectBroadcastSync.register(SKILL_TARGET_IMMUNITY);
+        EffectBroadcastSync.register(NO_COLLIDE);
         EffectBroadcastSync.init();
         WraithDimensionEffectSync.init();
         AllowPlayerDeathWithKiller.EVENT.register((player, killer, deathReason) -> {

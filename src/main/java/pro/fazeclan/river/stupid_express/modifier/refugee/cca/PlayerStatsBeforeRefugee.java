@@ -50,8 +50,9 @@ public record PlayerStatsBeforeRefugee(Vec3 pos, int money, ListTag inventory, V
             var worldModifierComponent = WorldModifierComponent.KEY.get(level);
             if (worldModifierComponent.isModifier(victim.getUUID(), SEModifiers.REFUGEE)) {
                 var refugeeComponent = RefugeeComponent.KEY.get(level);
-                Vec3 pos = GameUtils.getSpawnPos(AreasWorldComponent.KEY.get(level),
-                        GameUtils.roomToPlayer.get(victim.getUUID()));
+                // 房间出生点统一由 getPlayerRoomSpawnPos 解析：训练场假人是它的初始点位。
+                // 没有房间映射时回退到死亡位置；登记坐标会在亡命徒复活时真正使用。
+                Vec3 pos = GameUtils.getPlayerRoomSpawnPos(victim);
                 if (pos != null) {
                     refugeeComponent.addPendingRevival(victim.getUUID(), pos.x(), pos.y() + 1, pos.z());
                 } else {

@@ -27,8 +27,8 @@ class EchoSkillStateTest {
 
     @Test void pendingEffectIsConsumedExactlyOnceAndExpiryRefundsNothing() {
         EchoSkillState state = new EchoSkillState();
-        // LOCK_ON 已改为持续增益（狩猎本能），这里改用仍然是一次性的 SURGE 验证 pending 语义。
-        EchoSkill skill = EchoSkill.SURGE;
+        // LOCK_ON 已改为持续增益（狩猎本能），这里改用仍然是一次性的 STALL_BURST 验证 pending 语义。
+        EchoSkill skill = EchoSkill.STALL_BURST;
         assertFalse(state.consumePending(skill, 0), "没有窗口时不能消耗");
         assertTrue(state.activate(skill, 10));
         assertTrue(state.pendingActive(skill, 20));
@@ -56,10 +56,10 @@ class EchoSkillStateTest {
 
     @Test void expireAndClearDropWindowsWithoutTouchingRemainingCooldownOrder() {
         EchoSkillState state = new EchoSkillState();
-        assertTrue(state.activate(EchoSkill.SURGE, 0));
-        state.expire(EchoSkill.SURGE.windowTicks());
+        assertTrue(state.activate(EchoSkill.STALL_BURST, 0));
+        state.expire(EchoSkill.STALL_BURST.windowTicks());
         assertEquals(0, state.pendingUntil());
-        assertEquals(EchoSkill.SURGE.cooldownTicks(), state.readyAt());
+        assertEquals(EchoSkill.STALL_BURST.cooldownTicks(), state.readyAt());
         state.clear();
         assertEquals(0, state.readyAt());
         assertEquals(0, state.buffUntil());
@@ -82,21 +82,14 @@ class EchoSkillStateTest {
             assertTrue(skill.descriptionKey().startsWith("echo.skill."));
         }
         assertEquals(EchoSpecialization.values().length, skills.size());
-        // 追猎者职业各带一个技能；它们不绑定专长，因此单独校验，并且仍然要求 id/图标唯一。
-        for (org.agmas.noellesroles.game.modes.echo.hunter.EchoHunterClass hunter
-                : org.agmas.noellesroles.game.modes.echo.hunter.EchoHunterClass.values()) {
-            EchoSkill skill = hunter.skill();
-            assertNull(skill.specialization(), "职业技能不应绑定专长");
-            assertEquals(skill, EchoSkill.of(EchoSpecialization.HUNTER, hunter));
-            assertTrue(skills.add(skill), "职业与技能必须一一对应");
-            assertTrue(ids.add(skill.id()));
-            assertTrue(icons.add(skill.icon()));
-            assertTrue(skill.cooldownTicks() > 0 && skill.windowTicks() >= 0);
+        // 职业技能走独立的 EchoClassState（有自己的冷却），不再占用 EchoSkill 枚举。
+        // 每个专长仍有唯一技能；职业技能走 EchoClassState 的独立冷却。
+        for (var spec : EchoSpecialization.values()) {
+            var skill = EchoSkill.of(spec);
+            assertEquals(spec, skill.specialization(), spec.id());
         }
-        long classBound = java.util.Arrays.stream(EchoSkill.values()).filter(skill -> skill.specialization() == null).count();
-        assertEquals(org.agmas.noellesroles.game.modes.echo.hunter.EchoHunterClass.values().length, classBound);
-        assertEquals(EchoSpecialization.values().length + org.agmas.noellesroles.game.modes.echo.hunter.EchoHunterClass.values().length,
-                EchoSkill.values().length);
+        assertEquals(EchoSpecialization.values().length,
+                java.util.Arrays.stream(EchoSkill.values()).filter(s -> s.specialization() != null).count());
     }
 
     @Test void skillHearingAndIntroKeysExistInThreeLanguages() throws Exception {

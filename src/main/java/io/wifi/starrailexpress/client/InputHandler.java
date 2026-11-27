@@ -26,6 +26,7 @@ import io.wifi.starrailexpress.client.gui.screen.ingame.FourthRoomPeekDeckScreen
 import io.wifi.starrailexpress.content.item.SniperRifleItem;
 import io.wifi.starrailexpress.content.vote.client.ClientVoteCache;
 import io.wifi.starrailexpress.content.vote.client.GameModeVoteScreen;
+import io.wifi.starrailexpress.content.vote.client.RolePoolVoteScreen;
 import io.wifi.starrailexpress.content.vote.client.VoteScreen;
 import io.wifi.starrailexpress.index.TMMItems;
 import io.wifi.starrailexpress.network.RequestOpenClueArchivePayload;
@@ -67,6 +68,11 @@ public class InputHandler {
             "key.starrailexpress.sniper_reload",
             GLFW.GLFW_KEY_R,
             "category.starrailexpress.keybinds"));
+    /** 装填 / 卸载倍镜的独立按键，默认 Z，可在原版按键设置里改键。 */
+    public static KeyMapping sniperScopeKeybind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.starrailexpress.sniper_scope_mount",
+            GLFW.GLFW_KEY_Z,
+            "category.starrailexpress.keybinds"));
 
     public static void initialize() {
 
@@ -81,13 +87,17 @@ public class InputHandler {
         return openClueArchiveKeybind;
     }
 
-    /** 按投票类型选界面：模式投票用专用界面，其余用通用投票界面。 */
+    /** 按投票类型选界面：模式 / 职业池投票用专用界面，其余用通用投票界面。 */
     private static Screen createVoteScreen() {
+        if (ClientVoteCache.isRolePoolVote()) {
+            return new RolePoolVoteScreen();
+        }
         return ClientVoteCache.isGameModeVote() ? new GameModeVoteScreen() : new VoteScreen();
     }
 
     private static boolean isVoteScreenOpen(Screen screen) {
-        return screen instanceof VoteScreen || screen instanceof GameModeVoteScreen;
+        return screen instanceof VoteScreen || screen instanceof GameModeVoteScreen
+                || screen instanceof RolePoolVoteScreen;
     }
 
     private static boolean canOpenFourthRoomTableUi(Minecraft client) {
@@ -109,6 +119,9 @@ public class InputHandler {
             }
         }
 
+        // 每 tick 都消费一次按键，避免刚拿起狙击枪时把之前攒下的点击一次性触发；GUI 打开时不生效。
+        boolean scopeToggle = sniperScopeKeybind.consumeClick() && client.screen == null && client.player != null;
+
         // 狙击枪操作
         if (client.player != null && client.player.getMainHandItem().is(TMMItems.SNIPER_RIFLE)) {
             ItemStack mainHandItem = client.player.getMainHandItem();
@@ -124,6 +137,9 @@ public class InputHandler {
             if (sniperReloadKeybind.consumeClick()) {
                 SniperRifleItem.tryReloadFromKeybind(client.player);
             }
+            if (scopeToggle) {
+                SniperRifleItem.tryToggleScopeFromKeybind(client.player);
+            }
         } else {
             wasRightDown = false;
         }
@@ -138,6 +154,9 @@ public class InputHandler {
             final MapVotingComponent mapVotingComponent = MapVotingComponent.KEY.get(client.level);
             if (mapVotingComponent.isVotingActive()) {
                 client.setScreen(MapVoteScreen.create());
+            } else if (org.agmas.noellesroles.game.modes.echo.client.EchoFacilityMapClient.inMatch()) {
+                if (client.screen == null) client.setScreen(new org.agmas.noellesroles.client.screen.AreaMapScreen());
+                else if (client.screen instanceof org.agmas.noellesroles.client.screen.AreaMapScreen) client.screen.onClose();
             } else if (ClientVoteCache.canReOpen() && !isVoteScreenOpen(client.screen)) {
                 client.setScreen(createVoteScreen());
             }

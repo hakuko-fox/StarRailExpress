@@ -23,6 +23,7 @@ public class NRSounds {
     public static final SoundEventRegistrar registrar = new SoundEventRegistrar(Noellesroles.MOD_ID);
     public static final SoundEvent GAMBER_DEATH = registrar.create("noellesroles.gamber_died");
     public static final SoundEvent MUSIC_CLOCK = registrar.create("noellesroles.clock");
+    public static final SoundEvent LUNA_TIME_CLOCK = registrar.create("noellesroles.luna_time_clock");
     public static final SoundEvent GONGXI_FACAI = registrar.create("noellesroles.gongxifacai");
     public static final SoundEvent TO_BE_CONTINUED = registrar.create("noellesroles.to_be_continued");
     public static final SoundEvent HARPY_WELCOME = registrar.create("noellesroles.harpy_welcome");
@@ -56,6 +57,10 @@ public class NRSounds {
     public static final SoundEvent BROKEN_ALARM = registrar.create("noellesroles.broken_alarm");
     public static final SoundEvent CIRCUS_BACKGROUND = registrar.create("noellesroles.circus_background");
     public static final SoundEvent A_MENG = registrar.create("noellesroles.a_meng");
+    // 黑警时刻登场音效
+    public static final SoundEvent FATE = registrar.create("noellesroles.fate");
+    // 纵火犯时刻登场音效
+    public static final SoundEvent ARSONIST = registrar.create("noellesroles.arsonist");
     // 皮革噶的：疯魔模式神秘追杀音效
     public static final SoundEvent MANHUNT_CHASE = registrar.create("noellesroles.manhunt_chase");
     public static final SoundEvent TOMATO_SPLAT = registrar.create("noellesroles.tomato_splat");
@@ -78,6 +83,7 @@ public class NRSounds {
     public static final SoundEvent MUSIC_SAKURA_MOYU = registrar.create("music.sakura_moyu");
     public static final SoundEvent MUSIC_UNWELCOME_SCHOOL = registrar.create("music.unwelcome_school");
     public static final SoundEvent MUSIC_ZENRIANBANKA = registrar.create("music.zenrianbanka");
+    public static final SoundEvent MUSIC_HALLOWEEN = registrar.create("music.halloween_music");
 
     // 下界合金矛相关音效
     public static final SoundEvent SPEAR_ATTACK = registrar.create("noellesroles.spear_attack");

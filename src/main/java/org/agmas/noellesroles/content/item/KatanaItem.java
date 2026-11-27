@@ -3,12 +3,10 @@ package org.agmas.noellesroles.content.item;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.content.item.api.SREItemProperties;
 import io.wifi.starrailexpress.game.GameConstants;
-import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.UseAnim;
@@ -20,9 +18,9 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import org.agmas.noellesroles.katana.KatanaCombat;
-import org.agmas.noellesroles.katana.KatanaState;
-import org.agmas.noellesroles.katana.KatanaState;
+import org.agmas.noellesroles.content.item.katana.client.KatanaClientState;
+import org.agmas.noellesroles.content.item.katana.KatanaCombat;
+import org.agmas.noellesroles.content.item.katana.KatanaState;
 
 import java.util.List;
 
@@ -31,7 +29,7 @@ import java.util.List;
  *
  * <ul>
  * <li>左键：按顺序释放三连招，<b>实际命中玩家</b>后才推进到下一招式；
- * 每招固定扣除虚拟血量（6 / 7 / 7）并附带 1 点原版伤害作为击退载体。
+ * 每招固定扣除虚拟血量（6 / 7 / 7），独立播放受击反馈和施加击退，不扣原版血量。
  * 突刺（第二招）<b>不依赖准星目标</b>，左键空挥也会出刀，沿视线向前突进
  * （冲量与下界合金矛「突进」II 附魔一致）；连续 {@link KatanaState#THRUST_MAX_MISSES}
  * 次突刺都没碰到玩家则连招回到第一招。</li>
@@ -93,7 +91,7 @@ public class KatanaItem extends Item
         }
         if (level.isClientSide) {
             // 客户端：根据服务端同步的格挡内置冷却预判（实体事件 120/121）
-            if (org.agmas.noellesroles.katana.client.KatanaClientState.isOnBlockCooldown(player)) {
+            if (KatanaClientState.isOnBlockCooldown(player)) {
                 return InteractionResultHolder.fail(stack);
             }
         } else {

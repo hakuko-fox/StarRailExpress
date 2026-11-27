@@ -71,6 +71,7 @@ public final class PlayerSkinEconomyManager {
     }
 
     public static void addLootChance(Player player, int delta) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(player.level())) return;
         Entry entry = get(player.getUUID());
         entry.state.lootChance = Math.max(0, entry.state.lootChance + delta);
         markDirty(player, entry);
@@ -79,6 +80,7 @@ public final class PlayerSkinEconomyManager {
 
     // 请注意这个不是游戏内的金币，游戏内的金币是SREPlayerShopComponent在管理！
     public static void addCoinNum(Player player, int delta) {
+        if (io.wifi.starrailexpress.training.TrainingRules.isTrainingWorld(player.level())) return;
         Entry entry = get(player.getUUID());
         entry.state.coinNum = Math.max(0, entry.state.coinNum + delta);
         markDirty(player, entry);
@@ -93,19 +95,21 @@ public final class PlayerSkinEconomyManager {
     public static String getEquippedSkinForItemType(Player player, String itemType) {
         if (player.level().isClientSide()) {
             return io.wifi.starrailexpress.client.data.ClientPlayerDataCache
-                    .economy(player.getUUID())
-                    .getEquippedSkin(normalizeItemName(itemType));
+                    .getEquippedSkin(player.getUUID(), normalizeItemName(itemType));
         }
-        return get(player.getUUID()).state.equipped.getOrDefault(normalizeItemName(itemType), "default");
+        // 与皮肤管理界面共用组件中的装备状态，避免只恢复了界面却仍使用空的 economy 缓存。
+        return SREPlayerSkinsComponent.KEY.get(player).getEquippedSkin(normalizeItemName(itemType));
     }
 
     public static void setEquippedSkinForItemType(Player player, String itemType, String skinName) {
         String normalizedType = normalizeItemName(itemType);
         Entry entry = get(player.getUUID());
         entry.state.equipped.put(normalizedType, skinName == null || skinName.isBlank() ? "default" : skinName);
+        entry.equippedChanged = true;
         markDirty(player, entry);
         mirrorToSkinsComponent(player, sc -> sc.setEquippedSkinForItemType(normalizedType,
                 skinName == null || skinName.isBlank() ? "default" : skinName));
+        ItemSkinManager.refreshEquippedSkins(player, normalizedType);
     }
 
     public static boolean isSkinUnlocked(Player player, ItemStack stack, String skinName) {
@@ -119,8 +123,7 @@ public final class PlayerSkinEconomyManager {
         }
         if (player.level().isClientSide()) {
             return io.wifi.starrailexpress.client.data.ClientPlayerDataCache
-                    .economy(player.getUUID())
-                    .isSkinUnlocked(normalizedType, skinName);
+                    .isSkinUnlocked(player.getUUID(), normalizedType, skinName);
         }
         Map<String, Boolean> skins = get(player.getUUID()).state.unlocked.get(normalizedType);
         return skins != null && Boolean.TRUE.equals(skins.get(skinName));
@@ -177,6 +180,7 @@ public final class PlayerSkinEconomyManager {
     private static void onJoin(ServerPlayer player) {
         Entry entry = get(player.getUUID());
         entry.online = true;
+        ItemSkinManager.refreshEquippedSkins(player);
         send(player, entry);
         if (!isDatabaseEnabled()) {
             return;
@@ -216,6 +220,9 @@ public final class PlayerSkinEconomyManager {
                                         : economyRecord;
                         if (primary != null && primary.payload() != null && !primary.payload().isBlank()) {
                             EconomyState loaded = fromJson(primary.payload());
+                            if (entry.equippedChanged) {
+                                loaded.equipped = new ConcurrentHashMap<>(entry.state.equipped);
+                            }
                             entry.state.copyFrom(loaded);
                             entry.updatedAt = Math.max(entry.updatedAt, primary.updatedAt());
                             entry.dirty = false;
@@ -301,7 +308,8 @@ public final class PlayerSkinEconomyManager {
     }
 
     private static boolean isDatabaseEnabled() {
-        return SREConfig.instance().mysqlPlayerSyncEnabled && MysqlPlayerDataStore.isAvailable();
+        return !io.wifi.starrailexpress.training.TrainingRules.isIsolated()
+                && SREConfig.instance().mysqlPlayerSyncEnabled && MysqlPlayerDataStore.isAvailable();
     }
 
     private static String itemType(ItemStack stack) {
@@ -337,6 +345,7 @@ public final class PlayerSkinEconomyManager {
         private volatile boolean loadInFlight;
         private volatile boolean saveInFlight;
         private volatile long updatedAt;
+        private boolean equippedChanged;
         private volatile long lastFlushAt;
     }
 

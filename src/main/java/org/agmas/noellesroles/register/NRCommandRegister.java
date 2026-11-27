@@ -40,13 +40,16 @@ public class NRCommandRegister {
         GamblerMiracleCommand.register();
         EggClearCommand.register();
         MurderTimeCommand.register();
+        MomentCommand.register();
         TimeRewindCommand.register();
         FakeSteveCommand.register();
         CommandBlockCommand.register();
+        NightEventCommand.register();
         PurpleMonsterCommand.register();
         VirtualHealthCommand.register();
         MirrorReunionEndEggCommand.register();
         DraftPriorityCommand.register();
+        MagicianDisguiseCommand.register();
 
         // 注册疫使测试指令
         org.agmas.noellesroles.commands.InfectedCommand.register();

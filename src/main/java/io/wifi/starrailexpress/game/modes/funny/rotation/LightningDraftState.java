@@ -31,12 +31,11 @@ import org.agmas.noellesroles.utils.RoleUtils;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.backpack.FactionCardForcing;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.roles.SpecialGameModeRoles;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
-import io.wifi.starrailexpress.progression.ProgressionDataManager;
-import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -48,6 +47,8 @@ public class LightningDraftState {
     public static HashMap<UUID, Integer> PLAYER_SORT_WEIGHT = new HashMap<>();
     public static final Random random = new Random();
     public static final int PLAYER_SELECT_COUNT = 3;
+    /** 第一轮（首次见到候选职业）的固定选择时限，单位 tick */
+    public static final int FIRST_ROUND_TIME_LIMIT = 10 * 20;
     public final List<ServerPlayer> allPlayers;
     public final int totalPlayers;
     // 锁定本轮已展示给玩家的具体角色实例（按UUID），防止随机选择时抢走
@@ -268,13 +269,7 @@ public class LightningDraftState {
                 ServerPlayer sp = allPlayers.stream().filter(p -> p.getUUID().equals(uid)).findFirst().orElse(null);
                 if (sp != null) {
                     if (info.type() == ForceTeamType.CARD) {
-
-                        FactionCardType cardType = FactionCardType.fromRoleType(type);
-                        if (cardType != FactionCardType.NONE) {
-                            ProgressionDataManager.addFactionCard(sp, cardType, 1);
-                            sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
-                                    .withStyle(ChatFormatting.RED), true);
-                        }
+                        FactionCardForcing.refund(uid, info.roleType(), sp, "message.sre.role_rotation.card_limit");
                     } else {
                         sp.displayClientMessage(Component.translatable("message.sre.role_rotation.no_force_team")
                                 .withStyle(ChatFormatting.RED), true);
@@ -440,12 +435,7 @@ public class LightningDraftState {
                 ServerPlayer sp = world.getServer().getPlayerList().getPlayer(playerId);
                 if (sp != null) {
                     if (t.type() == ForceTeamType.CARD) {
-                        FactionCardType cardType = FactionCardType.fromRoleType(type);
-                        if (cardType != FactionCardType.NONE) {
-                            ProgressionDataManager.addFactionCard(sp, cardType, 1);
-                            sp.displayClientMessage(Component.translatable("message.sre.role_rotation.card_limit")
-                                    .withStyle(ChatFormatting.RED), false);
-                        }
+                        FactionCardForcing.refund(playerId, t.roleType(), sp, "message.sre.role_rotation.card_limit");
                     } else {
                         sp.displayClientMessage(Component.translatable("message.sre.role_rotation.no_force_team")
                                 .withStyle(ChatFormatting.RED), true);
@@ -477,7 +467,8 @@ public class LightningDraftState {
 
         int maxCandidates = roundCandidates.values().stream().mapToInt(List::size).max().orElse(0);
         int baseTime = (int) (maxCandidates * SREConfig.instance().roleRotationPerPlayerPerRoleTime * 20);
-        perPlayerTimeLimit = currentRoundIndex == 1 ? baseTime + 60 : baseTime;
+        // 第一轮固定 10 秒（留给玩家看清候选职业），之后各轮仍按「候选数量 × 配置乘数」
+        perPlayerTimeLimit = currentRoundIndex == 1 ? FIRST_ROUND_TIME_LIMIT : baseTime;
 
         isSelecting = true;
         confirmCountdown = -1;

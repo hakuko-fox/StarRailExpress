@@ -15,9 +15,11 @@
 
 package io.wifi.starrailexpress.client.gui.screen;
 
+import io.wifi.starrailexpress.client.ui.SRETheme;
 import io.wifi.starrailexpress.cca.SREPlayerSkinsComponent;
 import io.wifi.starrailexpress.client.gui.anim.GuiAnim;
 import io.wifi.starrailexpress.util.ItemSkinManager;
+import io.wifi.starrailexpress.util.ItemSkin3dRegistry;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -57,23 +59,24 @@ public class HatSkinGridPanel extends AbstractWidget {
     private static final String HAT_ITEM_NAMESPACE = "hats";
 
     // 复古列车主题色
-    private static final int PANEL_BG = 0x801A1008;
-    private static final int PANEL_BORDER = 0x558B6914;
-    private static final int CARD_BG = 0xB01A1008;
+    private static final int PANEL_BG = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x80);
+    private static final int PANEL_BORDER = SRETheme.withAlpha(SRETheme.BORDER, 0x55);
+    private static final int CARD_BG = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0xB0);
     private static final int CARD_BG_HOVER = 0xB02A1A08;
     private static final int CARD_BG_EQUIPPED = 0xB02A2010;
     private static final int CARD_BG_LOCKED = 0xB0140E08;
     private static final int CARD_BORDER_LOCKED = 0xFF3A3020;
     private static final int TEXT_NAME = 0xFFE8C88A;
-    private static final int TEXT_EQUIPPED = 0xFFD4AF37;
-    private static final int TEXT_EQUIP = 0xFFC9A84C;
+    private static final int TEXT_EQUIPPED = SRETheme.GOLD;
+    private static final int TEXT_EQUIP = SRETheme.GOLD_DIM;
     private static final int TEXT_LOCKED = 0xFF5A5340;
-    private static final int TEXT_EMPTY = 0xFF9E8B6E;
-    private static final int SCROLL_TRACK = 0x331A1008;
-    private static final int SCROLL_THUMB = 0xAA8B6914;
-    private static final int SCROLL_THUMB_HL = 0xAAD4AF37;
+    private static final int TEXT_EMPTY = SRETheme.MUTED;
+    private static final int SCROLL_TRACK = SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x33);
+    private static final int SCROLL_THUMB = SRETheme.withAlpha(SRETheme.BORDER, 0xAA);
+    private static final int SCROLL_THUMB_HL = SRETheme.withAlpha(SRETheme.GOLD, 0xAA);
 
     private final SREPlayerSkinsComponent skinsComponent;
+    private final String skinType;
     private final Consumer<String> onHatSelected;
     private final List<HatCard> cards = new ArrayList<>();
 
@@ -84,6 +87,11 @@ public class HatSkinGridPanel extends AbstractWidget {
     /** 由父界面每帧注入的帧间隔（秒），保证全界面动画使用同一时间步 */
     private float frameDelta = 0.016f;
     private boolean draggingScrollbar = false;
+    /** 当前搜索词（已归一化），用于重建时复用 */
+    private String searchQuery = "";
+    /** 是否只显示 3D 皮肤（由父界面的筛选按钮控制） */
+    private boolean only3d = false;
+    private ItemSkinManager.QualityColor qualityFilter;
 
     public void setFrameDelta(float frameDelta) {
         this.frameDelta = frameDelta;
@@ -91,10 +99,26 @@ public class HatSkinGridPanel extends AbstractWidget {
 
     public HatSkinGridPanel(int x, int y, int width, int height,
             SREPlayerSkinsComponent skinsComponent, Consumer<String> onHatSelected, String searchFilter) {
+        this(x, y, width, height, skinsComponent, "hat", onHatSelected, searchFilter);
+    }
+
+    public HatSkinGridPanel(int x, int y, int width, int height,
+            SREPlayerSkinsComponent skinsComponent, String skinType,
+            Consumer<String> onHatSelected, String searchFilter) {
+        this(x, y, width, height, skinsComponent, skinType, onHatSelected, searchFilter, false);
+    }
+
+    /**
+     * @param only3d 是否只显示 3D（Geo）皮肤
+     */
+    public HatSkinGridPanel(int x, int y, int width, int height,
+            SREPlayerSkinsComponent skinsComponent, String skinType,
+            Consumer<String> onHatSelected, String searchFilter, boolean only3d) {
         super(x, y, width, height, Component.empty());
         this.skinsComponent = skinsComponent;
+        this.skinType = skinType == null || skinType.isBlank() ? "hat" : skinType;
         this.onHatSelected = onHatSelected;
-        rebuild(searchFilter);
+        rebuild(searchFilter, only3d);
     }
 
     /** 重新收集帽子皮肤数据（刷新或装备变化后调用） */
@@ -103,42 +127,180 @@ public class HatSkinGridPanel extends AbstractWidget {
     }
 
     public final void rebuild(String filter) {
+        rebuild(filter, only3d);
+    }
+
+    /**
+     * 重建卡片列表。
+     * <p>
+     * 过滤顺序：先按「仅显示 3D 皮肤」筛掉非 3D 条目，再按搜索匹配度排序。
+     * 排序规则（关键，修「搜中文/拼音不先出对应皮肤」的问题）：
+     * <ol>
+     *   <li>有搜索词时<b>按匹配分从高到低</b>排；</li>
+     *   <li>分数相同时未解锁的沉底，再按皮肤 ID 保证顺序稳定；</li>
+     *   <li>没有搜索词时匹配分恒为 0，等价于原来的「未解锁沉底 + 字典序」。</li>
+     * </ol>
+     * 「未装备 / 随机」两张伪卡片不参与搜索过滤，始终钉在最前面。
+     */
+    public final void rebuild(String filter, boolean only3d) {
+        rebuild(filter, only3d, qualityFilter);
+    }
+
+    /** 搜索、3D 与品质条件可同时生效；null 表示全部品质。 */
+    public final void rebuild(String filter, boolean only3d, ItemSkinManager.QualityColor quality) {
+        String nextQuery = ItemSkinSearch.normalize(filter);
+        boolean changed = !nextQuery.equals(searchQuery) || this.only3d != only3d || qualityFilter != quality;
+        this.qualityFilter = quality;
         cards.clear();
-        this.equippedHat = skinsComponent.getEquippedSkin("hat");
+        this.only3d = only3d;
+        this.searchQuery = nextQuery;
+        this.equippedHat = skinsComponent.getEquippedSkin(skinType);
 
         cards.add(new HatCard("default", null, 0xFF9AA0AA, true));
+        // 「随机」：每局开局由服务端在已拥有的皮肤里重抽一次（见
+        // SREPlayerSkinsComponent#rollAllRandomSkins）。以前只有列表式
+        // SkinSelectionList 有这个条目，网格式的帽子 / 饰品 / 音乐盒 /
+        // 随从 / MVP 因此无法选随机，这里补齐，让所有皮肤类型都支持。
+        cards.add(new HatCard(ItemSkinManager.RANDOM_SKIN, null, SRETheme.GOLD, true));
 
-        Map<String, ItemSkinManager.Skin> hatSkins = ItemSkinManager.getSkins("hat");
+        Map<String, ItemSkinManager.Skin> hatSkins = ItemSkinManager.getSkins(skinType);
         List<Map.Entry<String, ItemSkinManager.Skin>> sorted = new ArrayList<>(hatSkins.entrySet());
+        // 先按「匹配分高 → 未解锁沉底 → 皮肤 ID」排一次
         sorted.sort(Comparator
-                .comparing((Map.Entry<String, ItemSkinManager.Skin> e) -> !isUnlocked(e.getKey()))
+                .comparingInt((Map.Entry<String, ItemSkinManager.Skin> e) -> -scoreOf(e.getKey()))
+                .thenComparing(e -> !isUnlocked(e.getKey()))
                 .thenComparing(Map.Entry::getKey));
         for (Map.Entry<String, ItemSkinManager.Skin> entry : sorted) {
             String name = entry.getKey();
-            if ("default".equals(name)) {
+            // 「随机」是伪皮肤，不参与普通卡片列表（上面已单独加过）
+            if ("default".equals(name) || ItemSkinManager.isRandomSkin(name)) {
                 continue;
             }
-            Item item = BuiltInRegistries.ITEM
-                    .getOptional(ResourceLocation.fromNamespaceAndPath(HAT_ITEM_NAMESPACE, name))
-                    .orElse(Items.LEATHER_HELMET);
+            // 「仅显示 3D 皮肤」筛选
+            if (only3d && !is3dSkin(name)) {
+                continue;
+            }
+            if (quality != null && (entry.getValue() == null || entry.getValue().getColor() != quality.getColor())) {
+                continue;
+            }
+            // 搜索过滤：匹配分 0 表示不命中（输入为空时恒为满分，不过滤）
+            if (!searchQuery.isEmpty() && scoreOf(name) <= ItemSkinSearch.SCORE_NONE) {
+                continue;
+            }
+            Item item = iconFor(name);
             int color = entry.getValue() != null ? entry.getValue().getColor() : 0xFFFFFFFF;
             cards.add(new HatCard(name, new ItemStack(item), color, isUnlocked(name)));
         }
 
-        // 搜索过滤
-        if (filter != null && !filter.isEmpty()) {
-            String f = filter.toLowerCase(java.util.Locale.ROOT);
-            cards.removeIf(c -> !"default".equals(c.skinName) && !c.displayName().getString().toLowerCase(java.util.Locale.ROOT).contains(f));
-        }
-
         int columns = columns();
         contentHeight = PADDING * 2f + (float) Math.ceil(cards.size() / (double) columns) * (CARD_HEIGHT + CARD_GAP);
-        targetScroll = Mth.clamp(targetScroll, 0, maxScroll());
-        scroll = Mth.clamp(scroll, 0, maxScroll());
+        if (changed) {
+            draggingScrollbar = false;
+            targetScroll = 0;
+            scroll = 0;
+        } else {
+            targetScroll = Mth.clamp(targetScroll, 0, maxScroll());
+            scroll = Mth.clamp(scroll, 0, maxScroll());
+        }
+    }
+
+    /** 当前皮肤名对应的匹配分（按中文名 / 拼音 / 首字母 / ID 综合打分）。 */
+    private int scoreOf(String skinName) {
+        if (searchQuery.isEmpty()) {
+            return ItemSkinSearch.SCORE_EXACT;
+        }
+        return ItemSkinSearch.score(searchQuery, displayNameOf(skinName), skinName);
     }
 
     private boolean isUnlocked(String skinName) {
-        return "default".equals(skinName) || skinsComponent.isSkinUnlockedForItemType("hat", skinName);
+        return "default".equals(skinName) || skinsComponent.isSkinUnlockedForItemType(skinType, skinName);
+    }
+
+    /**
+     * 该皮肤是否走了 3D（Geo）模型。
+     * <p>
+     * 判定来源见 {@link ItemSkin3dRegistry}：内容模组显式登记优先，
+     * 资源探测（{@code assets/*}{@code /geo/**.geo.json}）兜底。
+     */
+    private boolean is3dSkin(String skinName) {
+        return ItemSkin3dRegistry.is3d(skinType, skinName);
+    }
+
+    /**
+     * 皮肤的显示名（搜索与卡片标题共用同一套翻译键）。
+     * <p>
+     * 伪皮肤（未装备 / 随机）返回空串，避免「无帽子」这类字样被搜索命中。
+     */
+    private Component displayNameOf(String skinName) {
+        if (skinName == null || "default".equals(skinName) || ItemSkinManager.isRandomSkin(skinName)) {
+            return Component.empty();
+        }
+        return Component.translatableWithFallback(
+                "screen.sre.skins." + skinType + "." + skinName.toLowerCase(java.util.Locale.ROOT) + ".name",
+                formatSkinName(skinName));
+    }
+
+    /** {@code xinglan_revolver} → {@code Xinglan Revolver}（缺翻译时的兜底显示名）。 */
+    private static String formatSkinName(String raw) {
+        StringBuilder result = new StringBuilder();
+        for (String part : raw.split("[_\\-]")) {
+            if (!part.isEmpty()) {
+                result.append(Character.toUpperCase(part.charAt(0)))
+                        .append(part.substring(1).toLowerCase()).append(' ');
+            }
+        }
+        return result.toString().trim();
+    }
+
+    /** 当前卡片列表（只读快照，供父界面统计与调试使用）。 */
+    public List<String> visibleSkinNames() {
+        List<String> names = new ArrayList<>(cards.size());
+        for (HatCard card : cards) {
+            names.add(card.skinName);
+        }
+        return names;
+    }
+
+    /** 当前类型下总共登记了多少个 3D 皮肤（不受搜索词影响）。 */
+    public int total3dSkins() {
+        int count = 0;
+        for (String name : ItemSkinManager.getSkins(skinType).keySet()) {
+            if ("default".equals(name) || ItemSkinManager.isRandomSkin(name)) {
+                continue;
+            }
+            if (is3dSkin(name)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** 当前是否处于「仅显示 3D 皮肤」模式。 */
+    public boolean isOnly3d() {
+        return only3d;
+    }
+
+    /**
+     * 卡片图标：帽子 / 饰品用各自模组注册的物品，
+     * 音乐盒没有对应物品，统一用唱片机图标。
+     */
+    private Item iconFor(String skinName) {
+        if (ItemSkinManager.SkinTypes.MUSIC_BOX.equals(skinType)) {
+            return Items.JUKEBOX;
+        }
+        // 随从：用其载体物品（GeckoLib GeoItem，itemskins:pet_<id>）渲染本体模型，
+        // 效果与帽子 / 背饰一致；找不到对应载体物品时回退到「缰绳」图标。
+        if (ItemSkinManager.SkinTypes.PET.equals(skinType)) {
+            return BuiltInRegistries.ITEM
+                    .getOptional(ResourceLocation.fromNamespaceAndPath("itemskins", "pet_" + skinName))
+                    .orElse(Items.LEAD);
+        }
+        if (ItemSkinManager.SkinTypes.MVP_ANIMATION.equals(skinType)) return Items.DRAGON_HEAD;
+        String namespace = "hat".equals(skinType) ? HAT_ITEM_NAMESPACE : "sre_cosmetics";
+        Item fallback = "hat".equals(skinType) ? Items.LEATHER_HELMET : Items.LEATHER;
+        return BuiltInRegistries.ITEM
+                .getOptional(ResourceLocation.fromNamespaceAndPath(namespace, skinName))
+                .orElse(fallback);
     }
 
     private int columns() {
@@ -243,8 +405,16 @@ public class HatSkinGridPanel extends AbstractWidget {
         graphics.fill(getX(), getY(), getX() + width, getY() + 1, PANEL_BORDER);
         graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, PANEL_BORDER);
 
-        if (cards.size() <= 1) {
-            Component hint = Component.translatable("screen.sre.skins.hat_empty");
+        // 只有「未装备」一张卡时说明该类型没有任何皮肤，显示空提示。
+        // 「随机」卡也常驻，所以要按「有没有真实皮肤」判断，不能只看 cards.size()。
+        boolean hasRealSkin = cards.stream().anyMatch(c -> !"default".equals(c.skinName)
+                && !ItemSkinManager.isRandomSkin(c.skinName));
+        if (!hasRealSkin) {
+            String emptyKey = ItemSkinManager.SkinTypes.MUSIC_BOX.equals(skinType)
+                    ? "screen.sre.skins.music_box_empty"
+                    : ItemSkinManager.SkinTypes.MVP_ANIMATION.equals(skinType)
+                    ? "screen.sre.skins.mvp_animation_empty" : "screen.sre.skins.hat_empty";
+            Component hint = Component.translatable(emptyKey);
             graphics.drawCenteredString(Minecraft.getInstance().font, hint,
                     getX() + width / 2, getY() + height / 2 - 4, TEXT_EMPTY);
         }
@@ -373,23 +543,23 @@ public class HatSkinGridPanel extends AbstractWidget {
         }
 
         Component displayName() {
+            // 「随机」：显示图标位留空（画骰子符号），名称走通用翻译键。
+            if (ItemSkinManager.isRandomSkin(skinName)) {
+                return Component.translatableWithFallback("screen.sre.skins.random", "Random");
+            }
             if ("default".equals(skinName)) {
-                return Component.translatable("screen.sre.skins.no_hat");
+                String noneKey = switch (skinType) {
+                    case "backpack" -> "screen.sre.skins.no_backpack";
+                    case "hand_accessory" -> "screen.sre.skins.no_hand";
+                    case "music_box" -> "screen.sre.skins.no_music_box";
+                    case "pet" -> "screen.sre.skins.no_pet";
+                    case "mvp_animation" -> "screen.sre.skins.no_mvp_animation";
+                    default -> "screen.sre.skins.no_hat";
+                };
+                return Component.translatable(noneKey);
             }
-            return Component.translatableWithFallback(
-                    "screen.sre.skins.hat." + skinName.toLowerCase(java.util.Locale.ROOT) + ".name",
-                    formatName(skinName));
-        }
-
-        private String formatName(String raw) {
-            StringBuilder result = new StringBuilder();
-            for (String part : raw.split("[_\\-]")) {
-                if (!part.isEmpty()) {
-                    result.append(Character.toUpperCase(part.charAt(0)))
-                            .append(part.substring(1).toLowerCase()).append(' ');
-                }
-            }
-            return result.toString().trim();
+            // 与搜索用的显示名共用同一实现，保证「看到的名字」和「搜得到」一致
+            return HatSkinGridPanel.this.displayNameOf(skinName);
         }
     }
 }

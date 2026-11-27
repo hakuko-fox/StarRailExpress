@@ -26,7 +26,6 @@ import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent.GameStatus;
 import io.wifi.starrailexpress.game.GameUtils;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.component.ModComponents;
@@ -167,6 +166,27 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
     }
   }
 
+  private void forwardLoudVoice(VoicechatServerApi api, MicrophonePacketEvent event, ServerPlayer player) {
+    event.cancel();
+    var players = player.level().players();
+    if (players == null) {
+      return;
+    }
+    double maxDistance = api.getVoiceChatDistance() * 8.0;
+    players.forEach((p) -> {
+      if (p.getUUID() != player.getUUID() && player.distanceTo(p) <= maxDistance) {
+        VoicechatConnection con = api.getConnectionOf(p.getUUID());
+        if (con != null && con.isInstalled() && con.isConnected()) {
+          api.sendLocationalSoundPacketTo(con, event.getPacket()
+              .locationalSoundPacketBuilder()
+              .position(api.createPosition(p.getX(), p.getY(), p.getZ()))
+              .distance((float) api.getVoiceChatDistance())
+              .build());
+        }
+      }
+    });
+  }
+
   public void paranoidEvent(MicrophonePacketEvent event) {
     VoicechatServerApi api = event.getVoicechat();
     var connection = event.getSenderConnection();
@@ -176,14 +196,23 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
         var vctplayer = vcplayer.getPlayer();
         if (vctplayer != null) {
           var player = (ServerPlayer) vctplayer;
+          // 沉默语音只依赖玩家本身，必须排在一切转发之前，否则会出现"先转发再静音"的绕过。
+          if (player.hasEffect(ModEffects.VOICE_SILENCE)) {
+            event.cancel();
+            return;
+          }
+          // 嬉命人·语音互换：把声源换成交换对象（被接管时直接 return）。
+          //
+          // 刻意排在 CCA 判空之前：本回调跑在 SVC 语音线程，若这里取不到
+          // SREGameWorldComponent，旧写法会让整段逻辑被静默跳过 —— 技能提示成功、
+          // 冷却开始走，但语音完全没变化，日志里也不会留下任何错误。
+          // 语音互换只依赖主线程发布的不可变路由快照，不需要游戏状态就能工作。
+          if (EmbalmerVoiceSwapHook.handle(event, api, player)) {
+            return;
+          }
           FakeSteveVoiceDetector.onMicrophone(event, player);
           SREGameWorldComponent gameWorldComponent = SREGameWorldComponent.KEY.get(player.level());
           if (gameWorldComponent != null) {
-            // 检查沉默语音效果
-            if (player != null && player.hasEffect(ModEffects.VOICE_SILENCE)) {
-              event.cancel();
-              return;
-            }
             if (shouldMutePhantomSpirit(player, gameWorldComponent)) {
               event.cancel();
               return;
@@ -193,10 +222,8 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
               event.cancel();
               return;
             }
-            // 嬉命人·语音互换：把声源换成交换对象（被接管时直接 return）
-            if (EmbalmerVoiceSwapHook.handle(event, api, player)) {
-              return;
-            }
+            // 亡魂夜额外转发真实旁观者语音；只读主线程发布的活动路由，不改变原组频道。
+            org.agmas.noellesroles.game.halloween.village.VillageGhostVoice.forward(event, player.getUUID());
             // 如果发送者被鹈鹕吞噬，单独处理路由：只转发给鹈鹕和肚内玩家，避免默认逻辑忽略旁观者
             if (PelicanManager.isStashed(player)) {
               var bellyReceivers = PelicanManager.getBellyReceivers(player.getUUID());
@@ -242,6 +269,10 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
                 });
                 return;
               }
+              if (player.hasEffect(ModEffects.LOUD_VOICE)) {
+                forwardLoudVoice(api, event, player);
+                return;
+              }
               if (gameWorldComponent.isRole(player, ModRoles.NOISEMAKER)) {
                 event.cancel();
                 var players = player.level().players();
@@ -251,9 +282,6 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
                 players.forEach((p) -> {
                   if (p.getUUID() != player.getUUID()) {
                     double rangeMultiplier = 2;
-                    if (player.hasEffect(MobEffects.LUCK)) {
-                      rangeMultiplier = 8;
-                    }
                     if (player.distanceTo(p) <= api.getVoiceChatDistance() * rangeMultiplier) {
                       VoicechatConnection con = api.getConnectionOf(p.getUUID());
                       if (con != null && con.isInstalled() && con.isConnected()) {

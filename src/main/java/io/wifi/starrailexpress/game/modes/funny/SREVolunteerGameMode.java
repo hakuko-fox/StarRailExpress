@@ -271,8 +271,6 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
         List<ServerPlayer> alive = world.getPlayers(GameUtils::isPlayerAliveAndSurvivalIgnoreShitSplit);
         for (ServerPlayer p : alive) {
             SRERole role = roleComp.getRole(p);
-            var roleType = PlayerRoleWeightManager.getRoleType(role);
-            PlayerRoleWeightManager.addWeight(p, roleType, 1);
             p.removeEffect(ModEffects.SKILL_BANED);
             p.removeEffect(ModEffects.SAFE_TIME);
             p.removeEffect(ModEffects.MOVE_BANED);
@@ -304,6 +302,7 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
             mood.sync();
         });
         SREGameTimeComponent.KEY.get(world).setTimeFrozen(false);
+        io.wifi.starrailexpress.backpack.FactionCardForcing.settleRound(world);
         OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(world);
     }
 

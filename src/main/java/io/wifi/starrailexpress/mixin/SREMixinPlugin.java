@@ -36,6 +36,10 @@ public class SREMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (!FabricLoader.getInstance().isModLoaded("modernui")
+                && mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.modernui.")) {
+            return false;
+        }
         if (!FabricLoader.getInstance().isModLoaded("sodium-extra")) {
             if (mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.sodium_extra"))
                 return false;
@@ -45,13 +49,22 @@ public class SREMixinPlugin implements IMixinConfigPlugin {
                         || mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.sodium."))) {
             return false;
         }
+        if (!FabricLoader.getInstance().isModLoaded("iris")
+                && mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.iris.")) {
+            return false;
+        }
         
         if (!FabricLoader.getInstance().isModLoaded("carpet")
                 && mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.carpet")) {
             return false;
         }
-        if (!FabricLoader.getInstance().isModLoaded("dashloader")
-                && mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.dashloader")) {
+        if (!FabricLoader.getInstance().isModLoaded("lightspeed")
+                && mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.lightspeed.")) {
+            return false;
+        }
+        if (mixinClassName.contains("io.wifi.starrailexpress.mixin.compat.supplementaries.CarpetPistonPlaceholderMixin")
+                && (!FabricLoader.getInstance().isModLoaded("carpet")
+                    || !FabricLoader.getInstance().isModLoaded("supplementaries"))) {
             return false;
         }
         return true;

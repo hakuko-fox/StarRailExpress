@@ -141,8 +141,7 @@ public final class HatEquipmentApi {
         // 亡命徒 / 超级亡命徒（统一皮肤）
         if (org.agmas.noellesroles.utils.RoleUtils.isPlayerTheJob(player,
                 io.wifi.starrailexpress.api.TMMRoles.LOOSE_END)
-                || org.agmas.noellesroles.utils.RoleUtils.isPlayerTheJob(player,
-                        io.wifi.starrailexpress.game.roles.SpecialGameModeRoles.SUPER_LOOSE_END)) {
+                || org.agmas.noellesroles.game.roles.special.variant_loose_end.VariantLooseEndRole.isVariant(player)) {
             return true;
         }
         // 角色固定皮肤（与 PlayerEntityRendererMixin 的皮肤判定一致）
@@ -218,6 +217,11 @@ public final class HatEquipmentApi {
         }
         // 客户端配置：只显示自己的帽子
         if (config.showOwnHatOnly && !player.getUUID().equals(Minecraft.getInstance().player.getUUID())) {
+            return "default";
+        }
+        // 客户端配置：隐藏指定皮肤 —— 勾了 hat 类别后他人的帽子一律回退默认
+        if (!io.wifi.starrailexpress.client.util.SkinVisibility.isVisible(player,
+                io.wifi.starrailexpress.util.ItemSkinManager.SkinTypes.HAT)) {
             return "default";
         }
         // DISGUISE 伪装效果（含渡鸦的伪装）下隐藏帽子

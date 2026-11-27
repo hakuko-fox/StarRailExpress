@@ -38,6 +38,7 @@ import net.minecraft.world.item.component.ItemLore;
 import org.agmas.noellesroles.Noellesroles;
 import org.agmas.noellesroles.content.item.*;
 import org.agmas.noellesroles.role.ModRoles;
+import org.agmas.noellesroles.game.roles.killer.ma_chen_xu.GhostArt;
 import org.agmas.noellesroles.role.touhou.roles.THKonpakuYoumuRole;
 import org.agmas.noellesroles.content.item.charge_item.*;
 
@@ -52,6 +53,16 @@ import static io.wifi.starrailexpress.index.TMMItems.*;
 
 public class ModItems {
     public static final ItemRegistrar registrar = new ItemRegistrar(Noellesroles.MOD_ID);
+
+    public static final Item GHOST_ART_VEIL = register(new GhostArtItem(GhostArt.VEIL), "ghost_art_veil", TOOLS_GROUP);
+    public static final Item GHOST_ART_PUSH = register(new GhostArtItem(GhostArt.PUSH), "ghost_art_push", TOOLS_GROUP);
+    public static final Item GHOST_ART_SHROUD = register(new GhostArtItem(GhostArt.SHROUD), "ghost_art_shroud", TOOLS_GROUP);
+    public static final Item GHOST_ART_EFFIGY = register(new GhostArtItem(GhostArt.EFFIGY), "ghost_art_effigy", TOOLS_GROUP);
+    public static final Item GHOST_ART_ECHO = register(new GhostArtItem(GhostArt.ECHO), "ghost_art_echo", TOOLS_GROUP);
+    public static final Item GHOST_ART_WAIL = register(new GhostArtItem(GhostArt.WAIL), "ghost_art_wail", TOOLS_GROUP);
+    public static final Item GHOST_ART_PARASITE = register(new GhostArtItem(GhostArt.PARASITE), "ghost_art_parasite", TOOLS_GROUP);
+    public static final Item GHOST_ART_SEIZE = register(new GhostArtItem(GhostArt.SEIZE), "ghost_art_seize", TOOLS_GROUP);
+    public static final Item GHOST_WARD_RELIC = register(new GhostWardRelicItem(), "ghost_ward_relic", TOOLS_GROUP);
 
     public static final Item ANTIDOTE = register(new AntidoteItem((new Item.Properties()).stacksTo(1)), "antidote",
             CONSUMABLES_GROUP);
@@ -73,6 +84,9 @@ public class ModItems {
     public static final Item FLASHLIGHT = register(
             new FlashlightItem(new Item.Properties().stacksTo(1)),
             "flashlight", TOOLS_GROUP);
+    public static final Item PORTABLE_IDENTITY_SCANNER = register(
+            new PortableIdentityScannerItem(new Item.Properties().stacksTo(1)),
+            "portable_identity_scanner", TOOLS_GROUP);
     public static final Item COOKED_FOOD = register(
             new ChefFoodItem(new Item.Properties().stacksTo(1)), "cooked_food",
             CONSUMABLES_GROUP);
@@ -139,6 +153,18 @@ public class ModItems {
             new DivingHelmetItem(ArmorMaterials.DIAMOND, net.minecraft.world.item.ArmorItem.Type.HELMET,
                     (new Item.Properties()).stacksTo(1)),
             "diving_helmet", EQUIPMENT_GROUP);
+
+    /**
+     * 摄像头盔
+     * - 防护/外观沿用原版下界合金头盔
+     * - 戴在头上后可被「记者终端」观察
+     * - 按 Q 可以丢出
+     */
+    public static final Item CAMERA_HELMET = register(
+            new org.agmas.noellesroles.content.item.CameraHelmetItem(ArmorMaterials.NETHERITE,
+                    net.minecraft.world.item.ArmorItem.Type.HELMET,
+                    (new Item.Properties()).stacksTo(1)),
+            "camera_helmet", EQUIPMENT_GROUP);
 
     public static final Item DIVING_BOOTS = register(
             new DivingBootsItem(ArmorMaterials.GOLD, net.minecraft.world.item.ArmorItem.Type.BOOTS,
@@ -491,6 +517,22 @@ public class ModItems {
             "bang", ROLE_ITEMS_GROUP);
 
     /**
+     * 缝纫针（裁缝专属）
+     * - 长按右键一名玩家 5 秒，消耗一个毛线球为其编织一件「裁缝的衣服」
+     */
+    public static final Item SEWING_NEEDLE = register(
+            new SewingNeedleItem(new Item.Properties().stacksTo(1)),
+            "sewing_needle", ROLE_ITEMS_GROUP);
+
+    /**
+     * 毛线球（裁缝专属消耗品）
+     * - 右键投掷，命中玩家使其获得 8 秒「腿瘸」
+     */
+    public static final Item YARN_BALL = register(
+            new YarnBallItem(new Item.Properties().stacksTo(16)),
+            "yarn_ball", ROLE_ITEMS_GROUP);
+
+    /**
      * 波纹之力（承太郎商店，50 金币）
      * - 背包已有时不可再买，购买冷却 90 秒
      * - 右键：半径 5 格拉向自己，缓慢 I 5 秒，周围玩家理智 +30%，使用冷却 60 秒
@@ -735,6 +777,15 @@ public class ModItems {
             new org.agmas.noellesroles.content.item.MonitoringTerminalItem(
                     new Item.Properties().stacksTo(1)),
             "monitoring_terminal", TOOLS_GROUP);
+    /**
+     * 记者终端
+     * - 图标沿用远程监控终端的材质，手持时不渲染模型（INVISIBLE_ITEMS）
+     * - 右键查看戴摄像头盔玩家的视角
+     */
+    public static final Item REPORTER_TERMINAL = register(
+            new org.agmas.noellesroles.content.item.ReporterTerminalItem(
+                    new Item.Properties().stacksTo(1)),
+            "reporter_terminal", TOOLS_GROUP);
     public static final Item DEALER_PACKAGE = register(
             new DealerPackageItem(new Item.Properties().stacksTo(1)),
             "dealer_package", ROLE_ITEMS_GROUP);
@@ -812,13 +863,13 @@ public class ModItems {
 
     /**
      * 消防斧
-     * - 3点耐久
+     * - 5点耐久
      * - Shift+右键：直接撬开门，消耗1点耐久，30秒冷却
-     * - 直接右键：像刀一样举起，蓄力2秒，可击杀一名玩家，消耗3点耐久（需满耐久）
+     * - 直接右键：像刀一样举起，蓄力2秒，可击杀一名玩家，消耗3点耐久（需剩余耐久>=3）
      * - 击杀玩家会触发误杀惩罚
      */
     public static final Item FIRE_AXE = register(
-            new FireAxeItem(new Item.Properties().stacksTo(1).durability(3)),
+            new FireAxeItem(new Item.Properties().stacksTo(1).durability(FireAxeItem.MAX_DURABILITY)),
             "fire_axe", WEAPONS_GROUP);
     public static final Item THROWING_KNIFE = register(
             new ThrowingKnife((new Item.Properties()).stacksTo(1)), "throwing_knife",
@@ -963,7 +1014,7 @@ public class ModItems {
      * - 如果被喷射的人被纵火犯浇湿，则清除浇湿状态
      */
     public static final Item EXTINGUISHER = register(
-            new ExtinguisherItem(new Item.Properties().stacksTo(1).durability(5)),
+            new ExtinguisherItem(new Item.Properties().stacksTo(1).durability(60)),
             "extinguisher");
 
     /**
@@ -1167,7 +1218,20 @@ public class ModItems {
     public static final Item ZHANWEIFU2 = registrar.create("zhanweifu2",
             new Item(new Item.Properties().stacksTo(64)));
 
-    // 轮盘赌物品
+    // 轮盘赌专用道具；普通手铐和药剂不复用桌内行为。
+    public static final Map<org.agmas.noellesroles.game.minigame.roulette.RouletteItem, Item> ROULETTE_TOOLS = createRouletteTools();
+
+    private static Map<org.agmas.noellesroles.game.minigame.roulette.RouletteItem, Item> createRouletteTools() {
+        var result = new java.util.EnumMap<org.agmas.noellesroles.game.minigame.roulette.RouletteItem, Item>(
+                org.agmas.noellesroles.game.minigame.roulette.RouletteItem.class);
+        for (var kind : org.agmas.noellesroles.game.minigame.roulette.RouletteItem.values()) {
+            result.put(kind, register(new org.agmas.noellesroles.game.minigame.roulette.RouletteToolItem(kind),
+                    kind.itemId(), MISC_ITEMS_GROUP));
+        }
+        return java.util.Collections.unmodifiableMap(result);
+    }
+
+    // 旧六道具保留 ID，赌桌内映射为对应的新规则，不再随机发放。
     public static final Item MAGNIFYING_GLASS = register(new Item(new Item.Properties().stacksTo(64)) {
         @Override
         public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip,
@@ -1517,12 +1581,21 @@ public class ModItems {
     public static final Item VOID_STEP = register(
             new org.agmas.noellesroles.game.command_block.item.VoidStepItem(new Item.Properties().stacksTo(1)),
             "void_step", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item NULL_ITEM_ERASER = register(
+            new org.agmas.noellesroles.game.command_block.item.NullItemEraserItem(new Item.Properties().stacksTo(16)),
+            "null_item_eraser", ROLE_ITEMS_GROUP);
     public static final Item FARLANDS_RIFT = register(
             new org.agmas.noellesroles.game.command_block.item.FarlandsRiftItem(new Item.Properties().stacksTo(1)),
             "farlands_rift", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
     public static final Item EYE_NEEDLE = register(
             new org.agmas.noellesroles.game.command_block.item.EyeNeedleItem(new Item.Properties().stacksTo(1)),
             "eye_needle", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item THREAD_BALL = register(
+            new org.agmas.noellesroles.game.command_block.item.ThreadBallItem(new Item.Properties().stacksTo(16)),
+            "thread_ball", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item MINUTE_NEEDLE = register(
+            new org.agmas.noellesroles.game.command_block.item.MinuteNeedleItem(new Item.Properties().stacksTo(16)),
+            "minute_needle", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
     public static final Item THREAD_SPOOL = register(
             new org.agmas.noellesroles.game.command_block.item.ThreadSpoolItem(new Item.Properties().stacksTo(1)),
             "thread_spool", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
@@ -1538,6 +1611,10 @@ public class ModItems {
     public static final Item FOG_BLADE = register(
             new org.agmas.noellesroles.game.command_block.item.FogBladeItem(new Item.Properties().stacksTo(1)),
             "fog_blade", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
+    public static final Item PUPPET_CORE = register(new Item(new Item.Properties()),
+            "puppet_core", ROLE_ITEMS_GROUP);
+    public static final Item PUPPET_HAND = register(new Item(new Item.Properties().stacksTo(1)),
+            "puppet_hand", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
     public static final Item CLOCK_HAMMER = register(
             new org.agmas.noellesroles.game.command_block.item.ClockHammerItem(new Item.Properties().stacksTo(1)),
             "clock_hammer", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
@@ -1557,9 +1634,6 @@ public class ModItems {
             new org.agmas.noellesroles.game.command_block.item.StevePickaxeItem(
                     new Item.Properties().stacksTo(1).durability(org.agmas.noellesroles.game.command_block.SteveMiner.USES)),
             "steve_pickaxe", ROLE_ITEMS_GROUP, TOOLS_GROUP);
-    public static final Item STEVE_LEVER = register(
-            new org.agmas.noellesroles.game.command_block.item.SteveLeverItem(new Item.Properties().stacksTo(16)),
-            "steve_lever", ROLE_ITEMS_GROUP);
     public static final Item STEVE_DIAMOND_PICKAXE = register(
             new org.agmas.noellesroles.game.command_block.item.StevePickaxeItem(
                     new Item.Properties().durability(org.agmas.noellesroles.game.command_block.SteveMiner.DIAMOND_USES), 10),
@@ -1577,6 +1651,20 @@ public class ModItems {
     public static final Item STEVE_PISTON = register(
             new org.agmas.noellesroles.game.command_block.item.StevePistonItem(new Item.Properties().stacksTo(16)),
             "steve_piston", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+
+    /**
+     * 月之祝福 —— 祈月者（pooler）开局自带：海豚的恩惠 + 速度 II + 无碰撞 15 秒，冷却 40 秒。
+     */
+    public static final Item MOON_BLESSING = register(
+            new MoonBlessingItem(new Item.Properties().stacksTo(1)),
+            "moon_blessing", ROLE_ITEMS_GROUP, TOOLS_GROUP);
+
+    /**
+     * 星之权杖 —— 摘星者（star_gatherer）开局自带：锁定 35 格内目标，2 秒后星星砸下（死因「星星」）。
+     */
+    public static final Item STAR_SCEPTER = register(
+            new StarScepterItem(new Item.Properties().stacksTo(1)),
+            "star_scepter", ROLE_ITEMS_GROUP, WEAPONS_GROUP);
 
     public static Item register(Item item, String id, ResourceKey<CreativeModeTab>... extraGroups) {
         ResourceKey<CreativeModeTab>[] allGroups = java.util.Arrays.copyOf(extraGroups, extraGroups.length + 1);
@@ -1617,6 +1705,8 @@ public class ModItems {
         TMMItems.INVISIBLE_ITEMS.add(ModItems.DEALER_PACKAGE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.HONORED_NOTE);
         TMMItems.INVISIBLE_ITEMS.add(ModItems.SPIRIT_CLOAK);
+        // 记者终端：手持时不渲染模型，只在物品栏里显示图标
+        TMMItems.INVISIBLE_ITEMS.add(ModItems.REPORTER_TERMINAL);
         // TMMItems.INVISIBLE_ITEMS.add(TMMItems.KNIFE);
 
         // 为潜水靴添加深海探索者3附魔

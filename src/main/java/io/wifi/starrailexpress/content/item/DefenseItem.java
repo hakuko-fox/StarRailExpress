@@ -26,6 +26,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import org.agmas.noellesroles.game.roles.special.variant_loose_end.VariantLooseEndRole;
 
 import java.util.ArrayList;
 
@@ -56,7 +57,7 @@ public class DefenseItem extends Item {
         if (gameWorldComponent != null) {
             var role = gameWorldComponent.getRole(player);
             if (role != null) {
-                if (canUseByRightClickRolePaths.contains(role.identifier().getPath())) {
+                if (canUseByRightClickRolePaths.contains(role.identifier().getPath()) || VariantLooseEndRole.isVariant(role)) {
                     player.startUsingItem(interactionHand);
                     return InteractionResultHolder.consume(itemStack);
                 }
@@ -73,17 +74,19 @@ public class DefenseItem extends Item {
         if (gameWorldComponent != null) {
             var role = gameWorldComponent.getRole(livingEntity.getUUID());
             if (role != null) {
-                if (canUseByRightClickRolePaths.contains(role.identifier().getPath())) {
+                if (canUseByRightClickRolePaths.contains(role.identifier().getPath()) || VariantLooseEndRole.isVariant(role)) {
                     if (livingEntity instanceof Player player) {
                         var bartenderComponent = SREArmorPlayerComponent.KEY.get(player);
-                        // 超级亡命徒可以无限饮用药剂叠盾
-                        if (role == SpecialGameModeRoles.SUPER_LOOSE_END || role == SpecialGameModeRoles.DIRT) {
-                            bartenderComponent.addArmor();
+                        // 护盾试剂给予的护盾可被酒保透视（不区分阵营）
+                        // 超级亡命徒 幽灵亡命徒 可以无限饮用药剂叠盾
+                        if (VariantLooseEndRole.isVariant(role)
+                                || role == SpecialGameModeRoles.DIRT) {
+                            bartenderComponent.addBartenderVisibleArmor();
                             itemStack.consume(1, livingEntity);
                             return itemStack;
                         }
                         else if (bartenderComponent != null) {
-                            bartenderComponent.giveArmor();
+                            bartenderComponent.giveArmor(true);
                             itemStack.consume(1, livingEntity);
                             return itemStack;
                         }

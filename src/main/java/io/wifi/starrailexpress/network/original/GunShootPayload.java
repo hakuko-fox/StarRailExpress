@@ -67,7 +67,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
     public static class Receiver implements ServerPlayNetworking.PlayPayloadHandler<GunShootPayload> {
         @Override
         public void receive(@NotNull GunShootPayload payload, ServerPlayNetworking.@NotNull Context context) {
-            ServerPlayer player = context.player();
+            shoot(context.player(), payload.target());
+        }
+
+        /** 网络玩家与训练假人共享的服务端枪击入口。 */
+        public static void shoot(ServerPlayer player, int targetId) {
+            if (!io.wifi.starrailexpress.event.ItemGameplayEvents.ALLOW_GUN_FIRE.invoker().allow(player, targetId)) return;
             if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
                 return;
             }
@@ -110,7 +115,8 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 }
             }
             SREGameWorldComponent game = SREGameWorldComponent.KEY.get(player.level());
-            Entity hitEntity = player.serverLevel().getEntity(payload.target());
+            Entity hitEntity = player.serverLevel().getEntity(targetId);
+            if (hitEntity != null && !io.wifi.starrailexpress.training.TrainingRules.canInteract(player, hitEntity)) return;
             if (mainHandStack.is(TMMItemTags.GUNS)
                     && hitEntity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
                     && dummy.canReceiveHits()
@@ -150,8 +156,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 } else if (dropresult.equals(TrueFalseResult.TRUE)) {
                     shouldDropRevolver = true;
                 }
-                boolean shouldDropBrokenKillerGun = !dropresult.equals(TrueFalseResult.FALSE)
+                boolean shouldDropBrokenKillerGun = !io.wifi.starrailexpress.training.TrainingRules.suppressFriendlyPenalty(player)
+                        && !dropresult.equals(TrueFalseResult.FALSE)
                         && BrokenGunDropUtils.shouldBreakKillerGunOnGunKill(game, player, target, mainHandStack);
+                if (io.wifi.starrailexpress.training.TrainingRules.suppressFriendlyPenalty(player)) {
+                    shouldDropRevolver = false;
+                }
                 if (backfire) {
                     GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.BACKFIRE);
                 } else if (shouldDropRevolver || shouldDropBrokenKillerGun) {
@@ -224,8 +234,12 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 } else if (dropresult.equals(TrueFalseResult.TRUE)) {
                     shouldDropRevolver = true;
                 }
-                boolean shouldDropBrokenKillerGun = !dropresult.equals(TrueFalseResult.FALSE)
+                boolean shouldDropBrokenKillerGun = !io.wifi.starrailexpress.training.TrainingRules.suppressFriendlyPenalty(player)
+                        && !dropresult.equals(TrueFalseResult.FALSE)
                         && BrokenGunDropUtils.shouldBreakKillerGunOnGunKill(game, player, target, mainHandStack);
+                if (io.wifi.starrailexpress.training.TrainingRules.suppressFriendlyPenalty(player)) {
+                    shouldDropRevolver = false;
+                }
                 if (backfire) {
                     GameUtils.killPlayer(player, true, null, GameConstants.DeathReasons.BACKFIRE);
                 } else if (shouldDropRevolver || shouldDropBrokenKillerGun) {
@@ -267,7 +281,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                     // 德林加不在这里补充
 
                     // 对傀儡本体造成致命伤害
-                    bodyEntity.playerHurt(player, GameConstants.DeathReasons.PUPPETEER_GUN);
+                bodyEntity.playerHurt(player);
                 }
                 OnRevolverUsed.EVENT.invoker().onPlayerShoot(player, target);
             } else {

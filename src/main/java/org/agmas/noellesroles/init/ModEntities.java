@@ -31,6 +31,12 @@ import org.agmas.noellesroles.game.command_block.CommandBlockThrownEntity;
 import org.agmas.noellesroles.content.entity.*;
 
 public class ModEntities {
+    public static final EntityType<Error404PuppetEntity> ERROR404_PUPPET = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE, Noellesroles.id("error404_puppet"),
+            EntityType.Builder.of(Error404PuppetEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F).clientTrackingRange(16).updateInterval(1)
+                    .noSave().build("error404_puppet"));
+
     public static final EntityType<RoleMineEntity> ROLE_MINE_ENTITY_ENTITY_TYPE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(Noellesroles.MOD_ID, "cube"),
@@ -320,6 +326,13 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
+    /** 布袋鬼活化草人，使用独立地面寻路实体与本人皮肤渲染。 */
+    public static final EntityType<SackGhostEffigyEntity> SACK_GHOST_EFFIGY = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE, Noellesroles.id("sack_ghost_effigy"),
+            EntityType.Builder.of(SackGhostEffigyEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 1.8F).clientTrackingRange(16).updateInterval(1)
+                    .noSave().build("sack_ghost_effigy"));
+
     /**
      * 咸鱼假尸体实体 - 咸鱼晒咸鱼技能时生成的假尸体
      */
@@ -471,6 +484,17 @@ public class ModEntities {
                     .trackedUpdateRate(10)
                     .build());
 
+    /** 毛线球抛射物（裁缝的毛线球，命中玩家给予 8 秒腿瘸）。 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<YarnBallEntity> YARN_BALL = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("yarn_ball"),
+            FabricEntityTypeBuilder.<YarnBallEntity>create(MobCategory.MISC, YarnBallEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(8)
+                    .trackedUpdateRate(10)
+                    .build());
+
     @SuppressWarnings("deprecation")
     public static final EntityType<EmpBombEntity> EMP_BOMB = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
@@ -486,6 +510,17 @@ public class ModEntities {
             BuiltInRegistries.ENTITY_TYPE,
             Noellesroles.id("mechanical_bird"),
             FabricEntityTypeBuilder.<MechanicalBirdEntity>create(MobCategory.MISC, MechanicalBirdEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.45F, 0.45F))
+                    .trackRangeBlocks(128)
+                    .trackedUpdateRate(1)
+                    .build());
+
+    @SuppressWarnings("deprecation")
+    public static final EntityType<pro.fazeclan.river.stupid_express.role.arsonist.LargeOilCanEntity> LARGE_OIL_CAN = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            pro.fazeclan.river.stupid_express.StupidExpress.id("large_oil_can"),
+            FabricEntityTypeBuilder.<pro.fazeclan.river.stupid_express.role.arsonist.LargeOilCanEntity>create(MobCategory.MISC,
+                    pro.fazeclan.river.stupid_express.role.arsonist.LargeOilCanEntity::new)
                     .dimensions(EntityDimensions.fixed(0.45F, 0.45F))
                     .trackRangeBlocks(128)
                     .trackedUpdateRate(1)
@@ -633,6 +668,67 @@ public class ModEntities {
                     .trackedUpdateRate(2)
                     .build());
 
+    /**
+     * 钢卷实体 - 金属怪一技能的伪装形态，尺寸固定 2×2×2 格。
+     * 仅作为 EntityDisguise 的渲染载体，玩家本体碰撞箱不变，因此能过一格宽道路。
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<SteelCoilEntity> STEEL_COIL = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("steel_coil"),
+            FabricEntityTypeBuilder.<SteelCoilEntity>create(MobCategory.MISC, SteelCoilEntity::new)
+                    .dimensions(EntityDimensions.fixed(SteelCoilEntity.SIZE, SteelCoilEntity.SIZE))
+                    .trackRangeBlocks(64)
+                    .trackedUpdateRate(1)
+                    .build());
+
+    /**
+     * 雪傀儡推出的大雪球。
+     *
+     * <p>
+     * 碰撞箱是「基础尺寸」的固定 1.0×1.0，实际大小由实体自己的 SynchedEntityData 同步并按尺寸缩放
+     * （{@link SnowballRollEntity#getDimensions}），这样尺寸变化不需要重注册 EntityType。
+     * 追踪距离取 48（比滚石的 128 小）：雪球大部分时间是被雪傀儡推着走的，
+     * 128 格会让附近所有玩家整局都在收它的位置/元数据包。48 格已覆盖正常交战视距，
+     * 覆盖面积只有 128 的约 1/7。
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<SnowballRollEntity> SNOWBALL_ROLL = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("snowball_roll"),
+            FabricEntityTypeBuilder.<SnowballRollEntity>create(MobCategory.MISC, SnowballRollEntity::new)
+                    .dimensions(EntityDimensions.fixed(1.0F, 1.0F))
+                    .trackRangeBlocks(48)
+                    .trackedUpdateRate(2)
+                    .build());
+
+    /** 丝线团投掷物，沿用手榴弹的碰撞引爆方式。 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.command_block.entity.ThreadBallEntity> THREAD_BALL = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE, Noellesroles.id("thread_ball"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.command_block.entity.ThreadBallEntity>create(
+                    MobCategory.MISC, org.agmas.noellesroles.game.command_block.entity.ThreadBallEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(64).trackedUpdateRate(1).build());
+
+    /** 钟摆蓄力投出的分针。 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.command_block.MinuteNeedleEntity> MINUTE_NEEDLE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE, Noellesroles.id("minute_needle"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.command_block.MinuteNeedleEntity>create(
+                    MobCategory.MISC, org.agmas.noellesroles.game.command_block.MinuteNeedleEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
+                    .trackRangeBlocks(64).trackedUpdateRate(1).build());
+
+    /** 雾客的圆柱形雾区，尺寸覆盖完整作用范围。 */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<org.agmas.noellesroles.game.command_block.FogGuestZoneEntity> FOG_GUEST_ZONE = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE, Noellesroles.id("fog_guest_zone"),
+            FabricEntityTypeBuilder.<org.agmas.noellesroles.game.command_block.FogGuestZoneEntity>create(
+                    MobCategory.MISC, org.agmas.noellesroles.game.command_block.FogGuestZoneEntity::new)
+                    .dimensions(EntityDimensions.fixed(30.0F, 5.0F))
+                    .trackRangeBlocks(96).trackedUpdateRate(20).build());
+
     /** 命令方块投掷物：石头、火球和石枪都沿抛物线飞。石枪命中后飞回手里。 */
     @SuppressWarnings("deprecation")
     public static final EntityType<CommandBlockThrownEntity> COMMAND_BLOCK_THROWN = Registry.register(
@@ -721,6 +817,19 @@ public class ModEntities {
                     .build("command_block_marker"));
 
     /**
+     * 摘星者的星星实体 - 追踪目标并俯冲砸死（死因 {@code noellesroles:star}）。
+     * 只有召唤者本人在客户端能看到模型，其余人只看到粒子。
+     */
+    @SuppressWarnings("deprecation")
+    public static final EntityType<StarProjectileEntity> STAR = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            Noellesroles.id("star"),
+            FabricEntityTypeBuilder.<StarProjectileEntity>create(MobCategory.MISC, StarProjectileEntity::new)
+                    .dimensions(EntityDimensions.fixed(0.6F, 0.6F))
+                    .trackRangeBlocks(96)
+                    .trackedUpdateRate(1)
+                    .build());
+    /**
      * 初始化实体
      * 注册实体属性（LivingEntity 需要）
      */
@@ -729,6 +838,7 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(WHEELCHAIR, WheelchairEntity.createAttributes());
         // 注册傀儡本体实体属性（LivingEntity 必须注册属性才能生成）
         FabricDefaultAttributeRegistry.register(PUPPETEER_BODY, LivingEntity.createLivingAttributes());
+        FabricDefaultAttributeRegistry.register(SACK_GHOST_EFFIGY, SackGhostEffigyEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(SALTED_FISH_BODY,
                 io.wifi.starrailexpress.content.entity.PlayerBodyEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(DOOMED_SINNER_BODY,
@@ -736,6 +846,7 @@ public class ModEntities {
         FabricDefaultAttributeRegistry.register(PIGEON, PigeonEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MECHANICAL_BIRD, MechanicalBirdEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(KUIXI_PUPPET, KuiXiPuppetEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ERROR404_PUPPET, Error404PuppetEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(MUMMY,
                 net.minecraft.world.entity.monster.Husk.createAttributes());
         FabricDefaultAttributeRegistry.register(UNDEAD, UndeadEntity.createAttributes());

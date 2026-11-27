@@ -72,7 +72,7 @@ import org.agmas.noellesroles.init.ModItems;
 import org.agmas.noellesroles.packet.ProblemScreenOpenC2SPacket;
 import org.agmas.noellesroles.packet.ScanAllTaskPointsPayload;
 import org.agmas.noellesroles.role.ModRoles;
-import org.agmas.noellesroles.scene.SceneTaskManager;
+import org.agmas.noellesroles.client.scene.SceneTaskManager;
 import org.agmas.noellesroles.utils.MapScannerManager;
 import org.agmas.noellesroles.utils.OpenScreenManager;
 import org.agmas.noellesroles.utils.RoleUtils;
@@ -565,7 +565,7 @@ public class GameUtilsCommand {
                       () -> Component.translatable("Scanned Task points! Total %s types!", map.size()), true);
 
                   for (var player : context.getSource().getLevel().players()) {
-                    ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(GameUtils.taskBlocks));
+                    ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(org.agmas.noellesroles.game.modes.echo.content.EchoMachineTasks.snapshot(player.serverLevel(),GameUtils.taskBlocks)));
                   }
                   return 1;
                 })
@@ -601,7 +601,7 @@ public class GameUtilsCommand {
                       () -> Component.translatable("Scanned Task points! Total %s types!", map.size()), true);
 
                   for (var player : context.getSource().getLevel().players()) {
-                    ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(GameUtils.taskBlocks));
+                    ServerPlayNetworking.send(player, new ScanAllTaskPointsPayload(org.agmas.noellesroles.game.modes.echo.content.EchoMachineTasks.snapshot(player.serverLevel(),GameUtils.taskBlocks)));
                   }
                   return 1;
                 })))

@@ -1,0 +1,375 @@
+package org.agmas.noellesroles.game.halloween;
+
+import java.util.*;
+import io.wifi.starrailexpress.cca.AreasWorldComponent;
+import io.wifi.starrailexpress.cca.SREGameWorldComponent;
+import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
+import io.wifi.starrailexpress.content.block.SmallDoorBlock;
+import io.wifi.starrailexpress.game.GameUtils;
+import io.wifi.starrailexpress.util.SRENetworkMessageUtils;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import org.agmas.noellesroles.game.halloween.village.*;
+import org.agmas.noellesroles.init.ModEffects;
+
+/** 万圣村服务端入口。仅由活动总运行器每世界 tick 一次，事件只注册一次。 */
+public final class HalloweenVillage {
+    public static final EntityType<VillageNpc> NPC = Registry.register(BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath("noellesroles", "halloween_village_npc"),
+            EntityType.Builder.of(VillageNpc::new, MobCategory.MISC).sized(.6F, 1.8F)
+                    .clientTrackingRange(8).updateInterval(2).noSave().build("halloween_village_npc"));
+    private static final Map<ServerLevel, State> STATES = new IdentityHashMap<>();
+    // 按服务器隔离、按玩家计时；换门、换维度或重连不能绕过个人冷却。
+    private static final Map<MinecraftServer, Map<UUID, Long>> NEXT_KNOCK = new WeakHashMap<>();
+    private static boolean registered;
+    private static int candyReward = 1;
+
+    private HalloweenVillage() {}
+
+    /** 可由总配置加载器设置；缺省每位糖果 NPC 一枚糖，领取后立即消失。 */
+    public static void configureCandyReward(int candy) { candyReward = Math.clamp(candy, 1, 64); }
+
+    public static void register() {
+        if (registered) return;
+        registered = true;
+        FabricDefaultAttributeRegistry.register(NPC, VillageNpc.attributes());
+        PayloadTypeRegistry.playS2C().register(VillagePackets.Open.ID, VillagePackets.Open.CODEC);
+        PayloadTypeRegistry.playS2C().register(VillagePackets.Night.ID, VillagePackets.Night.CODEC);
+        PayloadTypeRegistry.playC2S().register(VillagePackets.Buy.ID, VillagePackets.Buy.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(VillagePackets.Buy.ID,
+                (packet, context) -> context.server().execute(() -> buy(context.player(), packet)));
+        UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+            if (level instanceof ServerLevel world && player instanceof ServerPlayer serverPlayer
+                    && hand == InteractionHand.MAIN_HAND && player.isShiftKeyDown()
+                    && player.getMainHandItem().isEmpty() && player.getOffhandItem().isEmpty()) {
+                knock(world, serverPlayer, hit.getBlockPos());
+            }
+            // 奖励是附加行为，不拦截开门，也不让非活动地图改变原有行为。
+            return InteractionResult.PASS;
+        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            for (State state : STATES.values()) {
+                state.sessions.remove(handler.player.getUUID());
+                state.lastInteract.remove(handler.player.getUUID());
+            }
+            VillageGhostVoice.removePlayer(handler.player.getUUID());
+            ServerLevel level = handler.player.serverLevel();
+            if (level.players().size() <= 1) clear(level);
+        });
+        ServerWorldEvents.UNLOAD.register((server, level) -> clear(level));
+        io.wifi.starrailexpress.event.OnGameEnd.EVENT.register((level, game) -> clear(level));
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            for (ServerLevel level : List.copyOf(STATES.keySet())) clear(level);
+            NEXT_KNOCK.clear();
+            VillageGhostVoice.clearAll();
+        });
+    }
+
+    public static void tick(ServerLevel level) {
+        if (!HalloweenRuntime.isEnabled(level)) { clear(level); return; }
+        var areas = AreasWorldComponent.KEY.get(level);
+        AABB bounds = areas.getResetPasteArea();
+        State state = STATES.get(level);
+        if (state != null && (!Objects.equals(state.map, areas.mapName) || !state.bounds.equals(bounds))) {
+            clear(level); state = null;
+        }
+        if (state == null) {
+            state = new State(level, areas.mapName, bounds);
+            STATES.put(level, state);
+        }
+        long now = level.getGameTime();
+        if (state.lastTick == now) return;
+        state.lastTick = now;
+        HalloweenConfig config = HalloweenConfig.get();
+        syncReaper(level, state, areas);
+        state.candy.entrySet().removeIf(entry -> {
+            boolean expired = now >= entry.getValue() || entry.getKey().isRemoved();
+            if (expired) entry.getKey().discard();
+            return expired;
+        });
+        state.sessions.values().removeIf(session -> now > session.expires);
+        // 亡魂夜已移除：不再生成旁观者名单或发布向活人的语音转发路由。
+        VillageGhostVoice.clear(level);
+    }
+
+    /**
+     * 固定残月只按地图设置 {@code halloweenNpcSpawnPos} 生成一个，不再扫描地图里的南瓜灯。
+     *
+     * <p>
+     * 坐标留空（0,0,0）时不生成；坐标被改动时丢弃旧实例并在新坐标重建；
+     * 区块未加载时不主动加载区块，等玩家靠近后下一 tick 再生成。
+     */
+    private static void syncReaper(ServerLevel level, State state, AreasWorldComponent areas) {
+        var settings = areas.areasSettings;
+        BlockPos configured = settings == null || settings.halloweenNpcSpawnPos == null ? null
+                : settings.halloweenNpcSpawnPos.toBlockPos();
+        if (configured != null && !VillageRules.isSpawnConfigured(configured.getX(), configured.getY(), configured.getZ()))
+            configured = null;
+        if (!Objects.equals(configured, state.reaperKey)) {
+            state.reapers.values().forEach(VillageNpc::discard);
+            state.reapers.clear();
+            state.reaperKey = configured == null ? null : configured.immutable();
+        }
+        if (state.reaperKey == null) return;
+        VillageNpc npc = state.reapers.get(state.reaperKey);
+        if (npc != null && !npc.isRemoved()) return;
+        // 与旧版一致：不因 NPC 缺失而加载区块。
+        if (!level.hasChunkAt(state.reaperKey)) return;
+        VillageNpc created = createNpc(level, Vec3.atBottomCenterOf(state.reaperKey), false);
+        state.reapers.put(state.reaperKey, created);
+        if (!level.addFreshEntity(created)) {
+            state.reapers.remove(state.reaperKey, created);
+            created.discard();
+        }
+    }
+
+    public static void clear(ServerLevel level) {
+        State state = STATES.remove(level);
+        if (state == null) return;
+        state.reapers.values().forEach(VillageNpc::discard);
+        state.candy.keySet().forEach(VillageNpc::discard);
+        for (ServerPlayer player : level.players()) sendNight(player, new VillagePackets.Night(false, 0, 5, List.of()));
+        VillageGhostVoice.clear(level);
+        if (STATES.keySet().stream().noneMatch(world -> world.getServer() == level.getServer())) NEXT_KNOCK.remove(level.getServer());
+    }
+
+    public static boolean isNearReaper(ServerPlayer player) {
+        if (!HalloweenRuntime.isEnabled(player.level())) return false;
+        State state = STATES.get(player.serverLevel());
+        if (state == null) return false;
+        double radius = HalloweenConfig.get().npcKillRadius;
+        return state.reapers.values().stream().anyMatch(npc -> !npc.isRemoved()
+                && npc.distanceToSqr(player) <= radius * radius);
+    }
+
+    /** 亡魂夜事件已移除，保留查询签名供旧调用方兼容。 */
+    public static boolean isGhostNight(Level level) { return false; }
+
+    /** 兼容旧客户端状态入口，不再接受亡魂夜激活。 */
+    public static void setClientNight(Level level, boolean active) {}
+
+    public static boolean owns(VillageNpc npc) {
+        if (!(npc.level() instanceof ServerLevel level) || !HalloweenRuntime.isEnabled(level)) return false;
+        State state = STATES.get(level);
+        return state != null && (state.reapers.containsValue(npc) || state.candy.containsKey(npc));
+    }
+
+    public static InteractionResult interact(VillageNpc npc, Player player, InteractionHand hand) {
+        if (player.level().isClientSide) return InteractionResult.SUCCESS;
+        if (!(player instanceof ServerPlayer serverPlayer) || !canInteract(serverPlayer, npc)) return InteractionResult.FAIL;
+        State state = STATES.get(serverPlayer.serverLevel());
+        long now = player.level().getGameTime();
+        // 同一 tick 的双手包、重复 interactAt/interact 都只能执行一次。
+        if (Objects.equals(state.lastInteract.put(player.getUUID(), now), now)) return InteractionResult.CONSUME;
+        if (npc.isCandy()) {
+            if (now >= state.candy.getOrDefault(npc, 0L)) return InteractionResult.FAIL;
+            if (deliver(serverPlayer, 0, 0, new ItemStack(HalloweenItems.CANDY), candyReward)) {
+                state.candy.remove(npc); npc.discard(); message(serverPlayer, "candy_received");
+            } else message(serverPlayer, "inventory_full");
+        } else if (player.getMainHandItem().is(HalloweenItems.SOUL_CONTRACT) || player.getOffhandItem().is(HalloweenItems.SOUL_CONTRACT)) {
+            int contractsBefore = player.getInventory().countItem(HalloweenItems.SOUL_CONTRACT);
+            if (HalloweenCombat.acceptPact(serverPlayer)) {
+                player.getInventory().setChanged();
+                serverPlayer.inventoryMenu.broadcastChanges();
+                message(serverPlayer, "pact_accepted");
+            } else message(serverPlayer, "pact_rejected");
+        } else openShop(serverPlayer, npc);
+        return InteractionResult.CONSUME;
+    }
+
+    private static boolean canInteract(ServerPlayer player, VillageNpc npc) {
+        return owns(npc) && GameUtils.isPlayerAliveAndSurvival(player) && player.level() == npc.level()
+                && !player.hasEffect(ModEffects.SAFE_TIME) && !player.hasEffect(ModEffects.USED_BANED)
+                && !HalloweenCombat.isActionLocked(player) && !HalloweenPactRole.isPact(player)
+                && player.distanceToSqr(npc) <= 16
+                && player.hasLineOfSight(npc) && player.containerMenu == player.inventoryMenu;
+    }
+
+    private static void knock(ServerLevel level, ServerPlayer player, BlockPos position) {
+        State state = STATES.get(level);
+        if (state == null || !HalloweenRuntime.isEnabled(level) || !GameUtils.isPlayerAliveAndSurvival(player)
+                || player.hasEffect(ModEffects.SAFE_TIME) || !level.hasChunkAt(position)
+                || !state.bounds.contains(Vec3.atCenterOf(position))
+                || player.getEyePosition().distanceToSqr(Vec3.atCenterOf(position)) > 25) return;
+        BlockState block = level.getBlockState(position);
+        if (!(block.getBlock() instanceof SmallDoorBlock)) return;
+        BlockPos door = block.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+                && block.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.UPPER ? position.below() : position;
+        // 防止伪造隔墙/越界右键包，只认可当前视线命中的同一扇门（上下半统一）。
+        var ray = level.clip(new net.minecraft.world.level.ClipContext(player.getEyePosition(),
+                player.getEyePosition().add(player.getLookAngle().scale(5)),
+                net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+        if (!ray.getBlockPos().equals(position) && !ray.getBlockPos().equals(door) && !ray.getBlockPos().equals(door.above())) return;
+        long now = level.getServer().overworld().getGameTime();
+        Map<UUID, Long> nextKnocks = NEXT_KNOCK.computeIfAbsent(level.getServer(), server -> new HashMap<>());
+        long next = nextKnocks.getOrDefault(player.getUUID(), 0L);
+        if (!VillageRules.cooldownReady(now, next)) {
+            knockNotice(player, "knock_cooldown", (next - now + 19) / 20);
+            return;
+        }
+        HalloweenConfig config = HalloweenConfig.get();
+        nextKnocks.put(player.getUUID(), now + Math.max(1, config.knockCooldownTicks));
+        player.playNotifySound(SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, SoundSource.PLAYERS, 0.8F, 1.2F);
+        org.agmas.noellesroles.game.halloween.pumpkin.PumpkinSpiritHandler.onDoorKnocked(player);
+        switch (VillageRules.knockReward(level.random.nextInt(100))) {
+            case 0 -> give(player, new ItemStack(HalloweenItems.PUMPKIN, 1 + level.random.nextInt(2)));
+            case 1 -> HalloweenCombat.spawnUndead(level, null, player.getUUID(), player.position(), config.knockUndeadTicks, player.getUUID());
+            case 2 -> give(player, new ItemStack(HalloweenItems.CANDY_BAG));
+        }
+        // 与 60/30/10 的奖励独立抽样，每个临时 NPC 全服只能成功领取一次。
+        if (level.random.nextDouble() < config.candyNpcChance) {
+            VillageNpc candy = createNpc(level, player.position().add(player.getLookAngle().scale(-1.5)), true);
+            state.candy.put(candy, level.getGameTime() + config.candyNpcLifetimeTicks);
+            if (!level.addFreshEntity(candy)) {
+                state.candy.remove(candy);
+                candy.discard();
+            }
+        }
+        knockNotice(player, "knock_success");
+    }
+
+    private static void knockNotice(ServerPlayer player, String key, Object... args) {
+        SRENetworkMessageUtils.sendTitleTime(player, 5, 40, 10);
+        SRENetworkMessageUtils.sendSubtitle(player, Component.empty());
+        SRENetworkMessageUtils.sendTitle(player, Component.translatable("halloween.village." + key, args));
+    }
+
+    /** 先创建并登记到 State，再由调用方加入世界，避免实体回调观察到未登记的归属。 */
+    private static VillageNpc createNpc(ServerLevel level, Vec3 position, boolean candy) {
+        VillageNpc npc = NPC.create(level);
+        if (npc == null) throw new IllegalStateException("halloween_village_npc");
+        npc.markEventManaged();
+        npc.setCandy(candy);
+        npc.moveTo(position.x, position.y, position.z, 0, 0);
+        npc.setCustomName(Component.translatable("halloween.village.reaper"));
+        npc.setCustomNameVisible(true);
+        return npc;
+    }
+
+    private static void openShop(ServerPlayer player, VillageNpc npc) {
+        if (!ServerPlayNetworking.canSend(player, VillagePackets.Open.ID) || player.hasEffect(ModEffects.SHOP_BANNED)) return;
+        List<VillagePackets.Offer> offers = new ArrayList<>();
+        for (HalloweenConfig.Trade trade : HalloweenConfig.get().trades) {
+            if (offers.size() >= 128) break;
+            ResourceLocation id = trade == null || trade.item == null ? null : ResourceLocation.tryParse(trade.item);
+            if (id != null && BuiltInRegistries.ITEM.containsKey(id) && trade.count > 0 && trade.count <= 4096
+                    && HalloweenConfig.isVillageTradeAllowed(id.toString())
+                    && trade.pumpkins >= 0 && trade.coins >= 0 && (trade.pumpkins > 0 || trade.coins > 0)
+                    && !BuiltInRegistries.ITEM.get(id).getDefaultInstance().isEmpty()) {
+                offers.add(new VillagePackets.Offer(id, trade.count, trade.pumpkins, trade.coins));
+            }
+        }
+        UUID nonce = UUID.randomUUID();
+        STATES.get(player.serverLevel()).sessions.put(player.getUUID(), new Session(npc.getUUID(), nonce,
+                player.level().getGameTime() + 400, List.copyOf(offers)));
+        ServerPlayNetworking.send(player, new VillagePackets.Open(npc.getUUID(), nonce, offers));
+    }
+
+    private static void buy(ServerPlayer player, VillagePackets.Buy packet) {
+        State state = STATES.get(player.serverLevel());
+        if (state == null) return;
+        Session session = state.sessions.get(player.getUUID());
+        if (session == null || !session.nonce.equals(packet.nonce()) || !session.npc.equals(packet.npc())) return;
+        state.sessions.remove(player.getUUID()); // 匹配的 nonce 在验证/扣费之前作废，重放无效。
+        if (player.level().getGameTime() > session.expires || packet.index() < 0 || packet.index() >= session.offers.size()
+                || !(player.serverLevel().getEntity(packet.npc()) instanceof VillageNpc npc) || npc.isCandy()
+                || !canInteract(player, npc) || player.hasEffect(ModEffects.SHOP_BANNED)) return;
+        var offer = session.offers.get(packet.index());
+        if (!HalloweenConfig.isVillageTradeAllowed(offer.item().toString())) {
+            message(player, "trade_failed");
+            openShop(player, npc);
+            return;
+        }
+        ItemStack reward = new ItemStack(BuiltInRegistries.ITEM.get(offer.item()));
+        boolean success = deliver(player, offer.pumpkins(), offer.coins(), reward, offer.count());
+        message(player, success ? "trade_success" : "trade_failed");
+        openShop(player, npc);
+    }
+
+    private static boolean deliver(ServerPlayer player, int pumpkins, int coins, ItemStack reward, int amount) {
+        if (HalloweenSoulLinks.isItemBorrower(player)) return false;
+        var shop = SREPlayerShopComponent.KEY.get(player);
+        var role = SREGameWorldComponent.KEY.get(player.level()).getRole(player);
+        if (coins < 0 || (coins > 0 && (shop.balance < coins || role == null || role.hasNoCoinSystem()))) return false;
+        reward = reward.copy(); // 不把本次发货标记写回商品模板，后续购买仍是新物品。
+        boolean pumpkinReward = reward.is(HalloweenItems.PUMPKIN);
+        if (pumpkinReward) {
+            reward.setCount(amount);
+            HalloweenPumpkinRewards.adjust(player, reward);
+            amount = reward.getCount();
+            reward.setCount(1); // 作为带有结算标记的发货模板，实际数量由 amount 决定。
+            org.agmas.noellesroles.game.halloween.pumpkin.PumpkinSpiritHandler.markSettled(reward);
+        }
+        List<ItemStack> plan = VillageInventory.plan(player.getInventory().items, pumpkins, reward, amount, STACKS, true);
+        if (plan == null) return false;
+        // 主线程、无回调提交：两个币种和商品作为一个事务；不调用会部分插入的 Inventory.add。
+        for (int i = 0; i < plan.size(); i++) player.getInventory().items.set(i, plan.get(i));
+        if (coins > 0) shop.setBalance(shop.balance - coins);
+        player.getInventory().setChanged();
+        player.inventoryMenu.broadcastChanges();
+        if (reward.is(HalloweenItems.PUMPKIN))
+            org.agmas.noellesroles.game.halloween.pumpkin.PumpkinSpiritHandler.onFreshPickup(player, amount);
+        return true;
+    }
+
+    private static final VillageInventory.Slots<ItemStack> STACKS = new VillageInventory.Slots<>() {
+        public int count(ItemStack stack) { return stack.getCount(); }
+        public int limit(ItemStack stack) { return stack.getMaxStackSize(); }
+        public boolean currency(ItemStack stack) { return stack.is(HalloweenItems.PUMPKIN); }
+        public boolean matches(ItemStack a, ItemStack b) { return ItemStack.isSameItemSameComponents(a, b); }
+        public ItemStack withCount(ItemStack stack, int count) { return count <= 0 ? ItemStack.EMPTY : stack.copyWithCount(count); }
+    };
+
+    private static void give(ServerPlayer player, ItemStack stack) {
+        org.agmas.noellesroles.game.halloween.pumpkin.PumpkinSpiritHandler.onRewardStack(player, stack);
+        if (!player.getInventory().add(stack) && !stack.isEmpty()) player.drop(stack, false);
+        player.inventoryMenu.broadcastChanges();
+    }
+    private static void message(ServerPlayer player, String key) { player.displayClientMessage(Component.translatable("halloween.village." + key), true); }
+    private static void sendNight(ServerPlayer player, VillagePackets.Night packet) {
+        if (ServerPlayNetworking.canSend(player, VillagePackets.Night.ID)) ServerPlayNetworking.send(player, packet);
+    }
+
+    private record Session(UUID npc, UUID nonce, long expires, List<VillagePackets.Offer> offers) {}
+    private static final class State {
+        final String map;
+        final AABB bounds;
+        final Map<BlockPos, VillageNpc> reapers = new LinkedHashMap<>();
+        final Map<VillageNpc, Long> candy = new IdentityHashMap<>();
+        final Map<UUID, Session> sessions = new HashMap<>();
+        final Map<UUID, Long> lastInteract = new HashMap<>();
+        long lastTick = Long.MIN_VALUE;
+        /** 当前固定残月所在的方块；null 表示地图未设置坐标。 */
+        BlockPos reaperKey;
+        State(ServerLevel level, String map, AABB bounds) {
+            this.map = map; this.bounds = bounds;
+        }
+    }
+}

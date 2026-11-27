@@ -282,6 +282,11 @@ public class VoiceExtraEffectsPlugin implements VoicechatPlugin {
     // =========================================================================
 
     private void onClientSound(ClientReceiveSoundEvent event) {
+        // SVC 音频线程只读 volatile 演出标记；不读取世界、不影响其他观众的会话。
+        if (io.wifi.starrailexpress.settlement.client.SettlementClient.isActive()) {
+            event.cancel();
+            return;
+        }
         if (event.isCancelled())
             return;
         Player localPlayer = SREClient.getMinecraftPlayer();
@@ -300,6 +305,10 @@ public class VoiceExtraEffectsPlugin implements VoicechatPlugin {
 
         if (level == null)
             return;
+
+        // 万圣亡魂夜：听者授权快照先处理，旁观者实体尚未跟踪到时也不能漏出清晰原声。
+        pcm = org.agmas.noellesroles.game.halloween.village.VillageGhostAudio.transform(speaker, pcm);
+        event.setRawAudio(pcm);
 
         Player player = level.getPlayerByUUID(speaker);
         if (player == null) {

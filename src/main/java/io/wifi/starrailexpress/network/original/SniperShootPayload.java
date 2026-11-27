@@ -78,7 +78,9 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
         SHOOT,
         RELOAD,
         INSTALL_SCOPE,
-        UNINSTALL_SCOPE
+        UNINSTALL_SCOPE,
+        /** 独立按键：由服务端按当前倍镜状态决定装填还是卸载。 */
+        TOGGLE_SCOPE
     }
 
     @Override
@@ -101,7 +103,18 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
 
             if (!mainHandStack.is(TMMItems.SNIPER_RIFLE))
                 return;
-            switch (payload.action()) {
+            // 独立按键只发「切换」语义：装填还是卸载以服务端权威数据为准，避免客户端状态不同步时装反。
+            Action action = payload.action();
+            if (action == Action.SHOOT && !io.wifi.starrailexpress.event.ItemGameplayEvents.ALLOW_GUN_FIRE.invoker()
+                    .allow(player, payload.targetOrShooterId())) return;
+            if (action == Action.TOGGLE_SCOPE) {
+                action = SniperRifleItem.hasScopeAttached(mainHandStack)
+                        ? Action.UNINSTALL_SCOPE : Action.INSTALL_SCOPE;
+            }
+            switch (action) {
+                case TOGGLE_SCOPE -> {
+                    // 上面已规范化成 INSTALL/UNINSTALL，这里只是让 switch 覆盖全部枚举值。
+                }
                 case SHOOT -> {
                     if (player.getCooldowns().isOnCooldown(mainHandStack.getItem()))
                         return;
@@ -134,6 +147,10 @@ public record SniperShootPayload(Action action, int targetOrShooterId, @Nullable
 
                     // 处理实体命中
                     Entity hitEntity = player.serverLevel().getEntity(payload.targetOrShooterId());
+                    if (org.agmas.noellesroles.game.command_block.CommandBlockCracks.isCrack(hitEntity)
+                            && player.distanceTo(hitEntity) <= 200.0D) {
+                        org.agmas.noellesroles.game.command_block.CommandBlockCracks.tryShatterWithWeapon(player, hitEntity);
+                    }
                     if (hitEntity instanceof io.wifi.starrailexpress.traindummy.TrainDummyEntity dummy
                             && dummy.canReceiveHits() && dummy.distanceTo(player) < 200.0) {
                         if (player.distanceTo(dummy) >= 50.0) {
