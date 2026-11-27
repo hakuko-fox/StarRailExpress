@@ -44,6 +44,7 @@ public final class BackpackState {
     public FactionCardType pendingFactionCard = FactionCardType.NONE;
     /** Cooldown timestamp to restore if the pending card is refunded. */
     public long pendingFactionCardPreviousUsedAt;
+    public int pendingFactionCardTargetRoleType;
     /** 最近一次已發獎的場次 UUID，防止同一結算重複入帳。 */
     public String lastVtuberCoinRoundId = "";
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
@@ -117,13 +118,23 @@ public final class BackpackState {
         cardLastUsedAt.put(type, epochMs);
     }
 
+    public int pendingFactionCardRoleType() {
+        return pendingFactionCard == FactionCardType.CUSTOM
+                ? pendingFactionCardTargetRoleType : pendingFactionCard.getTypeRoleId();
+    }
+
     public boolean reserveFactionCard(FactionCardType type, long now) {
+        return type != null && reserveFactionCard(type, type.getTypeRoleId(), now);
+    }
+
+    boolean reserveFactionCard(FactionCardType type, int targetRoleType, long now) {
         int count = cards.getOrDefault(type, 0);
-        if (type == FactionCardType.NONE || pendingFactionCard != FactionCardType.NONE || count < 1) {
+        if (targetRoleType <= 0 || type == FactionCardType.NONE || pendingFactionCard != FactionCardType.NONE || count < 1) {
             return false;
         }
         pendingFactionCardPreviousUsedAt = lastUsedAt(type);
         pendingFactionCard = type;
+        pendingFactionCardTargetRoleType = targetRoleType;
         cards.put(type, count - 1);
         markUsed(type, now);
         return true;
@@ -146,6 +157,7 @@ public final class BackpackState {
     public void consumeFactionCard() {
         pendingFactionCard = FactionCardType.NONE;
         pendingFactionCardPreviousUsedAt = 0L;
+        pendingFactionCardTargetRoleType = 0;
     }
 
     public void copyFrom(BackpackState other) {
@@ -161,6 +173,7 @@ public final class BackpackState {
         this.pendingRoleId = other.pendingRoleId;
         this.pendingFactionCard = other.pendingFactionCard;
         this.pendingFactionCardPreviousUsedAt = other.pendingFactionCardPreviousUsedAt;
+        this.pendingFactionCardTargetRoleType = other.pendingFactionCardTargetRoleType;
         this.purchasedSkins = other.purchasedSkins == null
                 ? new HashSet<>()
                 : new HashSet<>(other.purchasedSkins);

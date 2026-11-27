@@ -18,6 +18,8 @@ package net.exmo.sre.loading;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREClientConfig;
+import io.wifi.starrailexpress.client.ui.SRETheme;
+import io.wifi.starrailexpress.client.ui.UiSurface;
 import net.exmo.sre.loading.texture.ConfigTexture;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -31,28 +33,31 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * 复古列车 / 车票 UI 公共绘制（docs/ui_style.md）。
+ * <b>黄铜 HUD</b> 公共绘制（{@code docs/ui_style.md}）：深灰黑底 + 深炭灰卡片 + 1px 暗铜描边 + 明亮黄铜文字。
  * <p>
  * 供资源加载、进世界、多人加入与连接中界面复用同一套配色、面板范式与入场动画。
+ * 形状一律走 {@link UiSurface}，本类只管「背景 + 面板 + 这几个页面的排版」。
  */
 @Environment(EnvType.CLIENT)
 public final class SreUiStyle {
 
     private SreUiStyle() {}
 
-    // ── 色板（ui_style.md §2）────────────────────────────────────────
-    public static final int PANEL_BG_TOP = 0xD81A1008;
-    public static final int PANEL_BG_BOTTOM = 0xD820140A;
-    public static final int SCREEN_BG_TOP = 0xF018120A;
-    public static final int SCREEN_BG_BOTTOM = 0xF0061018;
-    public static final int BORDER = 0xFF8B6914;
-    public static final int DECOR = 0x33FFE8C0;
-    public static final int GOLD = 0xFFD4AF37;
-    public static final int GOLD_SOFT = 0xFFC9A84C;
-    public static final int TEXT = 0xFFFFF4DC;
-    public static final int TITLE = 0xFFF5E8C8;
-    public static final int MUTED = 0xFF9E8B6E;
-    public static final int BODY = 0xFFC8B898;
+    // ── 色板（全部转发到 SRETheme，见 docs/ui_unified_style_plan.md §3）──────
+    // static final int = SRETheme.X 仍是编译期常量，运行时零开销；
+    // 新代码请直接用 SRETheme，这里保留只为不打断「SreUiStyle.GOLD」这类既有调用面。
+    public static final int PANEL_BG_TOP = SRETheme.SURFACE_TOP;
+    public static final int PANEL_BG_BOTTOM = SRETheme.SURFACE_BOTTOM;
+    public static final int SCREEN_BG_TOP = SRETheme.SCREEN_TOP;
+    public static final int SCREEN_BG_BOTTOM = SRETheme.SCREEN_BOTTOM;
+    public static final int BORDER = SRETheme.BORDER;
+    public static final int DECOR = SRETheme.DECOR_LINE;
+    public static final int GOLD = SRETheme.GOLD;
+    public static final int GOLD_SOFT = SRETheme.GOLD_DIM;
+    public static final int TEXT = SRETheme.TEXT;
+    public static final int TITLE = SRETheme.TITLE;
+    public static final int MUTED = SRETheme.MUTED;
+    public static final int BODY = SRETheme.BODY;
 
     public static final int JOIN_HEADER_H = 32;
     public static final int JOIN_FOOTER_H = 64;
@@ -111,7 +116,7 @@ public final class SreUiStyle {
     /** 加载界面背景：只铺静态 background.png，不用列车动态帧。 */
     public static void renderLoadingBackdrop(GuiGraphics g, int w, int h, float delta, float alpha) {
         registerLoadingBackground();
-        g.fill(0, 0, w, h, 0xFF000000);
+        g.fill(0, 0, w, h, SRETheme.BLACK);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         g.setColor(1.0F, 1.0F, 1.0F, LoadingFx.clamp01(alpha));
@@ -123,18 +128,19 @@ public final class SreUiStyle {
 
     private static void renderBackdrop(GuiGraphics g, int w, int h, float delta, float alpha, boolean goldDust) {
         ensureBackdrop();
-        g.fill(0, 0, w, h, 0xFF000000);
+        g.fill(0, 0, w, h, SRETheme.BLACK);
         if (!SREClientConfig.instance().disableTitleScreenVideoBackground && BACKDROP.hasFrames()) {
             BACKDROP.render(g, w, h, delta, alpha);
         } else {
             g.fillGradient(0, 0, w, h,
-                    LoadingFx.lerpArgb(alpha, 0x00000000, SCREEN_BG_TOP),
-                    LoadingFx.lerpArgb(alpha, 0x00000000, SCREEN_BG_BOTTOM));
+                    LoadingFx.lerpArgb(alpha, SRETheme.TRANSPARENT, SCREEN_BG_TOP),
+                    LoadingFx.lerpArgb(alpha, SRETheme.TRANSPARENT, SCREEN_BG_BOTTOM));
         }
         g.fillGradient(0, 0, w, h,
                 LoadingFx.withAlpha(0x000000, 0.20F * alpha),
                 LoadingFx.withAlpha(0x000010, 0.53F * alpha));
-        g.fillGradient(0, h / 4, w, h, 0x00000000, LoadingFx.withAlpha(0x8B6914, 0.13F * alpha));
+        g.fillGradient(0, h / 4, w, h, SRETheme.withAlpha(SRETheme.SURFACE_TOP, 0),
+                LoadingFx.withAlpha(SRETheme.BORDER & 0xFFFFFF, 0.13F * alpha));
         if (goldDust) {
             drawGoldDust(g, w, h, alpha);
         }
@@ -152,27 +158,27 @@ public final class SreUiStyle {
             float y = h / 2.0F + (float) Math.sin(time * 0.0007 + i * 1.7) * (h * 0.42F);
             float twinkle = 0.5F + 0.5F * (float) Math.sin(time * 0.0011 + i * 2.3);
             int a = Mth.clamp((int) ((12 + 38 * twinkle) * alpha), 0, 255);
-            g.fill((int) x, (int) y, (int) x + 2, (int) y + 2, (a << 24) | 0x00D4AF37);
+            g.fill((int) x, (int) y, (int) x + 2, (int) y + 2, (a << 24) | (SRETheme.GOLD & 0xFFFFFF));
         }
     }
 
     // ── 面板（ui_style.md §3）──────────────────────────────────────────
 
+    /**
+     * 面板：纯色底 + 1px 圆角暗铜描边（扁平，无渐变 / 无装饰线），按 {@code alpha} 淡入。
+     */
     public static void drawPanel(GuiGraphics g, int x, int y, int w, int h, float alpha) {
         if (w <= 0 || h <= 0 || alpha <= 0.01F) {
             return;
         }
-        int top = LoadingFx.lerpArgb(alpha, 0x001A1008, PANEL_BG_TOP);
-        int bot = LoadingFx.lerpArgb(alpha, 0x0020140A, PANEL_BG_BOTTOM);
-        g.fillGradient(x, y, x + w, y + h, top, bot);
-        int border = LoadingFx.lerpArgb(alpha, 0x008B6914, BORDER);
-        g.renderOutline(x, y, w, h, border);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, LoadingFx.lerpArgb(alpha, 0x00FFE8C0, DECOR));
+        int fill = LoadingFx.lerpArgb(alpha, SRETheme.withAlpha(SRETheme.SURFACE_TOP, 0), PANEL_BG_TOP);
+        int border = LoadingFx.lerpArgb(alpha, SRETheme.withAlpha(SRETheme.BORDER, 0), BORDER);
+        UiSurface.card(g, x, y, w, h, fill, border);
     }
 
     public static void drawTitleUnderline(GuiGraphics g, int cx, int y, int halfWidth, float alpha) {
         int pulseA = (int) ((0.55F + 0.25F * (float) Math.sin(Util.getMillis() / 360.0)) * alpha * 255.0F);
-        int color = (Mth.clamp(pulseA, 0, 255) << 24) | 0x00D4AF37;
+        int color = (Mth.clamp(pulseA, 0, 255) << 24) | (SRETheme.GOLD & 0xFFFFFF);
         g.fill(cx - halfWidth, y, cx + halfWidth, y + 1, color);
     }
 
@@ -201,9 +207,9 @@ public final class SreUiStyle {
         Component sub = Component.translatable("screen.sre.join.subtitle");
         int titleY = 6;
         g.drawString(font, title, (w - font.width(title)) / 2, titleY,
-                LoadingFx.withAlpha(0xF5E8C8, headerAlpha), false);
+                LoadingFx.withAlpha(SRETheme.TITLE, headerAlpha), true);
         g.drawString(font, sub, (w - font.width(sub)) / 2, titleY + 12,
-                LoadingFx.withAlpha(0x9E8B6E, headerAlpha * 0.95F), false);
+                LoadingFx.withAlpha(SRETheme.MUTED, headerAlpha * 0.95F), true);
         drawTitleUnderline(g, w / 2, JOIN_HEADER_H - 3, Math.min(90, w / 5), headerAlpha);
         g.pose().popPose();
     }
@@ -230,13 +236,13 @@ public final class SreUiStyle {
         Component title = Component.translatable("screen.sre.connect.title").withStyle(ChatFormatting.BOLD);
         int titleY = h / 2 - 72 + (int) ((1.0F - enter) * -8.0F);
         g.drawString(font, title, (w - font.width(title)) / 2, titleY,
-                LoadingFx.withAlpha(0xF5E8C8, enter), false);
+                LoadingFx.withAlpha(SRETheme.TITLE, enter), true);
         drawTitleUnderline(g, w / 2, titleY + 12, 36, enter);
         g.drawString(font, status, (w - font.width(status)) / 2, h / 2 - 44,
-                LoadingFx.withAlpha(0xFFF4DC, enter * pulse), false);
+                LoadingFx.withAlpha(SRETheme.TEXT, enter * pulse), true);
         Component hint = Component.translatable("screen.sre.connect.hint");
         g.drawString(font, hint, (w - font.width(hint)) / 2, h / 2 - 28,
-                LoadingFx.withAlpha(0x9E8B6E, enter * 0.9F), false);
+                LoadingFx.withAlpha(SRETheme.MUTED, enter * 0.9F), true);
     }
 
     public static int blend(int c1, int c2, float t) {

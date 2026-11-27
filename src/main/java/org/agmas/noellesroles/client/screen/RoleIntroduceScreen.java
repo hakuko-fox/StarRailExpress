@@ -15,6 +15,7 @@
 
 package org.agmas.noellesroles.client.screen;
 
+import io.wifi.starrailexpress.client.ui.SRETheme;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -1363,9 +1364,10 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     /**
-     * 技能栏位：把「职业本体介绍」和「技能介绍」分开显示。
+     * 技能栏位：显示职业的技能介绍。
      * <p>
-     * 技能文案放在独立语言文件夹 {@code assets/skill_intro/lang}（与 item_intro / effect_intro 同级）：
+     * 职业本体介绍（{@code assets/role_modifier_intro/lang}）里同样会写技能介绍；
+     * 本栏位只是把职业的技能介绍在独立语言文件夹 {@code assets/skill_intro/lang}（与 item_intro / effect_intro 同级）里再写一遍：
      * <ul>
      * <li>单个技能：{@code <技能名键>.desc}，例如 {@code skill.noellesroles.phantom.invisibility.desc}</li>
      * <li>整个职业：{@code skill.intro.role.<职业路径>}，没有该键时退回
@@ -2113,15 +2115,15 @@ public class RoleIntroduceScreen extends Screen {
         int catBarW = rightW - TOP_BAR_GAP;
         renderCategoryBar(g, mouseX, mouseY, catBarX, topBarY, catBarW, TOP_BAR_H);
         g.fillGradient(0, 0, width, topBarY - 4, 0xBB000000, 0x00000000);
-        g.drawCenteredString(font, this.title, width / 2, 8, 0xF5E8C8);
+        g.drawCenteredString(font, this.title, width / 2, 8, SRETheme.TITLE);
         if (isSmall)
             g.drawCenteredString(font,
                     Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY), width / 2,
-                    height - 15, 0x9E8B6E);
+                    height - 15, SRETheme.MUTED);
         else
             g.drawCenteredString(font,
                     Component.translatable("screen.roleintroduce.hint").withStyle(ChatFormatting.GRAY), width / 2,
-                    height - 24, 0x9E8B6E);
+                    height - 24, SRETheme.MUTED);
         renderModeButtons(g, mouseX, mouseY, leftW - PANEL_PAD * 2);
         super.render(g, mouseX, mouseY, partialTick);
     }
@@ -2223,20 +2225,20 @@ public class RoleIntroduceScreen extends Screen {
 
             if (isActive) {
                 g.fillGradient(curX, curY, curX + btnW, curY + btnH,
-                        blendColors(0xFF1A1008, mode.color, 0.55f), blendColors(0xFF120A04, mode.color, 0.30f));
+                        blendColors(SRETheme.SURFACE_TOP_SOFT, mode.color, 0.55f), blendColors(SRETheme.SCROLL_TRACK, mode.color, 0.30f));
                 g.fill(curX, curY + btnH - 2, curX + btnW, curY + btnH, mode.color);
                 g.fill(curX, curY, curX + 1, curY + btnH, (mode.color & 0x00FFFFFF) | 0xAA000000);
                 g.fill(curX + btnW - 1, curY, curX + btnW, curY + btnH, (mode.color & 0x00FFFFFF) | 0xAA000000);
             } else if (isHovered) {
                 g.fillGradient(curX, curY, curX + btnW, curY + btnH,
-                        blendColors(0xFF1A1008, mode.color, 0.25f), blendColors(0xFF120A04, mode.color, 0.12f));
+                        blendColors(SRETheme.SURFACE_TOP_SOFT, mode.color, 0.25f), blendColors(SRETheme.SCROLL_TRACK, mode.color, 0.12f));
                 g.renderOutline(curX, curY, btnW, btnH, (mode.color & 0x00FFFFFF) | 0x44000000);
             } else {
-                g.fill(curX, curY, curX + btnW, curY + btnH, 0x551A1008);
-                g.renderOutline(curX, curY, btnW, btnH, 0x558B6914);
+                g.fill(curX, curY, curX + btnW, curY + btnH, SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x55));
+                g.renderOutline(curX, curY, btnW, btnH, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
             }
 
-            int textColor = isActive ? (mode.color | 0xFF000000) : isHovered ? 0xFFFFF4DC : 0xFF9E8B6E;
+            int textColor = isActive ? (mode.color | 0xFF000000) : isHovered ? SRETheme.TEXT : SRETheme.MUTED;
             g.drawCenteredString(font, truncated, curX + btnW / 2, curY + (btnH - font.lineHeight) / 2, textColor);
             curX += btnW + MODE_GAP;
         }
@@ -2305,24 +2307,24 @@ public class RoleIntroduceScreen extends Screen {
 
             if (active) {
                 g.fillGradient(curX, barY, curX + tw, barY + barH,
-                        blendColors(0xFF1A1008, baseColor, 0.50f), blendColors(0xFF120A04, baseColor, 0.28f));
+                        blendColors(SRETheme.SURFACE_TOP_SOFT, baseColor, 0.50f), blendColors(SRETheme.SCROLL_TRACK, baseColor, 0.28f));
                 g.fill(curX, barY + barH - 2, curX + tw, barY + barH, baseColor);
                 g.fill(curX, barY, curX + 1, barY + barH, (baseColor & 0x00FFFFFF) | 0xAA000000);
                 g.fill(curX + tw - 1, barY, curX + tw, barY + barH, (baseColor & 0x00FFFFFF) | 0xAA000000);
                 g.fill(curX + 1, barY, curX + tw - 1, barY + 1, (baseColor & 0x00FFFFFF) | 0x55000000);
             } else if (hovered) {
                 g.fillGradient(curX, barY, curX + tw, barY + barH,
-                        blendColors(0xFF1A1008, baseColor, 0.22f), blendColors(0xFF120A04, baseColor, 0.10f));
+                        blendColors(SRETheme.SURFACE_TOP_SOFT, baseColor, 0.22f), blendColors(SRETheme.SCROLL_TRACK, baseColor, 0.10f));
                 g.fill(curX, barY + barH - 1, curX + tw, barY + barH, (baseColor & 0x00FFFFFF) | 0x66000000);
                 g.renderOutline(curX, barY, tw, barH, (baseColor & 0x00FFFFFF) | 0x44000000);
             } else {
-                g.fill(curX, barY, curX + tw, barY + barH, 0x331A1008);
-                g.renderOutline(curX, barY, tw, barH, 0x338B6914);
+                g.fill(curX, barY, curX + tw, barY + barH, SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x33));
+                g.renderOutline(curX, barY, tw, barH, SRETheme.withAlpha(SRETheme.BORDER, 0x33));
             }
 
             String label = Component.translatable(cats.get(i).labelKey).getString();
             String truncated = font.plainSubstrByWidth(label, tw - 4);
-            int textColor = active ? (baseColor | 0xFF000000) : hovered ? 0xFFFFF4DC : 0xFF9E8B6E;
+            int textColor = active ? (baseColor | 0xFF000000) : hovered ? SRETheme.TEXT : SRETheme.MUTED;
             g.drawCenteredString(font, truncated, curX + tw / 2, barY + (barH - font.lineHeight) / 2, textColor);
             curX += tw + TAB_GAP;
         }
@@ -2331,8 +2333,8 @@ public class RoleIntroduceScreen extends Screen {
     private void renderListCard(GuiGraphics g, Object role, int x, int y, int w, int h, float hover, boolean selected) {
         int rawColor = RoleUtils.getRoleOrModifierColor(role);
         int roleColor = rawColor | 0xFF000000;
-        int outerBorder = selected ? 0xFFD4AF37
-                : (hover > 0.05f ? blendColors(0xFF5A4530, 0xFFC9A84C, hover) : 0xFF5A4530);
+        int outerBorder = selected ? SRETheme.GOLD
+                : (hover > 0.05f ? blendColors(SRETheme.CARD_BORDER, SRETheme.GOLD_DIM, hover) : SRETheme.CARD_BORDER);
         g.fill(x, y, x + w, y + h, outerBorder);
 
         int bgL, bgR;
@@ -2340,14 +2342,14 @@ public class RoleIntroduceScreen extends Screen {
             bgL = 0xFF5A4520;
             bgR = 0xFF3A2A10;
         } else if (hover > 0.05f) {
-            bgL = blendColors(0xFF1A1008, 0xFF5A4520, hover);
-            bgR = blendColors(0xFF120A04, 0xFF3A2A10, hover);
+            bgL = blendColors(SRETheme.SURFACE_TOP_SOFT, 0xFF5A4520, hover);
+            bgR = blendColors(SRETheme.SCROLL_TRACK, 0xFF3A2A10, hover);
         } else {
-            bgL = 0xFF1A1008;
-            bgR = 0xFF120A04;
+            bgL = SRETheme.SURFACE_TOP_SOFT;
+            bgR = SRETheme.SCROLL_TRACK;
         }
         g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, bgL, bgR);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, selected ? 0x44FFE8C0 : (hover > 0.05f ? 0x25FFFFFF : 0x10FFFFFF));
+        g.fill(x + 1, y + 1, x + w - 1, y + 2, selected ? SRETheme.withAlpha(SRETheme.BRASS_BRIGHT, 0x44) : (hover > 0.05f ? 0x25FFFFFF : 0x10FFFFFF));
 
         int barW = 3;
         g.fill(x + 1, y + 1, x + 1 + barW, y + h - 1, roleColor);
@@ -2355,7 +2357,7 @@ public class RoleIntroduceScreen extends Screen {
                 0x00000000);
 
         int iconX = x + 1 + barW + 5, iconY = y + (h - ICON_SIZE) / 2;
-        g.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, blendColors(0xFF120A04, roleColor, 0.25f));
+        g.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, blendColors(SRETheme.SCROLL_TRACK, roleColor, 0.25f));
         boolean iconOk = false;
         if (role instanceof Item it) {
             iconOk = true;
@@ -2375,7 +2377,7 @@ public class RoleIntroduceScreen extends Screen {
             }
         }
         if (!iconOk) {
-            g.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, blendColors(0xFF1A1008, roleColor, 0.55f));
+            g.fill(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, blendColors(SRETheme.SURFACE_TOP_SOFT, roleColor, 0.55f));
             String initial = RoleUtils.getRoleOrModifierOrItemName(role).getString();
             if (!initial.isEmpty())
                 g.drawCenteredString(font,
@@ -2388,14 +2390,14 @@ public class RoleIntroduceScreen extends Screen {
         int textX = iconX + ICON_SIZE + 5, textMaxW = w - (textX - x) - 6;
         g.drawString(font,
                 font.plainSubstrByWidth(RoleUtils.getRoleOrModifierOrItemTypeName(role).getString(), textMaxW),
-                textX, y + 5, selected ? 0xFFD4AF37 : blendColors(0xFF9E8B6E, 0xFFC9A84C, hover), false);
+                textX, y + 5, selected ? SRETheme.GOLD : blendColors(SRETheme.MUTED, SRETheme.GOLD_DIM, hover), false);
 
         int nameY = y + 5 + font.lineHeight + 1;
         List<FormattedCharSequence> nameLines = font.split(RoleUtils.getRoleOrModifierOrItemNameWithColor(role),
                 textMaxW);
         if (!nameLines.isEmpty())
             g.drawString(font, nameLines.get(0), textX, nameY,
-                    selected ? 0xFFF5E8C8 : (hover > 0.3f ? 0xFFFFF4DC : 0xFFE8D8B0), selected);
+                    selected ? SRETheme.TITLE : (hover > 0.3f ? SRETheme.TEXT : 0xFFE8D8B0), selected);
 
         Component subText = getCardSubText(role);
         if (subText != null) {
@@ -2457,7 +2459,7 @@ public class RoleIntroduceScreen extends Screen {
         if (selectedRole == null) {
             g.drawCenteredString(font,
                     Component.translatable("screen.roleintroduce.select_hint").withStyle(ChatFormatting.GRAY),
-                    rightX + rightW / 2, panelY + panelH / 2, 0x9E8B6E);
+                    rightX + rightW / 2, panelY + panelH / 2, SRETheme.MUTED);
             return;
         }
 
@@ -2487,7 +2489,7 @@ public class RoleIntroduceScreen extends Screen {
         int bIconSize = BANNER_H - 6;
         int bIconX = rightX + PANEL_PAD, bIconY = panelY + 3;
         g.fill(bIconX, bIconY, bIconX + bIconSize, bIconY + bIconSize,
-                blendColors(0xFF120A04, rawColor | 0xFF000000, 0.3f));
+                blendColors(SRETheme.SCROLL_TRACK, rawColor | 0xFF000000, 0.3f));
         if (selectedRole instanceof Item it) {
             g.renderItem(it.getDefaultInstance(), bIconX + (bIconSize - 16) / 2, bIconY + (bIconSize - 16) / 2);
         } else if (selectedRole instanceof IntroMobEffect effect && this.minecraft != null) {
@@ -2562,16 +2564,16 @@ public class RoleIntroduceScreen extends Screen {
             int baseColor = tab.getColor();
             if (active) {
                 g.fillGradient(curX, barY, curX + btnW, barY + barH,
-                        blendColors(0xFF1A1008, baseColor, 0.55f), blendColors(0xFF120A04, baseColor, 0.30f));
-                g.renderOutline(curX, barY, btnW, barH, 0x558B6914);
+                        blendColors(SRETheme.SURFACE_TOP_SOFT, baseColor, 0.55f), blendColors(SRETheme.SCROLL_TRACK, baseColor, 0.30f));
+                g.renderOutline(curX, barY, btnW, barH, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
                 g.fill(curX, barY + barH - 2, curX + btnW, barY + barH, baseColor);
             } else if (hovered) {
                 g.fillGradient(curX, barY, curX + btnW, barY + barH,
-                        blendColors(0xFF1A1008, baseColor, 0.25f), blendColors(0xFF120A04, baseColor, 0.12f));
+                        blendColors(SRETheme.SURFACE_TOP_SOFT, baseColor, 0.25f), blendColors(SRETheme.SCROLL_TRACK, baseColor, 0.12f));
                 g.renderOutline(curX, barY, btnW, barH, (baseColor & 0x00FFFFFF) | 0x44000000);
             } else {
-                g.fill(curX, barY, curX + btnW, barY + barH, 0x551A1008);
-                g.renderOutline(curX, barY, btnW, barH, 0x558B6914);
+                g.fill(curX, barY, curX + btnW, barY + barH, SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0x55));
+                g.renderOutline(curX, barY, btnW, barH, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
             }
             // 1px 左右边框
             g.fill(curX, barY, curX + 1, barY + barH, 0x55FFFFFF);
@@ -2579,7 +2581,7 @@ public class RoleIntroduceScreen extends Screen {
 
             Component title = tab.getTitle();
             Component truncated = substrByWidth(title, btnW - 4);
-            int textColor = active ? 0xFFFFF4DC : hovered ? 0xFFFFF4DC : 0xFF9E8B6E;
+            int textColor = active ? SRETheme.TEXT : hovered ? SRETheme.TEXT : SRETheme.MUTED;
             g.drawCenteredString(font, truncated, curX + btnW / 2, barY + (barH - font.lineHeight) / 2, textColor);
             curX += btnW + gap;
         }
@@ -3037,12 +3039,12 @@ public class RoleIntroduceScreen extends Screen {
         int x = getPonderButtonX(), y = getPonderButtonY();
         boolean hovered = isInRect(mouseX, mouseY, x, y, PONDER_BTN_W, PONDER_BTN_H);
         g.fillGradient(x, y, x + PONDER_BTN_W, y + PONDER_BTN_H,
-                hovered ? 0xFF8B6914 : 0xFF3A2A16, hovered ? 0xFF6B502A : 0xFF241A0F);
+                hovered ? SRETheme.BORDER : 0xFF3A2A16, hovered ? 0xFF6B502A : 0xFF241A0F);
         g.renderOutline(x, y, PONDER_BTN_W, PONDER_BTN_H, 0xFFD8B96C);
         g.fill(x, y + PONDER_BTN_H - 2, x + PONDER_BTN_W, y + PONDER_BTN_H, 0xFFD8B96C);
         Component text = Component.translatable("screen.roleintroduce.ponder.button");
         g.drawCenteredString(font, text, x + PONDER_BTN_W / 2,
-                y + (PONDER_BTN_H - font.lineHeight) / 2, hovered ? 0xFFFFF4DC : 0xFFE4C982);
+                y + (PONDER_BTN_H - font.lineHeight) / 2, hovered ? SRETheme.TEXT : 0xFFE4C982);
     }
 
     private static int blendColors(int c1, int c2, float t) {
@@ -3057,16 +3059,16 @@ public class RoleIntroduceScreen extends Screen {
     }
 
     private void drawPanelBg(GuiGraphics g, int x, int y, int w, int h) {
-        g.fillGradient(x, y, x + w, y + h, 0xD81A1008, 0xD820140A);
-        g.renderOutline(x, y, w, h, 0xFF8B6914);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x22FFE8C0);
+        g.fillGradient(x, y, x + w, y + h, SRETheme.withAlpha(SRETheme.SURFACE_TOP_SOFT, 0xD8), SRETheme.withAlpha(SRETheme.SURFACE_BOTTOM, 0xD8));
+        g.renderOutline(x, y, w, h, SRETheme.BORDER);
+        g.fill(x + 1, y + 1, x + w - 1, y + 2, SRETheme.withAlpha(SRETheme.BRASS_BRIGHT, 0x22));
     }
 
     private void renderVScrollbar(GuiGraphics g, int x, int y, int h,
             int scrollOffset, int maxScroll, int totalContentH,
             int mouseX, int mouseY, boolean dragging) {
-        g.fill(x, y, x + SCROLL_W, y + h, 0xFF1A1008);
-        g.fill(x + 1, y + 1, x + SCROLL_W - 1, y + h - 1, 0x558B6914);
+        g.fill(x, y, x + SCROLL_W, y + h, SRETheme.SURFACE_TOP_SOFT);
+        g.fill(x + 1, y + 1, x + SCROLL_W - 1, y + h - 1, SRETheme.withAlpha(SRETheme.BORDER, 0x55));
         if (maxScroll <= 0)
             return;
 
@@ -3075,8 +3077,8 @@ public class RoleIntroduceScreen extends Screen {
         int thumbY = y + (int) ((h - thumbH) * ((float) scrollOffset / maxScroll));
         boolean hl = dragging || isInRect(mouseX, mouseY, x, thumbY, SCROLL_W, thumbH);
 
-        g.fill(x, thumbY, x + SCROLL_W, thumbY + thumbH, hl ? 0xFFC9A84C : 0xFF8B6914);
-        g.fill(x + 1, thumbY + 1, x + SCROLL_W - 1, thumbY + thumbH - 1, hl ? 0xFFD4AF37 : 0xFFB8960C);
+        g.fill(x, thumbY, x + SCROLL_W, thumbY + thumbH, hl ? SRETheme.GOLD_DIM : SRETheme.BORDER);
+        g.fill(x + 1, thumbY + 1, x + SCROLL_W - 1, thumbY + thumbH - 1, hl ? SRETheme.GOLD : 0xFFB8960C);
         g.fill(x + 1, thumbY + 1, x + SCROLL_W - 1, thumbY + 3, 0x44FFFFFF);
     }
 

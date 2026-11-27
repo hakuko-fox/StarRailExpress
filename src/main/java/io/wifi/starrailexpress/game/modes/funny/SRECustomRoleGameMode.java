@@ -15,9 +15,12 @@
 
 package io.wifi.starrailexpress.game.modes.funny;
 
+import org.agmas.noellesroles.commands.BroadcastCommand;
+import net.minecraft.ChatFormatting;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.backpack.FactionCardForcing;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -33,7 +36,6 @@ import io.wifi.starrailexpress.game.utils.RoleInstance;
 import io.wifi.starrailexpress.network.CloseUiPayload;
 import io.wifi.starrailexpress.progression.ProgressionState.FactionCardType;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -47,7 +49,6 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 import org.agmas.harpymodloader.events.ModdedRoleAssigned;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
-import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.init.ModEffects;
 import org.agmas.noellesroles.utils.RoleUtils;
 import pro.fazeclan.river.stupid_express.role.avaricious.AvariciousGoldHandler;
@@ -109,7 +110,7 @@ public class SRECustomRoleGameMode extends SREMurderGameMode {
         assignModifiers(modifierRoleCount, serverWorld, gameWorldComponent, players);
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
-        PlayerRoleWeightManager.ForcePlayerTeam.clear();
+        FactionCardForcing.settleRound(serverWorld);
     }
 
     public void getRolesAndAssignTeams(ServerLevel serverWorld, SREGameWorldComponent gameWorldComponent,

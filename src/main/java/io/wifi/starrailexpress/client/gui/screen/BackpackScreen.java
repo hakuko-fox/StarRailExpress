@@ -49,13 +49,13 @@ public class BackpackScreen extends Screen {
     /** 渲染顺序与各阵营卡按钮的强调色（与通行证界面保持一致，紫色为杀手中立）。 */
     private static final FactionCardType[] DISPLAY_ORDER = {
             FactionCardType.KILLER, FactionCardType.CIVILIAN,
-            FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER };
-    private static final int[] ACCENT = { 0xFFC75450, 0xFF5EB7D8, 0xFFE0AD5B, 0xFFB18AE6 };
+            FactionCardType.NEUTRAL, FactionCardType.NEUTRAL_FOR_KILLER, FactionCardType.CUSTOM };
+    private static final int[] ACCENT = { 0xFFC75450, 0xFF5EB7D8, 0xFFE0AD5B, 0xFFB18AE6, 0xFFF1C674 };
     private static final int ROLE_ACCENT = 0xFF8FC7A8;
 
     private static final int PAD = 8;
     private static final int HEADER_H = 34;
-    private static final int ROW_H = 38;
+    private static final int ROW_H = 33;
     private static final int ROW_GAP = 5;
     private static final int FOOTER_H = 22;
 
@@ -187,7 +187,7 @@ public class BackpackScreen extends Screen {
         Component hint = pending
                 ? Component.translatable("sre.backpack.pending_role", pendingRoleName())
                 : Component.translatable(actionable ? "sre.backpack.click_choose_role" : "sre.backpack.unavailable");
-        g.drawString(font, hint, x + 12, y + 22, actionable ? 0xFFB8C9A8 : 0xFF6A5A48, false);
+        g.drawString(font, hint, x + 12, y + 20, actionable ? 0xFFB8C9A8 : 0xFF6A5A48, false);
         String countText = "×" + count;
         int cw = font.width(countText);
         g.drawString(font, countText, x + rowW - 14 - cw, y + 14,
@@ -231,7 +231,7 @@ public class BackpackScreen extends Screen {
         } else {
             hint = Component.translatable(owned ? "sre.backpack.click_activate" : "sre.backpack.unavailable");
         }
-        g.drawString(font, hint, x + 12, y + 22, usable ? 0xFFB8C9A8 : 0xFF6A5A48, false);
+        g.drawString(font, hint, x + 12, y + 20, usable ? 0xFFB8C9A8 : 0xFF6A5A48, false);
 
         // 右侧计数
         String countText = "×" + count;
@@ -259,8 +259,12 @@ public class BackpackScreen extends Screen {
                 if (count(type) > 0 && backpack.pendingFactionCard == FactionCardType.NONE
                         && !FactionCardCooldown.isOnCooldown(backpack, type)
                         && inside(mouseX, mouseY, rowX, rowY(i), rowW, ROW_H)) {
-                    sendCommand("sre:pass activate " + type.questKey);
-                    onClose();
+                    if (type == FactionCardType.CUSTOM && minecraft != null) {
+                        minecraft.setScreen(new FactionCardTargetScreen(this));
+                    } else {
+                        sendCommand("sre:pass activate " + type.questKey);
+                        onClose();
+                    }
                     return true;
                 }
             }

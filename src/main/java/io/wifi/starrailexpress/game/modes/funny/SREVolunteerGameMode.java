@@ -302,6 +302,7 @@ public class SREVolunteerGameMode extends SREMurderGameMode {
             mood.sync();
         });
         SREGameTimeComponent.KEY.get(world).setTimeFrozen(false);
+        io.wifi.starrailexpress.backpack.FactionCardForcing.settleRound(world);
         OnGameTrueStarted.EVENT.invoker().onGameTrueStarted(world);
         // 志願模式的陣營卡已於候選池生成時處理，清除強制陣營避免洩漏到下一局
         PlayerRoleWeightManager.ForcePlayerTeam.clear();

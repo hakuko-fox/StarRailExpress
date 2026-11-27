@@ -59,6 +59,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 场外背包数据管理器（MySQL 分区 {@code data_key="backpack"}）。
@@ -96,6 +97,7 @@ public final class BackpackManager {
             ENTRIES.clear();
             ROUND_PARTICIPANTS.clear();
             clearRoleChoiceReservations();
+            FactionCardForcing.clearAll();
         });
     }
 
@@ -118,7 +120,9 @@ public final class BackpackManager {
                 if (forced != null && forced.type() == ForceTeamType.CARD) {
                     PlayerRoleWeightManager.ForcePlayerTeam.remove(player.getUUID());
                 }
+                PlayerRoleWeightManager.clearCardFactionBoost(player.getUUID());
                 markDirty(player, entry);
+                sendPendingCard(player);
                 Component message = Component.translatable(switch (result) {
                     case SUCCESS -> "message.sre.backpack.assignment_success";
                     case FACTION_REFUNDED -> "message.sre.backpack.faction_mismatch_refund";
@@ -352,20 +356,31 @@ public final class BackpackManager {
         GAME_RUNNING,
         NO_CARD,
         ALREADY_ACTIVE,
-        ON_COOLDOWN
+        ON_COOLDOWN,
+        /** 自定义卡必须带上目标阵营（命令里漏参数或传了非法阵营）。 */
+        NEEDS_TARGET
     }
 
-    /** 逐字复刻 {@code ProgressionDataManager.activateFactionCard}：卡库写改为背包。 */
+    /** 固定目标阵营卡：目标就是卡自己的阵营。 */
     public static boolean activateCard(ServerPlayer player, FactionCardType type) {
-        return activateCardResult(player, type) == ActivateResult.SUCCESS;
+        return activateCardResult(player, type, type) == ActivateResult.SUCCESS;
     }
 
     public static ActivateResult activateCardResult(ServerPlayer player, FactionCardType type) {
-        if (type == FactionCardType.NONE) return ActivateResult.INVALID;
+        return activateCardResult(player, type, type);
+    }
+
+    public static ActivateResult activateCardResult(ServerPlayer player, FactionCardType consumed,
+            FactionCardType target) {
+        if (consumed == null || consumed == FactionCardType.NONE) return ActivateResult.INVALID;
+        if (target == null || !target.isSelectableTarget()
+                || (consumed != FactionCardType.CUSTOM && consumed != target)) {
+            return ActivateResult.NEEDS_TARGET;
+        }
         if (!isLoaded(player.getUUID())) return ActivateResult.NOT_LOADED;
         if (SREGameWorldComponent.KEY.get(player.serverLevel()).isRunning()) return ActivateResult.GAME_RUNNING;
         Entry entry = getEntry(player.getUUID());
-        int current = entry.state.cards.getOrDefault(type, 0);
+        int current = entry.state.cards.getOrDefault(consumed, 0);
         if (current < 1) {
             return ActivateResult.NO_CARD;
         }
@@ -373,18 +388,25 @@ public final class BackpackManager {
                 || PlayerRoleWeightManager.ForcePlayerTeam.containsKey(player.getUUID())) {
             return ActivateResult.ALREADY_ACTIVE;
         }
-        if (FactionCardCooldown.isOnCooldown(entry.state, type)) {
+        if (FactionCardCooldown.isOnCooldown(entry.state, consumed)) {
             return ActivateResult.ON_COOLDOWN;
         }
         if (!entry.state.pendingRoleId.isBlank()) {
             entry.state.pendingRoleId = "";
             entry.state.roleChoiceCards = (int) Math.min(Integer.MAX_VALUE, (long) entry.state.roleChoiceCards + 1L);
         }
-        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), new ForceTeamInfo(type.getTypeRoleId(), ForceTeamType.CARD));
-        entry.state.reserveFactionCard(type, System.currentTimeMillis());
+        int roleType = target.getTypeRoleId();
+        entry.state.reserveFactionCard(consumed, roleType, System.currentTimeMillis());
+        PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(), new ForceTeamInfo(roleType, ForceTeamType.CARD));
+        PlayerRoleWeightManager.setCardFactionBoost(player.getUUID(), roleType,
+                FactionCardForcing.PICK_BOOST_MULTIPLIER);
         markDirty(player, entry);
-        Component message = Component.translatable("message.sre.progression.faction_card_activated",
-                Component.translatable(type.displayName));
+        sendPendingCard(player);
+        Component message = consumed == FactionCardType.CUSTOM
+                ? Component.translatable("message.sre.progression.custom_card_activated",
+                        Component.translatable(target.displayName))
+                : Component.translatable("message.sre.progression.faction_card_activated",
+                        Component.translatable(consumed.displayName));
         player.sendSystemMessage(message);
         player.displayClientMessage(message, true);
         return ActivateResult.SUCCESS;
@@ -397,14 +419,23 @@ public final class BackpackManager {
     /** Refund only the outstanding reservation, including its previous cooldown. */
     public static boolean refundFactionCard(ServerPlayer player, FactionCardType type) {
         Entry entry = ENTRIES.get(player.getUUID());
-        if (entry == null || !entry.loaded || !entry.state.refundFactionCard(type)) {
+        if (entry == null || !entry.loaded) {
+            return false;
+        }
+        if (entry.state.pendingFactionCard == FactionCardType.CUSTOM
+                && type == FactionCardType.fromRoleType(entry.state.pendingFactionCardRoleType())) {
+            type = FactionCardType.CUSTOM;
+        }
+        if (!entry.state.refundFactionCard(type)) {
             return false;
         }
         var forced = PlayerRoleWeightManager.ForcePlayerTeam.get(player.getUUID());
         if (forced != null && forced.type() == ForceTeamType.CARD) {
             PlayerRoleWeightManager.ForcePlayerTeam.remove(player.getUUID());
         }
+        PlayerRoleWeightManager.clearCardFactionBoost(player.getUUID());
         markDirty(player, entry);
+        sendPendingCard(player);
         return true;
     }
 
@@ -505,8 +536,11 @@ public final class BackpackManager {
                 refundFactionCard(player, entry.state.pendingFactionCard);
                 continue;
             }
+            int targetRoleType = entry.state.pendingFactionCardRoleType();
             PlayerRoleWeightManager.ForcePlayerTeam.put(player.getUUID(),
-                    new ForceTeamInfo(entry.state.pendingFactionCard.getTypeRoleId(), ForceTeamType.CARD));
+                    new ForceTeamInfo(targetRoleType, ForceTeamType.CARD));
+            PlayerRoleWeightManager.setCardFactionBoost(player.getUUID(), targetRoleType,
+                    FactionCardForcing.PICK_BOOST_MULTIPLIER);
         }
         if (!supportedMode) {
             for (ServerPlayer player : players) {
@@ -661,6 +695,30 @@ public final class BackpackManager {
         player.displayClientMessage(message, true);
     }
 
+    // ====================== 待生效卡（客户端镜像） ======================
+
+    /** 背包分区之外的第二个分区：本局待兑现的阵营卡，只给界面显示「本局已生效」用。 */
+    public static final String CARD_PART = "card_force";
+
+    private static final AtomicLong CARD_PART_STAMP = new AtomicLong();
+
+    /** 客户端缓存按 updatedAt 丢弃旧包，所以这里保证时间戳单调递增。 */
+    private static long nextCardPartStamp() {
+        return CARD_PART_STAMP.updateAndGet(previous -> Math.max(previous + 1L, System.currentTimeMillis()));
+    }
+
+    /** 把「本局待兑现的卡」推给客户端；没有待生效卡时推空状态。 */
+    static void sendPendingCard(ServerPlayer player) {
+        BackpackState backpack = getEntry(player.getUUID()).state;
+        FactionCardType target = FactionCardType.fromRoleType(backpack.pendingFactionCardRoleType());
+        long stamp = nextCardPartStamp();
+        PendingCardState state = target == FactionCardType.NONE
+                ? PendingCardState.none(stamp)
+                : PendingCardState.of(backpack.pendingFactionCard, target, stamp);
+        ServerPlayNetworking.send(player,
+                new PlayerDataPartSyncPayload(player.getUUID(), CARD_PART, GSON.toJson(state), stamp));
+    }
+
     /** 命令开屏前可调用以保证客户端数据新鲜。 */
     public static void resend(ServerPlayer player) {
         send(player, getEntry(player.getUUID()));
@@ -725,6 +783,7 @@ public final class BackpackManager {
         Entry entry = getEntry(player.getUUID());
         entry.online = true;
         send(player, entry);
+        sendPendingCard(player);
         if (!isDatabaseEnabled()) {
             loadLocal(player, entry);
             entry.loaded = true;

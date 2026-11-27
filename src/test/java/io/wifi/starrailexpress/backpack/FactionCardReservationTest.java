@@ -14,12 +14,15 @@ class FactionCardReservationTest {
             BackpackState state = BackpackState.createDefault();
             state.cards.put(type, 2);
             state.markUsed(type, 1_000L);
-            assertTrue(state.reserveFactionCard(type, 3_000_000L));
+            int targetRoleType = type == FactionCardType.CUSTOM
+                    ? FactionCardType.KILLER.getTypeRoleId() : type.getTypeRoleId();
+            assertTrue(state.reserveFactionCard(type, targetRoleType, 3_000_000L));
             assertEquals(1, state.cards.get(type));
             assertEquals(3_000_000L, state.lastUsedAt(type));
 
             Gson gson = new Gson();
             state = gson.fromJson(gson.toJson(state), BackpackState.class).normalized();
+            assertEquals(targetRoleType, state.pendingFactionCardRoleType());
             assertTrue(state.refundFactionCard(type));
             assertFalse(state.refundFactionCard(type));
             assertEquals(2, state.cards.get(type));

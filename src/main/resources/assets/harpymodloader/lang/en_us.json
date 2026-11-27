@@ -87,5 +87,6 @@
   "commands.listroles.status.all_disabled.hover": "§eDisabled by config, and other features also disabled this role (e.g. role rotation, map bans).\n§aClick to switch to enabled\n%s",
   "commands.listroles.type.role": "§6[Role]",
   "commands.listroles.type.modifier": "§3[Modifier]",
-  "commands.changemodifier.player.notification.failed.norole": "Modifier modification failed: player %s has no role!"
+  "commands.changemodifier.player.notification.failed.norole": "Modifier modification failed: player %s has no role!",
+  "commands.managerolesui.synced": "Role / modifier toggle state synced"
 }

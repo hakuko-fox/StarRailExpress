@@ -15,6 +15,7 @@
 
 package io.wifi.starrailexpress.game.modes;
 
+import org.agmas.noellesroles.commands.BroadcastCommand;
 import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.CustomWinnerRoleInterface;
@@ -23,6 +24,7 @@ import io.wifi.starrailexpress.api.RoleTeam;
 import io.wifi.starrailexpress.api.SREGameModes;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.backpack.FactionCardForcing;
 import io.wifi.starrailexpress.cca.*;
 import io.wifi.starrailexpress.event.AllowGameEnd;
 import io.wifi.starrailexpress.event.AllowPlayerWin;
@@ -66,7 +68,6 @@ import org.agmas.harpymodloader.modifiers.HMLModifiers;
 import org.agmas.harpymodloader.modifiers.ModifierOpposingHelper;
 import org.agmas.harpymodloader.modifiers.SREModifier;
 import org.agmas.noellesroles.CustomWinnerClass;
-import org.agmas.noellesroles.commands.BroadcastCommand;
 import org.agmas.noellesroles.role_data.neutral.MercenaryRoleData;
 import org.agmas.noellesroles.role.ModRoles;
 import io.wifi.starrailexpress.event.GameplayExtensionEvents;
@@ -175,7 +176,7 @@ public class SREMurderGameMode extends GameMode {
 
         Harpymodloader.FORCED_MODDED_ROLE.clear();
         Harpymodloader.FORCED_MODDED_MODIFIER.clear();
-        PlayerRoleWeightManager.ForcePlayerTeam.clear();
+        FactionCardForcing.settleRound(serverWorld);
     }
 
     // 执行指定函数的辅助方法

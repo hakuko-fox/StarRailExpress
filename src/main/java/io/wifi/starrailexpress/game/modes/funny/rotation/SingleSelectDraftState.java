@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import org.agmas.harpymodloader.Harpymodloader;
 import org.agmas.harpymodloader.commands.RoleCountManager;
 import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
+import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
 import org.agmas.harpymodloader.modded_murder.PlayerRoleWeightManager;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo;
 import org.agmas.harpymodloader.modded_murder.ForceTeamInfo.ForceTeamType;
@@ -30,6 +32,7 @@ import org.agmas.noellesroles.role.touhou.THRedHouseRoles;
 import org.agmas.noellesroles.utils.RoleUtils;
 
 import io.wifi.starrailexpress.api.SRERole;
+import io.wifi.starrailexpress.backpack.FactionCardForcing;
 import io.wifi.starrailexpress.api.TMMRoles;
 import io.wifi.starrailexpress.game.modes.SREMurderGameMode;
 import io.wifi.starrailexpress.game.utils.RoleInstance;
@@ -180,7 +183,7 @@ public class SingleSelectDraftState {
         for (Map.Entry<Integer, List<UUID>> entry : byType.entrySet()) {
             int type = entry.getKey();
             List<UUID> uuids = entry.getValue();
-            int max = cardMaxPerType.getOrDefault(type, 0);
+            int max = cardMaxPerType.getOrDefault(type, uuids.size());
             cardUsedCount.put(type, Math.min(uuids.size(), max));
             for (int i = max; i < uuids.size(); i++) {
                 UUID uid = uuids.get(i);

@@ -13,9 +13,10 @@ class CardSettlementTest {
                 BackpackState state = BackpackState.createDefault();
                 state.cards.put(card, 1);
                 state.markUsed(card, 100L);
-                assertTrue(state.reserveFactionCard(card, 200L));
-                boolean matches = actualType == card.getTypeRoleId()
-                        || card == FactionCardType.CIVILIAN && actualType == 5;
+                int targetRoleType = card == FactionCardType.CUSTOM
+                        ? FactionCardType.CIVILIAN.getTypeRoleId() : card.getTypeRoleId();
+                assertTrue(state.reserveFactionCard(card, targetRoleType, 200L));
+                boolean matches = actualType == targetRoleType || targetRoleType == 1 && actualType == 5;
                 assertEquals(matches ? CardSettlement.Result.SUCCESS : CardSettlement.Result.FACTION_REFUNDED,
                         CardSettlement.settle(state, actualType < 0 ? null : "test:role", actualType));
                 assertEquals(matches ? 0 : 1, state.cards.get(card));

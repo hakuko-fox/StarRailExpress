@@ -19,6 +19,7 @@ import io.wifi.starrailexpress.SRE;
 import io.wifi.starrailexpress.SREConfig;
 import io.wifi.starrailexpress.api.SRERole;
 import io.wifi.starrailexpress.api.TMMRoles;
+import io.wifi.starrailexpress.backpack.FactionCardForcing;
 import io.wifi.starrailexpress.cca.SREGameTimeComponent;
 import io.wifi.starrailexpress.cca.SREGameWorldComponent;
 import io.wifi.starrailexpress.cca.SREPlayerShopComponent;
@@ -255,7 +256,7 @@ public class SREHideAndSeekGameMode extends SREMurderGameMode {
         }
         // 分配修饰符（修饰符放在职业分配后）
         Harpymodloader.FORCED_MODDED_ROLE.clear();
-        PlayerRoleWeightManager.ForcePlayerTeam.clear();
+        FactionCardForcing.settleRound(serverWorld);
     }
 
     private static Map<Player, SRERole> assignRolesToPlayers(ServerLevel serverWorld, List<ServerPlayer> players) {

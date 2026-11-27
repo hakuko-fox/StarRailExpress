@@ -18,7 +18,7 @@ final class CardSettlement {
         }
         FactionCardType card = state.pendingFactionCard;
         if (card == FactionCardType.NONE) return Result.NONE;
-        if (actualRoleId != null && FactionCardUtils.cardMatchesRoleType(card.getTypeRoleId(), actualRoleType)) {
+        if (actualRoleId != null && FactionCardUtils.cardMatchesRoleType(state.pendingFactionCardRoleType(), actualRoleType)) {
             state.consumeFactionCard();
             return Result.SUCCESS;
         }
