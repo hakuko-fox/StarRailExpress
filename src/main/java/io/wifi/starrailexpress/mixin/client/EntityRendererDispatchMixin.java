@@ -27,15 +27,18 @@ import io.wifi.starrailexpress.content.entity.PlayerBodyEntity;
 import io.wifi.starrailexpress.traindummy.TrainDummyEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
 import org.agmas.noellesroles.client.renderer.PuppeteerBodyEntityRenderer;
 import org.agmas.noellesroles.content.entity.PuppeteerBodyEntity;
+import org.agmas.noellesroles.init.ModEffects;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -48,6 +51,15 @@ import java.util.Map;
 @SuppressWarnings("unchecked")
 @Mixin(EntityRenderDispatcher.class)
 public class EntityRendererDispatchMixin {
+
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private <E extends Entity> void sre$hideUnstablePlayer(E entity, double x, double y, double z, float yaw,
+            float partialTick, PoseStack poses, MultiBufferSource buffers, int light, CallbackInfo ci) {
+        if (entity instanceof Player player && player != Minecraft.getInstance().player
+                && player.hasEffect(ModEffects.UNSTABLE_SHIFT)) {
+            ci.cancel();
+        }
+    }
 
     @Unique
     private static final Map<PlayerSkin.Model, EntityRendererProvider<PuppeteerBodyEntity>> PUPPETEER_BODY_RENDERER_FACTORIES = Map

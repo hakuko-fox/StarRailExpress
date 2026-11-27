@@ -73,7 +73,8 @@ public record KnifeStabPayload(int target) implements CustomPacketPayload {
             if (io.wifi.starrailexpress.anticheat.ClickAntiCheat.isLocked(player)) {
                 return;
             }
-            if (player.isSpectator() || player.hasEffect(ModEffects.USED_BANED)) {
+            if (player.isSpectator() || player.hasEffect(ModEffects.USED_BANED)
+                    || player.hasEffect(ModEffects.UNSTABLE_SHIFT)) {
                 return;
             }
             if (org.agmas.noellesroles.content.effects.StatusAilmentHandler.isIntellectLocked(player)) {

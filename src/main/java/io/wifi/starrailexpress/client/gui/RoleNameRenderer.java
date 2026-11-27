@@ -123,7 +123,8 @@ public class RoleNameRenderer {
         {
 
             Player target = null;
-            if (ProjectileUtil.getHitResultOnViewVector(self, entity -> entity instanceof Player,
+            if (ProjectileUtil.getHitResultOnViewVector(self,
+                    entity -> entity instanceof Player player && !player.hasEffect(org.agmas.noellesroles.init.ModEffects.UNSTABLE_SHIFT),
                     range) instanceof EntityHitResult entityHitResult
                     && entityHitResult.getEntity() instanceof Player) {
                 target = (Player) entityHitResult.getEntity();

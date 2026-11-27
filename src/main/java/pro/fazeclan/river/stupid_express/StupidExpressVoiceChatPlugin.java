@@ -46,7 +46,8 @@ public class StupidExpressVoiceChatPlugin implements VoicechatPlugin {
 
         ServerPlayer sender = ((ServerPlayer) connection_s.getPlayer().getPlayer());
         // 所有手工转发之前检查沉默，避免附身玩家经双重人格语音绕过禁言。
-        if (sender.hasEffect(org.agmas.noellesroles.init.ModEffects.VOICE_SILENCE)) {
+        if (sender.hasEffect(org.agmas.noellesroles.init.ModEffects.VOICE_SILENCE)
+                || sender.hasEffect(org.agmas.noellesroles.init.ModEffects.UNSTABLE_SHIFT)) {
             event.cancel();
             return;
         }

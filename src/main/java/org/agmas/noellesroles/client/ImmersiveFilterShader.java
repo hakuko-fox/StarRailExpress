@@ -123,7 +123,8 @@ public class ImmersiveFilterShader {
         FilterFade fade = new FilterFade();
         return post.addSinglePassEntry(passName, pass -> process(mc.player, () -> {
             LocalPlayer player = mc.player;
-            if (!player.hasEffect(effectHolder)) {
+            if (!player.hasEffect(effectHolder)
+                    && !(effectHolder.equals(ModEffects.BACKROOMS_FILTER) && player.hasEffect(ModEffects.UNSTABLE_SHIFT))) {
                 fade.reset();
                 return false;
             }

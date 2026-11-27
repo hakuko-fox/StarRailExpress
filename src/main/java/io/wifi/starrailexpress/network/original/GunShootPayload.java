@@ -81,6 +81,7 @@ public record GunShootPayload(int target) implements CustomPacketPayload {
                 return;
             }
             if (player.hasEffect(ModEffects.USED_BANED)
+                    || player.hasEffect(ModEffects.UNSTABLE_SHIFT)
                     || org.agmas.noellesroles.content.effects.StatusAilmentHandler.isIntellectLocked(player)) {
                 return;
             }

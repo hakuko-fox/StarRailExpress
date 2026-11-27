@@ -506,6 +506,10 @@ public class ModEffects {
     public static final Holder<MobEffect> TIME_REVEAL = register("time_reveal",
             new SimpleMobEffect(MobEffectCategory.BENEFICIAL, 0xB8C6FF));
 
+    /** 不稳定之人进入异世界时的同步状态。 */
+    public static final Holder<MobEffect> UNSTABLE_SHIFT = register("unstable_shift",
+            new SimpleMobEffect(MobEffectCategory.NEUTRAL, 0xBAA35C));
+
     /**
      * 沉浸式滤镜效果：后室
      * 纯视觉：VHS 录像带式后室渲染滤镜（搬运自 MinecraftFoundFootage 的 VHS 后处理），无任何玩法副作用。

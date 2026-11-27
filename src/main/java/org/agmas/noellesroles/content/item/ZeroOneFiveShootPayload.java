@@ -57,7 +57,7 @@ public record ZeroOneFiveShootPayload(int target) implements CustomPacketPayload
             if (player.isSpectator()) {
                 return;
             }
-            if (player.hasEffect(ModEffects.USED_BANED)) {
+            if (player.hasEffect(ModEffects.USED_BANED) || player.hasEffect(ModEffects.UNSTABLE_SHIFT)) {
                 return;
             }
             if (!mainHandStack.is(ModItems.ZERO_ONE_FIVE_GUN)) {

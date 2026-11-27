@@ -151,7 +151,8 @@ public class AbilityHandler {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
         final var role = gameWorldComponent.getRole(player);
-        if (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+        if (player.hasEffect(ModEffects.UNSTABLE_SHIFT)
+                || (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID()))) {
             return;
         }
         if (SpellbreakerRoleData.consumePendingSkillFail(player)) {
@@ -493,7 +494,8 @@ public class AbilityHandler {
         SREGameWorldComponent gameWorldComponent = (SREGameWorldComponent) SREGameWorldComponent.KEY
                 .get(player.level());
         final var role = gameWorldComponent.getRole(player);
-        if (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID())) {
+        if (player.hasEffect(ModEffects.UNSTABLE_SHIFT)
+                || (player.hasEffect(ModEffects.TIME_STOP) && !TimeStopEffect.canMovePlayers.contains(player.getUUID()))) {
             return;
         }
         if (SpellbreakerRoleData.consumePendingSkillFail(player)) {

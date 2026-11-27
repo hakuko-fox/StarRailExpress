@@ -243,6 +243,11 @@ public class NoellesrolesClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.ALLOW_CHAT.register(
+                (message, signedMessage, sender, parameters, receptionTimestamp) -> {
+                    var player = Minecraft.getInstance().player;
+                    return player == null || !player.hasEffect(ModEffects.UNSTABLE_SHIFT);
+                });
         // 思索扩展：必须在 PondererLib 场景注册之前完成，供职业教程使用自定义步骤
         io.wifi.starrailexpress.client.ponder.PonderSreRegistration.register();
         org.agmas.noellesroles.client.roulette.RouletteClient.register();

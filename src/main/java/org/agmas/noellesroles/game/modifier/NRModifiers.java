@@ -268,10 +268,17 @@ public class NRModifiers {
             .setDefaultEnableChance(1000)
             .setAddedVersion("4.4");
 
+    public static final SREModifier UNSTABLE_PERSON = HMLModifiers.registerModifier(new SREModifier(
+            Noellesroles.id("unstable_person"), 0xBAA35C, null, null, false, false))
+            .setServerGameTickEvent(UnstablePersonModifier::serverTick)
+            .setDefaultMax(1)
+            .setDefaultEnableChance(2000);
+
     /**
      * 初始化修饰符系统
      */
     public static void init() {
+        UnstablePersonModifier.init();
         FAKE_STEVE_REPLACED.addBothRelatedRole(ModRoles.FAKE_STEVE);
         FAKE_STEVE_VIRUS.addBothRelatedRole(ModRoles.FAKE_STEVE);
         EXPEDITION.civilianOnly = true;

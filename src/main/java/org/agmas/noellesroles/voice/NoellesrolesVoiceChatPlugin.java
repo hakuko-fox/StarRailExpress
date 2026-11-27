@@ -96,7 +96,8 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
         return true;
       }
     }
-    if (receiverPlayer.hasEffect(ModEffects.PLAYER_ISOLATION) || senderPlayer.hasEffect(ModEffects.PLAYER_ISOLATION)) {
+    if (receiverPlayer.hasEffect(ModEffects.PLAYER_ISOLATION) || senderPlayer.hasEffect(ModEffects.PLAYER_ISOLATION)
+        || receiverPlayer.hasEffect(ModEffects.UNSTABLE_SHIFT) || senderPlayer.hasEffect(ModEffects.UNSTABLE_SHIFT)) {
       return true;
     }
     if (receiverPlayer.hasEffect(ModEffects.VOICE_DEAFENED)
@@ -198,7 +199,7 @@ public class NoellesrolesVoiceChatPlugin implements VoicechatPlugin {
         if (vctplayer != null) {
           var player = (ServerPlayer) vctplayer;
           // 沉默语音只依赖玩家本身，必须排在一切转发之前，否则会出现"先转发再静音"的绕过。
-          if (player.hasEffect(ModEffects.VOICE_SILENCE)) {
+          if (player.hasEffect(ModEffects.VOICE_SILENCE) || player.hasEffect(ModEffects.UNSTABLE_SHIFT)) {
             event.cancel();
             return;
           }
