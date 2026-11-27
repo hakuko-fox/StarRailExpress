@@ -47,6 +47,7 @@ public final class BackpackState {
     public int pendingFactionCardTargetRoleType;
     /** 最近一次已發獎的場次 UUID，防止同一結算重複入帳。 */
     public String lastVtuberCoinRoundId = "";
+    public Set<String> appliedQueuedVtuberRewards = new HashSet<>();
     /** 一次性「移动」迁移守卫：通行证卡牌已搬入背包后置 true。 */
     public boolean migrated = false;
     /** 各阵营卡最近一次成功激活的墙钟时间（epoch ms）。用于同种类使用间隔。 */
@@ -82,6 +83,9 @@ public final class BackpackState {
             purchasedSkins = new HashSet<>();
         }
         purchasedSkins.removeIf(id -> id == null || id.isBlank());
+        if (appliedQueuedVtuberRewards == null) {
+            appliedQueuedVtuberRewards = new HashSet<>();
+        }
         if (lastVtuberCoinRoundId == null) {
             lastVtuberCoinRoundId = "";
         }
@@ -178,6 +182,8 @@ public final class BackpackState {
                 ? new HashSet<>()
                 : new HashSet<>(other.purchasedSkins);
         this.lastVtuberCoinRoundId = other.lastVtuberCoinRoundId;
+        this.appliedQueuedVtuberRewards = other.appliedQueuedVtuberRewards == null
+                ? new HashSet<>() : new HashSet<>(other.appliedQueuedVtuberRewards);
         this.version = other.version;
         this.cardLastUsedAt = other.cardLastUsedAt;
         normalized();

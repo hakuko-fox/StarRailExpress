@@ -75,4 +75,16 @@ class RoleChoiceFactionCapacityTest {
                 result.winners());
         assertEquals(java.util.Set.of(killer.playerId()), result.losers());
     }
+
+    @Test
+    void multiSlotRoleNeedsAllOfItsFactionSlots() {
+        var role = new BackpackRoleChoiceResolver.Request(UUID.randomUUID(), "sre:dictator", 5, 2);
+        var capacities = Map.of(role.roleId(), 1);
+        var accepted = BackpackRoleChoiceResolver.resolve(List.of(role), capacities, Map.of(), Map.of(5, 2),
+                Map.of(), new Random(7));
+        var rejected = BackpackRoleChoiceResolver.resolve(List.of(role), capacities, Map.of(), Map.of(5, 2),
+                Map.of(5, 1), new Random(7));
+        assertEquals(Map.of(role.playerId(), role.roleId()), accepted.winners());
+        assertTrue(rejected.losers().contains(role.playerId()));
+    }
 }

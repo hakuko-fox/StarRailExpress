@@ -14,7 +14,11 @@ public final class BackpackRoleChoiceResolver {
     private BackpackRoleChoiceResolver() {
     }
 
-    public record Request(UUID playerId, String roleId, int roleType) {
+    public record Request(UUID playerId, String roleId, int roleType, int occupiedSlots) {
+        public Request(UUID playerId, String roleId, int roleType) {
+            this(playerId, roleId, roleType, 1);
+        }
+
         public Request(UUID playerId, String roleId) {
             this(playerId, roleId, 0);
         }
@@ -48,10 +52,10 @@ public final class BackpackRoleChoiceResolver {
             int roleCount = Math.max(0, roleCounts.getOrDefault(request.roleId(), 0));
             int factionCount = Math.max(0, factionCounts.getOrDefault(faction, 0));
             if (roleCount < Math.max(0, capacities.getOrDefault(request.roleId(), 1))
-                    && factionCount < Math.max(0, factionCapacities.getOrDefault(faction, Integer.MAX_VALUE))) {
+                    && request.occupiedSlots() <= factionCapacities.getOrDefault(faction, Integer.MAX_VALUE) - factionCount) {
                 winners.put(request.playerId(), request.roleId());
                 roleCounts.put(request.roleId(), roleCount + 1);
-                factionCounts.put(faction, factionCount + 1);
+                factionCounts.put(faction, factionCount + request.occupiedSlots());
             } else {
                 losers.add(request.playerId());
             }

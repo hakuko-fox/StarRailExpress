@@ -579,6 +579,16 @@ public class SREMurderGameMode extends GameMode {
             int playerSize, int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
             RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
             List<SRERole> forcedRoles, int maxDepth, Map<Integer, Integer> cardRequests) {
+        return getAllRoles(killerCount, vigilanteCount, neutralsCount, playerSize, forcedRoleSize,
+                killerPool, neutralsPool, vigilantePool, civilianPool, haveOccupationRoles,
+                forcedRoles, maxDepth, cardRequests, role -> true);
+    }
+
+    protected static List<RoleInstance> getAllRoles(int killerCount, int vigilanteCount, int neutralsCount,
+            int playerSize, int forcedRoleSize, RoleAssignmentPool killerPool, RoleAssignmentPool neutralsPool,
+            RoleAssignmentPool vigilantePool, RoleAssignmentPool civilianPool, boolean haveOccupationRoles,
+            List<SRERole> forcedRoles, int maxDepth, Map<Integer, Integer> cardRequests,
+            java.util.function.Predicate<SRERole> allowFallbackRole) {
         // 第一步，减少强制职业
         if (forcedRoles != null) {
             for (var role : forcedRoles) {
@@ -637,7 +647,8 @@ public class SREMurderGameMode extends GameMode {
         SRERole fallbackVigilante = vigilanteFallback();
         int fallbackSlots = fallbackVigilante == null ? 0 : Math.max(1, fallbackVigilante.getOccupiedRoleCount());
         int assignedVigilanteSlots = getOccupiedSlotCount(assignedVigilantes);
-        while (fallbackVigilante != null && fallbackSlots > 0 && assignedVigilanteSlots < vigilanteCount) {
+        while (fallbackVigilante != null && allowFallbackRole.test(fallbackVigilante)
+                && fallbackSlots > 0 && assignedVigilanteSlots < vigilanteCount) {
             assignedVigilantes.add(fallbackVigilante);
             assignedVigilanteSlots += fallbackSlots;
         }
@@ -712,7 +723,7 @@ public class SREMurderGameMode extends GameMode {
                 resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), role));
             }
             // 平民池确实被抽空时才退回裸平民，避免玩家没有职业。
-            for (int i = extraCivilians.size(); i < needCivilian; i++) {
+            for (int i = extraCivilians.size(); i < needCivilian && allowFallbackRole.test(TMMRoles.CIVILIAN); i++) {
                 resultRoleInstances.add(new RoleInstance(UUID.randomUUID(), TMMRoles.CIVILIAN));
             }
         }

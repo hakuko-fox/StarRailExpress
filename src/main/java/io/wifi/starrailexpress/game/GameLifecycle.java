@@ -312,6 +312,14 @@ final class GameLifecycle {
         io.wifi.starrailexpress.backpack.BackpackManager.prepareRoleChoices(
                 serverWorld, readyPlayerList, gameComponent.getGameMode());
         gameComponent.getGameMode().initializeGame(serverWorld, gameComponent, readyPlayerList);
+        var modeId = gameComponent.getGameMode().identifier;
+        if ((modeId.equals(io.wifi.starrailexpress.api.SREGameModes.VTUBER_MODE_ID)
+                || modeId.equals(io.wifi.starrailexpress.api.SREGameModes.HK_VTUBER_MODE_ID))
+                && readyPlayerList.stream().anyMatch(player -> gameComponent.getRole(player) == null)) {
+            io.wifi.starrailexpress.backpack.BackpackManager.cancelRoundRoleChoices(serverWorld);
+            cancelStart(serverWorld, Component.translatable("game.start_error.sre.not_enough_flagged_roles"));
+            return;
+        }
         // 初始化回放管理器
         gameComponent.getGameMode().afterInitializeGame(serverWorld, gameComponent, readyPlayerList);
 

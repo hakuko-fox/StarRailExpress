@@ -39,18 +39,22 @@ import net.minecraft.network.chat.Component;
  * {@link #rolePaths()} 为空表示「全部已注册职业」；{@link #modifierPaths()}
  * 为空表示「全部修饰符」（内置池子目前都是全修饰符）。
  */
-public record RolePool(String id, String fallbackName, List<String> rolePaths, List<String> modifierPaths) {
+public record RolePool(String id, String fallbackName, List<String> rolePaths, List<String> modifierPaths, String roleFlag) {
 
     /** 投票选项 resultId 的前缀，完整格式为 {@code role_pool:<池 id>}。 */
     public static final String RESULT_PREFIX = "role_pool:";
 
     /** 只有职业、修饰符全开（常用写法）。 */
     public static RolePool of(String id, String fallbackName, List<String> rolePaths) {
-        return new RolePool(id, fallbackName, List.copyOf(rolePaths), List.of());
+        return new RolePool(id, fallbackName, List.copyOf(rolePaths), List.of(), null);
     }
 
     public static RolePool of(String id, String fallbackName, List<String> rolePaths, List<String> modifierPaths) {
-        return new RolePool(id, fallbackName, List.copyOf(rolePaths), List.copyOf(modifierPaths));
+        return new RolePool(id, fallbackName, List.copyOf(rolePaths), List.copyOf(modifierPaths), null);
+    }
+
+    public static RolePool tagged(String roleFlag, String fallbackName) {
+        return new RolePool(roleFlag, fallbackName, List.of(), List.of(), roleFlag);
     }
 
     /** 池子名称的翻译键（缺失时回退到 {@link #fallbackName()}）。 */
@@ -64,7 +68,7 @@ public record RolePool(String id, String fallbackName, List<String> rolePaths, L
 
     /** 是否表示「全部职业」（没有显式列出职业）。 */
     public boolean allRoles() {
-        return rolePaths.isEmpty();
+        return roleFlag == null && rolePaths.isEmpty();
     }
 
     /** 是否表示「全部修饰符」。 */

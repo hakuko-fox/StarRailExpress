@@ -87,7 +87,9 @@ public final class RolePoolRegistry {
      */
     public static List<SRERole> rolesOf(RolePool pool) {
         List<SRERole> roles = new ArrayList<>();
-        if (pool.allRoles()) {
+        if (pool.roleFlag() != null) {
+            TMMRoles.ROLES.values().stream().filter(role -> role.isFlag(pool.roleFlag())).forEach(roles::add);
+        } else if (pool.allRoles()) {
             roles.addAll(TMMRoles.ROLES.values());
         } else {
             for (String path : pool.rolePaths()) {

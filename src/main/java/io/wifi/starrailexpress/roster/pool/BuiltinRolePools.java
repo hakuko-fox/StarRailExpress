@@ -105,5 +105,6 @@ public final class BuiltinRolePools {
 
     /** 全部内置池子，顺序即投票界面的展示顺序。 */
     public static final List<RolePool> ALL = List.of(
-            RESIDENT, BLAST_CARNIVAL, TOUHOU_NIGHT, DARK_HOURS, TOUHOU, ALL_ROLES);
+            RESIDENT, BLAST_CARNIVAL, TOUHOU_NIGHT, DARK_HOURS, TOUHOU,
+            RolePool.tagged("vtuber", "VTuber 职业池"), RolePool.tagged("hkvtuber", "HKVTuber 职业池"), ALL_ROLES);
 }

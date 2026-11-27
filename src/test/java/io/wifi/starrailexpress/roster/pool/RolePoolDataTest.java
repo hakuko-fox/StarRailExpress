@@ -94,4 +94,14 @@ class RolePoolDataTest {
         assertNull(RolePoolRegistry.byId("nope"));
         assertNull(RolePoolRegistry.byResultId("pool:resident"));
     }
+
+    @Test
+    void vtuberPoolsSelectTheirOwnRoleFlags() {
+        for (String flag : List.of("vtuber", "hkvtuber")) {
+            RolePool pool = RolePoolRegistry.byResultId("role_pool:" + flag);
+            assertNotNull(pool);
+            assertEquals(flag, pool.roleFlag());
+            assertFalse(pool.allRoles());
+        }
+    }
 }

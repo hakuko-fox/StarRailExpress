@@ -42,7 +42,6 @@ import java.util.UUID;
 public final class VtuberStoreManager {
     private static final Gson GSON = new GsonBuilder().create();
     private static final Map<ResourceKey<Level>, RewardRound> ACTIVE_ROUNDS = new HashMap<>();
-    private static final Map<UUID, LinkedHashMap<UUID, PendingRoundReward>> PENDING_ROUND_REWARDS = new HashMap<>();
     private static volatile VtuberStoreConfig config = new VtuberStoreConfig();
 
     private VtuberStoreManager() {
@@ -53,16 +52,9 @@ public final class VtuberStoreManager {
             config = VtuberStoreConfig.loadAndMergeDefaults();
             warnUnknownConfigProducts();
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            ACTIVE_ROUNDS.clear();
-            PENDING_ROUND_REWARDS.clear();
-        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> ACTIVE_ROUNDS.clear());
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> sendCatalog(handler.getPlayer()));
         ServerTickEvents.END_SERVER_TICK.register(VtuberStoreManager::processPendingRewards);
-        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            ACTIVE_ROUNDS.clear();
-            PENDING_ROUND_REWARDS.clear();
-        });
     }
 
     public static List<CatalogProduct> registeredProducts() {
@@ -147,6 +139,7 @@ public final class VtuberStoreManager {
     public static void rewardRound(ServerLevel world, SREGameRoundEndComponent roundEnd) {
         RewardRound round = ACTIVE_ROUNDS.remove(world.dimension());
         if (round == null) return;
+        PendingVtuberRewards pending = PendingVtuberRewards.get(world.getServer());
         for (var result : roundEnd.players) {
             UUID playerId = result.player.getId();
             if (!round.canReward(playerId, roundEnd.getWinStatus())) continue;
@@ -154,10 +147,11 @@ public final class VtuberStoreManager {
             boolean alive = !result.wasDead();
             int amount = config.rewards.amountForRound(winner, alive);
             ServerPlayer player = world.getServer().getPlayerList().getPlayer(playerId);
-            if (player == null || !BackpackManager.isLoaded(playerId)) {
-                queuePendingReward(playerId, round.id(), amount, winner, alive);
+            if (player == null || !BackpackManager.isLoaded(playerId) || pending.hasPending(playerId)) {
+                pending.add(new PendingVtuberRewards.Reward(playerId, round.id(), amount, winner, alive));
             } else {
-                awardRoundReward(player, round.id(), amount, winner, alive);
+                int awarded = BackpackManager.awardVtuberCoinsForRound(player, round.id(), amount, winner);
+                notifyRoundReward(player, awarded, winner, alive);
             }
         }
     }
@@ -168,37 +162,26 @@ public final class VtuberStoreManager {
         }
     }
 
-    private static void queuePendingReward(UUID playerUuid, UUID roundId, int baseAmount, boolean winner,
-            boolean alive) {
-        PENDING_ROUND_REWARDS.computeIfAbsent(playerUuid, ignored -> new LinkedHashMap<>())
-                .putIfAbsent(roundId, new PendingRoundReward(baseAmount, winner, alive));
-    }
-
     private static void processPendingRewards(MinecraftServer server) {
-        var playerEntries = PENDING_ROUND_REWARDS.entrySet().iterator();
-        while (playerEntries.hasNext()) {
-            var playerEntry = playerEntries.next();
-            ServerPlayer player = server.getPlayerList().getPlayer(playerEntry.getKey());
-            if (player == null || !BackpackManager.isLoaded(player.getUUID())) {
+        PendingVtuberRewards pending = PendingVtuberRewards.get(server);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            UUID playerId = player.getUUID();
+            if (!BackpackManager.isLoaded(playerId) || !pending.hasPending(playerId)) {
                 continue;
             }
-            var rewards = playerEntry.getValue();
-            var rewardEntries = rewards.entrySet().iterator();
-            while (rewardEntries.hasNext()) {
-                var rewardEntry = rewardEntries.next();
-                PendingRoundReward reward = rewardEntry.getValue();
-                awardRoundReward(player, rewardEntry.getKey(), reward.baseAmount(), reward.winner(), reward.alive());
-                rewardEntries.remove();
-            }
-            if (rewards.isEmpty()) {
-                playerEntries.remove();
+            for (PendingVtuberRewards.Reward reward : pending.forPlayer(playerId)) {
+                if (!BackpackManager.isQueuedVtuberRewardSaved(playerId, reward.roundId())) {
+                    int awarded = BackpackManager.awardQueuedVtuberCoins(
+                            player, reward.roundId(), reward.baseAmount(), reward.winner());
+                    notifyRoundReward(player, awarded, reward.winner(), reward.alive());
+                    break;
+                }
+                pending.acknowledge(reward);
             }
         }
     }
 
-    private static void awardRoundReward(ServerPlayer player, UUID roundId, int baseAmount, boolean winner,
-            boolean alive) {
-        int amount = BackpackManager.awardVtuberCoinsForRound(player, roundId, baseAmount, winner);
+    private static void notifyRoundReward(ServerPlayer player, int amount, boolean winner, boolean alive) {
         if (amount >= 0) {
             String messageKey = winner
                     ? (alive ? "message.sre.vtuber_store.round_reward.winner_alive"
@@ -266,6 +249,4 @@ public final class VtuberStoreManager {
             String rarity, boolean enabled, int price) {
     }
 
-    private record PendingRoundReward(int baseAmount, boolean winner, boolean alive) {
-    }
 }

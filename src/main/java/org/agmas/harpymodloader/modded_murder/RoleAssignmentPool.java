@@ -25,8 +25,10 @@ import org.agmas.harpymodloader.config.HarpyModLoaderConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -41,6 +43,7 @@ public class RoleAssignmentPool {
     private final Map<ResourceLocation, Integer> roleCountMap;
     private final String poolName;
     private final boolean allowUnlimitedRepeats;
+    private Set<SRERole> drawnRoles;
     public boolean ignoreeRoleOccupiedCount = false;
 
     private RoleAssignmentPool(String poolName, WeightedUtil<SRERole> roleWeights,
@@ -78,6 +81,12 @@ public class RoleAssignmentPool {
     /**
      * 内部方法：创建角色分配池
      */
+    public static RoleAssignmentPool createPreferDistinct(String poolName, Predicate<SRERole> filter) {
+        RoleAssignmentPool pool = createUnlimited(poolName, filter);
+        pool.drawnRoles = new HashSet<>();
+        return pool;
+    }
+
     private static RoleAssignmentPool createInternal(String poolName, Predicate<SRERole> filter,
             boolean allowUnlimitedRepeats) {
         // 获取所有符合条件的角色
@@ -200,7 +209,9 @@ public class RoleAssignmentPool {
         List<SRERole> selected = new ArrayList<>();
         for (int i = 0; i < needCount; i++) {
             for (int j = 0; j < maxTrial; j++) {
-                SRERole role = selectRole(condition);
+                int remainingSlots = needCount - i;
+                SRERole role = selectRole(drawnRoles == null || ignoreeRoleOccupiedCount ? condition
+                        : condition.and(candidate -> candidate.getOccupiedRoleCount() <= remainingSlots));
                 if (role != null) {
                     int roleOccupiedCount = role.getOccupiedRoleCount();
                     // 额外逻辑：occupiedRoleCount <= 0 表示不占用角色槽位（如迷失杀手）
@@ -262,8 +273,11 @@ public class RoleAssignmentPool {
         if (isEmpty()) {
             return null;
         }
-        var roleWeights2 = roleWeights.filter(condition);
-        SRERole selectedRole = roleWeights2.selectRandomKeyBasedOnWeights();
+        SRERole selectedRole = drawnRoles == null ? null : roleWeights
+                .filter(condition.and(role -> !drawnRoles.contains(role))).selectRandomKeyBasedOnWeights();
+        if (selectedRole == null) {
+            selectedRole = roleWeights.filter(condition).selectRandomKeyBasedOnWeights();
+        }
         if (selectedRole == null) {
             return null;
         }
@@ -276,6 +290,9 @@ public class RoleAssignmentPool {
                 if (remainingCount - 1 <= 0) {
                     roleWeights.removeKey(selectedRole);
                 }
+            }
+            if (drawnRoles != null) {
+                drawnRoles.add(selectedRole);
             }
             return selectedRole;
         } else {
@@ -308,6 +325,9 @@ public class RoleAssignmentPool {
     }
 
     public void removeRoleCount(SRERole role, int i) {
+        if (drawnRoles != null && role != null && i > 0) {
+            drawnRoles.add(role);
+        }
         addRoleCount(role, -i);
     }
 }

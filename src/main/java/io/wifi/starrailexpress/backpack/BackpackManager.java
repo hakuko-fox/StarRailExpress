@@ -231,7 +231,7 @@ public final class BackpackManager {
     }
 
     public static boolean awardVtuberCoins(ServerPlayer player, UUID roundId, int amount) {
-        return awardVtuberCoinsInternal(player, roundId, amount, null) >= 0;
+        return awardVtuberCoinsInternal(player, roundId, amount, null, false) >= 0;
     }
 
     /**
@@ -243,17 +243,27 @@ public final class BackpackManager {
      */
     public static int awardVtuberCoinsForRound(ServerPlayer player, UUID roundId, int baseAmount,
             boolean winner) {
-        return awardVtuberCoinsInternal(player, roundId, baseAmount, winner);
+        return awardVtuberCoinsInternal(player, roundId, baseAmount, winner, false);
+    }
+
+    public static int awardQueuedVtuberCoins(ServerPlayer player, UUID roundId, int baseAmount, boolean winner) {
+        return awardVtuberCoinsInternal(player, roundId, baseAmount, winner, true);
+    }
+
+    public static boolean isQueuedVtuberRewardSaved(UUID playerId, UUID roundId) {
+        Entry entry = ENTRIES.get(playerId);
+        return entry != null && entry.loaded && !entry.dirty && !entry.saveInFlight && !entry.loadInFlight
+                && entry.state.appliedQueuedVtuberRewards.contains(roundId.toString());
     }
 
     private static int awardVtuberCoinsInternal(ServerPlayer player, UUID roundId, int baseAmount,
-            Boolean winner) {
+            Boolean winner, boolean queued) {
         if (roundId == null || baseAmount < 0 || !isLoaded(player.getUUID())) {
             return -1;
         }
         Entry entry = getEntry(player.getUUID());
         String id = roundId.toString();
-        if (id.equals(entry.state.lastVtuberCoinRoundId)) {
+        if (id.equals(entry.state.lastVtuberCoinRoundId) || entry.state.appliedQueuedVtuberRewards.contains(id)) {
             return -1;
         }
 
@@ -288,6 +298,9 @@ public final class BackpackManager {
             entry.state.vtuberLossStreak = nextLossStreak;
         }
         entry.state.lastVtuberCoinRoundId = id;
+        if (queued) {
+            entry.state.appliedQueuedVtuberRewards.add(id);
+        }
         markDirty(player, entry);
         return amount;
     }
@@ -592,7 +605,7 @@ public final class BackpackManager {
                 continue;
             }
             applicants.add(new BackpackRoleChoiceResolver.Request(player.getUUID(), role.identifier().toString(),
-                    roleType));
+                    roleType, Math.max(1, role.getOccupiedRoleCount())));
         }
         for (ServerPlayer player : players) {
             SRERole role = Harpymodloader.FORCED_MODDED_ROLE.get(player.getUUID());
@@ -638,6 +651,11 @@ public final class BackpackManager {
         return ROLE_CHOICE_RESERVATIONS.get(playerId);
     }
 
+    public static void cancelRoundRoleChoices(net.minecraft.server.level.ServerLevel world) {
+        ROUND_PARTICIPANTS.remove(world.dimension().location());
+        clearRoleChoiceReservations();
+    }
+
     private static void clearRoleChoiceReservations() {
         ROLE_CHOICE_RESERVATIONS.forEach(Harpymodloader.FORCED_MODDED_ROLE::remove);
         ROLE_CHOICE_RESERVATIONS.clear();
@@ -645,7 +663,7 @@ public final class BackpackManager {
 
     private static boolean isSelectableRole(SRERole role) {
         if (role == null || role == TMMRoles.DISCOVERY_CIVILIAN || role == TMMRoles.LOOSE_END
-                || role.isOtherModeRole() || role.getOccupiedRoleCount() != 1
+                || role.isOtherModeRole() || role.getOccupiedRoleCount() <= 0
                 || !role.occupationedRoles.isEmpty() || !role.occupationRoles.isEmpty()
                 || SREDisableManager.isRoleDisabled(role) || !RoleRosterManager.isRoleEnabled(role)) {
             return false;

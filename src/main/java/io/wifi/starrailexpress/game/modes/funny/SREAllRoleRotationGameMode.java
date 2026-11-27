@@ -150,6 +150,9 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         int killerCount = RoleCountManager.getKillerCount(players.size());
         int vigilanteCount = RoleCountManager.getVigilanteCount(players.size());
         int neutralsCount = RoleCountManager.getNeutralCount(players.size());
+        Map<Integer, Integer> factionSeats = new HashMap<>(Map.of(
+                4, killerCount, 5, vigilanteCount, 2, neutralsCount,
+                1, Math.max(0, players.size() - killerCount - vigilanteCount - neutralsCount)));
         boolean eggAssigned = false;
         List<ServerPlayer> companionPlayers = new ArrayList<>(players);
         companionPlayers.removeIf(player -> forcedRoles.containsKey(player.getUUID()));
@@ -163,25 +166,20 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
             }
             Set<SRERole> group = companionGroup(role);
             boolean hasEgg = group.stream().anyMatch(EggRoleInterface.class::isInstance);
-            if (hasEgg && eggAssigned) {
+            if ((hasEgg && eggAssigned) || !fitsFactionSeats(group, factionSeats)) {
                 continue;
             }
             eggAssigned |= hasEgg;
+            reserveFactionSeats(group, factionSeats);
             for (SRERole member : group) {
                 ServerPlayer recipient = member == role ? serverPlayer : companionPlayers.removeLast();
                 roleAssignments.put(recipient, member);
                 forcedPlayers.add(recipient);
-                int occupied = Math.max(1, member.getOccupiedRoleCount());
-                switch (member.getRoleType()) {
-                    case 4 -> killerCount -= occupied;
-                    case 5 -> vigilanteCount -= occupied;
-                    case 2, 3 -> neutralsCount -= occupied;
-                }
             }
         }
-        killerCount = Math.max(0, killerCount);
-        vigilanteCount = Math.max(0, vigilanteCount);
-        neutralsCount = Math.max(0, neutralsCount);
+        killerCount = factionSeats.get(4);
+        vigilanteCount = factionSeats.get(5);
+        neutralsCount = factionSeats.get(2);
 
         // 第二步：依佇列順序從各陣營挑選職業
         Set<String> selectedKillers = new HashSet<>();
@@ -240,7 +238,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
             instances.add(new RoleInstance(UUID.randomUUID(), r));
 
         instances = fitCompanionGroups(instances, availableSlots, eligible, state, random, eggAssigned,
-                roleAssignments.values());
+                roleAssignments.values(), factionSeats);
 
         int needCivilian = (players.size() - forcedPlayers.size()) - instances.size();
         for (int i = 0; i < needCivilian; i++)
@@ -311,11 +309,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
 
         List<SRERole> sequence = new ArrayList<>(eligible);
         Collections.shuffle(sequence, new Random(random.nextLong()));
-        sequence.sort(Comparator.comparingInt((SRERole role) -> playedCount(state, role))
-                .thenComparingLong(role -> {
-                    var track = state.getTrackOrNull(role.identifier().toString());
-                    return track == null ? 0L : track.lastPlayedRound;
-                }));
+        sequence.sort(rotationPriority(state));
         while (result.size() < need && !sequence.isEmpty()) {
             List<SRERole> available = sequence.stream()
                     .filter(role -> !selectedThisRound.contains(role.getIdentifier().toString()))
@@ -381,6 +375,14 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         return group;
     }
 
+    private static Comparator<SRERole> rotationPriority(AllRoleRotationSavedData state) {
+        return Comparator.comparingInt((SRERole role) -> playedCount(state, role))
+                .thenComparingLong(role -> {
+                    var track = state.getTrackOrNull(role.identifier().toString());
+                    return track == null ? 0L : track.lastPlayedRound;
+                });
+    }
+
     private static int playedCount(AllRoleRotationSavedData state, SRERole role) {
         var track = state.getTrackOrNull(role.identifier().toString());
         return track == null ? 0 : track.playedCount;
@@ -400,7 +402,7 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
 
     private List<RoleInstance> fitCompanionGroups(List<RoleInstance> candidates, int slots,
             Predicate<SRERole> eligible, AllRoleRotationSavedData state, RandomSource random, boolean eggAssigned,
-            Collection<SRERole> forcedRoles) {
+            Collection<SRERole> forcedRoles, Map<Integer, Integer> factionSeats) {
         List<RoleInstance> assignments = new ArrayList<>();
         List<RoleInstance> remainingPicks = new ArrayList<>();
         Set<SRERole> activeRoles = new HashSet<>(forcedRoles);
@@ -413,14 +415,17 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
         }
         RoleInstance eggPick = eggAssigned ? null : candidates.stream()
                 .filter(candidate -> groups.get(candidate).stream().anyMatch(EggRoleInterface.class::isInstance))
-                .filter(candidate -> isCompatible(groups.get(candidate), activeRoles))
-                .min(Comparator.comparingInt(candidate -> groups.get(candidate).stream()
-                        .filter(EggRoleInterface.class::isInstance)
-                        .mapToInt(role -> playedCount(state, role))
-                        .min().orElseThrow()))
+                .filter(candidate -> groups.get(candidate).size() <= slots
+                        && fitsFactionSeats(groups.get(candidate), factionSeats)
+                        && isCompatible(groups.get(candidate), activeRoles))
+                .min(Comparator.comparing(
+                        (RoleInstance candidate) -> groups.get(candidate).stream()
+                                .filter(EggRoleInterface.class::isInstance).findFirst().orElseThrow(),
+                        rotationPriority(state)))
                 .orElse(null);
         // Reserve the egg pick first so another group cannot take its seats.
         if (eggPick != null) {
+            reserveFactionSeats(groups.get(eggPick), factionSeats);
             addGroup(assignments, groups.get(eggPick));
             activeRoles.addAll(groups.get(eggPick));
         }
@@ -430,7 +435,8 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 continue;
             }
             Set<SRERole> group = entry.getValue();
-            if (group.size() > 1 && canFitRegularGroup(group, activeRoles, slots - assignments.size())) {
+            if (group.size() > 1 && canFitRegularGroup(group, activeRoles, slots - assignments.size(), factionSeats)) {
+                reserveFactionSeats(group, factionSeats);
                 addGroup(assignments, group);
                 activeRoles.addAll(group);
             } else {
@@ -444,25 +450,54 @@ public class SREAllRoleRotationGameMode extends SREMurderGameMode {
                 break;
             }
             Set<SRERole> group = groups.get(pick);
-            if (group.size() != 1 || !canFitRegularGroup(group, activeRoles, seatsLeft)) {
-                int faction = pick.role().getRoleType();
-                List<SRERole> replacements = filterRoles(eligible.and(role -> role.getRoleType() == faction
-                        && canFitRegularGroup(companionGroup(role), activeRoles, seatsLeft)));
+            if (group.size() != 1 || !canFitRegularGroup(group, activeRoles, seatsLeft, factionSeats)) {
+                int faction = rotationFaction(pick.role());
+                List<SRERole> replacements = filterRoles(eligible.and(role -> rotationFaction(role) == faction
+                        && canFitRegularGroup(companionGroup(role), activeRoles, seatsLeft, factionSeats)));
                 List<SRERole> reroll = pickForFaction(replacements, 1, state, random, selected);
                 if (reroll.isEmpty()) {
                     continue;
                 }
                 group = companionGroup(reroll.getFirst());
             }
+            reserveFactionSeats(group, factionSeats);
             addGroup(assignments, group);
             activeRoles.addAll(group);
         }
         return assignments;
     }
 
-    private static boolean canFitRegularGroup(Set<SRERole> group, Set<SRERole> activeRoles, int seatsLeft) {
+    private static boolean canFitRegularGroup(Set<SRERole> group, Set<SRERole> activeRoles, int seatsLeft,
+            Map<Integer, Integer> factionSeats) {
         return group.size() <= seatsLeft && group.stream().noneMatch(EggRoleInterface.class::isInstance)
-                && isCompatible(group, activeRoles);
+                && fitsFactionSeats(group, factionSeats) && isCompatible(group, activeRoles);
+    }
+
+    private static boolean fitsFactionSeats(Set<SRERole> group, Map<Integer, Integer> available) {
+        Map<Integer, Integer> remaining = new HashMap<>(available);
+        reserveFactionSeats(group, remaining);
+        return remaining.values().stream().noneMatch(seats -> seats < 0);
+    }
+
+    private static void reserveFactionSeats(Set<SRERole> group, Map<Integer, Integer> available) {
+        for (SRERole role : group) {
+            int faction = rotationFaction(role);
+            int occupied = faction == 1 ? Math.max(1, role.getOccupiedRoleCount()) : role.getOccupiedRoleCount();
+            if (occupied <= 0) {
+                available.merge(1, -1, Integer::sum);
+            } else {
+                available.merge(faction, -occupied, Integer::sum);
+            }
+        }
+    }
+
+    private static int rotationFaction(SRERole role) {
+        int type = role.getRoleType();
+        return switch (type) {
+            case 2, 3 -> 2;
+            case 4, 5 -> type;
+            default -> 1;
+        };
     }
 
     private static boolean isCompatible(Set<SRERole> group, Set<SRERole> activeRoles) {

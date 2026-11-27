@@ -185,24 +185,12 @@ public class LightningDraftState {
             }
             forcedRoles.add(role);
             forceRoleCount++;
-            switch (role.getRoleType()) {
-                case 1:
-                    break;
-                case 2:
-                case 3:
-                    neutralsCount--;
-                    break;
-                case 4:
-                    killerCount--;
-                    break;
-                case 5:
-                    vigilanteCount--;
-                    break;
-            }
         }
 
         List<RoleInstance> baseRoles = SREMurderGameMode.getAllRoles(
-                Math.max(0, killerCount), Math.max(0, vigilanteCount), Math.max(0, neutralsCount),
+                SREMurderGameMode.remainingFactionSlots(killerCount, forcedRoles, 4),
+                SREMurderGameMode.remainingFactionSlots(vigilanteCount, forcedRoles, 5),
+                SREMurderGameMode.remainingFactionSlots(neutralsCount, forcedRoles, 2),
                 totalPlayers, forceRoleCount,
                 killerPool, neutralsPool, vigilantePool, civilianPool, true, forcedRoles);
 
